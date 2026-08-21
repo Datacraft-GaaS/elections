@@ -189,8 +189,8 @@ contracts: _lint-contracts
     @echo "[contracts] placeholder, wire Karapace in WP-0.4a"
     @echo "[contracts] SpiceDB schema validation..."
     @if find packages/authz-schema -name "*.zed" 2>/dev/null | grep -q .; then \
-      find packages/authz-schema -name "*.zed" -exec zed validate {} \; 2>/dev/null || \
-        echo "[contracts] zed not found, skipping"; \
+      find packages/authz-schema -name "*.zed" -exec ./tools/spicedb/zed validate {} \; 2>/dev/null || \
+        echo "[contracts] SpiceDB zed CLI not found (see tools/spicedb/zed for install hints), skipping"; \
     else \
       echo "[contracts] no .zed schemas yet, skipping"; \
     fi

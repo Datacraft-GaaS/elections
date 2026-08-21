@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# Wrapper for the SpiceDB `zed` CLI (https://authzed.com/docs/spicedb/getting-started/install/zed).
+# Resolves the SpiceDB binary unambiguously, never falling back to the
+# unrelated `zed` code editor which may install to the same PATH position.
+#
+# Resolution order:
+#   1. $SPICEDB_ZED_BIN environment variable (explicit override)
+#   2. Nix flake output eel#spicedb-zed (via `nix shell`)
+#   3. Homebrew tap-installed authzed/tap/zed at /opt/homebrew/opt/authzed/tap/zed/bin/zed or /usr/local/opt/authzed/tap/zed/bin/zed
+#   4. ~/.local/bin/spicedb-zed (manual install alias)
+#   5. Any binary on PATH whose --version output starts with "zed" and mentions "authzed" or "spicedb"
+#
+# Errors with an install hint if none resolve.
+
+set -euo pipefail
+
+verify_authzed() {
+    local bin="$1"
+    if [[ ! -x "$bin" ]]; then return 1; fi
+    local ver
+    ver="$("$bin" version 2>&1 || true)"
+    if [[ "$ver" == *"authzed"* ]] || [[ "$ver" == *"SpiceDB"* ]] || [[ "$ver" == *"zed version"* ]]; then
+        return 0
+    fi
+    return 1
+}
+
+resolve() {
+    if [[ -n "${SPICEDB_ZED_BIN:-}" ]]; then
+        verify_authzed "$SPICEDB_ZED_BIN" && { echo "$SPICEDB_ZED_BIN"; return 0; }
+        echo "SPICEDB_ZED_BIN set but binary is not the SpiceDB zed CLI: $SPICEDB_ZED_BIN" >&2
+        exit 2
+    fi
+    for candidate in \
+        "/opt/homebrew/opt/authzed/tap/zed/bin/zed" \
+        "/usr/local/opt/authzed/tap/zed/bin/zed" \
+        "$HOME/.local/bin/spicedb-zed" \
+        "$HOME/.cargo/bin/spicedb-zed"; do
+        verify_authzed "$candidate" && { echo "$candidate"; return 0; }
+    done
+    if command -v nix >/dev/null 2>&1; then
+        # Prefer a repo-local flake output; may take a few seconds first time.
+        if nix eval --raw ".#packages.$(nix eval --impure --raw --expr builtins.currentSystem 2>/dev/null || echo x86_64-linux).spicedb-zed" >/dev/null 2>&1; then
+            echo "__nix_run__"
+            return 0
+        fi
+    fi
+    if command -v zed >/dev/null 2>&1; then
+        local system_zed
+        system_zed="$(command -v zed)"
+        if verify_authzed "$system_zed"; then
+            echo "$system_zed"
+            return 0
+        fi
+        echo "ERROR: 'zed' on PATH ($system_zed) is not the SpiceDB CLI (probably the Zed editor)." >&2
+        echo "Install SpiceDB CLI via:" >&2
+        echo "  macOS: brew install authzed/tap/zed" >&2
+        echo "  Nix:   nix shell nixpkgs#spicedb-zed (or use the flake output)" >&2
+        echo "  Other: https://github.com/authzed/zed/releases and place at ~/.local/bin/spicedb-zed" >&2
+        echo "Set SPICEDB_ZED_BIN to override." >&2
+        exit 3
+    fi
+    echo "ERROR: SpiceDB zed CLI not found. Install one of:" >&2
+    echo "  macOS: brew install authzed/tap/zed" >&2
+    echo "  Nix:   nix shell nixpkgs#spicedb-zed" >&2
+    echo "  Other: https://github.com/authzed/zed/releases and place at ~/.local/bin/spicedb-zed" >&2
+    echo "Or set SPICEDB_ZED_BIN to an explicit path." >&2
+    exit 4
+}
+
+BIN="$(resolve)"
+if [[ "$BIN" == "__nix_run__" ]]; then
+    exec nix shell nixpkgs#spicedb-zed --command zed "$@"
+fi
+exec "$BIN" "$@"

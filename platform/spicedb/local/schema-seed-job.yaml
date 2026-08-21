@@ -8,7 +8,7 @@ spec:
     spec:
       restartPolicy: OnFailure
       containers:
-        - name: zed
+        - name: spicedb-cli
           image: authzed/zed:v0.21.3
           command:
             - /bin/sh

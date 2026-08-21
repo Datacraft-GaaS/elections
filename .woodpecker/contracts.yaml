@@ -20,7 +20,7 @@ steps:
       - |
         if find packages/authz-schema -name '*.zed' | grep -q .; then
           find packages/authz-schema -name '*.zed' -print0 \
-            | xargs -0 -I{} zed validate {}
+            | xargs -0 -I{} ./tools/spicedb/zed validate {}
         else
           echo "no ZED schemas, skip"
         fi
