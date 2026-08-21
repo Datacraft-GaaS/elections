@@ -1,0 +1,202 @@
+openapi: "3.1.0"
+info:
+  title: "eel CVR API"
+  version: "1.0.0"
+  description: "Continuous voter register batch ingest and event API (WP-4.10, M35)"
+paths:
+  /healthz:
+    get:
+      summary: Health check
+      operationId: healthz
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /v1/cvr/batches:
+    post:
+      summary: Ingest a batch from CRS/NRB/KRA
+      operationId: ingestBatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchIngestRequest"
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchIngestionReport"
+        "400":
+          description: Bad request
+  /v1/cvr/events:
+    get:
+      summary: List voter register events
+      operationId: listEvents
+      parameters:
+        - name: voter_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: source
+          in: query
+          schema:
+            $ref: "#/components/schemas/EventSource"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  events:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/VoterRegisterEvent"
+  /v1/cvr/snapshots:
+    get:
+      summary: List register snapshots
+      operationId: listSnapshots
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  snapshots:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/RegisterSnapshot"
+  /v1/cvr/family-notify:
+    post:
+      summary: Handle *400# family shortcode notification
+      operationId: familyNotify
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FamilyNotificationRequest"
+      responses:
+        "202":
+          description: Accepted
+        "400":
+          description: Bad request
+components:
+  schemas:
+    EventSource:
+      type: string
+      enum: [CRS, NRB, KRA, FAMILY_SHORTCODE, OFFICER_MANUAL]
+    RegisterEventType:
+      type: string
+      enum: [DEATH_PROPOSED, DEATH_CONFIRMED, ID_CORRECTION, DORMANCY_FLAG,
+             FAMILY_NOTIFICATION, REMOVAL_APPROVED, REMOVAL_REJECTED, REINSTATEMENT]
+    EventDecision:
+      type: string
+      enum: [APPROVED, REJECTED, PENDING, HELD]
+    BatchIngestRequest:
+      type: object
+      required: [source, records]
+      properties:
+        source:
+          $ref: "#/components/schemas/EventSource"
+        records:
+          type: array
+          items: {}
+    BatchIngestionReport:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        source:
+          $ref: "#/components/schemas/EventSource"
+        receivedAt:
+          type: string
+          format: date-time
+        recordCount:
+          type: integer
+        matched:
+          type: integer
+        unmatched:
+          type: integer
+        flagged:
+          type: integer
+        actioned:
+          type: integer
+        errors:
+          type: integer
+        reportUrl:
+          type: string
+          nullable: true
+    VoterRegisterEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        voterId:
+          type: string
+          format: uuid
+        eventType:
+          $ref: "#/components/schemas/RegisterEventType"
+        source:
+          $ref: "#/components/schemas/EventSource"
+        confidenceScore:
+          type: number
+          format: float
+        batchId:
+          type: string
+          format: uuid
+          nullable: true
+        decision:
+          $ref: "#/components/schemas/EventDecision"
+        createdAt:
+          type: string
+          format: date-time
+    RegisterSnapshot:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        snapshotAt:
+          type: string
+          format: date-time
+        totalRegistered:
+          type: integer
+        rootHash:
+          type: string
+        merkleRoot:
+          type: string
+        gazetteNoticeId:
+          type: string
+          format: uuid
+          nullable: true
+    FamilyNotificationRequest:
+      type: object
+      required: [familyShortcode, voterIdHash, notificationType]
+      properties:
+        familyShortcode:
+          type: string
+        voterIdHash:
+          type: string
+        notificationType:
+          $ref: "#/components/schemas/RegisterEventType"

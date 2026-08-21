@@ -1,0 +1,13 @@
+{
+  "@@locale": "luo",
+  "appTitle": "EEL Kony mar Pap",
+  "ticketQueue": "Hang Tikit",
+  "diagnostics": "Nonro",
+  "warrantyClaims": "Kwayo mar Warranty",
+  "shiftReport": "Ripot mar Shift",
+  "slaBreached": "SLA Olepore",
+  "minutesRemaining": "Dakika {minutes} podho",
+  "@minutesRemaining": {"placeholders": {"minutes": {"type": "int"}}},
+  "escalate": "Wuok Malo",
+  "resolve": "Losi"
+}

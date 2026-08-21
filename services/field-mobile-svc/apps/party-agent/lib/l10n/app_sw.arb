@@ -1,0 +1,13 @@
+{
+  "@@locale": "sw",
+  "appTitle": "Wakala wa Chama",
+  "loginButton": "Ingia",
+  "submitButton": "Wasilisha",
+  "errorGeneric": "Hitilafu imetokea. Tafadhali jaribu tena.",
+  "loadingMessage": "Inapakia...",
+  "checkInButton": "Jiandikishe",
+  "verifyFormButton": "Thibitisha Fomu 34A",
+  "countersignButton": "Saini kwa Pili",
+  "disputeButton": "Pinga",
+  "duressAlertButton": "Tahadhari ya Siri"
+}

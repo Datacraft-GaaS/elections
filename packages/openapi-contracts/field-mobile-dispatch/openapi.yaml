@@ -1,0 +1,412 @@
+openapi: "3.1.0"
+info:
+  title: "eel field-dispatch API"
+  version: "1.0.0"
+  description: "Personnel deployment, check-in/out, and status tracking for M33 (WP-4.9)"
+  contact:
+    name: eel platform team
+    url: https://eel.local/support
+
+servers:
+  - url: https://api.eel.local
+    description: production
+  - url: https://staging.api.eel.local
+    description: staging
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: assignments
+    description: Worker station assignments
+  - name: attendance
+    description: Check-in, status ping, and check-out lifecycle
+  - name: workers
+    description: Worker current status queries
+
+paths:
+  /v1/dispatch/assignments/{worker_id}:
+    get:
+      tags: [assignments]
+      operationId: getWorkerAssignments
+      summary: List assignments for a worker
+      parameters:
+        - name: worker_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: electionId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of assignments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkerAssignment"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/dispatch/check-in:
+    post:
+      tags: [attendance]
+      operationId: workerCheckIn
+      summary: Record worker check-in at a polling station
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckInRequest"
+      responses:
+        "201":
+          description: Check-in recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkerCheckIn"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /v1/dispatch/ping:
+    post:
+      tags: [attendance]
+      operationId: workerStatusPing
+      summary: Submit a worker status ping (on-station, break, absent)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusPingRequest"
+      responses:
+        "200":
+          description: Ping recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkerStatusPing"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /v1/dispatch/check-out:
+    post:
+      tags: [attendance]
+      operationId: workerCheckOut
+      summary: Record worker check-out and trigger payroll event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckOutRequest"
+      responses:
+        "201":
+          description: Check-out recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkerCheckOut"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /v1/dispatch/workers/{id}/status:
+    get:
+      tags: [workers]
+      operationId: getWorkerStatus
+      summary: Get current status for a worker
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Current worker status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkerStatusPing"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+    Unauthorized:
+      description: Missing or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+    Conflict:
+      description: Conflict with current state
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+
+  schemas:
+    ErrorBody:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    AssignmentStatus:
+      type: string
+      enum: [PENDING, ACCEPTED, DECLINED, REASSIGNED]
+
+    WorkerStatus:
+      type: string
+      enum: [ON_STATION, BREAK, ABSENT]
+
+    WorkerAssignment:
+      type: object
+      required:
+        - id
+        - workerId
+        - stationCode
+        - electionId
+        - role
+        - reportTime
+        - supervisorId
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        workerId:
+          type: string
+          format: uuid
+        stationCode:
+          type: string
+        electionId:
+          type: string
+          format: uuid
+        role:
+          type: string
+        reportTime:
+          type: string
+          format: date-time
+        supervisorId:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/AssignmentStatus"
+        acceptedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    WorkerCheckIn:
+      type: object
+      required:
+        - id
+        - workerId
+        - stationCode
+        - electionId
+        - biometricHash
+        - gpsLat
+        - gpsLon
+        - gpsAccuracyM
+        - checkInAt
+        - signature
+      properties:
+        id:
+          type: string
+          format: uuid
+        workerId:
+          type: string
+          format: uuid
+        stationCode:
+          type: string
+        electionId:
+          type: string
+          format: uuid
+        biometricHash:
+          type: string
+        gpsLat:
+          type: number
+          format: double
+        gpsLon:
+          type: number
+          format: double
+        gpsAccuracyM:
+          type: number
+          format: float
+        checkInAt:
+          type: string
+          format: date-time
+        signature:
+          type: string
+
+    CheckInRequest:
+      type: object
+      required:
+        - workerId
+        - stationCode
+        - electionId
+        - biometricHash
+        - gpsLat
+        - gpsLon
+        - gpsAccuracyM
+        - signature
+      properties:
+        workerId:
+          type: string
+          format: uuid
+        stationCode:
+          type: string
+        electionId:
+          type: string
+          format: uuid
+        biometricHash:
+          type: string
+        gpsLat:
+          type: number
+          format: double
+        gpsLon:
+          type: number
+          format: double
+        gpsAccuracyM:
+          type: number
+          format: float
+        signature:
+          type: string
+
+    WorkerStatusPing:
+      type: object
+      required: [id, workerId, stationCode, status, pingedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        workerId:
+          type: string
+          format: uuid
+        stationCode:
+          type: string
+        status:
+          $ref: "#/components/schemas/WorkerStatus"
+        reason:
+          type: string
+          nullable: true
+        pingedAt:
+          type: string
+          format: date-time
+
+    StatusPingRequest:
+      type: object
+      required: [workerId, stationCode, status]
+      properties:
+        workerId:
+          type: string
+          format: uuid
+        stationCode:
+          type: string
+        status:
+          $ref: "#/components/schemas/WorkerStatus"
+        reason:
+          type: string
+
+    WorkerCheckOut:
+      type: object
+      required:
+        - id
+        - workerId
+        - stationCode
+        - electionId
+        - gpsLat
+        - gpsLon
+        - checkOutAt
+        - hoursWorked
+        - signature
+      properties:
+        id:
+          type: string
+          format: uuid
+        workerId:
+          type: string
+          format: uuid
+        stationCode:
+          type: string
+        electionId:
+          type: string
+          format: uuid
+        gpsLat:
+          type: number
+          format: double
+        gpsLon:
+          type: number
+          format: double
+        checkOutAt:
+          type: string
+          format: date-time
+        hoursWorked:
+          type: number
+          format: float
+        payrollTriggerId:
+          type: string
+          format: uuid
+          nullable: true
+        signature:
+          type: string
+
+    CheckOutRequest:
+      type: object
+      required:
+        - workerId
+        - stationCode
+        - electionId
+        - gpsLat
+        - gpsLon
+        - signature
+      properties:
+        workerId:
+          type: string
+          format: uuid
+        stationCode:
+          type: string
+        electionId:
+          type: string
+          format: uuid
+        gpsLat:
+          type: number
+          format: double
+        gpsLon:
+          type: number
+          format: double
+        signature:
+          type: string

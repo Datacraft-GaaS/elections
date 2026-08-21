@@ -1,0 +1,13 @@
+{
+  "@@locale": "ki",
+  "appTitle": "Mwangalizi",
+  "loginButton": "Ingia",
+  "submitButton": "Wasilisha",
+  "errorGeneric": "Hitilafu imetokea. Jaribu tena.",
+  "loadingMessage": "Inapakia...",
+  "stationVisitButton": "Kumbuka Ziara ya Kituo",
+  "reportIncidentButton": "Ripoti Tukio",
+  "verifyTallyButton": "Thibitisha Hesabu",
+  "exportMissionButton": "Hamisha PDF ya Ujumbe",
+  "ussdFallbackNote": "USSD inapatikana kama hifadhi"
+}

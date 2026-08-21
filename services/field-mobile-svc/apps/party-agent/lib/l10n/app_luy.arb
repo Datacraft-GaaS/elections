@@ -1,0 +1,13 @@
+{
+  "@@locale": "luy",
+  "appTitle": "Omwami wa Chama",
+  "loginButton": "Ingira",
+  "submitButton": "Tuma",
+  "errorGeneric": "Kuna kosa. Ingira tena.",
+  "loadingMessage": "Inapakia...",
+  "checkInButton": "Jiandikishe",
+  "verifyFormButton": "Thibitisha Fomu 34A",
+  "countersignButton": "Saini ya Pili",
+  "disputeButton": "Pinga",
+  "duressAlertButton": "Tahadhari"
+}

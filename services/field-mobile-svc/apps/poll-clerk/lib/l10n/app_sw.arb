@@ -1,0 +1,13 @@
+{
+  "@@locale": "sw",
+  "appTitle": "Mhudumu wa Kura",
+  "loginButton": "Ingia",
+  "submitButton": "Wasilisha",
+  "errorGeneric": "Hitilafu imetokea. Jaribu tena.",
+  "loadingMessage": "Inapakia...",
+  "stationDashboardTitle": "Dashibodi ya Kituo",
+  "reportIncidentButton": "Ripoti Tukio",
+  "eodReportButton": "Ripoti ya Mwisho wa Siku",
+  "kioskModeButton": "Hali ya Kiosk",
+  "paperBackupNote": "Nakala ya karatasi inapatikana"
+}

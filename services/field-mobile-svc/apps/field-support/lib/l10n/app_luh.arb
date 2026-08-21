@@ -1,0 +1,13 @@
+{
+  "@@locale": "luh",
+  "appTitle": "EEL Field Support",
+  "ticketQueue": "Mufu wa Tiketi",
+  "diagnostics": "Diagnostics",
+  "warrantyClaims": "Warranty Claims",
+  "shiftReport": "Ripoti ya Zamu",
+  "slaBreached": "SLA Yavunjwa",
+  "minutesRemaining": "Dakika {minutes} zilizobaki",
+  "@minutesRemaining": {"placeholders": {"minutes": {"type": "int"}}},
+  "escalate": "Panda",
+  "resolve": "Maliza"
+}

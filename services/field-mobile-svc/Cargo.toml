@@ -2,6 +2,8 @@
 resolver = "2"
 members = [
 	"crates/mobile-bff",
+	"crates/support-api",
+	"crates/dispatch-api",
 ]
 
 [workspace.package]

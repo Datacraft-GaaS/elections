@@ -1,0 +1,13 @@
+{
+  "@@locale": "en",
+  "appTitle": "Poll Clerk",
+  "loginButton": "Login",
+  "submitButton": "Submit",
+  "errorGeneric": "An error occurred. Please try again.",
+  "loadingMessage": "Loading...",
+  "stationDashboardTitle": "Station Dashboard",
+  "reportIncidentButton": "Report Incident",
+  "eodReportButton": "End-of-Day Report",
+  "kioskModeButton": "Kiosk Mode",
+  "paperBackupNote": "Paper backup available"
+}

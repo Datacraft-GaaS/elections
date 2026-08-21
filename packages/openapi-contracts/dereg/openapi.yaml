@@ -1,0 +1,319 @@
+openapi: "3.1.0"
+info:
+  title: "eel Deregistration Appeal API"
+  version: "1.0.0"
+  description: "Deregistration and appeal workflow (WP-4.10, M36). 30+14-day notice and appeal window."
+paths:
+  /healthz:
+    get:
+      summary: Health check
+      operationId: healthz
+      responses:
+        "200":
+          description: OK
+  /v1/dereg/cases:
+    get:
+      summary: List deregistration cases
+      operationId: listCases
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/CaseStatus"
+        - name: voter_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cases:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/DeregistrationCase"
+    post:
+      summary: Create a deregistration case from an M35 event
+      operationId: createCase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCaseRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeregistrationCase"
+        "400":
+          description: Bad request
+        "409":
+          description: Case already exists for this M35 event
+  /v1/dereg/cases/{id}:
+    get:
+      summary: Get a deregistration case
+      operationId: getCase
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeregistrationCase"
+        "404":
+          description: Not found
+    patch:
+      summary: Update case status or officer recommendation
+      operationId: patchCase
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchCaseRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeregistrationCase"
+        "404":
+          description: Not found
+  /v1/dereg/appeals:
+    post:
+      summary: File an appeal against a deregistration notice
+      operationId: fileAppeal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppealRecord"
+      responses:
+        "201":
+          description: Appeal filed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppealRecord"
+        "400":
+          description: Bad request
+        "409":
+          description: Appeal window closed
+  /v1/dereg/reports:
+    get:
+      summary: List quarterly deregistration reports
+      operationId: listReports
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reports:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/QuarterlyDeregistrationReport"
+components:
+  schemas:
+    CaseStatus:
+      type: string
+      enum: [NOTICED, APPEAL_FILED, UNDER_REVIEW, ADJUDICATION,
+             OVERTURNED, CONFIRMED, DEREGISTERED, EXPIRED_NO_APPEAL]
+    AdjudicatorDecision:
+      type: string
+      enum: [OVERTURN, CONFIRM]
+    IntakeChannel:
+      type: string
+      enum: [VERIFIER_APP, WEB, USSD, IN_PERSON]
+    AppealGrounds:
+      type: string
+      enum: [IDENTITY_ERROR, ALIVE_AND_PRESENT, DATA_MATCH_ERROR, FAMILY_DISPUTE, OTHER]
+    DeregistrationCase:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        voterId:
+          type: string
+          format: uuid
+        m35EventId:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/CaseStatus"
+        noticeDispatchedAt:
+          type: string
+          format: date-time
+          nullable: true
+        noticeDeadline:
+          type: string
+          format: date-time
+          nullable: true
+        appealId:
+          type: string
+          format: uuid
+          nullable: true
+        officerId:
+          type: string
+          format: uuid
+          nullable: true
+        officerRecommendation:
+          type: string
+          nullable: true
+        adjudicatorId:
+          type: string
+          format: uuid
+          nullable: true
+        adjudicatorDecision:
+          $ref: "#/components/schemas/AdjudicatorDecision"
+        adjudicatorDecisionAt:
+          type: string
+          format: date-time
+          nullable: true
+        adjudicatorNotes:
+          type: string
+          nullable: true
+        dataMinimisationAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+    CreateCaseRequest:
+      type: object
+      required: [voterId, m35EventId]
+      properties:
+        voterId:
+          type: string
+          format: uuid
+        m35EventId:
+          type: string
+          format: uuid
+        officerId:
+          type: string
+          format: uuid
+    PatchCaseRequest:
+      type: object
+      properties:
+        officerRecommendation:
+          type: string
+        adjudicatorDecision:
+          $ref: "#/components/schemas/AdjudicatorDecision"
+        adjudicatorNotes:
+          type: string
+    AppealRecord:
+      type: object
+      required: [caseId, intakeChannel, appellantIdHash, grounds, groundsDetail, language]
+      properties:
+        id:
+          type: string
+          format: uuid
+        caseId:
+          type: string
+          format: uuid
+        intakeChannel:
+          $ref: "#/components/schemas/IntakeChannel"
+        appellantIdHash:
+          type: string
+          description: SHA-256 of National ID
+        representativeAuthFileId:
+          type: string
+          format: uuid
+          nullable: true
+        grounds:
+          $ref: "#/components/schemas/AppealGrounds"
+        groundsDetail:
+          type: string
+        supportingDocIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        language:
+          type: string
+          description: BCP-47 language tag
+          example: "sw"
+        filedAt:
+          type: string
+          format: date-time
+        hearingDate:
+          type: string
+          format: date-time
+          nullable: true
+    QuarterlyDeregistrationReport:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        periodStart:
+          type: string
+          format: date-time
+        periodEnd:
+          type: string
+          format: date-time
+        countyBreakdown:
+          type: object
+        totalProposed:
+          type: integer
+        totalNoticed:
+          type: integer
+        totalAppealed:
+          type: integer
+        totalOverturned:
+          type: integer
+        totalConfirmed:
+          type: integer
+        reportPdfHash:
+          type: string
+          nullable: true
+        merkleInclusionProof:
+          type: string
+          nullable: true
+        commissionerSignedAt:
+          type: string
+          format: date-time
+          nullable: true
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true

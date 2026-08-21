@@ -1,0 +1,13 @@
+{
+  "@@locale": "gus",
+  "appTitle": "EEL Field Support",
+  "ticketQueue": "Tiket Kibagenge",
+  "diagnostics": "Diagnostics",
+  "warrantyClaims": "Warranty Claims",
+  "shiftReport": "Shift Report",
+  "slaBreached": "SLA Yachelelwa",
+  "minutesRemaining": "Dakika {minutes} zilizobaki",
+  "@minutesRemaining": {"placeholders": {"minutes": {"type": "int"}}},
+  "escalate": "Peleka Juu",
+  "resolve": "Maliza"
+}

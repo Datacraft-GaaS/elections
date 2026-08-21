@@ -1,0 +1,13 @@
+{
+  "@@locale": "kal",
+  "appTitle": "EEL Field Support",
+  "ticketQueue": "Tiket Kibagenge",
+  "diagnostics": "Diagnostics",
+  "warrantyClaims": "Warranty Claims",
+  "shiftReport": "Shift Report",
+  "slaBreached": "SLA Ilipita",
+  "minutesRemaining": "Dakika {minutes} zilizobaki",
+  "@minutesRemaining": {"placeholders": {"minutes": {"type": "int"}}},
+  "escalate": "Peleka Juu",
+  "resolve": "Maliza"
+}

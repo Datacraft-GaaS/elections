@@ -1,0 +1,15 @@
+{
+  "@@locale": "gus",
+  "appTitle": "EEL Personnel",
+  "myAssignment": "Kazi Yangu",
+  "checkIn": "Ingia",
+  "checkOut": "Toka",
+  "statusPing": "Hali",
+  "incident": "Ripoti",
+  "gpsVerifying": "GPS...",
+  "checkInSuccess": "Umeingia",
+  "checkOutSuccess": "Umetoka",
+  "onStation": "Kituo",
+  "onBreak": "Pumzika",
+  "absent": "Hayupo"
+}

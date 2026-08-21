@@ -1,0 +1,13 @@
+{
+  "@@locale": "luo",
+  "appTitle": "Jawach mar Party",
+  "loginButton": "Donjo",
+  "submitButton": "Or",
+  "errorGeneric": "Nene bal. Tem kendo.",
+  "loadingMessage": "Kano...",
+  "checkInButton": "Ndik Nyingi",
+  "verifyFormButton": "Riti Form 34A",
+  "countersignButton": "Saini Duto",
+  "disputeButton": "Geng",
+  "duressAlertButton": "Ywach Maler"
+}

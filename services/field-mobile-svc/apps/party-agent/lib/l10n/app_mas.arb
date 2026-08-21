@@ -1,0 +1,13 @@
+{
+  "@@locale": "mas",
+  "appTitle": "Enkiama e Chama",
+  "loginButton": "Kiri",
+  "submitButton": "Tum",
+  "errorGeneric": "Kuna kosa. Kiri tena.",
+  "loadingMessage": "Entasati...",
+  "checkInButton": "Jiandikishe",
+  "verifyFormButton": "Thibitisha Fomu 34A",
+  "countersignButton": "Saini ya Pili",
+  "disputeButton": "Pinga",
+  "duressAlertButton": "Tahadhari"
+}

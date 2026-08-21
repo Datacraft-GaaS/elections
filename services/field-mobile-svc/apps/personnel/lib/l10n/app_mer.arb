@@ -1,0 +1,15 @@
+{
+  "@@locale": "mer",
+  "appTitle": "EEL Atũmia",
+  "myAssignment": "Wĩra Wakwa",
+  "checkIn": "Injĩra",
+  "checkOut": "Toka",
+  "statusPing": "Hali",
+  "incident": "Ripoti",
+  "gpsVerifying": "GPS...",
+  "checkInSuccess": "Wĩnjĩrĩtie",
+  "checkOutSuccess": "Wetokĩtie",
+  "onStation": "Kituo",
+  "onBreak": "Pumzika",
+  "absent": "Ndari"
+}

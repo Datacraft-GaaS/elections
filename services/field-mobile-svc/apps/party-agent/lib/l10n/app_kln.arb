@@ -1,0 +1,13 @@
+{
+  "@@locale": "kln",
+  "appTitle": "Muren ne Chama",
+  "loginButton": "Ingia",
+  "submitButton": "Tuma",
+  "errorGeneric": "Kosa. Ngotony tena.",
+  "loadingMessage": "Koroto...",
+  "checkInButton": "Jiandikishe",
+  "verifyFormButton": "Thibitisha Fomu 34A",
+  "countersignButton": "Saini ya Pili",
+  "disputeButton": "Pinga",
+  "duressAlertButton": "Tahadhari"
+}

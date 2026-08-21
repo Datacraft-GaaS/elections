@@ -1,0 +1,82 @@
+openapi: "3.1.0"
+info:
+  title: "eel WhatsApp Bot API"
+  version: "1.0.0"
+  description: "WhatsApp Business API webhook for voter services (WP-4.7)"
+paths:
+  /healthz:
+    get:
+      summary: Health check
+      operationId: healthz
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /webhook/whatsapp:
+    get:
+      summary: Meta webhook verification challenge
+      operationId: verifyWebhook
+      parameters:
+        - name: hub.mode
+          in: query
+          schema:
+            type: string
+        - name: hub.challenge
+          in: query
+          schema:
+            type: string
+        - name: hub.verify_token
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Challenge echo
+          content:
+            text/plain:
+              schema:
+                type: string
+        "403":
+          description: Verification failed
+    post:
+      summary: Receive WhatsApp message event
+      operationId: receiveMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WhatsAppWebhookPayload"
+      responses:
+        "200":
+          description: Received
+components:
+  schemas:
+    WhatsAppWebhookPayload:
+      type: object
+      properties:
+        object:
+          type: string
+          example: "whatsapp_business_account"
+        entry:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              changes:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    value:
+                      type: object
+                    field:
+                      type: string

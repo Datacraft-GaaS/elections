@@ -1,0 +1,15 @@
+{
+  "@@locale": "ki",
+  "appTitle": "EEL Atũmia",
+  "myAssignment": "Wĩra Wakwa",
+  "checkIn": "Injĩra",
+  "checkOut": "Toka",
+  "statusPing": "Hali",
+  "incident": "Ripoti Ithiko",
+  "gpsVerifying": "Kũhinyia GPS...",
+  "checkInSuccess": "Wĩnjĩrĩtie wega",
+  "checkOutSuccess": "Wetokĩtie wega",
+  "onStation": "Kũ Kituo",
+  "onBreak": "Mapumziko",
+  "absent": "Ndari"
+}

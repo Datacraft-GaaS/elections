@@ -1,0 +1,15 @@
+{
+  "@@locale": "mas",
+  "appTitle": "EEL Personnel",
+  "myAssignment": "Enkiama Enye",
+  "checkIn": "Ador",
+  "checkOut": "Indipo",
+  "statusPing": "Enkiama",
+  "incident": "Ashu",
+  "gpsVerifying": "GPS...",
+  "checkInSuccess": "Idorore",
+  "checkOutSuccess": "Indipore",
+  "onStation": "E Kituo",
+  "onBreak": "Aker",
+  "absent": "Meitore"
+}

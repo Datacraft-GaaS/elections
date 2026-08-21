@@ -1,0 +1,13 @@
+{
+  "@@locale": "ki",
+  "appTitle": "Muthamaki wa Chama",
+  "loginButton": "Ingia",
+  "submitButton": "Tuma",
+  "errorGeneric": "Kuna hitilafu. Ongera eka.",
+  "loadingMessage": "Inapakia...",
+  "checkInButton": "Jiandikishe",
+  "verifyFormButton": "Thibitisha Fomu 34A",
+  "countersignButton": "Saini ya Pili",
+  "disputeButton": "Pinga",
+  "duressAlertButton": "Tahadhari"
+}

@@ -1,0 +1,13 @@
+{
+  "@@locale": "mer",
+  "appTitle": "Murimi wa Chama",
+  "loginButton": "Ingia",
+  "submitButton": "Tuma",
+  "errorGeneric": "Kuna hitilafu. Jaribu tena.",
+  "loadingMessage": "Inapakia...",
+  "checkInButton": "Jiandikishe",
+  "verifyFormButton": "Thibitisha Fomu 34A",
+  "countersignButton": "Saini ya Pili",
+  "disputeButton": "Pinga",
+  "duressAlertButton": "Tahadhari"
+}

@@ -1,0 +1,13 @@
+{
+  "@@locale": "kam",
+  "appTitle": "EEL Ũteithio wa Ndĩa",
+  "ticketQueue": "Mũndũ wa Tiketi",
+  "diagnostics": "Kũtũlia",
+  "warrantyClaims": "Madai ma Warranty",
+  "shiftReport": "Ripoti ya Shift",
+  "slaBreached": "SLA Yathikiiri",
+  "minutesRemaining": "Ndaka {minutes} nĩkũhoro",
+  "@minutesRemaining": {"placeholders": {"minutes": {"type": "int"}}},
+  "escalate": "Endesha Juu",
+  "resolve": "Tatua"
+}

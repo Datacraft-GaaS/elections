@@ -1,0 +1,367 @@
+openapi: "3.1.0"
+info:
+  title: "eel field-support API"
+  version: "1.0.0"
+  description: "Field support ticket lifecycle and kit diagnostic commands for M32 (WP-4.9)"
+  contact:
+    name: eel platform team
+    url: https://eel.local/support
+
+servers:
+  - url: https://api.eel.local
+    description: production
+  - url: https://staging.api.eel.local
+    description: staging
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: tickets
+    description: Support ticket lifecycle management
+  - name: diagnostics
+    description: Remote kit diagnostic actions
+  - name: warranty
+    description: OEM warranty claim submission
+
+paths:
+  /v1/support/tickets:
+    get:
+      tags: [tickets]
+      operationId: listTickets
+      summary: List support tickets
+      parameters:
+        - name: stationCode
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/TicketStatus"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Paginated ticket list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [tickets]
+      operationId: createTicket
+      summary: Open a new support ticket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTicketRequest"
+      responses:
+        "201":
+          description: Ticket created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicket"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /v1/support/tickets/{id}:
+    get:
+      tags: [tickets]
+      operationId: getTicket
+      summary: Retrieve a support ticket by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Support ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicket"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/support/tickets/{id}/diagnostics:
+    post:
+      tags: [diagnostics]
+      operationId: runDiagnostic
+      summary: Trigger a remote diagnostic action on a kit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Ticket ID the diagnostic is associated with
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunDiagnosticRequest"
+      responses:
+        "202":
+          description: Diagnostic command accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiagnosticAction"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /v1/support/warranty:
+    post:
+      tags: [warranty]
+      operationId: submitWarrantyClaim
+      summary: Submit an OEM warranty claim for a faulty kit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WarrantyClaimRequest"
+      responses:
+        "201":
+          description: Warranty claim submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WarrantyClaim"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+    Unauthorized:
+      description: Missing or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+
+  schemas:
+    ErrorBody:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    TicketSeverity:
+      type: string
+      enum: [SEV1, SEV2, SEV3]
+
+    TicketStatus:
+      type: string
+      enum: [OPEN, IN_PROGRESS, ESCALATED, RESOLVED, CLOSED]
+
+    DiagnosticActionType:
+      type: string
+      enum: [FETCH_LOGS, REBOOT, FIRMWARE_ATTEST, SELF_TEST]
+
+    SupportTicket:
+      type: object
+      required:
+        - id
+        - stationCode
+        - kitSerial
+        - reporterRole
+        - severity
+        - title
+        - description
+        - status
+        - slaTargetAt
+        - escalationLevel
+      properties:
+        id:
+          type: string
+          format: uuid
+        stationCode:
+          type: string
+        kitSerial:
+          type: string
+        reporterRole:
+          type: string
+        severity:
+          $ref: "#/components/schemas/TicketSeverity"
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: "#/components/schemas/TicketStatus"
+        assignedEngineerId:
+          type: string
+          format: uuid
+          nullable: true
+        slaTargetAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+        escalationLevel:
+          type: integer
+          minimum: 0
+          maximum: 3
+
+    TicketPage:
+      type: object
+      required: [items, total, page, size]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SupportTicket"
+        total:
+          type: integer
+        page:
+          type: integer
+        size:
+          type: integer
+
+    CreateTicketRequest:
+      type: object
+      required: [stationCode, kitSerial, severity, title, description]
+      properties:
+        stationCode:
+          type: string
+        kitSerial:
+          type: string
+        severity:
+          $ref: "#/components/schemas/TicketSeverity"
+        title:
+          type: string
+          maxLength: 120
+        description:
+          type: string
+
+    DiagnosticAction:
+      type: object
+      required:
+        - id
+        - ticketId
+        - kitSerial
+        - actionType
+        - engineerId
+        - kitConsentRecorded
+        - signedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        ticketId:
+          type: string
+          format: uuid
+        kitSerial:
+          type: string
+        actionType:
+          $ref: "#/components/schemas/DiagnosticActionType"
+        engineerId:
+          type: string
+          format: uuid
+        kitConsentRecorded:
+          type: boolean
+        signedAt:
+          type: string
+          format: date-time
+        result:
+          type: string
+          nullable: true
+
+    RunDiagnosticRequest:
+      type: object
+      required: [kitSerial, actionType, engineerId, kitConsentRecorded, signature]
+      properties:
+        kitSerial:
+          type: string
+        actionType:
+          $ref: "#/components/schemas/DiagnosticActionType"
+        engineerId:
+          type: string
+          format: uuid
+        kitConsentRecorded:
+          type: boolean
+        signature:
+          type: string
+
+    WarrantyClaim:
+      type: object
+      required: [id, kitSerial, oemCode, faultDescription, claimStatus, engineerId, submittedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kitSerial:
+          type: string
+        oemCode:
+          type: string
+        faultDescription:
+          type: string
+        claimStatus:
+          type: string
+        engineerId:
+          type: string
+          format: uuid
+        submittedAt:
+          type: string
+          format: date-time
+
+    WarrantyClaimRequest:
+      type: object
+      required: [kitSerial, oemCode, faultDescription, engineerId]
+      properties:
+        kitSerial:
+          type: string
+        oemCode:
+          type: string
+        faultDescription:
+          type: string
+        engineerId:
+          type: string
+          format: uuid

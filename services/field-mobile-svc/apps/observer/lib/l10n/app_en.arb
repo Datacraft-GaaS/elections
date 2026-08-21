@@ -1,0 +1,13 @@
+{
+  "@@locale": "en",
+  "appTitle": "Observer",
+  "loginButton": "Login",
+  "submitButton": "Submit",
+  "errorGeneric": "An error occurred. Please try again.",
+  "loadingMessage": "Loading...",
+  "stationVisitButton": "Log Station Visit",
+  "reportIncidentButton": "Report Incident",
+  "verifyTallyButton": "Verify Tally",
+  "exportMissionButton": "Export Mission PDF",
+  "ussdFallbackNote": "USSD fallback available"
+}

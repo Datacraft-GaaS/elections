@@ -1,0 +1,13 @@
+{
+  "@@locale": "en",
+  "appTitle": "Party Agent",
+  "loginButton": "Login",
+  "submitButton": "Submit",
+  "errorGeneric": "An error occurred. Please try again.",
+  "loadingMessage": "Loading...",
+  "checkInButton": "Check In",
+  "verifyFormButton": "Verify Form 34A",
+  "countersignButton": "Countersign",
+  "disputeButton": "Raise Dispute",
+  "duressAlertButton": "Silent Alert"
+}

@@ -1,0 +1,13 @@
+{
+  "@@locale": "tuk",
+  "appTitle": "EEL Field Support",
+  "ticketQueue": "Tiket Queue",
+  "diagnostics": "Diagnostics",
+  "warrantyClaims": "Warranty Claims",
+  "shiftReport": "Shift Report",
+  "slaBreached": "SLA Breached",
+  "minutesRemaining": "{minutes}m remaining",
+  "@minutesRemaining": {"placeholders": {"minutes": {"type": "int"}}},
+  "escalate": "Escalate",
+  "resolve": "Resolve"
+}

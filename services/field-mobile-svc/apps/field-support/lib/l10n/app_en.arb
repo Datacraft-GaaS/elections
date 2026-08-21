@@ -1,0 +1,14 @@
+{
+  "@@locale": "en",
+  "appTitle": "EEL Field Support",
+  "@appTitle": {"description": "Application title"},
+  "ticketQueue": "Ticket Queue",
+  "diagnostics": "Diagnostics",
+  "warrantyClaims": "Warranty Claims",
+  "shiftReport": "Shift Report",
+  "slaBreached": "SLA Breached",
+  "minutesRemaining": "{minutes}m remaining",
+  "@minutesRemaining": {"placeholders": {"minutes": {"type": "int"}}},
+  "escalate": "Escalate",
+  "resolve": "Resolve"
+}

@@ -1,0 +1,15 @@
+{
+  "@@locale": "luo",
+  "appTitle": "EEL Jotich",
+  "myAssignment": "Tich Mara",
+  "checkIn": "Donj",
+  "checkOut": "Wuogi",
+  "statusPing": "Teko",
+  "incident": "Ripot Tich",
+  "gpsVerifying": "Nonro GPS...",
+  "checkInSuccess": "Idonjore maber",
+  "checkOutSuccess": "Iwuogore maber",
+  "onStation": "E Steshon",
+  "onBreak": "Pong",
+  "absent": "Ok nitiere"
+}

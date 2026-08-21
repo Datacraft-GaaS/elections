@@ -1,0 +1,37 @@
+[package]
+name = "dereg-appeal"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Deregistration and appeal workflow (WP-4.10, M36)"
+
+[lib]
+name = "dereg_appeal"
+path = "src/lib.rs"
+
+[[bin]]
+name = "dereg-appeal"
+path = "src/main.rs"
+
+[dependencies]
+bvr-domain        = { path = "../bvr-domain" }
+axum              = { workspace = true }
+tower-http        = { workspace = true }
+tokio             = { workspace = true }
+serde             = { workspace = true }
+serde_json        = { workspace = true }
+utoipa            = { workspace = true }
+utoipa-swagger-ui = { workspace = true }
+sqlx              = { workspace = true }
+uuid              = { workspace = true }
+chrono            = { workspace = true }
+thiserror         = { workspace = true }
+anyhow            = { workspace = true }
+tracing           = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+[dev-dependencies]
+rstest  = { workspace = true }
+tokio   = { workspace = true }

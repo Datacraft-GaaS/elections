@@ -1,0 +1,13 @@
+{
+  "@@locale": "sw",
+  "appTitle": "Msaada wa Shamba EEL",
+  "ticketQueue": "Foleni ya Tiketi",
+  "diagnostics": "Uchunguzi",
+  "warrantyClaims": "Madai ya Dhamana",
+  "shiftReport": "Ripoti ya Zamu",
+  "slaBreached": "SLA Imevunjwa",
+  "minutesRemaining": "Dakika {minutes} zilizobaki",
+  "@minutesRemaining": {"placeholders": {"minutes": {"type": "int"}}},
+  "escalate": "Panda Ngazi",
+  "resolve": "Suluhisha"
+}

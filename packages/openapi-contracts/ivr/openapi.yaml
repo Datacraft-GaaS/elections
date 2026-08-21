@@ -1,0 +1,57 @@
+openapi: "3.1.0"
+info:
+  title: "eel IVR Hook API"
+  version: "1.0.0"
+  description: "Africa's Talking IVR webhook for voter helpline (WP-4.7)"
+paths:
+  /healthz:
+    get:
+      summary: Health check
+      operationId: healthz
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /ivr/voice:
+    post:
+      summary: Handle IVR call event
+      operationId: handleVoiceCall
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                  description: Africa's Talking session identifier
+                phoneNumber:
+                  type: string
+                  description: Caller MSISDN in E.164 format
+                dtmfDigits:
+                  type: string
+                  description: DTMF digits pressed by caller
+                isActive:
+                  type: string
+                  enum: ["0", "1"]
+                  description: Whether the call is still active
+                callerCountryCode:
+                  type: string
+                  example: "KE"
+      responses:
+        "200":
+          description: SSML or plain text IVR response
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: Africa's Talking IVR XML/SSML response
+components:
+  schemas: {}

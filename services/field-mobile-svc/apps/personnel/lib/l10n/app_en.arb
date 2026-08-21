@@ -1,0 +1,16 @@
+{
+  "@@locale": "en",
+  "appTitle": "EEL Personnel",
+  "@appTitle": {"description": "Application title"},
+  "myAssignment": "My Assignment",
+  "checkIn": "Check In",
+  "checkOut": "Check Out",
+  "statusPing": "Status",
+  "incident": "Report Incident",
+  "gpsVerifying": "Verifying GPS...",
+  "checkInSuccess": "Checked in successfully",
+  "checkOutSuccess": "Checked out successfully",
+  "onStation": "On Station",
+  "onBreak": "On Break",
+  "absent": "Absent"
+}

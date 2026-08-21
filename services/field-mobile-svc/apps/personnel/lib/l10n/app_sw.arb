@@ -1,0 +1,15 @@
+{
+  "@@locale": "sw",
+  "appTitle": "EEL Wafanyakazi",
+  "myAssignment": "Kazi Yangu",
+  "checkIn": "Ingia",
+  "checkOut": "Toka",
+  "statusPing": "Hali",
+  "incident": "Ripoti Tukio",
+  "gpsVerifying": "Kuthibitisha GPS...",
+  "checkInSuccess": "Umeingia kwa mafanikio",
+  "checkOutSuccess": "Umetoka kwa mafanikio",
+  "onStation": "Katika Kituo",
+  "onBreak": "Mapumziko",
+  "absent": "Hayupo"
+}

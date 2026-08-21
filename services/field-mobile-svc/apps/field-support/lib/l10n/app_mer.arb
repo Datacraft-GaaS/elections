@@ -1,0 +1,13 @@
+{
+  "@@locale": "mer",
+  "appTitle": "EEL Field Support",
+  "ticketQueue": "Mũtego wa Tiketi",
+  "diagnostics": "Kũhinyia",
+  "warrantyClaims": "Madai ma Warranty",
+  "shiftReport": "Ripoti ya Shift",
+  "slaBreached": "SLA Yathikiiri",
+  "minutesRemaining": "Ndagĩka {minutes} zĩkĩhoro",
+  "@minutesRemaining": {"placeholders": {"minutes": {"type": "int"}}},
+  "escalate": "Endesha",
+  "resolve": "Tatua"
+}

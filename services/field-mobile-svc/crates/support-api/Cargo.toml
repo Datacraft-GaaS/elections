@@ -1,0 +1,37 @@
+[package]
+name = "support-api"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Field support ticket and kit diagnostics API (WP-4.9, M32)"
+
+[lib]
+name = "support_api"
+path = "src/lib.rs"
+
+[[bin]]
+name = "support-api"
+path = "src/main.rs"
+
+[dependencies]
+axum              = { workspace = true }
+tower-http        = { workspace = true }
+tokio             = { workspace = true }
+serde             = { workspace = true }
+serde_json        = { workspace = true }
+utoipa            = { workspace = true }
+utoipa-swagger-ui = { workspace = true }
+sqlx              = { workspace = true }
+uuid              = { workspace = true }
+chrono            = { workspace = true }
+thiserror         = { workspace = true }
+anyhow            = { workspace = true }
+tracing           = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+[dev-dependencies]
+tokio  = { workspace = true }
+tower  = { workspace = true }
+rstest = { workspace = true }

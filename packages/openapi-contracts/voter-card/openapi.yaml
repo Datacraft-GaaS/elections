@@ -1,0 +1,196 @@
+openapi: "3.1.0"
+info:
+  title: "eel Voter Card API"
+  version: "1.0.0"
+  description: "Voter ID card issuance (WP-4.10, M53, feature-flagged). Blacklist propagation target <=30 min."
+paths:
+  /healthz:
+    get:
+      summary: Health check
+      operationId: healthz
+      responses:
+        "200":
+          description: OK
+  /v1/voter-cards/status:
+    get:
+      summary: Query voter card status
+      operationId: getCardStatus
+      parameters:
+        - name: voter_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: card_number
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoterCard"
+        "404":
+          description: Card not found
+  /v1/voter-cards/batches:
+    post:
+      summary: Create a card print batch
+      operationId: createBatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBatchRequest"
+      responses:
+        "201":
+          description: Batch created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardBatch"
+        "400":
+          description: Bad request
+  /v1/voter-cards/batches/{id}:
+    get:
+      summary: Get batch details
+      operationId: getBatch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardBatch"
+        "404":
+          description: Not found
+  /v1/voter-cards/blacklist:
+    post:
+      summary: Blacklist a voter card
+      operationId: blacklistCard
+      description: Publishes to eel.bvr.card_blacklisted.v1; target propagation <=30 min.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BlacklistEntry"
+      responses:
+        "201":
+          description: Blacklisted
+        "400":
+          description: Bad request
+components:
+  schemas:
+    CardStatus:
+      type: string
+      enum: [ORDERED, PRINTED, DISPATCHED, COLLECTED, DEACTIVATED, BLACKLISTED]
+    BatchStatus:
+      type: string
+      enum: [DRAFT, SUBMITTED, IN_PRODUCTION, RECEIVED, DISTRIBUTED]
+    BlacklistSource:
+      type: string
+      enum: [LOST_REPORT, STOLEN_REPORT, DEACTIVATION, SYSTEM_FLAG]
+    VoterCard:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        voterId:
+          type: string
+          format: uuid
+        cardNumber:
+          type: string
+        batchId:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/CardStatus"
+        issuedAt:
+          type: string
+          format: date-time
+          nullable: true
+    CardBatch:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        electionId:
+          type: string
+          format: uuid
+        constituencyId:
+          type: string
+        orderCount:
+          type: integer
+        manufacturerRef:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/BatchStatus"
+        orderedAt:
+          type: string
+          format: date-time
+        receivedAt:
+          type: string
+          format: date-time
+          nullable: true
+    CreateBatchRequest:
+      type: object
+      required: [electionId, constituencyId, orderCount]
+      properties:
+        electionId:
+          type: string
+          format: uuid
+        constituencyId:
+          type: string
+        orderCount:
+          type: integer
+        manufacturerRef:
+          type: string
+    CollectionRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        cardId:
+          type: string
+          format: uuid
+        voterId:
+          type: string
+          format: uuid
+        collectedAt:
+          type: string
+          format: date-time
+        stationId:
+          type: string
+        officerId:
+          type: string
+          format: uuid
+    BlacklistEntry:
+      type: object
+      required: [id, cardNumber, reason, blacklistedAt, blacklistSource]
+      properties:
+        id:
+          type: string
+          format: uuid
+        cardNumber:
+          type: string
+        reason:
+          type: string
+        blacklistedAt:
+          type: string
+          format: date-time
+        blacklistSource:
+          $ref: "#/components/schemas/BlacklistSource"

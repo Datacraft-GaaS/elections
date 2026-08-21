@@ -1,0 +1,13 @@
+{
+  "@@locale": "ki",
+  "appTitle": "EEL Ũteithio wa Murima",
+  "ticketQueue": "Mũtego wa Tiketi",
+  "diagnostics": "Kũhinyia",
+  "warrantyClaims": "Madai ma Warranty",
+  "shiftReport": "Ripoti ya Mutukanio",
+  "slaBreached": "SLA Yathikiririo",
+  "minutesRemaining": "Ndagĩka {minutes} zĩkĩhoro",
+  "@minutesRemaining": {"placeholders": {"minutes": {"type": "int"}}},
+  "escalate": "Endesha Juu",
+  "resolve": "Tatua"
+}

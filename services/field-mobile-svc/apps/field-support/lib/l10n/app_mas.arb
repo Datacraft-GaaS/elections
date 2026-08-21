@@ -1,0 +1,13 @@
+{
+  "@@locale": "mas",
+  "appTitle": "EEL Field Support",
+  "ticketQueue": "Tiketi Queue",
+  "diagnostics": "Diagnostics",
+  "warrantyClaims": "Warranty Claims",
+  "shiftReport": "Shift Report",
+  "slaBreached": "SLA Enchoro",
+  "minutesRemaining": "Enkiama {minutes} ake",
+  "@minutesRemaining": {"placeholders": {"minutes": {"type": "int"}}},
+  "escalate": "Ashu",
+  "resolve": "Ingisho"
+}

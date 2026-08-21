@@ -1,0 +1,340 @@
+openapi: "3.1.0"
+info:
+  title: "eel field-mobile-bff API"
+  version: "1.0.0"
+  description: "BFF gateway for M13 verifier and M30 party-agent field mobile endpoints (WP-4.7)"
+  contact:
+    name: eel platform team
+    url: https://eel.local/support
+
+servers:
+  - url: https://api.eel.local
+    description: production
+  - url: https://staging.api.eel.local
+    description: staging
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: agent
+    description: Party agent check-in, dashboard, and form operations (M30)
+  - name: forms
+    description: Form 34A countersign workflow
+  - name: incidents
+    description: Field incident reporting
+  - name: verify
+    description: Voter registration verification (M13)
+
+paths:
+  /v1/agent/check-in:
+    post:
+      tags: [agent]
+      operationId: agentCheckIn
+      summary: Party agent check-in at station
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgentCheckInRequest"
+      responses:
+        "200":
+          description: Check-in recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentCheckInResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/agent/station/{code}/dashboard:
+    get:
+      tags: [agent]
+      operationId: getStationDashboard
+      summary: Retrieve station operational dashboard for the agent
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Polling station code
+      responses:
+        "200":
+          description: Station dashboard snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StationDashboard"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/agent/forms/34a/{id}:
+    get:
+      tags: [forms]
+      operationId: getForm34a
+      summary: Retrieve a Form 34A by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Form 34A document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Form34A"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/agent/forms/34a/{id}/countersign:
+    post:
+      tags: [forms]
+      operationId: countersignForm34a
+      summary: Countersign a Form 34A
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CountersignRequest"
+      responses:
+        "200":
+          description: Countersign recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CountersignResponse"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /v1/agent/incidents:
+    post:
+      tags: [incidents]
+      operationId: createIncident
+      summary: Report a field incident
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IncidentRequest"
+      responses:
+        "201":
+          description: Incident created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentResponse"
+
+  /v1/verify/registration:
+    get:
+      tags: [verify]
+      operationId: verifyRegistration
+      summary: Verify voter registration status
+      parameters:
+        - name: id_number
+          in: query
+          required: true
+          schema:
+            type: string
+          description: National ID number to verify
+      responses:
+        "200":
+          description: Voter registration record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegistrationVerification"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+    Unauthorized:
+      description: Missing or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+    Conflict:
+      description: Conflict with current state
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+
+  schemas:
+    ErrorBody:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    AgentCheckInRequest:
+      type: object
+      required: [stationCode, agentId, partyCode, biometricHash, signature]
+      properties:
+        stationCode:
+          type: string
+        agentId:
+          type: string
+          format: uuid
+        partyCode:
+          type: string
+        biometricHash:
+          type: string
+        signature:
+          type: string
+
+    AgentCheckInResponse:
+      type: object
+      required: [id, checkedInAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        checkedInAt:
+          type: string
+          format: date-time
+
+    StationDashboard:
+      type: object
+      required: [stationCode, votersProcessed, incidentCount, status]
+      properties:
+        stationCode:
+          type: string
+        votersProcessed:
+          type: integer
+        incidentCount:
+          type: integer
+        status:
+          type: string
+          enum: [OPEN, CLOSED, ADJOURNED]
+        updatedAt:
+          type: string
+          format: date-time
+
+    Form34A:
+      type: object
+      required: [id, stationCode, presidingOfficerId, createdAt, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        stationCode:
+          type: string
+        presidingOfficerId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [DRAFT, COUNTERSIGNED, DISPUTED]
+        data:
+          type: object
+          additionalProperties: true
+
+    CountersignRequest:
+      type: object
+      required: [agentId, signature]
+      properties:
+        agentId:
+          type: string
+          format: uuid
+        signature:
+          type: string
+
+    CountersignResponse:
+      type: object
+      required: [id, countersignedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        countersignedAt:
+          type: string
+          format: date-time
+
+    IncidentRequest:
+      type: object
+      required: [stationCode, category, description, reportedById]
+      properties:
+        stationCode:
+          type: string
+        category:
+          type: string
+          enum: [VIOLENCE, PROCEDURAL, EQUIPMENT, OTHER]
+        description:
+          type: string
+        reportedById:
+          type: string
+          format: uuid
+        gpsLat:
+          type: number
+          format: double
+        gpsLon:
+          type: number
+          format: double
+
+    IncidentResponse:
+      type: object
+      required: [id, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+
+    RegistrationVerification:
+      type: object
+      required: [idNumber, registered, stationCode]
+      properties:
+        idNumber:
+          type: string
+        registered:
+          type: boolean
+        stationCode:
+          type: string
+        voterName:
+          type: string
+        verifiedAt:
+          type: string
+          format: date-time
