@@ -1,0 +1,21 @@
+<table>
+  <thead>
+    <tr>
+      {% for col in columns %}
+      <th scope="col">{{ col }}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      {% for col in columns %}
+      <td>{{ row[col] }}</td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% if rows | length == 0 %}
+<p role="status">No data for the selected window.</p>
+{% endif %}

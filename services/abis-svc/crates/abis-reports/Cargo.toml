@@ -1,0 +1,58 @@
+[package]
+name            = "eel-abis-reports"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish         = false
+description     = "Reports engine, renderers, HSM signer, and tlog anchoring for the ABIS service"
+
+[lib]
+name = "eel_abis_reports"
+path = "src/lib.rs"
+
+[dependencies]
+# Workspace deps
+axum              = { workspace = true }
+tokio             = { workspace = true }
+sqlx              = { workspace = true }
+serde             = { workspace = true }
+serde_json        = { workspace = true }
+thiserror         = { workspace = true }
+tracing           = { workspace = true }
+uuid              = { workspace = true }
+chrono            = { workspace = true }
+blake3            = { workspace = true }
+sha2              = { workspace = true }
+hex               = { workspace = true }
+reqwest           = { workspace = true }
+bytes             = { workspace = true }
+futures           = { workspace = true }
+tower-http        = { workspace = true }
+
+# Intra-workspace
+eel-crypto-rs     = { path = "../../../../packages/eel-crypto-rs" }
+eel-events-rs     = { path = "../../../../packages/eel-events-rs" }
+eel-outbox-rs     = { path = "../../../../packages/eel-outbox-rs" }
+eel-auth-rs       = { path = "../../../../packages/eel-auth-rs" }
+
+# New workspace deps (added for this crate)
+tera              = { workspace = true }
+csv               = { workspace = true }
+printpdf          = { workspace = true }
+rust_xlsxwriter   = { workspace = true }
+parquet           = { workspace = true }
+arrow-array       = { workspace = true }
+arrow-schema      = { workspace = true }
+plotters          = { workspace = true }
+croner            = { workspace = true }
+prometheus        = { workspace = true }
+tokio-util        = { workspace = true }
+tokio-stream      = { workspace = true }
+tempfile          = { workspace = true }
+httpmock          = { workspace = true }
+
+[dev-dependencies]
+rstest            = { workspace = true }
+tokio             = { workspace = true }
+tempfile          = { workspace = true }

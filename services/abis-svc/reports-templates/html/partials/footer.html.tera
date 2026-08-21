@@ -1,0 +1,5 @@
+<footer role="contentinfo">
+  <small>
+    Slug: {{ slug }} | Version: {{ template_version }} | EEL ABIS Reports Engine
+  </small>
+</footer>

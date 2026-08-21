@@ -1,0 +1,48 @@
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum ReportError {
+    #[error("database: {0}")]
+    Database(#[from] sqlx::Error),
+
+    #[error("template render: {0}")]
+    Template(#[from] tera::Error),
+
+    #[error("io: {0}")]
+    Io(#[from] std::io::Error),
+
+    #[error("json: {0}")]
+    Json(#[from] serde_json::Error),
+
+    #[error("too many rows: {0} exceeds max {1}")]
+    TooManyRows(u64, u64),
+
+    #[error("extractor cancelled")]
+    Cancelled,
+
+    #[error("hsm signer: {0}")]
+    HsmSigner(String),
+
+    #[error("tlog anchor: {0}")]
+    TlogAnchor(String),
+
+    #[error("renderer: {0}")]
+    Renderer(String),
+
+    #[error("not found: {0}")]
+    NotFound(String),
+
+    #[error("invalid status transition: {0} -> {1}")]
+    InvalidTransition(String, String),
+
+    #[error("reqwest: {0}")]
+    Http(#[from] reqwest::Error),
+
+    #[error("csv: {0}")]
+    Csv(#[from] csv::Error),
+
+    #[error("parquet: {0}")]
+    Parquet(#[from] parquet::errors::ParquetError),
+}
+
+pub type Result<T, E = ReportError> = std::result::Result<T, E>;

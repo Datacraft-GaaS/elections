@@ -1,0 +1,5 @@
+{% if chart_svg %}
+<div class="chart" role="img" aria-label="Report visualisation">
+  {{ chart_svg | safe }}
+</div>
+{% endif %}
