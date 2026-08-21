@@ -1,0 +1,53 @@
+{% extends "reports/base.html" %}
+{% block title %}Delivery Dashboard - ABIS Reports Console{% endblock %}
+{% block content %}
+<h1>Delivery Dashboard</h1>
+<p>{{ deliveries|length }} pending / failed delivery(s)</p>
+
+{% if deliveries %}
+<table>
+    <thead>
+        <tr>
+            <th scope="col">Delivery ID</th>
+            <th scope="col">Run</th>
+            <th scope="col">Status</th>
+            <th scope="col">Attempts</th>
+            <th scope="col">Last error</th>
+            <th scope="col">Next attempt</th>
+            <th scope="col">Action</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for d in deliveries %}
+    <tr>
+        <td><code>{{ d.delivery_id|slice:":8" }}...</code></td>
+        <td>{{ d.run.slug }}</td>
+        <td><span class="badge badge-{{ d.status }}">{{ d.status }}</span></td>
+        <td>{{ d.attempt_count }} / {{ d.max_attempts }}</td>
+        <td>{{ d.last_error|default:"-" }}</td>
+        <td>{{ d.next_attempt_at|default:"-" }}</td>
+        <td>
+            {% if d.status == "failed" or d.status == "abandoned" %}
+            <form method="post" action="{% url 'reports:retry_delivery' d.delivery_id %}"
+                  hx-post="{% url 'reports:retry_delivery' d.delivery_id %}"
+                  hx-target="closest tr" hx-swap="outerHTML">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary btn-sm"
+                        aria-label="Retry delivery {{ d.delivery_id }}">Retry</button>
+            </form>
+            {% else %}
+            -
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No pending or failed deliveries.</p>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://unpkg.com/htmx.org@2.0.0/dist/htmx.min.js" integrity="sha384-kHRYTIbCiXaJJz3k8N/h5Ij0IOAH6xMf1lQkBdI0pX7hK2JFrCzjLO8eDi2zfmQ" crossorigin="anonymous"></script>
+{% endblock %}

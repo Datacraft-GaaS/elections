@@ -1,0 +1,111 @@
+{
+  "$ref": "#/definitions/reports",
+  "definitions": {
+    "reports": {
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string"
+        },
+        "title": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "report_class": {
+          "type": "string",
+          "enum": [
+            "operational",
+            "statistical",
+            "regulatory",
+            "legal",
+            "public",
+            "financial",
+            "executive",
+            "ad_hoc"
+          ]
+        },
+        "window_from": {
+          "type": "string"
+        },
+        "window_to": {
+          "type": "string"
+        },
+        "formats": {
+          "type": "object",
+          "properties": {
+            "pdf": {
+              "type": "string",
+              "format": "uri"
+            },
+            "csv": {
+              "type": "string",
+              "format": "uri"
+            },
+            "json": {
+              "type": "string",
+              "format": "uri"
+            },
+            "html": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "additionalProperties": false
+        },
+        "sha256": {
+          "type": "object",
+          "properties": {
+            "pdf": {
+              "type": "string"
+            },
+            "csv": {
+              "type": "string"
+            },
+            "json": {
+              "type": "string"
+            },
+            "html": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "tlog_leaf_index": {
+          "type": "number"
+        },
+        "tlog_root_hash": {
+          "type": "string"
+        },
+        "cosign_sig": {
+          "type": "string"
+        },
+        "published_at": {
+          "type": "string"
+        },
+        "generator_svid": {
+          "type": "string"
+        },
+        "template_version": {
+          "type": "string"
+        },
+        "$schema": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "slug",
+        "title",
+        "report_class",
+        "window_from",
+        "window_to",
+        "formats",
+        "sha256",
+        "published_at"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

@@ -1,0 +1,177 @@
+---
+import reports from "../../../../data/reports.json";
+
+type ReportEntry = {
+  slug: string;
+  run_id: string;
+  title: Record<string, string>;
+  report_class: string;
+  window_from: string;
+  window_to: string;
+  formats: Record<string, string | undefined>;
+  sha256: Record<string, string | undefined>;
+  tlog_leaf_index?: number | null;
+  tlog_root_hash?: string | null;
+  cosign_sig?: string | null;
+  published_at: string;
+  template_version?: string;
+};
+
+export function getStaticPaths() {
+  const locales = ["en", "sw", "ki", "luo", "kal", "kam", "guj", "mer", "mas", "ksl-glossary", "som"];
+  const allReports = reports as unknown as ReportEntry[];
+  const paths: { params: { lang: string; slug: string; run: string } }[] = [];
+  for (const report of allReports) {
+    for (const locale of locales) {
+      paths.push({ params: { lang: locale, slug: report.slug, run: report.run_id } });
+    }
+  }
+  return paths;
+}
+
+const { lang, slug, run } = Astro.params;
+const allReports = reports as unknown as ReportEntry[];
+const report = allReports.find((r) => r.slug === slug && r.run_id === run);
+if (!report) {
+  return Astro.redirect("/404");
+}
+
+const title = report.title[lang] ?? report.title.en ?? report.slug;
+const fmtEntries = Object.entries(report.formats).filter(([, url]) => url);
+const shaEntries = report.sha256 ?? {};
+const hasTlog = report.tlog_leaf_index != null;
+---
+
+<html lang={lang}>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title} - ABIS Reports</title>
+  <style>
+    :root { --color-primary: #1d4ed8; --color-text: #111827; --color-border: #e5e7eb; }
+    body { font-family: system-ui, sans-serif; color: var(--color-text); margin: 0; padding: 0; line-height: 1.6; }
+    .skip-link { position: absolute; left: -9999px; }
+    .skip-link:focus { position: fixed; left: 8px; top: 8px; background: var(--color-primary); color: #fff; padding: 8px 16px; border-radius: 4px; z-index: 1000; text-decoration: none; }
+    header { background: var(--color-primary); color: #fff; padding: 16px 24px; }
+    main { max-width: 900px; margin: 0 auto; padding: 24px; }
+    h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+    dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin-bottom: 24px; }
+    dt { font-weight: 600; color: #374151; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { padding: 10px; border: 1px solid var(--color-border); text-align: left; }
+    th { background: #f9fafb; font-weight: 600; font-size: 0.85rem; }
+    a { color: var(--color-primary); }
+    a:focus { outline: 3px solid var(--color-primary); outline-offset: 2px; }
+    section { margin-bottom: 32px; border: 1px solid var(--color-border); border-radius: 8px; padding: 20px; }
+    code { font-size: 0.85rem; word-break: break-all; }
+    input[type="file"], select { padding: 8px; min-height: 44px; display: block; margin-bottom: 12px; }
+    button { padding: 8px 20px; min-height: 44px; background: var(--color-primary); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+<header role="banner">
+  <a href="/" style="color:#fff;">ABIS Reports</a>
+</header>
+
+<main id="main-content" role="main">
+  <h1>{title}</h1>
+  <dl>
+    <dt>Run ID</dt><dd><code>{run}</code></dd>
+    <dt>Class</dt><dd>{report.report_class}</dd>
+    <dt>Window</dt><dd>{report.window_from.split("T")[0]} to {report.window_to.split("T")[0]}</dd>
+    <dt>Published</dt><dd>{report.published_at.split("T")[0]}</dd>
+    {report.template_version && <dt>Template</dt>}
+    {report.template_version && <dd>v{report.template_version}</dd>}
+  </dl>
+
+  <section aria-labelledby="downloads-heading">
+    <h2 id="downloads-heading">Downloads</h2>
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Format</th>
+          <th scope="col">SHA-256</th>
+          <th scope="col">Download</th>
+        </tr>
+      </thead>
+      <tbody>
+        {fmtEntries.map(([fmt, url]) => (
+          <tr>
+            <td>{fmt.toUpperCase()}</td>
+            <td><code title={`SHA-256 for ${fmt}`}>{shaEntries[fmt] ?? "not available"}</code></td>
+            <td><a href={url ?? "#"} aria-label={`Download ${fmt.toUpperCase()}`}>Download</a></td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+
+  <section aria-labelledby="verify-heading">
+    <h2 id="verify-heading">Verify a downloaded file</h2>
+    <p>Select a file you downloaded and this page will compute its SHA-256 in your browser. No data is uploaded.</p>
+    <label for="verify-file" style="display:block;font-weight:500;margin-bottom:8px;">Choose file to verify</label>
+    <input type="file" id="verify-file" />
+    <label for="verify-format" style="display:block;font-weight:500;margin-bottom:8px;">Format downloaded</label>
+    <select id="verify-format" aria-label="Select the format you downloaded">
+      {fmtEntries.map(([fmt]) => (
+        <option value={fmt}>{fmt.toUpperCase()}</option>
+      ))}
+    </select>
+    <button id="verify-btn">Verify file</button>
+    <div id="verify-result" role="status" aria-live="assertive" style="margin-top:16px;font-size:1rem;"></div>
+  </section>
+
+  {hasTlog && (
+    <section aria-labelledby="tlog-heading">
+      <h2 id="tlog-heading">Transparency log anchor</h2>
+      <dl>
+        <dt>Leaf index</dt><dd><code>{report.tlog_leaf_index}</code></dd>
+        <dt>Root hash</dt><dd><code>{report.tlog_root_hash}</code></dd>
+      </dl>
+      <p><a href={`https://transparency.eel.internal/verify?leaf=${report.tlog_leaf_index}`}>Verify on transparency portal</a></p>
+    </section>
+  )}
+</main>
+
+<script define:vars={{ shaEntries, fmtEntries: Object.fromEntries(fmtEntries) }}>
+  async function sha256Hex(buf) {
+    const hash = await crypto.subtle.digest("SHA-256", buf);
+    return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  document.getElementById("verify-btn")?.addEventListener("click", async () => {
+    const fileInput = document.getElementById("verify-file");
+    const formatSelect = document.getElementById("verify-format");
+    const resultDiv = document.getElementById("verify-result");
+
+    const file = fileInput?.files?.[0];
+    if (!file) {
+      resultDiv.textContent = "Please select a file first.";
+      return;
+    }
+
+    const fmt = formatSelect?.value;
+    const expected = shaEntries[fmt];
+    if (!expected) {
+      resultDiv.textContent = "No SHA-256 declared for this format.";
+      return;
+    }
+
+    resultDiv.textContent = "Computing...";
+    try {
+      const buf = await file.arrayBuffer();
+      const actual = await sha256Hex(buf);
+      if (actual.toLowerCase() === expected.toLowerCase()) {
+        resultDiv.innerHTML = '<strong style="color:#166534;">PASS</strong> File matches the declared SHA-256. This artifact is authentic.';
+      } else {
+        resultDiv.innerHTML = '<strong style="color:#991b1b;">FAIL</strong> SHA-256 does not match. This file may have been tampered with or is a different version.' +
+          `<p style="font-size:0.8rem;margin-top:8px;">Expected: ${expected}<br>Actual: ${actual}</p>`;
+      }
+    } catch (err) {
+      resultDiv.textContent = "Error reading file: " + String(err);
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+[
+  {
+    "slug": "public-fmr-fnmr-monthly",
+    "run_id": "00000000-0000-7000-8000-000000000001",
+    "title": {
+      "en": "Public Monthly FMR/FNMR Summary",
+      "sw": "Muhtasari wa Kila Mwezi wa FMR/FNMR"
+    },
+    "report_class": "public",
+    "window_from": "2025-01-01T00:00:00Z",
+    "window_to": "2025-01-31T23:59:59Z",
+    "formats": {
+      "pdf": "https://reports.eel.internal/artifacts/00000000-0000-7000-8000-000000000001.pdf",
+      "json": "https://reports.eel.internal/artifacts/00000000-0000-7000-8000-000000000001.json",
+      "html": "https://reports.eel.internal/artifacts/00000000-0000-7000-8000-000000000001.html"
+    },
+    "sha256": {
+      "pdf": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "json": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "tlog_leaf_index": 42,
+    "tlog_root_hash": "deadbeefcafe",
+    "published_at": "2025-02-05T06:00:00Z",
+    "template_version": "1.0.0"
+  }
+]

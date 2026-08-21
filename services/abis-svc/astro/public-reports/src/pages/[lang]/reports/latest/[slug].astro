@@ -1,0 +1,49 @@
+---
+/**
+ * Permanent redirect to the latest run of a given report slug.
+ * Built statically - redirects are rendered as HTML meta-refresh + JS redirect.
+ */
+import reports from "../../../../data/reports.json";
+
+export function getStaticPaths() {
+  const locales = ["en", "sw", "ki", "luo", "kal", "kam", "guj", "mer", "mas", "ksl-glossary", "som"];
+  const slugs = [...new Set(reports.map((r) => r.slug))];
+  const paths: { params: { lang: string; slug: string }; props: { latestRunId: string | undefined } }[] = [];
+
+  for (const slug of slugs) {
+    const latest = reports
+      .filter((r) => r.slug === slug)
+      .sort((a, b) => b.published_at.localeCompare(a.published_at))[0];
+
+    for (const lang of locales) {
+      paths.push({
+        params: { lang, slug },
+        props: { latestRunId: latest?.run_id },
+      });
+    }
+  }
+  return paths;
+}
+
+const { lang, slug } = Astro.params;
+const { latestRunId } = Astro.props;
+
+const redirectTo = latestRunId
+  ? `/${lang}/reports/${slug}/${latestRunId}/`
+  : "/";
+---
+
+<html lang={lang}>
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="refresh" content={`0; url=${redirectTo}`} />
+  <title>Redirecting to latest {slug} report</title>
+</head>
+<body>
+  <p>Redirecting to the latest version of report <strong>{slug}</strong>...</p>
+  <p><a href={redirectTo}>Click here if you are not redirected automatically.</a></p>
+  <script define:vars={{ redirectTo }}>
+    window.location.replace(redirectTo);
+  </script>
+</body>
+</html>

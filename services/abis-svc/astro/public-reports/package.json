@@ -1,0 +1,24 @@
+{
+  "name": "eel-public-reports",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Public transparency site for ABIS reports",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "test": "playwright test",
+    "fetch-published": "node src/scripts/fetch-published.mjs"
+  },
+  "dependencies": {
+    "astro": "^5.0.0",
+    "@astrojs/tailwind": "^5.1.0",
+    "@astrojs/mdx": "^4.0.0",
+    "@astrojs/sitemap": "^3.2.0",
+    "tailwindcss": "^3.4.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "axe-playwright": "^2.0.3"
+  }
+}

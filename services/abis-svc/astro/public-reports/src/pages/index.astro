@@ -1,0 +1,124 @@
+---
+import reports from "../data/reports.json";
+
+type ReportEntry = {
+  slug: string;
+  run_id: string;
+  title: Record<string, string>;
+  report_class: string;
+  window_from: string;
+  window_to: string;
+  formats: Record<string, string | undefined>;
+  published_at: string;
+};
+
+const classFilter = Astro.url.searchParams.get("class") ?? "";
+const allReports = reports as unknown as ReportEntry[];
+const filtered = classFilter
+  ? allReports.filter((r) => r.report_class === classFilter)
+  : allReports;
+
+const classes = [...new Set(allReports.map((r) => r.report_class))].sort();
+
+const title = "Public Reports";
+---
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title} - ABIS Transparency</title>
+  <meta name="description" content="Published public reports for ABIS transparency and accountability" />
+  <link rel="alternate" type="application/rss+xml" title="ABIS Reports RSS" href="/api/rss.xml" />
+  <style>
+    :root {
+      --color-bg: #ffffff;
+      --color-text: #111827;
+      --color-primary: #1d4ed8;
+      --color-border: #e5e7eb;
+    }
+    body { font-family: system-ui, sans-serif; background: var(--color-bg); color: var(--color-text); line-height: 1.6; margin: 0; padding: 0; }
+    .skip-link { position: absolute; left: -9999px; }
+    .skip-link:focus { position: fixed; left: 8px; top: 8px; background: var(--color-primary); color: #fff; padding: 8px 16px; border-radius: 4px; z-index: 1000; text-decoration: none; }
+    header { background: var(--color-primary); color: #fff; padding: 16px 24px; }
+    header h1 { margin: 0; font-size: 1.5rem; font-weight: 700; }
+    header p { margin: 4px 0 0; font-size: 0.9rem; opacity: 0.85; }
+    main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+    .filter-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 24px; }
+    .filter-bar form { display: flex; gap: 8px; align-items: center; }
+    select, button { padding: 8px 12px; min-height: 44px; border: 1px solid var(--color-border); border-radius: 6px; font-size: 0.9rem; background: #fff; cursor: pointer; }
+    button { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+    .report-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+    .report-card { border: 1px solid var(--color-border); border-radius: 8px; padding: 20px; background: #fff; }
+    .report-card h2 { font-size: 1rem; font-weight: 600; margin: 0 0 8px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; background: #e0f2fe; color: #0369a1; }
+    .window { font-size: 0.85rem; color: #6b7280; margin: 8px 0; }
+    .formats { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .formats a { padding: 4px 10px; border: 1px solid var(--color-primary); border-radius: 4px; color: var(--color-primary); font-size: 0.8rem; text-decoration: none; font-weight: 500; }
+    .formats a:hover { background: var(--color-primary); color: #fff; }
+    footer { border-top: 1px solid var(--color-border); padding: 16px 24px; color: #9ca3af; font-size: 0.8rem; margin-top: 40px; }
+    a { color: var(--color-primary); }
+    a:focus { outline: 3px solid var(--color-primary); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<header role="banner">
+  <h1>ABIS Public Reports</h1>
+  <p>Transparency and accountability reports published under the ABIS reporting mandate.</p>
+</header>
+
+<main id="main-content" role="main">
+  <section aria-labelledby="filter-heading">
+    <h2 id="filter-heading" style="font-size:1rem;font-weight:600;margin-bottom:12px;">Filter reports</h2>
+    <div class="filter-bar">
+      <form method="get" action="/">
+        <label for="class-filter" style="font-size:0.9rem;font-weight:500;">Class:</label>
+        <select id="class-filter" name="class">
+          <option value="">All classes</option>
+          {classes.map((c) => (
+            <option value={c} selected={c === classFilter}>{c}</option>
+          ))}
+        </select>
+        <button type="submit">Filter</button>
+        {classFilter && <a href="/" style="padding:8px 12px;font-size:0.9rem;">Clear</a>}
+      </form>
+      <span style="font-size:0.85rem;color:#6b7280;">{filtered.length} report(s)</span>
+    </div>
+  </section>
+
+  <div class="report-grid" role="list">
+    {filtered.map((report) => {
+      const titleText = report.title?.en ?? report.slug;
+      const fmtEntries = Object.entries(report.formats).filter(([, url]) => url);
+      return (
+        <article class="report-card" role="listitem">
+          <h2>{titleText}</h2>
+          <span class="badge">{report.report_class}</span>
+          <p class="window">
+            Window: {report.window_from.split("T")[0]} to {report.window_to.split("T")[0]}
+          </p>
+          <p style="font-size:0.8rem;color:#6b7280;">Published: {report.published_at.split("T")[0]}</p>
+          <div class="formats">
+            {fmtEntries.map(([fmt, url]) => (
+              <a href={url ?? "#"} aria-label={`Download ${fmt.toUpperCase()} for ${titleText}`}>{fmt.toUpperCase()}</a>
+            ))}
+            <a href={`/en/reports/${report.slug}/${report.run_id}/`}>Details</a>
+          </div>
+        </article>
+      );
+    })}
+    {filtered.length === 0 && <p>No reports found for the selected filter.</p>}
+  </div>
+</main>
+
+<footer role="contentinfo">
+  <p>
+    ABIS Public Transparency Portal.
+    <a href="/api/rss.xml">RSS Feed</a> |
+    <a href="/api/atom.xml">Atom Feed</a>
+  </p>
+</footer>
+</body>
+</html>

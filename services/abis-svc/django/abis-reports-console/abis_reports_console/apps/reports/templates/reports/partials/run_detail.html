@@ -1,0 +1,41 @@
+<article aria-label="Run detail: {{ run.slug }}">
+    <h2>{{ run.slug }}</h2>
+    <dl>
+        <dt>Run ID</dt><dd><code>{{ run.run_id }}</code></dd>
+        <dt>Status</dt><dd><span class="badge badge-{{ run.status }}">{{ run.status }}</span></dd>
+        <dt>Window</dt><dd>{{ run.window_from }} to {{ run.window_to }}</dd>
+        <dt>Requested by</dt><dd>{{ run.requested_by }}</dd>
+        {% if run.rows_extracted %}<dt>Rows</dt><dd>{{ run.rows_extracted }}</dd>{% endif %}
+        {% if run.total_ms %}<dt>Duration</dt><dd>{{ run.total_ms }} ms</dd>{% endif %}
+        {% if run.failure_reason %}<dt>Failure</dt><dd class="badge badge-failed">{{ run.failure_reason }}</dd>{% endif %}
+    </dl>
+
+    {% if artifacts %}
+    <section aria-labelledby="artifacts-heading">
+        <h3 id="artifacts-heading">Artifacts</h3>
+        <ul>
+        {% for artifact in artifacts %}
+            <li>
+                <strong>{{ artifact.format|upper }}</strong>
+                &mdash; {{ artifact.size_human }}
+                &mdash; <code title="SHA-256">{{ artifact.sha256_hex|slice:":16" }}...</code>
+                {% if artifact.page_count %} &mdash; {{ artifact.page_count }} pages{% endif %}
+                {% if artifact.row_count %} &mdash; {{ artifact.row_count }} rows{% endif %}
+                <a href="{% url 'reports:artifact_download' artifact.artifact_id %}"
+                   class="btn btn-primary btn-sm"
+                   aria-label="Download {{ artifact.format|upper }} artifact">Download</a>
+            </li>
+        {% endfor %}
+        </ul>
+    </section>
+
+    {% for artifact in artifacts %}
+        {% if artifact.format == "pdf" %}
+        <section aria-labelledby="preview-pdf-heading">
+            <h3 id="preview-pdf-heading">PDF Preview</h3>
+            <p>{{ artifact.page_count|default:"?" }} pages &mdash; open the download link in your PDF viewer.</p>
+        </section>
+        {% endif %}
+    {% endfor %}
+    {% endif %}
+</article>

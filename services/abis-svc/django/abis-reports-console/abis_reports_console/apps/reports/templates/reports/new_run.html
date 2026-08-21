@@ -1,0 +1,49 @@
+{% extends "reports/base.html" %}
+{% block title %}New Run - ABIS Reports Console{% endblock %}
+{% block content %}
+<h1>Queue a New Report Run</h1>
+
+{% if errors %}
+<div class="error-list" role="alert" aria-live="assertive">
+    <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<form method="post" action="{% url 'reports:new_run' %}" novalidate>
+    {% csrf_token %}
+    <div class="form-group">
+        <label for="slug">Report</label>
+        <select id="slug" name="slug" required aria-required="true">
+            <option value="">-- select a report --</option>
+            {% for d in definitions %}
+            <option value="{{ d.slug }}" {% if post.slug == d.slug %}selected{% endif %}>
+                {{ d.slug }} ({{ d.report_class }})
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="window_from">Window start</label>
+        <input type="datetime-local" id="window_from" name="window_from"
+               value="{{ post.window_from }}" required aria-required="true">
+    </div>
+    <div class="form-group">
+        <label for="window_to">Window end</label>
+        <input type="datetime-local" id="window_to" name="window_to"
+               value="{{ post.window_to }}" required aria-required="true">
+    </div>
+    <fieldset>
+        <legend>Output formats</legend>
+        {% for fmt in formats_list %}
+        <label style="display:inline-flex;align-items:center;gap:6px;margin-right:16px;min-height:48px;">
+            <input type="checkbox" name="formats" value="{{ fmt }}"
+                   style="width:auto;min-height:auto;">
+            {{ fmt|upper }}
+        </label>
+        {% endfor %}
+    </fieldset>
+    <div style="margin-top:24px;">
+        <button type="submit" class="btn btn-primary">Queue run</button>
+    </div>
+</form>
+{% endblock %}

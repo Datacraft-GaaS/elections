@@ -1,0 +1,58 @@
+{% extends "reports/base.html" %}
+{% block title %}Subscribe - ABIS Reports Console{% endblock %}
+{% block content %}
+<h1>Subscription Wizard</h1>
+
+{% if step == "done" %}
+<div role="status" aria-live="polite" style="background:#dcfce7;color:#166534;padding:16px;border-radius:6px;">
+    Subscription created: <code>{{ subscription.subscription_id }}</code>
+    for <strong>{{ subscription.subscriber }}</strong> on <strong>{{ subscription.definition.slug }}</strong>.
+</div>
+{% else %}
+
+{% if errors %}
+<div class="error-list" role="alert">
+    <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<form method="post" action="{% url 'reports:subscription_wizard' %}" novalidate>
+    {% csrf_token %}
+    <div class="form-group">
+        <label for="subscriber_id">Subscriber</label>
+        <select id="subscriber_id" name="subscriber_id" required aria-required="true">
+            <option value="">-- select subscriber --</option>
+            {% for s in subscribers %}
+            <option value="{{ s.subscriber_id }}">{{ s.name }} ({{ s.channel }})</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="definition_id">Report definition</label>
+        <select id="definition_id" name="definition_id" required aria-required="true">
+            <option value="">-- select report --</option>
+            {% for d in definitions %}
+            <option value="{{ d.definition_id }}">{{ d.slug }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="format">Format</label>
+        <select id="format" name="format">
+            <option value="pdf">PDF</option>
+            <option value="csv">CSV</option>
+            <option value="json">JSON</option>
+            <option value="html">HTML</option>
+            <option value="xlsx">XLSX</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="filter_json">Filter (JSON, optional)</label>
+        <textarea id="filter_json" name="filter_json" rows="4" placeholder='{"county": "047"}'>{}</textarea>
+    </div>
+    <div style="margin-top:24px;">
+        <button type="submit" class="btn btn-primary">Create subscription</button>
+    </div>
+</form>
+{% endif %}
+{% endblock %}
