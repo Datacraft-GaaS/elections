@@ -1,0 +1,17 @@
+name: eel_kit_sdk_example
+description: Example app consuming eel_kit_sdk.
+publish_to: none
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  eel_kit_sdk:
+    path: ../
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

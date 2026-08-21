@@ -5,7 +5,29 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 publish = false
+description = "eel verifier: Merkle inclusion/consistency, STH sig, witness cosign, bundle hash; cdylib for Dart FFI and WASM"
 
 [lib]
-name = "verifier_rs"
+name = "eel_verifier"
+crate-type = ["rlib", "cdylib"]
 path = "src/lib.rs"
+
+[features]
+default = ["cdylib", "wasm"]
+cdylib  = []
+wasm    = ["dep:wasm-bindgen"]
+
+[dependencies]
+eel-crypto-rs = { path = "../eel-crypto-rs" }
+serde         = { version = "1", features = ["derive"] }
+serde_json    = { workspace = true }
+thiserror     = { workspace = true }
+hex           = "0.4"
+wasm-bindgen  = { version = "0.2", optional = true }
+
+[build-dependencies]
+cbindgen = "0.26"
+
+[dev-dependencies]
+eel-crypto-rs = { path = "../eel-crypto-rs" }
+proptest      = "1"

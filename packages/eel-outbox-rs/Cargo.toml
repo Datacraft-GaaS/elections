@@ -5,7 +5,37 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 publish = false
+description = "Transactional outbox for the eel platform (WP-1.2)"
 
 [lib]
 name = "eel_outbox_rs"
 path = "src/lib.rs"
+
+[dependencies]
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+sqlx        = { workspace = true }
+tokio       = { workspace = true }
+thiserror   = { workspace = true }
+tracing     = { workspace = true }
+uuid        = { workspace = true }
+chrono      = { workspace = true }
+
+# BLAKE3 hash for blob references
+blake3  = "1"
+
+# MinIO blob upload (optional, enabled by default)
+reqwest = { version = "0.12", features = ["rustls-tls", "json"], default-features = false, optional = true }
+
+[dev-dependencies]
+tokio               = { workspace = true }
+testcontainers      = { workspace = true }
+testcontainers-modules = { workspace = true }
+serde_json          = { workspace = true }
+
+[features]
+default = ["minio"]
+minio   = ["dep:reqwest"]
+
+# Enable integration tests that require Docker
+integration-tests = []

@@ -62,7 +62,7 @@ garde           = { version = "0.20", features = ["derive", "full"] }
 rdkafka         = { version = "0.37", features = ["cmake-build", "ssl"] }
 
 # Cache
-fred            = { version = "9",    features = ["full"] }
+fred            = { version = "9",    features = ["i-all"] }
 
 # Search
 opensearch      = { version = "2" }

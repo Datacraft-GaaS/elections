@@ -5,7 +5,42 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 publish = false
+description = "Event store with optimistic concurrency and replay for the eel platform (WP-1.2)"
 
 [lib]
 name = "eel_eventstore_rs"
 path = "src/lib.rs"
+
+[[bench]]
+name = "replay_1m"
+harness = false
+
+[dependencies]
+eel-hlc-rs  = { path = "../eel-hlc-rs" }
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+sqlx        = { workspace = true }
+tokio       = { workspace = true }
+thiserror   = { workspace = true }
+tracing     = { workspace = true }
+uuid        = { workspace = true }
+chrono      = { workspace = true }
+
+# Kafka exactly-once helper (optional)
+rdkafka     = { workspace = true, optional = true }
+
+[dev-dependencies]
+tokio               = { workspace = true }
+testcontainers      = { workspace = true }
+testcontainers-modules = { workspace = true }
+serde_json          = { workspace = true }
+proptest            = "1"
+rstest              = { workspace = true }
+criterion           = { version = "0.5", features = ["async_tokio"] }
+
+[features]
+default = ["kafka"]
+kafka   = ["dep:rdkafka"]
+
+# Enable integration tests that require Docker
+integration-tests = []

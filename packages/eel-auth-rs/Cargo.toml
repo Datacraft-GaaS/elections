@@ -9,3 +9,28 @@ publish = false
 [lib]
 name = "eel_auth_rs"
 path = "src/lib.rs"
+
+[features]
+default = ["keycloak", "spicedb"]
+keycloak = []
+spicedb = []
+test-utils = []
+
+[dependencies]
+jsonwebtoken    = "9"
+reqwest         = { version = "0.12", features = ["rustls-tls", "json"], default-features = false }
+moka            = { version = "0.12", features = ["future"] }
+prost           = "0.13"
+async-trait     = "0.1"
+tonic           = { workspace = true }
+tokio           = { workspace = true }
+serde           = { workspace = true }
+serde_json      = { workspace = true }
+thiserror       = { workspace = true }
+tracing         = { workspace = true }
+chrono          = { workspace = true }
+uuid            = { workspace = true }
+
+[dev-dependencies]
+tokio           = { workspace = true }
+rstest          = { workspace = true }

@@ -1,0 +1,13 @@
+{
+  "@@locale": "en",
+  "appName": "eel Kit",
+  "@appName": { "description": "Application name" },
+  "errorGeneric": "An error occurred. Please try again.",
+  "@errorGeneric": { "description": "Generic error message" },
+  "syncPending": "Changes pending sync",
+  "@syncPending": { "description": "Shown when offline queue has pending entries" },
+  "attestationFailed": "Device attestation failed",
+  "@attestationFailed": { "description": "Shown when attestation returns an error" },
+  "timeLow": "Time confidence is low. Some features are unavailable.",
+  "@timeLow": { "description": "Shown when time fence blocks session" }
+}

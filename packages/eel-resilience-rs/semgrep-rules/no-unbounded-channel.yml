@@ -1,0 +1,11 @@
+rules:
+  - id: eel-no-unbounded-channel
+    pattern: tokio::sync::mpsc::unbounded_channel()
+    message: >
+      Unbounded channels are prohibited (ADR-0009). Use bounded
+      tokio::sync::mpsc::channel(N) with a documented bound.
+    languages: [rust]
+    severity: ERROR
+    metadata:
+      category: resilience
+      adr: "0009"

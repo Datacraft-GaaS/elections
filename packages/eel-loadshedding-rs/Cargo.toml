@@ -5,7 +5,31 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 publish = false
+description = "CoDel-style priority load shedder tower::Layer (ADR-0009)"
 
 [lib]
 name = "eel_loadshedding_rs"
 path = "src/lib.rs"
+
+[dependencies]
+tower            = { workspace = true }
+axum             = { workspace = true }
+tokio            = { workspace = true }
+serde            = { workspace = true }
+serde_json       = { workspace = true }
+thiserror        = { workspace = true }
+tracing          = { workspace = true }
+chrono           = { workspace = true }
+http             = "1"
+http-body        = "1"
+http-body-util   = "0.1"
+bytes            = "1"
+pin-project      = "1"
+futures-util     = "0.3"
+
+[dev-dependencies]
+tokio            = { workspace = true }
+rstest           = { workspace = true }
+proptest         = "1"
+axum             = { workspace = true }
+tower            = { workspace = true }

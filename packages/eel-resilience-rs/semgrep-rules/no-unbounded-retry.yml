@@ -1,0 +1,16 @@
+rules:
+  - id: eel-no-unbounded-retry
+    patterns:
+      - pattern: |
+          loop {
+            ...
+            $ERR => { continue }
+          }
+    message: >
+      Bare retry loops without a counter are prohibited (ADR-0009). Use
+      eel_resilience_rs::retry::with_retry with a RetryConfig max_attempts bound.
+    languages: [rust]
+    severity: WARNING
+    metadata:
+      category: resilience
+      adr: "0009"

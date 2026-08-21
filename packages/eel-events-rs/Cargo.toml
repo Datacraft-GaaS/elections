@@ -5,7 +5,57 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 publish = false
+description = "CloudEvents envelope, signing, consumer, and schema for the eel platform (WP-1.2)"
 
 [lib]
 name = "eel_events_rs"
 path = "src/lib.rs"
+
+[dependencies]
+eel-hlc-rs  = { path = "../eel-hlc-rs" }
+eel-crypto-rs = { path = "../eel-crypto-rs" }
+
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+tokio       = { workspace = true }
+thiserror   = { workspace = true }
+tracing     = { workspace = true }
+uuid        = { workspace = true }
+chrono      = { workspace = true }
+
+# Signature encoding
+base64 = "0.22"
+
+# Karapace schema lookup
+reqwest = { version = "0.12", features = ["rustls-tls", "json"], default-features = false }
+
+# PG-durable dedupe
+sqlx = { workspace = true }
+
+# Kafka consumer / DLQ / tamper routing
+rdkafka = { workspace = true, optional = true }
+
+# Valkey cache write-through (fred v9 uses "i-all" not "full")
+fred = { version = "9", features = ["i-all"], optional = true }
+
+# Async trait
+async-trait = "0.1"
+
+[dev-dependencies]
+tokio           = { workspace = true }
+serde_json      = { workspace = true }
+rstest          = { workspace = true }
+chrono          = { workspace = true }
+eel-crypto-rs   = { path = "../eel-crypto-rs" }
+
+[features]
+default = ["kafka"]
+
+# Kafka consumer + producer, DLQ, tamper routing, Valkey dedupe cache
+kafka = ["dep:rdkafka", "dep:fred"]
+
+# In-memory stubs for unit testing without external dependencies
+test-utils = []
+
+# Experimental Pulsar backend (not production-ready)
+pulsar-experimental = []

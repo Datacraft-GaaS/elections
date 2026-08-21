@@ -1,0 +1,51 @@
+{
+  "name": "${CONNECTOR_NAME}",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "tasks.max": "1",
+
+    "database.hostname": "${PG_HOST}",
+    "database.port": "${PG_PORT:-5432}",
+    "database.user": "${PG_USER}",
+    "database.password": "${PG_PASSWORD}",
+    "database.dbname": "${PG_DBNAME}",
+    "database.server.name": "${PG_SERVER_NAME}",
+
+    "plugin.name": "pgoutput",
+    "publication.name": "eel_outbox_pub",
+    "slot.name": "${SLOT_NAME:-eel_outbox_slot}",
+
+    "table.include.list": "${PG_SCHEMA:-public}.outbox",
+
+    "transforms": "outbox",
+    "transforms.outbox.type": "io.debezium.transforms.outbox.EventRouter",
+    "transforms.outbox.route.by.field": "topic",
+    "transforms.outbox.route.topic.replacement": "${routedByValue}",
+    "transforms.outbox.table.field.event.id": "id",
+    "transforms.outbox.table.field.event.key": "key",
+    "transforms.outbox.table.field.event.payload": "payload",
+    "transforms.outbox.table.field.event.timestamp": "created_at",
+    "transforms.outbox.table.fields.additional.placement": "headers:header,sig:header:eel_sig,hlc:header:eel_hlc,aggregate_type:header:eel_aggregate_type",
+    "transforms.outbox.route.tombstone.on.empty.payload": "false",
+
+    "producer.override.acks": "all",
+    "producer.override.enable.idempotence": "true",
+    "producer.override.transactional.id": "${TRANSACTIONAL_ID_PREFIX}-${database.server.name}",
+    "producer.override.max.in.flight.requests.per.connection": "5",
+
+    "heartbeat.interval.ms": "5000",
+    "snapshot.mode": "never",
+
+    "tombstones.on.delete": "false",
+
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "io.confluent.connect.avro.AvroConverter",
+    "value.converter.schema.registry.url": "${KARAPACE_URL}",
+    "value.converter.auto.register.schemas": "false",
+    "value.converter.use.latest.version": "true",
+
+    "errors.retry.delay.max.ms": "60000",
+    "errors.retry.timeout": "300000",
+    "errors.tolerance": "none"
+  }
+}

@@ -5,7 +5,32 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 publish = false
+description = "Resilience primitives: circuit breaker, bulkhead, retry, timeout, idempotency, degradation (ADR-0009)"
 
 [lib]
 name = "eel_resilience_rs"
 path = "src/lib.rs"
+
+[dependencies]
+tokio            = { workspace = true }
+tower            = { workspace = true }
+axum             = { workspace = true }
+serde            = { workspace = true }
+serde_json       = { workspace = true }
+thiserror        = { workspace = true }
+tracing          = { workspace = true }
+chrono           = { workspace = true }
+uuid             = { workspace = true }
+async-trait      = "0.1"
+pin-project      = "1"
+futures          = "0.3"
+http             = "1"
+http-body        = "1"
+bytes            = "1"
+sha2             = "0.10"
+hex              = "0.4"
+
+[dev-dependencies]
+tokio            = { workspace = true }
+rstest           = { workspace = true }
+proptest         = "1"

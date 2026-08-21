@@ -1,0 +1,65 @@
+name: eel_kit_sdk
+description: eel kit SDK - secure offline-capable Flutter client for the eel platform.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  ffi: ^2.1.0
+
+  # Secure local storage
+  isar: ^3.1.0
+  isar_flutter_libs: ^3.1.0
+  flutter_secure_storage: ^9.0.0
+
+  # HTTP
+  dio: ^5.4.0
+  # dio_certificate_pinning not published on pub.dev; SPKI pinning implemented
+  # via a custom HttpClientAdapter in EelHttpClient.
+
+  # State management
+  flutter_riverpod: ^2.5.0
+  hooks_riverpod: ^2.5.0
+  flutter_hooks: ^0.20.5
+
+  # Code generation support
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.9.0
+  injectable: ^2.3.2
+  get_it: ^7.6.7
+
+  # Navigation
+  go_router: ^13.2.0
+
+  # Internationalisation
+  intl: ^0.20.0
+  flutter_localizations:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  # Code generators
+  build_runner: ^2.4.8
+  freezed: ^2.5.2
+  json_serializable: ^6.8.0
+  injectable_generator: ^2.4.1
+
+  # Linting
+  flutter_lints: ^3.0.0
+
+  # Testing
+  mocktail: ^1.0.4
+  patrol: ^3.6.1
+  integration_test:
+    sdk: flutter
+
+flutter:
+  generate: true

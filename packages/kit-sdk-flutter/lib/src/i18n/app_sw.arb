@@ -1,0 +1,8 @@
+{
+  "@@locale": "sw",
+  "appName": "eel Kit",
+  "errorGeneric": "Hitilafu imetokea. Tafadhali jaribu tena.",
+  "syncPending": "Mabadiliko yanasubiri kusawazishwa",
+  "attestationFailed": "Uthibitisho wa kifaa umeshindwa",
+  "timeLow": "Imani ya wakati ni ndogo. Baadhi ya vipengele havipo."
+}

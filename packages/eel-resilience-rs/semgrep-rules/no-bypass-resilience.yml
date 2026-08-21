@@ -1,0 +1,15 @@
+rules:
+  - id: eel-no-bypass-resilience
+    patterns:
+      - pattern: reqwest::Client::new().get($URL).send().await
+      - pattern-not: |
+          eel_resilience_rs::...
+    message: >
+      Direct reqwest calls without circuit breaker or bulkhead bypass the
+      resilience layer (ADR-0009). Wrap outbound calls with CircuitBreaker::allow
+      and Bulkhead::acquire.
+    languages: [rust]
+    severity: WARNING
+    metadata:
+      category: resilience
+      adr: "0009"

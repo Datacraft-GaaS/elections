@@ -1,0 +1,40 @@
+rules:
+  - id: no-raw-kafka-producer
+    severity: ERROR
+    languages: [rust]
+    message: >
+      Direct use of rdkafka producers is forbidden outside eel-outbox-rs.
+      Use `eel_outbox_rs::Outbox::emit()` instead so every event goes
+      through the transactional outbox (ADR-0015, EVENT-CONVENTIONS).
+    metadata:
+      category: security
+      cwe: "CWE-693: Protection Mechanism Failure"
+      references:
+        - docs/EVENT-CONVENTIONS.md
+        - docs/adr/0015-cross-service-consistency.md
+    patterns:
+      - pattern: |
+          use rdkafka::producer::$PRODUCER;
+      - pattern: |
+          rdkafka::producer::$PRODUCER::new($...)
+      - pattern: |
+          BaseProducer::new($...)
+      - pattern: |
+          FutureProducer::new($...)
+      - pattern: |
+          ThreadedProducer::new($...)
+      - pattern: |
+          ClientConfig::new().create::<$PRODUCER>()
+    fix: >
+      Replace with `eel_outbox_rs::Outbox::emit(&mut tx, &envelope).await`.
+
+  - id: no-raw-kafka-consumer-produce
+    severity: ERROR
+    languages: [rust]
+    message: >
+      Calling `.send()` on a raw rdkafka producer is forbidden.
+      Route all events through `eel_outbox_rs::Outbox`.
+    metadata:
+      category: security
+    pattern: |
+      $PRODUCER.send($RECORD, $...)
