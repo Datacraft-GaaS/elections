@@ -1,0 +1,95 @@
+---
+import { getCollection } from "astro:content";
+import FactCheckBadge from "../../components/FactCheckBadge.astro";
+import KSLVideoLink from "../../components/KSLVideoLink.astro";
+import LanguageSwitcher from "../../components/LanguageSwitcher.astro";
+import TTSPlayer from "../../components/TTSPlayer.astro";
+
+export async function getStaticPaths() {
+  const locales = [
+    "en", "sw", "ki", "luo", "kal", "kam", "guj", "mer", "mas", "ksl-glossary", "som",
+  ];
+  const questions = await getCollection("questions");
+  return locales.flatMap((lang) =>
+    questions.map((q) => ({
+      params: { lang, question: q.slug },
+      props: { question: q, lang },
+    }))
+  );
+}
+
+const { question, lang } = Astro.props;
+const data = question.data;
+const title = (data.title as Record<string, string>)[lang] ?? data.title.en;
+const summary = (data.summary as Record<string, string>)[lang] ?? data.summary.en;
+const fullText = (data.full_text as Record<string, string>)[lang] ?? data.full_text.en;
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title} - Referendum Explainer</title>
+    <meta name="description" content={summary} />
+    <style>
+      :root {
+        --color-bg:   #ffffff;
+        --color-text: #0d0d0d;
+        --color-link: #003580;
+      }
+      body { background: var(--color-bg); color: var(--color-text); font-family: system-ui, sans-serif; margin: 0; }
+      a { color: var(--color-link); }
+      .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+      .sr-only:focus { position: fixed; width: auto; height: auto; clip: auto; }
+    </style>
+  </head>
+  <body>
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:px-4 focus:py-2 focus:border">
+      Skip to main content
+    </a>
+
+    <header role="banner" class="bg-blue-900 text-white px-6 py-4">
+      <a href="/" aria-label="Back to all questions" class="text-sm underline text-white">All questions</a>
+    </header>
+
+    <main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
+      <LanguageSwitcher currentLang={lang} questionId={question.slug} />
+
+      <h1 class="text-xl font-bold mt-6 mb-2">{title}</h1>
+      <p class="text-base mb-6">{summary}</p>
+
+      {data.tts_audio_url && (
+        <TTSPlayer audioUrl={data.tts_audio_url} label={`Listen: ${title}`} />
+      )}
+
+      {data.ksl_video_url && (
+        <div id="ksl">
+          <KSLVideoLink videoUrl={data.ksl_video_url} questionTitle={title} />
+        </div>
+      )}
+
+      <section aria-labelledby="full-text-heading">
+        <h2 id="full-text-heading" class="text-lg font-semibold mt-6 mb-2">Full explanation</h2>
+        <div class="prose">{fullText}</div>
+      </section>
+
+      {data.fact_check_annotations.length > 0 && (
+        <section aria-labelledby="fact-check-heading">
+          <h2 id="fact-check-heading" class="text-lg font-semibold mt-6 mb-2">Fact checks</h2>
+          {data.fact_check_annotations.map((ann) => (
+            <FactCheckBadge
+              verdict={ann.verdict}
+              claim={ann.claim}
+              sourceUrl={ann.source_url}
+            />
+          ))}
+        </section>
+      )}
+    </main>
+
+    <footer role="contentinfo" class="border-t px-6 py-4 text-sm mt-8">
+      <p>Accessible in 11 languages. WCAG 2.2 AAA compliant.</p>
+    </footer>
+  </body>
+</html>

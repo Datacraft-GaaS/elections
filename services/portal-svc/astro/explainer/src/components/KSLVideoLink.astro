@@ -1,0 +1,25 @@
+---
+interface Props {
+  videoUrl: string;
+  questionTitle: string;
+}
+
+const { videoUrl, questionTitle } = Astro.props;
+---
+
+<div class="my-4 border-l-4 border-blue-600 pl-4">
+  <p class="text-sm font-semibold mb-1">Kenya Sign Language (KSL) version</p>
+  <a
+    href={videoUrl}
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label={`Watch KSL video explanation: ${questionTitle}`}
+    class="inline-flex items-center gap-2 text-blue-800 underline focus:outline-none focus:ring-2 focus:ring-blue-600"
+  >
+    <span aria-hidden="true">▶</span>
+    Watch in KSL
+  </a>
+  <p class="sr-only">
+    Opens a video with Kenya Sign Language interpretation of: {questionTitle}
+  </p>
+</div>

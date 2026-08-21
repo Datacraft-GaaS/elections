@@ -1,0 +1,44 @@
+---
+const locales = [
+  { code: "en",           label: "English" },
+  { code: "sw",           label: "Kiswahili" },
+  { code: "ki",           label: "Gikuyu" },
+  { code: "luo",          label: "Dholuo" },
+  { code: "kal",          label: "Kalenjin" },
+  { code: "kam",          label: "Kamba" },
+  { code: "guj",          label: "Gujarati" },
+  { code: "mer",          label: "Kimeru" },
+  { code: "mas",          label: "Maa" },
+  { code: "ksl-glossary", label: "KSL Glossary" },
+  { code: "som",          label: "Somali" },
+];
+
+interface Props {
+  currentLang: string;
+  questionId: string;
+}
+
+const { currentLang, questionId } = Astro.props;
+---
+
+<nav aria-label="Language switcher">
+  <ul class="flex flex-wrap gap-2 list-none p-0 m-0">
+    {locales.map((locale) => (
+      <li>
+        <a
+          href={`/${locale.code}/${questionId}`}
+          aria-current={locale.code === currentLang ? "page" : undefined}
+          lang={locale.code}
+          hreflang={locale.code}
+          class={`px-3 py-1 rounded border text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 ${
+            locale.code === currentLang
+              ? "bg-blue-900 text-white border-blue-900"
+              : "bg-white text-blue-900 border-blue-400 hover:bg-blue-50"
+          }`}
+        >
+          {locale.label}
+        </a>
+      </li>
+    ))}
+  </ul>
+</nav>

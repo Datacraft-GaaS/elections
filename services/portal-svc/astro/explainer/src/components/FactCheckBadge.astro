@@ -1,0 +1,43 @@
+---
+interface Props {
+  verdict: "true" | "false" | "misleading" | "unverified";
+  claim: string;
+  sourceUrl?: string;
+}
+
+const { verdict, claim, sourceUrl } = Astro.props;
+
+const labels: Record<string, string> = {
+  true: "Verified true",
+  false: "False",
+  misleading: "Misleading",
+  unverified: "Unverified",
+};
+
+const classes: Record<string, string> = {
+  true:       "bg-green-100 text-green-900 border-green-400",
+  false:      "bg-red-100 text-red-900 border-red-400",
+  misleading: "bg-amber-100 text-amber-900 border-amber-400",
+  unverified: "bg-gray-100 text-gray-900 border-gray-400",
+};
+---
+
+<div
+  role="note"
+  aria-label={`Fact-check: ${labels[verdict]}`}
+  class={`border rounded p-3 my-2 text-sm ${classes[verdict]}`}
+>
+  <span class="font-semibold">{labels[verdict]}:</span>
+  {" "}{claim}
+  {sourceUrl && (
+    <a
+      href={sourceUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="ml-2 underline"
+      aria-label={`Source for fact-check: ${claim}`}
+    >
+      Source
+    </a>
+  )}
+</div>

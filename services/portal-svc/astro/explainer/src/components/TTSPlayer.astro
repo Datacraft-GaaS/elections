@@ -1,0 +1,23 @@
+---
+interface Props {
+  audioUrl: string;
+  label?: string;
+}
+
+const { audioUrl, label = "Listen to audio description" } = Astro.props;
+---
+
+<div class="my-4">
+  <p id="tts-label" class="text-sm font-medium mb-1">{label}</p>
+  <audio
+    controls
+    aria-labelledby="tts-label"
+    class="w-full"
+  >
+    <source src={audioUrl} type="audio/mpeg" />
+    <p>
+      Your browser does not support audio playback.
+      <a href={audioUrl} download>Download the audio file</a>.
+    </p>
+  </audio>
+</div>

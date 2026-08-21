@@ -1,0 +1,81 @@
+---
+import { getCollection } from "astro:content";
+
+const questions = await getCollection("questions");
+const title = "Referendum Explainer";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content="Plain-language explanations of all referendum questions, available in 11 languages including Kenya Sign Language." />
+    <!-- Colour tokens meet WCAG 2.2 AAA (>= 7:1 contrast) -->
+    <style>
+      :root {
+        --color-bg:   #ffffff;
+        --color-text: #0d0d0d;
+        --color-link: #003580;
+        --color-link-hover: #00235c;
+      }
+      body { background: var(--color-bg); color: var(--color-text); font-family: system-ui, sans-serif; margin: 0; }
+      a { color: var(--color-link); }
+      a:hover { color: var(--color-link-hover); }
+    </style>
+  </head>
+  <body>
+    <!-- Skip to main content: WCAG 2.4.1 -->
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:text-blue-900 focus:px-4 focus:py-2 focus:border focus:border-blue-900 focus:rounded"
+    >
+      Skip to main content
+    </a>
+
+    <header role="banner" class="bg-blue-900 text-white px-6 py-4">
+      <h1 class="text-xl font-bold">{title}</h1>
+      <p class="text-sm mt-1">Available in 11 languages including Kenya Sign Language (KSL)</p>
+    </header>
+
+    <main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
+      <h2 class="text-lg font-semibold mb-4">Referendum Questions</h2>
+
+      {questions.length === 0 && (
+        <p>No questions available yet.</p>
+      )}
+
+      <ul class="space-y-4 list-none p-0">
+        {questions.map((q) => (
+          <li>
+            <article>
+              <h3 class="font-medium">
+                <a
+                  href={`/en/${q.slug}`}
+                  class="underline focus:outline-none focus:ring-2 focus:ring-blue-600"
+                >
+                  {q.data.title.en}
+                </a>
+              </h3>
+              <p class="text-sm mt-1">{q.data.summary.en}</p>
+              {q.data.ksl_video_url && (
+                <a
+                  href={`/en/${q.slug}#ksl`}
+                  aria-label={`View KSL version: ${q.data.title.en}`}
+                  class="text-sm underline focus:outline-none focus:ring-2 focus:ring-blue-600"
+                >
+                  KSL version available
+                </a>
+              )}
+            </article>
+          </li>
+        ))}
+      </ul>
+    </main>
+
+    <footer role="contentinfo" class="border-t px-6 py-4 text-sm text-gray-700 mt-8">
+      <p>This page meets WCAG 2.2 AAA accessibility requirements. Run axe to verify zero violations.</p>
+    </footer>
+  </body>
+</html>

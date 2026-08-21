@@ -30,6 +30,8 @@ exclude = [
   "tools/dr-failover",
   # custody: uuid6 not on crates.io (in-flight)
   "services/inventory-svc/crates/custody",
+  # diaspora: WP-5.8 in-flight, pending workspace deps
+  "services/biometric-edge-svc/crates/diaspora",
   # support-admin-svc: nested workspace owns these crates
   "services/support-admin-svc/crates/budget",
   "services/support-admin-svc/crates/payroll",
@@ -105,6 +107,7 @@ oqs             = { version = "0.9",  features = ["mlkem768", "mldsa65"] }
 
 # IDs
 uuid            = { version = "1",    features = ["v4", "v7", "serde"] }
+blake3          = { version = "1" }
 uuid6           = { version = "0.7" }
 
 # Error handling

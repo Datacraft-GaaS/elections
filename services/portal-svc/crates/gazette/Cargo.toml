@@ -1,0 +1,33 @@
+[package]
+name            = "eel-portal-gazette"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description     = "eel portal-svc: election calendar and gazette (M52)"
+
+[lib]
+name = "eel_portal_gazette"
+path = "src/lib.rs"
+
+[dependencies]
+axum            = { workspace = true }
+tokio           = { workspace = true }
+sqlx            = { workspace = true }
+utoipa          = { workspace = true }
+serde           = { workspace = true }
+serde_json      = { workspace = true }
+uuid            = { workspace = true }
+chrono          = { workspace = true }
+thiserror       = { workspace = true }
+tracing         = { workspace = true }
+tower-http      = { workspace = true }
+reqwest         = { workspace = true }
+eel-events-rs   = { path = "../../../../packages/eel-events-rs" }
+eel-outbox-rs   = { path = "../../../../packages/eel-outbox-rs" }
+eel-crypto-rs   = { path = "../../../../packages/eel-crypto-rs" }
+eel-auth-rs     = { path = "../../../../packages/eel-auth-rs" }
+
+[dev-dependencies]
+tokio           = { workspace = true, features = ["full"] }
+rstest          = { workspace = true }
