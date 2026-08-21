@@ -2,6 +2,7 @@ packages:
   - 'packages/*'
   - 'packages/design-system/*'
   - 'packages/api-clients/*'
+  - 'services/*/astro/*'
 allowBuilds:
   esbuild: true
   sharp: true

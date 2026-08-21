@@ -1,0 +1,140 @@
+# TRACEABILITY.yaml — portal-svc (WP-3.9, M11)
+# Maps functional requirements to implementation paths.
+
+service: portal-svc
+module: M11
+work_package: WP-3.9
+version: "1.0"
+
+spec_ref: docs/plans/modules/public-portal.md
+adr_refs:
+  - docs/adr/0008-portal-stack.md
+  - docs/adr/0010-edge-ddos.md
+  - docs/adr/0011-public-api-surface.md
+  - docs/adr/0017-transparency-log.md
+
+requirements:
+
+  - id: FR-M11-001
+    summary: Home dashboard, national totals, turnout, last-updated.
+    impl:
+      - services/portal-svc/astro/public/src/pages/index.astro
+    test:
+      - services/portal-svc/astro/public/src/test/snapshot.test.js (stale-label logic)
+
+  - id: FR-M11-002
+    summary: Drill-down navigation national to station.
+    impl:
+      - services/portal-svc/astro/public/src/pages/constituency/[code].astro
+      - services/portal-svc/astro/public/src/pages/station/[code].astro
+
+  - id: FR-M11-003
+    summary: Per-station page with signed Form 34A, tally, Merkle proof.
+    impl:
+      - services/portal-svc/astro/public/src/pages/station/[code].astro
+      - services/portal-svc/crates/portal-api/src/lib.rs (snapshot_verify handler)
+    test:
+      - services/portal-svc/crates/portal-api/tests/integration_test.rs (merkle_proof_json_shape)
+
+  - id: FR-M11-006
+    summary: Transparency dashboard with Merkle roots and inclusion proofs.
+    impl:
+      - services/portal-svc/astro/public/src/pages/transparency.astro
+    test:
+      - services/portal-svc/crates/portal-api/tests/health_test.rs (merkle_proof_round_trip)
+
+  - id: FR-M11-007
+    summary: Historical snapshot access, append-only.
+    impl:
+      - services/portal-svc/astro/public/src/pages/history/index.astro
+      - services/portal-svc/migrations/V2__snapshot_index.sql
+
+  - id: FR-M11-011
+    summary: Inclusion-proof retrieval verifiable client-side via WASM.
+    impl:
+      - services/portal-svc/crates/portal-api/src/lib.rs (snapshot_verify)
+      - services/portal-svc/astro/public/src/pages/transparency.astro (verifier-rs WASM)
+    test:
+      - services/portal-svc/crates/portal-api/tests/integration_test.rs (merkle_proof_json_shape)
+
+  - id: FR-M11-013
+    summary: RSS feed of published snapshots.
+    impl:
+      - services/portal-svc/astro/public/src/pages/rss.xml.ts
+    test:
+      - services/portal-svc/astro/public/src/test/snapshot.test.js (i18n: all locales produce rss.title)
+
+  - id: FR-M11-022
+    summary: 5M visitors/hour peak, p95 <= 200 ms, p99 <= 500 ms.
+    impl:
+      - services/portal-svc/loadtest/k6_portal.js
+    test:
+      - services/portal-svc/loadtest/k6_portal.js (thresholds)
+
+  - id: FR-M11-024
+    summary: Cache keys include Merkle root and signature version.
+    impl:
+      - services/portal-svc/crates/portal-api/src/lib.rs (signing_headers)
+    test:
+      - services/portal-svc/crates/portal-api/tests/health_test.rs (snapshot_response_carries_signing_headers)
+      - services/portal-svc/astro/public/src/test/snapshot.test.js (cache-key builder)
+      - services/portal-svc/crates/portal-api/tests/integration_test.rs (cache_poisoning_defence)
+
+  - id: FR-M11-026
+    summary: No PII on any endpoint.
+    impl:
+      - services/portal-svc/crates/portal-api/src/lib.rs (SnapshotSummary, MerkleProofResponse)
+    test:
+      - services/portal-svc/ex/portal_live/test/portal_live_test.exs (no PII in snapshot message)
+
+  - id: FR-M11-027
+    summary: Rate limit on proof and bulk-download endpoints.
+    impl:
+      - services/portal-svc/crates/portal-api/src/lib.rs (Tower middleware layer; edge: ADR-0010)
+    test:
+      - services/portal-svc/crates/portal-api/tests/integration_test.rs (burst_does_not_produce_5xx)
+
+  - id: FR-M11-033
+    summary: Multilingual, 11 languages.
+    impl:
+      - services/portal-svc/astro/public/src/i18n/locales.js
+      - services/portal-svc/astro/public/astro.config.mjs (i18n config)
+    test:
+      - services/portal-svc/astro/public/src/test/snapshot.test.js (11-language coverage)
+
+  - id: FR-M11-034
+    summary: WCAG 2.2 AA.
+    impl:
+      - services/portal-svc/astro/public/src/pages/index.astro (skip-link, ARIA landmarks)
+      - services/portal-svc/astro/public/src/pages/transparency.astro
+    test:
+      - services/portal-svc/tests/axe_wcag.js
+
+acceptance_criteria:
+  - id: AC-M11-01
+    summary: p95 <= 200 ms at scaled 5M/hr
+    test: services/portal-svc/loadtest/k6_portal.js
+
+  - id: AC-M11-02
+    summary: Inclusion proof verified within 30 s
+    test: services/portal-svc/crates/portal-api/tests/integration_test.rs
+
+  - id: AC-M11-05
+    summary: Cache-poisoning attempt blocked
+    test:
+      - services/portal-svc/crates/portal-api/tests/integration_test.rs
+      - services/portal-svc/astro/public/src/test/snapshot.test.js
+
+  - id: AC-M11-07
+    summary: WCAG 2.2 AA, axe zero violations
+    test: services/portal-svc/tests/axe_wcag.js
+
+  - id: AC-M11-10
+    summary: No PII in any published surface
+    test:
+      - services/portal-svc/ex/portal_live/test/portal_live_test.exs
+      - services/portal-svc/data_dictionary.yaml (all pii: false)
+
+  - id: AC-M11-11
+    summary: 11-language smoke test
+    test: services/portal-svc/astro/public/src/test/snapshot.test.js

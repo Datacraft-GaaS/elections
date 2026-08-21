@@ -1,0 +1,115 @@
+# data_dictionary.yaml — portal-svc (WP-3.9, M11)
+# Data classes: C = non-personal public, D = derived/aggregate.
+# No PII (FR-M11-026, ADR-0016).
+
+service: portal-svc
+module: M11
+version: "1.0"
+
+entities:
+
+  - name: SnapshotSummary
+    data_class: C
+    store: snapshot_index (PostgreSQL T1)
+    pii: false
+    fields:
+      - name: snapshot_id
+        type: UUID
+        description: Unique identifier for the published snapshot.
+      - name: merkle_root
+        type: hex string (64 chars)
+        description: SHA-256 Merkle root of the tally tree at publication time.
+      - name: sig
+        type: base64url
+        description: Ed25519 cosign signature over canonical_json(snapshot).
+      - name: published_at
+        type: RFC 3339 timestamp
+        description: Wall-clock time of publication (UTC).
+      - name: scope
+        type: enum
+        values: [national, presidential, county, constituency, ward, county_assembly]
+        description: Electoral scope.
+      - name: scope_code
+        type: string or null
+        description: IEBC scope code; null for national.
+      - name: position_code
+        type: string
+        description: Elective position, e.g. presidential, governor, senator.
+      - name: stale
+        type: boolean
+        description: True when last-updated exceeds 60 s staleness threshold.
+
+  - name: MerkleProofResponse
+    data_class: D
+    store: derived from transparency log (ADR-0017)
+    pii: false
+    fields:
+      - name: snapshot_id
+        type: UUID
+        description: The snapshot this proof belongs to.
+      - name: leaf_index
+        type: uint64
+        description: 0-based leaf index in the Merkle tree.
+      - name: leaf_hash
+        type: hex string (64 chars)
+        description: SHA-256 hash of the leaf entry.
+      - name: siblings
+        type: list of hex strings
+        description: Sibling hashes for inclusion proof path.
+      - name: root
+        type: hex string (64 chars)
+        description: Claimed Merkle root; must match STH.
+      - name: sth_sig
+        type: base64url
+        description: HSM-signed Signed Tree Head signature.
+      - name: tree_size
+        type: uint64
+        description: Tree size at the time the STH was issued.
+      - name: verified
+        type: boolean
+        description: True if verifier-rs confirmed proof against the STH.
+
+  - name: CacheControlHint
+    data_class: D
+    store: cache_control_hints (PostgreSQL T1)
+    pii: false
+    fields:
+      - name: snapshot_id
+        type: UUID
+      - name: merkle_root
+        type: hex string (64 chars)
+      - name: max_age_seconds
+        type: integer
+        description: HTTP Cache-Control max-age value.
+      - name: s_maxage_seconds
+        type: integer
+        description: Shared cache (CDN) max-age.
+      - name: petition_day
+        type: integer or null
+        description: Days since national declaration (null = pre-declaration).
+
+  - name: ViewerSessionMetrics
+    data_class: D
+    store: viewer_session_metrics (PostgreSQL T1)
+    pii: false
+    description: >
+      Aggregate per-minute request counters. No IP addresses, no session tokens,
+      no individual identifiers. Complies with ADR-0016.
+    fields:
+      - name: bucket_at
+        type: RFC 3339 timestamp (truncated to minute)
+      - name: endpoint
+        type: string
+      - name: http_status_class
+        type: enum
+        values: ['2xx', '3xx', '4xx', '5xx']
+      - name: request_count
+        type: uint64
+      - name: p95_ms
+        type: integer or null
+      - name: p99_ms
+        type: integer or null
+      - name: cache_hits
+        type: uint64
+      - name: cache_misses
+        type: uint64

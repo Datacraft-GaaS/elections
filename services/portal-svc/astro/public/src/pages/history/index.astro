@@ -1,0 +1,33 @@
+---
+// Historical snapshots index (FR-M11-007): append-only; no overwrites.
+const locale = Astro.currentLocale ?? 'en'
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Historical Snapshots | eel</title>
+  </head>
+  <body>
+    <a href="#main" class="skip-link">Skip to main content</a>
+    <header><nav><a href="/">Home</a> <a href="/transparency">Transparency Log</a></nav></header>
+    <main id="main" tabindex="-1">
+      <h1>Historical Snapshots</h1>
+      <p>Each snapshot is append-only, cosign-signed, and independently verifiable.</p>
+      <p>
+        Snapshots are also available for bulk download:
+        <a href="/api/v1/portal/snapshots/bulk.tar.gz">signed Parquet + CSV</a>.
+      </p>
+      <ul id="snapshot-list">
+        <li>No snapshots published yet.</li>
+      </ul>
+    </main>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 960px; margin: 0 auto; padding: 1rem; }
+      .skip-link { position: absolute; left: -9999px; }
+      .skip-link:focus { left: 0; background: #000; color: #fff; padding: .5rem 1rem; z-index: 100; }
+    </style>
+  </body>
+</html>

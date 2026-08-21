@@ -1,0 +1,40 @@
+---
+// Station view: signed Form 34A image, per-candidate tally, Merkle-inclusion proof (FR-M11-003).
+
+export async function getStaticPaths() {
+  // Production: derive from signed tarball via eel-web-astro loader.
+  return []
+}
+
+const { code } = Astro.params
+const locale = Astro.currentLocale ?? 'en'
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Station {code} Results | eel</title>
+  </head>
+  <body>
+    <a href="#main" class="skip-link">Skip to main content</a>
+    <header><nav><a href="/">Home</a></nav></header>
+    <main id="main" tabindex="-1">
+      <h1>Polling Station <code>{code}</code></h1>
+      <section aria-labelledby="h-form">
+        <h2 id="h-form">Form 34A</h2>
+        <p>Signed form image and tally will appear once the station publishes.</p>
+      </section>
+      <section aria-labelledby="h-proof">
+        <h2 id="h-proof">Merkle Inclusion Proof</h2>
+        <p><a href="/transparency">Open the transparency log viewer to verify this station.</a></p>
+      </section>
+    </main>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 960px; margin: 0 auto; padding: 1rem; }
+      .skip-link { position: absolute; left: -9999px; }
+      .skip-link:focus { left: 0; background: #000; color: #fff; padding: .5rem 1rem; z-index: 100; }
+    </style>
+  </body>
+</html>

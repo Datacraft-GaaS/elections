@@ -1,0 +1,97 @@
+---
+// Home page: national tally (FR-M11-001).
+// Renders from signed publication tarballs produced by WP-3.1 rts-publisher.
+// No PII (FR-M11-026). WCAG 2.2 AA (AC-M11-07).
+// Petition-window cache rules applied at edge (ADR-0010).
+
+const locale = Astro.currentLocale ?? 'en'
+
+// In production this data comes from the signed snapshot loader
+// (packages/eel-web-astro) which cosign-verifies the tarball before render.
+const snapshot = {
+  snapshot_id: '00000000-0000-0000-0000-000000000000',
+  merkle_root: '0'.repeat(64),
+  published_at: new Date().toISOString(),
+  stale: false,
+  positions: [],
+}
+---
+
+<!doctype html>
+<html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <!-- CSP nonce injected by edge per ADR-0010; placeholder here -->
+    <meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'nonce-EDGE_NONCE'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'" />
+    <title>Election Results | eel</title>
+    <link rel="alternate" type="application/rss+xml" title="Election Results Feed" href="/rss.xml" />
+  </head>
+  <body>
+    <a href="#main" class="skip-link">Skip to main content</a>
+
+    <header role="banner">
+      <nav aria-label="Primary navigation">
+        <a href="/">Results</a>
+        <a href="/transparency">Transparency Log</a>
+        <a href="/history">Snapshots</a>
+      </nav>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <h1>Election Results</h1>
+
+      {snapshot.stale && (
+        <div role="alert" aria-live="assertive" class="stale-warning">
+          Data may be stale. Last update: {snapshot.published_at}
+        </div>
+      )}
+
+      <section aria-labelledby="h-national">
+        <h2 id="h-national">National Tally</h2>
+        <dl>
+          <dt>Merkle root</dt>
+          <dd><code>{snapshot.merkle_root}</code></dd>
+          <dt>Published</dt>
+          <dd><time datetime={snapshot.published_at}>{snapshot.published_at}</time></dd>
+          <dt>Snapshot ID</dt>
+          <dd><code>{snapshot.snapshot_id}</code></dd>
+        </dl>
+
+        {snapshot.positions.length === 0 && (
+          <p>Results not yet published. Check back after the official announcement.</p>
+        )}
+      </section>
+
+      <section aria-labelledby="h-downloads">
+        <h2 id="h-downloads">Bulk Downloads</h2>
+        <ul>
+          <li>
+            <a href="/api/v1/portal/snapshots/bulk.tar.gz">
+              Signed Parquet + CSV (latest snapshot)
+            </a>
+          </li>
+        </ul>
+      </section>
+    </main>
+
+    <footer>
+      <p>All results independently verifiable via the <a href="/transparency">transparency log</a>.</p>
+    </footer>
+  </body>
+</html>
+
+<style>
+  /* Minimal reset; page weight target < 200 KB on 3G (FR-M11-035) */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; max-width: 960px; margin: 0 auto; padding: 1rem; }
+  .skip-link { position: absolute; left: -9999px; }
+  .skip-link:focus { left: 0; background: #000; color: #fff; padding: .5rem 1rem; z-index: 100; }
+  .stale-warning { background: #ffe; border: 2px solid #c80; padding: 1rem; border-radius: 4px; }
+  nav a { margin-right: 1rem; }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: .25rem 1rem; }
+  code { font-family: monospace; word-break: break-all; }
+</style>
