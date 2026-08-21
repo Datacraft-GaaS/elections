@@ -1,0 +1,17 @@
+work_package: WP-2.1
+name: transparency-svc
+adrs: [0013, 0015, 0017, 0022]
+personas: []
+modules: []
+crates:
+  - tlog-domain
+  - tlog-sequencer
+  - tlog-ingest
+  - tlog-witness
+  - tlog-api
+  - tlog-admin
+events_emitted:
+  - eel.transparency.leaf_appended.v1
+  - eel.transparency.tree_head_signed.v1
+  - eel.transparency.witness_cosigned.v1
+  - eel.transparency.split_view_detected.v1

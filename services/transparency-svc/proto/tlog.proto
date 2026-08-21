@@ -1,0 +1,75 @@
+syntax = "proto3";
+package eel.transparency.v1;
+
+service TransparencyLog {
+    rpc AppendLeaf(LeafRequest) returns (InclusionProofResponse);
+    rpc GetProof(ProofQuery) returns (ProofResponse);
+    rpc GetSth(SthQuery) returns (SignedTreeHeadResponse);
+    rpc SubscribeSth(SthQuery) returns (stream SignedTreeHeadResponse);
+}
+
+message LeafRequest {
+    string domain = 1;
+    bytes canonical_event_json = 2;
+    string producer_spiffe_id = 3;
+    string source_event_id = 4;
+    string source_topic = 5;
+    int64 event_time_us = 6;
+    bytes producer_signature = 7;
+}
+
+message InclusionProofResponse {
+    uint64 leaf_index = 1;
+    uint64 tree_size = 2;
+    string root_hash = 3;
+    repeated string hashes = 4;
+    bool rate_limited = 5;
+}
+
+message ProofQuery {
+    oneof query {
+        InclusionQuery inclusion = 1;
+        ConsistencyQuery consistency = 2;
+    }
+}
+
+message InclusionQuery {
+    string leaf_hash = 1;
+}
+
+message ConsistencyQuery {
+    uint64 from_size = 1;
+    uint64 to_size = 2;
+}
+
+message ProofResponse {
+    oneof proof {
+        InclusionProofResponse inclusion = 1;
+        ConsistencyProofResponse consistency = 2;
+    }
+}
+
+message ConsistencyProofResponse {
+    uint64 old_size = 1;
+    uint64 new_size = 2;
+    string old_root = 3;
+    string new_root = 4;
+    repeated string hashes = 5;
+}
+
+message SthQuery {
+    optional uint64 tree_size = 1;
+    optional string cadence = 2;
+}
+
+message SignedTreeHeadResponse {
+    string id = 1;
+    uint64 tree_size = 2;
+    string root_hash = 3;
+    string cadence = 4;
+    int64 signed_at_us = 5;
+    string signature = 6;
+    string key_role = 7;
+    string key_fingerprint = 8;
+    optional string domain = 9;
+}

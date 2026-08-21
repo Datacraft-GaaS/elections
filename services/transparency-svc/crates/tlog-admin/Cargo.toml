@@ -1,0 +1,33 @@
+[package]
+name = "tlog-admin"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Admin CLI for the eel transparency log (WP-2.1)"
+
+[[bin]]
+name = "tlog-admin"
+path = "src/main.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+tlog-domain = { path = "../tlog-domain" }
+eel-crypto-rs = { path = "../../../../packages/eel-crypto-rs" }
+
+clap = { version = "4", features = ["derive"] }
+sqlx = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+anyhow = { workspace = true }
+hex = "0.4"
+reqwest = { version = "0.12", features = ["rustls-tls", "json"], default-features = false }

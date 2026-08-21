@@ -1,0 +1,40 @@
+[package]
+name = "tlog-api"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "REST + gRPC API for the eel transparency log (WP-2.1)"
+
+[[bin]]
+name = "tlog-api"
+path = "src/main.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[build-dependencies]
+tonic-build = { workspace = true }
+
+[dependencies]
+tlog-domain = { path = "../tlog-domain" }
+tlog-sequencer = { path = "../tlog-sequencer" }
+
+axum = { workspace = true }
+tonic = { workspace = true }
+prost = "0.13"
+tokio = { workspace = true }
+tokio-stream = { workspace = true }
+sqlx = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+utoipa = { workspace = true }
+utoipa-swagger-ui = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+anyhow = { workspace = true }
+hex = "0.4"

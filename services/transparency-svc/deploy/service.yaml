@@ -1,23 +1,80 @@
-# deploy/service.yaml — filled by the service owner (WP-1.9 template)
-# Fields: name, image, artifacts, sites, strategy, replicas
 name: transparency-svc
-image: harbor.eel.internal/eel/transparency-svc
-artifacts: []
-# sites: leave empty to deploy to all 7 sites (primary, mirror, edge-*)
-sites: []
-strategy:
-  primary: blue-green
-  mirror:  blue-green
-  edge-nairobi:  rolling
-  edge-mombasa:  rolling
-  edge-kisumu:   rolling
-  edge-eldoret:  rolling
-  edge-garissa:  rolling
+team: trust-core
+wave: 2
+priority: 5
+
+images:
+  tlog-api:
+    binary: tlog-api
+    port: 8080
+    protocol: [http, grpc]
+  tlog-sequencer:
+    binary: tlog-sequencer
+    port: 9090
+    protocol: [grpc]
+  tlog-ingest:
+    binary: tlog-ingest
+    port: 9091
+    protocol: [internal]
+  tlog-witness:
+    binary: tlog-witness
+    port: 8082
+    protocol: [http]
+
 replicas:
-  primary:       3
-  mirror:        3
-  edge-nairobi:  2
-  edge-mombasa:  2
-  edge-kisumu:   2
-  edge-eldoret:  2
-  edge-garissa:  2
+  tlog-api: 3
+  tlog-sequencer: 3
+  tlog-ingest: 2
+  tlog-witness: 2
+
+sites:
+  - primary
+  - mirror
+
+strategy: blue-green
+
+health:
+  readiness: /api/v1/transparency/health
+  liveness:  /api/v1/transparency/health
+
+resources:
+  tlog-api:
+    requests: { cpu: "500m", memory: "512Mi" }
+    limits:   { cpu: "2",    memory: "2Gi" }
+  tlog-sequencer:
+    requests: { cpu: "1",    memory: "1Gi" }
+    limits:   { cpu: "4",    memory: "4Gi" }
+  tlog-ingest:
+    requests: { cpu: "500m", memory: "512Mi" }
+    limits:   { cpu: "2",    memory: "2Gi" }
+  tlog-witness:
+    requests: { cpu: "250m", memory: "256Mi" }
+    limits:   { cpu: "1",    memory: "1Gi" }
+
+kafka:
+  topics:
+    consume:
+      - eel.voter-events
+      - eel.results-events
+      - eel.custody-events
+      - eel.credential-events
+      - eel.meta-events
+    produce:
+      - eel.transparency.tree_head_signed.v1
+      - eel.transparency.witness_cosigned.v1
+      - eel.transparency.split_view_detected.v1
+      - eel.transparency.leaf_appended.v1
+      - "*.tamper"
+
+storage:
+  postgres:
+    cluster: t1-consensus
+    database: eel_tlog
+    migrations: migrations/
+  minio:
+    bucket: eel-tlog-snapshots
+    snapshot_interval_minutes: 15
+
+spiffe:
+  trust_domain: spiffe://eel.local
+  service_id: spiffe://eel.local/transparency-svc

@@ -1,0 +1,37 @@
+[package]
+name = "tlog-ingest"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Kafka ingest consumer for the eel transparency log (WP-2.1)"
+
+[[bin]]
+name = "tlog-ingest"
+path = "src/main.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[build-dependencies]
+cc = "1"
+
+[dependencies]
+tlog-domain = { path = "../tlog-domain" }
+tlog-sequencer = { path = "../tlog-sequencer" }
+eel-events-rs = { path = "../../../../packages/eel-events-rs" }
+eel-crypto-rs = { path = "../../../../packages/eel-crypto-rs" }
+
+rdkafka = { workspace = true }
+sqlx = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+anyhow = { workspace = true }
+hex = "0.4"
