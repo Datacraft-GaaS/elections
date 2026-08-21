@@ -1,0 +1,67 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: eel-support-admin-svc
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    eel.internal/rollout-strategy: canary
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - site: primary
+            cluster: https://kubernetes.default.svc
+            namespace: support-admin-svc
+          - site: mirror
+            cluster: https://mirror.eel.internal:6443
+            namespace: support-admin-svc
+          - site: edge-nairobi
+            cluster: https://edge-nairobi.eel.internal:6443
+            namespace: support-admin-svc
+          - site: edge-mombasa
+            cluster: https://edge-mombasa.eel.internal:6443
+            namespace: support-admin-svc
+          - site: edge-kisumu
+            cluster: https://edge-kisumu.eel.internal:6443
+            namespace: support-admin-svc
+          - site: edge-eldoret
+            cluster: https://edge-eldoret.eel.internal:6443
+            namespace: support-admin-svc
+          - site: edge-garissa
+            cluster: https://edge-garissa.eel.internal:6443
+            namespace: support-admin-svc
+  template:
+    metadata:
+      name: "eel-support-admin-svc-{{.site}}"
+      annotations:
+        argocd.argoproj.io/sync-wave: "2"
+        eel.internal/rollout-strategy: canary
+      labels:
+        eel.internal/service: support-admin-svc
+        eel.internal/site: "{{.site}}"
+        eel.internal/election-critical: "false"
+    spec:
+      project: eel-cycle-critical
+      source:
+        repoURL: https://gitea.internal/eel/eel
+        targetRevision: HEAD
+        path: services/support-admin-svc/deploy/overlays/{{.site}}
+      destination:
+        server: "{{.cluster}}"
+        namespace: "{{.namespace}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m

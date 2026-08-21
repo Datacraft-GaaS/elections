@@ -1,0 +1,67 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: eel-ecc-svc
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    eel.internal/rollout-strategy: canary
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - site: primary
+            cluster: https://kubernetes.default.svc
+            namespace: ecc-svc
+          - site: mirror
+            cluster: https://mirror.eel.internal:6443
+            namespace: ecc-svc
+          - site: edge-nairobi
+            cluster: https://edge-nairobi.eel.internal:6443
+            namespace: ecc-svc
+          - site: edge-mombasa
+            cluster: https://edge-mombasa.eel.internal:6443
+            namespace: ecc-svc
+          - site: edge-kisumu
+            cluster: https://edge-kisumu.eel.internal:6443
+            namespace: ecc-svc
+          - site: edge-eldoret
+            cluster: https://edge-eldoret.eel.internal:6443
+            namespace: ecc-svc
+          - site: edge-garissa
+            cluster: https://edge-garissa.eel.internal:6443
+            namespace: ecc-svc
+  template:
+    metadata:
+      name: "eel-ecc-svc-{{.site}}"
+      annotations:
+        argocd.argoproj.io/sync-wave: "2"
+        eel.internal/rollout-strategy: canary
+      labels:
+        eel.internal/service: ecc-svc
+        eel.internal/site: "{{.site}}"
+        eel.internal/election-critical: "false"
+    spec:
+      project: eel-cycle-critical
+      source:
+        repoURL: https://gitea.internal/eel/eel
+        targetRevision: HEAD
+        path: services/ecc-svc/deploy/overlays/{{.site}}
+      destination:
+        server: "{{.cluster}}"
+        namespace: "{{.namespace}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m

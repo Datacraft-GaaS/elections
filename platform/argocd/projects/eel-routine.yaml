@@ -1,0 +1,51 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: eel-routine
+  namespace: argocd
+spec:
+  description: Routine services (field-mobile, hello)
+  sourceRepos:
+    - https://gitea.internal/eel/eel
+    - https://harbor.eel.internal/chartrepo/eel
+  destinations:
+    - namespace: field-mobile-svc
+      server: "*"
+    - namespace: hello-svc
+      server: "*"
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+    - group: cilium.io
+      kind: CiliumNetworkPolicy
+    - group: argoproj.io
+      kind: Rollout
+    - group: argoproj.io
+      kind: AnalysisTemplate
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  roles:
+    - name: admin
+      description: Full admin for routine services
+      policies:
+        - p, proj:eel-routine:admin, applications, *, eel-routine/*, allow
+        - p, proj:eel-routine:admin, repositories, *, *, allow
+      groups:
+        - eel-platform-admins
+    - name: operator
+      description: Sync and get access for routine services
+      policies:
+        - p, proj:eel-routine:operator, applications, sync, eel-routine/*, allow
+        - p, proj:eel-routine:operator, applications, get, eel-routine/*, allow
+        - p, proj:eel-routine:operator, applications, action/*, eel-routine/*, allow
+      groups:
+        - eel-deployers
+    - name: read-only
+      description: Read-only access to routine services
+      policies:
+        - p, proj:eel-routine:read-only, applications, get, eel-routine/*, allow
+      groups:
+        - eel-observers

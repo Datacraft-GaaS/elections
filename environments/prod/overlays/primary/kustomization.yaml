@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: []
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 3
+    target:
+      kind: Deployment
+      labelSelector: "eel.internal/site=primary"
+  # election-day-mode flag patch (enabled T-1 through T+1 via ConfigMap ref)
+  - patch: |-
+      - op: replace
+        path: /data/election-day-mode-enabled
+        value: "false"
+    target:
+      kind: ConfigMap
+      name: eel-election-day-mode
+labels:
+  - pairs:
+      eel.internal/site: primary
+      eel.internal/environment: prod
+    includeSelectors: false

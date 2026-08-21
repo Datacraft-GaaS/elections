@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: []
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+    target:
+      kind: Deployment
+      labelSelector: "eel.internal/site=edge-kisumu"
+  - patch: |-
+      - op: add
+        path: /metadata/labels/load-profile
+        value: "5x"
+    target:
+      kind: Deployment
+      labelSelector: "eel.internal/site=edge-kisumu"
+labels:
+  - pairs:
+      eel.internal/site: edge-kisumu
+      eel.internal/environment: pre-prod
+      load-profile: "5x"
+    includeSelectors: false

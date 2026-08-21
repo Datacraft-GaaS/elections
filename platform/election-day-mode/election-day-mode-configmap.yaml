@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eel-election-day-mode
+  namespace: argocd
+  labels:
+    eel.internal/managed-by: election-day-mode
+  annotations:
+    eel.internal/description: >
+      Global election-day-mode flag. Default disabled. Toggled by the Chair HSM-signed
+      procedure (dual SVID sign-off) documented in toggle-runbook.md.
+      Hierarchy: global (this ConfigMap) -> service opt-in -> module.
+data:
+  election-day-mode-enabled: "false"
+  # T-day ISO-8601 date set by the toggle procedure; empty when not in election period
+  election-day: ""
+  # Freeze window bounds (RFC3339); set alongside election-day-mode-enabled: "true"
+  freeze-start: ""
+  freeze-end: ""

@@ -1,0 +1,66 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: eel-canary-template
+  namespace: argocd
+  annotations:
+    eel.internal/rollout-class: canary
+    eel.internal/target-services: ai-platform-svc,crms-svc,ecc-svc,field-mobile-svc,governance-svc,inventory-svc,queue-svc,support-admin-svc,training-svc,vprs-svc
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: eel-service
+  template:
+    metadata:
+      labels:
+        app: eel-service
+    spec:
+      containers:
+        - name: service
+          image: harbor.eel.internal/eel/service:latest
+          ports:
+            - containerPort: 8080
+  strategy:
+    canary:
+      # Traffic split steps: 10% -> 25% -> 50% -> 100%
+      steps:
+        - setWeight: 10
+        - pause:
+            duration: 3m
+        - analysis:
+            templates:
+              - templateName: eel-slo-gate
+            args:
+              - name: service-name
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.name
+        - setWeight: 25
+        - pause:
+            duration: 3m
+        - analysis:
+            templates:
+              - templateName: eel-slo-gate
+            args:
+              - name: service-name
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.name
+        - setWeight: 50
+        - pause:
+            duration: 3m
+        - analysis:
+            templates:
+              - templateName: eel-slo-gate
+            args:
+              - name: service-name
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.name
+        - setWeight: 100
+      canaryService: eel-service-canary
+      stableService: eel-service-stable
+      trafficRouting:
+        managedRoutes:
+          - name: eel-service-canary

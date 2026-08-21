@@ -1,0 +1,52 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: eel-blue-green-template
+  namespace: argocd
+  annotations:
+    eel.internal/rollout-class: blue-green
+    eel.internal/target-services: rts-svc,bvr-svc,abis-svc,bvi-svc,biometric-edge-svc,boundary-svc,transparency-svc,portal-svc
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: eel-service
+  template:
+    metadata:
+      labels:
+        app: eel-service
+    spec:
+      containers:
+        - name: service
+          image: harbor.eel.internal/eel/service:latest
+          ports:
+            - containerPort: 8080
+  strategy:
+    blueGreen:
+      # Active service receives live traffic; preview service receives pre-promotion traffic
+      activeService: eel-service-active
+      previewService: eel-service-preview
+      # Automatically promote after analysis passes
+      autoPromotionEnabled: false
+      # Wait for analysis before promotion
+      prePromotionAnalysis:
+        templates:
+          - templateName: eel-slo-gate
+        args:
+          - name: service-name
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+      # Analysis window: 5 minutes
+      postPromotionAnalysis:
+        templates:
+          - templateName: eel-slo-gate
+        args:
+          - name: service-name
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+      # Scale down old (blue) replica set after successful promotion + 5 min analysis
+      scaleDownDelaySeconds: 300
+      # Abort and rollback immediately on SLO alert failure
+      abortScaleDownDelaySeconds: 0

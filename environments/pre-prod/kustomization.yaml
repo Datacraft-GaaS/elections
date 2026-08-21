@@ -15,6 +15,44 @@ resources:
   - ../../platform/spire/registration-entries.yaml
   - ../../platform/observability/alerts/alerts.yaml
   - pre-prod-config.yaml
+  # ApplicationSet project manifests
+  - ../../platform/argocd/projects/eel-election-critical.yaml
+  - ../../platform/argocd/projects/eel-cycle-critical.yaml
+  - ../../platform/argocd/projects/eel-routine.yaml
+  # ApplicationSets (all 19 services)
+  - ../../platform/argocd/applicationsets/abis-svc.yaml
+  - ../../platform/argocd/applicationsets/ai-platform-svc.yaml
+  - ../../platform/argocd/applicationsets/biometric-edge-svc.yaml
+  - ../../platform/argocd/applicationsets/boundary-svc.yaml
+  - ../../platform/argocd/applicationsets/bvi-svc.yaml
+  - ../../platform/argocd/applicationsets/bvr-svc.yaml
+  - ../../platform/argocd/applicationsets/crms-svc.yaml
+  - ../../platform/argocd/applicationsets/ecc-svc.yaml
+  - ../../platform/argocd/applicationsets/field-mobile-svc.yaml
+  - ../../platform/argocd/applicationsets/governance-svc.yaml
+  - ../../platform/argocd/applicationsets/hello-svc.yaml
+  - ../../platform/argocd/applicationsets/inventory-svc.yaml
+  - ../../platform/argocd/applicationsets/portal-svc.yaml
+  - ../../platform/argocd/applicationsets/queue-svc.yaml
+  - ../../platform/argocd/applicationsets/rts-svc.yaml
+  - ../../platform/argocd/applicationsets/support-admin-svc.yaml
+  - ../../platform/argocd/applicationsets/training-svc.yaml
+  - ../../platform/argocd/applicationsets/transparency-svc.yaml
+  - ../../platform/argocd/applicationsets/vprs-svc.yaml
+  # Rollout templates
+  - ../../platform/argocd/rollouts/blueGreen-template.yaml
+  - ../../platform/argocd/rollouts/canary-template.yaml
+  - ../../platform/argocd/rollouts/analysis-templates/portal-p95.yaml
+  - ../../platform/argocd/rollouts/analysis-templates/rts-error-rate.yaml
+  - ../../platform/argocd/rollouts/analysis-templates/bvi-latency-p99.yaml
+  # Overlays (5x load-test profile)
+  - overlays/primary
+  - overlays/mirror
+  - overlays/edge-nairobi
+  - overlays/edge-mombasa
+  - overlays/edge-kisumu
+  - overlays/edge-eldoret
+  - overlays/edge-garissa
 patches:
   # Kyverno: enforce signed images in pre-prod (same as prod)
   - patch: |-

@@ -1,0 +1,65 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: eel-cycle-critical
+  namespace: argocd
+spec:
+  description: Cycle-critical services (crms, vprs, governance, training, ai-platform, ecc, queue, inventory, support-admin)
+  sourceRepos:
+    - https://gitea.internal/eel/eel
+    - https://harbor.eel.internal/chartrepo/eel
+  destinations:
+    - namespace: crms-svc
+      server: "*"
+    - namespace: vprs-svc
+      server: "*"
+    - namespace: governance-svc
+      server: "*"
+    - namespace: training-svc
+      server: "*"
+    - namespace: ai-platform-svc
+      server: "*"
+    - namespace: ecc-svc
+      server: "*"
+    - namespace: queue-svc
+      server: "*"
+    - namespace: inventory-svc
+      server: "*"
+    - namespace: support-admin-svc
+      server: "*"
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+    - group: cilium.io
+      kind: CiliumNetworkPolicy
+    - group: argoproj.io
+      kind: Rollout
+    - group: argoproj.io
+      kind: AnalysisTemplate
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  roles:
+    - name: admin
+      description: Full admin for cycle-critical services
+      policies:
+        - p, proj:eel-cycle-critical:admin, applications, *, eel-cycle-critical/*, allow
+        - p, proj:eel-cycle-critical:admin, repositories, *, *, allow
+      groups:
+        - eel-platform-admins
+    - name: operator
+      description: Sync and get access for cycle-critical services
+      policies:
+        - p, proj:eel-cycle-critical:operator, applications, sync, eel-cycle-critical/*, allow
+        - p, proj:eel-cycle-critical:operator, applications, get, eel-cycle-critical/*, allow
+        - p, proj:eel-cycle-critical:operator, applications, action/*, eel-cycle-critical/*, allow
+      groups:
+        - eel-cycle-operators
+    - name: read-only
+      description: Read-only access to cycle-critical services
+      policies:
+        - p, proj:eel-cycle-critical:read-only, applications, get, eel-cycle-critical/*, allow
+      groups:
+        - eel-observers

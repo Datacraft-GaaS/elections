@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: portal-p95-latency
+  namespace: argocd
+  labels:
+    eel.internal/service: portal-svc
+    eel.internal/analysis: latency
+spec:
+  args:
+    - name: service-name
+  metrics:
+    - name: portal-p95-latency
+      interval: 30s
+      count: 6
+      successCondition: result[0] < 0.5
+      failureLimit: 1
+      provider:
+        prometheus:
+          address: http://prometheus.monitoring.svc.cluster.local:9090
+          query: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_seconds_bucket{
+                service="{{args.service-name}}",
+                namespace="portal-svc"
+              }[2m])) by (le)
+            )

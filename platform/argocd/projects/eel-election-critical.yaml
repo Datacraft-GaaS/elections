@@ -1,0 +1,80 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: eel-election-critical
+  namespace: argocd
+spec:
+  description: Election-critical services (rts, bvr, abis, bvi, biometric-edge, boundary, transparency, portal)
+  sourceRepos:
+    - https://gitea.internal/eel/eel
+    - https://harbor.eel.internal/chartrepo/eel
+  destinations:
+    - namespace: rts-svc
+      server: "*"
+    - namespace: bvr-svc
+      server: "*"
+    - namespace: abis-svc
+      server: "*"
+    - namespace: bvi-svc
+      server: "*"
+    - namespace: biometric-edge-svc
+      server: "*"
+    - namespace: boundary-svc
+      server: "*"
+    - namespace: transparency-svc
+      server: "*"
+    - namespace: portal-svc
+      server: "*"
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+    - group: cilium.io
+      kind: CiliumNetworkPolicy
+    - group: argoproj.io
+      kind: Rollout
+    - group: argoproj.io
+      kind: AnalysisTemplate
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  syncWindows:
+    # Freeze window: T-1 through T+7 (election period)
+    - kind: deny
+      schedule: "0 0 * * *"
+      duration: 8d
+      applications:
+        - "*"
+      namespaces:
+        - rts-svc
+        - bvr-svc
+        - abis-svc
+        - bvi-svc
+        - biometric-edge-svc
+        - boundary-svc
+        - transparency-svc
+        - portal-svc
+      manualSync: false
+  roles:
+    - name: admin
+      description: Full admin for election-critical services
+      policies:
+        - p, proj:eel-election-critical:admin, applications, *, eel-election-critical/*, allow
+        - p, proj:eel-election-critical:admin, repositories, *, *, allow
+      groups:
+        - eel-platform-admins
+    - name: operator
+      description: Sync and get access for election-critical services
+      policies:
+        - p, proj:eel-election-critical:operator, applications, sync, eel-election-critical/*, allow
+        - p, proj:eel-election-critical:operator, applications, get, eel-election-critical/*, allow
+        - p, proj:eel-election-critical:operator, applications, action/*, eel-election-critical/*, allow
+      groups:
+        - eel-election-operators
+    - name: read-only
+      description: Read-only access to election-critical services
+      policies:
+        - p, proj:eel-election-critical:read-only, applications, get, eel-election-critical/*, allow
+      groups:
+        - eel-observers

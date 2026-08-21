@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: rts-error-rate
+  namespace: argocd
+  labels:
+    eel.internal/service: rts-svc
+    eel.internal/analysis: error-rate
+spec:
+  args:
+    - name: service-name
+  metrics:
+    - name: rts-5xx-error-rate
+      interval: 30s
+      count: 10
+      # Error rate must stay below 0.1% (0.001)
+      successCondition: result[0] < 0.001
+      failureLimit: 2
+      provider:
+        prometheus:
+          address: http://prometheus.monitoring.svc.cluster.local:9090
+          query: |
+            sum(rate(http_requests_total{
+              service="{{args.service-name}}",
+              namespace="rts-svc",
+              status=~"5.."
+            }[2m]))
+            /
+            sum(rate(http_requests_total{
+              service="{{args.service-name}}",
+              namespace="rts-svc"
+            }[2m]))

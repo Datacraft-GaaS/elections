@@ -1,0 +1,67 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: eel-transparency-svc
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    eel.internal/rollout-strategy: blue-green
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - site: primary
+            cluster: https://kubernetes.default.svc
+            namespace: transparency-svc
+          - site: mirror
+            cluster: https://mirror.eel.internal:6443
+            namespace: transparency-svc
+          - site: edge-nairobi
+            cluster: https://edge-nairobi.eel.internal:6443
+            namespace: transparency-svc
+          - site: edge-mombasa
+            cluster: https://edge-mombasa.eel.internal:6443
+            namespace: transparency-svc
+          - site: edge-kisumu
+            cluster: https://edge-kisumu.eel.internal:6443
+            namespace: transparency-svc
+          - site: edge-eldoret
+            cluster: https://edge-eldoret.eel.internal:6443
+            namespace: transparency-svc
+          - site: edge-garissa
+            cluster: https://edge-garissa.eel.internal:6443
+            namespace: transparency-svc
+  template:
+    metadata:
+      name: "eel-transparency-svc-{{.site}}"
+      annotations:
+        argocd.argoproj.io/sync-wave: "1"
+        eel.internal/rollout-strategy: blue-green
+      labels:
+        eel.internal/service: transparency-svc
+        eel.internal/site: "{{.site}}"
+        eel.internal/election-critical: "true"
+    spec:
+      project: eel-election-critical
+      source:
+        repoURL: https://gitea.internal/eel/eel
+        targetRevision: HEAD
+        path: services/transparency-svc/deploy/overlays/{{.site}}
+      destination:
+        server: "{{.cluster}}"
+        namespace: "{{.namespace}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m

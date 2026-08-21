@@ -1,0 +1,43 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: eel-freeze-window-sync-block
+  labels:
+    eel.internal/managed-by: election-day-mode
+    policies.kyverno.io/category: Governance
+  annotations:
+    policies.kyverno.io/title: Freeze window sync block
+    policies.kyverno.io/description: >
+      Blocks any ArgoCD Application sync for wave-1 (election-critical) services when
+      election-day-mode is active (T-1 through T+7). The global ConfigMap
+      eel-election-day-mode must have election-day-mode-enabled="true" for this policy
+      to deny. Applies only to Applications annotated with
+      argocd.argoproj.io/sync-wave: "1".
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+    - name: block-election-critical-sync-in-freeze
+      match:
+        any:
+          - resources:
+              kinds:
+                - argoproj.io/v1alpha1/Application
+              annotations:
+                argocd.argoproj.io/sync-wave: "1"
+      context:
+        - name: electionDayMode
+          configMap:
+            name: eel-election-day-mode
+            namespace: argocd
+      deny:
+        conditions:
+          any:
+            - key: "{{ electionDayMode.data.\"election-day-mode-enabled\" }}"
+              operator: Equals
+              value: "true"
+      message: >
+        Sync denied: election-day-mode is active (freeze window T-1 through T+7).
+        To override, follow the emergency sync procedure in
+        platform/election-day-mode/toggle-runbook.md and obtain dual SVID sign-off
+        from eel-election-operators.
