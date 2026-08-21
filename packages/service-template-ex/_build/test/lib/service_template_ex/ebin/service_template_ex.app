@@ -1,0 +1,1 @@
+{application,service_template_ex,[{modules,['Elixir.Eel.ServiceTemplateEx.Templates','Elixir.Mix.Tasks.Eel.Generate']},{optional_applications,[ecto_sql]},{applications,[kernel,stdlib,elixir,logger,jason,ecto_sql]},{description,"service_template_ex"},{registered,[]},{vsn,"0.1.0"}]}.

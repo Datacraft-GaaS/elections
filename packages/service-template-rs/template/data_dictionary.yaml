@@ -1,0 +1,6 @@
+# Data dictionary for {{project-name}}
+service: {{project-name}}
+tier: {{tier}}
+owning_modules:
+  - "{{owning-modules}}"
+entities: []

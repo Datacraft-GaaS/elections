@@ -1,0 +1,1 @@
+{application,eel_event_store,[{modules,['Elixir.Eel.EventStore','Elixir.Eel.EventStore.Aggregate','Elixir.Eel.EventStore.Event','Elixir.Eel.EventStore.Replay','Elixir.Eel.EventStore.Snapshot','Elixir.Eel.EventStore.Stream']},{optional_applications,[]},{applications,[kernel,stdlib,elixir,logger,ecto,jason,ecto_sql]},{description,"eel_event_store"},{registered,[]},{vsn,"0.1.0"}]}.

@@ -12,7 +12,7 @@ name = "service_template_rs"
 path = "src/lib.rs"
 
 [features]
-conformance-suite = []
+conformance-suite = ["dep:reqwest"]
 
 [dependencies]
 tokio        = { workspace = true }
@@ -20,9 +20,11 @@ serde        = { workspace = true }
 serde_json   = { workspace = true }
 thiserror    = { workspace = true }
 tracing      = { workspace = true }
+reqwest      = { version = "0.12", features = ["json"], default-features = false, optional = true }
 
 [dev-dependencies]
 tokio              = { workspace = true }
 rstest             = { workspace = true }
+axum               = { workspace = true }
 reqwest            = { version = "0.12", features = ["json"], default-features = false }
 eel-api-server-rs  = { path = "../eel-api-server-rs" }

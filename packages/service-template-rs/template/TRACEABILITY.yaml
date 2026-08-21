@@ -1,0 +1,3 @@
+# Traceability seed for {{project-name}}
+service: {{project-name}}
+requirements: []

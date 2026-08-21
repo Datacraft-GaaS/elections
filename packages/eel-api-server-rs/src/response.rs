@@ -3,7 +3,6 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use base64::Engine;
-use http::HeaderMap;
 use serde::Serialize;
 
 /// Canonical response headers added by the signing layer.
@@ -13,11 +12,8 @@ pub const HEADER_SNAPSHOT_ID: &str = "x-eel-snapshot-id";
 
 /// Detached cosign-style signature over canonical JSON body.
 ///
-/// In production this calls eel-crypto-rs cosign; in this stub the signature
-/// is a base64-encoded placeholder so the header contract is exercised.
+/// Placeholder: base64(hash) so tests can assert the header exists.
 pub fn sign_body(body_bytes: &[u8]) -> String {
-    // Production: eel_crypto_rs::cosign::sign_detached(body_bytes)
-    // Placeholder: base64(hash) so tests can assert the header exists.
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
     let mut h = DefaultHasher::new();
@@ -71,31 +67,24 @@ impl<T: Serialize> IntoResponse for SignedJson<T> {
         };
 
         let sig = sign_body(&body);
-        let mut headers = HeaderMap::new();
-        headers.insert(
-            http::HeaderName::from_static(HEADER_SIGNATURE),
-            sig.parse().unwrap(),
-        );
-        headers.insert(
-            http::header::CONTENT_TYPE,
-            "application/json".parse().unwrap(),
-        );
+
+        let mut builder = Response::builder()
+            .status(self.status)
+            .header(http::header::CONTENT_TYPE, "application/json")
+            .header(http::HeaderName::from_static(HEADER_SIGNATURE), sig);
 
         if let (Some(sid), Some(leaf)) = (self.snapshot_id, self.leaf_index) {
-            headers.insert(
-                http::HeaderName::from_static(HEADER_SNAPSHOT_ID),
-                sid.parse().unwrap(),
-            );
-            headers.insert(
-                http::HeaderName::from_static(HEADER_MERKLE_PROOF),
-                merkle_proof_header(&sid, leaf).parse().unwrap(),
-            );
+            builder = builder
+                .header(
+                    http::HeaderName::from_static(HEADER_SNAPSHOT_ID),
+                    sid.clone(),
+                )
+                .header(
+                    http::HeaderName::from_static(HEADER_MERKLE_PROOF),
+                    merkle_proof_header(&sid, leaf),
+                );
         }
 
-        Response::builder()
-            .status(self.status)
-            .body(Body::from(body))
-            .unwrap()
-            .into_response()
+        builder.body(Body::from(body)).unwrap().into_response()
     }
 }

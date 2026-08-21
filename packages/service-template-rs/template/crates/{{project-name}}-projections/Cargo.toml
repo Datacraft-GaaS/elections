@@ -1,0 +1,15 @@
+[package]
+name = "{{project-name}}-projections"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde     = { workspace = true }
+sqlx      = { workspace = true }
+tokio     = { workspace = true }
+thiserror = { workspace = true }
+
+[lib]
+name = "{{project_name}}_projections"
+path = "src/lib.rs"

@@ -6,8 +6,6 @@ defmodule Eel.Observability.Slo do
   compliance checks against defined targets.
   """
 
-  require OpenTelemetry.Tracer
-
   @doc """
   Records a request metric for SLO tracking.
 

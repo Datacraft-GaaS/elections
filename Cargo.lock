@@ -6471,6 +6471,17 @@ dependencies = [
 [[package]]
 name = "service-template-rs"
 version = "0.1.0"
+dependencies = [
+ "axum 0.8.9",
+ "eel-api-server-rs",
+ "reqwest 0.12.28",
+ "rstest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "tokio",
+ "tracing",
+]
 
 [[package]]
 name = "sha1"

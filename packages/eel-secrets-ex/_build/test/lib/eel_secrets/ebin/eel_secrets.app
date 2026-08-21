@@ -1,0 +1,1 @@
+{application,eel_secrets,[{modules,['Elixir.Eel.Secrets','Elixir.Eel.Secrets.JITAdminCred','Elixir.Eel.Secrets.PgDynamicCred']},{optional_applications,[]},{applications,[kernel,stdlib,elixir,logger,finch,jason]},{description,"eel_secrets"},{registered,[]},{vsn,"0.1.0"}]}.

@@ -1,0 +1,29 @@
+# Woodpecker CI pipeline for {{project-name}}
+when:
+  - event: push
+    branch: main
+  - event: pull_request
+
+steps:
+  test:
+    image: rust:1.83
+    commands:
+      - cargo nextest run -p {{project-name}}-api
+    when:
+      - event: [push, pull_request]
+
+  build:
+    image: rust:1.83
+    commands:
+      - cargo build --release -p {{project-name}}-api
+    when:
+      - event: push
+        branch: main
+
+  deploy:
+    image: bitnami/kubectl:latest
+    commands:
+      - kubectl apply -k deploy/
+    when:
+      - event: push
+        branch: main
