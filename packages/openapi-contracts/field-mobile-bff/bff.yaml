@@ -1,0 +1,1193 @@
+openapi: 3.1.0
+info:
+  title: eel-field-mobile-bff
+  version: 1.0.0
+  description: >
+    Modules M29-M34 - Field Mobile Backend for Frontend. Single BFF serving
+    all mobile apps: citizen verify (M29), party agent (M30), poll clerk (M31),
+    field support (M32), personnel dispatch (M33), and observer (M34).
+    All endpoints require the X-Eel-Attest header carrying a Google Play
+    Integrity or Apple App Attest token per ADR-0021. JWT tokens are
+    short-lived (5-15 minutes).
+  contact:
+    name: eel platform team
+    url: https://eel.local/support
+servers:
+  - url: https://api.eel.local
+    description: production
+  - url: https://staging.api.eel.local
+    description: staging
+
+tags:
+  - name: config
+    description: App configuration bundle
+  - name: sessions
+    description: BFF session management and token lifecycle
+  - name: voter
+    description: Voter verification (M29 - citizen verify)
+  - name: station
+    description: Polling station operational status (M31, M32)
+  - name: forms
+    description: Offline form sync (M31)
+  - name: incidents
+    description: Field incident reporting (all roles)
+  - name: dispatch
+    description: Personnel dispatch assignments (M33)
+  - name: observer
+    description: Observer access and observations (M34)
+  - name: tamper
+    description: RASP tamper event reporting (internal)
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/mobile/bff/config:
+    get:
+      tags: [config]
+      operationId: getAppConfig
+      summary: Retrieve app configuration bundle
+      description: >
+        Returns the current election configuration bundle including feature
+        flags, offline pack version, and force-update floor. Clients call this
+        on launch to detect required updates and fetch offline assets.
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 400
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EelAttest'
+        - name: role
+          in: query
+          required: true
+          description: App role requesting config
+          schema:
+            type: string
+            enum: [citizen, party_agent, poll_clerk, field_support, dispatcher, observer]
+            x-eel-data-class: D
+        - name: app_version
+          in: query
+          required: true
+          description: Caller's installed app version string
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: D
+        - name: platform
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [android, ios]
+            x-eel-data-class: D
+      responses:
+        '200':
+          description: App configuration bundle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppConfig'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/mobile/bff/sessions:
+    post:
+      tags: [sessions]
+      operationId: createBffSession
+      summary: Establish an authenticated BFF session
+      description: >
+        Exchanges a verified JWT and platform attestation token for a
+        short-lived BFF session. Returns access token (5-15 min TTL) and
+        optional offline pack URL. Idempotent on Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 400
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EelAttest'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionRequest'
+      responses:
+        '201':
+          description: BFF session established
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/mobile/bff/sessions/refresh:
+    post:
+      tags: [sessions]
+      operationId: refreshBffSession
+      summary: Silent token refresh
+      description: >
+        Silently renews an expiring access token using the session_id.
+        Requires fresh platform attestation on every call. Idempotent on
+        Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 400
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EelAttest'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Refreshed token response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/mobile/bff/voter/verification:
+    get:
+      tags: [voter]
+      operationId: verifyVoter
+      summary: Voter registration verification lookup (M29)
+      description: >
+        Checks voter registration status given an ID hash. Returns only
+        non-PII fields: registration status, polling station name, ward, and
+        constituency. The id_hash is SHA-256(server-side-salt || national_id).
+        Never returns raw ID numbers.
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 400
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EelAttest'
+        - name: id_hash
+          in: query
+          required: true
+          description: SHA-256(salt || national_id) provided by the caller
+          schema:
+            type: string
+            pattern: '^[0-9a-f]{64}$'
+            x-eel-data-class: B
+        - name: station_code
+          in: query
+          description: Optional polling station code to scope the lookup
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Voter verification result (no PII)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoterVerificationResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/mobile/bff/station/status:
+    get:
+      tags: [station]
+      operationId: getStationStatus
+      summary: Get polling station operational status (M31, M32)
+      description: >
+        Returns real-time operational status of a polling station including
+        kit inventory, form capture progress, connectivity, and queue length.
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 400
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EelAttest'
+        - name: station_code
+          in: query
+          required: true
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Station status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StationStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/mobile/bff/forms/sync:
+    post:
+      tags: [forms]
+      operationId: syncForms
+      summary: Sync offline forms from field kit (M31)
+      description: >
+        Accepts a batch of encrypted form payloads captured offline at the
+        polling station. Payloads are AES-256-GCM encrypted with station key.
+        Idempotent on Idempotency-Key; duplicate batch_ids are safely ignored.
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 400
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EelAttest'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FormSyncBatch'
+      responses:
+        '200':
+          description: Sync result
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/mobile/bff/incidents:
+    post:
+      tags: [incidents]
+      operationId: reportIncident
+      summary: Report a field incident (all roles)
+      description: >
+        Submits a field incident report from any authenticated role. Evidence
+        is referenced by content hashes only (evidence blobs uploaded
+        separately via presigned MinIO URL). Idempotent on Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 400
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EelAttest'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentReport'
+      responses:
+        '201':
+          description: Incident submitted
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/mobile/bff/dispatch/assignments:
+    get:
+      tags: [dispatch]
+      operationId: listDispatchAssignments
+      summary: Get dispatch assignments for the authenticated dispatcher (M33)
+      description: >
+        Returns the current list of dispatch assignments visible to the
+        authenticated dispatcher. Filtered by the dispatcher's county scope
+        derived from JWT claims.
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 400
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EelAttest'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed, on_site, completed]
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: List of dispatch assignments
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DispatchAssignment'
+                    x-eel-data-class: C
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/mobile/bff/dispatch/assignments/{assignment_id}:
+    patch:
+      tags: [dispatch]
+      operationId: updateDispatchAssignment
+      summary: Confirm or update a dispatch assignment (M33)
+      description: >
+        Allows a dispatcher or the assigned officer to update assignment
+        status (confirm arrival, mark on-site, complete). Idempotent on
+        Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 400
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EelAttest'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/AssignmentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentUpdate'
+      responses:
+        '200':
+          description: Assignment updated
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DispatchAssignment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/mobile/bff/observer/access-pass:
+    get:
+      tags: [observer]
+      operationId: getObserverAccessPass
+      summary: Get observer QR access pass for station entry (M34)
+      description: >
+        Issues a time-bounded QR access pass for the authenticated observer.
+        The pass grants entry to the specified polling station. QR payload is
+        signed and verifiable offline by station clerks.
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 400
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EelAttest'
+        - name: station_code
+          in: query
+          required: true
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Observer QR access pass
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObserverPass'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/mobile/bff/observer/observations:
+    post:
+      tags: [observer]
+      operationId: submitObservation
+      summary: Submit an observer observation (M34)
+      description: >
+        Records an observer's structured observation at a polling station.
+        Idempotent on Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 400
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EelAttest'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ObserverObservation'
+      responses:
+        '201':
+          description: Observation recorded
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObservationAck'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/mobile/bff/tamper-events:
+    post:
+      tags: [tamper]
+      operationId: reportTamperEvent
+      summary: Report RASP tamper event (internal mTLS)
+      description: >
+        Called by the in-app RASP SDK after killing the session. Service-to-
+        service only (mTLS). Records the tamper event for security analytics
+        and triggers account suspension workflows. Idempotent on
+        Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 400
+        availability: "99.9%"
+      security:
+        - mtls: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TamperEvent'
+      responses:
+        '202':
+          description: Tamper event accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TamperEventAck'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Short-lived JWT (5-15 min) issued by eel.local BFF session endpoint
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS for service-to-service calls within eel.local trust domain
+
+  parameters:
+    EelAttest:
+      name: X-Eel-Attest
+      in: header
+      required: true
+      description: >
+        Google Play Integrity verdict token (Android) or Apple App Attest
+        assertion (iOS) per ADR-0021. Server verifies freshness and device
+        binding before processing the request.
+      schema:
+        type: string
+        minLength: 32
+        x-eel-data-class: E
+
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Client-generated UUIDv7 for idempotent request deduplication (TTL 24 h)
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: E
+
+    AssignmentId:
+      name: assignment_id
+      in: path
+      required: true
+      description: UUIDv7 dispatch assignment identifier
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+
+  headers:
+    CosignSig:
+      description: Sigstore cosign signature over the response body
+      schema:
+        type: string
+        x-eel-data-class: C
+    MerkleProof:
+      description: Merkle proof anchoring this response to the audit ledger
+      schema:
+        type: string
+        x-eel-data-class: C
+    SnapshotId:
+      description: Snapshot identifier for response reproducibility
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+
+  schemas:
+    AppConfig:
+      type: object
+      required:
+        - election_id
+        - feature_flags
+        - offline_pack_version
+        - force_update_floor
+      properties:
+        election_id:
+          type: string
+          format: uuid
+          x-eel-data-class: E
+        feature_flags:
+          type: object
+          additionalProperties:
+            type: boolean
+          description: Key-value feature flag map for this role and version
+          x-eel-data-class: E
+        offline_pack_version:
+          type: string
+          description: Version identifier of the current offline asset pack
+          x-eel-data-class: D
+        force_update_floor:
+          type: string
+          description: Minimum app version string required (semver); older clients must update
+          x-eel-data-class: D
+        offline_pack_url:
+          type: string
+          format: uri
+          description: Presigned MinIO URL to download updated offline pack (if needed)
+          nullable: true
+          x-eel-data-class: D
+        server_time:
+          type: string
+          format: date-time
+          description: Authoritative server time for clock-skew detection
+          x-eel-data-class: E
+
+    SessionRequest:
+      type: object
+      required: [device_id_hash, app_version, platform, role]
+      properties:
+        device_id_hash:
+          type: string
+          description: SHA-256 hash of the device hardware identifier
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: E
+        app_version:
+          type: string
+          maxLength: 32
+          x-eel-data-class: D
+        platform:
+          type: string
+          enum: [android, ios]
+          x-eel-data-class: D
+        role:
+          type: string
+          enum: [citizen, party_agent, poll_clerk, field_support, dispatcher, observer]
+          x-eel-data-class: D
+
+    SessionResponse:
+      type: object
+      required: [session_id, access_token, refresh_token_hint, token_expires_in]
+      properties:
+        session_id:
+          type: string
+          format: uuid
+          description: Opaque session identifier (UUIDv7)
+          x-eel-data-class: E
+        access_token:
+          type: string
+          description: Short-lived JWT (5-15 min)
+          x-eel-data-class: E
+        refresh_token_hint:
+          type: string
+          description: Opaque hint used with /sessions/refresh; not a bearer token
+          x-eel-data-class: E
+        token_expires_in:
+          type: integer
+          description: Access token TTL in seconds
+          x-eel-data-class: E
+        offline_pack_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Presigned MinIO URL for offline asset download if update is needed
+          x-eel-data-class: D
+
+    RefreshRequest:
+      type: object
+      required: [session_id]
+      properties:
+        session_id:
+          type: string
+          format: uuid
+          x-eel-data-class: E
+
+    TokenResponse:
+      type: object
+      required: [access_token, expires_in]
+      properties:
+        access_token:
+          type: string
+          x-eel-data-class: E
+        expires_in:
+          type: integer
+          description: New token TTL in seconds
+          x-eel-data-class: E
+
+    VoterVerificationResult:
+      type: object
+      required: [registered]
+      properties:
+        registered:
+          type: boolean
+          description: Whether the hashed ID corresponds to a registered voter
+          x-eel-data-class: C
+        polling_station_name:
+          type: string
+          description: Name of the voter's assigned polling station (no address)
+          nullable: true
+          x-eel-data-class: C
+        ward:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+        constituency:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+        station_code:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+
+    StationStatus:
+      type: object
+      required: [station_code, is_open, connectivity]
+      properties:
+        station_code:
+          type: string
+          x-eel-data-class: C
+        is_open:
+          type: boolean
+          x-eel-data-class: D
+        kit_ids:
+          type: array
+          items:
+            type: string
+          description: List of kit identifiers assigned to this station
+          x-eel-data-class: D
+        form_34a_captured:
+          type: boolean
+          description: Whether Form 34A has been captured at this station
+          x-eel-data-class: D
+        connectivity:
+          type: string
+          enum: [online, degraded, offline]
+          x-eel-data-class: D
+        queue_length:
+          type: integer
+          description: Current estimated queue length at the station
+          minimum: 0
+          x-eel-data-class: C
+        last_sync_at:
+          type: string
+          format: date-time
+          nullable: true
+          x-eel-data-class: D
+
+    FormEntry:
+      type: object
+      required: [form_type, payload_hash, encrypted_payload, captured_at]
+      properties:
+        form_type:
+          type: string
+          maxLength: 64
+          description: Form type code (e.g. form_34a, form_32b)
+          x-eel-data-class: C
+        payload_hash:
+          type: string
+          description: SHA-256 hex digest of the decrypted payload for integrity verification
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: C
+        encrypted_payload:
+          type: string
+          format: byte
+          description: AES-256-GCM encrypted form payload (base64)
+          x-eel-data-class: B
+        captured_at:
+          type: string
+          format: date-time
+          description: Timestamp when the form was captured at the station
+          x-eel-data-class: C
+
+    FormSyncBatch:
+      type: object
+      required: [station_code, forms, device_id_hash]
+      properties:
+        station_code:
+          type: string
+          x-eel-data-class: C
+        forms:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/FormEntry'
+          x-eel-data-class: B
+        device_id_hash:
+          type: string
+          description: SHA-256 hash of the originating device identifier
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: E
+
+    SyncResult:
+      type: object
+      required: [accepted_count]
+      properties:
+        accepted_count:
+          type: integer
+          x-eel-data-class: D
+        rejected_refs:
+          type: array
+          items:
+            type: object
+            properties:
+              payload_hash:
+                type: string
+                x-eel-data-class: D
+              reason:
+                type: string
+                x-eel-data-class: D
+          x-eel-data-class: D
+
+    IncidentLocation:
+      type: object
+      required: [lat, lon]
+      properties:
+        lat:
+          type: number
+          format: float
+          minimum: -90
+          maximum: 90
+          x-eel-data-class: D
+        lon:
+          type: number
+          format: float
+          minimum: -180
+          maximum: 180
+          x-eel-data-class: D
+
+    IncidentReport:
+      type: object
+      required: [incident_type, station_code, description, severity]
+      properties:
+        incident_type:
+          type: string
+          maxLength: 128
+          x-eel-data-class: C
+        station_code:
+          type: string
+          maxLength: 32
+          x-eel-data-class: C
+        description:
+          type: string
+          maxLength: 4096
+          x-eel-data-class: C
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+          x-eel-data-class: C
+        location:
+          $ref: '#/components/schemas/IncidentLocation'
+        evidence_hashes:
+          type: array
+          items:
+            type: string
+            pattern: '^[0-9a-f]{64}$'
+          description: SHA-256 hashes of evidence blobs uploaded via presigned MinIO URL
+          x-eel-data-class: C
+
+    Incident:
+      type: object
+      required: [incident_id, status]
+      properties:
+        incident_id:
+          type: string
+          format: uuid
+          description: UUIDv7 incident identifier
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [submitted, triaged, dispatched, resolved]
+          x-eel-data-class: C
+
+    DispatchAssignment:
+      type: object
+      required:
+        - assignment_id
+        - personnel_id_hash
+        - station_code
+        - role
+        - report_by
+        - status
+      properties:
+        assignment_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        personnel_id_hash:
+          type: string
+          description: SHA-256 hash of the assigned officer identifier
+          x-eel-data-class: B
+        station_code:
+          type: string
+          x-eel-data-class: C
+        role:
+          type: string
+          x-eel-data-class: C
+        report_by:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [pending, confirmed, on_site, completed]
+          x-eel-data-class: C
+        actual_arrival:
+          type: string
+          format: date-time
+          nullable: true
+          x-eel-data-class: C
+
+    AssignmentUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [confirmed, on_site, completed]
+          x-eel-data-class: C
+        actual_arrival:
+          type: string
+          format: date-time
+          nullable: true
+          x-eel-data-class: C
+
+    ObserverPass:
+      type: object
+      required:
+        - pass_id
+        - station_code
+        - observer_id_hash
+        - valid_from
+        - valid_until
+        - qr_payload
+      properties:
+        pass_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        station_code:
+          type: string
+          x-eel-data-class: C
+        observer_id_hash:
+          type: string
+          description: SHA-256 hash of the observer identifier
+          x-eel-data-class: B
+        valid_from:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        valid_until:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        qr_payload:
+          type: string
+          description: Signed QR payload string (JWT compact); verifiable offline
+          x-eel-data-class: E
+
+    ObserverObservation:
+      type: object
+      required: [station_code, observation_type, value, observed_at]
+      properties:
+        station_code:
+          type: string
+          maxLength: 32
+          x-eel-data-class: C
+        observation_type:
+          type: string
+          enum: [queue_length, form_capture, agent_present, material_ok]
+          x-eel-data-class: C
+        value:
+          type: string
+          maxLength: 512
+          description: String-encoded observation value (numeric or boolean as text)
+          x-eel-data-class: C
+        observed_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        notes:
+          type: string
+          maxLength: 2048
+          x-eel-data-class: C
+
+    ObservationAck:
+      type: object
+      required: [observation_id]
+      properties:
+        observation_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+
+    TamperEvent:
+      type: object
+      required: [device_id_hash, app_version, tamper_type, detected_at]
+      properties:
+        device_id_hash:
+          type: string
+          description: SHA-256 hash of the affected device hardware identifier
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: E
+        app_version:
+          type: string
+          maxLength: 32
+          x-eel-data-class: D
+        tamper_type:
+          type: string
+          enum: [root, jailbreak, frida, emulator, signature_mismatch, debugger]
+          x-eel-data-class: D
+        detected_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        additional_context:
+          type: string
+          maxLength: 1024
+          description: Optional RASP diagnostic context (no user PII)
+          x-eel-data-class: D
+
+    TamperEventAck:
+      type: object
+      required: [event_id]
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          x-eel-data-class: E
+
+    ProblemDetail:
+      type: object
+      description: RFC 9457 problem detail
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: E
+        title:
+          type: string
+          x-eel-data-class: E
+        status:
+          type: integer
+          x-eel-data-class: E
+        detail:
+          type: string
+          x-eel-data-class: E
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: E
+        trace_id:
+          type: string
+          x-eel-data-class: E
+
+  responses:
+    BadRequest:
+      description: Request body or parameters failed validation
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Missing or invalid JWT or attestation token
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Role or SpiceDB authorization denied
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Idempotency-Key collision or state conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Semantic validation error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'

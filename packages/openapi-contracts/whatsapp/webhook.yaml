@@ -1,0 +1,251 @@
+openapi: 3.1.0
+info:
+  title: eel-whatsapp-webhook
+  version: 1.0.0
+  description: >
+    Generic WhatsApp Cloud API webhook schema serving multiple EEL modules:
+    M13 (voter verifier), M23 (grievance), M35 (CVR), and M36 (deregistration).
+    Routing is performed by the wa_id prefix registered per module. Incoming
+    events are verified via X-Hub-Signature-256 before processing. The Meta
+    verification challenge endpoint is public and unauthenticated per Meta spec.
+
+servers:
+  - url: https://eel.local/api/v1
+    description: Production trust domain
+
+tags:
+  - name: webhook
+    description: WhatsApp Cloud API webhook endpoints
+
+paths:
+  /whatsapp/webhook:
+    post:
+      tags: [webhook]
+      operationId: receiveWhatsAppWebhook
+      summary: WhatsApp Cloud API webhook receiver
+      description: >
+        Receives event payloads from the WhatsApp Cloud API (Meta). Events
+        are verified by the EEL WhatsApp proxy service using X-Hub-Signature-256
+        before forwarding here via mTLS. The proxy validates the signature
+        against the per-account app secret stored in EEL vault. This endpoint
+        must return HTTP 200 within 5 seconds or Meta will retry. Idempotent
+        on Idempotency-Key; duplicate webhook deliveries return 200 without
+        re-processing.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - mtls: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: X-Hub-Signature-256
+          in: header
+          required: true
+          schema:
+            type: string
+            pattern: '^sha256=[0-9a-f]{64}$'
+            x-eel-data-class: E
+          description: >
+            HMAC-SHA256 signature of the raw request body, keyed with the
+            WhatsApp app secret. Format: "sha256=<hex-digest>". Verified by
+            the EEL proxy; presence here confirms proxy-side validation passed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WhatsAppWebhookPayload'
+      responses:
+        '200':
+          description: Event accepted for processing
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags: [webhook]
+      operationId: verifyWhatsAppWebhook
+      summary: Meta webhook verification challenge
+      description: >
+        Handles the webhook verification challenge from Meta during initial
+        endpoint registration. Meta sends a GET request with hub.mode,
+        hub.verify_token, and hub.challenge query parameters. This endpoint
+        validates hub.verify_token against the value stored in EEL vault and
+        returns the hub.challenge value as a plain-text body. No authentication
+        required; the verify_token is the shared secret.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security: []
+      parameters:
+        - name: hub.mode
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [subscribe]
+            x-eel-data-class: E
+          description: Must be "subscribe" per Meta spec
+        - name: hub.verify_token
+          in: query
+          required: true
+          schema:
+            type: string
+            maxLength: 256
+            x-eel-data-class: E
+          description: Token to validate against the EEL vault-stored value
+        - name: hub.challenge
+          in: query
+          required: true
+          schema:
+            type: string
+            maxLength: 256
+            x-eel-data-class: E
+          description: Random string that must be echoed back verbatim on success
+      responses:
+        '200':
+          description: Challenge accepted; hub.challenge echoed as plain text
+          content:
+            text/plain:
+              schema:
+                type: string
+                x-eel-data-class: E
+                description: The hub.challenge value verbatim
+        '403':
+          description: Verification token mismatch
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Keycloak-issued JWT. Validated against eel.local JWKS endpoint.
+    mtls:
+      type: mutualTLS
+      description: X.509 mTLS client certificate. CN must match registered service principal in eel.local PKI.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: E
+      description: >
+        Client-generated UUIDv7 set by the EEL WhatsApp proxy per delivery
+        attempt. Server stores response for 24 hours and returns 200 on retries
+        without re-processing.
+
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status, detail, instance, eel_trace_id]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        title:
+          type: string
+          x-eel-data-class: D
+        status:
+          type: integer
+          x-eel-data-class: D
+        detail:
+          type: string
+          x-eel-data-class: D
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        eel_trace_id:
+          type: string
+          x-eel-data-class: D
+
+    WhatsAppWebhookChange:
+      type: object
+      required: [value, field]
+      properties:
+        value:
+          type: object
+          x-eel-data-class: D
+          description: >
+            WhatsApp Cloud API change value object per Meta spec. Contents
+            vary by field type (messages, statuses, errors). Treated as an
+            opaque blob routed to the module handler.
+          additionalProperties: true
+        field:
+          type: string
+          x-eel-data-class: D
+          description: Change field type (e.g. "messages")
+
+    WhatsAppWebhookEntry:
+      type: object
+      required: [id, changes]
+      properties:
+        id:
+          type: string
+          x-eel-data-class: D
+          description: WhatsApp Business Account ID
+        changes:
+          type: array
+          x-eel-data-class: D
+          items:
+            $ref: '#/components/schemas/WhatsAppWebhookChange'
+
+    WhatsAppWebhookPayload:
+      type: object
+      required: [object, entry]
+      properties:
+        object:
+          type: string
+          x-eel-data-class: D
+          description: Always "whatsapp_business_account" per Meta Cloud API spec
+        entry:
+          type: array
+          x-eel-data-class: D
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/WhatsAppWebhookEntry'
+
+  responses:
+    BadRequest:
+      description: Malformed request body
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: Invalid mTLS certificate or signature verification failed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: Idempotency key conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'

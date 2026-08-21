@@ -1,0 +1,545 @@
+openapi: "3.1.0"
+
+info:
+  title: eel-verifier-whatsapp
+  version: "1.0.0"
+  description: >
+    WhatsApp Cloud API webhook schema for the M13 verifier module.
+    Meta POSTs incoming messages and delivery status updates to the webhook endpoint.
+    The verification challenge (GET) is used by Meta during webhook registration.
+
+    Security: server-to-server webhook. X-Eel-Attest is NOT required.
+    Meta authenticates each POST with the X-Hub-Signature-256 header:
+      sig = HMAC-SHA256(raw_request_body_bytes, app_secret)
+      header = "sha256=" + hex(sig)
+    The eel backend verifies this signature before processing. Requests with invalid
+    signatures are rejected with HTTP 401.
+
+    Message processing is asynchronous. The webhook handler MUST respond within 20 s
+    with HTTP 200; substantive processing (voter lookup, station query) is enqueued.
+    Replies to subscribers are sent via the WhatsApp Cloud API send-message endpoint,
+    not via the webhook response body.
+
+    Privacy note: WhatsApp phone numbers (wa_id) are stored only as
+    SHA-256(salt||wa_id) in eel systems (class A). Incoming webhook payloads contain
+    the raw wa_id; the handler hashes it immediately before any persistence.
+  contact:
+    name: eel platform team
+    email: platform@eel.local
+  license:
+    name: Proprietary
+    identifier: LicenseRef-eel-proprietary
+
+servers:
+  - url: "https://api.eel.local"
+    description: "Production"
+  - url: "https://api.staging.eel.local"
+    description: "Staging"
+
+components:
+  securitySchemes:
+    metaWebhookHmac:
+      type: apiKey
+      in: header
+      name: X-Hub-Signature-256
+      description: >
+        Meta standard HMAC-SHA256 over the raw request body, keyed with the
+        WhatsApp Business App Secret. Format: sha256=<64-char hex digest>.
+
+  schemas:
+
+    WhatsAppProfile:
+      type: object
+      description: "Sender profile information included in message metadata."
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: "Subscriber's WhatsApp display name."
+          maxLength: 200
+          x-eel-data-class: A
+      additionalProperties: true
+
+    WhatsAppContact:
+      type: object
+      description: "Contact block identifying the message sender."
+      required:
+        - wa_id
+        - profile
+      properties:
+        wa_id:
+          type: string
+          description: >
+            Sender WhatsApp ID (E.164 phone number without '+').
+            IMPORTANT: hash this value immediately on receipt; do not persist raw wa_id.
+          pattern: "^[0-9]{7,15}$"
+          x-eel-data-class: A
+          example: "254712345678"
+        profile:
+          $ref: "#/components/schemas/WhatsAppProfile"
+      additionalProperties: false
+
+    WhatsAppTextMessage:
+      type: object
+      required:
+        - body
+      properties:
+        body:
+          type: string
+          description: "Plain text content of the message."
+          maxLength: 4096
+          x-eel-data-class: A
+      additionalProperties: false
+
+    WhatsAppButtonReply:
+      type: object
+      description: "Interactive button reply from subscriber."
+      required:
+        - id
+        - title
+      properties:
+        id:
+          type: string
+          description: "Button payload ID set when the button was sent."
+          maxLength: 256
+          x-eel-data-class: E
+        title:
+          type: string
+          description: "Button label text."
+          maxLength: 60
+          x-eel-data-class: E
+      additionalProperties: false
+
+    WhatsAppListReply:
+      type: object
+      description: "Interactive list selection from subscriber."
+      required:
+        - id
+        - title
+      properties:
+        id:
+          type: string
+          maxLength: 256
+          x-eel-data-class: E
+        title:
+          type: string
+          maxLength: 60
+          x-eel-data-class: E
+        description:
+          type: string
+          maxLength: 200
+          nullable: true
+          x-eel-data-class: E
+      additionalProperties: false
+
+    WhatsAppInteractiveReply:
+      type: object
+      description: "Interactive message reply (button or list selection)."
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum: [button_reply, list_reply]
+          x-eel-data-class: E
+        button_reply:
+          $ref: "#/components/schemas/WhatsAppButtonReply"
+          nullable: true
+        list_reply:
+          $ref: "#/components/schemas/WhatsAppListReply"
+          nullable: true
+      additionalProperties: false
+
+    WhatsAppMessage:
+      type: object
+      description: "An inbound message from a subscriber."
+      required:
+        - id
+        - from
+        - timestamp
+        - type
+      properties:
+        id:
+          type: string
+          description: "Meta-assigned message ID. Unique per message."
+          minLength: 1
+          maxLength: 100
+          x-eel-data-class: D
+          example: "wamid.HBgLMjU0NzEyMzQ1NjcVAgASGBQwRUU4ODk4NDIxRTIzRTk4RjIAA"
+        from:
+          type: string
+          description: "Sender wa_id. Hash immediately; do not persist raw value."
+          pattern: "^[0-9]{7,15}$"
+          x-eel-data-class: A
+        timestamp:
+          type: string
+          description: "Unix epoch seconds as a string."
+          pattern: "^[0-9]{10,13}$"
+          x-eel-data-class: D
+        type:
+          type: string
+          description: "Message type."
+          enum: [text, interactive, image, document, audio, video, location, sticker, unsupported]
+          x-eel-data-class: D
+        text:
+          $ref: "#/components/schemas/WhatsAppTextMessage"
+          nullable: true
+        interactive:
+          $ref: "#/components/schemas/WhatsAppInteractiveReply"
+          nullable: true
+        context:
+          type: object
+          description: "Optional context if this is a reply to a previous message."
+          nullable: true
+          properties:
+            from:
+              type: string
+              x-eel-data-class: D
+            id:
+              type: string
+              x-eel-data-class: D
+          x-eel-data-class: D
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: integer
+                x-eel-data-class: D
+              details:
+                type: string
+                x-eel-data-class: D
+              title:
+                type: string
+                x-eel-data-class: D
+          nullable: true
+          x-eel-data-class: D
+      additionalProperties: true
+
+    WhatsAppStatus:
+      type: object
+      description: "Message delivery/read status update."
+      required:
+        - id
+        - status
+        - timestamp
+        - recipient_id
+      properties:
+        id:
+          type: string
+          description: "Message ID this status refers to."
+          x-eel-data-class: D
+        status:
+          type: string
+          enum: [sent, delivered, read, failed]
+          x-eel-data-class: D
+        timestamp:
+          type: string
+          pattern: "^[0-9]{10,13}$"
+          x-eel-data-class: D
+        recipient_id:
+          type: string
+          description: "wa_id of the recipient (raw). Hash before persisting."
+          x-eel-data-class: A
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: integer
+                x-eel-data-class: D
+              title:
+                type: string
+                x-eel-data-class: D
+              message:
+                type: string
+                x-eel-data-class: D
+              error_data:
+                type: object
+                additionalProperties: true
+                x-eel-data-class: D
+          nullable: true
+          x-eel-data-class: D
+      additionalProperties: true
+
+    WhatsAppValue:
+      type: object
+      description: "Change value block containing messages and/or statuses."
+      required:
+        - messaging_product
+        - metadata
+      properties:
+        messaging_product:
+          type: string
+          description: "Always 'whatsapp'."
+          enum: [whatsapp]
+          x-eel-data-class: D
+        metadata:
+          type: object
+          description: "Business phone number metadata."
+          required:
+            - display_phone_number
+            - phone_number_id
+          properties:
+            display_phone_number:
+              type: string
+              description: "Business display phone number."
+              x-eel-data-class: D
+            phone_number_id:
+              type: string
+              description: "Business phone number ID assigned by Meta."
+              x-eel-data-class: D
+          x-eel-data-class: D
+        contacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/WhatsAppContact"
+          nullable: true
+          x-eel-data-class: A
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/WhatsAppMessage"
+          nullable: true
+          x-eel-data-class: A
+        statuses:
+          type: array
+          items:
+            $ref: "#/components/schemas/WhatsAppStatus"
+          nullable: true
+          x-eel-data-class: D
+        errors:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+          nullable: true
+          x-eel-data-class: D
+      additionalProperties: true
+
+    WhatsAppChange:
+      type: object
+      description: "A change event within an entry."
+      required:
+        - value
+        - field
+      properties:
+        value:
+          $ref: "#/components/schemas/WhatsAppValue"
+        field:
+          type: string
+          description: "Meta event field type. Typically 'messages'."
+          x-eel-data-class: D
+          example: "messages"
+      additionalProperties: false
+
+    WhatsAppEntry:
+      type: object
+      description: "A webhook entry (one per business phone number)."
+      required:
+        - id
+        - changes
+      properties:
+        id:
+          type: string
+          description: "WhatsApp Business Account ID."
+          x-eel-data-class: D
+        changes:
+          type: array
+          items:
+            $ref: "#/components/schemas/WhatsAppChange"
+          minItems: 1
+          x-eel-data-class: D
+      additionalProperties: false
+
+    WhatsAppWebhookPayload:
+      type: object
+      description: "Top-level WhatsApp Cloud API webhook payload."
+      required:
+        - object
+        - entry
+      properties:
+        object:
+          type: string
+          description: "Always 'whatsapp_business_account'."
+          enum: [whatsapp_business_account]
+          x-eel-data-class: D
+        entry:
+          type: array
+          items:
+            $ref: "#/components/schemas/WhatsAppEntry"
+          minItems: 1
+          x-eel-data-class: D
+      additionalProperties: false
+
+paths:
+
+  /api/v1/verifier/whatsapp/webhook:
+    get:
+      operationId: verifyWhatsAppWebhook
+      summary: "Meta webhook verification challenge"
+      description: >
+        Meta sends this GET request when the webhook URL is registered or re-verified
+        in the Meta Business Developer Portal. The handler must echo hub.challenge when
+        hub.verify_token matches the configured secret.
+      tags: [verifier-whatsapp]
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 300
+        availability: "99.9%"
+      security: []
+      parameters:
+        - name: hub.mode
+          in: query
+          required: true
+          description: "Meta challenge mode. Must equal 'subscribe'."
+          schema:
+            type: string
+            enum: [subscribe]
+            x-eel-data-class: D
+        - name: hub.challenge
+          in: query
+          required: true
+          description: "Random challenge string. Echo this value in the response body on success."
+          schema:
+            type: string
+            maxLength: 100
+            x-eel-data-class: D
+        - name: hub.verify_token
+          in: query
+          required: true
+          description: "Must match the WHATSAPP_VERIFY_TOKEN secret configured in eel Vault."
+          schema:
+            type: string
+            maxLength: 256
+            x-eel-data-class: D
+      responses:
+        "200":
+          description: "Verification successful. Response body is the hub.challenge value (plain text)."
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: "Echo of hub.challenge."
+                x-eel-data-class: D
+        "403":
+          description: "hub.verify_token did not match. Meta will not register the webhook."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/components.yaml#/components/schemas/Problem"
+
+    post:
+      operationId: handleWhatsAppWebhookFull
+      summary: "WhatsApp Cloud API inbound event webhook"
+      description: >
+        Meta POSTs incoming messages and status updates here.
+        The handler MUST respond with HTTP 200 within 20 s; any business logic beyond
+        signature verification and message parsing is processed asynchronously.
+        Delivery of replies to subscribers happens via the Meta send-message API
+        (out-of-band from this endpoint).
+
+        Idempotency: Meta may deliver the same webhook payload multiple times.
+        Deduplicate on entry[].changes[].value.messages[].id or
+        entry[].changes[].value.statuses[].id.
+      tags: [verifier-whatsapp]
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 300
+        availability: "99.9%"
+      security:
+        - metaWebhookHmac: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: "Use the Meta message ID or a hash of the payload as the idempotency key."
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+            x-eel-data-class: E
+        - name: X-Hub-Signature-256
+          in: header
+          required: true
+          description: "Meta HMAC-SHA256 webhook signature. Format: sha256=<hex>."
+          schema:
+            type: string
+            pattern: "^sha256=[0-9a-f]{64}$"
+            x-eel-data-class: D
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WhatsAppWebhookPayload"
+            examples:
+              incoming_text:
+                summary: "Subscriber sends text 'check registration'"
+                value:
+                  object: "whatsapp_business_account"
+                  entry:
+                    - id: "123456789012345"
+                      changes:
+                        - field: "messages"
+                          value:
+                            messaging_product: "whatsapp"
+                            metadata:
+                              display_phone_number: "+254800720000"
+                              phone_number_id: "987654321098765"
+                            contacts:
+                              - wa_id: "254712345678"
+                                profile:
+                                  name: "John Otieno"
+                            messages:
+                              - id: "wamid.HBgLMjU0NzEyMzQ1NjcVAgASGBQ"
+                                from: "254712345678"
+                                timestamp: "1754553600"
+                                type: "text"
+                                text:
+                                  body: "check registration"
+              delivery_status:
+                summary: "Delivery status update"
+                value:
+                  object: "whatsapp_business_account"
+                  entry:
+                    - id: "123456789012345"
+                      changes:
+                        - field: "messages"
+                          value:
+                            messaging_product: "whatsapp"
+                            metadata:
+                              display_phone_number: "+254800720000"
+                              phone_number_id: "987654321098765"
+                            statuses:
+                              - id: "wamid.HBgLMjU0NzEyMzQ1NjcVAgASGBQ"
+                                status: "delivered"
+                                timestamp: "1754553605"
+                                recipient_id: "254712345678"
+      responses:
+        "200":
+          description: >
+            Acknowledged. Meta requires a 200 within 20 s. Response body is empty.
+            Actual subscriber reply is sent via the Meta send-message API asynchronously.
+        "400":
+          description: "Malformed webhook payload."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/components.yaml#/components/schemas/Problem"
+        "401":
+          description: "X-Hub-Signature-256 verification failed."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/components.yaml#/components/schemas/Problem"
+              example:
+                type: "https://errors.eel.local/t1/webhook-signature-invalid"
+                title: "Webhook signature invalid"
+                status: 401
+                detail: "X-Hub-Signature-256 did not match the computed HMAC-SHA256 over the request body."
+        "500":
+          $ref: "../_shared/components.yaml#/components/responses/500InternalServerError"

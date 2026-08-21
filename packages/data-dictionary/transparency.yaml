@@ -1,0 +1,165 @@
+# Transparency Log data dictionary
+# Data classes: A=PII-sensitive, B=PII-adjacent, C=system/non-PII, D=metadata/operational
+# Transparency log is a public audit record; all data in this context is intended for public verifiability
+# Lawful basis: Kenya DPA 2019 s.25 public task; Elections Act s.32 public record
+context: transparency
+service: transparency-svc
+updated: "2026-08-21"
+tables:
+  - table: log_leaves
+    description: "Append-only Merkle tree leaves anchoring all significant election events in the public log"
+    store: T1-log
+    columns:
+      - column: leaf_index
+        type: "BIGINT"
+        data_class: D
+        pii_purpose: "Operational metadata - sequential leaf position in tree"
+        retention: "Permanent public record"
+        notes: "Monotonically increasing; immutable once appended; aligns with RFC 6962 tile indices"
+      - column: leaf_hash
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - cryptographic commitment"
+        retention: "Permanent public record"
+        notes: "SHA-256 of the leaf TLS-encoded structure; public verifiability"
+      - column: domain_tag
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - domain separation tag"
+        retention: "Permanent public record"
+        notes: "e.g. rts.form.v1, bvr.audit.v1; prevents cross-domain hash collisions"
+      - column: source_event_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - reference to originating event"
+        retention: "Permanent public record"
+        notes: "UUIDv7 of event in the source service event-store; no payload content"
+      - column: source_event_type
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - event type discriminator"
+        retention: "Permanent public record"
+        notes: "e.g. rts.form.received; used for log auditor filtering"
+      - column: producer_spiffe_id
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - which service produced this event"
+        retention: "Permanent public record"
+        notes: "SPIFFE URI; public identity of the producing service"
+      - column: appended_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Permanent public record"
+        notes: "HLC when leaf was appended to the log"
+
+  - table: signed_tree_heads
+    description: "Periodic Signed Tree Heads (STH) marking consistent states of the Merkle log"
+    store: T1-log
+    columns:
+      - column: sth_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Permanent public record"
+        notes: "UUIDv7; primary key; published to eel.transparency.leaf.v1"
+      - column: tree_size
+        type: "BIGINT"
+        data_class: D
+        pii_purpose: "Operational metadata - number of leaves at this STH"
+        retention: "Permanent public record"
+        notes: "Monotonically increasing; consistent with RFC 6962 STH semantics"
+      - column: root_hash
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - Merkle root commitment"
+        retention: "Permanent public record"
+        notes: "SHA-256 hex; root of the full Merkle tree at tree_size; public"
+      - column: timestamp
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Permanent public record"
+        notes: "RFC 6962 timestamp field; used by log clients for freshness checks"
+      - column: cadence_tier
+        type: "TEXT"
+        data_class: D
+        pii_purpose: "Operational metadata - publication cadence"
+        retention: "Permanent public record"
+        notes: "Values: realtime (every 10s on polling day), hourly, daily"
+      - column: hsm_sig
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - HSM signature over STH fields"
+        retention: "Permanent public record"
+        notes: "Ed25519 by election HSM; verifiable by published public cert; RFC 6962 format"
+      - column: prev_sth_hash
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - hash-chain link to previous STH"
+        retention: "Permanent public record"
+        notes: "SHA-256 of preceding STH id; log continuity guarantee"
+
+  - table: witness_cosigs
+    description: "Third-party witness cosignatures on Signed Tree Heads for independent verification"
+    store: T2-witness
+    columns:
+      - column: cosig_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Permanent public record"
+        notes: "UUIDv7; primary key"
+      - column: sth_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - FK to cosigned STH"
+        retention: "Permanent public record"
+        notes: "FK to signed_tree_heads.sth_id"
+      - column: witness_id
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - witness public identity"
+        retention: "Permanent public record"
+        notes: "Key transparency witness ID (e.g. registered observer body, court system)"
+      - column: cosig
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - witness signature over STH"
+        retention: "Permanent public record"
+        notes: "Ed25519 by witness key; base64url; verifiable by witness public key"
+      - column: received_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Permanent public record"
+        notes: "HLC when cosig was received and verified"
+
+  - table: tree_snapshots
+    description: "Periodic full Merkle tree exports to MinIO for offline verification by observers"
+    store: T3-snapshots
+    columns:
+      - column: snapshot_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Permanent public record"
+        notes: "UUIDv7; primary key"
+      - column: tree_size
+        type: "BIGINT"
+        data_class: D
+        pii_purpose: "Operational metadata - leaf count covered by snapshot"
+        retention: "Permanent public record"
+        notes: "Matches a corresponding STH tree_size for consistency proof"
+      - column: minio_ref
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - MinIO object reference for snapshot bundle"
+        retention: "Permanent public record"
+        notes: "Publicly accessible object; contains tile files per RFC 9162 format"
+      - column: created_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Permanent public record"
+        notes: "HLC of snapshot creation"

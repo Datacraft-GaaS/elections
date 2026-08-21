@@ -1,0 +1,1702 @@
+openapi: "3.1.0"
+
+info:
+  title: "Eel RTS - Results Transmission System"
+  version: "1.0.0"
+  description: |
+    Results Transmission System API covering form ingest from polling kits,
+    SMS fallback, token management, event streaming, ICR (intelligent character
+    recognition), public snapshot endpoints, and RO adjudication.
+
+    Modules: M08 rts-device, M09 rts-ro, M10 rts-backend.
+
+    Trust domain: eel.local. Internal ingest via SVID mTLS; public snapshots
+    are signed-static CDN served with Tier 1 integrity headers.
+
+servers:
+  - url: "https://rts.eel.local"
+    description: "RTS internal service (mTLS required)"
+  - url: "https://api.eel.local"
+    description: "External API gateway"
+
+security:
+  - BearerJWT: []
+
+tags:
+  - name: forms
+    description: "Form 34A ingest and management"
+  - name: tokens
+    description: "Device token provisioning"
+  - name: events
+    description: "Event streaming ingest"
+  - name: snapshots
+    description: "Public result snapshots (Tier 1)"
+  - name: icr
+    description: "Intelligent Character Recognition jobs"
+  - name: audit
+    description: "Form audit and evidence chain"
+  - name: ro
+    description: "Returning Officer dispute adjudication"
+
+paths:
+  /api/v1/rts/forms:
+    post:
+      operationId: submitForm
+      summary: "Ingest Form 34A from polling kit"
+      description: |
+        Primary ingest endpoint for Form 34A (Presidential tally sheet) from
+        polling kits (M08 rts-device). Accepts CBOR or JSON payload.
+        Device signature is verified before acceptance. Triggers ICR job
+        if raw_scan_ref is present. Idempotent via Idempotency-Key.
+      tags: [forms]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: 5
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Form34ARequest"
+          application/cbor:
+            schema:
+              $ref: "#/components/schemas/Form34ARequest"
+      responses:
+        "202":
+          description: "Form accepted for processing"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormAccepted"
+            application/cbor:
+              schema:
+                $ref: "#/components/schemas/FormAccepted"
+        "400":
+          description: "Invalid form payload or device signature"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "422":
+          description: "Validation error"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "RTS backend unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/rts/forms/sms-fallback:
+    post:
+      operationId: submitFormSmsFallback
+      summary: "Ingest Form 34A via SMS fallback channel"
+      description: |
+        Fallback ingest for low-connectivity areas where the primary kit
+        channel is unavailable. Accepts a structured SMS-encoded payload
+        (compact format, numeric only). Triggers manual ICR review flag.
+      tags: [forms]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: 5
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SmsFallbackRequest"
+          application/cbor:
+            schema:
+              $ref: "#/components/schemas/SmsFallbackRequest"
+      responses:
+        "202":
+          description: "SMS fallback form accepted"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormAccepted"
+            application/cbor:
+              schema:
+                $ref: "#/components/schemas/FormAccepted"
+        "400":
+          description: "Invalid SMS payload"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "422":
+          description: "Validation error"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/rts/tokens:
+    post:
+      operationId: provisionToken
+      summary: "Provision device authentication token"
+      description: |
+        Issues a short-lived device token (SPIFFE-backed, 8h TTL) to an
+        authenticated polling kit. The kit must present its SVID and
+        station_code to receive a token scoped to that station.
+      tags: [tokens]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: 5
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TokenRequest"
+          application/cbor:
+            schema:
+              $ref: "#/components/schemas/TokenRequest"
+      responses:
+        "200":
+          description: "Device token issued"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceToken"
+            application/cbor:
+              schema:
+                $ref: "#/components/schemas/DeviceToken"
+        "400":
+          description: "Invalid token request"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "401":
+          description: "SVID authentication failed"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Station not authorized for this device"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/rts/events:
+    post:
+      operationId: ingestEvent
+      summary: "Ingest RTS domain event from a polling kit"
+      description: |
+        Accepts a CloudEvents-wrapped RTS domain event (e.g., scanner_online,
+        ballot_box_sealed, ro_signed). Events are persisted to the event store
+        and used to drive aggregate state and audit trails.
+      tags: [events]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: 5
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "../_shared/common.yaml#/components/schemas/EelEnvelope"
+          application/cbor:
+            schema:
+              $ref: "../_shared/common.yaml#/components/schemas/EelEnvelope"
+      responses:
+        "202":
+          description: "Event accepted"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventAccepted"
+            application/cbor:
+              schema:
+                $ref: "#/components/schemas/EventAccepted"
+        "400":
+          description: "Invalid event envelope"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse (duplicate event)"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/rts/acks/{scan_id}:
+    get:
+      operationId: getAck
+      summary: "Get acknowledgement status for a scan submission"
+      description: |
+        Returns the current processing status for a submitted Form 34A scan.
+        Used by polling kits to confirm receipt and ICR completion.
+      tags: [forms]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - name: scan_id
+          in: path
+          required: true
+          schema:
+            $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: "Scan acknowledgement"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanAck"
+        "404":
+          description: "Scan ID not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/rts/snapshots:
+    get:
+      operationId: getSnapshotIndex
+      summary: "Get index of public result snapshots (Tier 1)"
+      description: |
+        Returns the index of all available signed result snapshots.
+        Served from signed-static CDN. No authentication required.
+        Response includes cosign signature, Merkle proof, and snapshot ID headers.
+      tags: [snapshots]
+      x-eel-auth: public
+      x-eel-tier: 1
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: "Snapshot index"
+          headers:
+            X-Eel-Signature:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Eel-Signature"
+            X-Eel-Merkle-Proof:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Eel-Merkle-Proof"
+            X-Eel-Snapshot-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Eel-Snapshot-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SnapshotIndex"
+        "503":
+          description: "Service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/rts/snapshots/{scope}/{code}:
+    get:
+      operationId: getSnapshot
+      summary: "Get public result snapshot for a scope and code (Tier 1)"
+      description: |
+        Returns the signed result snapshot for a specific scope (e.g., presidential)
+        and code (e.g., polling station code or constituency code). Response is
+        signed-static and includes integrity headers.
+      tags: [snapshots]
+      x-eel-auth: public
+      x-eel-tier: 1
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      parameters:
+        - name: scope
+          in: path
+          required: true
+          description: "Election scope: presidential, governor, senator, etc."
+          schema:
+            type: string
+            enum:
+              - presidential
+              - governor
+              - senator
+              - national_assembly
+              - county_assembly
+            x-eel-data-class: C
+        - name: code
+          in: path
+          required: true
+          description: "Administrative scope code (polling station, constituency, county, national)"
+          schema:
+            type: string
+            pattern: "^(NATIONAL|[A-Z]{2}-[0-9]{3}(-[0-9]{3})*)$"
+            x-eel-data-class: C
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: "Signed result snapshot"
+          headers:
+            X-Eel-Signature:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Eel-Signature"
+            X-Eel-Merkle-Proof:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Eel-Merkle-Proof"
+            X-Eel-Snapshot-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Eel-Snapshot-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResultSnapshot"
+        "404":
+          description: "Snapshot not found for scope/code"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/rts/forms/{form_id}/proof:
+    get:
+      operationId: getFormProof
+      summary: "Get Merkle inclusion proof for a form"
+      description: |
+        Returns the Merkle inclusion proof for a Form 34A in the results
+        transparency log. Used by observers and candidates to verify
+        that a specific form was included in the tally.
+      tags: [forms]
+      x-eel-auth: JWT
+      x-eel-tier: 2
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      parameters:
+        - name: form_id
+          in: path
+          required: true
+          schema:
+            $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: "Form Merkle inclusion proof"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormProof"
+            application/cbor:
+              schema:
+                $ref: "#/components/schemas/FormProof"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Form not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/rts/forms/34b:
+    post:
+      operationId: submitForm34B
+      summary: "Ingest Form 34B (constituency tally) from RO kit"
+      description: |
+        Accepts Form 34B (constituency-level tally) from the Returning Officer
+        device (M09 rts-ro). Aggregates polling station Form 34A results.
+        Requires RO signature (ro_sig) and kit signature (kit_sig).
+      tags: [forms]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: 5
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Form34BRequest"
+          application/cbor:
+            schema:
+              $ref: "#/components/schemas/Form34BRequest"
+      responses:
+        "202":
+          description: "Form 34B accepted"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormAccepted"
+            application/cbor:
+              schema:
+                $ref: "#/components/schemas/FormAccepted"
+        "400":
+          description: "Invalid form or signature"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/rts/forms/34c:
+    post:
+      operationId: submitForm34C
+      summary: "Ingest Form 34C (national tally) from national tally centre"
+      description: |
+        Accepts Form 34C (national presidential tally) from the national
+        tally centre system. Aggregates all Form 34B constituency results.
+        Requires dual-officer signatures.
+      tags: [forms]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: 5
+      x-eel-sla:
+        p50: 500
+        p95: 2000
+        p99: 5000
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Form34CRequest"
+          application/cbor:
+            schema:
+              $ref: "#/components/schemas/Form34CRequest"
+      responses:
+        "202":
+          description: "Form 34C accepted"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormAccepted"
+            application/cbor:
+              schema:
+                $ref: "#/components/schemas/FormAccepted"
+        "400":
+          description: "Invalid form or dual-officer signature missing"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/rts/icr/{form_id}:
+    post:
+      operationId: submitIcrJob
+      summary: "Submit form image for ICR processing"
+      description: |
+        Submits a form scan image reference to the ICR (Intelligent Character
+        Recognition) engine. Returns a job ID for polling. Used when
+        digital transcription from the kit is unavailable or flagged for review.
+      tags: [icr]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: 5
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - name: form_id
+          in: path
+          required: true
+          schema:
+            $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IcrJobRequest"
+          application/cbor:
+            schema:
+              $ref: "#/components/schemas/IcrJobRequest"
+      responses:
+        "202":
+          description: "ICR job submitted"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IcrJobAccepted"
+            application/cbor:
+              schema:
+                $ref: "#/components/schemas/IcrJobAccepted"
+        "404":
+          description: "Form not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/rts/icr/{job_id}/result:
+    get:
+      operationId: getIcrResult
+      summary: "Get ICR job result"
+      description: |
+        Returns the result of a completed ICR job. Status may be pending,
+        complete, or failed. When complete, extracted_counts contains
+        the transcribed candidate vote counts.
+      tags: [icr]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: "ICR result"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IcrJobResult"
+        "404":
+          description: "Job not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/rts/audit/{form_id}:
+    get:
+      operationId: getFormAudit
+      summary: "Get audit trail for a form"
+      description: |
+        Returns the complete audit chain for a Form 34A: all events,
+        ICR jobs, RO signatures, dispute filings, and resolution records.
+        Requires JWT+SpiceDB AUDITOR role.
+      tags: [audit]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 100
+        p95: 300
+        p99: 800
+      parameters:
+        - name: form_id
+          in: path
+          required: true
+          schema:
+            $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: "Form audit trail"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormAuditTrail"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Form not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/rts/ro/disputes:
+    post:
+      operationId: createRoDispute
+      summary: "File a Returning Officer dispute"
+      description: |
+        Allows an RO to file a dispute against a Form 34A or 34B tally.
+        Creates a dispute record for adjudication by the dispute resolution
+        committee. Requires valid RO JWT+SpiceDB credentials.
+      tags: [ro]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoDisputeRequest"
+      responses:
+        "202":
+          description: "Dispute filed"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoDisputeAccepted"
+        "400":
+          description: "Invalid dispute"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/rts/ro/disputes/{id}/resolve:
+    patch:
+      operationId: resolveRoDispute
+      summary: "Resolve a Returning Officer dispute"
+      description: |
+        Records the resolution of an RO dispute. Outcomes may trigger
+        re-tallying or form correction workflows. Requires dispute
+        committee chair JWT+SpiceDB role.
+      tags: [ro]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoDisputeResolution"
+      responses:
+        "200":
+          description: "Dispute resolved"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoDispute"
+        "400":
+          description: "Invalid resolution"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Dispute not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse or dispute already resolved"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+components:
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+
+    XRequestId:
+      name: X-Request-Id
+      in: header
+      required: false
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+
+  securitySchemes:
+    BearerJWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+    SVIDmTLS:
+      type: mutualTLS
+      description: "SPIFFE SVID mutual TLS"
+
+  schemas:
+    Form34A:
+      type: object
+      description: "Form 34A - Polling Station Tally Sheet (Presidential)."
+      required:
+        - form_id
+        - station_code
+        - election_id
+        - position_code
+        - candidate_counts
+        - raw_scan_ref
+        - image_hash
+        - kit_sig
+        - status
+      properties:
+        form_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Unique form identifier."
+          x-eel-data-class: C
+        station_code:
+          type: string
+          description: "Polling station code."
+          pattern: "^[A-Z]{2,3}-[0-9]{3}-PS-[0-9]{3,4}$"
+          x-eel-data-class: C
+          example: "NRB-001-PS-042"
+        election_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Election instance identifier."
+          x-eel-data-class: C
+        position_code:
+          type: string
+          description: "Electoral position code."
+          enum:
+            - PRESIDENTIAL
+            - GOVERNOR
+            - SENATOR
+            - NATIONAL_ASSEMBLY
+            - COUNTY_ASSEMBLY
+          x-eel-data-class: C
+          example: "PRESIDENTIAL"
+        candidate_counts:
+          type: array
+          description: "Per-candidate vote counts."
+          x-eel-data-class: C
+          items:
+            $ref: "#/components/schemas/CandidateCount"
+        raw_scan_ref:
+          type: string
+          description: "Object storage reference to the raw scanned image."
+          x-eel-data-class: C
+          example: "s3://eel-forms/2027/scans/NRB-001-PS-042-34A.tiff"
+        image_hash:
+          type: string
+          description: "SHA-256 hash of the raw scan image."
+          pattern: "^[0-9a-f]{64}$"
+          x-eel-data-class: C
+          example: "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
+        quality_score:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: "Image quality score from the kit scanner."
+          x-eel-data-class: D
+          example: 0.92
+        kit_sig:
+          type: string
+          description: "ECDSA-P256 device HSM signature over canonical form payload."
+          x-eel-data-class: C
+          example: "MEQCIB..."
+        ro_sig:
+          type: string
+          description: "Returning Officer signature (present when form progressed to RO stage)."
+          x-eel-data-class: C
+        status:
+          type: string
+          enum:
+            - received
+            - icr_pending
+            - icr_complete
+            - ro_signed
+            - disputed
+            - finalized
+          x-eel-data-class: D
+          example: "received"
+
+    CandidateCount:
+      type: object
+      description: "Vote count for a single candidate."
+      required:
+        - candidate_code
+        - votes
+      properties:
+        candidate_code:
+          type: string
+          description: "Candidate identifier code."
+          x-eel-data-class: C
+          example: "CAND-001"
+        votes:
+          type: integer
+          minimum: 0
+          description: "Number of valid votes for this candidate."
+          x-eel-data-class: C
+          example: 1432
+        rejected_ballots:
+          type: integer
+          minimum: 0
+          description: "Rejected ballots attributed to this candidate slot."
+          x-eel-data-class: D
+          example: 3
+
+    Form34ARequest:
+      type: object
+      description: "Form 34A ingest request from a polling kit."
+      required:
+        - station_code
+        - election_id
+        - position_code
+        - candidate_counts
+        - raw_scan_ref
+        - image_hash
+        - kit_sig
+        - capture_timestamp
+        - device_serial
+      properties:
+        station_code:
+          type: string
+          x-eel-data-class: C
+          example: "NRB-001-PS-042"
+        election_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        position_code:
+          type: string
+          enum: [PRESIDENTIAL, GOVERNOR, SENATOR, NATIONAL_ASSEMBLY, COUNTY_ASSEMBLY]
+          x-eel-data-class: C
+        candidate_counts:
+          type: array
+          x-eel-data-class: C
+          items:
+            $ref: "#/components/schemas/CandidateCount"
+        raw_scan_ref:
+          type: string
+          x-eel-data-class: C
+        image_hash:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+          x-eel-data-class: C
+        quality_score:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          x-eel-data-class: D
+        kit_sig:
+          type: string
+          x-eel-data-class: C
+        capture_timestamp:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        device_serial:
+          type: string
+          x-eel-data-class: C
+          example: "RTS-KIT-00219"
+        rejected_ballots:
+          type: integer
+          minimum: 0
+          x-eel-data-class: D
+          example: 7
+        valid_votes:
+          type: integer
+          minimum: 0
+          x-eel-data-class: C
+          example: 2847
+        registered_voters:
+          type: integer
+          minimum: 0
+          x-eel-data-class: C
+          example: 3100
+
+    FormAccepted:
+      type: object
+      description: "Acknowledgement of an accepted form."
+      required:
+        - form_id
+        - scan_id
+        - status
+        - hlc
+      properties:
+        form_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        scan_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Unique scan submission ID for ack polling."
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [received, icr_pending]
+          x-eel-data-class: C
+          example: "icr_pending"
+        hlc:
+          $ref: "../_shared/common.yaml#/components/schemas/HLC"
+          x-eel-data-class: D
+
+    SmsFallbackRequest:
+      type: object
+      description: "Form 34A SMS fallback payload (compact numeric encoding)."
+      required:
+        - msisdn
+        - sms_payload
+        - station_code
+        - election_id
+        - capture_timestamp
+      properties:
+        msisdn:
+          type: string
+          description: "Sender MSISDN in E.164 format (must be whitelisted RO device)."
+          pattern: "^\\+[1-9][0-9]{7,14}$"
+          x-eel-data-class: C
+          example: "+254712345678"
+        sms_payload:
+          type: string
+          description: "Compact numeric SMS payload (format defined in M08 spec)."
+          maxLength: 640
+          x-eel-data-class: C
+          example: "34A|NRB001PS042|2027GEN|PRES|1432,987,654,321,7|29"
+        station_code:
+          type: string
+          x-eel-data-class: C
+          example: "NRB-001-PS-042"
+        election_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        capture_timestamp:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+
+    TokenRequest:
+      type: object
+      description: "Request for a device session token."
+      required:
+        - device_serial
+        - station_code
+        - svid
+      properties:
+        device_serial:
+          type: string
+          x-eel-data-class: C
+          example: "RTS-KIT-00219"
+        station_code:
+          type: string
+          x-eel-data-class: C
+          example: "NRB-001-PS-042"
+        svid:
+          type: string
+          description: "SPIFFE SVID URI of the device."
+          x-eel-data-class: C
+          example: "spiffe://eel.local/ns/rts/sa/rts-device-00219"
+
+    DeviceToken:
+      type: object
+      description: "Short-lived device session token."
+      required:
+        - token
+        - expires_at
+        - station_code
+      properties:
+        token:
+          type: string
+          description: "Signed JWT device token (8h TTL)."
+          x-eel-data-class: C
+        expires_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        station_code:
+          type: string
+          x-eel-data-class: C
+
+    EventAccepted:
+      type: object
+      description: "Acknowledgement of an accepted domain event."
+      required:
+        - event_id
+        - sequence
+        - hlc
+      properties:
+        event_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        sequence:
+          type: integer
+          format: int64
+          x-eel-data-class: D
+        hlc:
+          $ref: "../_shared/common.yaml#/components/schemas/HLC"
+          x-eel-data-class: D
+
+    ScanAck:
+      type: object
+      description: "Scan submission acknowledgement and processing status."
+      required:
+        - scan_id
+        - form_id
+        - status
+        - received_at
+      properties:
+        scan_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        form_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [received, icr_pending, icr_complete, ro_signed, finalized, failed]
+          x-eel-data-class: C
+          example: "icr_complete"
+        received_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        icr_completed_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        failure_reason:
+          type: string
+          x-eel-data-class: D
+
+    SnapshotIndex:
+      type: object
+      description: "Index of available signed result snapshots."
+      required:
+        - snapshots
+        - generated_at
+        - snapshot_id
+      properties:
+        snapshots:
+          type: array
+          x-eel-data-class: C
+          items:
+            $ref: "#/components/schemas/SnapshotMeta"
+        generated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        snapshot_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+
+    SnapshotMeta:
+      type: object
+      description: "Metadata for a single result snapshot."
+      required:
+        - scope
+        - code
+        - snapshot_id
+        - generated_at
+        - url
+      properties:
+        scope:
+          type: string
+          x-eel-data-class: C
+          example: "presidential"
+        code:
+          type: string
+          x-eel-data-class: C
+          example: "NATIONAL"
+        snapshot_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        generated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        url:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        merkle_root:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+          x-eel-data-class: C
+
+    ResultSnapshot:
+      type: object
+      description: "Signed result snapshot for a scope/code pair."
+      required:
+        - snapshot_id
+        - scope
+        - code
+        - generated_at
+        - candidate_totals
+        - total_valid_votes
+        - total_registered_voters
+        - merkle_root
+        - hsm_sig
+        - stations_reported
+        - stations_total
+      properties:
+        snapshot_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        scope:
+          type: string
+          x-eel-data-class: C
+          example: "presidential"
+        code:
+          type: string
+          x-eel-data-class: C
+          example: "NATIONAL"
+        generated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        candidate_totals:
+          type: array
+          x-eel-data-class: C
+          items:
+            $ref: "#/components/schemas/CandidateTotal"
+        total_valid_votes:
+          type: integer
+          format: int64
+          x-eel-data-class: C
+          example: 14800000
+        total_registered_voters:
+          type: integer
+          format: int64
+          x-eel-data-class: C
+          example: 22500000
+        total_rejected_ballots:
+          type: integer
+          format: int64
+          x-eel-data-class: C
+          example: 45000
+        turnout_pct:
+          type: number
+          format: float
+          x-eel-data-class: C
+          example: 65.8
+        stations_reported:
+          type: integer
+          x-eel-data-class: C
+          example: 46123
+        stations_total:
+          type: integer
+          x-eel-data-class: C
+          example: 46232
+        merkle_root:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+          x-eel-data-class: C
+        hsm_sig:
+          type: string
+          description: "HSM signature over canonical snapshot content."
+          x-eel-data-class: C
+        witness_cosigs:
+          type: array
+          x-eel-data-class: C
+          items:
+            $ref: "../_shared/common.yaml#/components/schemas/WitnessCosignature"
+
+    CandidateTotal:
+      type: object
+      description: "Aggregated vote totals for a candidate."
+      required:
+        - candidate_code
+        - candidate_name
+        - party_code
+        - votes
+      properties:
+        candidate_code:
+          type: string
+          x-eel-data-class: C
+        candidate_name:
+          type: string
+          x-eel-data-class: C
+        party_code:
+          type: string
+          x-eel-data-class: C
+        votes:
+          type: integer
+          format: int64
+          x-eel-data-class: C
+        vote_share_pct:
+          type: number
+          format: float
+          x-eel-data-class: C
+
+    FormProof:
+      type: object
+      description: "Merkle inclusion proof for a form in the results log."
+      required:
+        - form_id
+        - proof
+      properties:
+        form_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        proof:
+          $ref: "../_shared/common.yaml#/components/schemas/MerkleInclusionProof"
+          x-eel-data-class: C
+
+    Form34BRequest:
+      type: object
+      description: "Form 34B (constituency tally) ingest payload."
+      required:
+        - constituency_code
+        - election_id
+        - position_code
+        - station_summaries
+        - kit_sig
+        - ro_sig
+        - capture_timestamp
+        - device_serial
+      properties:
+        constituency_code:
+          type: string
+          x-eel-data-class: C
+          example: "NRB-001"
+        election_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        position_code:
+          type: string
+          enum: [PRESIDENTIAL, GOVERNOR, SENATOR, NATIONAL_ASSEMBLY, COUNTY_ASSEMBLY]
+          x-eel-data-class: C
+        station_summaries:
+          type: array
+          description: "Per-station form 34A summaries included in this 34B."
+          x-eel-data-class: C
+          items:
+            type: object
+            required: [station_code, form_34a_id, valid_votes]
+            properties:
+              station_code:
+                type: string
+                x-eel-data-class: C
+              form_34a_id:
+                $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+                x-eel-data-class: C
+              valid_votes:
+                type: integer
+                format: int64
+                x-eel-data-class: C
+        kit_sig:
+          type: string
+          x-eel-data-class: C
+        ro_sig:
+          type: string
+          description: "Returning Officer ECDSA-P256 signature."
+          x-eel-data-class: C
+        capture_timestamp:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        device_serial:
+          type: string
+          x-eel-data-class: C
+
+    Form34CRequest:
+      type: object
+      description: "Form 34C (national presidential tally) ingest payload."
+      required:
+        - election_id
+        - constituency_summaries
+        - primary_officer_sig
+        - countersign_officer_sig
+        - capture_timestamp
+      properties:
+        election_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        constituency_summaries:
+          type: array
+          description: "Per-constituency Form 34B references."
+          x-eel-data-class: C
+          items:
+            type: object
+            required: [constituency_code, form_34b_id, valid_votes]
+            properties:
+              constituency_code:
+                type: string
+                x-eel-data-class: C
+              form_34b_id:
+                $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+                x-eel-data-class: C
+              valid_votes:
+                type: integer
+                format: int64
+                x-eel-data-class: C
+        primary_officer_sig:
+          type: string
+          description: "Primary officer signature (HSM-backed)."
+          x-eel-data-class: C
+        countersign_officer_sig:
+          type: string
+          description: "Second officer countersignature (HSM-backed)."
+          x-eel-data-class: C
+        capture_timestamp:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+
+    IcrJobRequest:
+      type: object
+      description: "ICR job submission for a form scan."
+      required:
+        - image_ref
+        - image_hash
+        - form_type
+      properties:
+        image_ref:
+          type: string
+          description: "Object storage reference to the form image."
+          x-eel-data-class: C
+        image_hash:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+          x-eel-data-class: C
+        form_type:
+          type: string
+          enum: [form_34a, form_34b, form_34c]
+          x-eel-data-class: C
+        priority:
+          type: string
+          enum: [normal, high]
+          default: normal
+          x-eel-data-class: D
+
+    IcrJobAccepted:
+      type: object
+      description: "ICR job accepted response."
+      required:
+        - job_id
+        - status
+        - estimated_duration_ms
+      properties:
+        job_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [queued, processing]
+          x-eel-data-class: C
+        estimated_duration_ms:
+          type: integer
+          x-eel-data-class: D
+          example: 3000
+
+    IcrJobResult:
+      type: object
+      description: "Result of an ICR processing job."
+      required:
+        - job_id
+        - status
+        - form_id
+      properties:
+        job_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        form_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [queued, processing, complete, failed, requires_review]
+          x-eel-data-class: C
+        extracted_counts:
+          type: array
+          description: "ICR-extracted candidate counts (populated when complete)."
+          x-eel-data-class: C
+          items:
+            $ref: "#/components/schemas/CandidateCount"
+        confidence_score:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: "Overall ICR confidence score."
+          x-eel-data-class: D
+        failure_reason:
+          type: string
+          x-eel-data-class: D
+        completed_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    FormAuditTrail:
+      type: object
+      description: "Complete audit trail for a form submission."
+      required:
+        - form_id
+        - events
+      properties:
+        form_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        events:
+          type: array
+          description: "Ordered list of all audit events for this form."
+          x-eel-data-class: C
+          items:
+            type: object
+            required: [event_type, timestamp, actor_id]
+            properties:
+              event_type:
+                type: string
+                x-eel-data-class: C
+                example: "form_received"
+              timestamp:
+                type: string
+                format: date-time
+                x-eel-data-class: D
+              actor_id:
+                type: string
+                x-eel-data-class: C
+              details:
+                type: object
+                x-eel-data-class: C
+                additionalProperties: true
+
+    RoDisputeRequest:
+      type: object
+      description: "RO dispute filing request."
+      required:
+        - form_id
+        - form_type
+        - dispute_type
+        - ro_id
+        - reason
+      properties:
+        form_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        form_type:
+          type: string
+          enum: [form_34a, form_34b]
+          x-eel-data-class: C
+        dispute_type:
+          type: string
+          enum:
+            - count_mismatch
+            - missing_signature
+            - tamper_suspected
+            - invalid_station
+            - other
+          x-eel-data-class: C
+        ro_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        reason:
+          type: string
+          maxLength: 2000
+          x-eel-data-class: C
+        supporting_refs:
+          type: array
+          x-eel-data-class: C
+          items:
+            type: string
+            x-eel-data-class: C
+
+    RoDisputeAccepted:
+      type: object
+      description: "RO dispute filing acknowledgement."
+      required:
+        - dispute_id
+        - status
+      properties:
+        dispute_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [open, escalated]
+          x-eel-data-class: C
+
+    RoDispute:
+      type: object
+      description: "RO dispute record."
+      required:
+        - dispute_id
+        - form_id
+        - dispute_type
+        - status
+        - created_at
+      properties:
+        dispute_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        form_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        dispute_type:
+          type: string
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [open, in_review, resolved, escalated]
+          x-eel-data-class: C
+        outcome:
+          type: string
+          enum: [upheld, dismissed, form_corrected, escalated]
+          x-eel-data-class: C
+        created_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        resolved_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    RoDisputeResolution:
+      type: object
+      description: "Resolution payload for an RO dispute."
+      required:
+        - outcome
+        - resolver_id
+        - resolution_notes
+      properties:
+        outcome:
+          type: string
+          enum: [upheld, dismissed, form_corrected, escalate]
+          x-eel-data-class: C
+        resolver_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        resolution_notes:
+          type: string
+          maxLength: 2000
+          x-eel-data-class: C
+        corrected_counts:
+          type: array
+          description: "Corrected counts (required if outcome=form_corrected)."
+          x-eel-data-class: C
+          items:
+            $ref: "#/components/schemas/CandidateCount"

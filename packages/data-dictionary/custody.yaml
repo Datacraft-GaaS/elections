@@ -1,0 +1,318 @@
+# Custody and Inventory data dictionary
+# Data classes: A=PII-sensitive, B=PII-adjacent, C=system/non-PII, D=metadata/operational
+# Lawful basis: Kenya DPA 2019 s.25 public task; Elections Act s.32 custody records
+context: custody
+service: inventory-svc
+updated: "2026-08-21"
+tables:
+  - table: assets
+    description: "Master register of election equipment and materials (kits, ballot boxes, seals, vehicles)"
+    store: T1-assets
+    columns:
+      - column: asset_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Elections Act s.32: 15 years"
+        notes: "UUIDv7; primary key"
+      - column: asset_type
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - category of asset"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Values: bvi_kit, bvr_kit, ballot_box, seal_pack, ballot_paper_ream, vehicle"
+      - column: serial
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - manufacturer or authority serial number"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Unique per asset; cross-references MDM for kits"
+      - column: model
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - device model or specification"
+        retention: "Elections Act s.32: 15 years"
+        notes: "e.g. M08, BallotBox-2027-A"
+      - column: status
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - operational status"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Values: in_store, in_transit, deployed, returned, decommissioned"
+      - column: station_code
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - current assignment"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Null when in store or transit; FK to station register"
+      - column: last_seen_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Elections Act s.32: 15 years"
+        notes: "HLC of last custody scan or heartbeat"
+
+  - table: custody_events
+    description: "Tamper-evident chain of custody transfers for all election assets"
+    store: T2-custody
+    columns:
+      - column: event_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Elections Act s.32: 15 years"
+        notes: "UUIDv7; primary key; append-only"
+      - column: asset_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - FK to assets"
+        retention: "Elections Act s.32: 15 years"
+        notes: "FK to assets.asset_id"
+      - column: from_custodian
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - transferring party identifier (staff ID or depot code)"
+        retention: "Elections Act s.32: 15 years"
+        notes: "SPIFFE ID or staff UUID; logged for accountability"
+      - column: to_custodian
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - receiving party identifier"
+        retention: "Elections Act s.32: 15 years"
+        notes: "SPIFFE ID or staff UUID"
+      - column: gps_lat
+        type: "FLOAT8"
+        data_class: D
+        pii_purpose: "Operational metadata - transfer location"
+        retention: "Elections Act s.32: 15 years"
+        notes: "WGS84; optional for non-GPS-equipped transfer points"
+      - column: gps_lon
+        type: "FLOAT8"
+        data_class: D
+        pii_purpose: "Operational metadata - transfer location"
+        retention: "Elections Act s.32: 15 years"
+        notes: "WGS84"
+      - column: transferred_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Elections Act s.32: 15 years"
+        notes: "HLC of physical handover"
+      - column: hsm_sig
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - HSM signature over transfer record"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Ed25519 by inventory-svc HSM key; legally authenticates transfer"
+      - column: transfer_reason
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - reason code for transfer"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Values: pre_election_dispatch, post_election_return, repair, replacement"
+
+  - table: seals
+    description: "Tamper-evident seal lifecycle records for ballot boxes and kit compartments"
+    store: T2-custody
+    columns:
+      - column: seal_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Elections Act s.32: 15 years"
+        notes: "UUIDv7; primary key"
+      - column: asset_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - FK to sealed asset"
+        retention: "Elections Act s.32: 15 years"
+        notes: "FK to assets.asset_id"
+      - column: seal_type
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - type of seal"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Values: plastic_numbered, adhesive_holographic, wire_lead"
+      - column: affixed_by
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - staff ID of officer who affixed seal"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Staff UUID; logged for accountability"
+      - column: affixed_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Elections Act s.32: 15 years"
+        notes: "HLC of affixing"
+      - column: broken_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Null while intact; HLC of breaking"
+      - column: broken_reason
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - reason for breaking"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Values: polling_open, result_counting, official_inspection, tamper_detected"
+      - column: hsm_sig
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - HSM signature over seal record"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Ed25519; both affixing and breaking events separately signed"
+
+  - table: consumables
+    description: "Inventory of consumable election supplies (ballot papers, ink, stationery)"
+    store: T3-inventory
+    columns:
+      - column: item_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Election cycle + 2 years"
+        notes: "UUIDv7; primary key"
+      - column: item_type
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - type of consumable"
+        retention: "Election cycle + 2 years"
+        notes: "Values: ballot_paper, indelible_ink, voter_register_copy, seal_pack"
+      - column: quantity
+        type: "INTEGER"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 2 years"
+        notes: "Current stock at station or depot"
+      - column: unit
+        type: "TEXT"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 2 years"
+        notes: "e.g. sheets, bottles, packs"
+      - column: station_code
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - location of stock"
+        retention: "Election cycle + 2 years"
+        notes: "Station or depot code; FK to boundary register"
+      - column: replenishment_threshold
+        type: "INTEGER"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 2 years"
+        notes: "Alert fires to ECC when quantity falls below this threshold"
+
+  - table: reserve_pools
+    description: "Reserve asset pool levels for emergency replenishment tracking"
+    store: T3-inventory
+    columns:
+      - column: pool_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Election cycle + 2 years"
+        notes: "UUIDv7; primary key"
+      - column: scope
+        type: "TEXT"
+        data_class: D
+        pii_purpose: "Operational metadata - geographic scope of pool"
+        retention: "Election cycle + 2 years"
+        notes: "Values: national, county, constituency"
+      - column: asset_type
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - asset category for this pool"
+        retention: "Election cycle + 2 years"
+        notes: "FK to assets.asset_type taxonomy"
+      - column: count
+        type: "INTEGER"
+        data_class: D
+        pii_purpose: "Operational metadata - current reserve count"
+        retention: "Election cycle + 2 years"
+        notes: "Decremented on each reserve dispatch"
+      - column: alert_threshold
+        type: "INTEGER"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 2 years"
+        notes: "Alert fires to ECC and iab-svc when count falls below threshold"
+      - column: updated_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 2 years"
+        notes: "HLC of last pool update"
+
+  - table: events
+    description: "Append-only event-store for all custody domain events"
+    store: T4-eventstore
+    columns:
+      - column: id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - event identifier"
+        retention: "Elections Act s.32: 15 years"
+        notes: "UUIDv7; primary key; append-only"
+      - column: stream_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - aggregate stream identifier (asset_id)"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Identifies the aggregate this event belongs to"
+      - column: stream_version
+        type: "BIGINT"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Monotonically increasing per stream"
+      - column: event_type
+        type: "TEXT"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Elections Act s.32: 15 years"
+        notes: "e.g. custody.asset.transferred, custody.seal.broken"
+      - column: payload_hash
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - SHA-256 of serialised event payload"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Payload in MinIO; hash enables tamper detection"
+      - column: metadata_hash
+        type: "TEXT"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Elections Act s.32: 15 years"
+        notes: "SHA-256 of CloudEvents metadata headers"
+      - column: producer_sig
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - service signing key signature"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Ed25519 by inventory-svc SPIFFE private key"
+      - column: hsm_countersig
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - HSM countersignature"
+        retention: "Elections Act s.32: 15 years"
+        notes: "HSM co-signs all custody events"
+      - column: recorded_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Wall-clock insert time"
+      - column: hlc
+        type: "TEXT"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Elections Act s.32: 15 years"
+        notes: "HLC string; authoritative ordering key"
+      - column: prev_hash
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - hash-chain link"
+        retention: "Elections Act s.32: 15 years"
+        notes: "SHA-256 of preceding event id"

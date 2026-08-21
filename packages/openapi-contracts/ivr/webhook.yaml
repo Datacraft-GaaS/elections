@@ -1,0 +1,272 @@
+openapi: 3.1.0
+info:
+  title: eel-ivr-webhook
+  version: 1.0.0
+  description: >
+    IVR (Interactive Voice Response) webhook schema for EEL modules M23
+    (grievance intake) and M13 (voter verifier). Built for Africa's Talking
+    Voice API. Authenticated via X-Africastalking-Signature header (HMAC-SHA256
+    of the raw form body using the AT API key as the secret). Caller numbers
+    are stored only as SHA-256 hashes (class A). All session data is ephemeral
+    (class E).
+
+servers:
+  - url: https://eel.local/api/v1
+    description: Production trust domain
+
+tags:
+  - name: sessions
+    description: IVR session lifecycle
+
+paths:
+  /ivr/sessions:
+    post:
+      tags: [sessions]
+      operationId: handleIvrSession
+      summary: Africa's Talking IVR session hook
+      description: >
+        Receives IVR session events from Africa's Talking Voice API. Each
+        call step or DTMF input triggers a new POST to this endpoint. The
+        handler returns an XML or JSON action document instructing the IVR
+        platform on the next step (say text, collect digits, transfer, end).
+        Authenticated via X-Africastalking-Signature (HMAC-SHA256 of the
+        raw request body keyed with the AT API key stored in EEL vault).
+        Idempotent on Idempotency-Key; network retries with the same key
+        receive the original response.
+      x-eel-sla:
+        p95_ms: 1500
+        p99_ms: 4000
+        availability: "99%"
+      security:
+        - mtls: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: X-Africastalking-Signature
+          in: header
+          required: true
+          schema:
+            type: string
+            x-eel-data-class: E
+          description: >
+            HMAC-SHA256 signature of the raw request body keyed with the
+            Africa's Talking API key registered in EEL vault. Validated by
+            the EEL IVR proxy before forwarding here.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IVRSessionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/IVRSessionRequest'
+      responses:
+        '200':
+          description: IVR action response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IVRSessionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Keycloak-issued JWT. Validated against eel.local JWKS endpoint.
+    mtls:
+      type: mutualTLS
+      description: X.509 mTLS client certificate. CN must match registered service principal in eel.local PKI.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: E
+      description: >
+        Set by the EEL IVR proxy per delivery attempt. The server stores the
+        response for 24 hours and returns it verbatim on retries.
+
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status, detail, instance, eel_trace_id]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        title:
+          type: string
+          x-eel-data-class: D
+        status:
+          type: integer
+          x-eel-data-class: D
+        detail:
+          type: string
+          x-eel-data-class: D
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        eel_trace_id:
+          type: string
+          x-eel-data-class: D
+
+    IVRSessionRequest:
+      type: object
+      required: [session_id, caller_number_hash, destination_number, direction, is_active]
+      properties:
+        session_id:
+          type: string
+          maxLength: 128
+          x-eel-data-class: E
+          description: Africa's Talking session identifier; unique per call leg
+        caller_number_hash:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: A
+          description: SHA-256 hex hash of the caller MSISDN; raw number never stored
+        destination_number:
+          type: string
+          maxLength: 20
+          x-eel-data-class: C
+          description: EEL IVR service number the caller dialed (e.g. +254800EEL000)
+        dtmf_digits:
+          type: string
+          maxLength: 32
+          x-eel-data-class: E
+          description: >
+            DTMF digits entered by the caller at this step. Empty string on
+            session initiation or when a voice prompt step has no input.
+        direction:
+          type: string
+          enum: [inbound, outbound]
+          x-eel-data-class: D
+          description: Call direction from the IVR platform perspective
+        is_active:
+          type: boolean
+          x-eel-data-class: E
+          description: >
+            True while the call is connected; false when the caller has hung
+            up. A final event with is_active=false signals session end.
+        recording_url:
+          type: string
+          format: uri
+          nullable: true
+          x-eel-data-class: E
+          description: >
+            Signed Africa's Talking recording URL if a recording step was
+            active. Ephemeral; expires after 7 days.
+
+    IVRSessionResponse:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [say, getDigits, dial, enqueue, redirect, reject, dequeue]
+          x-eel-data-class: E
+          description: >
+            Africa's Talking Voice API action to execute. Maps to AT XML
+            actions: say (Speak), getDigits (GetDigits), dial (Dial),
+            enqueue (Enqueue), redirect (Redirect), reject (Reject),
+            dequeue (Dequeue).
+        text:
+          type: string
+          maxLength: 3000
+          nullable: true
+          x-eel-data-class: C
+          description: >
+            Text to synthesise via TTS for "say" or "getDigits" actions.
+            Supports SSML markup for language and prosody hints.
+        num_digits:
+          type: integer
+          minimum: 1
+          maximum: 20
+          nullable: true
+          x-eel-data-class: E
+          description: Number of DTMF digits to collect; required for getDigits action
+        timeout:
+          type: integer
+          minimum: 1
+          maximum: 30
+          nullable: true
+          x-eel-data-class: E
+          description: >
+            Seconds to wait for DTMF input before treating as no-input;
+            used with getDigits action
+        finish_on_key:
+          type: string
+          maxLength: 1
+          nullable: true
+          x-eel-data-class: E
+          description: Key that terminates digit collection early (e.g. "#")
+        callback_url:
+          type: string
+          format: uri
+          nullable: true
+          x-eel-data-class: E
+          description: >
+            URL for AT to POST results to after async actions (enqueue,
+            dial). Must be an eel.local endpoint.
+        phone_number:
+          type: string
+          maxLength: 20
+          nullable: true
+          x-eel-data-class: C
+          description: >
+            Destination number for dial action; used to transfer the caller
+            to a live caseworker line. E.164 format.
+        voice:
+          type: string
+          nullable: true
+          enum: [man, woman]
+          x-eel-data-class: C
+          description: TTS voice preference; defaults to "woman"
+        language:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+          description: >
+            BCP-47 language code for TTS synthesis (e.g. sw-KE, en-KE);
+            defaults to en-KE
+
+  responses:
+    BadRequest:
+      description: Malformed request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: Invalid mTLS certificate or AT signature verification failed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: Idempotency key conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'

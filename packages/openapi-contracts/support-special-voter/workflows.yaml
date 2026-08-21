@@ -1,0 +1,512 @@
+openapi: 3.1.0
+info:
+  title: eel-support-special-voter
+  version: 1.0.0
+  description: Module M25 - Special Voter Workflows. Manages special voting arrangements for postal voters, hospitalized, incarcerated, and persons with disabilities.
+  contact:
+    name: EEL Platform Team
+    email: platform@eel.local
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+tags:
+  - name: applications
+    description: Special voting arrangement applications
+  - name: decisions
+    description: Application decisions
+  - name: facilities
+    description: Facilities accepting special voters
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/support/special-voter/applications:
+    post:
+      tags: [applications]
+      operationId: applySpecialVoting
+      summary: Apply for special voting arrangement
+      description: Submits a special voter application. Idempotent on Idempotency-Key. Requires JWT.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpecialVoterApplicationCreate'
+      responses:
+        '201':
+          description: Application submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpecialVoterApplication'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      tags: [applications]
+      operationId: listSpecialVoterApplications
+      summary: List special voter applications (admin)
+      description: Returns paginated list of all special voter applications. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: arrangement_type
+          in: query
+          schema:
+            type: string
+            enum: [postal, hospital, prison, residential_facility, pwd_assistance]
+            x-eel-data-class: C
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [submitted, approved, scheduled, completed, rejected]
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Paginated application list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpecialVoterApplicationPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/support/special-voter/applications/{application_id}:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationId'
+
+    get:
+      tags: [applications]
+      operationId: getSpecialVoterApplication
+      summary: Get special voter application detail
+      description: Returns application status. Requires JWT.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Application detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpecialVoterApplication'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/support/special-voter/applications/{application_id}/decisions:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationId'
+
+    post:
+      tags: [decisions]
+      operationId: decideSpecialVoterApplication
+      summary: Approve or reject special voter application
+      description: Records a decision on the application. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpecialVoterDecision'
+      responses:
+        '201':
+          description: Decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpecialVoterDecisionResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/support/special-voter/facilities:
+    get:
+      tags: [facilities]
+      operationId: listSpecialVoterFacilities
+      summary: List facilities accepting special voters
+      description: Public endpoint. Returns facilities with their locations and available arrangement types. Tier 1 with Merkle proofs.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security: []
+      parameters:
+        - name: arrangement_type
+          in: query
+          schema:
+            type: string
+            enum: [postal, hospital, prison, residential_facility, pwd_assistance]
+            x-eel-data-class: C
+        - name: county_code
+          in: query
+          schema:
+            type: string
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Facility list
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FacilityList'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by auth.eel.local (Keycloak). Trust domain eel.local.
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS client certificate for machine-to-machine calls.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+      description: UUIDv7 client-generated idempotency key.
+
+    ApplicationId:
+      name: application_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+        x-eel-data-class: D
+
+    PageSizeParam:
+      name: page_size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+        x-eel-data-class: D
+
+  headers:
+    CosignSig:
+      description: Cosign detached signature over the response body (base64url).
+      schema:
+        type: string
+        x-eel-data-class: C
+    MerkleProof:
+      description: Merkle inclusion proof for this response in the audit log tree.
+      schema:
+        type: string
+        x-eel-data-class: C
+    SnapshotId:
+      description: Snapshot identifier from which this response was served.
+      schema:
+        type: string
+        x-eel-data-class: C
+
+  schemas:
+    SpecialVoterApplicationCreate:
+      type: object
+      required:
+        - voter_id_hash
+        - arrangement_type
+        - supporting_doc_hash
+        - preferred_date
+      properties:
+        voter_id_hash:
+          type: string
+          x-eel-data-class: A
+          description: SHA-256(salt||voter_id). Stored in class A vault.
+        arrangement_type:
+          type: string
+          enum: [postal, hospital, prison, residential_facility, pwd_assistance]
+          x-eel-data-class: C
+        supporting_doc_hash:
+          type: string
+          x-eel-data-class: A
+          description: SHA-256 of supporting document. Stored in class A vault.
+        preferred_date:
+          type: string
+          format: date
+          x-eel-data-class: C
+        facility_code:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+          description: Facility code for hospital, prison, or residential arrangements.
+
+    SpecialVoterApplication:
+      allOf:
+        - $ref: '#/components/schemas/SpecialVoterApplicationCreate'
+        - type: object
+          required: [application_id, status, submitted_at]
+          properties:
+            application_id:
+              type: string
+              format: uuid
+              x-eel-data-class: C
+            status:
+              type: string
+              enum: [submitted, approved, scheduled, completed, rejected]
+              x-eel-data-class: C
+            submitted_at:
+              type: string
+              format: date-time
+              x-eel-data-class: C
+            updated_at:
+              type: string
+              format: date-time
+              x-eel-data-class: D
+
+    SpecialVoterApplicationPage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpecialVoterApplication'
+          x-eel-data-class: C
+        total:
+          type: integer
+          x-eel-data-class: C
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+        next_page:
+          type: integer
+          nullable: true
+          x-eel-data-class: D
+
+    SpecialVoterDecision:
+      type: object
+      required: [verdict]
+      properties:
+        verdict:
+          type: string
+          enum: [approved, rejected]
+          x-eel-data-class: C
+        scheduled_date:
+          type: string
+          format: date
+          nullable: true
+          x-eel-data-class: C
+        facility_code:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+        grounds:
+          type: string
+          nullable: true
+          maxLength: 2000
+          x-eel-data-class: C
+
+    SpecialVoterDecisionResult:
+      allOf:
+        - $ref: '#/components/schemas/SpecialVoterDecision'
+        - type: object
+          required: [decision_id, decided_at]
+          properties:
+            decision_id:
+              type: string
+              format: uuid
+              x-eel-data-class: C
+            decided_at:
+              type: string
+              format: date-time
+              x-eel-data-class: C
+
+    Facility:
+      type: object
+      required: [facility_code, name, county_code, arrangement_types]
+      properties:
+        facility_code:
+          type: string
+          x-eel-data-class: C
+        name:
+          type: string
+          x-eel-data-class: C
+        county_code:
+          type: string
+          x-eel-data-class: C
+        constituency:
+          type: string
+          x-eel-data-class: C
+        arrangement_types:
+          type: array
+          items:
+            type: string
+            enum: [postal, hospital, prison, residential_facility, pwd_assistance]
+            x-eel-data-class: C
+          x-eel-data-class: C
+        address:
+          type: string
+          x-eel-data-class: C
+        capacity:
+          type: integer
+          x-eel-data-class: C
+
+    FacilityList:
+      type: object
+      required: [facilities, total]
+      properties:
+        facilities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Facility'
+          x-eel-data-class: C
+        total:
+          type: integer
+          x-eel-data-class: C
+
+    ProblemDetail:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        title:
+          type: string
+          x-eel-data-class: C
+        status:
+          type: integer
+          x-eel-data-class: C
+        detail:
+          type: string
+          x-eel-data-class: C
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        trace_id:
+          type: string
+          x-eel-data-class: D
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Validation error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalError:
+      description: Internal server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'

@@ -1,0 +1,19 @@
+# Topic: eel.crms.candidate.v1
+name: eel.crms.candidate.v1
+partitions: 12
+replication_factor: 3
+config:
+  min.insync.replicas: "2"
+  unclean.leader.election.enable: "false"
+  acks: "all"
+  retention.ms: "2592000000"
+  tiered.storage.enable: "false"
+  remote.storage.manager: "eel-minio-tiered-storage"
+retention_class: operational
+owner: crms-svc
+description: Candidate registration and management system events. Tracks candidate submission, clearance decisions from vetting agencies, and final approval for the ballot.
+event_types:
+  - eel.crms.candidate_submitted.v1
+  - eel.crms.clearance_received.v1
+  - eel.crms.candidate_approved.v1
+partition_key: eel_stream_id

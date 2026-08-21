@@ -1,0 +1,496 @@
+openapi: 3.1.0
+info:
+  title: eel-governance-recall
+  version: 1.0.0
+  description: >
+    Module M48: Recall Mechanics.
+    Manages recall petition lifecycle from initiation through signature collection,
+    verification, and threshold determination.
+  contact:
+    name: EEL Platform Team
+    email: platform@eel.local
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+tags:
+  - name: recall-petitions
+    description: Recall petition lifecycle
+  - name: signatures
+    description: Recall petition signatures
+  - name: verification
+    description: Signature count verification
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/governance/recall/petitions:
+    post:
+      operationId: initiateRecallPetition
+      tags: [recall-petitions]
+      summary: Initiate a recall petition
+      description: >
+        Creates a recall petition against a sitting member. Member and initiator
+        identities are stored as hashes. Tier 3 endpoint. Idempotent via Idempotency-Key.
+      security:
+        - bearerAuth: []
+        - mtls: []
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecallPetitionRequest"
+      responses:
+        "201":
+          description: Petition initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecallPetition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    get:
+      operationId: listRecallPetitions
+      tags: [recall-petitions]
+      summary: List recall petitions
+      description: Paginated list of recall petitions. Tier 3 endpoint.
+      security:
+        - bearerAuth: []
+        - mtls: []
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+        - name: constituency_code
+          in: query
+          schema:
+            type: string
+            x-eel-data-class: C
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [initiated, signature_collection, verified, threshold_met, lapsed]
+            x-eel-data-class: C
+      responses:
+        "200":
+          description: Petition list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecallPetitionPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/governance/recall/petitions/{petition_id}:
+    get:
+      operationId: getRecallPetition
+      tags: [recall-petitions]
+      summary: Get recall petition detail
+      description: Returns full detail for a specific recall petition. Tier 3 endpoint.
+      security:
+        - bearerAuth: []
+        - mtls: []
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      parameters:
+        - $ref: "#/components/parameters/PetitionIdPath"
+      responses:
+        "200":
+          description: Petition detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecallPetition"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/governance/recall/petitions/{petition_id}/signatures:
+    post:
+      operationId: recordRecallSignature
+      tags: [signatures]
+      summary: Record a recall petition signature
+      description: >
+        Records a single signature on a recall petition. Tier 2 endpoint (JWT only).
+        Petitioner identity stored as hash. Idempotent via Idempotency-Key.
+      security:
+        - bearerAuth: []
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      parameters:
+        - $ref: "#/components/parameters/PetitionIdPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecallSignatureRequest"
+      responses:
+        "201":
+          description: Signature recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecallSignatureResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/governance/recall/petitions/{petition_id}/verification:
+    post:
+      operationId: verifySignatureCount
+      tags: [verification]
+      summary: Verify the recall petition signature count
+      description: >
+        Records the official verified signature count for a recall petition.
+        Tier 3 endpoint. Idempotent via Idempotency-Key.
+      security:
+        - bearerAuth: []
+        - mtls: []
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      parameters:
+        - $ref: "#/components/parameters/PetitionIdPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignatureVerification"
+      responses:
+        "201":
+          description: Verification recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignatureVerification"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by eel.local identity provider
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS client certificate for tier 3 operations
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUIDv7 idempotency key
+    PetitionIdPath:
+      name: petition_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSizeParam:
+      name: page_size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+
+  schemas:
+    Problem:
+      type: object
+      description: RFC 9457 problem detail
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        title:
+          type: string
+          x-eel-data-class: D
+        status:
+          type: integer
+          x-eel-data-class: D
+        detail:
+          type: string
+          x-eel-data-class: D
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        trace_id:
+          type: string
+          x-eel-data-class: E
+
+    PageMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+        total:
+          type: integer
+          x-eel-data-class: D
+        total_pages:
+          type: integer
+          x-eel-data-class: D
+
+    RecallPetitionRequest:
+      type: object
+      required: [constituency_code, member_id_hash, grounds, initiator_id_hash, petition_date]
+      properties:
+        constituency_code:
+          type: string
+          x-eel-data-class: C
+        member_id_hash:
+          type: string
+          description: SHA-256 hash of member national ID
+          x-eel-data-class: A
+        grounds:
+          type: string
+          maxLength: 5000
+          x-eel-data-class: C
+        initiator_id_hash:
+          type: string
+          description: SHA-256 hash of initiator national ID
+          x-eel-data-class: A
+        petition_date:
+          type: string
+          format: date
+          x-eel-data-class: C
+
+    RecallPetition:
+      type: object
+      required: [petition_id, constituency_code, member_id_hash, grounds, initiator_id_hash, petition_date, status, threshold_required, created_at]
+      properties:
+        petition_id:
+          type: string
+          format: uuid
+          description: UUIDv7 petition identifier
+          x-eel-data-class: C
+        constituency_code:
+          type: string
+          x-eel-data-class: C
+        member_id_hash:
+          type: string
+          x-eel-data-class: A
+        grounds:
+          type: string
+          x-eel-data-class: C
+        initiator_id_hash:
+          type: string
+          x-eel-data-class: A
+        petition_date:
+          type: string
+          format: date
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [initiated, signature_collection, verified, threshold_met, lapsed]
+          x-eel-data-class: C
+        threshold_required:
+          type: integer
+          description: Minimum signatures required (set from constituency voter register)
+          x-eel-data-class: C
+        signatures_collected:
+          type: integer
+          x-eel-data-class: C
+        created_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        updated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+
+    RecallPetitionPage:
+      type: object
+      required: [items, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecallPetition"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+
+    RecallSignatureRequest:
+      type: object
+      required: [petitioner_id_hash, ward_code, signed_at]
+      properties:
+        petitioner_id_hash:
+          type: string
+          description: SHA-256 hash of petitioner national ID
+          x-eel-data-class: A
+        ward_code:
+          type: string
+          x-eel-data-class: C
+        signed_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+
+    RecallSignatureResponse:
+      type: object
+      required: [accepted, count_so_far]
+      properties:
+        accepted:
+          type: boolean
+          x-eel-data-class: C
+        count_so_far:
+          type: integer
+          description: Running total of accepted signatures (public aggregate)
+          x-eel-data-class: C
+        rejection_reason:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+
+    SignatureVerification:
+      type: object
+      required: [verified_count, verified_by_hash, method]
+      properties:
+        verified_count:
+          type: integer
+          minimum: 0
+          x-eel-data-class: C
+        verified_by_hash:
+          type: string
+          description: SHA-256 hash of verifying officer identity
+          x-eel-data-class: B
+        method:
+          type: string
+          description: Verification method (e.g. manual_cross_check, biometric)
+          x-eel-data-class: C
+        verified_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Forbidden:
+      description: Forbidden
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotFound:
+      description: Not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Conflict:
+      description: Conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    UnprocessableEntity:
+      description: Unprocessable entity
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    InternalError:
+      description: Internal server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
