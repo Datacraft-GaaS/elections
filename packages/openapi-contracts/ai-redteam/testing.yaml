@@ -1,0 +1,631 @@
+openapi: 3.1.0
+info:
+  title: eel-ai-redteam
+  version: 1.0.0
+  description: >
+    Module M61 - Secrecy Assurance Testing. Adversarial red-team campaign
+    management for ballot secrecy assurance. Covers campaign lifecycle,
+    finding submission, and sign-off for the eel election management platform.
+  contact:
+    name: eel platform team
+    url: https://eel.local/support
+servers:
+  - url: https://api.eel.local
+    description: production
+  - url: https://staging.api.eel.local
+    description: staging
+
+tags:
+  - name: campaigns
+    description: Red-team campaign lifecycle management
+  - name: findings
+    description: Vulnerability findings within a campaign
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/ai/redteam/campaigns:
+    post:
+      tags: [campaigns]
+      operationId: createRedTeamCampaign
+      summary: Initiate a red-team campaign
+      description: >
+        Creates a new adversarial testing campaign targeting a specific eel
+        module. Requires explicit authorisation reference and authorising
+        officer hash. Idempotent on Idempotency-Key. Tier 3, JWT + SpiceDB.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RedTeamCampaignRequest'
+      responses:
+        '201':
+          description: Red-team campaign created
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedTeamCampaign'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags: [campaigns]
+      operationId: listRedTeamCampaigns
+      summary: List red-team campaigns
+      description: Paginated list of all red-team campaigns. Tier 3, JWT + SpiceDB.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageCursor'
+        - $ref: '#/components/parameters/PageLimit'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [planned, running, complete, aborted]
+            x-eel-data-class: D
+        - name: attack_type
+          in: query
+          schema:
+            type: string
+            enum: [inference, timing, side_channel, model_inversion]
+            x-eel-data-class: D
+      responses:
+        '200':
+          description: Paginated campaign list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedTeamCampaignPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/ai/redteam/campaigns/{campaign_id}:
+    get:
+      tags: [campaigns]
+      operationId: getRedTeamCampaign
+      summary: Get a red-team campaign by ID
+      description: Retrieve full campaign detail including findings summary.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CampaignId'
+      responses:
+        '200':
+          description: Campaign detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedTeamCampaign'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/ai/redteam/campaigns/{campaign_id}/findings:
+    post:
+      tags: [findings]
+      operationId: addRedTeamFinding
+      summary: Add a finding to a red-team campaign
+      description: >
+        Records a vulnerability or observation discovered during the campaign.
+        Idempotent on Idempotency-Key. Campaign must be in 'running' status.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CampaignId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RedTeamFindingRequest'
+      responses:
+        '201':
+          description: Finding recorded
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedTeamFinding'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/ai/redteam/campaigns/{campaign_id}/complete:
+    post:
+      tags: [campaigns]
+      operationId: completeRedTeamCampaign
+      summary: Close a red-team campaign with final sign-off
+      description: >
+        Transitions a campaign to 'complete' status. Requires overall risk
+        rating, report reference, and sign-off officer hash. Idempotent on
+        Idempotency-Key. Campaign must be in 'running' status.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CampaignId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampaignClosure'
+      responses:
+        '200':
+          description: Campaign closed successfully
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedTeamCampaign'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by eel.local identity provider (SpiceDB-checked on every request)
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS for service-to-service calls within eel.local trust domain
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Client-generated UUIDv7 for idempotent request deduplication (TTL 24 h)
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: E
+
+    CampaignId:
+      name: campaign_id
+      in: path
+      required: true
+      description: UUIDv7 identifier of the red-team campaign
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+
+    PageCursor:
+      name: cursor
+      in: query
+      description: Opaque pagination cursor from a previous response
+      schema:
+        type: string
+        x-eel-data-class: E
+
+    PageLimit:
+      name: limit
+      in: query
+      description: Maximum items to return (1-100)
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+        x-eel-data-class: E
+
+  headers:
+    CosignSig:
+      description: Sigstore cosign signature over the response body
+      schema:
+        type: string
+        x-eel-data-class: C
+    MerkleProof:
+      description: Merkle proof anchoring this response to the audit ledger
+      schema:
+        type: string
+        x-eel-data-class: C
+    SnapshotId:
+      description: Snapshot identifier for response reproducibility
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+
+  schemas:
+    RedTeamCampaignRequest:
+      type: object
+      required:
+        - campaign_name
+        - target_module
+        - attack_type
+        - scope_description
+        - authorised_by_hash
+        - authorisation_ref
+      properties:
+        campaign_name:
+          type: string
+          maxLength: 256
+          x-eel-data-class: D
+        target_module:
+          type: string
+          maxLength: 128
+          description: Module identifier under test (e.g. M26, M44)
+          x-eel-data-class: D
+        attack_type:
+          type: string
+          enum: [inference, timing, side_channel, model_inversion]
+          x-eel-data-class: D
+        scope_description:
+          type: string
+          maxLength: 4096
+          description: Detailed description of the testing scope and boundaries
+          x-eel-data-class: D
+        authorised_by_hash:
+          type: string
+          description: SHA-256 hash of the authorising officer identifier
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: B
+        authorisation_ref:
+          type: string
+          maxLength: 512
+          description: Reference to the formal authorisation document (ticket or URI)
+          x-eel-data-class: D
+        planned_start_date:
+          type: string
+          format: date
+          x-eel-data-class: D
+        planned_end_date:
+          type: string
+          format: date
+          x-eel-data-class: D
+
+    RedTeamCampaign:
+      type: object
+      required:
+        - campaign_id
+        - campaign_name
+        - target_module
+        - attack_type
+        - status
+        - created_at
+      properties:
+        campaign_id:
+          type: string
+          format: uuid
+          description: UUIDv7 campaign identifier
+          x-eel-data-class: C
+        campaign_name:
+          type: string
+          x-eel-data-class: D
+        target_module:
+          type: string
+          x-eel-data-class: D
+        attack_type:
+          type: string
+          enum: [inference, timing, side_channel, model_inversion]
+          x-eel-data-class: D
+        scope_description:
+          type: string
+          x-eel-data-class: D
+        status:
+          type: string
+          enum: [planned, running, complete, aborted]
+          x-eel-data-class: D
+        authorised_by_hash:
+          type: string
+          x-eel-data-class: B
+        authorisation_ref:
+          type: string
+          x-eel-data-class: D
+        overall_risk:
+          type: string
+          enum: [low, medium, high, critical]
+          nullable: true
+          description: Set at campaign completion
+          x-eel-data-class: D
+        report_ref:
+          type: string
+          nullable: true
+          description: Reference to the final campaign report
+          x-eel-data-class: D
+        findings_count:
+          type: integer
+          minimum: 0
+          x-eel-data-class: D
+        created_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+          x-eel-data-class: D
+
+    RedTeamCampaignPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RedTeamCampaign'
+          x-eel-data-class: D
+        next_cursor:
+          type: string
+          nullable: true
+          x-eel-data-class: E
+
+    RedTeamFindingRequest:
+      type: object
+      required:
+        - vulnerability_type
+        - severity
+        - description
+        - reproduction_steps
+        - remediation
+      properties:
+        vulnerability_type:
+          type: string
+          maxLength: 128
+          x-eel-data-class: D
+        severity:
+          type: string
+          enum: [info, low, medium, high, critical]
+          x-eel-data-class: D
+        description:
+          type: string
+          maxLength: 8192
+          x-eel-data-class: D
+        reproduction_steps:
+          type: string
+          maxLength: 8192
+          x-eel-data-class: D
+        remediation:
+          type: string
+          maxLength: 4096
+          x-eel-data-class: D
+        cvss_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 10
+          description: Optional CVSS v3.1 base score
+          x-eel-data-class: D
+        evidence_ref:
+          type: string
+          maxLength: 512
+          description: Optional MinIO reference to evidence artifact
+          x-eel-data-class: D
+
+    RedTeamFinding:
+      type: object
+      required:
+        - finding_id
+        - campaign_id
+        - vulnerability_type
+        - severity
+        - recorded_at
+      properties:
+        finding_id:
+          type: string
+          format: uuid
+          description: UUIDv7 finding identifier
+          x-eel-data-class: D
+        campaign_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        vulnerability_type:
+          type: string
+          x-eel-data-class: D
+        severity:
+          type: string
+          enum: [info, low, medium, high, critical]
+          x-eel-data-class: D
+        description:
+          type: string
+          x-eel-data-class: D
+        reproduction_steps:
+          type: string
+          x-eel-data-class: D
+        remediation:
+          type: string
+          x-eel-data-class: D
+        cvss_score:
+          type: number
+          format: float
+          nullable: true
+          x-eel-data-class: D
+        evidence_ref:
+          type: string
+          nullable: true
+          x-eel-data-class: D
+        recorded_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    CampaignClosure:
+      type: object
+      required:
+        - overall_risk
+        - report_ref
+        - sign_off_hash
+      properties:
+        overall_risk:
+          type: string
+          enum: [low, medium, high, critical]
+          x-eel-data-class: D
+        report_ref:
+          type: string
+          maxLength: 512
+          description: Reference to the final campaign report document
+          x-eel-data-class: D
+        sign_off_hash:
+          type: string
+          description: SHA-256 hash of the signing officer identifier
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: B
+        closure_notes:
+          type: string
+          maxLength: 4096
+          x-eel-data-class: D
+
+    ProblemDetail:
+      type: object
+      description: RFC 9457 problem detail
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: E
+        title:
+          type: string
+          x-eel-data-class: E
+        status:
+          type: integer
+          x-eel-data-class: E
+        detail:
+          type: string
+          x-eel-data-class: E
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: E
+        trace_id:
+          type: string
+          x-eel-data-class: E
+
+  responses:
+    BadRequest:
+      description: Request body or parameters failed validation
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Missing or invalid JWT
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: SpiceDB authorization denied
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Idempotency-Key collision or state machine conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Semantic validation error (e.g. campaign not in valid state)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'

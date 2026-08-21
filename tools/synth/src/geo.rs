@@ -91,13 +91,14 @@ pub fn generate(seed: u64, target_stations: u64) -> Result<GeoData> {
     // Adjust to exactly 290.
     let mut assigned: u32 = county_const_counts.iter().sum();
     let mut idx = 0usize;
+    let n_counties = county_const_counts.len();
     while assigned < total_const {
-        county_const_counts[idx % county_const_counts.len()] += 1;
+        county_const_counts[idx % n_counties] += 1;
         assigned += 1;
         idx += 1;
     }
     while assigned > total_const {
-        let k = idx % county_const_counts.len();
+        let k = idx % n_counties;
         if county_const_counts[k] > 1 {
             county_const_counts[k] -= 1;
             assigned -= 1;

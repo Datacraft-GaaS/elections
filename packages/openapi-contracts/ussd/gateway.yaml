@@ -1,0 +1,340 @@
+openapi: 3.1.0
+info:
+  title: eel-ussd-gateway
+  version: 1.0.0
+  description: >
+    Generic USSD gateway webhook schema serving multiple EEL modules: M13
+    (voter verifier), M23 (grievance), M35 (CVR), and M36 (deregistration).
+    Routing is performed by the service_code field. Each telco integration
+    authenticates via HMAC-SHA256 (X-Eel-Gateway-Signature header) with a
+    shared secret registered per network operator. All session data is
+    ephemeral (class E); MSISDN is stored only as a one-way hash (class A).
+
+servers:
+  - url: https://eel.local/api/v1
+    description: Production trust domain
+
+tags:
+  - name: sessions
+    description: USSD session lifecycle
+
+paths:
+  /ussd/sessions:
+    post:
+      tags: [sessions]
+      operationId: handleUssdSession
+      summary: Unified USSD session hook
+      description: >
+        Receives a USSD session step from a telco gateway. The service_code
+        determines which EEL module processes the session. The handler returns
+        a response string and a CON/END action. Each step of a multi-step
+        menu must carry the same session_id and the fully accumulated text
+        input string per Africa's Talking USSD conventions. Idempotent on
+        Idempotency-Key; duplicate steps (network retries) return the original
+        response without re-processing. Authenticated by HMAC-SHA256 of the
+        raw request body using the per-telco shared secret; the signature is
+        passed in X-Eel-Gateway-Signature.
+      x-eel-sla:
+        p95_ms: 800
+        p99_ms: 2000
+        availability: "99.5%"
+      security:
+        - mtls: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: X-Eel-Gateway-Signature
+          in: header
+          required: true
+          schema:
+            type: string
+            x-eel-data-class: E
+          description: >
+            HMAC-SHA256 hex digest of the raw request body, keyed with the
+            per-telco shared secret registered in EEL vault. Format:
+            "sha256=<hex-digest>"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/USSDSessionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/USSDSessionRequest'
+      responses:
+        '200':
+          description: USSD session response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/USSDSessionResponse'
+            text/plain:
+              schema:
+                type: string
+                description: >
+                  Plain-text fallback for telcos that require a raw string
+                  response (action prefix CON or END followed by a newline
+                  and the response text)
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /ussd/sessions/{session_id}:
+    get:
+      tags: [sessions]
+      operationId: getUssdSessionLog
+      summary: Retrieve USSD session audit log
+      description: >
+        Returns the full audit log of a USSD session including all steps,
+        user inputs, and system responses. Used for audit and dispute
+        resolution. Session input data is class E; routing metadata is class D.
+        Authenticated via mTLS; no JWT required.
+      x-eel-sla:
+        p95_ms: 800
+        p99_ms: 2000
+        availability: "99.5%"
+      security:
+        - mtls: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 128
+            x-eel-data-class: E
+          description: Telco-assigned USSD session identifier
+      responses:
+        '200':
+          description: USSD session audit log
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/USSDSessionLog'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Keycloak-issued JWT. Validated against eel.local JWKS endpoint.
+    mtls:
+      type: mutualTLS
+      description: X.509 mTLS client certificate. CN must match registered service principal in eel.local PKI.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: E
+      description: >
+        Client-generated UUIDv7. Server stores session response for 24 hours
+        and returns it verbatim on retries with the same key.
+
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status, detail, instance, eel_trace_id]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        title:
+          type: string
+          x-eel-data-class: D
+        status:
+          type: integer
+          x-eel-data-class: D
+        detail:
+          type: string
+          x-eel-data-class: D
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        eel_trace_id:
+          type: string
+          x-eel-data-class: D
+
+    USSDSessionRequest:
+      type: object
+      required: [session_id, msisdn_hash, text, service_code, network_code]
+      properties:
+        session_id:
+          type: string
+          maxLength: 128
+          x-eel-data-class: E
+          description: Telco-assigned USSD session identifier; ephemeral
+        msisdn_hash:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: A
+          description: SHA-256 hex hash of the caller MSISDN; never the raw number
+        text:
+          type: string
+          maxLength: 182
+          x-eel-data-class: E
+          description: >
+            Accumulated user input string for this USSD session step. Empty
+            string on the first step (session initiation).
+        service_code:
+          type: string
+          maxLength: 16
+          x-eel-data-class: C
+          description: USSD short code that triggered the session (e.g. *999#, *120*5000#)
+        network_code:
+          type: string
+          maxLength: 8
+          x-eel-data-class: D
+          description: MNO network identifier (e.g. 63902 for Safaricom Kenya)
+
+    USSDSessionResponse:
+      type: object
+      required: [session_id, response_text, action]
+      properties:
+        session_id:
+          type: string
+          x-eel-data-class: E
+        response_text:
+          type: string
+          maxLength: 182
+          x-eel-data-class: C
+          description: Text to render on the subscriber handset
+        action:
+          type: string
+          enum: [CON, END]
+          x-eel-data-class: C
+          description: >
+            CON keeps the session active for further input;
+            END terminates the session and displays response_text
+        menu_items:
+          type: array
+          nullable: true
+          x-eel-data-class: C
+          description: >
+            Optional structured menu items for rich USSD clients that support
+            them. Each item is a numbered choice. Falls back to plain text
+            in response_text for all clients.
+          items:
+            type: object
+            required: [index, label]
+            properties:
+              index:
+                type: integer
+                x-eel-data-class: C
+              label:
+                type: string
+                maxLength: 40
+                x-eel-data-class: C
+
+    USSDSessionStep:
+      type: object
+      required: [step_index, text_at_step, response_text, action, occurred_at]
+      properties:
+        step_index:
+          type: integer
+          x-eel-data-class: D
+          description: Zero-based step number within the session
+        text_at_step:
+          type: string
+          x-eel-data-class: E
+          description: Accumulated input text at this step
+        response_text:
+          type: string
+          x-eel-data-class: C
+          description: System response rendered at this step
+        action:
+          type: string
+          enum: [CON, END]
+          x-eel-data-class: C
+        module_routed:
+          type: string
+          nullable: true
+          x-eel-data-class: D
+          description: EEL module code that handled this step (e.g. M13, M23)
+        occurred_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    USSDSessionLog:
+      type: object
+      required: [session_id, service_code, network_code, started_at, ended_at, steps]
+      properties:
+        session_id:
+          type: string
+          x-eel-data-class: E
+        service_code:
+          type: string
+          x-eel-data-class: C
+        network_code:
+          type: string
+          x-eel-data-class: D
+        started_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
+          x-eel-data-class: D
+        terminal_action:
+          type: string
+          nullable: true
+          enum: [CON, END]
+          x-eel-data-class: D
+        steps:
+          type: array
+          x-eel-data-class: E
+          items:
+            $ref: '#/components/schemas/USSDSessionStep'
+
+  responses:
+    BadRequest:
+      description: Malformed request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: Invalid mTLS certificate or HMAC signature
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Session not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: Idempotency key conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'

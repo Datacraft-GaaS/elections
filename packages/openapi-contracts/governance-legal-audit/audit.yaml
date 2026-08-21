@@ -1,0 +1,418 @@
+openapi: 3.1.0
+info:
+  title: eel-governance-legal-audit
+  version: 1.0.0
+  description: >
+    Module M62: Transmission Legal Basis Audit.
+    Documents the legal basis for each step in the form transmission chain,
+    enabling post-hoc legal compliance review.
+  contact:
+    name: EEL Platform Team
+    email: platform@eel.local
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+tags:
+  - name: transmissions
+    description: Transmission legal audit records
+  - name: certifications
+    description: Officer transmission certifications
+  - name: reports
+    description: Legal audit reports
+
+security:
+  - bearerAuth: []
+  - mtls: []
+
+paths:
+  /api/v1/governance/legal-audit/transmissions:
+    get:
+      operationId: listTransmissionLegalRecords
+      tags: [transmissions]
+      summary: List transmission legal audit records
+      description: Paginated list of transmission legal audit records. Tier 3 endpoint.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: step
+          in: query
+          schema:
+            type: string
+            x-eel-data-class: C
+      responses:
+        "200":
+          description: Transmission legal record list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransmissionLegalBasisPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/governance/legal-audit/transmissions/{form_id}:
+    get:
+      operationId: getTransmissionLegalBasis
+      tags: [transmissions]
+      summary: Get legal basis for a form transmission
+      description: >
+        Returns the full transmission chain with legal instrument and officer
+        attestation for each step. Tier 3 endpoint.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      parameters:
+        - $ref: "#/components/parameters/FormIdPath"
+      responses:
+        "200":
+          description: Transmission legal basis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransmissionLegalBasis"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/governance/legal-audit/certifications:
+    post:
+      operationId: certifyTransmission
+      tags: [certifications]
+      summary: Officer certifies a transmission step
+      description: >
+        Records an officer's certification that a transmission step was conducted
+        under the stated legal instrument. Tier 3 endpoint. Idempotent via Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransmissionCertificationRequest"
+      responses:
+        "201":
+          description: Certification recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransmissionCertification"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/governance/legal-audit/reports/{report_id}:
+    get:
+      operationId: getLegalAuditReport
+      tags: [reports]
+      summary: Get a legal audit report
+      description: Returns a compiled legal audit report. Tier 3 endpoint.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      parameters:
+        - $ref: "#/components/parameters/ReportIdPath"
+      responses:
+        "200":
+          description: Legal audit report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegalAuditReport"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by eel.local identity provider
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS client certificate for tier 3 operations
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUIDv7 idempotency key
+    FormIdPath:
+      name: form_id
+      in: path
+      required: true
+      schema:
+        type: string
+        x-eel-data-class: C
+    ReportIdPath:
+      name: report_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSizeParam:
+      name: page_size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+
+  schemas:
+    Problem:
+      type: object
+      description: RFC 9457 problem detail
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        title:
+          type: string
+          x-eel-data-class: D
+        status:
+          type: integer
+          x-eel-data-class: D
+        detail:
+          type: string
+          x-eel-data-class: D
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        trace_id:
+          type: string
+          x-eel-data-class: E
+
+    PageMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+        total:
+          type: integer
+          x-eel-data-class: D
+        total_pages:
+          type: integer
+          x-eel-data-class: D
+
+    TransmissionChainStep:
+      type: object
+      required: [step, legal_instrument, officer_hash, timestamp, signature]
+      properties:
+        step:
+          type: string
+          x-eel-data-class: C
+        legal_instrument:
+          type: string
+          description: Gazette reference or statutory citation
+          x-eel-data-class: C
+        officer_hash:
+          type: string
+          description: SHA-256 hash of officer identity
+          x-eel-data-class: B
+        timestamp:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        signature:
+          type: string
+          description: Ed25519 signature over step fields
+          x-eel-data-class: C
+
+    TransmissionLegalBasis:
+      type: object
+      required: [form_id, transmission_chain]
+      properties:
+        form_id:
+          type: string
+          x-eel-data-class: C
+        transmission_chain:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransmissionChainStep"
+
+    TransmissionLegalBasisPage:
+      type: object
+      required: [items, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransmissionLegalBasis"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+
+    TransmissionCertificationRequest:
+      type: object
+      required: [form_id, step, legal_instrument]
+      properties:
+        form_id:
+          type: string
+          x-eel-data-class: C
+        step:
+          type: string
+          x-eel-data-class: C
+        legal_instrument:
+          type: string
+          x-eel-data-class: C
+
+    TransmissionCertification:
+      type: object
+      required: [certification_id, form_id, step, legal_instrument, officer_hash, certified_at]
+      properties:
+        certification_id:
+          type: string
+          format: uuid
+          description: UUIDv7 certification identifier
+          x-eel-data-class: C
+        form_id:
+          type: string
+          x-eel-data-class: C
+        step:
+          type: string
+          x-eel-data-class: C
+        legal_instrument:
+          type: string
+          x-eel-data-class: C
+        officer_hash:
+          type: string
+          x-eel-data-class: B
+        certified_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+
+    LegalAuditReport:
+      type: object
+      required: [report_id, generated_at, scope, compliance_summary]
+      properties:
+        report_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        generated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        scope:
+          type: string
+          x-eel-data-class: C
+        compliance_summary:
+          type: object
+          additionalProperties: true
+          x-eel-data-class: C
+        findings:
+          type: array
+          items:
+            type: string
+          x-eel-data-class: C
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Forbidden:
+      description: Forbidden
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotFound:
+      description: Not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Conflict:
+      description: Conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    UnprocessableEntity:
+      description: Unprocessable entity
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    InternalError:
+      description: Internal server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"

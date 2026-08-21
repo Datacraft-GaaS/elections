@@ -1,0 +1,527 @@
+openapi: 3.1.0
+info:
+  title: eel-training-cms
+  version: 1.0.0
+  description: Module M37 - Voter Education Content Management System. Publishes and manages educational content for voters in multiple languages and formats.
+  contact:
+    name: EEL Platform Team
+    email: platform@eel.local
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+tags:
+  - name: content
+    description: Voter education content lifecycle management
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/training/cms/content:
+    post:
+      tags: [content]
+      operationId: publishContent
+      summary: Publish educational content item
+      description: Creates and publishes a voter education content item. Idempotent on Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContentItemCreate'
+      responses:
+        '201':
+          description: Content item published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      tags: [content]
+      operationId: listContent
+      summary: List published voter education content
+      description: Returns paginated list of published content items. Public endpoint. Tier 1 with Merkle proofs.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: audience
+          in: query
+          schema:
+            type: string
+            enum: [voter, youth, diaspora, pwd]
+            x-eel-data-class: C
+        - name: content_type
+          in: query
+          schema:
+            type: string
+            enum: [article, video, infographic, audio]
+            x-eel-data-class: C
+        - name: language_code
+          in: query
+          schema:
+            type: string
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Paginated content list
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentItemPage'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/training/cms/content/{content_id}:
+    parameters:
+      - $ref: '#/components/parameters/ContentId'
+
+    get:
+      tags: [content]
+      operationId: getContent
+      summary: Get content item detail
+      description: Returns full content item including body HTML in all available languages. Public. Tier 1.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      security: []
+      responses:
+        '200':
+          description: Content item
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentItem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      tags: [content]
+      operationId: updateContent
+      summary: Update content item
+      description: Full replacement update of a content item. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContentItemCreate'
+      responses:
+        '200':
+          description: Content item updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags: [content]
+      operationId: deleteContent
+      summary: Soft-delete content item
+      description: Marks content item as deleted. Idempotent. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '204':
+          description: Content item soft-deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/training/cms/content/{content_id}/translations:
+    parameters:
+      - $ref: '#/components/parameters/ContentId'
+
+    post:
+      tags: [content]
+      operationId: addContentTranslation
+      summary: Add translation to content item
+      description: Adds or replaces a language translation for a content item. Idempotent on Idempotency-Key plus language_code.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContentTranslation'
+      responses:
+        '201':
+          description: Translation added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentTranslation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by auth.eel.local (Keycloak). Trust domain eel.local.
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS client certificate. Required for machine-to-machine tier-3 endpoints.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+      description: UUIDv7 client-generated idempotency key. Replays within 24 h return the cached response.
+
+    ContentId:
+      name: content_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+      description: UUIDv7 content item identifier.
+
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+        x-eel-data-class: D
+
+    PageSizeParam:
+      name: page_size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+        x-eel-data-class: D
+
+  headers:
+    CosignSig:
+      description: Cosign detached signature over the response body (base64url).
+      schema:
+        type: string
+        x-eel-data-class: C
+    MerkleProof:
+      description: Merkle inclusion proof for this response in the audit log tree.
+      schema:
+        type: string
+        x-eel-data-class: C
+    SnapshotId:
+      description: Snapshot identifier from which this response was served.
+      schema:
+        type: string
+        x-eel-data-class: C
+
+  schemas:
+    ContentItemCreate:
+      type: object
+      required:
+        - content_type
+        - title_en
+        - title_sw
+        - body_html_en
+        - body_html_sw
+        - language_codes
+        - audience
+        - status
+      properties:
+        content_type:
+          type: string
+          enum: [article, video, infographic, audio]
+          x-eel-data-class: D
+          description: Format of the content asset.
+        title_en:
+          type: string
+          minLength: 1
+          maxLength: 500
+          x-eel-data-class: C
+          description: English title.
+        title_sw:
+          type: string
+          minLength: 1
+          maxLength: 500
+          x-eel-data-class: C
+          description: Swahili title.
+        body_html_en:
+          type: string
+          x-eel-data-class: C
+          description: HTML body in English. Sanitized on server side.
+        body_html_sw:
+          type: string
+          x-eel-data-class: C
+          description: HTML body in Swahili.
+        language_codes:
+          type: array
+          items:
+            type: string
+            x-eel-data-class: D
+          x-eel-data-class: D
+          description: BCP-47 language codes for which translations exist.
+        tags:
+          type: array
+          items:
+            type: string
+            x-eel-data-class: C
+          x-eel-data-class: C
+          description: Taxonomy tags for content discovery.
+        audience:
+          type: string
+          enum: [voter, youth, diaspora, pwd]
+          x-eel-data-class: C
+          description: Primary audience segment.
+        status:
+          type: string
+          enum: [draft, review, published]
+          x-eel-data-class: D
+          description: Publication workflow state.
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          x-eel-data-class: C
+          description: Optional expiry. After this datetime the item is hidden from public listing.
+
+    ContentItem:
+      allOf:
+        - $ref: '#/components/schemas/ContentItemCreate'
+        - type: object
+          required:
+            - content_id
+            - status
+          properties:
+            content_id:
+              type: string
+              format: uuid
+              x-eel-data-class: C
+              description: UUIDv7 content identifier.
+            published_at:
+              type: string
+              format: date-time
+              nullable: true
+              x-eel-data-class: C
+              description: Timestamp when content transitioned to published state.
+            created_at:
+              type: string
+              format: date-time
+              x-eel-data-class: D
+            updated_at:
+              type: string
+              format: date-time
+              x-eel-data-class: D
+
+    ContentItemPage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentItem'
+          x-eel-data-class: C
+        total:
+          type: integer
+          x-eel-data-class: C
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+        next_page:
+          type: integer
+          nullable: true
+          x-eel-data-class: D
+
+    ContentTranslation:
+      type: object
+      required: [language_code, title, body_html]
+      properties:
+        language_code:
+          type: string
+          x-eel-data-class: D
+          description: BCP-47 language code for this translation.
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+          x-eel-data-class: C
+          description: Translated title.
+        body_html:
+          type: string
+          x-eel-data-class: C
+          description: Translated HTML body.
+
+    ProblemDetail:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        title:
+          type: string
+          x-eel-data-class: C
+        status:
+          type: integer
+          x-eel-data-class: C
+        detail:
+          type: string
+          x-eel-data-class: C
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        trace_id:
+          type: string
+          x-eel-data-class: D
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Insufficient permissions (SpiceDB denied)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Idempotency key conflict or state conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Validation error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalError:
+      description: Internal server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'

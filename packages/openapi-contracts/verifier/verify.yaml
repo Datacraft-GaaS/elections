@@ -1,0 +1,571 @@
+openapi: "3.1.0"
+
+info:
+  title: eel-verifier
+  version: "1.0.0"
+  description: >
+    M13 public verifier API — citizen-facing mobile app and USSD/WhatsApp webhook surface.
+    Allows citizens to verify their voter registration status, locate their polling station,
+    and view election result summaries.
+
+    Mobile endpoints require the X-Eel-Attest header (Google Play Integrity / Apple App Attest)
+    per ADR-0021. The id_number_hash field MUST be SHA-256(salt||id_number) computed client-side;
+    the raw national ID number is never transmitted.
+
+    USSD and WhatsApp channels are server-to-server; attestation is not required on those paths.
+  contact:
+    name: eel platform team
+    email: platform@eel.local
+  license:
+    name: Proprietary
+    identifier: LicenseRef-eel-proprietary
+
+servers:
+  - url: "https://api.eel.local"
+    description: "Production"
+  - url: "https://api.staging.eel.local"
+    description: "Staging"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: "../_shared/components.yaml#/components/securitySchemes/bearerAuth"
+    mtls:
+      $ref: "../_shared/components.yaml#/components/securitySchemes/mtls"
+
+  schemas:
+
+    VerificationRequest:
+      type: object
+      description: >
+        Voter registration status lookup request.
+        IMPORTANT: id_number_hash MUST be SHA-256(salt||id_number) computed on-device.
+        The raw national ID number must never leave the device. Salt is the election-specific
+        public salt published at /api/v1/verifier/config (obtained at app install/update).
+      required:
+        - id_number_hash
+      properties:
+        id_number_hash:
+          type: string
+          description: >
+            SHA-256(salt||national_id_number) expressed as 64 lowercase hex characters.
+            Compute client-side. Do not transmit the raw ID number.
+          pattern: "^[0-9a-f]{64}$"
+          x-eel-data-class: A
+          example: "a3f5c2d1b4e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2"
+        station_hint:
+          type: string
+          description: "Optional station code hint to narrow lookup (improves latency on large rolls)."
+          maxLength: 20
+          nullable: true
+          x-eel-data-class: B
+      additionalProperties: false
+
+    VerificationResult:
+      type: object
+      description: "Voter registration verification result. Returns only class-C/B fields — no PII."
+      required:
+        - registered
+        - lookup_id
+        - as_of
+      properties:
+        lookup_id:
+          $ref: "../_shared/components.yaml#/components/schemas/UUIDv7"
+          description: "Opaque identifier for this lookup event (for audit only — not returned to caller with PII)."
+          x-eel-data-class: D
+        registered:
+          type: boolean
+          description: "True if the hashed ID is found in the active voter roll."
+          x-eel-data-class: B
+        polling_station_code:
+          type: string
+          description: "Station code for in-person voting. Present only when registered=true."
+          maxLength: 20
+          nullable: true
+          x-eel-data-class: C
+          example: "KE-047-0042"
+        polling_station_name:
+          type: string
+          description: "Human-readable polling station name."
+          maxLength: 300
+          nullable: true
+          x-eel-data-class: C
+          example: "Westlands Primary School"
+        ward:
+          type: string
+          description: "Ward name."
+          maxLength: 200
+          nullable: true
+          x-eel-data-class: C
+          example: "Parklands/Highridge"
+        constituency:
+          type: string
+          description: "Constituency name."
+          maxLength: 200
+          nullable: true
+          x-eel-data-class: C
+          example: "Westlands"
+        county:
+          type: string
+          description: "County name."
+          maxLength: 200
+          nullable: true
+          x-eel-data-class: C
+          example: "Nairobi"
+        polling_station_address:
+          type: string
+          description: "Street address or landmark description of the polling station."
+          maxLength: 400
+          nullable: true
+          x-eel-data-class: C
+        polling_day:
+          type: string
+          format: date
+          description: "Official polling day for this voter."
+          nullable: true
+          x-eel-data-class: C
+          example: "2027-08-10"
+        not_registered_reason:
+          type: string
+          description: "Informational reason code when registered=false. Not exhaustive."
+          enum:
+            - not_found
+            - roll_not_published
+            - deregistered
+          nullable: true
+          x-eel-data-class: C
+        as_of:
+          type: string
+          format: date-time
+          description: "Voter roll snapshot timestamp used for this lookup."
+          x-eel-data-class: C
+      additionalProperties: false
+
+    StationDetail:
+      type: object
+      description: "Full detail record for a polling station. All fields are class C (public, no PII)."
+      required:
+        - station_code
+        - station_name
+        - county_code
+        - county_name
+        - constituency_code
+        - constituency_name
+        - ward_name
+        - registered_voters
+        - coordinates
+      properties:
+        station_code:
+          type: string
+          maxLength: 20
+          x-eel-data-class: C
+        station_name:
+          type: string
+          maxLength: 300
+          x-eel-data-class: C
+        county_code:
+          type: string
+          maxLength: 3
+          x-eel-data-class: C
+        county_name:
+          type: string
+          maxLength: 200
+          x-eel-data-class: C
+        constituency_code:
+          type: string
+          maxLength: 10
+          x-eel-data-class: C
+        constituency_name:
+          type: string
+          maxLength: 200
+          x-eel-data-class: C
+        ward_name:
+          type: string
+          maxLength: 200
+          x-eel-data-class: C
+        registered_voters:
+          type: integer
+          description: "Number of voters assigned to this station."
+          minimum: 0
+          x-eel-data-class: C
+        streams:
+          type: integer
+          description: "Number of polling streams (voting booths) at this station."
+          minimum: 1
+          nullable: true
+          x-eel-data-class: C
+        address:
+          type: string
+          maxLength: 400
+          nullable: true
+          x-eel-data-class: C
+        coordinates:
+          type: object
+          description: "GPS coordinates (WGS84)."
+          required: [lat, lng]
+          properties:
+            lat:
+              type: number
+              format: float
+              minimum: -90
+              maximum: 90
+              x-eel-data-class: C
+            lng:
+              type: number
+              format: float
+              minimum: -180
+              maximum: 180
+              x-eel-data-class: C
+          x-eel-data-class: C
+        accessibility_features:
+          type: array
+          items:
+            type: string
+            enum: [ramp, braille_ballot, sign_language_officer, large_print]
+          x-eel-data-class: C
+          nullable: true
+        opening_time:
+          type: string
+          format: time
+          description: "Local opening time on polling day (ISO 8601 partial time, local tz)."
+          nullable: true
+          x-eel-data-class: C
+          example: "06:00:00"
+        closing_time:
+          type: string
+          format: time
+          nullable: true
+          x-eel-data-class: C
+          example: "17:00:00"
+      additionalProperties: false
+
+    ResultSummary:
+      type: object
+      description: "Citizen-facing election result summary. All class C. No PII."
+      required:
+        - election_id
+        - election_name
+        - status
+        - total_valid_votes
+        - turnout_pct
+        - leading_candidate
+        - as_of
+      properties:
+        election_id:
+          type: string
+          x-eel-data-class: C
+          example: "KE-GE-2027"
+        election_name:
+          type: string
+          x-eel-data-class: C
+          example: "Kenya General Election 2027"
+        status:
+          type: string
+          enum: [polling, tallying, provisional, certified, gazetted]
+          x-eel-data-class: C
+        total_valid_votes:
+          type: integer
+          minimum: 0
+          x-eel-data-class: C
+        total_registered_voters:
+          type: integer
+          minimum: 0
+          x-eel-data-class: C
+        turnout_pct:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          x-eel-data-class: C
+        leading_candidate:
+          type: object
+          description: "Candidate with the most votes at time of snapshot."
+          required: [display_name, party_acronym, votes, vote_pct]
+          properties:
+            display_name:
+              type: string
+              x-eel-data-class: C
+            party_acronym:
+              type: string
+              x-eel-data-class: C
+            votes:
+              type: integer
+              minimum: 0
+              x-eel-data-class: C
+            vote_pct:
+              type: number
+              format: float
+              x-eel-data-class: C
+          x-eel-data-class: C
+        top_candidates:
+          type: array
+          description: "Top 5 candidates by vote count."
+          maxItems: 5
+          items:
+            type: object
+            required: [display_name, party_acronym, votes, vote_pct, position]
+            properties:
+              display_name:
+                type: string
+                x-eel-data-class: C
+              party_acronym:
+                type: string
+                x-eel-data-class: C
+              votes:
+                type: integer
+                minimum: 0
+                x-eel-data-class: C
+              vote_pct:
+                type: number
+                format: float
+                x-eel-data-class: C
+              position:
+                type: integer
+                minimum: 1
+                x-eel-data-class: C
+          x-eel-data-class: C
+        as_of:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+      additionalProperties: false
+
+paths:
+
+  /api/v1/verifier/lookups:
+    post:
+      operationId: lookupVoterRegistration
+      summary: "Verify voter registration status by hashed ID (mobile, Tier 2)"
+      description: >
+        Citizen queries their registration status using their hashed national ID.
+        The X-Eel-Attest header is required (Play Integrity / App Attest).
+        id_number_hash MUST be SHA-256(salt||id_number) — the raw ID must never be transmitted.
+        Idempotent on Idempotency-Key: identical requests within 60 s return cached result.
+        Rate-limited to 5 lookups per 10-minute window per attestation device binding.
+      tags: [verifier-lookup]
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 300
+        availability: "99.9%"
+      security: []
+      parameters:
+        - $ref: "../_shared/components.yaml#/components/parameters/AttestHeader"
+        - $ref: "../_shared/components.yaml#/components/parameters/IdempotencyKeyHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerificationRequest"
+          application/cbor:
+            schema:
+              $ref: "#/components/schemas/VerificationRequest"
+      responses:
+        "200":
+          description: "Lookup complete."
+          headers:
+            X-Eel-Request-Id:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerificationResult"
+            application/cbor:
+              schema:
+                $ref: "#/components/schemas/VerificationResult"
+        "400":
+          $ref: "../_shared/components.yaml#/components/responses/400BadRequest"
+        "401":
+          description: "Attestation token missing, invalid, or expired."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/components.yaml#/components/schemas/Problem"
+              example:
+                type: "https://errors.eel.local/t2/attestation-invalid"
+                title: "Attestation invalid"
+                status: 401
+        "422":
+          $ref: "../_shared/components.yaml#/components/responses/422UnprocessableEntity"
+        "429":
+          $ref: "../_shared/components.yaml#/components/responses/429TooManyRequests"
+        "500":
+          $ref: "../_shared/components.yaml#/components/responses/500InternalServerError"
+
+  /api/v1/verifier/station/{station_code}:
+    get:
+      operationId: getPollingStationDetail
+      summary: "Polling station details (signed-static, Tier 1)"
+      description: >
+        Returns full detail for a polling station by its code.
+        Public, no auth, no attestation. CDN-cacheable.
+        Response includes Cosign signature and snapshot headers.
+      tags: [verifier-station]
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 300
+        availability: "99.9%"
+      security: []
+      parameters:
+        - name: station_code
+          in: path
+          required: true
+          description: "IEBC polling station code (e.g. KE-047-0042)."
+          schema:
+            type: string
+            maxLength: 20
+            x-eel-data-class: C
+      responses:
+        "200":
+          description: "Station detail."
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Cosign-Sig"
+            X-Eel-Merkle-Proof:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Merkle-Proof"
+            X-Eel-Snapshot-Id:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Snapshot-Id"
+            X-Eel-Request-Id:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StationDetail"
+            application/cbor:
+              schema:
+                $ref: "#/components/schemas/StationDetail"
+        "404":
+          $ref: "../_shared/components.yaml#/components/responses/404NotFound"
+        "500":
+          $ref: "../_shared/components.yaml#/components/responses/500InternalServerError"
+
+  /api/v1/verifier/results/summary:
+    get:
+      operationId: getResultSummary
+      summary: "Election result summary for citizen view (signed-static, Tier 1)"
+      description: >
+        Returns a citizen-facing summary of the current election results.
+        Public, no auth. Response is Cosign-signed and Merkle-anchored.
+        Updated every 2 minutes during tallying.
+      tags: [verifier-results]
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 300
+        availability: "99.9%"
+      security: []
+      responses:
+        "200":
+          description: "Result summary."
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Cosign-Sig"
+            X-Eel-Merkle-Proof:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Merkle-Proof"
+            X-Eel-Snapshot-Id:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Snapshot-Id"
+            X-Eel-Request-Id:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Request-Id"
+            Cache-Control:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResultSummary"
+        "500":
+          $ref: "../_shared/components.yaml#/components/responses/500InternalServerError"
+
+  /api/v1/verifier/ussd/session:
+    post:
+      operationId: handleUSSDSession
+      summary: "USSD session webhook (telco server-to-server)"
+      description: >
+        Telco USSD gateways POST each menu interaction here.
+        Server-to-server; X-Eel-Attest not required.
+        HMAC-SHA256 webhook signature is verified via the X-Eel-Webhook-Sig header
+        (HMAC-SHA256 over raw request body, keyed with the telco-specific webhook secret).
+        See ussd.yaml for full USSD flow schema.
+      tags: [verifier-ussd]
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 300
+        availability: "99.9%"
+      security: []
+      parameters:
+        - $ref: "../_shared/components.yaml#/components/parameters/IdempotencyKeyHeader"
+        - name: X-Eel-Webhook-Sig
+          in: header
+          required: true
+          description: "HMAC-SHA256(raw_body, webhook_secret) hex-encoded. Verified before processing."
+          schema:
+            type: string
+            pattern: "^sha256=[0-9a-f]{64}$"
+            x-eel-data-class: D
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./ussd.yaml#/components/schemas/USSDRequest"
+      responses:
+        "200":
+          description: "USSD response for the gateway to relay to the subscriber."
+          content:
+            application/json:
+              schema:
+                $ref: "./ussd.yaml#/components/schemas/USSDResponse"
+        "400":
+          $ref: "../_shared/components.yaml#/components/responses/400BadRequest"
+        "401":
+          description: "Webhook signature verification failed."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/components.yaml#/components/schemas/Problem"
+        "500":
+          $ref: "../_shared/components.yaml#/components/responses/500InternalServerError"
+
+  /api/v1/verifier/whatsapp/webhook:
+    post:
+      operationId: handleWhatsAppWebhook
+      summary: "WhatsApp Cloud API webhook (Meta server-to-server)"
+      description: >
+        Meta POSTs incoming messages and status updates here.
+        Webhook signature is verified via X-Hub-Signature-256 (Meta standard).
+        Server-to-server; X-Eel-Attest not required.
+        See whatsapp.yaml for full payload schema.
+      tags: [verifier-whatsapp]
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 300
+        availability: "99.9%"
+      security: []
+      parameters:
+        - $ref: "../_shared/components.yaml#/components/parameters/IdempotencyKeyHeader"
+        - name: X-Hub-Signature-256
+          in: header
+          required: true
+          description: "Meta webhook HMAC-SHA256 signature. Format: sha256=<hex>."
+          schema:
+            type: string
+            pattern: "^sha256=[0-9a-f]{64}$"
+            x-eel-data-class: D
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./whatsapp.yaml#/components/schemas/WhatsAppWebhookPayload"
+      responses:
+        "200":
+          description: "Acknowledged. Meta requires a 200 response within 20 s."
+        "400":
+          $ref: "../_shared/components.yaml#/components/responses/400BadRequest"
+        "401":
+          description: "X-Hub-Signature-256 verification failed."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/components.yaml#/components/schemas/Problem"
+        "500":
+          $ref: "../_shared/components.yaml#/components/responses/500InternalServerError"

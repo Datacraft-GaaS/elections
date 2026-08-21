@@ -1,0 +1,660 @@
+openapi: 3.1.0
+info:
+  title: eel-grievance-channels
+  version: 1.0.0
+  description: >
+    Module M23: Grievance Channels providing multi-channel intake for election
+    complaints and petitions. Supports web, USSD, WhatsApp, IVR, and in-person
+    channels. Complainant PII is stored at class A; public status lookups use
+    reference codes only.
+
+servers:
+  - url: https://eel.local/api/v1
+    description: Production trust domain
+
+tags:
+  - name: complaints
+    description: Complaint filing and status
+  - name: investigator
+    description: Investigator and caseworker operations
+  - name: ussd
+    description: USSD channel webhook
+  - name: whatsapp
+    description: WhatsApp channel webhook
+
+paths:
+  /grievance/complaints:
+    post:
+      tags: [complaints]
+      operationId: fileComplaint
+      summary: File a complaint
+      description: >
+        Files a new election complaint. Accepts both authenticated submissions
+        (JWT) and public submissions (no auth, CAPTCHA verified upstream by
+        the API gateway). Complainant identity is stored as a one-way hash
+        (class A). Idempotent on Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      security:
+        - bearerAuth: []
+        - {}
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComplaintSubmission'
+      responses:
+        '201':
+          description: Complaint filed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Complaint'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags: [investigator]
+      operationId: listComplaints
+      summary: Caseworker complaint list
+      description: >
+        Returns a paginated list of complaints for caseworker and investigator
+        roles. SpiceDB controls which complaints each role can see (e.g.
+        regional restriction). Requires JWT.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [submitted, triaged, investigating, resolved, closed]
+            x-eel-data-class: C
+        - name: complaint_type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [voter_intimidation, bribery, results_dispute, registration, other]
+            x-eel-data-class: C
+        - name: channel
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [web, ussd, whatsapp, ivr, in_person]
+            x-eel-data-class: D
+        - name: from_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Paginated complaint list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplaintPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /grievance/complaints/{reference_code}:
+    get:
+      tags: [complaints]
+      operationId: getComplaintStatus
+      summary: Complaint status by reference code
+      description: >
+        Returns the current status and public timeline of a complaint. No
+        investigator notes or PII are returned. Any citizen who possesses the
+        reference code can access this endpoint without authentication.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      security: []
+      parameters:
+        - name: reference_code
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 8
+            maxLength: 16
+            pattern: '^GRV-[A-Z0-9]{8}$'
+            x-eel-data-class: C
+          description: Public reference code issued at complaint submission
+      responses:
+        '200':
+          description: Complaint status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplaintStatusView'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /grievance/complaints/{complaint_id}/updates:
+    post:
+      tags: [investigator]
+      operationId: addComplaintUpdate
+      summary: Add investigator update to complaint
+      description: >
+        Appends a status update to a complaint record. Used by caseworkers and
+        investigators. Idempotent on Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ComplaintIdParam'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComplaintUpdate'
+      responses:
+        '201':
+          description: Update appended
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplaintUpdateResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /grievance/ussd/session:
+    post:
+      tags: [ussd]
+      operationId: handleUssdSession
+      summary: USSD session hook for complaint intake
+      description: >
+        Processes a USSD session step for the grievance intake flow. The
+        telco gateway delivers session state on each user input. The
+        msisdn_hash is a one-way hash of the caller's MSISDN (class A).
+        Session data is ephemeral (class E) and not persisted beyond the
+        session lifetime. Authenticated via mTLS; no JWT required.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      security:
+        - mtls: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/USSDRequest'
+      responses:
+        '200':
+          description: USSD session response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/USSDResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /grievance/whatsapp/webhook:
+    post:
+      tags: [whatsapp]
+      operationId: handleWhatsAppWebhook
+      summary: WhatsApp webhook for grievance intake
+      description: >
+        Receives WhatsApp Cloud API event payloads and routes them to the
+        grievance intake state machine. Authenticated via mTLS from the
+        EEL WhatsApp proxy service. Idempotent on Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      security:
+        - mtls: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WhatsAppWebhookPayload'
+      responses:
+        '200':
+          description: Event accepted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Keycloak-issued JWT. Validated against eel.local JWKS endpoint.
+    mtls:
+      type: mutualTLS
+      description: X.509 mTLS client certificate. CN must match registered service principal in eel.local PKI.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: E
+      description: Client-generated UUIDv7. Server stores response for 24 hours.
+
+    PageParam:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+        x-eel-data-class: D
+
+    PageSizeParam:
+      name: page_size
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+        x-eel-data-class: D
+
+    ComplaintIdParam:
+      name: complaint_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+      description: UUIDv7 internal complaint identifier
+
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status, detail, instance, eel_trace_id]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        title:
+          type: string
+          x-eel-data-class: D
+        status:
+          type: integer
+          x-eel-data-class: D
+        detail:
+          type: string
+          x-eel-data-class: D
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        eel_trace_id:
+          type: string
+          x-eel-data-class: D
+
+    ComplaintSubmission:
+      type: object
+      required: [channel, complaint_type, description]
+      properties:
+        complainant_id_hash:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+          nullable: true
+          x-eel-data-class: A
+          description: >
+            Optional SHA-256 hash of complainant national ID. Required for
+            authenticated submissions. Not stored in plaintext.
+        channel:
+          type: string
+          enum: [web, ussd, whatsapp, ivr, in_person]
+          x-eel-data-class: D
+        complaint_type:
+          type: string
+          enum: [voter_intimidation, bribery, results_dispute, registration, other]
+          x-eel-data-class: C
+        station_code:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+          description: Polling station where the incident occurred (optional)
+        description:
+          type: string
+          minLength: 20
+          maxLength: 8000
+          x-eel-data-class: C
+        evidence_refs:
+          type: array
+          x-eel-data-class: C
+          description: Document IDs or external URLs for supporting evidence
+          items:
+            type: string
+            maxLength: 512
+            x-eel-data-class: C
+
+    Complaint:
+      type: object
+      required: [complaint_id, reference_code, status, channel, complaint_type, submitted_at]
+      properties:
+        complaint_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+          description: Internal UUIDv7 identifier (not shown publicly)
+        reference_code:
+          type: string
+          x-eel-data-class: C
+          description: Public reference code (format GRV-XXXXXXXX) for citizen tracking
+        status:
+          type: string
+          enum: [submitted, triaged, investigating, resolved, closed]
+          x-eel-data-class: C
+        channel:
+          type: string
+          enum: [web, ussd, whatsapp, ivr, in_person]
+          x-eel-data-class: D
+        complaint_type:
+          type: string
+          enum: [voter_intimidation, bribery, results_dispute, registration, other]
+          x-eel-data-class: C
+        station_code:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+        submitted_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+
+    ComplaintStatusView:
+      type: object
+      required: [reference_code, status, complaint_type, submitted_at, timeline]
+      description: Public-facing status view; no PII or investigator notes
+      properties:
+        reference_code:
+          type: string
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [submitted, triaged, investigating, resolved, closed]
+          x-eel-data-class: C
+        complaint_type:
+          type: string
+          enum: [voter_intimidation, bribery, results_dispute, registration, other]
+          x-eel-data-class: C
+        submitted_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+          x-eel-data-class: C
+        timeline:
+          type: array
+          x-eel-data-class: C
+          description: Public status transitions (no notes content)
+          items:
+            type: object
+            required: [status, occurred_at]
+            properties:
+              status:
+                type: string
+                x-eel-data-class: C
+              occurred_at:
+                type: string
+                format: date-time
+                x-eel-data-class: C
+
+    ComplaintPage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items:
+          type: array
+          x-eel-data-class: C
+          items:
+            $ref: '#/components/schemas/Complaint'
+        total:
+          type: integer
+          x-eel-data-class: C
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+
+    ComplaintUpdate:
+      type: object
+      required: [status, notes]
+      properties:
+        status:
+          type: string
+          enum: [triaged, investigating, resolved, closed]
+          x-eel-data-class: C
+        notes:
+          type: string
+          minLength: 5
+          maxLength: 4000
+          x-eel-data-class: C
+          description: Internal investigator notes (not shown publicly)
+        assigned_to_role:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+          description: Role to assign the complaint to for next action
+
+    ComplaintUpdateResult:
+      type: object
+      required: [update_id, complaint_id, status, updated_at]
+      properties:
+        update_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        complaint_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        status:
+          type: string
+          x-eel-data-class: C
+        assigned_to_role:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+        updated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+
+    USSDRequest:
+      type: object
+      required: [session_id, msisdn_hash, text, service_code]
+      properties:
+        session_id:
+          type: string
+          maxLength: 128
+          x-eel-data-class: E
+          description: Telco-assigned USSD session identifier; ephemeral
+        msisdn_hash:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: A
+          description: SHA-256 hash of the caller MSISDN
+        text:
+          type: string
+          maxLength: 182
+          x-eel-data-class: E
+          description: Accumulated user input string for this USSD session
+        service_code:
+          type: string
+          maxLength: 16
+          x-eel-data-class: C
+          description: USSD short code that triggered this session (e.g. *999#)
+
+    USSDResponse:
+      type: object
+      required: [text, action]
+      properties:
+        text:
+          type: string
+          maxLength: 182
+          x-eel-data-class: C
+          description: Text to display to the user on the handset screen
+        action:
+          type: string
+          enum: [continue, end]
+          x-eel-data-class: C
+          description: >
+            "continue" keeps the session open for further input;
+            "end" terminates the USSD session
+
+    WhatsAppWebhookPayload:
+      type: object
+      required: [object, entry]
+      properties:
+        object:
+          type: string
+          x-eel-data-class: D
+          description: Always "whatsapp_business_account" per Meta Cloud API spec
+        entry:
+          type: array
+          x-eel-data-class: D
+          items:
+            type: object
+            required: [id, changes]
+            properties:
+              id:
+                type: string
+                x-eel-data-class: D
+              changes:
+                type: array
+                x-eel-data-class: D
+                items:
+                  type: object
+                  x-eel-data-class: D
+                  description: WhatsApp Cloud API change object per Meta spec
+
+  responses:
+    BadRequest:
+      description: Malformed request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: Missing or invalid authentication credential
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: Authenticated principal lacks SpiceDB permission
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: Idempotency key conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnprocessableEntity:
+      description: Semantically invalid request body
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    TooManyRequests:
+      description: Rate limit exceeded for public complaint filing
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'

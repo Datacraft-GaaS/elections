@@ -1,0 +1,487 @@
+openapi: 3.1.0
+info:
+  title: eel-training-accreditation
+  version: 1.0.0
+  description: Modules M42 (media accreditation) and M43 (observer accreditation). Manages applications, decisions, and badge verification for media and observer personnel.
+  contact:
+    name: EEL Platform Team
+    email: platform@eel.local
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+tags:
+  - name: applications
+    description: Accreditation application lifecycle
+  - name: decisions
+    description: Application approval and rejection
+  - name: badges
+    description: Badge verification
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/training/accreditation/applications:
+    post:
+      tags: [applications]
+      operationId: submitAccreditationApplication
+      summary: Apply for media or observer accreditation
+      description: Submits an accreditation application. Idempotent on Idempotency-Key. Requires JWT.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccreditationApplicationCreate'
+      responses:
+        '201':
+          description: Application submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccreditationApplication'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      tags: [applications]
+      operationId: listAccreditationApplications
+      summary: List accreditation applications (admin)
+      description: Returns paginated list of all applications. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: application_type
+          in: query
+          schema:
+            type: string
+            enum: [media, domestic_observer, international_observer]
+            x-eel-data-class: C
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [submitted, under_review, approved, rejected]
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Paginated application list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccreditationApplicationPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/training/accreditation/applications/{application_id}:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationId'
+
+    get:
+      tags: [applications]
+      operationId: getAccreditationApplication
+      summary: Get accreditation application detail
+      description: Returns application status and submitted documents. Requires JWT.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Application detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccreditationApplication'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/training/accreditation/applications/{application_id}/decisions:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationId'
+
+    post:
+      tags: [decisions]
+      operationId: decideAccreditationApplication
+      summary: Approve or reject accreditation application
+      description: Records an accreditation decision. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccreditationDecisionCreate'
+      responses:
+        '201':
+          description: Decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccreditationDecision'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/training/accreditation/badges/{badge_number}:
+    parameters:
+      - name: badge_number
+        in: path
+        required: true
+        schema:
+          type: string
+          x-eel-data-class: C
+        description: Badge number encoded in the QR code.
+
+    get:
+      tags: [badges]
+      operationId: verifyBadge
+      summary: Verify accreditation badge via QR scan
+      description: Returns masked verification details for a badge. Public endpoint secured with HMAC token query parameter.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      security: []
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+            x-eel-data-class: E
+          description: HMAC-SHA256 token derived from badge_number and a rotating secret. Expires in 5 minutes.
+      responses:
+        '200':
+          description: Badge verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadgeVerification'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by auth.eel.local (Keycloak). Trust domain eel.local.
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS client certificate for machine-to-machine calls.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+      description: UUIDv7 client-generated idempotency key.
+
+    ApplicationId:
+      name: application_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+        x-eel-data-class: D
+
+    PageSizeParam:
+      name: page_size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+        x-eel-data-class: D
+
+  schemas:
+    AccreditationApplicationCreate:
+      type: object
+      required:
+        - applicant_id_hash
+        - application_type
+        - organisation
+        - id_document_hash
+        - photo_hash
+      properties:
+        applicant_id_hash:
+          type: string
+          x-eel-data-class: B
+          description: SHA-256(salt||applicant_id). Never raw.
+        application_type:
+          type: string
+          enum: [media, domestic_observer, international_observer]
+          x-eel-data-class: C
+        organisation:
+          type: string
+          maxLength: 300
+          x-eel-data-class: C
+        id_document_hash:
+          type: string
+          x-eel-data-class: A
+          description: SHA-256 of the uploaded ID document. Stored in class A vault.
+        photo_hash:
+          type: string
+          x-eel-data-class: A
+          description: SHA-256 of the applicant photo. Stored in class A vault.
+        supporting_docs_refs:
+          type: array
+          x-eel-data-class: C
+          items:
+            type: string
+            x-eel-data-class: C
+          description: Object storage references for supporting documents.
+
+    AccreditationApplication:
+      allOf:
+        - $ref: '#/components/schemas/AccreditationApplicationCreate'
+        - type: object
+          required: [application_id, status, submitted_at]
+          properties:
+            application_id:
+              type: string
+              format: uuid
+              x-eel-data-class: C
+            status:
+              type: string
+              enum: [submitted, under_review, approved, rejected]
+              x-eel-data-class: C
+            submitted_at:
+              type: string
+              format: date-time
+              x-eel-data-class: C
+            updated_at:
+              type: string
+              format: date-time
+              x-eel-data-class: D
+
+    AccreditationApplicationPage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccreditationApplication'
+          x-eel-data-class: C
+        total:
+          type: integer
+          x-eel-data-class: C
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+        next_page:
+          type: integer
+          nullable: true
+          x-eel-data-class: D
+
+    AccreditationDecisionCreate:
+      type: object
+      required: [verdict, grounds]
+      properties:
+        verdict:
+          type: string
+          enum: [approved, rejected]
+          x-eel-data-class: C
+        grounds:
+          type: string
+          maxLength: 2000
+          x-eel-data-class: C
+          description: Documented grounds for the decision.
+        badge_number:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+          description: Assigned badge number. Required when verdict is approved.
+
+    AccreditationDecision:
+      allOf:
+        - $ref: '#/components/schemas/AccreditationDecisionCreate'
+        - type: object
+          required: [decision_id, decided_at]
+          properties:
+            decision_id:
+              type: string
+              format: uuid
+              x-eel-data-class: C
+            credential_id:
+              type: string
+              nullable: true
+              x-eel-data-class: C
+              description: Verifiable credential ID issued on approval.
+            decided_at:
+              type: string
+              format: date-time
+              x-eel-data-class: C
+
+    BadgeVerification:
+      type: object
+      required: [valid, organisation, type, valid_until]
+      properties:
+        valid:
+          type: boolean
+          x-eel-data-class: C
+        name_masked:
+          type: string
+          x-eel-data-class: C
+          description: Initials or masked name (e.g. J. D***). Never full name.
+        organisation:
+          type: string
+          x-eel-data-class: C
+        type:
+          type: string
+          enum: [media, domestic_observer, international_observer]
+          x-eel-data-class: C
+        valid_until:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+
+    ProblemDetail:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        title:
+          type: string
+          x-eel-data-class: C
+        status:
+          type: integer
+          x-eel-data-class: C
+        detail:
+          type: string
+          x-eel-data-class: C
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        trace_id:
+          type: string
+          x-eel-data-class: D
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Validation error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalError:
+      description: Internal server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'

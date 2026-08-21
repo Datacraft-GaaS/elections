@@ -1,0 +1,235 @@
+# Biometric Voter Identification data dictionary
+# Data classes: A=PII-sensitive, B=PII-adjacent, C=system/non-PII, D=metadata/operational
+# Lawful basis: Kenya DPA 2019 s.25 public task; Elections Act Cap.7 s.4
+context: bvi
+service: bvi-svc
+updated: "2026-08-21"
+tables:
+  - table: kit_config_bundles
+    description: "Signed configuration bundles distributed to BVI kits before polling day"
+    store: T1-config
+    columns:
+      - column: bundle_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Election cycle + 2 years"
+        notes: "UUIDv7; primary key"
+      - column: station_code
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - polling station reference"
+        retention: "Election cycle + 2 years"
+        notes: "Authoritative station code from boundary register"
+      - column: voter_list_hash
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - commitment to the voter list for this station"
+        retention: "Election cycle + 2 years"
+        notes: "SHA-256 of the station voter list blob; kit verifies before use"
+      - column: polygon_hash
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - geo-fence boundary commitment"
+        retention: "Election cycle + 2 years"
+        notes: "SHA-256 of GeoJSON polygon; used for station geo-fence enforcement"
+      - column: config_version
+        type: "BIGINT"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 2 years"
+        notes: "Monotonically increasing per station; kits reject rollbacks"
+      - column: signed_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 2 years"
+        notes: "HSM signing timestamp"
+
+  - table: identification_events
+    description: "Per-voter biometric identification outcome records from polling-day BVI kits"
+    store: T2-identification
+    columns:
+      - column: event_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Election cycle + 5 years"
+        notes: "UUIDv7; primary key; append-only"
+      - column: voter_id
+        type: "UUID"
+        data_class: B
+        pii_purpose: "Links to voter record; PII-adjacent because combination with outcome infers franchise exercise"
+        retention: "Election cycle + 5 years"
+        notes: "Pseudonymous token; not the national_id; used for cross-ref with RTS token"
+      - column: modality
+        type: "TEXT"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 5 years"
+        notes: "Values: fingerprint, iris, face, fallback_manual"
+      - column: outcome
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - identification result code"
+        retention: "Election cycle + 5 years"
+        notes: "Values: identified, not_found, duplicate_attempt, fallback_granted"
+      - column: ts_hlc
+        type: "TEXT"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 5 years"
+        notes: "HLC timestamp from kit; used for ordering and replay detection"
+      - column: gps_lat
+        type: "FLOAT8"
+        data_class: D
+        pii_purpose: "Operational metadata - station geo-fence verification"
+        retention: "Election cycle + 5 years"
+        notes: "WGS84; retained for geo-fence audit; not published to portal"
+      - column: gps_lon
+        type: "FLOAT8"
+        data_class: D
+        pii_purpose: "Operational metadata - station geo-fence verification"
+        retention: "Election cycle + 5 years"
+        notes: "WGS84"
+      - column: gps_accuracy_m
+        type: "FLOAT4"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 5 years"
+        notes: "GPS horizontal accuracy in metres; flags unreliable fixes"
+      - column: kit_serial
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - device identifier"
+        retention: "Election cycle + 5 years"
+        notes: "Manufacturer serial; cross-references kit_certs"
+      - column: kit_sig
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - device attestation signature"
+        retention: "Election cycle + 5 years"
+        notes: "Ed25519 signature by kit TEE key over event payload"
+      - column: station_code
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - polling station"
+        retention: "Election cycle + 5 years"
+        notes: "Must match kit_config_bundles.station_code for this kit"
+
+  - table: turnout_rollups
+    description: "Pre-aggregated voter turnout counts by geographic scope for portal display"
+    store: T3-analytics
+    columns:
+      - column: rollup_id
+        type: "UUID"
+        data_class: D
+        pii_purpose: "Operational metadata - system identifier"
+        retention: "Election cycle + 5 years"
+        notes: "UUIDv7; replaced on each rollup update for the scope"
+      - column: scope
+        type: "TEXT"
+        data_class: D
+        pii_purpose: "Operational metadata - geographic level"
+        retention: "Election cycle + 5 years"
+        notes: "Values: station, ward, constituency, county, national"
+      - column: scope_code
+        type: "TEXT"
+        data_class: D
+        pii_purpose: "Operational metadata - code for the scope level"
+        retention: "Election cycle + 5 years"
+        notes: "e.g. station code, ward code; no individual voter data"
+      - column: authenticated_count
+        type: "BIGINT"
+        data_class: D
+        pii_purpose: "Aggregated count; no individual data"
+        retention: "Election cycle + 5 years"
+        notes: "Running total of successful identifications; public figure"
+      - column: updated_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 5 years"
+        notes: "HLC of last rollup computation"
+
+  - table: kit_certs
+    description: "X.509 certificates for BVI kit TEE attestation keys"
+    store: T4-pki
+    columns:
+      - column: kit_serial
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - device identifier"
+        retention: "Election cycle + 5 years"
+        notes: "Primary key; manufacturer serial number"
+      - column: cert_pem
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - public certificate"
+        retention: "Election cycle + 5 years"
+        notes: "PEM-encoded X.509; public key material only"
+      - column: revoked
+        type: "BOOLEAN"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 5 years"
+        notes: "True when kit is decommissioned or compromised"
+      - column: revoked_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 5 years"
+        notes: "Null when not revoked"
+      - column: revoked_reason
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - revocation cause code"
+        retention: "Election cycle + 5 years"
+        notes: "Values: compromised, damaged, decommissioned, lost"
+
+  - table: session_lifecycles
+    description: "Presiding officer session open and close records for each kit on polling day"
+    store: T5-session
+    columns:
+      - column: session_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Election cycle + 5 years"
+        notes: "UUIDv7; primary key"
+      - column: kit_serial
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - device identifier"
+        retention: "Election cycle + 5 years"
+        notes: "FK to kit_certs.kit_serial"
+      - column: station_code
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - polling station"
+        retention: "Election cycle + 5 years"
+        notes: "Must match authorised station for this kit"
+      - column: po_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - presiding officer staff ID"
+        retention: "Election cycle + 5 years"
+        notes: "FK to staff identity; logged for accountability; not voter PII"
+      - column: opened_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 5 years"
+        notes: "HLC from kit at session open"
+      - column: closed_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 5 years"
+        notes: "Null while session active; HLC from kit at close"
+      - column: close_reason
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - why session was closed"
+        retention: "Election cycle + 5 years"
+        notes: "Values: polls_closed, shift_handover, battery_fail, manual_close"

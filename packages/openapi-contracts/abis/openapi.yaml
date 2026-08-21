@@ -1,0 +1,907 @@
+openapi: "3.1.0"
+
+info:
+  title: "Eel ABIS - Automated Biometric Identification System"
+  version: "1.0.0"
+  description: |
+    ABIS API for 1:N deduplication, 1:1 verification, adjudication
+    workflows, batch dedup, and reporting.
+
+    Module: M03 abis.
+
+    Trust domain: eel.local. All endpoints are internal or officer-facing;
+    no public Tier 1 endpoints in this context.
+
+servers:
+  - url: "https://abis.eel.local"
+    description: "ABIS internal service (mTLS required)"
+  - url: "https://api.eel.local"
+    description: "External API gateway (officer-facing)"
+
+security:
+  - BearerJWT: []
+
+tags:
+  - name: match
+    description: "Biometric matching operations (1:N and 1:1)"
+  - name: adjudication
+    description: "Biometric adjudication case management"
+  - name: batch
+    description: "Batch deduplication operations"
+  - name: reports
+    description: "ABIS reporting and statistics"
+
+paths:
+  /api/v1/abis/match/1n:
+    post:
+      operationId: match1N
+      summary: "Submit 1:N biometric deduplication match request"
+      description: |
+        Submits a biometric probe for 1:N matching against the full ABIS
+        gallery. Used during voter enrolment to detect duplicate identities.
+        The match is processed asynchronously; poll /match/{request_id} for
+        the result. The biometric probe is a reference to an encrypted
+        template in secure storage.
+      tags: [match]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: 5
+      x-eel-sla:
+        p50: 3000
+        p95: 5000
+        p99: 8000
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Match1NRequest"
+          application/cbor:
+            schema:
+              $ref: "#/components/schemas/Match1NRequest"
+      responses:
+        "202":
+          description: "Match request accepted for async processing"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MatchAccepted"
+            application/cbor:
+              schema:
+                $ref: "#/components/schemas/MatchAccepted"
+        "400":
+          description: "Invalid biometric probe or request"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "422":
+          description: "Validation error"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "ABIS engine unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/abis/match/11:
+    post:
+      operationId: match11
+      summary: "Submit 1:1 biometric verification request"
+      description: |
+        Verifies a biometric probe against a specific gallery template
+        (candidate match). Used during voter identification (BVI) and
+        for officer authentication. Returns a similarity score and
+        match decision (above/below configured threshold).
+      tags: [match]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: 5
+      x-eel-sla:
+        p50: 500
+        p95: 1500
+        p99: 3000
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Match11Request"
+          application/cbor:
+            schema:
+              $ref: "#/components/schemas/Match11Request"
+      responses:
+        "200":
+          description: "1:1 verification result"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Match11Result"
+            application/cbor:
+              schema:
+                $ref: "#/components/schemas/Match11Result"
+        "400":
+          description: "Invalid request"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Gallery template not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "ABIS engine unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/abis/match/{request_id}:
+    get:
+      operationId: getMatchResult
+      summary: "Get 1:N match result by request ID"
+      description: |
+        Polls for the result of a previously submitted 1:N match request.
+        Returns status (pending/complete/failed) and, when complete,
+        the list of candidate hits with similarity scores.
+      tags: [match]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          description: "Match request UUIDv7 from a prior 1:N submit"
+          schema:
+            $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: "Match result (may still be pending)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Match1NResult"
+        "404":
+          description: "Request ID not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/abis/adjudication:
+    get:
+      operationId: listAdjudicationCases
+      summary: "List ABIS adjudication cases"
+      description: |
+        Returns paginated list of biometric adjudication cases (duplicate
+        identity hits requiring manual review). Filterable by status,
+        match_score range, and date range.
+      tags: [adjudication]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [open, in_review, resolved, escalated]
+            x-eel-data-class: B
+        - name: min_score
+          in: query
+          required: false
+          description: "Filter cases with score >= this threshold (0.0-1.0)"
+          schema:
+            type: number
+            format: float
+            minimum: 0.0
+            maximum: 1.0
+            x-eel-data-class: D
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            x-eel-data-class: D
+        - name: page_size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+            x-eel-data-class: D
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: "Paginated adjudication case list"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdjudicationCasePage"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "429":
+          description: "Rate limited"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/abis/adjudication/{case_id}:
+    patch:
+      operationId: resolveAdjudicationCase
+      summary: "Resolve an ABIS adjudication case"
+      description: |
+        Records an officer resolution for a biometric adjudication case.
+        Outcomes: confirm_duplicate (triggers BVR deregistration),
+        dismiss_duplicate (clears the case), or escalate.
+        All resolutions require SpiceDB ABIS_ADJUDICATOR role.
+      tags: [adjudication]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      parameters:
+        - name: case_id
+          in: path
+          required: true
+          schema:
+            $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdjudicationResolutionRequest"
+      responses:
+        "200":
+          description: "Case resolved"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AbisAdjudicationCase"
+        "400":
+          description: "Invalid resolution"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Case not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Case already resolved or idempotency key reuse"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/abis/batch/dedup:
+    post:
+      operationId: submitBatchDedup
+      summary: "Submit batch deduplication job"
+      description: |
+        Triggers a full or incremental batch deduplication sweep.
+        Used after mass enrolment events to clear the pending-dedup queue.
+        Returns a job ID for polling progress. Only one batch job
+        may run per election scope at a time.
+      tags: [batch]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 500
+        p95: 2000
+        p99: 5000
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchDedupRequest"
+      responses:
+        "202":
+          description: "Batch job accepted"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchJobAccepted"
+        "400":
+          description: "Invalid request or job already running"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/abis/reports:
+    get:
+      operationId: getAbisReports
+      summary: "Get ABIS statistics and reports"
+      description: |
+        Returns aggregate ABIS statistics: gallery size, match throughput,
+        dedup rate, pending adjudication queue depth, and error rates.
+        Data classified D (aggregate, non-personal).
+      tags: [reports]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      parameters:
+        - name: since
+          in: query
+          required: false
+          description: "Return stats since this UTC timestamp."
+          schema:
+            type: string
+            format: date-time
+            x-eel-data-class: D
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: "ABIS statistics report"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AbisReport"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+components:
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+
+    XRequestId:
+      name: X-Request-Id
+      in: header
+      required: false
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+
+  securitySchemes:
+    BearerJWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+    SVIDmTLS:
+      type: mutualTLS
+      description: "SPIFFE SVID mutual TLS"
+
+  schemas:
+    Match1NRequest:
+      type: object
+      description: "1:N biometric deduplication match request."
+      required:
+        - probe_ref
+        - modality
+        - caller_id
+        - election_id
+      properties:
+        probe_ref:
+          type: string
+          description: "Reference to encrypted biometric probe in ABIS secure store."
+          x-eel-data-class: A
+          example: "bio-store://eel.local/probes/550e8400-e29b-41d4-a716-446655440000"
+        modality:
+          type: string
+          enum: [fingerprint, iris, face, multimodal]
+          description: "Biometric modality of the probe."
+          x-eel-data-class: A
+          example: "fingerprint"
+        caller_id:
+          type: string
+          description: "SPIFFE SVID of the calling service."
+          x-eel-data-class: C
+          example: "spiffe://eel.local/ns/bvr/sa/bvr-backend"
+        election_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Election context for the dedup run."
+          x-eel-data-class: C
+        threshold_override:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: "Override matching threshold (leave null for configured default)."
+          x-eel-data-class: C
+        max_candidates:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 10
+          description: "Maximum number of candidate hits to return."
+          x-eel-data-class: D
+
+    Match11Request:
+      type: object
+      description: "1:1 biometric verification request."
+      required:
+        - probe_ref
+        - gallery_ref
+        - modality
+        - caller_id
+      properties:
+        probe_ref:
+          type: string
+          description: "Reference to the probe biometric template."
+          x-eel-data-class: A
+          example: "bio-store://eel.local/probes/probe-001"
+        gallery_ref:
+          type: string
+          description: "Reference to the gallery (enrolled) biometric template."
+          x-eel-data-class: A
+          example: "bio-store://eel.local/gallery/voter-001"
+        modality:
+          type: string
+          enum: [fingerprint, iris, face, multimodal]
+          x-eel-data-class: A
+          example: "iris"
+        caller_id:
+          type: string
+          x-eel-data-class: C
+          example: "spiffe://eel.local/ns/bvi/sa/bvi-backend"
+        purpose:
+          type: string
+          enum: [voter_identification, officer_auth, sar_verification]
+          description: "Purpose of the verification (for audit logging)."
+          x-eel-data-class: C
+          example: "voter_identification"
+
+    Match11Result:
+      type: object
+      description: "Result of a 1:1 biometric verification."
+      required:
+        - request_id
+        - decision
+        - score
+        - threshold_used
+        - processed_at
+      properties:
+        request_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        decision:
+          type: string
+          enum: [match, no_match, inconclusive]
+          x-eel-data-class: C
+          example: "match"
+        score:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: "Similarity score (higher = more similar)."
+          x-eel-data-class: C
+          example: 0.97
+        threshold_used:
+          type: number
+          format: float
+          x-eel-data-class: D
+          example: 0.80
+        modality:
+          type: string
+          x-eel-data-class: C
+          example: "iris"
+        processed_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+          example: "2026-08-21T10:00:00.000Z"
+        engine_version:
+          type: string
+          description: "ABIS engine version used for this match."
+          x-eel-data-class: D
+
+    MatchAccepted:
+      type: object
+      description: "Response to a submitted async match request."
+      required:
+        - request_id
+        - status
+        - estimated_completion_ms
+      properties:
+        request_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [queued, processing]
+          x-eel-data-class: C
+          example: "queued"
+        estimated_completion_ms:
+          type: integer
+          description: "Estimated processing time in milliseconds."
+          x-eel-data-class: D
+          example: 4000
+        queue_position:
+          type: integer
+          description: "Position in the processing queue (0 = next to run)."
+          x-eel-data-class: D
+          example: 3
+
+    Match1NResult:
+      type: object
+      description: "Result of a 1:N biometric deduplication match."
+      required:
+        - request_id
+        - status
+        - submitted_at
+      properties:
+        request_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [queued, processing, complete, failed]
+          x-eel-data-class: C
+          example: "complete"
+        candidates:
+          type: array
+          description: "Candidate hits (populated when status=complete)."
+          x-eel-data-class: C
+          items:
+            $ref: "#/components/schemas/MatchCandidate"
+        submitted_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        completed_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        failure_reason:
+          type: string
+          description: "Reason for failure (populated when status=failed)."
+          x-eel-data-class: D
+
+    MatchCandidate:
+      type: object
+      description: "A candidate hit from a 1:N deduplication match."
+      required:
+        - gallery_ref
+        - score
+        - decision
+      properties:
+        gallery_ref:
+          type: string
+          description: "Reference to the matching gallery entry."
+          x-eel-data-class: A
+        score:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          x-eel-data-class: C
+          example: 0.94
+        decision:
+          type: string
+          enum: [hit, near_hit, miss]
+          x-eel-data-class: C
+          example: "hit"
+        modality:
+          type: string
+          x-eel-data-class: C
+
+    AbisAdjudicationCase:
+      type: object
+      description: "ABIS adjudication case record."
+      required:
+        - case_id
+        - status
+        - match_score
+        - created_at
+        - probe_ref
+        - candidate_gallery_ref
+      properties:
+        case_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: B
+        status:
+          type: string
+          enum: [open, in_review, resolved, escalated]
+          x-eel-data-class: B
+          example: "resolved"
+        match_score:
+          type: number
+          format: float
+          x-eel-data-class: B
+          example: 0.91
+        probe_ref:
+          type: string
+          x-eel-data-class: A
+        candidate_gallery_ref:
+          type: string
+          x-eel-data-class: A
+        outcome:
+          type: string
+          enum: [confirm_duplicate, dismiss_duplicate, escalated]
+          x-eel-data-class: B
+        resolution_notes:
+          type: string
+          maxLength: 2000
+          x-eel-data-class: B
+        adjudicator_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: B
+        created_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        resolved_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+
+    AdjudicationCasePage:
+      type: object
+      description: "Paginated list of adjudication cases."
+      required:
+        - cases
+        - pagination
+      properties:
+        cases:
+          type: array
+          x-eel-data-class: B
+          items:
+            $ref: "#/components/schemas/AbisAdjudicationCase"
+        pagination:
+          $ref: "../_shared/common.yaml#/components/schemas/PaginationMeta"
+          x-eel-data-class: D
+
+    AdjudicationResolutionRequest:
+      type: object
+      description: "Resolution payload for an ABIS adjudication case."
+      required:
+        - outcome
+        - adjudicator_id
+        - resolution_notes
+      properties:
+        outcome:
+          type: string
+          enum: [confirm_duplicate, dismiss_duplicate, escalate]
+          x-eel-data-class: B
+          example: "dismiss_duplicate"
+        adjudicator_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: B
+        resolution_notes:
+          type: string
+          maxLength: 2000
+          x-eel-data-class: B
+          example: "Physical inspection confirmed distinct individuals. Dismissed."
+        supporting_refs:
+          type: array
+          x-eel-data-class: B
+          items:
+            type: string
+            x-eel-data-class: B
+
+    BatchDedupRequest:
+      type: object
+      description: "Batch deduplication job submission."
+      required:
+        - election_id
+        - mode
+        - requester_id
+      properties:
+        election_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        mode:
+          type: string
+          enum: [full, incremental]
+          description: "Full re-runs entire gallery; incremental processes only pending-dedup records."
+          x-eel-data-class: C
+          example: "incremental"
+        requester_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Officer initiating the batch job."
+          x-eel-data-class: C
+        modality:
+          type: string
+          enum: [fingerprint, iris, face, multimodal]
+          default: multimodal
+          x-eel-data-class: C
+        priority:
+          type: string
+          enum: [normal, high, critical]
+          default: normal
+          x-eel-data-class: D
+
+    BatchJobAccepted:
+      type: object
+      description: "Response to a submitted batch dedup job."
+      required:
+        - job_id
+        - status
+        - estimated_duration_s
+      properties:
+        job_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [queued, running]
+          x-eel-data-class: C
+          example: "queued"
+        estimated_duration_s:
+          type: integer
+          description: "Estimated total duration in seconds."
+          x-eel-data-class: D
+          example: 7200
+        probe_count:
+          type: integer
+          format: int64
+          description: "Number of probes to be processed."
+          x-eel-data-class: D
+          example: 45000
+
+    AbisReport:
+      type: object
+      description: "ABIS statistics and performance report."
+      required:
+        - generated_at
+        - gallery_size
+        - pending_dedup_count
+        - open_adjudication_count
+      properties:
+        generated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+          example: "2026-08-21T12:00:00.000Z"
+        gallery_size:
+          type: integer
+          format: int64
+          description: "Total enrolled biometric templates."
+          x-eel-data-class: D
+          example: 22500000
+        pending_dedup_count:
+          type: integer
+          format: int64
+          x-eel-data-class: D
+          example: 1200
+        open_adjudication_count:
+          type: integer
+          x-eel-data-class: D
+          example: 47
+        match_throughput_per_hour:
+          type: integer
+          format: int64
+          x-eel-data-class: D
+          example: 15000
+        duplicate_rate_pct:
+          type: number
+          format: float
+          description: "Percentage of probes flagging as duplicates."
+          x-eel-data-class: D
+          example: 0.03
+        p50_match_ms:
+          type: integer
+          x-eel-data-class: D
+          example: 450
+        p95_match_ms:
+          type: integer
+          x-eel-data-class: D
+          example: 4800
+        p99_match_ms:
+          type: integer
+          x-eel-data-class: D
+          example: 7600
+        error_rate_pct:
+          type: number
+          format: float
+          x-eel-data-class: D
+          example: 0.001

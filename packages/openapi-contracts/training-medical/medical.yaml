@@ -1,0 +1,503 @@
+openapi: 3.1.0
+info:
+  title: eel-training-medical
+  version: 1.0.0
+  description: Module M60 - Medical First Response coordination for election day. Manages incident reporting, personnel rosters, and first responder registration.
+  contact:
+    name: EEL Platform Team
+    email: platform@eel.local
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+tags:
+  - name: incidents
+    description: Medical incident reporting and status tracking
+  - name: personnel
+    description: Medical first responder roster management
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/training/medical/incidents:
+    post:
+      tags: [incidents]
+      operationId: reportMedicalIncident
+      summary: Report a medical incident at a polling station
+      description: Creates a medical incident record. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MedicalIncidentCreate'
+      responses:
+        '201':
+          description: Incident reported
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicalIncident'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      tags: [incidents]
+      operationId: listMedicalIncidents
+      summary: List medical incidents
+      description: Returns paginated incident list. No PII in list view. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: station_code
+          in: query
+          schema:
+            type: string
+            x-eel-data-class: C
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [minor, moderate, critical]
+            x-eel-data-class: C
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [reported, responded, resolved, transferred]
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Paginated incident list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicalIncidentPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/training/medical/incidents/{incident_id}:
+    parameters:
+      - $ref: '#/components/parameters/IncidentId'
+
+    patch:
+      tags: [incidents]
+      operationId: updateMedicalIncident
+      summary: Update incident status
+      description: Updates the status of a medical incident. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MedicalIncidentUpdate'
+      responses:
+        '200':
+          description: Incident updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicalIncident'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/training/medical/personnel/{county_code}:
+    parameters:
+      - name: county_code
+        in: path
+        required: true
+        schema:
+          type: string
+          x-eel-data-class: C
+
+    get:
+      tags: [personnel]
+      operationId: getMedicalPersonnelByCounty
+      summary: Medical personnel roster for a county
+      description: Returns medical first responders assigned to a county. Data class B. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: County medical personnel roster
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicalPersonnelList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/training/medical/personnel:
+    post:
+      tags: [personnel]
+      operationId: registerMedicalPersonnel
+      summary: Register a medical first responder
+      description: Registers a medical first responder in the system. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MedicalPersonnelCreate'
+      responses:
+        '201':
+          description: Medical personnel registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicalPersonnel'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by auth.eel.local (Keycloak). Trust domain eel.local.
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS client certificate for machine-to-machine calls.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+      description: UUIDv7 client-generated idempotency key.
+
+    IncidentId:
+      name: incident_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+        x-eel-data-class: D
+
+    PageSizeParam:
+      name: page_size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+        x-eel-data-class: D
+
+  schemas:
+    MedicalIncidentCreate:
+      type: object
+      required:
+        - station_code
+        - incident_type
+        - severity
+        - first_responder_id_hash
+        - reported_at
+      properties:
+        station_code:
+          type: string
+          x-eel-data-class: C
+        incident_type:
+          type: string
+          enum: [cardiac, trauma, faint, other]
+          x-eel-data-class: D
+        severity:
+          type: string
+          enum: [minor, moderate, critical]
+          x-eel-data-class: C
+        first_responder_id_hash:
+          type: string
+          x-eel-data-class: B
+          description: SHA-256(salt||responder_id). Never raw.
+        reported_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        notes:
+          type: string
+          maxLength: 2000
+          x-eel-data-class: D
+          description: Operational notes. No patient PII permitted.
+
+    MedicalIncident:
+      allOf:
+        - $ref: '#/components/schemas/MedicalIncidentCreate'
+        - type: object
+          required: [incident_id, status]
+          properties:
+            incident_id:
+              type: string
+              format: uuid
+              x-eel-data-class: C
+            status:
+              type: string
+              enum: [reported, responded, resolved, transferred]
+              x-eel-data-class: C
+            created_at:
+              type: string
+              format: date-time
+              x-eel-data-class: D
+            updated_at:
+              type: string
+              format: date-time
+              x-eel-data-class: D
+
+    MedicalIncidentUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [reported, responded, resolved, transferred]
+          x-eel-data-class: C
+        notes:
+          type: string
+          maxLength: 2000
+          x-eel-data-class: D
+
+    MedicalIncidentPage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MedicalIncident'
+          x-eel-data-class: C
+        total:
+          type: integer
+          x-eel-data-class: C
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+        next_page:
+          type: integer
+          nullable: true
+          x-eel-data-class: D
+
+    MedicalPersonnelCreate:
+      type: object
+      required:
+        - personnel_id_hash
+        - county_code
+        - qualification
+        - station_code
+        - phone_hash
+      properties:
+        personnel_id_hash:
+          type: string
+          x-eel-data-class: B
+          description: SHA-256(salt||personnel_id).
+        county_code:
+          type: string
+          x-eel-data-class: C
+        qualification:
+          type: string
+          enum: [EMT, nurse, paramedic, doctor]
+          x-eel-data-class: D
+        station_code:
+          type: string
+          x-eel-data-class: C
+        phone_hash:
+          type: string
+          x-eel-data-class: A
+          description: SHA-256(salt||phone). Stored in class A vault.
+
+    MedicalPersonnel:
+      allOf:
+        - $ref: '#/components/schemas/MedicalPersonnelCreate'
+        - type: object
+          required: [record_id, active]
+          properties:
+            record_id:
+              type: string
+              format: uuid
+              x-eel-data-class: C
+            active:
+              type: boolean
+              x-eel-data-class: D
+            registered_at:
+              type: string
+              format: date-time
+              x-eel-data-class: D
+
+    MedicalPersonnelList:
+      type: object
+      required: [county_code, personnel]
+      properties:
+        county_code:
+          type: string
+          x-eel-data-class: C
+        personnel:
+          type: array
+          items:
+            $ref: '#/components/schemas/MedicalPersonnel'
+          x-eel-data-class: B
+        total:
+          type: integer
+          x-eel-data-class: C
+
+    ProblemDetail:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        title:
+          type: string
+          x-eel-data-class: C
+        status:
+          type: integer
+          x-eel-data-class: C
+        detail:
+          type: string
+          x-eel-data-class: C
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        trace_id:
+          type: string
+          x-eel-data-class: D
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Validation error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalError:
+      description: Internal server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'

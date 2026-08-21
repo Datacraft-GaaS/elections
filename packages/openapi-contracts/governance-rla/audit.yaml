@@ -1,0 +1,568 @@
+openapi: 3.1.0
+info:
+  title: eel-governance-rla
+  version: 1.0.0
+  description: >
+    Module M21: Risk-Limiting Audit (RLA) Tool.
+    Supports ballot-polling, ballot-comparison, and batch-comparison audit methods.
+    All endpoints are tier 3 requiring JWT and SpiceDB authorisation.
+  contact:
+    name: EEL Platform Team
+    email: platform@eel.local
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+tags:
+  - name: audits
+    description: RLA audit lifecycle
+  - name: samples
+    description: Audit sample draws
+  - name: counts
+    description: Manual audit counts
+
+security:
+  - bearerAuth: []
+  - mtls: []
+
+paths:
+  /api/v1/governance/rla/audits:
+    get:
+      operationId: listRLAAudits
+      tags: [audits]
+      summary: List RLA audits
+      description: Paginated list of all risk-limiting audits. Tier 3 endpoint.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+        - name: election_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: C
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [initialised, sampling, counting, complete, escalated]
+            x-eel-data-class: C
+      responses:
+        "200":
+          description: Audit list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RLAAuditPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      operationId: initiateRLAAudit
+      tags: [audits]
+      summary: Initiate a risk-limiting audit
+      description: >
+        Creates and initialises a new RLA audit for the specified contest.
+        Tier 3 endpoint. Idempotent via Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RLAAuditInitRequest"
+      responses:
+        "201":
+          description: Audit initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RLAAudit"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/governance/rla/audits/{audit_id}:
+    get:
+      operationId: getRLAAudit
+      tags: [audits]
+      summary: Get RLA audit detail
+      description: Returns full detail for a specific audit. Tier 3 endpoint.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      parameters:
+        - $ref: "#/components/parameters/AuditIdPath"
+      responses:
+        "200":
+          description: Audit detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RLAAudit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/governance/rla/audits/{audit_id}/samples:
+    post:
+      operationId: drawAuditSample
+      tags: [samples]
+      summary: Draw an audit sample
+      description: >
+        Draws the ballot sample for the specified audit round using the committed seed.
+        Returns hashed ballot identifiers. Tier 3 endpoint. Idempotent via Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      parameters:
+        - $ref: "#/components/parameters/AuditIdPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SampleDrawRequest"
+      responses:
+        "201":
+          description: Sample drawn
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SampleList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/governance/rla/audits/{audit_id}/counts:
+    post:
+      operationId: submitManualCount
+      tags: [counts]
+      summary: Submit a manual audit count
+      description: >
+        Records the manual count outcome for a sampled ballot, including whether
+        the audit count matches the cast vote record. Tier 3 endpoint. Idempotent via Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      parameters:
+        - $ref: "#/components/parameters/AuditIdPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManualCount"
+      responses:
+        "201":
+          description: Count recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManualCount"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/governance/rla/audits/{audit_id}/results:
+    get:
+      operationId: getRLAAuditResults
+      tags: [audits]
+      summary: Get RLA audit results
+      description: >
+        Returns the current p-value, stopping condition status, and risk limit
+        compliance for the audit. Tier 3 endpoint.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      parameters:
+        - $ref: "#/components/parameters/AuditIdPath"
+      responses:
+        "200":
+          description: Audit results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RLAAuditResults"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by eel.local identity provider
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS client certificate for tier 3 operations
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUIDv7 idempotency key
+    AuditIdPath:
+      name: audit_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSizeParam:
+      name: page_size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+
+  schemas:
+    Problem:
+      type: object
+      description: RFC 9457 problem detail
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        title:
+          type: string
+          x-eel-data-class: D
+        status:
+          type: integer
+          x-eel-data-class: D
+        detail:
+          type: string
+          x-eel-data-class: D
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        trace_id:
+          type: string
+          x-eel-data-class: E
+
+    PageMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+        total:
+          type: integer
+          x-eel-data-class: D
+        total_pages:
+          type: integer
+          x-eel-data-class: D
+
+    RLAAuditInitRequest:
+      type: object
+      required: [election_id, contest_code, risk_limit, method, seed]
+      properties:
+        election_id:
+          type: string
+          format: uuid
+          description: UUIDv7 election identifier
+          x-eel-data-class: C
+        contest_code:
+          type: string
+          x-eel-data-class: C
+        risk_limit:
+          type: number
+          format: float
+          minimum: 0.01
+          maximum: 0.20
+          description: Risk limit alpha (e.g. 0.05 for 5%)
+          x-eel-data-class: C
+        method:
+          type: string
+          enum: [ballot_polling, ballot_comparison, batch_comparison]
+          x-eel-data-class: C
+        seed:
+          type: string
+          description: Committed random seed for sample selection
+          x-eel-data-class: C
+
+    RLAAudit:
+      type: object
+      required: [audit_id, election_id, contest_code, risk_limit, method, seed, status, created_at]
+      properties:
+        audit_id:
+          type: string
+          format: uuid
+          description: UUIDv7 audit identifier
+          x-eel-data-class: C
+        election_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        contest_code:
+          type: string
+          x-eel-data-class: C
+        risk_limit:
+          type: number
+          format: float
+          x-eel-data-class: C
+        method:
+          type: string
+          enum: [ballot_polling, ballot_comparison, batch_comparison]
+          x-eel-data-class: C
+        seed:
+          type: string
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [initialised, sampling, counting, complete, escalated]
+          x-eel-data-class: C
+        current_round:
+          type: integer
+          x-eel-data-class: C
+        created_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        updated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+
+    RLAAuditPage:
+      type: object
+      required: [items, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RLAAudit"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+
+    SampleDrawRequest:
+      type: object
+      required: [round]
+      properties:
+        round:
+          type: integer
+          minimum: 1
+          x-eel-data-class: C
+
+    SampleBallot:
+      type: object
+      required: [ballot_id_hash, station_code, form_id]
+      properties:
+        ballot_id_hash:
+          type: string
+          description: SHA-256 hash of ballot identifier
+          x-eel-data-class: B
+        station_code:
+          type: string
+          x-eel-data-class: C
+        form_id:
+          type: string
+          x-eel-data-class: C
+
+    SampleList:
+      type: object
+      required: [audit_id, round, samples]
+      properties:
+        audit_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        round:
+          type: integer
+          x-eel-data-class: C
+        samples:
+          type: array
+          items:
+            $ref: "#/components/schemas/SampleBallot"
+          x-eel-data-class: B
+
+    ManualCount:
+      type: object
+      required: [ballot_id_hash, cvr_candidate_id, audit_candidate_id, matches, counted_by_hash]
+      properties:
+        ballot_id_hash:
+          type: string
+          description: SHA-256 hash of ballot identifier
+          x-eel-data-class: B
+        cvr_candidate_id:
+          type: string
+          description: Candidate recorded in the cast vote record
+          x-eel-data-class: C
+        audit_candidate_id:
+          type: string
+          description: Candidate recorded in the manual audit count
+          x-eel-data-class: C
+        matches:
+          type: boolean
+          description: Whether audit count matches the CVR
+          x-eel-data-class: C
+        counted_by_hash:
+          type: string
+          description: SHA-256 hash of auditor identity
+          x-eel-data-class: B
+        counted_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+
+    RLAAuditResults:
+      type: object
+      required: [audit_id, p_value, risk_limit, risk_limit_met, stopping_condition_met, ballots_audited, discrepancies]
+      properties:
+        audit_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        p_value:
+          type: number
+          format: float
+          description: Current Kaplan-Markov p-value
+          x-eel-data-class: C
+        risk_limit:
+          type: number
+          format: float
+          x-eel-data-class: C
+        risk_limit_met:
+          type: boolean
+          description: Whether p_value is below the risk limit
+          x-eel-data-class: C
+        stopping_condition_met:
+          type: boolean
+          x-eel-data-class: C
+        ballots_audited:
+          type: integer
+          x-eel-data-class: C
+        discrepancies:
+          type: integer
+          x-eel-data-class: C
+        computed_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Forbidden:
+      description: Forbidden
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotFound:
+      description: Not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Conflict:
+      description: Conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    UnprocessableEntity:
+      description: Unprocessable entity
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    InternalError:
+      description: Internal server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"

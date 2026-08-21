@@ -1,0 +1,619 @@
+openapi: 3.1.0
+info:
+  title: eel-ai-forecast-analytics
+  version: 1.0.0
+  description: >
+    Module M44 - Turnout Forecasting and Analytics. Provides national,
+    county, and constituency-level voter turnout forecasts, accuracy
+    reporting, and model retraining triggers for the eel election management
+    platform. All forecast data is class C (public/audit) with no PII.
+  contact:
+    name: eel platform team
+    url: https://eel.local/support
+servers:
+  - url: https://api.eel.local
+    description: production
+  - url: https://staging.api.eel.local
+    description: staging
+
+tags:
+  - name: turnout
+    description: Turnout forecasts at various geographic granularities
+  - name: accuracy
+    description: Forecast accuracy and performance reports
+  - name: training
+    description: Model retraining lifecycle
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/ai/forecast/turnout/national:
+    get:
+      tags: [turnout]
+      operationId: getNationalTurnoutForecast
+      summary: Get national voter turnout forecast
+      description: >
+        Returns the current national-level turnout forecast including
+        confidence intervals and the generating model reference. No PII.
+        Tier 2, JWT auth.
+      x-eel-sla:
+        p95_ms: 800
+        p99_ms: 3000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: election_id
+          in: query
+          required: true
+          description: UUIDv7 identifier of the target election
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: C
+        - name: horizon_hours
+          in: query
+          description: Forecast horizon in hours from now (default 24)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 168
+            default: 24
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: National turnout forecast
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TurnoutForecast'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/ai/forecast/turnout/county/{county_code}:
+    get:
+      tags: [turnout]
+      operationId: getCountyTurnoutForecast
+      summary: Get county-level voter turnout forecast
+      description: >
+        Returns turnout forecast aggregated at county level. No PII.
+        Tier 2, JWT auth.
+      x-eel-sla:
+        p95_ms: 800
+        p99_ms: 3000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: county_code
+          in: path
+          required: true
+          description: KNBS county code (3-digit zero-padded)
+          schema:
+            type: string
+            pattern: '^\d{3}$'
+            x-eel-data-class: C
+        - name: election_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: C
+        - name: horizon_hours
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 168
+            default: 24
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: County turnout forecast
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TurnoutForecast'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/ai/forecast/turnout/constituency/{constituency_code}:
+    get:
+      tags: [turnout]
+      operationId: getConstituencyTurnoutForecast
+      summary: Get constituency-level voter turnout forecast
+      description: >
+        Returns turnout forecast at constituency granularity. No PII.
+        Tier 2, JWT auth.
+      x-eel-sla:
+        p95_ms: 800
+        p99_ms: 3000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: constituency_code
+          in: path
+          required: true
+          description: Constituency code (e.g. KEN-290-01)
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+        - name: election_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: C
+        - name: horizon_hours
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 168
+            default: 24
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Constituency turnout forecast
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TurnoutForecast'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/ai/forecast/reports:
+    get:
+      tags: [accuracy]
+      operationId: listForecastAccuracyReports
+      summary: List forecast accuracy reports
+      description: >
+        Paginated list of post-election forecast accuracy assessments.
+        Tier 3, JWT + SpiceDB.
+      x-eel-sla:
+        p95_ms: 800
+        p99_ms: 3000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageCursor'
+        - $ref: '#/components/parameters/PageLimit'
+        - name: model_id
+          in: query
+          description: Filter reports to a specific model
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: C
+        - name: election_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Paginated accuracy reports
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForecastAccuracyReportPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/ai/forecast/models/retrain:
+    post:
+      tags: [training]
+      operationId: triggerModelRetrain
+      summary: Trigger AI model retraining job
+      description: >
+        Enqueues a retraining job for a turnout or anomaly model against a
+        new dataset. Returns immediately with a job reference. Idempotent on
+        Idempotency-Key. Tier 3, JWT + SpiceDB.
+      x-eel-sla:
+        p95_ms: 800
+        p99_ms: 3000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RetrainRequest'
+      responses:
+        '201':
+          description: Retraining job queued
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetrainJob'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by eel.local identity provider (SpiceDB-checked on every request)
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS for service-to-service calls within eel.local trust domain
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Client-generated UUIDv7 for idempotent request deduplication (TTL 24 h)
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: E
+
+    PageCursor:
+      name: cursor
+      in: query
+      description: Opaque pagination cursor from a previous response
+      schema:
+        type: string
+        x-eel-data-class: E
+
+    PageLimit:
+      name: limit
+      in: query
+      description: Maximum items to return (1-100)
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+        x-eel-data-class: E
+
+  headers:
+    CosignSig:
+      description: Sigstore cosign signature over the response body
+      schema:
+        type: string
+        x-eel-data-class: C
+    MerkleProof:
+      description: Merkle proof anchoring this response to the audit ledger
+      schema:
+        type: string
+        x-eel-data-class: C
+    SnapshotId:
+      description: Snapshot identifier for response reproducibility
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+
+  schemas:
+    ConfidenceInterval:
+      type: object
+      required: [lower, upper, level]
+      properties:
+        lower:
+          type: number
+          format: float
+          description: Lower bound of the confidence interval (0.0-1.0)
+          minimum: 0
+          maximum: 1
+          x-eel-data-class: C
+        upper:
+          type: number
+          format: float
+          description: Upper bound of the confidence interval (0.0-1.0)
+          minimum: 0
+          maximum: 1
+          x-eel-data-class: C
+        level:
+          type: number
+          format: float
+          description: Confidence level (e.g. 0.95 for 95%)
+          minimum: 0
+          maximum: 1
+          x-eel-data-class: C
+
+    TurnoutForecast:
+      type: object
+      required:
+        - forecast_id
+        - election_id
+        - predicted_turnout_pct
+        - confidence_interval
+        - model_id
+        - generated_at
+        - horizon_hours
+        - geo_scope
+      properties:
+        forecast_id:
+          type: string
+          format: uuid
+          description: UUIDv7 forecast record identifier
+          x-eel-data-class: C
+        election_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        geo_scope:
+          type: string
+          description: Geographic scope label (e.g. national, county:001, constituency:KEN-290-01)
+          x-eel-data-class: C
+        predicted_turnout_pct:
+          type: number
+          format: float
+          description: Predicted turnout as a fraction (0.0-1.0)
+          minimum: 0
+          maximum: 1
+          x-eel-data-class: C
+        confidence_interval:
+          $ref: '#/components/schemas/ConfidenceInterval'
+        model_id:
+          type: string
+          format: uuid
+          description: AI model that produced this forecast
+          x-eel-data-class: C
+        generated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        horizon_hours:
+          type: integer
+          description: Forecast horizon from generation time in hours
+          x-eel-data-class: C
+        registered_voters:
+          type: integer
+          description: Registered voter count used in the forecast (public stat)
+          x-eel-data-class: C
+
+    ForecastAccuracyReport:
+      type: object
+      required:
+        - report_id
+        - election_id
+        - model_id
+        - mae
+        - rmse
+        - generated_at
+      properties:
+        report_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        election_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        model_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        mae:
+          type: number
+          format: float
+          description: Mean absolute error across all geo scopes
+          x-eel-data-class: C
+        rmse:
+          type: number
+          format: float
+          description: Root mean square error
+          x-eel-data-class: C
+        bias:
+          type: number
+          format: float
+          description: Signed mean forecast bias (positive = over-estimate)
+          x-eel-data-class: C
+        generated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        notes:
+          type: string
+          maxLength: 2048
+          x-eel-data-class: D
+
+    ForecastAccuracyReportPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ForecastAccuracyReport'
+          x-eel-data-class: C
+        next_cursor:
+          type: string
+          nullable: true
+          x-eel-data-class: E
+
+    RetrainRequest:
+      type: object
+      required: [model_type, dataset_ref, reason]
+      properties:
+        model_type:
+          type: string
+          enum: [turnout, anomaly]
+          x-eel-data-class: D
+        dataset_ref:
+          type: string
+          maxLength: 512
+          description: MinIO object key or URI of the training dataset
+          x-eel-data-class: D
+        reason:
+          type: string
+          maxLength: 1024
+          description: Human-readable justification for the retrain
+          x-eel-data-class: D
+        hyperparameter_overrides:
+          type: object
+          additionalProperties: true
+          description: Optional hyperparameter key-value overrides
+          x-eel-data-class: D
+
+    RetrainJob:
+      type: object
+      required: [job_id, status, model_type, submitted_at]
+      properties:
+        job_id:
+          type: string
+          format: uuid
+          description: UUIDv7 training job identifier
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [queued, running, complete, failed]
+          x-eel-data-class: D
+        model_type:
+          type: string
+          enum: [turnout, anomaly]
+          x-eel-data-class: D
+        estimated_duration_minutes:
+          type: integer
+          description: Estimated training duration in minutes (informational)
+          x-eel-data-class: D
+        submitted_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    ProblemDetail:
+      type: object
+      description: RFC 9457 problem detail
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: E
+        title:
+          type: string
+          x-eel-data-class: E
+        status:
+          type: integer
+          x-eel-data-class: E
+        detail:
+          type: string
+          x-eel-data-class: E
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: E
+        trace_id:
+          type: string
+          x-eel-data-class: E
+
+  responses:
+    BadRequest:
+      description: Request body or parameters failed validation
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Missing or invalid JWT
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: SpiceDB authorization denied
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Idempotency-Key collision or concurrent job conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Semantic validation error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'

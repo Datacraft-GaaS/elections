@@ -1,0 +1,292 @@
+openapi: "3.1.0"
+
+info:
+  title: eel-verifier-ussd
+  version: "1.0.0"
+  description: >
+    USSD webhook schema for the M13 verifier USSD flow.
+    Telco USSD gateways (Safaricom, Airtel, Telkom) POST session interactions to
+    POST /api/v1/verifier/ussd/session. This file documents the request/response
+    schemas and the webhook security model.
+
+    Security: server-to-server. X-Eel-Attest is NOT required.
+    Webhook authenticity is enforced via HMAC-SHA256 (keyed with a per-telco secret
+    stored in eel Vault). The gateway MUST include X-Eel-Webhook-Sig in every request.
+
+    HMAC verification:
+      sig = HMAC-SHA256(raw_request_body_bytes, webhook_secret)
+      header value = "sha256=" + hex(sig)
+    Requests with missing or invalid signatures are rejected with HTTP 401.
+
+    USSD session flow:
+      1. Subscriber dials *384#
+      2. Gateway POSTs USSDRequest with text="" (session start)
+      3. Server responds USSDResponse with action=continue and a menu prompt
+      4. Subscriber selects option; gateway POSTs USSDRequest with text="1" (etc.)
+      5. Flow continues until server responds with action=end
+      6. Sessions expire after 3 minutes of inactivity (telco-enforced)
+  contact:
+    name: eel platform team
+    email: platform@eel.local
+  license:
+    name: Proprietary
+    identifier: LicenseRef-eel-proprietary
+
+servers:
+  - url: "https://api.eel.local"
+    description: "Production"
+  - url: "https://api.staging.eel.local"
+    description: "Staging"
+
+components:
+  securitySchemes:
+    webhookHmac:
+      type: apiKey
+      in: header
+      name: X-Eel-Webhook-Sig
+      description: >
+        HMAC-SHA256 over the raw request body, keyed with the per-telco webhook secret.
+        Format: sha256=<64-char hex digest>. Verified before any processing occurs.
+
+  schemas:
+
+    USSDRequest:
+      type: object
+      description: "USSD session interaction posted by the telco USSD gateway."
+      required:
+        - session_id
+        - msisdn_hash
+        - text
+        - service_code
+      properties:
+        session_id:
+          type: string
+          description: "Telco-assigned session identifier. Unique per subscriber dial session."
+          minLength: 1
+          maxLength: 128
+          x-eel-data-class: E
+          example: "ATU-20270810-0001234"
+        msisdn_hash:
+          type: string
+          description: >
+            SHA-256(salt||e164_msisdn) hex-encoded. The raw MSISDN must not be transmitted
+            to the eel backend. Telco middleware computes this hash before forwarding.
+          pattern: "^[0-9a-f]{64}$"
+          x-eel-data-class: A
+          example: "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3"
+        text:
+          type: string
+          description: >
+            Accumulated subscriber input, asterisk-delimited. Empty string on session start.
+            Example: "1*2" means subscriber selected "1" then "2" across two prompts.
+          maxLength: 255
+          x-eel-data-class: E
+          example: "1*2"
+        service_code:
+          type: string
+          description: "USSD service code dialled by the subscriber."
+          pattern: "^\\*[0-9#*]+#$"
+          x-eel-data-class: D
+          example: "*384#"
+        telco_id:
+          type: string
+          description: "Identifier for the originating telco (safaricom, airtel, telkom)."
+          enum: [safaricom, airtel, telkom]
+          nullable: true
+          x-eel-data-class: D
+        network_code:
+          type: string
+          description: "MNO network code (MCC+MNC), e.g. '63902' for Safaricom Kenya."
+          pattern: "^[0-9]{5,6}$"
+          nullable: true
+          x-eel-data-class: D
+          example: "63902"
+        timestamp:
+          type: string
+          format: date-time
+          description: "Timestamp of the subscriber interaction as reported by the gateway."
+          nullable: true
+          x-eel-data-class: D
+      additionalProperties: false
+
+    USSDResponse:
+      type: object
+      description: "USSD response relayed by the gateway to the subscriber's handset."
+      required:
+        - text
+        - action
+      properties:
+        text:
+          type: string
+          description: >
+            Screen text to display. USSD screens are typically limited to 182 characters
+            (including newlines) by handset firmware; keep each response under 160 characters.
+          maxLength: 182
+          x-eel-data-class: C
+          example: "Jibu: Umesajiliwa kupiga kura.\nKituo: Westlands Primary School\n\n0. Mwisho"
+        action:
+          type: string
+          description: >
+            Session continuation signal.
+            continue: gateway expects another interaction from the subscriber.
+            end: gateway terminates the session and dismisses the menu.
+          enum: [continue, end]
+          x-eel-data-class: E
+          example: "end"
+        session_id:
+          type: string
+          description: "Echo of the session_id from the corresponding request."
+          maxLength: 128
+          nullable: true
+          x-eel-data-class: E
+      additionalProperties: false
+
+    USSDMenu:
+      type: object
+      description: "Internal representation of a USSD menu node (not part of the wire protocol)."
+      required:
+        - node_id
+        - prompt
+        - options
+      properties:
+        node_id:
+          type: string
+          description: "Unique node identifier within the USSD flow graph."
+          x-eel-data-class: D
+        prompt:
+          type: string
+          description: "Menu text displayed to the subscriber."
+          maxLength: 182
+          x-eel-data-class: C
+        options:
+          type: object
+          description: "Map from subscriber input digit to next node_id or terminal action."
+          additionalProperties:
+            type: string
+          x-eel-data-class: D
+        is_terminal:
+          type: boolean
+          description: "True if this node ends the session."
+          default: false
+          x-eel-data-class: D
+      additionalProperties: false
+
+paths:
+
+  /api/v1/verifier/ussd/session:
+    post:
+      operationId: handleUSSDSessionFull
+      summary: "USSD session interaction (telco gateway webhook)"
+      description: >
+        The telco USSD gateway POSTs each subscriber interaction here.
+        The endpoint is idempotent on session_id + text combination within a 5-minute window.
+        HMAC-SHA256 webhook signature verification is applied before any business logic.
+        Telco gateway must handle retries with exponential backoff; the eel backend is
+        idempotent and will return the same response for identical session_id + text inputs.
+      tags: [ussd]
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 300
+        availability: "99.9%"
+      security:
+        - webhookHmac: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: "Telco gateway idempotency key (session_id + text hash is acceptable)."
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+            x-eel-data-class: E
+        - name: X-Eel-Webhook-Sig
+          in: header
+          required: true
+          description: "HMAC-SHA256(raw_body, per_telco_secret). Format: sha256=<hex>."
+          schema:
+            type: string
+            pattern: "^sha256=[0-9a-f]{64}$"
+            x-eel-data-class: D
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/USSDRequest"
+            examples:
+              session_start:
+                summary: "Subscriber dials *384# (session start)"
+                value:
+                  session_id: "ATU-20270810-0001234"
+                  msisdn_hash: "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3"
+                  text: ""
+                  service_code: "*384#"
+                  telco_id: "safaricom"
+                  network_code: "63902"
+              menu_selection:
+                summary: "Subscriber selects option 1 (registration check)"
+                value:
+                  session_id: "ATU-20270810-0001234"
+                  msisdn_hash: "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3"
+                  text: "1"
+                  service_code: "*384#"
+                  telco_id: "safaricom"
+      responses:
+        "200":
+          description: "USSD response for relay to subscriber."
+          headers:
+            X-Eel-Request-Id:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/USSDResponse"
+              examples:
+                main_menu:
+                  summary: "Main menu (session start response)"
+                  value:
+                    text: "Karibu kwenye mfumo wa uchaguzi.\n1. Angalia usajili\n2. Kituo cha kupiga kura\n3. Matokeo\n0. Toka"
+                    action: "continue"
+                    session_id: "ATU-20270810-0001234"
+                lookup_result:
+                  summary: "Registration confirmed"
+                  value:
+                    text: "Umesajiliwa kupiga kura.\nKituo: Westlands Primary School\nKodi: KE-047-0042\n\n0. Mwisho"
+                    action: "end"
+                    session_id: "ATU-20270810-0001234"
+                session_expired:
+                  summary: "Session expired response"
+                  value:
+                    text: "Kipindi chako kimeisha. Piga tena *384# kuendelea."
+                    action: "end"
+                    session_id: "ATU-20270810-0001234"
+        "400":
+          description: "Malformed request body."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/components.yaml#/components/schemas/Problem"
+        "401":
+          description: "HMAC signature verification failed."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/components.yaml#/components/schemas/Problem"
+              example:
+                type: "https://errors.eel.local/t1/webhook-signature-invalid"
+                title: "Webhook signature invalid"
+                status: 401
+                detail: "HMAC-SHA256 signature did not match. Ensure the correct webhook secret is in use."
+        "410":
+          description: "USSD session has expired on the server side."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/components.yaml#/components/schemas/Problem"
+              example:
+                type: "https://errors.eel.local/t2/ussd-session-expired"
+                title: "USSD session expired"
+                status: 410
+        "500":
+          $ref: "../_shared/components.yaml#/components/responses/500InternalServerError"

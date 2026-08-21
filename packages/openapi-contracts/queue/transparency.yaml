@@ -1,0 +1,435 @@
+openapi: 3.1.0
+info:
+  title: eel-queue-transparency
+  version: 1.0.0
+  description: >
+    Module M19: Queue Transparency providing real-time polling station queue
+    status for the public and accredited observers. Observer submissions are
+    aggregated to produce estimates. No PII is surfaced.
+
+servers:
+  - url: https://eel.local/api/v1
+    description: Production trust domain
+
+tags:
+  - name: queue-status
+    description: Real-time station queue status
+  - name: observations
+    description: Observer queue observation submissions
+  - name: analytics
+    description: County-level queue analytics
+
+paths:
+  /queue/stations/{station_code}/status:
+    get:
+      tags: [queue-status]
+      operationId: getStationQueueStatus
+      summary: Current queue status for a station
+      description: >
+        Returns the current estimated queue wait time and queue length for
+        a polling station. Values are aggregated from recent observer
+        submissions and updated every 5 minutes. No PII is returned.
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 400
+        availability: "99%"
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/StationCodeParam'
+      responses:
+        '200':
+          description: Current queue status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueStatus'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /queue/stations:
+    get:
+      tags: [queue-status]
+      operationId: listStationQueueStatuses
+      summary: All station queue statuses
+      description: >
+        Returns a paginated summary of current queue statuses across all
+        polling stations. Suitable for public map overlays. Sorted by
+        estimated wait time descending.
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 400
+        availability: "99%"
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: county_code
+          in: query
+          required: false
+          schema:
+            type: string
+            x-eel-data-class: C
+        - name: is_open
+          in: query
+          required: false
+          schema:
+            type: boolean
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Paginated station queue status list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueStatusPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /queue/observations:
+    post:
+      tags: [observations]
+      operationId: submitQueueObservation
+      summary: Submit queue observation
+      description: >
+        Accepts a queue length observation from a credentialed observer
+        application. The observer_id_hash is a one-way hash of the
+        observer's identifier (class B) and is used only for de-duplication
+        and fraud detection. Idempotent on Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 400
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueueObservationSubmission'
+      responses:
+        '201':
+          description: Observation accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueObservation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /queue/analytics/county/{county_code}:
+    get:
+      tags: [analytics]
+      operationId: getCountyQueueAnalytics
+      summary: County-level queue analytics
+      description: >
+        Returns aggregated queue analytics for all stations in the specified
+        county. Includes average wait times, peak periods, and observation
+        count. All fields class C (no PII).
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 400
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CountyCodeParam'
+      responses:
+        '200':
+          description: County queue analytics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CountyQueueAnalytics'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Keycloak-issued JWT. Validated against eel.local JWKS endpoint.
+    mtls:
+      type: mutualTLS
+      description: X.509 mTLS client certificate. CN must match registered service principal in eel.local PKI.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: E
+      description: Client-generated UUIDv7. Server stores response for 24 hours.
+
+    PageParam:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+        x-eel-data-class: D
+
+    PageSizeParam:
+      name: page_size
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+        x-eel-data-class: D
+
+    StationCodeParam:
+      name: station_code
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 4
+        maxLength: 16
+        x-eel-data-class: C
+      description: Polling station code
+
+    CountyCodeParam:
+      name: county_code
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 2
+        maxLength: 8
+        x-eel-data-class: C
+      description: County code
+
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status, detail, instance, eel_trace_id]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        title:
+          type: string
+          x-eel-data-class: D
+        status:
+          type: integer
+          x-eel-data-class: D
+        detail:
+          type: string
+          x-eel-data-class: D
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        eel_trace_id:
+          type: string
+          x-eel-data-class: D
+
+    QueueStatus:
+      type: object
+      required: [station_code, estimated_wait_minutes, queue_length, last_updated_at, is_open]
+      properties:
+        station_code:
+          type: string
+          x-eel-data-class: C
+        estimated_wait_minutes:
+          type: integer
+          minimum: 0
+          x-eel-data-class: C
+          description: Estimated wait time in minutes based on recent observations
+        queue_length:
+          type: integer
+          minimum: 0
+          x-eel-data-class: C
+          description: Estimated number of voters currently in queue
+        last_updated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        is_open:
+          type: boolean
+          x-eel-data-class: C
+          description: Whether the station is currently accepting voters
+        observation_count:
+          type: integer
+          x-eel-data-class: C
+          description: Number of observations used in the current estimate
+
+    QueueStatusPage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items:
+          type: array
+          x-eel-data-class: C
+          items:
+            $ref: '#/components/schemas/QueueStatus'
+        total:
+          type: integer
+          x-eel-data-class: C
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+
+    QueueObservationSubmission:
+      type: object
+      required: [station_code, observed_queue_length, observed_at, observer_id_hash]
+      properties:
+        station_code:
+          type: string
+          x-eel-data-class: C
+        observed_queue_length:
+          type: integer
+          minimum: 0
+          maximum: 10000
+          x-eel-data-class: C
+          description: Number of voters observed in queue at time of observation
+        observed_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+          description: Timestamp of the observation (not submission time)
+        observer_id_hash:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: B
+          description: SHA-256 hex hash of the observer credential identifier for deduplication
+
+    QueueObservation:
+      type: object
+      required: [observation_id, station_code, observed_queue_length, observed_at, submitted_at]
+      properties:
+        observation_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        station_code:
+          type: string
+          x-eel-data-class: C
+        observed_queue_length:
+          type: integer
+          x-eel-data-class: C
+        observed_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        submitted_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    CountyQueueAnalytics:
+      type: object
+      required: [county_code, generated_at, station_count, avg_wait_minutes, max_wait_minutes, total_observations]
+      properties:
+        county_code:
+          type: string
+          x-eel-data-class: C
+        generated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        station_count:
+          type: integer
+          x-eel-data-class: C
+        stations_open:
+          type: integer
+          x-eel-data-class: C
+        avg_wait_minutes:
+          type: number
+          format: float
+          x-eel-data-class: C
+        max_wait_minutes:
+          type: integer
+          x-eel-data-class: C
+        total_observations:
+          type: integer
+          x-eel-data-class: C
+        peak_hour:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+          description: ISO 8601 hour string of peak queue observed (e.g. "2027-08-09T10:00:00Z")
+        stations_above_30min:
+          type: integer
+          x-eel-data-class: C
+          description: Count of stations where estimated wait exceeds 30 minutes
+
+  responses:
+    BadRequest:
+      description: Malformed request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: Missing or invalid authentication credential
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: Authenticated principal lacks SpiceDB permission
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: Idempotency key conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnprocessableEntity:
+      description: Semantically invalid request body
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'

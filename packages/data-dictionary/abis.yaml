@@ -1,0 +1,236 @@
+# Automated Biometric Identification System data dictionary
+# Data classes: A=PII-sensitive, B=PII-adjacent, C=system/non-PII, D=metadata/operational
+# Biometric data is special-category under Kenya DPA 2019 s.2; processed under TEE enclave isolation
+# Lawful basis: DPA s.25 public task; Elections Act s.4 deduplication mandate
+context: abis
+service: abis-svc
+updated: "2026-08-21"
+tables:
+  - table: template_index
+    description: "Index of encrypted biometric feature vectors for deduplication matching (enclave-only access)"
+    store: T1-enclave
+    columns:
+      - column: index_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Election cycle + 5 years, then cryptographic shredding"
+        notes: "UUIDv7; primary key"
+      - column: voter_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII in isolation - pseudonymous reference to bvr.voters"
+        retention: "Election cycle + 5 years"
+        notes: "FK to bvr voters; not co-located with biometric data in query results"
+      - column: modality
+        type: "TEXT"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 5 years"
+        notes: "Values: fingerprint, iris, face"
+      - column: encrypted_feature_vector
+        type: "BYTEA"
+        data_class: A
+        pii_purpose: "Biometric special category; DPA s.2; Elections Act s.4 deduplication"
+        retention: "Election cycle + 5 years, then cryptographic shredding"
+        notes: "Enclave-only; never decrypted outside TEE; AES-256-GCM + enclave sealing key; no external API access"
+      - column: enclave_attestation_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - FK to attestation proving enclave integrity"
+        retention: "Election cycle + 5 years"
+        notes: "FK to enclave_attestations; rotated on enclave restart"
+      - column: quality_score
+        type: "FLOAT4"
+        data_class: D
+        pii_purpose: "Operational metadata - template quality"
+        retention: "Election cycle + 5 years"
+        notes: "0.0-1.0; low scores flagged for re-capture"
+      - column: created_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 5 years"
+        notes: "HLC of template ingestion"
+      - column: deleted_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Soft-delete marker; DPA erasure"
+        retention: "Election cycle + 5 years"
+        notes: "Null when active; triggers enclave cryptographic shredding when set"
+
+  - table: match_requests
+    description: "Biometric deduplication match job queue managed by abis-svc"
+    store: T2-matching
+    columns:
+      - column: request_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Election cycle + 2 years"
+        notes: "UUIDv7; primary key"
+      - column: voter_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII in isolation - which voter to match against"
+        retention: "Election cycle + 2 years"
+        notes: "FK to bvr.voters; probe template fetched from template_index by enclave"
+      - column: modalities
+        type: "JSONB"
+        data_class: D
+        pii_purpose: "Operational metadata - which biometric modalities to run"
+        retention: "Election cycle + 2 years"
+        notes: "Array of modality strings; drives enclave worker selection"
+      - column: status
+        type: "TEXT"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 2 years"
+        notes: "Values: queued, running, completed, failed"
+      - column: enqueued_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 2 years"
+        notes: "HLC when request was created"
+      - column: completed_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 2 years"
+        notes: "Null while running; HLC of completion"
+
+  - table: match_results
+    description: "Biometric deduplication match outcomes from enclave workers"
+    store: T2-matching
+    columns:
+      - column: result_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Election cycle + 5 years"
+        notes: "UUIDv7; primary key"
+      - column: request_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - FK to match_requests"
+        retention: "Election cycle + 5 years"
+        notes: "FK to match_requests.request_id"
+      - column: outcome
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - match verdict code"
+        retention: "Election cycle + 5 years"
+        notes: "Values: no_match, probable_duplicate, confirmed_duplicate"
+      - column: confidence_score
+        type: "FLOAT4"
+        data_class: D
+        pii_purpose: "Operational metadata - aggregate match confidence"
+        retention: "Election cycle + 5 years"
+        notes: "0.0-1.0 normalised; threshold for confirmed_duplicate is system-configured"
+      - column: modality_scores
+        type: "JSONB"
+        data_class: D
+        pii_purpose: "Operational metadata - per-modality confidence breakdown"
+        retention: "Election cycle + 5 years"
+        notes: "Keyed by modality; used by adjudicators"
+      - column: enclave_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - which enclave instance ran this match"
+        retention: "Election cycle + 5 years"
+        notes: "FK to enclave_attestations; enables post-hoc TEE audit"
+      - column: completed_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 5 years"
+        notes: "HLC of result production"
+
+  - table: adjudication_cases
+    description: "Human review cases for contested biometric duplicate matches"
+    store: T3-adjudication
+    columns:
+      - column: case_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Election cycle + 5 years"
+        notes: "UUIDv7; primary key"
+      - column: match_result_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - FK to triggering match result"
+        retention: "Election cycle + 5 years"
+        notes: "FK to match_results.result_id"
+      - column: voter_ids
+        type: "JSONB"
+        data_class: A
+        pii_purpose: "Array of voter UUIDs involved; PII-sensitive in ABIS context as biometric dispute"
+        retention: "Election cycle + 5 years"
+        notes: "Array of UUIDv7; sensitive in combination with match context; access restricted to adjudicators"
+      - column: status
+        type: "TEXT"
+        data_class: B
+        pii_purpose: "Adjudication outcome affects voter franchise"
+        retention: "Election cycle + 5 years"
+        notes: "Values: open, under_review, resolved, escalated"
+      - column: investigator_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - staff member assigned"
+        retention: "Election cycle + 5 years"
+        notes: "FK to staff identity; logged for accountability"
+      - column: decision
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - outcome code"
+        retention: "Election cycle + 5 years"
+        notes: "Values: false_positive, confirmed_duplicate, refer_court"
+      - column: reason_code
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - structured decision reason"
+        retention: "Election cycle + 5 years"
+        notes: "Controlled vocabulary; used for analytics and appeals"
+      - column: opened_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 5 years"
+        notes: "HLC"
+      - column: resolved_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 5 years"
+        notes: "Null while open"
+
+  - table: enclave_attestations
+    description: "TEE remote attestation records for ABIS enclave worker instances"
+    store: T4-attestation
+    columns:
+      - column: enclave_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Election cycle + 5 years"
+        notes: "UUIDv7; primary key"
+      - column: worker_id
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - compute worker hostname or pod ID"
+        retention: "Election cycle + 5 years"
+        notes: "Kubernetes pod name or bare-metal hostname"
+      - column: tee_quote
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - public TEE attestation quote"
+        retention: "Election cycle + 5 years"
+        notes: "Intel TDX or AMD SEV-SNP quote; base64url; verifiable by Intel IAS or AMD KDS"
+      - column: verified_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 5 years"
+        notes: "When abis-svc verified this quote against the TEE vendor certificate chain"

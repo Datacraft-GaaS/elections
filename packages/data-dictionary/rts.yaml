@@ -1,0 +1,389 @@
+# Results Transmission System data dictionary
+# Data classes: A=PII-sensitive, B=PII-adjacent, C=system/non-PII, D=metadata/operational
+# Lawful basis: Kenya DPA 2019 s.25 public task; Elections Act s.32 (15-year retention on all result forms)
+context: rts
+service: rts-svc
+updated: "2026-08-21"
+tables:
+  - table: form34a
+    description: "Polling station result declarations (Form 34A) - raw and ICR-extracted counts"
+    store: T1-forms
+    columns:
+      - column: form_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Elections Act s.32: 15 years"
+        notes: "UUIDv7; primary key"
+      - column: station_code
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - public polling station reference"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Authoritative code from boundary register"
+      - column: election_id
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - election cycle identifier"
+        retention: "Elections Act s.32: 15 years"
+        notes: "e.g. KE-2027-GEN"
+      - column: position_code
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - contested position code"
+        retention: "Elections Act s.32: 15 years"
+        notes: "e.g. PRESIDENT, GOVERNOR-047"
+      - column: raw_scan_ref
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - MinIO object reference for scanned form image"
+        retention: "Elections Act s.32: 15 years"
+        notes: "MinIO path; original scan is the source of truth"
+      - column: extracted_counts
+        type: "JSONB"
+        data_class: C
+        pii_purpose: "Not PII - candidate vote tallies extracted by ICR"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Keyed by candidate_id; public result data"
+      - column: confidence_map
+        type: "JSONB"
+        data_class: D
+        pii_purpose: "Operational metadata - ICR confidence per field"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Float per candidate_id field; retained for audit of ICR accuracy"
+      - column: kit_sig
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - device attestation signature over form data"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Ed25519 by RTS kit TEE key; verifies form not altered in transit"
+      - column: ro_sig
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - returning officer digital signature"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Ed25519 by RO credential; legally equivalent to handwritten signature"
+      - column: status
+        type: "TEXT"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Values: received, icr_pending, icr_done, disputed, accepted"
+      - column: dispute_case_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - FK to dispute case if raised"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Null when no dispute; FK to dispute tracking system"
+      - column: created_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Elections Act s.32: 15 years"
+        notes: "HLC timestamp of receipt at rts-backend"
+
+  - table: form34b
+    description: "Constituency results tally (Form 34B) - aggregated from Form 34A per constituency"
+    store: T1-forms
+    columns:
+      - column: form_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Elections Act s.32: 15 years"
+        notes: "UUIDv7; primary key"
+      - column: constituency_code
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - public constituency reference"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Authoritative code from boundary register"
+      - column: election_id
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - election cycle identifier"
+        retention: "Elections Act s.32: 15 years"
+        notes: "e.g. KE-2027-GEN"
+      - column: position_code
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - contested position code"
+        retention: "Elections Act s.32: 15 years"
+        notes: "e.g. PRESIDENT, GOVERNOR-047"
+      - column: station_subtotals
+        type: "JSONB"
+        data_class: C
+        pii_purpose: "Not PII - per-station vote subtotals"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Keyed by station_code; public result data"
+      - column: totals
+        type: "JSONB"
+        data_class: C
+        pii_purpose: "Not PII - constituency-level candidate totals"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Keyed by candidate_id; public result data"
+      - column: ro_sig
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - constituency returning officer signature"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Ed25519 by RO credential"
+      - column: witness_sig
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - candidate agent witness signature"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Ed25519 by agent credential; may be absent if agent declined to sign"
+      - column: accepted_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Elections Act s.32: 15 years"
+        notes: "HLC when form was formally accepted by national tally centre"
+
+  - table: form34c
+    description: "National results tally (Form 34C) - final presidential result aggregate"
+    store: T1-forms
+    columns:
+      - column: form_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Elections Act s.32: 15 years"
+        notes: "UUIDv7; primary key"
+      - column: region_code
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - region reference (national for presidential)"
+        retention: "Elections Act s.32: 15 years"
+        notes: "KE-NATIONAL for presidential; county code for gubernatorial"
+      - column: election_id
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - election cycle identifier"
+        retention: "Elections Act s.32: 15 years"
+        notes: "e.g. KE-2027-GEN"
+      - column: constituency_subtotals
+        type: "JSONB"
+        data_class: C
+        pii_purpose: "Not PII - per-constituency subtotals"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Keyed by constituency_code; public result data"
+      - column: totals
+        type: "JSONB"
+        data_class: C
+        pii_purpose: "Not PII - national candidate totals"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Keyed by candidate_id; public result data"
+      - column: ro_sig
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - national returning officer signature"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Ed25519 by chief returning officer credential"
+      - column: accepted_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Elections Act s.32: 15 years"
+        notes: "HLC when Form 34C was formally accepted and declared"
+
+  - table: publication_snapshots
+    description: "Signed immutable snapshots of results at each publication milestone"
+    store: T2-snapshots
+    columns:
+      - column: snap_id
+        type: "UUID"
+        data_class: D
+        pii_purpose: "Operational metadata - system identifier"
+        retention: "Elections Act s.32: 15 years"
+        notes: "UUIDv7; primary key"
+      - column: scope
+        type: "TEXT"
+        data_class: D
+        pii_purpose: "Operational metadata - geographic scope"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Values: station, constituency, county, national"
+      - column: scope_code
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - code for scope level"
+        retention: "Elections Act s.32: 15 years"
+        notes: "e.g. station code, constituency code"
+      - column: position_code
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - contested position"
+        retention: "Elections Act s.32: 15 years"
+        notes: "e.g. PRESIDENT, GOVERNOR-047"
+      - column: totals_json_ref
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - MinIO reference to totals JSON blob"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Public result data; MinIO object is publicly accessible"
+      - column: merkle_root
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - commitment to the form events underlying this snapshot"
+        retention: "Elections Act s.32: 15 years"
+        notes: "SHA-256 of Merkle root; published to transparency log"
+      - column: published_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Elections Act s.32: 15 years"
+        notes: "HLC of publication"
+      - column: hsm_sig
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - HSM signature over snapshot"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Ed25519 by election HSM; verifiable by public cert"
+
+  - table: icr_jobs
+    description: "Intelligent Character Recognition job tracking for Form 34A scans"
+    store: T3-icr
+    columns:
+      - column: job_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Election cycle + 2 years"
+        notes: "UUIDv7; primary key"
+      - column: form_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - FK to form34a"
+        retention: "Election cycle + 2 years"
+        notes: "FK to form34a.form_id"
+      - column: model_version
+        type: "TEXT"
+        data_class: D
+        pii_purpose: "Operational metadata - ICR model version"
+        retention: "Election cycle + 2 years"
+        notes: "Semantic version of the ICR model; retained for reproducibility audit"
+      - column: confidence_map
+        type: "JSONB"
+        data_class: D
+        pii_purpose: "Operational metadata - per-field ICR confidence scores"
+        retention: "Election cycle + 2 years"
+        notes: "Float per candidate_id field; fields below threshold trigger human review"
+      - column: corrected_by
+        type: "UUID"
+        data_class: D
+        pii_purpose: "Operational metadata - staff ID of human reviewer"
+        retention: "Election cycle + 2 years"
+        notes: "Null if no human correction; FK to staff identity"
+      - column: completed_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 2 years"
+        notes: "HLC when ICR job finished"
+
+  - table: participation_tokens
+    description: "Batch records of participation tokens issued to BVI kits per station"
+    store: T4-tokens
+    columns:
+      - column: token_sha256
+        type: "TEXT"
+        data_class: D
+        pii_purpose: "Cryptographic commitment; no individual voter linkage"
+        retention: "Elections Act s.32: 15 years"
+        notes: "SHA-256 of the token batch root; individual tokens are ephemeral"
+      - column: station_code
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - polling station reference"
+        retention: "Elections Act s.32: 15 years"
+        notes: "FK to station register"
+      - column: issued_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Elections Act s.32: 15 years"
+        notes: "HLC of batch issuance"
+      - column: batch_size
+        type: "INTEGER"
+        data_class: D
+        pii_purpose: "Operational metadata - number of tokens in batch"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Should equal registered voters at station; discrepancy triggers alert"
+      - column: kit_serial
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - device that received this batch"
+        retention: "Elections Act s.32: 15 years"
+        notes: "FK to bvi.kit_certs.kit_serial"
+
+  - table: events
+    description: "Append-only event-store for all RTS domain events (form received, signed, disputed, etc.)"
+    store: T5-eventstore
+    columns:
+      - column: id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - event identifier"
+        retention: "Elections Act s.32: 15 years"
+        notes: "UUIDv7; primary key; append-only"
+      - column: stream_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - aggregate stream identifier (form_id, station_code)"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Identifies the aggregate this event belongs to"
+      - column: stream_version
+        type: "BIGINT"
+        data_class: D
+        pii_purpose: "Operational metadata - position within stream"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Monotonically increasing per stream; used for optimistic concurrency"
+      - column: event_type
+        type: "TEXT"
+        data_class: D
+        pii_purpose: "Operational metadata - event schema discriminator"
+        retention: "Elections Act s.32: 15 years"
+        notes: "e.g. rts.form.received, rts.form.disputed"
+      - column: payload_hash
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - SHA-256 of serialised event payload"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Payload stored in MinIO; hash enables tamper detection"
+      - column: metadata_hash
+        type: "TEXT"
+        data_class: D
+        pii_purpose: "Operational metadata - hash of CloudEvents metadata headers"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Covers specversion, source, subject, time fields"
+      - column: producer_sig
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - service signing key signature"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Ed25519 by rts-backend SPIFFE private key"
+      - column: hsm_countersig
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - HSM countersignature"
+        retention: "Elections Act s.32: 15 years"
+        notes: "HSM co-signs all result events; verifiable by public cert"
+      - column: recorded_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Wall-clock insert time"
+      - column: hlc
+        type: "TEXT"
+        data_class: D
+        pii_purpose: "Operational metadata - hybrid logical clock"
+        retention: "Elections Act s.32: 15 years"
+        notes: "HLC string; authoritative ordering key across distributed nodes"
+      - column: prev_hash
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - hash-chain link to previous event in stream"
+        retention: "Elections Act s.32: 15 years"
+        notes: "SHA-256 of preceding event id; forms append-only chain"

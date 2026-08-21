@@ -1,0 +1,671 @@
+openapi: 3.1.0
+info:
+  title: eel-training-lms
+  version: 1.0.0
+  description: Module M38 - Poll Worker Training Learning Management System. Manages courses, enrolments, assessments, and certificates for election personnel.
+  contact:
+    name: EEL Platform Team
+    email: platform@eel.local
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+tags:
+  - name: courses
+    description: Training course catalogue
+  - name: enrolments
+    description: Worker enrolment in training courses
+  - name: assessments
+    description: Assessment submissions and results
+  - name: completions
+    description: Completion reporting
+  - name: certificates
+    description: Certificate download
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/training/lms/courses:
+    get:
+      tags: [courses]
+      operationId: listCourses
+      summary: List training courses
+      description: Returns paginated catalogue of available training courses. Requires JWT.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Paginated course list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoursePage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/training/lms/courses/{course_id}:
+    parameters:
+      - $ref: '#/components/parameters/CourseId'
+    get:
+      tags: [courses]
+      operationId: getCourse
+      summary: Get course detail
+      description: Returns full course metadata, modules, and assessment configuration.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Course detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/training/lms/enrolments:
+    post:
+      tags: [enrolments]
+      operationId: createEnrolment
+      summary: Enrol poll worker in training course
+      description: Creates an enrolment record for a poll worker in a training course. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnrolmentCreate'
+      responses:
+        '201':
+          description: Enrolment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Enrolment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/training/lms/enrolments/{enrolment_id}:
+    parameters:
+      - $ref: '#/components/parameters/EnrolmentId'
+    get:
+      tags: [enrolments]
+      operationId: getEnrolment
+      summary: Get enrolment detail
+      description: Returns enrolment status and progress for a poll worker.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Enrolment detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Enrolment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/training/lms/assessments/{assessment_id}/submissions:
+    parameters:
+      - $ref: '#/components/parameters/AssessmentId'
+    post:
+      tags: [assessments]
+      operationId: submitAssessment
+      summary: Submit assessment answers
+      description: Records a poll worker's assessment submission and computes result. Idempotent on Idempotency-Key. Answer data is ephemeral (class E) after scoring.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssessmentSubmission'
+      responses:
+        '201':
+          description: Assessment scored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssessmentResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/training/lms/completions:
+    get:
+      tags: [completions]
+      operationId: listCompletions
+      summary: Completion report
+      description: Returns paginated completion records for audit and HR purposes. Requires JWT and SpiceDB authorization. No individual PII exposed.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: county_code
+          in: query
+          schema:
+            type: string
+            x-eel-data-class: D
+        - name: course_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: D
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [enrolled, in_progress, complete, failed]
+            x-eel-data-class: D
+      responses:
+        '200':
+          description: Paginated completion list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompletionPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/training/lms/certificates/{certificate_id}:
+    parameters:
+      - name: certificate_id
+        in: path
+        required: true
+        schema:
+          type: string
+          x-eel-data-class: D
+        description: Certificate identifier returned from AssessmentResult.
+    get:
+      tags: [certificates]
+      operationId: getCertificate
+      summary: Download training certificate
+      description: Returns a presigned MinIO URL for certificate PDF download. Valid for 15 minutes. Requires JWT or public token query parameter.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+        - {}
+      parameters:
+        - name: token
+          in: query
+          required: false
+          schema:
+            type: string
+            x-eel-data-class: E
+          description: Short-lived HMAC download token for unauthenticated access.
+      responses:
+        '200':
+          description: Certificate download URL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CertificateDownload'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by auth.eel.local (Keycloak). Trust domain eel.local.
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS client certificate for machine-to-machine calls.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+      description: UUIDv7 client-generated idempotency key.
+
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+        x-eel-data-class: D
+
+    PageSizeParam:
+      name: page_size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+        x-eel-data-class: D
+
+    CourseId:
+      name: course_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+
+    EnrolmentId:
+      name: enrolment_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+
+    AssessmentId:
+      name: assessment_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+
+  schemas:
+    Course:
+      type: object
+      required: [course_id, title_en, title_sw, duration_minutes, passing_score_pct]
+      properties:
+        course_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        title_en:
+          type: string
+          x-eel-data-class: D
+        title_sw:
+          type: string
+          x-eel-data-class: D
+        description_en:
+          type: string
+          x-eel-data-class: D
+        description_sw:
+          type: string
+          x-eel-data-class: D
+        duration_minutes:
+          type: integer
+          x-eel-data-class: D
+        passing_score_pct:
+          type: number
+          format: float
+          x-eel-data-class: D
+        role_target:
+          type: string
+          enum: [RO, ARO, PRO, clerk, agent, technical]
+          x-eel-data-class: D
+        mandatory:
+          type: boolean
+          x-eel-data-class: D
+        created_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    CourseDetail:
+      allOf:
+        - $ref: '#/components/schemas/Course'
+        - type: object
+          properties:
+            modules:
+              type: array
+              x-eel-data-class: D
+              items:
+                type: object
+                properties:
+                  module_id:
+                    type: string
+                    format: uuid
+                    x-eel-data-class: D
+                  title_en:
+                    type: string
+                    x-eel-data-class: D
+                  order_index:
+                    type: integer
+                    x-eel-data-class: D
+                  content_id:
+                    type: string
+                    format: uuid
+                    nullable: true
+                    x-eel-data-class: D
+            assessment_id:
+              type: string
+              format: uuid
+              nullable: true
+              x-eel-data-class: D
+
+    CoursePage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Course'
+          x-eel-data-class: D
+        total:
+          type: integer
+          x-eel-data-class: D
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+        next_page:
+          type: integer
+          nullable: true
+          x-eel-data-class: D
+
+    EnrolmentCreate:
+      type: object
+      required: [personnel_id_hash, course_id]
+      properties:
+        personnel_id_hash:
+          type: string
+          x-eel-data-class: B
+          description: SHA-256(salt||personnel_id). Never transmit raw personnel ID.
+        course_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+
+    Enrolment:
+      allOf:
+        - $ref: '#/components/schemas/EnrolmentCreate'
+        - type: object
+          required: [enrolment_id, status]
+          properties:
+            enrolment_id:
+              type: string
+              format: uuid
+              x-eel-data-class: C
+            status:
+              type: string
+              enum: [enrolled, in_progress, complete, failed]
+              x-eel-data-class: D
+            enrolled_at:
+              type: string
+              format: date-time
+              x-eel-data-class: D
+            completed_at:
+              type: string
+              format: date-time
+              nullable: true
+              x-eel-data-class: D
+            certificate_id:
+              type: string
+              nullable: true
+              x-eel-data-class: D
+
+    AssessmentSubmission:
+      type: object
+      required: [enrolment_id, answers]
+      properties:
+        enrolment_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        answers:
+          type: array
+          x-eel-data-class: E
+          items:
+            type: object
+            required: [question_id, selected_option]
+            properties:
+              question_id:
+                type: string
+                x-eel-data-class: D
+                description: Opaque question identifier.
+              selected_option:
+                type: string
+                x-eel-data-class: E
+                description: Selected option key. Ephemeral after scoring.
+
+    AssessmentResult:
+      type: object
+      required: [score_pct, passed]
+      properties:
+        score_pct:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          x-eel-data-class: D
+        passed:
+          type: boolean
+          x-eel-data-class: D
+        certificate_id:
+          type: string
+          nullable: true
+          x-eel-data-class: D
+          description: Present only when passed is true.
+        assessed_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    CompletionRecord:
+      type: object
+      required: [enrolment_id, course_id, county_code, status]
+      properties:
+        enrolment_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        course_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        county_code:
+          type: string
+          x-eel-data-class: D
+        status:
+          type: string
+          enum: [enrolled, in_progress, complete, failed]
+          x-eel-data-class: D
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+          x-eel-data-class: D
+
+    CompletionPage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompletionRecord'
+          x-eel-data-class: D
+        total:
+          type: integer
+          x-eel-data-class: D
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+        next_page:
+          type: integer
+          nullable: true
+          x-eel-data-class: D
+
+    CertificateDownload:
+      type: object
+      required: [certificate_id, url, expires_at]
+      properties:
+        certificate_id:
+          type: string
+          x-eel-data-class: D
+        url:
+          type: string
+          format: uri
+          x-eel-data-class: E
+          description: Presigned MinIO URL. Valid for 15 minutes.
+        expires_at:
+          type: string
+          format: date-time
+          x-eel-data-class: E
+
+    ProblemDetail:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        title:
+          type: string
+          x-eel-data-class: C
+        status:
+          type: integer
+          x-eel-data-class: C
+        detail:
+          type: string
+          x-eel-data-class: C
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        trace_id:
+          type: string
+          x-eel-data-class: D
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Validation error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalError:
+      description: Internal server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
