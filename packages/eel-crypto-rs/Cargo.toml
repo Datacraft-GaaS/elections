@@ -37,8 +37,10 @@ p384            = { version = "0.13", features = ["ecdsa"], optional = true }
 ecdsa           = { version = "0.16", optional = true }
 # rand_core already declared above (always-on with getrandom); pq-hybrid reuses it
 
-# PQ: ML-DSA-65 + ML-KEM-768 (requires liboqs C library)
-oqs             = { workspace = true, optional = true }
+# PQ: ML-DSA (Dilithium) + ML-KEM (Kyber) + SLH-DSA (Sphincs) via liboqs.
+# Use inline (not workspace = true) because the workspace entry has stale
+# feature names from an earlier draft; correct names are dilithium/kyber/sphincs.
+oqs             = { version = "0.9", features = ["dilithium", "kyber", "sphincs"], optional = true }
 
 # PKCS#11 session pool (requires PKCS#11 runtime library)
 cryptoki        = { workspace = true, optional = true }

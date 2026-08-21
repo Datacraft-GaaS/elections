@@ -1,0 +1,38 @@
+[package]
+name = "eel-crypto-rs-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[[bin]]
+name = "rfc8785"
+path = "fuzz_targets/rfc8785.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "merkle_proof"
+path = "fuzz_targets/merkle_proof.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "ed25519_verify"
+path = "fuzz_targets/ed25519_verify.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "pkcs11_response"
+path = "fuzz_targets/pkcs11_response.rs"
+test = false
+doc = false
+
+[dependencies]
+libfuzzer-sys = "0.4"
+eel-crypto-rs = { path = "..", default-features = false }
+serde_json    = "1"
+arbitrary     = { version = "1", features = ["derive"] }

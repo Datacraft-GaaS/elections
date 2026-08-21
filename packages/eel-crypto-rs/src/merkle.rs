@@ -127,7 +127,7 @@ impl MerkleTree {
     pub fn root(&self) -> Hash {
         if self.nodes.is_empty() {
             // Empty tree.
-            let mut h = Sha256::new();
+            let h = Sha256::new();
             h.finalize().into()
         } else {
             self.nodes[0]
@@ -353,7 +353,7 @@ fn recompute_root(
 fn merkle_root(leaves: &[Hash]) -> Hash {
     match leaves.len() {
         0 => {
-            let mut h = Sha256::new();
+            let h = Sha256::new();
             h.finalize().into()
         }
         1 => leaves[0],

@@ -11,7 +11,7 @@
 //! ```
 
 use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
-use rand_core::OsRng;
+use rand_core::{OsRng, RngCore};
 
 use crate::CryptoError;
 
@@ -27,7 +27,11 @@ pub use ed25519_dalek::{SigningKey as Ed25519SigningKey, VerifyingKey as Ed25519
 /// assert_eq!(kp.verifying_key().as_bytes().len(), 32);
 /// ```
 pub fn generate_keypair() -> SigningKey {
-    SigningKey::generate(&mut OsRng)
+    // Generate 32 random bytes then construct the key directly.
+    // This avoids requiring the `rand_core` feature on ed25519-dalek.
+    let mut secret = [0u8; 32];
+    OsRng.fill_bytes(&mut secret);
+    SigningKey::from_bytes(&secret)
 }
 
 /// Sign `message` with `signing_key`, returning a 64-byte signature.

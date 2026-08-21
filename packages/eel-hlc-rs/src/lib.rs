@@ -168,7 +168,7 @@ impl<'q> sqlx::Encode<'q, sqlx::Postgres> for Hlc {
         &self,
         buf: &mut sqlx::postgres::PgArgumentBuffer,
     ) -> Result<sqlx::encode::IsNull, sqlx::error::BoxDynError> {
-        self.to_string().encode_by_ref(buf)
+        <String as sqlx::Encode<'_, sqlx::Postgres>>::encode_by_ref(&self.to_string(), buf)
     }
 }
 
