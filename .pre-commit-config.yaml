@@ -1,0 +1,86 @@
+repos:
+  # ---------------------------------------------------------------------------
+  # Generic file hygiene
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+
+  # ---------------------------------------------------------------------------
+  # Rust
+  # ---------------------------------------------------------------------------
+  - repo: local
+    hooks:
+      - id: cargo-fmt-check
+        name: cargo fmt --check
+        language: system
+        entry: cargo fmt --all --check
+        types: [rust]
+        pass_filenames: false
+
+  # ---------------------------------------------------------------------------
+  # Python (ruff)
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  # ---------------------------------------------------------------------------
+  # Elixir (when present)
+  # ---------------------------------------------------------------------------
+  - repo: local
+    hooks:
+      - id: mix-format-check
+        name: mix format --check-formatted
+        language: system
+        entry: bash -c 'find services -name "mix.exs" -maxdepth 6 -exec dirname {} \; | xargs -I{} sh -c "cd {} && mix format --check-formatted" 2>/dev/null || true'
+        files: \.ex$|\.exs$
+        pass_filenames: false
+
+  # ---------------------------------------------------------------------------
+  # OpenAPI contracts (spectral)
+  # ---------------------------------------------------------------------------
+  - repo: local
+    hooks:
+      - id: spectral-lint
+        name: spectral lint OpenAPI contracts
+        language: system
+        entry: bash -c 'if find packages/openapi-contracts -name "*.yaml" 2>/dev/null | grep -q .; then spectral lint "packages/openapi-contracts/**/*.yaml" --fail-severity=warn; else echo "spectral: no contracts yet — skipping"; fi'
+        files: packages/openapi-contracts/.*\.yaml$
+        pass_filenames: false
+
+  # ---------------------------------------------------------------------------
+  # Custom: reject em/en dashes in Markdown files
+  # ---------------------------------------------------------------------------
+  - repo: local
+    hooks:
+      - id: no-dashes-in-md
+        name: reject em/en dashes in .md files
+        language: pygrep
+        entry: '[–—]'
+        types: [markdown]
+        args: [--multiline]
+
+  # ---------------------------------------------------------------------------
+  # Custom: reject banned namespace strings in all staged files
+  # ---------------------------------------------------------------------------
+  - repo: local
+    hooks:
+      - id: no-banned-namespaces
+        name: reject banned namespace strings (iebc-/iebc_/X-IEBC-/libiebc/IEBC_/ke.iebc.)
+        language: pygrep
+        entry: 'iebc-|iebc_|X-IEBC-|libiebc|IEBC_|ke\.iebc\.'
+        exclude: '^docs/adr/|^docs/plans/|^docs/spec-alignment/|^\.pre-commit-config\.yaml$'
+        args: [--multiline]

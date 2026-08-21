@@ -5,14 +5,69 @@ charset = utf-8
 end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
+
+# YAML / TOML / JSON / JS / TS — 2-space indent
+[*.{yaml,yml,toml,json,js,jsx,ts,tsx,svelte,astro,html,css,scss}]
 indent_style = space
 indent_size = 2
 
-[*.py]
-indent_style = tab
+# Nix — 2-space
+[*.nix]
+indent_style = space
+indent_size = 2
 
+# Rust — 4-space (rustfmt default)
+[*.rs]
+indent_style = space
+indent_size = 4
+
+# Python — 4-space (PEP 8 default; project overrides with tabs via pyproject.toml)
+[*.py]
+indent_style = space
+indent_size = 4
+
+# Elixir — 2-space
+[*.{ex,exs}]
+indent_style = space
+indent_size = 2
+
+# Dart / Flutter — 2-space
+[*.dart]
+indent_style = space
+indent_size = 2
+
+# Go — tabs
+[*.go]
+indent_style = tab
+indent_size = 4
+
+# Makefile — tabs (required)
 [Makefile]
 indent_style = tab
+indent_size = 4
 
+# justfile — tabs (just requires tabs)
+[justfile,*.just]
+indent_style = tab
+indent_size = 4
+
+# Markdown — 2-space (for nested lists), no trim (trailing spaces = line break)
 [*.md]
+indent_style = space
+indent_size = 2
 trim_trailing_whitespace = false
+
+# SQL — 2-space
+[*.sql]
+indent_style = space
+indent_size = 2
+
+# Proto — 2-space
+[*.proto]
+indent_style = space
+indent_size = 2
+
+# Shell — 2-space
+[*.{sh,bash,zsh}]
+indent_style = space
+indent_size = 2

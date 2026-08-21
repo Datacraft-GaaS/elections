@@ -1,0 +1,71 @@
+# Default: all text files get LF line endings
+* text=auto eol=lf
+
+# Explicit text formats
+*.rs    text eol=lf
+*.toml  text eol=lf
+*.yaml  text eol=lf
+*.yml   text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+*.nix   text eol=lf
+*.ex    text eol=lf
+*.exs   text eol=lf
+*.py    text eol=lf
+*.dart  text eol=lf
+*.ts    text eol=lf
+*.tsx   text eol=lf
+*.js    text eol=lf
+*.jsx   text eol=lf
+*.html  text eol=lf
+*.css   text eol=lf
+*.scss  text eol=lf
+*.sql   text eol=lf
+*.sh    text eol=lf
+*.bash  text eol=lf
+*.zsh   text eol=lf
+*.proto text eol=lf
+*.zed   text eol=lf
+Makefile text eol=lf
+justfile text eol=lf
+*.just  text eol=lf
+Dockerfile text eol=lf
+*.dockerignore text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+.editorconfig text eol=lf
+
+# Binary formats — no line-ending normalization, no diff
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.svg   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary
+*.eot   binary
+*.pdf   binary
+*.zip   binary
+*.tar   binary
+*.gz    binary
+*.bz2   binary
+*.xz    binary
+*.zst   binary
+*.so    binary
+*.dylib binary
+*.dll   binary
+*.exe   binary
+*.wasm  binary
+*.parquet binary
+*.sqlite  binary
+*.db      binary
+
+# Lock files — text but never auto-merged
+Cargo.lock linguist-generated=true
+mix.lock   linguist-generated=true
+pnpm-lock.yaml linguist-generated=true
+uv.lock    linguist-generated=true
+pubspec.lock linguist-generated=true
