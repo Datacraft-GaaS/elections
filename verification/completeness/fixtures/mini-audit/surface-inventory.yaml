@@ -1,0 +1,10 @@
+# Mini-audit fixture: minimal surface inventory for dry-run
+surfaces:
+  - name: public-portal
+    service: portal-svc
+    module: M11
+    framework: astro
+    dir: services/portal-svc/astro
+    url-template: "http://localhost:3000"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]

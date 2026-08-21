@@ -1,0 +1,8 @@
+{
+  "version": "1",
+  "run_at": "2026-08-21T00:00:00Z",
+  "scale": "1/100",
+  "measured_slas": ["SLA-RTS-THROUGHPUT", "SLA-PORTAL-VIEWERS", "SLA-BVI-P99"],
+  "failed_slas": [],
+  "notes": "mini-audit fixture; all SLAs pass"
+}

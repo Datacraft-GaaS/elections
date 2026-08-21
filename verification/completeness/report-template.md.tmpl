@@ -1,0 +1,73 @@
+# Completeness Audit Report
+
+Generated: {{generated_at}}
+Mode: {{audit_mode}}
+Result: **{{overall_status}}** ({{passed}}/{{total_steps}} steps passed)
+
+## 9.1 Stub scan
+
+Status: {{step_9_1_status}}
+Findings outside allowlist: {{stub_findings_count}}
+
+## 9.2 Surface inventory
+
+Status: {{step_9_2_status}}
+Surfaces checked: {{surfaces_checked}}
+Missing artefacts: {{missing_artefacts}}
+
+## 9.3 Traceability matrix
+
+Status: {{step_9_3_status}}
+Total rows: {{trace_total}}
+Rows with passing test: {{trace_mapped}}
+Unmapped rows: {{trace_unmapped}}
+
+## 9.4 Contract closure
+
+Status: {{step_9_4_status}}
+Pact pairs verified: {{pact_pairs}}
+Karapace schemas with producer+consumer: {{karapace_covered}}
+
+## 9.5 Endpoint closure
+
+Status: {{step_9_5_status}}
+OpenAPI paths checked: {{endpoint_total}}
+Missing contract tests: {{endpoint_no_contract}}
+Missing idempotency tests: {{endpoint_no_idempotency}}
+Missing DAST entries: {{endpoint_no_dast}}
+Missing 4-language smoke: {{endpoint_no_smoke}}
+
+## 9.6 Runbook closure
+
+Status: {{step_9_6_status}}
+Services checked: {{services_total}}
+Missing runbooks: {{runbooks_missing}}
+Chaos recency: {{chaos_recency}}
+
+## 9.7 SLA closure
+
+Status: {{step_9_7_status}}
+SLAs defined: {{sla_total}}
+SLAs measured: {{sla_measured}}
+SLAs met: {{sla_met}}
+
+## 9.8 Legal closure
+
+Status: {{step_9_8_status}}
+Citations required: {{citations_required}}
+Citations covered: {{citations_covered}}
+Uncovered: {{citations_uncovered}}
+
+## 9.9 Report
+
+Status: {{step_9_9_status}}
+Report hash (SHA-256): {{report_sha256}}
+Tlog inclusion proof: {{inclusion_proof_status}}
+
+## Gate G6 sign-off
+
+{{#if all_pass}}
+All 9 completeness criteria met. Submit `completeness-attestation.json` to Gate G6.
+{{else}}
+{{failed}} step(s) require remediation before Gate G6. See failing steps above.
+{{/if}}

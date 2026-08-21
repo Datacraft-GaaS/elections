@@ -1,0 +1,19 @@
+# Mini-audit fixture: synthetic TRACEABILITY.yaml
+# All rows have at least one test ID mapped so dry-run passes.
+rows:
+  AC-M03-01:
+    module: abis
+    wp: WP-3.6
+    tests: [test_abis_enrolment_basic]
+  AC-M03-02:
+    module: abis
+    wp: WP-3.6
+    tests: [test_abis_dedup_reject]
+  EC-DAT-01:
+    module: transparency
+    wp: WP-2.1
+    tests: [test_tlog_inclusion_proof]
+  EC-MOB-01:
+    module: bvr-kit
+    wp: WP-3.5
+    tests: [test_bvr_offline_sync]

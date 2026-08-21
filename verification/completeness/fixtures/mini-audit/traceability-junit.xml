@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="mini-audit">
+  <testsuite name="abis">
+    <testcase name="test_abis_enrolment_basic [AC-M03-01]" classname="abis::tests"/>
+    <testcase name="test_abis_dedup_reject [AC-M03-02]" classname="abis::tests"/>
+  </testsuite>
+  <testsuite name="transparency">
+    <testcase name="test_tlog_inclusion_proof [EC-DAT-01]" classname="transparency::tests"/>
+  </testsuite>
+  <testsuite name="bvr">
+    <testcase name="test_bvr_offline_sync [EC-MOB-01]" classname="bvr::tests"/>
+  </testsuite>
+</testsuites>

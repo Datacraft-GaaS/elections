@@ -1,0 +1,64 @@
+{
+  "version": "1",
+  "generated_at": "2026-08-21T14:35:51.343981Z",
+  "audit_mode": "dry",
+  "total_steps": 9,
+  "passed": 9,
+  "failed": 0,
+  "steps": [
+    {
+      "step": "9.1",
+      "label": "stub-scan",
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "step": "9.2",
+      "label": "surface-inventory",
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "step": "9.3",
+      "label": "traceability",
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "step": "9.4",
+      "label": "contract-closure",
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "step": "9.5",
+      "label": "endpoint-closure",
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "step": "9.6",
+      "label": "runbook-closure",
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "step": "9.7",
+      "label": "sla-closure",
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "step": "9.8",
+      "label": "legal-closure",
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "step": "9.9",
+      "label": "report",
+      "status": "pass",
+      "exit_code": 0
+    }
+  ]
+}

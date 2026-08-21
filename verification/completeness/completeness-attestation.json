@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "generated_at": "2026-08-21T14:35:51.284330Z",
+  "report_sha256": "ae686f17c15a497652d4d83cf10e2171004f075e3dab4f12f09fa3140b9eb1cb",
+  "inclusion_proof": {
+    "sha256": "ae686f17c15a497652d4d83cf10e2171004f075e3dab4f12f09fa3140b9eb1cb",
+    "note": "dry mode stub"
+  }
+}

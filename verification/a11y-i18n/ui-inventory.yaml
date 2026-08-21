@@ -1,0 +1,341 @@
+# UI surface inventory for eel a11y + i18n sweep (WP-6.6)
+# Every surface that presents a user interface is listed here.
+# wcag-target: AA (all) | AAA (M68 only)
+# locales-required: subset of the 11 production locales relevant to this surface
+# framework: astro | liveview | django | flutter | tauri
+
+surfaces:
+
+  # --- Astro (SSG/SSR web) ---
+
+  - name: public-portal
+    service: portal-svc
+    module: M11
+    framework: astro
+    dir: services/portal-svc/astro
+    url-template: "http://localhost:3000"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE, om-ET, so-KE, kam-KE, mer-KE, guz-KE, luo-KE, luy-KE, kln-KE, mas-KE]
+
+  - name: referendum-explainer
+    service: portal-svc
+    module: M68
+    framework: astro
+    dir: services/portal-svc/astro
+    url-template: "http://localhost:3001"
+    wcag-target: AAA
+    locales-required: [en-KE, sw-KE, om-ET, so-KE, kam-KE, mer-KE, guz-KE, luo-KE, luy-KE, kln-KE, mas-KE]
+
+  - name: voter-list-inspection
+    service: portal-svc
+    module: M64
+    framework: astro
+    dir: services/portal-svc/astro
+    url-template: "http://localhost:3002"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: bvv-voter-lookup
+    service: bvi-svc
+    module: M07
+    framework: astro
+    dir: services/bvi-svc/astro
+    url-template: "http://localhost:4000"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: boundary-public
+    service: boundary-svc
+    module: M18
+    framework: astro
+    dir: services/boundary-svc/astro
+    url-template: "http://localhost:8000"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: reproducibility-bundle
+    service: transparency-svc
+    module: M14
+    framework: astro
+    dir: services/transparency-svc/astro
+    url-template: "http://localhost:8001"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: election-calendar
+    service: portal-svc
+    module: M52
+    framework: astro
+    dir: services/portal-svc/astro
+    url-template: "http://localhost:7000"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  # --- Phoenix LiveView (ex) ---
+
+  - name: vprs-public
+    service: vprs-svc
+    module: M04
+    framework: liveview
+    dir: services/vprs-svc/ex
+    url-template: "http://localhost:5000"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: crms-public
+    service: crms-svc
+    module: M12
+    framework: liveview
+    dir: services/crms-svc/ex
+    url-template: "http://localhost:5001"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: grievance-public
+    service: ecc-svc
+    module: M23
+    framework: liveview
+    dir: services/ecc-svc/ex
+    url-template: "http://localhost:5002"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: observer-portal
+    service: governance-svc
+    module: M57
+    framework: liveview
+    dir: services/governance-svc/ex
+    url-template: "http://localhost:6000"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: candidate-public
+    service: crms-svc
+    module: M12
+    framework: liveview
+    dir: services/crms-svc/ex
+    url-template: "http://localhost:7001"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: bvi-liveview
+    service: bvi-svc
+    module: M06
+    framework: liveview
+    dir: services/bvi-svc/ex
+    url-template: "http://localhost:4001"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: portal-liveview
+    service: portal-svc
+    module: M11
+    framework: liveview
+    dir: services/portal-svc/ex
+    url-template: "http://localhost:3003"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  # --- Django admin ---
+
+  - name: bvr-admin
+    service: bvr-svc
+    module: M02
+    framework: django
+    dir: services/bvr-svc/django
+    url-template: "http://localhost:9000/admin"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: biometric-admin
+    service: biometric-edge-svc
+    module: M01
+    framework: django
+    dir: services/biometric-edge-svc/django
+    url-template: "http://localhost:9001/admin"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: governance-admin
+    service: governance-svc
+    module: M21
+    framework: django
+    dir: services/governance-svc/django
+    url-template: "http://localhost:9002/admin"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: inventory-admin
+    service: inventory-svc
+    module: M20
+    framework: django
+    dir: services/inventory-svc/django
+    url-template: "http://localhost:9003/admin"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: crms-admin
+    service: crms-svc
+    module: M12
+    framework: django
+    dir: services/crms-svc/django
+    url-template: "http://localhost:9004/admin"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: training-admin
+    service: training-svc
+    module: M37
+    framework: django
+    dir: services/training-svc/django
+    url-template: "http://localhost:9005/admin"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: support-admin
+    service: support-admin-svc
+    module: M25
+    framework: django
+    dir: services/support-admin-svc/django
+    url-template: "http://localhost:9006/admin"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: rts-admin
+    service: rts-svc
+    module: M08
+    framework: django
+    dir: services/rts-svc/django
+    url-template: "http://localhost:9007/admin"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: transparency-admin
+    service: transparency-svc
+    module: M14
+    framework: django
+    dir: services/transparency-svc/django
+    url-template: "http://localhost:9008/admin"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  # --- Flutter mobile / kit apps ---
+
+  - name: bvr-kit
+    service: biometric-edge-svc
+    module: M02
+    framework: flutter
+    dir: services/biometric-edge-svc/apps/bvr-kit
+    url-template: "apk:bvr-kit"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE, om-ET, so-KE]
+
+  - name: bvi-kit
+    service: biometric-edge-svc
+    module: M01
+    framework: flutter
+    dir: services/biometric-edge-svc/apps/bvi-kit
+    url-template: "apk:bvi-kit"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: diaspora-kit
+    service: biometric-edge-svc
+    module: M05
+    framework: flutter
+    dir: services/biometric-edge-svc/apps/diaspora-kit
+    url-template: "apk:diaspora-kit"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: rts-kit
+    service: rts-svc
+    module: M08
+    framework: flutter
+    dir: services/rts-svc/apps/rts-kit
+    url-template: "apk:rts-kit"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: field-support
+    service: field-mobile-svc
+    module: M13
+    framework: flutter
+    dir: services/field-mobile-svc/apps/field-support
+    url-template: "apk:field-support"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: observer-app
+    service: field-mobile-svc
+    module: M57
+    framework: flutter
+    dir: services/field-mobile-svc/apps/observer
+    url-template: "apk:observer"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: party-agent
+    service: field-mobile-svc
+    module: M41
+    framework: flutter
+    dir: services/field-mobile-svc/apps/party-agent
+    url-template: "apk:party-agent"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: poll-clerk
+    service: field-mobile-svc
+    module: M10
+    framework: flutter
+    dir: services/field-mobile-svc/apps/poll-clerk
+    url-template: "apk:poll-clerk"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: personnel
+    service: field-mobile-svc
+    module: M29
+    framework: flutter
+    dir: services/field-mobile-svc/apps/personnel
+    url-template: "apk:personnel"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: lms-offline
+    service: training-svc
+    module: M37
+    framework: flutter
+    dir: services/training-svc/apps/lms-offline
+    url-template: "apk:lms-offline"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: accred-scanner
+    service: training-svc
+    module: M42
+    framework: flutter
+    dir: services/training-svc/apps/accred-scanner
+    url-template: "apk:accred-scanner"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  # --- Tauri 2 desktop ---
+
+  - name: ro-desktop
+    service: rts-svc
+    module: M09
+    framework: tauri
+    dir: services/rts-svc/apps/ro-desktop
+    url-template: "tauri:ro-desktop"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]
+
+  - name: rla-desktop
+    service: governance-svc
+    module: M56
+    framework: tauri
+    dir: services/governance-svc/apps/rla-desktop
+    url-template: "tauri:rla-desktop"
+    wcag-target: AA
+    locales-required: [en-KE, sw-KE]

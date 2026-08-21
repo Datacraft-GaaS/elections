@@ -1,0 +1,17 @@
+# Mini-audit fixture: synthetic SLA manifest
+slas:
+  - id: SLA-RTS-THROUGHPUT
+    description: "rts-svc throughput 18k req/s"
+    metric: throughput_rps
+    target: 18000
+    unit: req/s
+  - id: SLA-PORTAL-VIEWERS
+    description: "portal 5M concurrent viewers/hr"
+    metric: concurrent_viewers_per_hour
+    target: 5000000
+    unit: viewers/hr
+  - id: SLA-BVI-P99
+    description: "bvi-svc P99 latency <= 500ms"
+    metric: p99_latency_ms
+    target: 500
+    unit: ms

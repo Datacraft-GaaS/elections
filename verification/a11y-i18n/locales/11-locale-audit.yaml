@@ -1,0 +1,238 @@
+# 11-locale-audit.yaml
+# Per-locale x per-surface audit: catalogue completeness, font fallback, ICU plurals, RTL.
+# RTL note: none of the 11 production locales uses an RTL script.
+# The RTL mechanism (CSS dir="rtl", ICU BIDI, logical properties) is exercised via
+# the xxa pseudo-locale which injects directionality markers.
+
+meta:
+  locales: [en-KE, sw-KE, om-ET, so-KE, kam-KE, mer-KE, guz-KE, luo-KE, luy-KE, kln-KE, mas-KE]
+  rtl-applicable: false
+  rtl-mechanism: "CSS dir attribute + logical CSS properties; activated by pseudo-locale xxa"
+  icu-plural-forms-required: true
+  font-stack: "Noto Sans KE, Ubuntu, system-ui, sans-serif"
+
+rows:
+
+  - surface: public-portal
+    locale: en-KE
+    catalogue-completeness-pct: 100
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: public-portal
+    locale: sw-KE
+    catalogue-completeness-pct: 100
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: public-portal
+    locale: om-ET
+    catalogue-completeness-pct: 95
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: public-portal
+    locale: so-KE
+    catalogue-completeness-pct: 95
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: public-portal
+    locale: kam-KE
+    catalogue-completeness-pct: 90
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: public-portal
+    locale: mer-KE
+    catalogue-completeness-pct: 90
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: public-portal
+    locale: guz-KE
+    catalogue-completeness-pct: 88
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: public-portal
+    locale: luo-KE
+    catalogue-completeness-pct: 90
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: public-portal
+    locale: luy-KE
+    catalogue-completeness-pct: 88
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: public-portal
+    locale: kln-KE
+    catalogue-completeness-pct: 85
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: public-portal
+    locale: mas-KE
+    catalogue-completeness-pct: 85
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: referendum-explainer
+    locale: en-KE
+    catalogue-completeness-pct: 100
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: referendum-explainer
+    locale: sw-KE
+    catalogue-completeness-pct: 100
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: referendum-explainer
+    locale: om-ET
+    catalogue-completeness-pct: 98
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: referendum-explainer
+    locale: so-KE
+    catalogue-completeness-pct: 98
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: referendum-explainer
+    locale: kam-KE
+    catalogue-completeness-pct: 95
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: referendum-explainer
+    locale: mer-KE
+    catalogue-completeness-pct: 95
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: referendum-explainer
+    locale: guz-KE
+    catalogue-completeness-pct: 93
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: referendum-explainer
+    locale: luo-KE
+    catalogue-completeness-pct: 95
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: referendum-explainer
+    locale: luy-KE
+    catalogue-completeness-pct: 93
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: referendum-explainer
+    locale: kln-KE
+    catalogue-completeness-pct: 90
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: referendum-explainer
+    locale: mas-KE
+    catalogue-completeness-pct: 90
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: bvr-kit
+    locale: en-KE
+    catalogue-completeness-pct: 100
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: bvr-kit
+    locale: sw-KE
+    catalogue-completeness-pct: 100
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: bvr-kit
+    locale: om-ET
+    catalogue-completeness-pct: 95
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: bvr-kit
+    locale: so-KE
+    catalogue-completeness-pct: 95
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: rts-kit
+    locale: en-KE
+    catalogue-completeness-pct: 100
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: rts-kit
+    locale: sw-KE
+    catalogue-completeness-pct: 100
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: ro-desktop
+    locale: en-KE
+    catalogue-completeness-pct: 100
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: ro-desktop
+    locale: sw-KE
+    catalogue-completeness-pct: 100
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: rla-desktop
+    locale: en-KE
+    catalogue-completeness-pct: 100
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false
+
+  - surface: rla-desktop
+    locale: sw-KE
+    catalogue-completeness-pct: 100
+    font-fallback-available: true
+    icu-plurals-present: true
+    rtl-applicable: false

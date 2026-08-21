@@ -1,0 +1,55 @@
+# A11y + i18n Report: {{surface}}
+
+Generated: {{timestamp}}
+Surface: {{surface}} ({{module}})
+Service: {{service}}
+Framework: {{framework}}
+WCAG target: {{wcag_target}}
+
+## Axe Violations
+
+{{#if axe_violations}}
+| Rule | Impact | Element | Description |
+|---|---|---|---|
+{{#each axe_violations}}
+| {{rule_id}} | {{impact}} | {{element}} | {{description}} |
+{{/each}}
+{{else}}
+Zero violations.
+{{/if}}
+
+## Pseudo-locale (xxa)
+
+Status: {{pseudo_status}}
+{{#if pseudo_issues}}
+Issues:
+{{#each pseudo_issues}}
+- {{description}} at {{selector}}
+{{/each}}
+{{else}}
+No truncation issues detected.
+{{/if}}
+
+## Locale completeness
+
+| Locale | Completeness | Font | ICU plurals | RTL |
+|---|---|---|---|---|
+{{#each locales}}
+| {{code}} | {{completeness_pct}}% | {{font_ok}} | {{icu_ok}} | {{rtl_note}} |
+{{/each}}
+
+## Screen-reader script results
+
+| Platform | Tool | Script | Status | Notes |
+|---|---|---|---|---|
+{{#each sr_results}}
+| {{platform}} | {{tool}} | {{script}} | {{status}} | {{notes}} |
+{{/each}}
+
+## Summary
+
+{{#if all_pass}}
+PASS: surface meets {{wcag_target}} conformance. All locale and screen-reader checks green.
+{{else}}
+FAIL: {{fail_count}} check(s) require remediation before Gate G6.
+{{/if}}
