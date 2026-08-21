@@ -2684,6 +2684,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "eel-abis-accelerator"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "rstest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "eel-abis-adjudication"
 version = "0.1.0"
 dependencies = [
@@ -2739,10 +2753,45 @@ dependencies = [
 [[package]]
 name = "eel-abis-cert-fido"
 version = "0.1.0"
+dependencies = [
+ "chrono",
+ "hex",
+ "proptest",
+ "rstest",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror 2.0.20",
+ "tracing",
+]
 
 [[package]]
 name = "eel-abis-cert-frvt"
 version = "0.1.0"
+dependencies = [
+ "chrono",
+ "proptest",
+ "rstest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "eel-abis-cluster-analysis"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "rstest",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.20",
+ "tokio",
+ "tracing",
+ "uuid",
+]
 
 [[package]]
 name = "eel-abis-drift-monitor"
@@ -2962,6 +3011,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "eel-abis-perf-monitor"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "rstest",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.20",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "eel-abis-rectification"
 version = "0.1.0"
 dependencies = [
@@ -3108,6 +3172,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "eel-abis-search-planner"
+version = "0.1.0"
+
+[[package]]
 name = "eel-abis-shielding"
 version = "0.1.0"
 dependencies = [
@@ -3218,6 +3286,17 @@ dependencies = [
 [[package]]
 name = "eel-abis-twin-registry"
 version = "0.1.0"
+dependencies = [
+ "chrono",
+ "rstest",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.20",
+ "tokio",
+ "tracing",
+ "uuid",
+]
 
 [[package]]
 name = "eel-abis-vendor"
