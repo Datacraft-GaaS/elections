@@ -1,0 +1,46 @@
+# deps
+node_modules/
+.pnp/
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# builds
+dist/
+build/
+out/
+target/
+.next/
+.turbo/
+.parcel-cache/
+*.egg-info/
+
+# platform artefacts
+.DS_Store
+Thumbs.db
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# editors
+.idea/
+.vscode/
+*.swp
+
+# logs / coverage
+*.log
+coverage/
+.nyc_output/
+
+# mobile
+ios/Pods/
+ios/build/
+android/.gradle/
+android/build/
+android/app/build/
+
+# desktop
+electron-dist/
