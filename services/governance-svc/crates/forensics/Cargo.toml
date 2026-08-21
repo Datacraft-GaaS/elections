@@ -1,0 +1,32 @@
+[package]
+name = "eel-governance-forensics"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "M66 Election Financial Forensics: RD/IV/DiD analysis cycles, referral packets, replication packages (WP-5.3)"
+
+[lib]
+name = "eel_governance_forensics"
+path = "src/lib.rs"
+
+[[bin]]
+name = "eel-governance-forensics"
+path = "src/main.rs"
+
+[dependencies]
+axum              = { workspace = true }
+tower             = { workspace = true }
+tower-http        = { workspace = true }
+tokio             = { workspace = true }
+serde             = { workspace = true, features = ["derive"] }
+serde_json        = { workspace = true }
+uuid              = { workspace = true }
+chrono            = { workspace = true }
+tracing           = { workspace = true }
+tracing-subscriber = { workspace = true }
+thiserror         = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

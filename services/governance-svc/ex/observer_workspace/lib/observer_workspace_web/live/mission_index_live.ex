@@ -1,0 +1,40 @@
+defmodule ObserverWorkspaceWeb.MissionIndexLive do
+  use ObserverWorkspaceWeb, :live_view
+
+  alias ObserverWorkspace.Missions
+
+  @impl true
+  def mount(_params, _session, socket) do
+    missions = Missions.list_missions()
+    {:ok, assign(socket, :missions, missions)}
+  end
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <div class="mx-auto max-w-4xl p-6">
+      <h1 class="text-2xl font-bold mb-4">Observer Mission Workspaces</h1>
+      <ul class="space-y-2">
+        <%= for mission <- @missions do %>
+          <li class="border rounded p-4 flex justify-between items-center">
+            <div>
+              <span class="font-medium"><%= mission.organisation %></span>
+              <span class="ml-2 text-sm text-gray-500">(<%= mission.id %>)</span>
+            </div>
+            <div class="flex gap-2">
+              <span class={"px-2 py-1 text-xs rounded #{status_class(mission.status)}"}>
+                <%= mission.status %>
+              </span>
+              <.link navigate={"/missions/#{mission.id}"} class="btn btn-sm">Open</.link>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+    """
+  end
+
+  defp status_class("active"), do: "bg-green-100 text-green-800"
+  defp status_class("registered"), do: "bg-yellow-100 text-yellow-800"
+  defp status_class(_), do: "bg-gray-100 text-gray-600"
+end

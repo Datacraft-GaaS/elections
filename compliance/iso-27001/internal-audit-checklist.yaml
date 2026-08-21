@@ -1,0 +1,351 @@
+# Internal Audit Checklist
+# ISO 27001:2022 Clauses 4 through 10
+# Auditor completes rating for each item: yes | partial | no | na
+# Evidence column records document/artefact/interview reference
+
+checklist_version: "1.0"
+audit_date: "[YYYY-MM-DD]"
+auditor: "[AUDITOR_NAME]"
+auditee: "IEBC ICT Department"
+scope: "eel platform ISMS"
+
+sections:
+
+  - clause: "4"
+    title: "Context of the organisation"
+    items:
+      - id: "4.1.1"
+        question: "Has the organisation identified internal and external issues relevant to the ISMS?"
+        rating: null
+        evidence: null
+
+      - id: "4.1.2"
+        question: "Is there a documented analysis of external issues (regulatory, competitive, technological)?"
+        rating: null
+        evidence: null
+
+      - id: "4.2.1"
+        question: "Have interested parties been identified and their requirements documented?"
+        rating: null
+        evidence: "isms-scope.md section 5"
+
+      - id: "4.2.2"
+        question: "Are interested party requirements reviewed at least annually?"
+        rating: null
+        evidence: null
+
+      - id: "4.3.1"
+        question: "Is the ISMS scope documented and approved?"
+        rating: null
+        evidence: "compliance/iso-27001/isms-scope.md"
+
+      - id: "4.3.2"
+        question: "Does the scope include all relevant assets, locations, and activities?"
+        rating: null
+        evidence: "isms-scope.md sections 3 and 4"
+
+      - id: "4.3.3"
+        question: "Are interfaces and dependencies with external parties documented in the scope?"
+        rating: null
+        evidence: "isms-scope.md section 6"
+
+  - clause: "5"
+    title: "Leadership"
+    items:
+      - id: "5.1.1"
+        question: "Is there evidence of management commitment to the ISMS (signed policy, management review minutes)?"
+        rating: null
+        evidence: null
+
+      - id: "5.1.2"
+        question: "Has management ensured that ISMS objectives are established and aligned with organisational strategy?"
+        rating: null
+        evidence: null
+
+      - id: "5.2.1"
+        question: "Is there a documented information security policy approved by top management?"
+        rating: null
+        evidence: "docs/policies/ (to be authored)"
+
+      - id: "5.2.2"
+        question: "Is the information security policy communicated to all relevant personnel?"
+        rating: null
+        evidence: null
+
+      - id: "5.3.1"
+        question: "Are ISMS roles and responsibilities defined and assigned?"
+        rating: null
+        evidence: "packages/authz-schema/; RACI matrix"
+
+      - id: "5.3.2"
+        question: "Is a Data Protection Officer appointed and registered with the ODPC?"
+        rating: null
+        evidence: null
+
+  - clause: "6"
+    title: "Planning"
+    items:
+      - id: "6.1.1"
+        question: "Is there a documented risk assessment process for the ISMS?"
+        rating: null
+        evidence: "compliance/iso-27001/risk-register-template.yaml"
+
+      - id: "6.1.2"
+        question: "Has a risk assessment been conducted covering all in-scope assets?"
+        rating: null
+        evidence: "risk-register-template.yaml"
+
+      - id: "6.1.3"
+        question: "Has the Statement of Applicability been completed and approved?"
+        rating: null
+        evidence: "compliance/iso-27001/soa.yaml"
+
+      - id: "6.1.4"
+        question: "Does the SoA include justification for inclusion and exclusion of all Annex A controls?"
+        rating: null
+        evidence: "soa.yaml"
+
+      - id: "6.1.5"
+        question: "Is a risk treatment plan documented for all unacceptable risks?"
+        rating: null
+        evidence: "risk-register-template.yaml (treatment column)"
+
+      - id: "6.1.6"
+        question: "Have risk owners been assigned and risk acceptance criteria defined?"
+        rating: null
+        evidence: "risk-register-template.yaml (owner column)"
+
+      - id: "6.2.1"
+        question: "Are ISMS objectives established, measurable, and monitored?"
+        rating: null
+        evidence: null
+
+      - id: "6.2.2"
+        question: "Is there a plan for achieving ISMS objectives?"
+        rating: null
+        evidence: null
+
+      - id: "6.3.1"
+        question: "Is there a process for planning and managing changes to the ISMS?"
+        rating: null
+        evidence: "platform/argocd/ (GitOps); PR review process"
+
+  - clause: "7"
+    title: "Support"
+    items:
+      - id: "7.1.1"
+        question: "Has the organisation determined and provided the resources needed for the ISMS?"
+        rating: null
+        evidence: null
+
+      - id: "7.2.1"
+        question: "Is there a process to determine competence requirements for ISMS roles?"
+        rating: null
+        evidence: null
+
+      - id: "7.2.2"
+        question: "Is there evidence that personnel are competent (training records, certifications)?"
+        rating: null
+        evidence: "services/training-svc/ M38 LMS records"
+
+      - id: "7.3.1"
+        question: "Are all relevant personnel aware of the information security policy and their obligations?"
+        rating: null
+        evidence: null
+
+      - id: "7.3.2"
+        question: "Are all relevant personnel aware of how they contribute to the ISMS?"
+        rating: null
+        evidence: null
+
+      - id: "7.4.1"
+        question: "Is there a documented communication plan for internal and external ISMS communications?"
+        rating: null
+        evidence: null
+
+      - id: "7.5.1"
+        question: "Is there a documented information procedure for creating and updating ISMS documents?"
+        rating: null
+        evidence: null
+
+      - id: "7.5.2"
+        question: "Are ISMS documents version-controlled, dated, and approved?"
+        rating: null
+        evidence: "git history; version fields in YAML headers"
+
+      - id: "7.5.3"
+        question: "Are ISMS records protected from unintended modification or loss?"
+        rating: null
+        evidence: "services/transparency-svc/ Merkle log; git branch protection"
+
+  - clause: "8"
+    title: "Operation"
+    items:
+      - id: "8.1.1"
+        question: "Are operational plans and controls documented for all ISMS processes?"
+        rating: null
+        evidence: "docs/runbooks/; operations/"
+
+      - id: "8.1.2"
+        question: "Are outsourced processes within the scope controlled and monitored?"
+        rating: null
+        evidence: "integrations/; compliance/ipr-handover/"
+
+      - id: "8.2.1"
+        question: "Is a risk assessment performed at planned intervals or when significant changes occur?"
+        rating: null
+        evidence: "risk-register-template.yaml (review_date column)"
+
+      - id: "8.2.2"
+        question: "Are risk assessment results documented and retained?"
+        rating: null
+        evidence: "compliance/iso-27001/risk-register-template.yaml"
+
+      - id: "8.3.1"
+        question: "Is a risk treatment plan implemented and results documented?"
+        rating: null
+        evidence: "risk-register-template.yaml (controls, residual_score columns)"
+
+      - id: "8.3.2"
+        question: "Is evidence retained that the risk treatment plan has been carried out?"
+        rating: null
+        evidence: null
+
+  - clause: "9"
+    title: "Performance evaluation"
+    items:
+      - id: "9.1.1"
+        question: "Are ISMS monitoring and measurement processes defined and implemented?"
+        rating: null
+        evidence: "Grafana dashboards; PrometheusRule SLO alerts"
+
+      - id: "9.1.2"
+        question: "Are monitoring results evaluated and retained as evidence?"
+        rating: null
+        evidence: null
+
+      - id: "9.1.3"
+        question: "Are information security metrics reported to management at planned intervals?"
+        rating: null
+        evidence: "compliance/iso-27001/management-review-agenda.md"
+
+      - id: "9.2.1"
+        question: "Are internal audits conducted at planned intervals?"
+        rating: null
+        evidence: null
+
+      - id: "9.2.2"
+        question: "Is the internal audit programme documented and approved?"
+        rating: null
+        evidence: null
+
+      - id: "9.2.3"
+        question: "Do auditors maintain objectivity and impartiality (no self-audit)?"
+        rating: null
+        evidence: null
+
+      - id: "9.2.4"
+        question: "Are audit results reported to relevant management?"
+        rating: null
+        evidence: null
+
+      - id: "9.2.5"
+        question: "Are audit records retained?"
+        rating: null
+        evidence: null
+
+      - id: "9.3.1"
+        question: "Does top management conduct management reviews at planned intervals?"
+        rating: null
+        evidence: "compliance/iso-27001/management-review-agenda.md"
+
+      - id: "9.3.2"
+        question: "Do management reviews include all required inputs (incidents, audit results, objectives, feedback)?"
+        rating: null
+        evidence: "management-review-agenda.md"
+
+      - id: "9.3.3"
+        question: "Are management review outputs (decisions and actions) documented?"
+        rating: null
+        evidence: null
+
+  - clause: "10"
+    title: "Improvement"
+    items:
+      - id: "10.1.1"
+        question: "Is there a process for identifying and managing nonconformities?"
+        rating: null
+        evidence: null
+
+      - id: "10.1.2"
+        question: "When a nonconformity occurs, is it corrected and the cause determined?"
+        rating: null
+        evidence: null
+
+      - id: "10.1.3"
+        question: "Are corrective actions implemented and their effectiveness reviewed?"
+        rating: null
+        evidence: null
+
+      - id: "10.1.4"
+        question: "Are nonconformity and corrective action records retained?"
+        rating: null
+        evidence: null
+
+      - id: "10.2.1"
+        question: "Is there evidence of continual improvement of the ISMS?"
+        rating: null
+        evidence: null
+
+  - clause: "annex-a-spot-check"
+    title: "Annex A controls spot check (sample)"
+    items:
+      - id: "SC.1"
+        question: "Is the information security policy current (reviewed within the last 12 months)?"
+        rating: null
+        evidence: null
+
+      - id: "SC.2"
+        question: "Are privileged access rights reviewed at least every 6 months?"
+        rating: null
+        evidence: "packages/authz-schema/ git log"
+
+      - id: "SC.3"
+        question: "Is MFA enforced for all administrative access to production systems?"
+        rating: null
+        evidence: "Keycloak configuration; platform/keycloak/"
+
+      - id: "SC.4"
+        question: "Are backups tested by restoring them at least annually?"
+        rating: null
+        evidence: "chaos/ DR scenarios; pgBackRest restore test records"
+
+      - id: "SC.5"
+        question: "Are vulnerability scans (SAST/SCA/DAST) run on every pull request?"
+        rating: null
+        evidence: "CI pipeline configuration"
+
+      - id: "SC.6"
+        question: "Is Tier A data absent from all log files (confirmed by log-scanner CI pass)?"
+        rating: null
+        evidence: "CI log-scanner job results"
+
+      - id: "SC.7"
+        question: "Are all kit devices enrolled in MDM?"
+        rating: null
+        evidence: "operations/mdm/ device inventory"
+
+      - id: "SC.8"
+        question: "Is the ODPC breach notification procedure tested via an annual drill?"
+        rating: null
+        evidence: "compliance/dpa-toolkit/drill-records/"
+
+      - id: "SC.9"
+        question: "Are all ASVS L3 requirements for election-critical modules mapped to passing tests?"
+        rating: null
+        evidence: "tools/asvs-check/ report output"
+
+      - id: "SC.10"
+        question: "Is the transparency Merkle log producing signed roots and are they publicly verifiable?"
+        rating: null
+        evidence: "services/transparency-svc/ operation; public root publication"

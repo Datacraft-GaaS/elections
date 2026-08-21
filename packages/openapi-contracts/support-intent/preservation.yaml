@@ -1,459 +1,454 @@
-openapi: 3.1.0
+openapi: "3.1.0"
+
 info:
   title: eel-support-intent
-  version: 1.0.0
-  description: Module M27 - Intent Preservation. Manages disputed ballot adjudication and intent-of-voter determinations at polling stations.
+  version: "1.0.0"
+  description: |
+    Module M27 intent preservation (WP-5.5).
+
+    On-device opt-in pre-mark visual validation (image deleted within 1 second),
+    spoilt ballot replacement (Elections Act s.54), standardised adjudication
+    catalogue (A1-A8 rejection, V1-V3 acceptance) with photo evidence,
+    rejection-rate outlier alerts to ECC, and disable-toggle audit trail.
   contact:
     name: EEL Platform Team
     email: platform@eel.local
 
 servers:
-  - url: https://api.eel.local
-    description: Production
-
-tags:
-  - name: adjudications
-    description: Ballot intent adjudication records
-  - name: disputes
-    description: Disputed ballot flagging
+  - url: "https://support-admin.eel.local"
+    description: "Internal (mTLS for kit endpoints)"
+  - url: "https://api.eel.local"
+    description: "External API gateway"
 
 security:
-  - bearerAuth: []
+  - BearerJWT: []
+
+tags:
+  - name: premark
+    description: "Pre-mark validation events (on-device only)"
+  - name: spoilt
+    description: "Spoilt ballot workflow"
+  - name: adjudication
+    description: "Ballot adjudication with standardised catalogue"
+  - name: alerts
+    description: "Rejection-rate outlier alerts to ECC"
+  - name: catalogue
+    description: "Adjudication reason-code catalogue"
+  - name: toggle
+    description: "Adjudication disable toggle audit"
 
 paths:
-  /api/v1/support/intent/adjudications:
+  /v1/intent/premark:
     post:
-      tags: [adjudications]
-      operationId: recordIntentAdjudication
-      summary: Record intent adjudication for disputed ballot
-      description: Records the adjudicator's determination on a disputed ballot. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
-      x-eel-sla:
-        p95_ms: 300
-        p99_ms: 800
-        availability: "99.5%"
+      operationId: submitPreMarkValidation
+      tags: [premark]
+      summary: "Submit pre-mark validation event from kit"
+      description: |
+        Kit SVID mTLS only. Image must already be deleted before this call
+        (image_delete_elapsed_ms <= 1000). Server enforces the invariant and
+        rejects events where elapsed > 1000 ms.
       security:
-        - bearerAuth: []
+        - KitMTLS: []
       parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/IntentAdjudicationCreate'
+              $ref: "#/components/schemas/PreMarkValidationRequest"
       responses:
-        '201':
-          description: Adjudication recorded
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/IntentAdjudication'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '422':
-          $ref: '#/components/responses/UnprocessableEntity'
-        '500':
-          $ref: '#/components/responses/InternalError'
+        "202":
+          description: "Accepted"
+        "422":
+          description: "image_delete_elapsed_ms > 1000 or model version mismatch"
 
-    get:
-      tags: [adjudications]
-      operationId: listIntentAdjudications
-      summary: List intent adjudications
-      description: Returns paginated adjudication records. Requires JWT and SpiceDB authorization.
-      x-eel-sla:
-        p95_ms: 300
-        p99_ms: 800
-        availability: "99.5%"
+  /v1/intent/spoilt:
+    post:
+      operationId: submitSpoiltBallot
+      tags: [spoilt]
+      summary: "Record spoilt ballot and replacement (Elections Act s.54)"
       security:
-        - bearerAuth: []
+        - KitMTLS: []
       parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PageSizeParam'
-        - name: decision
-          in: query
+        - name: Idempotency-Key
+          in: header
+          required: true
           schema:
             type: string
-            enum: [valid, invalid, spoilt]
-            x-eel-data-class: C
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpoiltBallotRequest"
+      responses:
+        "202":
+          description: "Accepted"
+
+  /v1/intent/adjudications:
+    post:
+      operationId: recordAdjudication
+      tags: [adjudication]
+      summary: "Record ballot adjudication"
+      description: |
+        Presiding Officer submits adjudication decision with catalogue reason
+        code and optional photo evidence reference. Idempotent on Idempotency-Key.
+      security:
+        - BearerJWT: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdjudicationRequest"
+      responses:
+        "202":
+          description: "Accepted"
+        "422":
+          description: "Unknown reason code or decision mismatch"
+    get:
+      operationId: listAdjudications
+      tags: [adjudication]
+      summary: "List adjudication events (IAB audit panel)"
+      security:
+        - BearerJWT: []
+      parameters:
         - name: station_code
           in: query
           schema:
             type: string
-            x-eel-data-class: C
+        - name: decision
+          in: query
+          schema:
+            type: string
+            enum: [REJECT, ACCEPT]
       responses:
-        '200':
-          description: Paginated adjudication list
+        "200":
+          description: "Adjudication list"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/IntentAdjudicationPage'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '500':
-          $ref: '#/components/responses/InternalError'
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdjudicationRecord"
 
-  /api/v1/support/intent/adjudications/{adjudication_id}:
-    parameters:
-      - $ref: '#/components/parameters/AdjudicationId'
-
+  /v1/intent/adjudications/{id}:
     get:
-      tags: [adjudications]
-      operationId: getIntentAdjudication
-      summary: Get adjudication detail
-      description: Returns a single adjudication record. Requires JWT and SpiceDB authorization.
-      x-eel-sla:
-        p95_ms: 300
-        p99_ms: 800
-        availability: "99.5%"
+      operationId: getAdjudication
+      tags: [adjudication]
+      summary: "Single adjudication record"
       security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Adjudication detail
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/IntentAdjudication'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
-  /api/v1/support/intent/disputes/{station_code}:
-    parameters:
-      - name: station_code
-        in: path
-        required: true
-        schema:
-          type: string
-          x-eel-data-class: C
-
-    get:
-      tags: [disputes]
-      operationId: getDisputedBallotsByStation
-      summary: Disputed ballots for a polling station
-      description: Returns all disputed ballot flags for a given station. Requires JWT and SpiceDB authorization.
-      x-eel-sla:
-        p95_ms: 300
-        p99_ms: 800
-        availability: "99.5%"
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Disputed ballots for station
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BallotDisputeList'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
-  /api/v1/support/intent/disputes:
-    post:
-      tags: [disputes]
-      operationId: flagDisputedBallot
-      summary: Flag ballot as disputed
-      description: Records a dispute flag on a ballot. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
-      x-eel-sla:
-        p95_ms: 300
-        p99_ms: 800
-        availability: "99.5%"
-      security:
-        - bearerAuth: []
+        - BearerJWT: []
       parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: "Adjudication record"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdjudicationRecord"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/intent/alerts:
+    get:
+      operationId: listRejectionRateAlerts
+      tags: [alerts]
+      summary: "Rejection-rate outlier alerts to ECC"
+      description: "COMMISSION_OPS or ECC_OFFICER JWT required."
+      security:
+        - BearerJWT: []
+      parameters:
+        - name: acknowledged
+          in: query
+          schema:
+            type: boolean
+        - name: contest_id
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "Alert list"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RejectionRateAlert"
+
+  /v1/intent/alerts/{id}/acknowledge:
+    post:
+      operationId: acknowledgeAlert
+      tags: [alerts]
+      summary: "Acknowledge rejection-rate alert"
+      security:
+        - BearerJWT: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BallotDisputeCreate'
+              type: object
+              required: [acknowledged_by]
+              properties:
+                acknowledged_by:
+                  type: string
       responses:
-        '201':
-          description: Dispute flagged
+        "200":
+          description: "Acknowledged"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/intent/catalogue:
+    get:
+      operationId: listAdjudicationCatalogue
+      tags: [catalogue]
+      summary: "List adjudication reason-code catalogue (A1-A8, V1-V3)"
+      security: []
+      responses:
+        "200":
+          description: "Catalogue entries"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BallotDispute'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '422':
-          $ref: '#/components/responses/UnprocessableEntity'
-        '500':
-          $ref: '#/components/responses/InternalError'
+                type: array
+                items:
+                  $ref: "#/components/schemas/CatalogueEntry"
+
+  /v1/intent/toggle:
+    post:
+      operationId: toggleAdjudication
+      tags: [toggle]
+      summary: "Enable or disable pre-mark validation at station"
+      description: "COMMISSION_OPS JWT required. Audit-logged."
+      security:
+        - BearerJWT: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ToggleRequest"
+      responses:
+        "200":
+          description: "Toggle applied"
+    get:
+      operationId: listToggleAudit
+      tags: [toggle]
+      summary: "Audit log of toggle events"
+      security:
+        - BearerJWT: []
+      parameters:
+        - name: station_code
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "Toggle audit log"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ToggleAuditRecord"
 
 components:
   securitySchemes:
-    bearerAuth:
+    BearerJWT:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT issued by auth.eel.local (Keycloak). Trust domain eel.local.
-    mtls:
+    KitMTLS:
       type: mutualTLS
-      description: Mutual TLS client certificate for machine-to-machine calls.
-
-  parameters:
-    IdempotencyKey:
-      name: Idempotency-Key
-      in: header
-      required: true
-      schema:
-        type: string
-        format: uuid
-        x-eel-data-class: D
-      description: UUIDv7 client-generated idempotency key.
-
-    AdjudicationId:
-      name: adjudication_id
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
-        x-eel-data-class: C
-
-    PageParam:
-      name: page
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        default: 1
-        x-eel-data-class: D
-
-    PageSizeParam:
-      name: page_size
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 100
-        default: 20
-        x-eel-data-class: D
-
-  schemas:
-    IntentAdjudicationCreate:
-      type: object
-      required:
-        - ballot_id_hash
-        - adjudicator_id_hash
-        - decision
-        - reason
-        - evidence_ref
-      properties:
-        ballot_id_hash:
-          type: string
-          x-eel-data-class: B
-          description: SHA-256(salt||ballot_id).
-        adjudicator_id_hash:
-          type: string
-          x-eel-data-class: B
-          description: SHA-256(salt||adjudicator_id).
-        decision:
-          type: string
-          enum: [valid, invalid, spoilt]
-          x-eel-data-class: C
-        reason:
-          type: string
-          maxLength: 2000
-          x-eel-data-class: C
-        evidence_ref:
-          type: string
-          x-eel-data-class: C
-          description: Object storage reference to photographic evidence.
-
-    IntentAdjudication:
-      allOf:
-        - $ref: '#/components/schemas/IntentAdjudicationCreate'
-        - type: object
-          required: [adjudication_id, decided_at]
-          properties:
-            adjudication_id:
-              type: string
-              format: uuid
-              x-eel-data-class: C
-            decided_at:
-              type: string
-              format: date-time
-              x-eel-data-class: C
-
-    IntentAdjudicationPage:
-      type: object
-      required: [items, total, page, page_size]
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/IntentAdjudication'
-          x-eel-data-class: C
-        total:
-          type: integer
-          x-eel-data-class: C
-        page:
-          type: integer
-          x-eel-data-class: D
-        page_size:
-          type: integer
-          x-eel-data-class: D
-        next_page:
-          type: integer
-          nullable: true
-          x-eel-data-class: D
-
-    BallotDisputeCreate:
-      type: object
-      required:
-        - ballot_id_hash
-        - station_code
-        - reason
-        - flagged_by_hash
-      properties:
-        ballot_id_hash:
-          type: string
-          x-eel-data-class: B
-          description: SHA-256(salt||ballot_id).
-        station_code:
-          type: string
-          x-eel-data-class: C
-        reason:
-          type: string
-          maxLength: 2000
-          x-eel-data-class: C
-        flagged_by_hash:
-          type: string
-          x-eel-data-class: B
-          description: SHA-256(salt||officer_id).
-
-    BallotDispute:
-      allOf:
-        - $ref: '#/components/schemas/BallotDisputeCreate'
-        - type: object
-          required: [dispute_id, flagged_at, adjudicated]
-          properties:
-            dispute_id:
-              type: string
-              format: uuid
-              x-eel-data-class: C
-            flagged_at:
-              type: string
-              format: date-time
-              x-eel-data-class: C
-            adjudicated:
-              type: boolean
-              x-eel-data-class: C
-            adjudication_id:
-              type: string
-              format: uuid
-              nullable: true
-              x-eel-data-class: C
-
-    BallotDisputeList:
-      type: object
-      required: [station_code, disputes, total]
-      properties:
-        station_code:
-          type: string
-          x-eel-data-class: C
-        disputes:
-          type: array
-          items:
-            $ref: '#/components/schemas/BallotDispute'
-          x-eel-data-class: C
-        total:
-          type: integer
-          x-eel-data-class: C
-
-    ProblemDetail:
-      type: object
-      required: [type, title, status]
-      properties:
-        type:
-          type: string
-          format: uri
-          x-eel-data-class: C
-        title:
-          type: string
-          x-eel-data-class: C
-        status:
-          type: integer
-          x-eel-data-class: C
-        detail:
-          type: string
-          x-eel-data-class: C
-        instance:
-          type: string
-          format: uri
-          x-eel-data-class: C
-        trace_id:
-          type: string
-          x-eel-data-class: D
+      description: "SVID mTLS for kit certificate"
 
   responses:
-    BadRequest:
-      description: Bad request
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/ProblemDetail'
-    Unauthorized:
-      description: Authentication required
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/ProblemDetail'
-    Forbidden:
-      description: Insufficient permissions
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/ProblemDetail'
     NotFound:
-      description: Resource not found
+      description: "Resource not found"
       content:
-        application/problem+json:
+        application/json:
           schema:
-            $ref: '#/components/schemas/ProblemDetail'
-    Conflict:
-      description: Conflict
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/ProblemDetail'
-    UnprocessableEntity:
-      description: Validation error
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/ProblemDetail'
-    InternalError:
-      description: Internal server error
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/ProblemDetail'
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    PreMarkValidationRequest:
+      type: object
+      required:
+        - station_code
+        - contest_id
+        - inference_outcome
+        - model_version
+        - device_id
+        - image_delete_elapsed_ms
+      properties:
+        station_code:
+          type: string
+        contest_id:
+          type: string
+        inference_outcome:
+          type: string
+          enum: [LIKELY_VALID, LIKELY_SPOILT, AMBIGUOUS, MODEL_UNAVAILABLE]
+        model_version:
+          type: string
+        device_id:
+          type: string
+        image_delete_elapsed_ms:
+          type: integer
+          maximum: 1000
+          description: "Elapsed ms from capture to delete; must be <= 1000"
+
+    SpoiltBallotRequest:
+      type: object
+      required: [station_code, contest_id, reason_code, officer_id, witness_ids]
+      properties:
+        station_code:
+          type: string
+        contest_id:
+          type: string
+        reason_code:
+          type: string
+        officer_id:
+          type: string
+        witness_ids:
+          type: array
+          items:
+            type: string
+        replacement_issued:
+          type: boolean
+
+    AdjudicationRequest:
+      type: object
+      required: [ballot_id, station_code, contest_id, adjudicator_id, reason_code, decision]
+      properties:
+        ballot_id:
+          type: string
+        station_code:
+          type: string
+        contest_id:
+          type: string
+        adjudicator_id:
+          type: string
+        reason_code:
+          type: string
+          description: "Must be a valid catalogue code: A1-A8 or V1-V3"
+        decision:
+          type: string
+          enum: [REJECT, ACCEPT]
+        photo_evidence_ref:
+          type: string
+          description: "MinIO object reference; required for rejection codes A2-A7"
+
+    AdjudicationRecord:
+      allOf:
+        - $ref: "#/components/schemas/AdjudicationRequest"
+        - type: object
+          required: [id, adjudicated_at]
+          properties:
+            id:
+              type: string
+              format: uuid
+            adjudicated_at:
+              type: string
+              format: date-time
+
+    RejectionRateAlert:
+      type: object
+      required: [id, station_code, contest_id, rejection_rate, national_mean, z_score, alerted_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        station_code:
+          type: string
+        contest_id:
+          type: string
+        rejection_rate:
+          type: number
+          description: "Station rejection rate (0.0 - 1.0)"
+        national_mean:
+          type: number
+        z_score:
+          type: number
+        acknowledged:
+          type: boolean
+        acknowledged_by:
+          type: string
+          nullable: true
+        alerted_at:
+          type: string
+          format: date-time
+
+    CatalogueEntry:
+      type: object
+      required: [code, decision, description_en, description_sw]
+      properties:
+        code:
+          type: string
+          description: "A1-A8 (reject) or V1-V3 (accept)"
+        decision:
+          type: string
+          enum: [REJECT, ACCEPT]
+        description_en:
+          type: string
+        description_sw:
+          type: string
+
+    ToggleRequest:
+      type: object
+      required: [station_code, enabled, toggled_by, reason]
+      properties:
+        station_code:
+          type: string
+        enabled:
+          type: boolean
+        toggled_by:
+          type: string
+        reason:
+          type: string
+
+    ToggleAuditRecord:
+      allOf:
+        - $ref: "#/components/schemas/ToggleRequest"
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            toggled_at:
+              type: string
+              format: date-time
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string

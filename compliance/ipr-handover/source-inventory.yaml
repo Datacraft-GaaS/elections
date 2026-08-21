@@ -1,0 +1,490 @@
+# Source code inventory: all custom eel software components
+# Update git_hash and sbom_file at each release.
+# build_instructions_ref points to the section in gcc-15-4-handover-template.md
+
+inventory_version: "[VERSION]"
+date: "[YYYY-MM-DD]"
+
+components:
+
+  # --------------------------------------------------------------------------
+  # Services
+  # --------------------------------------------------------------------------
+
+  - component_id: SVC-001
+    name: "transparency-svc"
+    path: "services/transparency-svc/"
+    languages:
+      - Rust
+      - Elixir
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/transparency-svc-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+    modules:
+      - "M14 reproducibility-bundle"
+      - "M22 campaign-finance"
+      - "P05 transparency-log"
+      - "P06 hsm-signer"
+
+  - component_id: SVC-002
+    name: "bvr-svc"
+    path: "services/bvr-svc/"
+    languages:
+      - Rust
+      - Python
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/bvr-svc-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+    modules:
+      - "M02 bvr-backend"
+      - "M35 cvr-continuous-register"
+      - "M36 voter-deregistration-appeal"
+      - "M53 voter-id-card"
+
+  - component_id: SVC-003
+    name: "abis-svc"
+    path: "services/abis-svc/"
+    languages:
+      - Rust
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/abis-svc-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+    modules:
+      - "M03 abis"
+
+  - component_id: SVC-004
+    name: "bvi-svc"
+    path: "services/bvi-svc/"
+    languages:
+      - Rust
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/bvi-svc-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+    modules:
+      - "M06 bvi-backend"
+      - "M07 bvv"
+
+  - component_id: SVC-005
+    name: "biometric-edge-svc"
+    path: "services/biometric-edge-svc/"
+    languages:
+      - Rust
+      - Flutter
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/biometric-edge-svc-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+    modules:
+      - "M01 bvr-device"
+      - "M05 bvi-device"
+      - "M24 diaspora-voting"
+
+  - component_id: SVC-006
+    name: "portal-svc"
+    path: "services/portal-svc/"
+    languages:
+      - Rust
+      - Elixir
+      - TypeScript
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/portal-svc-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+    modules:
+      - "M11 public-portal"
+      - "M52 election-calendar-gazette"
+      - "M64 voter-list-inspection"
+      - "M68 referendum-explainer"
+
+  - component_id: SVC-007
+    name: "ecc-svc"
+    path: "services/ecc-svc/"
+    languages:
+      - Rust
+      - Elixir
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/ecc-svc-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+    modules:
+      - "M15 iab-dashboard"
+      - "M16 election-command-centre"
+      - "M23 grievance-channels"
+
+  - component_id: SVC-008
+    name: "queue-svc"
+    path: "services/queue-svc/"
+    languages:
+      - Rust
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/queue-svc-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+    modules:
+      - "M19 queue-transparency"
+
+  - component_id: SVC-009
+    name: "inventory-svc"
+    path: "services/inventory-svc/"
+    languages:
+      - Rust
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/inventory-svc-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+    modules:
+      - "M20 inventory-management"
+      - "M39 ballot-printing-chain"
+      - "M65 diaspora-logistics"
+
+  - component_id: SVC-010
+    name: "ai-platform-svc"
+    path: "services/ai-platform-svc/"
+    languages:
+      - Rust
+      - Python
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/ai-platform-svc-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+    modules:
+      - "M17 speech-integrity"
+      - "M26 anomaly-fraud-detection"
+      - "M28 ai-monitoring-stack"
+      - "M44 turnout-forecasting"
+      - "M61 secrecy-assurance-testing"
+
+  - component_id: SVC-011
+    name: "field-mobile-svc"
+    path: "services/field-mobile-svc/"
+    languages:
+      - Rust
+      - Flutter
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/field-mobile-svc-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+    modules:
+      - "M13 public-verifier-app"
+      - "M29 mobile-citizen-verify"
+      - "M30 mobile-party-agent"
+      - "M31 mobile-poll-clerk"
+      - "M32 mobile-field-support"
+      - "M33 mobile-personnel-dispatch"
+      - "M34 mobile-observer"
+
+  - component_id: SVC-012
+    name: "vprs-svc"
+    path: "services/vprs-svc/"
+    languages:
+      - Rust
+      - Elixir
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/vprs-svc-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+    modules:
+      - "M04 vprs"
+
+  - component_id: SVC-013
+    name: "crms-svc"
+    path: "services/crms-svc/"
+    languages:
+      - Rust
+      - Elixir
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/crms-svc-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+    modules:
+      - "M12 crms"
+      - "M45 party-registration"
+      - "M46 party-primaries-oversight"
+      - "M47 nomination-fee-payment"
+      - "M67 party-symbol-registry"
+
+  - component_id: SVC-014
+    name: "governance-svc"
+    path: "services/governance-svc/"
+    languages:
+      - Rust
+      - Python
+      - Elixir
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/governance-svc-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+    modules:
+      - "M21 rla-audit-tool"
+      - "M40 election-court-it-interface"
+      - "M41 post-election-review"
+      - "M48 recall"
+      - "M49 referendum-mechanics"
+      - "M50 by-election-operations"
+      - "M56 county-national-coord"
+      - "M57 intl-observer-coord"
+      - "M58 parliamentary-judiciary-reporting"
+      - "M59 oag-interface"
+      - "M62 transmission-legal-audit"
+      - "M66 financial-forensics"
+
+  - component_id: SVC-015
+    name: "training-svc"
+    path: "services/training-svc/"
+    languages:
+      - Rust
+      - Python
+      - Elixir
+      - Flutter
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/training-svc-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+    modules:
+      - "M37 voter-education-cms"
+      - "M38 poll-worker-training-lms"
+      - "M42 media-accreditation"
+      - "M43 observer-accreditation"
+      - "M60 medical-first-response"
+
+  - component_id: SVC-016
+    name: "support-admin-svc"
+    path: "services/support-admin-svc/"
+    languages:
+      - Rust
+      - Python
+      - Elixir
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/support-admin-svc-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+    modules:
+      - "M25 special-voter-workflows"
+      - "M27 intent-preservation"
+      - "M54 budget-expenditure"
+      - "M55 hr-payroll"
+      - "M69 long-term-archive"
+
+  # --------------------------------------------------------------------------
+  # Shared packages
+  # --------------------------------------------------------------------------
+
+  - component_id: PKG-001
+    name: "eel-crypto-rs"
+    path: "packages/eel-crypto-rs/"
+    languages:
+      - Rust
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/packages-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+
+  - component_id: PKG-002
+    name: "eel-telemetry-rs"
+    path: "packages/eel-telemetry-rs/"
+    languages:
+      - Rust
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/packages-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+
+  - component_id: PKG-003
+    name: "eel-authn-rs"
+    path: "packages/eel-authn-rs/"
+    languages:
+      - Rust
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/packages-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+
+  - component_id: PKG-004
+    name: "eel-resilience-rs"
+    path: "packages/eel-resilience-rs/"
+    languages:
+      - Rust
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/packages-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+
+  - component_id: PKG-005
+    name: "eel-outbox-rs"
+    path: "packages/eel-outbox-rs/"
+    languages:
+      - Rust
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/packages-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+
+  - component_id: PKG-006
+    name: "eel-api-server-rs"
+    path: "packages/eel-api-server-rs/"
+    languages:
+      - Rust
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/packages-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+
+  - component_id: PKG-007
+    name: "verifier-rs"
+    path: "packages/verifier-rs/"
+    languages:
+      - Rust
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/packages-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+
+  # --------------------------------------------------------------------------
+  # Tools
+  # --------------------------------------------------------------------------
+
+  - component_id: TOOL-001
+    name: "eel-completeness"
+    path: "tools/completeness/"
+    languages:
+      - Rust
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/tools-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+
+  - component_id: TOOL-002
+    name: "eel-asvs-check"
+    path: "tools/asvs-check/"
+    languages:
+      - Rust
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/tools-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+
+  - component_id: TOOL-003
+    name: "eel-wcag-audit"
+    path: "tools/wcag-audit/"
+    languages:
+      - Rust
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/tools-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+
+  - component_id: TOOL-004
+    name: "eel-dr-failover"
+    path: "tools/dr-failover/"
+    languages:
+      - Rust
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/tools-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+
+  - component_id: TOOL-005
+    name: "eel-appset-gen"
+    path: "tools/appset-gen/"
+    languages:
+      - Rust
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/tools-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+
+  - component_id: TOOL-006
+    name: "eel-iam-seed"
+    path: "tools/iam-seed/"
+    languages:
+      - Rust
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/tools-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+
+  - component_id: TOOL-007
+    name: "eel-kit-simulator"
+    path: "tools/kit-simulator/"
+    languages:
+      - Rust
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/tools-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true
+
+  - component_id: TOOL-008
+    name: "eel-hsm-ceremony"
+    path: "tools/hsm-ceremony/"
+    languages:
+      - Rust
+    version: "[VERSION]"
+    license: "Apache-2.0"
+    sbom_file: "docs/sbom/tools-sbom-[VERSION].spdx.json"
+    git_hash: "[GIT_HASH]"
+    build_instructions_ref: "gcc-15-4-handover-template.md section 4"
+    custom_software: true

@@ -1,0 +1,474 @@
+# Statement of Applicability (SoA)
+# ISO 27001:2022 Clause 6.1.3(d)
+# All 93 Annex A controls declared applicable or not applicable with justification.
+# implementation_status: implemented | partial | planned | not_applicable
+
+soa_version: "1.0"
+date: "[YYYY-MM-DD]"
+approved_by: "[DG_NAME], Director-General, IEBC"
+
+controls:
+  - control_id: "A.5.1"
+    applicable: true
+    justification: "Information security policies are required to establish the governance framework for the ISMS."
+    implementation_status: partial
+
+  - control_id: "A.5.2"
+    applicable: true
+    justification: "Roles and responsibilities must be defined for all ISMS participants."
+    implementation_status: partial
+
+  - control_id: "A.5.3"
+    applicable: true
+    justification: "Segregation of duties is required to prevent fraud and error, particularly in finance (M55) and system administration."
+    implementation_status: implemented
+
+  - control_id: "A.5.4"
+    applicable: true
+    justification: "Management must demonstrate leadership and commitment to the ISMS."
+    implementation_status: partial
+
+  - control_id: "A.5.5"
+    applicable: true
+    justification: "Contact with ODPC, DCI, NCIC, and CSIRT is required for incident response."
+    implementation_status: partial
+
+  - control_id: "A.5.6"
+    applicable: true
+    justification: "Participation in specialist groups provides timely threat information."
+    implementation_status: partial
+
+  - control_id: "A.5.7"
+    applicable: true
+    justification: "Threat intelligence is essential for an election system that is a high-value target."
+    implementation_status: partial
+
+  - control_id: "A.5.8"
+    applicable: true
+    justification: "Security must be embedded in all eel work packages from inception."
+    implementation_status: implemented
+
+  - control_id: "A.5.9"
+    applicable: true
+    justification: "Asset inventory is required to manage information security risks across all eel components."
+    implementation_status: partial
+
+  - control_id: "A.5.10"
+    applicable: true
+    justification: "Acceptable use rules govern how IEBC staff and contractors interact with eel systems."
+    implementation_status: partial
+
+  - control_id: "A.5.11"
+    applicable: true
+    justification: "Return of assets (MDM wipe, credential revocation) is required on staff termination."
+    implementation_status: partial
+
+  - control_id: "A.5.12"
+    applicable: true
+    justification: "Information classification (Tier A-E) is fundamental to risk-appropriate controls."
+    implementation_status: implemented
+
+  - control_id: "A.5.13"
+    applicable: true
+    justification: "Labelling ensures correct handling of classified information across services and systems."
+    implementation_status: implemented
+
+  - control_id: "A.5.14"
+    applicable: true
+    justification: "Secure information transfer is required for kit transmissions, inter-service calls, and third-party integrations."
+    implementation_status: implemented
+
+  - control_id: "A.5.15"
+    applicable: true
+    justification: "Access control is fundamental to protecting Tier A/B data."
+    implementation_status: implemented
+
+  - control_id: "A.5.16"
+    applicable: true
+    justification: "Identity management is required for human users and service identities across the eel platform."
+    implementation_status: implemented
+
+  - control_id: "A.5.17"
+    applicable: true
+    justification: "Strong authentication is required to protect sensitive electoral systems."
+    implementation_status: implemented
+
+  - control_id: "A.5.18"
+    applicable: true
+    justification: "Access rights must be granted on a least-privilege basis and reviewed regularly."
+    implementation_status: implemented
+
+  - control_id: "A.5.19"
+    applicable: true
+    justification: "eel interfaces with multiple external suppliers (biometric sensor vendors, telco, HSM vendor); their security must be managed."
+    implementation_status: partial
+
+  - control_id: "A.5.20"
+    applicable: true
+    justification: "Information security requirements must be reflected in all supplier agreements."
+    implementation_status: partial
+
+  - control_id: "A.5.21"
+    applicable: true
+    justification: "ICT supply chain risks (including open-source dependencies) must be managed."
+    implementation_status: partial
+
+  - control_id: "A.5.22"
+    applicable: true
+    justification: "Ongoing monitoring of supplier performance is required."
+    implementation_status: partial
+
+  - control_id: "A.5.23"
+    applicable: true
+    justification: "eel uses self-hosted infrastructure; cloud service security governance applies to IaaS provider."
+    implementation_status: implemented
+
+  - control_id: "A.5.24"
+    applicable: true
+    justification: "Incident management planning is required given the critical nature of election systems."
+    implementation_status: partial
+
+  - control_id: "A.5.25"
+    applicable: true
+    justification: "Security events must be assessed promptly to determine if they constitute incidents."
+    implementation_status: partial
+
+  - control_id: "A.5.26"
+    applicable: true
+    justification: "Timely and effective incident response is required."
+    implementation_status: partial
+
+  - control_id: "A.5.27"
+    applicable: true
+    justification: "Lessons learned from incidents must improve the ISMS over time."
+    implementation_status: planned
+
+  - control_id: "A.5.28"
+    applicable: true
+    justification: "Evidence collection capability is required for incident investigation and electoral court proceedings."
+    implementation_status: implemented
+
+  - control_id: "A.5.29"
+    applicable: true
+    justification: "Information security must be maintained during disruptions, including election-night peaks."
+    implementation_status: implemented
+
+  - control_id: "A.5.30"
+    applicable: true
+    justification: "ICT readiness for business continuity is a fundamental requirement for an election management system."
+    implementation_status: implemented
+
+  - control_id: "A.5.31"
+    applicable: true
+    justification: "eel must comply with Elections Act, DPA, Elections (Technology) Regulations, and GCC 15.4."
+    implementation_status: implemented
+
+  - control_id: "A.5.32"
+    applicable: true
+    justification: "IPR obligations under GCC 15.4 and FOSS license compliance must be maintained."
+    implementation_status: partial
+
+  - control_id: "A.5.33"
+    applicable: true
+    justification: "Electoral records must be protected and retained per Elections Act s.32."
+    implementation_status: implemented
+
+  - control_id: "A.5.34"
+    applicable: true
+    justification: "DPA compliance requires privacy and PII protection throughout eel."
+    implementation_status: implemented
+
+  - control_id: "A.5.35"
+    applicable: true
+    justification: "Independent review is required by Elections (Technology) Regulations Reg 14 and ISO 27001:2022."
+    implementation_status: planned
+
+  - control_id: "A.5.36"
+    applicable: true
+    justification: "Compliance with ISMS policies must be verified regularly."
+    implementation_status: partial
+
+  - control_id: "A.5.37"
+    applicable: true
+    justification: "Documented operating procedures are required for all security-relevant operations."
+    implementation_status: partial
+
+  - control_id: "A.6.1"
+    applicable: true
+    justification: "Background screening is required for personnel with access to Tier A data."
+    implementation_status: partial
+
+  - control_id: "A.6.2"
+    applicable: true
+    justification: "Employment terms must include information security obligations."
+    implementation_status: partial
+
+  - control_id: "A.6.3"
+    applicable: true
+    justification: "Security awareness training is required for all IEBC staff and contractors."
+    implementation_status: implemented
+
+  - control_id: "A.6.4"
+    applicable: true
+    justification: "Disciplinary process is required to enforce information security obligations."
+    implementation_status: partial
+
+  - control_id: "A.6.5"
+    applicable: true
+    justification: "Post-termination responsibilities (confidentiality, asset return) must be enforced."
+    implementation_status: partial
+
+  - control_id: "A.6.6"
+    applicable: true
+    justification: "NDAs are required for contractors and staff with access to sensitive electoral information."
+    implementation_status: partial
+
+  - control_id: "A.6.7"
+    applicable: true
+    justification: "Remote working is common among eel developers; controls must be in place."
+    implementation_status: partial
+
+  - control_id: "A.6.8"
+    applicable: true
+    justification: "All personnel must know how to report security events."
+    implementation_status: partial
+
+  - control_id: "A.7.1"
+    applicable: true
+    justification: "Physical perimeter security is required at DCs hosting eel."
+    implementation_status: partial
+
+  - control_id: "A.7.2"
+    applicable: true
+    justification: "Physical entry to facilities housing eel infrastructure must be controlled."
+    implementation_status: partial
+
+  - control_id: "A.7.3"
+    applicable: true
+    justification: "Server rooms and secure areas within IEBC premises must be protected."
+    implementation_status: partial
+
+  - control_id: "A.7.4"
+    applicable: true
+    justification: "Physical security monitoring deters and detects unauthorised access."
+    implementation_status: partial
+
+  - control_id: "A.7.5"
+    applicable: true
+    justification: "Environmental threats (fire, flood, power) must be mitigated at DC level."
+    implementation_status: partial
+
+  - control_id: "A.7.6"
+    applicable: true
+    justification: "HSM ceremonies and sensitive operations must be conducted in secure areas."
+    implementation_status: partial
+
+  - control_id: "A.7.7"
+    applicable: true
+    justification: "Clear desk and screen lock policies reduce risk of unauthorised access to information."
+    implementation_status: partial
+
+  - control_id: "A.7.8"
+    applicable: true
+    justification: "Server and kit device siting must protect against unauthorised access and environmental hazards."
+    implementation_status: partial
+
+  - control_id: "A.7.9"
+    applicable: true
+    justification: "Kit devices and developer laptops are used off-premises; they must be protected."
+    implementation_status: partial
+
+  - control_id: "A.7.10"
+    applicable: true
+    justification: "Storage media containing Tier A data must be securely managed and destroyed."
+    implementation_status: partial
+
+  - control_id: "A.7.11"
+    applicable: true
+    justification: "UPS and generator backup is required to maintain availability during power disruptions."
+    implementation_status: partial
+
+  - control_id: "A.7.12"
+    applicable: true
+    justification: "Network cabling security prevents physical interception."
+    implementation_status: partial
+
+  - control_id: "A.7.13"
+    applicable: true
+    justification: "Kit and HSM maintenance must not compromise security."
+    implementation_status: partial
+
+  - control_id: "A.7.14"
+    applicable: true
+    justification: "Secure disposal prevents data recovery from decommissioned media."
+    implementation_status: partial
+
+  - control_id: "A.8.1"
+    applicable: true
+    justification: "Kit devices and developer workstations must be secured as endpoints."
+    implementation_status: implemented
+
+  - control_id: "A.8.2"
+    applicable: true
+    justification: "Privileged access to production eel systems must be tightly controlled and logged."
+    implementation_status: implemented
+
+  - control_id: "A.8.3"
+    applicable: true
+    justification: "Access to Tier A/B information must be restricted to authorised purposes."
+    implementation_status: implemented
+
+  - control_id: "A.8.4"
+    applicable: true
+    justification: "Source code access must be restricted to authorised developers."
+    implementation_status: implemented
+
+  - control_id: "A.8.5"
+    applicable: true
+    justification: "Strong authentication is required for all access to eel systems."
+    implementation_status: implemented
+
+  - control_id: "A.8.6"
+    applicable: true
+    justification: "Capacity management ensures eel remains available during election-night peaks."
+    implementation_status: implemented
+
+  - control_id: "A.8.7"
+    applicable: true
+    justification: "Malware protection is required on all systems hosting eel components."
+    implementation_status: partial
+
+  - control_id: "A.8.8"
+    applicable: true
+    justification: "Technical vulnerability management is required to maintain ASVS L3 posture."
+    implementation_status: implemented
+
+  - control_id: "A.8.9"
+    applicable: true
+    justification: "Configuration management ensures consistent and known system state."
+    implementation_status: implemented
+
+  - control_id: "A.8.10"
+    applicable: true
+    justification: "Secure deletion is required to honour DPA s.40 and enforce retention schedules."
+    implementation_status: implemented
+
+  - control_id: "A.8.11"
+    applicable: true
+    justification: "Data masking protects Tier A/B data in logs and non-production environments."
+    implementation_status: implemented
+
+  - control_id: "A.8.12"
+    applicable: true
+    justification: "DLP prevents inadvertent disclosure of Tier A data in logs, backups, or exports."
+    implementation_status: implemented
+
+  - control_id: "A.8.13"
+    applicable: true
+    justification: "Backup is required to recover from data loss or corruption."
+    implementation_status: implemented
+
+  - control_id: "A.8.14"
+    applicable: true
+    justification: "Redundancy is required to meet 99.99% availability SLA for election-critical services."
+    implementation_status: implemented
+
+  - control_id: "A.8.15"
+    applicable: true
+    justification: "Logging is required for incident detection and electoral audit."
+    implementation_status: implemented
+
+  - control_id: "A.8.16"
+    applicable: true
+    justification: "Monitoring is required to detect anomalies and respond to incidents promptly."
+    implementation_status: implemented
+
+  - control_id: "A.8.17"
+    applicable: true
+    justification: "Clock synchronisation is required for accurate audit trails and Merkle log timestamps."
+    implementation_status: implemented
+
+  - control_id: "A.8.18"
+    applicable: true
+    justification: "Privileged utility programs (database admin tools, hsm-ceremony) must be controlled."
+    implementation_status: partial
+
+  - control_id: "A.8.19"
+    applicable: true
+    justification: "Software installation must be controlled to prevent introduction of malware."
+    implementation_status: implemented
+
+  - control_id: "A.8.20"
+    applicable: true
+    justification: "Network security controls protect eel services from unauthorised access."
+    implementation_status: implemented
+
+  - control_id: "A.8.21"
+    applicable: true
+    justification: "Security of network services (VPN, TLS, DDoS) is fundamental to eel."
+    implementation_status: implemented
+
+  - control_id: "A.8.22"
+    applicable: true
+    justification: "Network segregation isolates Tier A services from less sensitive components."
+    implementation_status: implemented
+
+  - control_id: "A.8.23"
+    applicable: true
+    justification: "Web filtering reduces risk from malicious websites on developer workstations."
+    implementation_status: partial
+
+  - control_id: "A.8.24"
+    applicable: true
+    justification: "Cryptography is fundamental to eel's election integrity guarantees."
+    implementation_status: implemented
+
+  - control_id: "A.8.25"
+    applicable: true
+    justification: "Secure SDLC ensures security is built into eel from requirements to deployment."
+    implementation_status: implemented
+
+  - control_id: "A.8.26"
+    applicable: true
+    justification: "ASVS L3 application security requirements apply to all election-critical modules."
+    implementation_status: implemented
+
+  - control_id: "A.8.27"
+    applicable: true
+    justification: "Secure architecture and engineering principles must be applied consistently."
+    implementation_status: implemented
+
+  - control_id: "A.8.28"
+    applicable: true
+    justification: "Secure coding practices are required to prevent vulnerabilities at the source."
+    implementation_status: implemented
+
+  - control_id: "A.8.29"
+    applicable: true
+    justification: "Security testing is required to verify controls are effective before deployment."
+    implementation_status: implemented
+
+  - control_id: "A.8.30"
+    applicable: true
+    justification: "Outsourced development must meet the same security standards as in-house development."
+    implementation_status: partial
+
+  - control_id: "A.8.31"
+    applicable: true
+    justification: "Separation of environments prevents test activities from affecting production."
+    implementation_status: implemented
+
+  - control_id: "A.8.32"
+    applicable: true
+    justification: "Change management controls reduce the risk of changes introducing security vulnerabilities."
+    implementation_status: implemented
+
+  - control_id: "A.8.33"
+    applicable: true
+    justification: "Test data must not include real voter PII to protect data subjects."
+    implementation_status: implemented
+
+  - control_id: "A.8.34"
+    applicable: true
+    justification: "Audit testing must not disrupt production election services."
+    implementation_status: partial

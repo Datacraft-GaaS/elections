@@ -30,6 +30,12 @@ exclude = [
   "tools/dr-failover",
   # custody: uuid6 not on crates.io (in-flight)
   "services/inventory-svc/crates/custody",
+  # support-admin-svc: nested workspace owns these crates
+  "services/support-admin-svc/crates/budget",
+  "services/support-admin-svc/crates/payroll",
+  "services/support-admin-svc/crates/archive",
+  "services/support-admin-svc/crates/special-voter",
+  "services/support-admin-svc/crates/intent",
 ]
 # Cargo tolerates glob members that match no paths yet.
 # New crates under these globs are picked up automatically.

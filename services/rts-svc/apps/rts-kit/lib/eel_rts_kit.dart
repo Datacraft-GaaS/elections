@@ -10,3 +10,4 @@ export 'src/rts_workflow/scan.dart';
 export 'src/rts_workflow/sign.dart';
 export 'src/rts_workflow/transmit.dart';
 export 'src/a11y/workflow_semantics.dart';
+export 'src/rts_workflow/intent_premark.dart';

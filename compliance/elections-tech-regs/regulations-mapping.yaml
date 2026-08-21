@@ -1,0 +1,277 @@
+# Elections (Technology) Regulations 2017 - Compliance Mapping
+# Kenya Legal Notice No. 36 of 2017
+# Each regulation mapped to test tags, Pact contracts, and rules-engine tests.
+# implementation_status: implemented | partial | planned
+
+regulations:
+
+  - reg_id: "REG-003"
+    title: "Use of technology in elections"
+    summary: >
+      Technology used in elections must be approved by the Commission and must ensure
+      the integrity, transparency, and accuracy of the election process.
+    test_ids:
+      - "LEGAL-REGS-003"
+    pact_contracts:
+      - "packages/openapi-contracts/governance/legal-audit.yaml"
+    rules_engine_tests:
+      - "eel-governance-svc/crates/legal-audit/tests/regulations_test.rs::regulation_3_technology_use_is_logged"
+    implementation_status: planned
+    evidence_artefacts:
+      - "services/transparency-svc/ (audit trail for every technology action)"
+      - "docs/adr/0017-transparency-log.md"
+      - "compliance/iso-27001/isms-scope.md"
+
+  - reg_id: "REG-004"
+    title: "Approval of technology"
+    summary: >
+      The technology to be used in an election must be submitted to the Commission
+      for approval before the election. The Commission must satisfy itself that the
+      technology meets the prescribed requirements.
+    test_ids:
+      - "LEGAL-REGS-004"
+    pact_contracts: []
+    rules_engine_tests:
+      - "eel-governance-svc/crates/legal-audit/tests/regulations_test.rs::regulation_4_technology_approved"
+    implementation_status: planned
+    evidence_artefacts:
+      - "compliance/elections-tech-regs/certifier-submission-template.md"
+      - "docs/audit/gate-G5.md (when produced)"
+
+  - reg_id: "REG-005"
+    title: "Testing of technology"
+    summary: >
+      All technology used in an election must be tested before deployment. Tests must
+      include functional testing, security testing, and load testing at the expected
+      election-day volumes.
+    test_ids:
+      - "LEGAL-REGS-005"
+    pact_contracts:
+      - "packages/openapi-contracts/rts/rts-api.yaml"
+      - "packages/openapi-contracts/bvr/bvr-api.yaml"
+    rules_engine_tests:
+      - "eel-governance-svc/crates/legal-audit/tests/regulations_test.rs::regulation_5_technology_tested"
+    implementation_status: partial
+    evidence_artefacts:
+      - "tools/asvs-check/ (ASVS L3 test report)"
+      - "chaos/ (chaos and DR test scenarios)"
+      - "loadtest/ (load test results at module SLA)"
+      - "docs/plans/10-definition-of-done.md"
+
+  - reg_id: "REG-006"
+    title: "Biometric data"
+    summary: >
+      Biometric data collected for voter registration must be used only for the
+      purpose of voter identification. Biometric systems must meet prescribed accuracy
+      standards. Biometric data must be secured against unauthorised access.
+    test_ids:
+      - "LEGAL-REGS-006"
+    pact_contracts:
+      - "packages/openapi-contracts/bvr/biometric-api.yaml"
+      - "packages/openapi-contracts/abis/abis-api.yaml"
+    rules_engine_tests:
+      - "eel-governance-svc/crates/legal-audit/tests/regulations_test.rs::regulation_6_biometric_data_purpose_limited"
+    implementation_status: partial
+    evidence_artefacts:
+      - "compliance/dpa-toolkit/dpia-modules.yaml (M01, M02, M03)"
+      - "docs/adr/0016-pii-retention.md (Tier A controls)"
+      - "packages/eel-telemetry-rs/ (biometric data never logged)"
+      - "services/abis-svc/ (FNMR <= 0.1%, FMR <= 0.001%)"
+
+  - reg_id: "REG-007"
+    title: "Voter identification"
+    summary: >
+      Technology used for voter identification at the polling station must correctly
+      identify registered voters and must provide a fallback mechanism where the
+      technology fails.
+    test_ids:
+      - "LEGAL-REGS-007"
+    pact_contracts:
+      - "packages/openapi-contracts/bvi/bvi-api.yaml"
+      - "packages/openapi-contracts/bvi/kit-sync-api.yaml"
+    rules_engine_tests:
+      - "eel-governance-svc/crates/legal-audit/tests/regulations_test.rs::regulation_7_voter_identification_fallback"
+    implementation_status: partial
+    evidence_artefacts:
+      - "services/bvi-svc/ (M06 biometric identification)"
+      - "services/biometric-edge-svc/ (M05 kit-level identification)"
+      - "docs/runbooks/bvi-svc-degradation.md (manual fallback procedure)"
+
+  - reg_id: "REG-008"
+    title: "Results transmission"
+    summary: >
+      Technology used to transmit election results must ensure the integrity,
+      confidentiality, and authenticity of the transmitted results. Transmission
+      must be secure and the origin of results must be verifiable.
+    test_ids:
+      - "LEGAL-REGS-008"
+    pact_contracts:
+      - "packages/openapi-contracts/rts/form34-api.yaml"
+    rules_engine_tests:
+      - "eel-governance-svc/crates/legal-audit/tests/regulations_test.rs::regulation_8_results_transmission_secure"
+    implementation_status: partial
+    evidence_artefacts:
+      - "services/rts-svc/ (M08, M10 - HSM-signed Form 34A transmission)"
+      - "packages/eel-crypto-rs/ (Ed25519/ML-DSA-65 signatures)"
+      - "docs/adr/0005-crypto-hsm.md"
+      - "chaos/ (transmission resilience scenarios)"
+
+  - reg_id: "REG-009"
+    title: "Results tallying"
+    summary: >
+      Technology used to tally election results must be accurate, transparent, and
+      verifiable. The tallying process must produce an auditable record. A Random
+      Limit Audit (RLA) must be available to verify the tally.
+    test_ids:
+      - "LEGAL-REGS-009"
+    pact_contracts:
+      - "packages/openapi-contracts/rts/tally-api.yaml"
+      - "packages/openapi-contracts/governance/rla-api.yaml"
+    rules_engine_tests:
+      - "eel-governance-svc/crates/legal-audit/tests/regulations_test.rs::regulation_9_results_tallying_auditable"
+    implementation_status: partial
+    evidence_artefacts:
+      - "services/rts-svc/crates/rts-backend/ (M10 tallying)"
+      - "services/governance-svc/crates/rla/ (M21 SHANGRLA RLA)"
+      - "docs/tla/ (TLA+ formal model of tallying)"
+      - "services/transparency-svc/ (Merkle root of all tally inputs)"
+
+  - reg_id: "REG-010"
+    title: "Security of technology"
+    summary: >
+      Technology used in elections must be secure against unauthorised access,
+      manipulation, or interference. Security must be independently tested and
+      certified before deployment.
+    test_ids:
+      - "LEGAL-REGS-010"
+    pact_contracts: []
+    rules_engine_tests:
+      - "eel-governance-svc/crates/legal-audit/tests/regulations_test.rs::regulation_10_security_certified"
+    implementation_status: partial
+    evidence_artefacts:
+      - "tools/asvs-check/ (ASVS L3 compliance report)"
+      - "compliance/iso-27001/ (ISO 27001 ISMS)"
+      - "compliance/elections-tech-regs/certifier-submission-template.md"
+      - "docs/plans/10-definition-of-done.md §10 (zero critical/high SAST/SCA/DAST)"
+
+  - reg_id: "REG-011"
+    title: "Audit trail"
+    summary: >
+      Technology used in elections must maintain a complete and tamper-evident audit
+      trail of all actions taken by the system and by operators. The audit trail must
+      be accessible for inspection by authorised parties.
+    test_ids:
+      - "LEGAL-REGS-011"
+    pact_contracts:
+      - "packages/openapi-contracts/transparency/audit-api.yaml"
+    rules_engine_tests:
+      - "eel-governance-svc/crates/legal-audit/tests/regulations_test.rs::regulation_11_audit_trail_complete"
+    implementation_status: partial
+    evidence_artefacts:
+      - "services/transparency-svc/ (Merkle log - M14, M22)"
+      - "docs/adr/0013-event-sourcing-boundaries.md"
+      - "docs/adr/0017-transparency-log.md"
+
+  - reg_id: "REG-012"
+    title: "Backup systems"
+    summary: >
+      Technology used in elections must have backup systems capable of assuming
+      operations within a prescribed time if the primary system fails. Backup systems
+      must be tested before the election.
+    test_ids:
+      - "LEGAL-REGS-012"
+    pact_contracts: []
+    rules_engine_tests:
+      - "eel-governance-svc/crates/legal-audit/tests/regulations_test.rs::regulation_12_backup_systems_tested"
+    implementation_status: partial
+    evidence_artefacts:
+      - "chaos/ (DR scenarios)"
+      - "platform/pgbackrest/ (PostgreSQL backup)"
+      - "platform/velero/ (k8s state backup)"
+      - "docs/runbooks/ (DR runbooks with RTO <= 30 min)"
+
+  - reg_id: "REG-013"
+    title: "Public verification"
+    summary: >
+      The Commission must make available to the public the means to verify that
+      election results have not been tampered with. Verification must not require
+      technical expertise to perform.
+    test_ids:
+      - "LEGAL-REGS-013"
+    pact_contracts:
+      - "packages/openapi-contracts/portal/public-results-api.yaml"
+    rules_engine_tests:
+      - "eel-governance-svc/crates/legal-audit/tests/regulations_test.rs::regulation_13_public_verification_available"
+    implementation_status: partial
+    evidence_artefacts:
+      - "services/portal-svc/ (M11 public portal with inclusion proofs)"
+      - "services/transparency-svc/crates/reproducibility-bundle/ (M14)"
+      - "docs/plans/12-appendix-module-inventory.md M14 (citizen verification)"
+
+  - reg_id: "REG-014"
+    title: "Certification"
+    summary: >
+      Technology used in elections must be certified by an independent security
+      certifier approved by the Commission. A certification report must be submitted
+      to the Commission before the technology is deployed.
+    test_ids:
+      - "LEGAL-REGS-014"
+    pact_contracts: []
+    rules_engine_tests:
+      - "eel-governance-svc/crates/legal-audit/tests/regulations_test.rs::regulation_14_certifier_report_submitted"
+    implementation_status: planned
+    evidence_artefacts:
+      - "compliance/elections-tech-regs/certifier-submission-template.md"
+      - "docs/audit/gate-G5.md (when produced - must reference certifier report)"
+
+  - reg_id: "REG-015"
+    title: "Data protection"
+    summary: >
+      Personal data collected in connection with elections must be processed in
+      accordance with the Kenya Data Protection Act 2019. Biometric data must be
+      used only for voter identification and must not be retained beyond the
+      prescribed retention period.
+    test_ids:
+      - "LEGAL-REGS-015"
+    pact_contracts: []
+    rules_engine_tests:
+      - "eel-governance-svc/crates/legal-audit/tests/regulations_test.rs::regulation_15_data_protection_compliant"
+    implementation_status: partial
+    evidence_artefacts:
+      - "docs/adr/0016-pii-retention.md"
+      - "compliance/dpa-toolkit/"
+      - "packages/eel-telemetry-rs/ (PII type enforcement)"
+
+  - reg_id: "REG-016"
+    title: "Incident reporting"
+    summary: >
+      The Commission must report technology incidents that affect the conduct of
+      elections to the prescribed authority within the prescribed time. A technology
+      incident log must be maintained.
+    test_ids:
+      - "LEGAL-REGS-016"
+    pact_contracts: []
+    rules_engine_tests:
+      - "eel-governance-svc/crates/legal-audit/tests/regulations_test.rs::regulation_16_incident_reported"
+    implementation_status: partial
+    evidence_artefacts:
+      - "operations/helpdesk/ (incident management)"
+      - "compliance/dpa-toolkit/odpc-breach-notification.md"
+      - "docs/runbooks/ (incident runbooks)"
+
+  - reg_id: "REG-017"
+    title: "Training"
+    summary: >
+      All persons who operate technology used in elections must be trained and
+      certified before the election. Training records must be maintained and
+      available for inspection.
+    test_ids:
+      - "LEGAL-REGS-017"
+    pact_contracts:
+      - "packages/openapi-contracts/training/lms-api.yaml"
+    rules_engine_tests:
+      - "eel-governance-svc/crates/legal-audit/tests/regulations_test.rs::regulation_17_operators_trained"
+    implementation_status: partial
+    evidence_artefacts:
+      - "services/training-svc/ (M37 CMS, M38 LMS)"
+      - "services/training-svc/crates/accreditation/ (M42, M43 accreditation)"

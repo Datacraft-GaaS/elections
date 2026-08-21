@@ -1,0 +1,431 @@
+# Risk Register Template
+# ISO 27001:2022 Clause 6.1.2
+# Scale: likelihood and impact 1 (lowest) to 5 (highest); risk_score = likelihood * impact
+# treatment: mitigate | accept | transfer | avoid
+
+risk_register_version: "1.0"
+date: "[YYYY-MM-DD]"
+next_review: "[YYYY-MM-DD]"
+owner: "Information Security Manager, IEBC"
+
+risks:
+  - risk_id: RISK-001
+    category: confidentiality
+    description: "External attacker exfiltrates biometric templates from bvr-svc or abis-svc"
+    asset: "Biometric templates (Tier A)"
+    threat: "Targeted cyberattack (APT, ransomware, SQL injection)"
+    vulnerability: "Internet-facing API; complexity of ABIS vendor software"
+    likelihood: 2
+    impact: 5
+    risk_score: 10
+    treatment: mitigate
+    controls:
+      - "TDE + column-level encryption for biometric fields (A.8.24)"
+      - "SpiceDB RBAC + purpose-of-processing header (A.5.15)"
+      - "ASVS L3 penetration testing (A.8.29)"
+      - "PIIRestricted<T> type wrapper prevents accidental logging (A.8.11)"
+      - "Network segmentation: ABIS on isolated segment (A.8.22)"
+    residual_likelihood: 1
+    residual_impact: 5
+    residual_score: 5
+    owner: "Head of ICT"
+    review_date: "[YYYY-MM-DD]"
+
+  - risk_id: RISK-002
+    category: integrity
+    description: "Voter register record tampered without detection, altering polling station assignment or registration status"
+    asset: "Voter register (Tier A/B)"
+    threat: "Insider threat; compromised admin account; supply chain attack"
+    vulnerability: "Admin access to database; insufficient audit logging"
+    likelihood: 2
+    impact: 5
+    risk_score: 10
+    treatment: mitigate
+    controls:
+      - "Merkle log in transparency-svc; every mutation event signed and committed (A.5.28)"
+      - "SoD: no single person can both modify and approve a register change (A.5.3)"
+      - "All admin access logged; alerts on bulk mutation patterns (A.8.16)"
+      - "Signed Merkle root published publicly; any tamper is externally detectable (A.5.28)"
+    residual_likelihood: 1
+    residual_impact: 4
+    residual_score: 4
+    owner: "DPO"
+    review_date: "[YYYY-MM-DD]"
+
+  - risk_id: RISK-003
+    category: availability
+    description: "DDoS attack takes down the public results portal (portal-svc) on election night"
+    asset: "Public results portal (Tier C)"
+    threat: "Volumetric DDoS; application-layer DDoS"
+    vulnerability: "High public interest profile; election-night traffic peak"
+    likelihood: 3
+    impact: 4
+    risk_score: 12
+    treatment: mitigate
+    controls:
+      - "Edge DDoS protection per ADR-0010 (A.8.20)"
+      - "Horizontal auto-scaling via ArgoCD (A.8.6)"
+      - "CDN caching for static results content (A.8.21)"
+      - "Load test at 5M requests/hr in pre-prod (A.8.6)"
+      - "DDoS chaos scenario in WP-5.9 (A.5.29)"
+    residual_likelihood: 2
+    residual_impact: 3
+    residual_score: 6
+    owner: "Head of ICT"
+    review_date: "[YYYY-MM-DD]"
+
+  - risk_id: RISK-004
+    category: availability
+    description: "HSM failure causes inability to sign election results or biometric operations"
+    asset: "HSM appliance; signing keys"
+    threat: "Hardware failure; HSM vendor software defect; network partition"
+    vulnerability: "Single HSM appliance at primary DC; HSM vendor dependency"
+    likelihood: 2
+    impact: 5
+    risk_score: 10
+    treatment: mitigate
+    controls:
+      - "Primary and mirror HSM in active-passive configuration (A.8.14)"
+      - "HSM failure chaos scenario in WP-5.9 (A.5.29)"
+      - "Offline ceremony procedure for emergency key use (tools/hsm-ceremony/) (A.7.6)"
+      - "HSM vendor maintenance contract with 4-hour response SLA (A.7.13)"
+    residual_likelihood: 1
+    residual_impact: 4
+    residual_score: 4
+    owner: "Head of ICT"
+    review_date: "[YYYY-MM-DD]"
+
+  - risk_id: RISK-005
+    category: confidentiality
+    description: "Insider exfiltrates voter PII (National IDs, phone numbers) for misuse"
+    asset: "Voter PII (Tier A)"
+    threat: "Malicious insider; social engineering of privileged user"
+    vulnerability: "Privileged admin access; large dataset volume"
+    likelihood: 2
+    impact: 5
+    risk_score: 10
+    treatment: mitigate
+    controls:
+      - "Every reveal() of PIIRestricted<T> emits audit event (A.8.3)"
+      - "SIEM alert on bulk access patterns (A.8.16)"
+      - "SoD and four-eyes on bulk exports (A.5.3)"
+      - "Background screening of privileged personnel (A.6.1)"
+      - "Purpose-of-processing header enforcement (A.5.15)"
+    residual_likelihood: 1
+    residual_impact: 4
+    residual_score: 4
+    owner: "DPO"
+    review_date: "[YYYY-MM-DD]"
+
+  - risk_id: RISK-006
+    category: integrity
+    description: "Supply chain compromise of a Rust crate or Python package introduces malicious code"
+    asset: "eel source code and dependencies"
+    threat: "Malicious package maintainer; typosquatting; dependency confusion"
+    vulnerability: "Large number of open-source dependencies; automated dependency updates"
+    likelihood: 2
+    impact: 5
+    risk_score: 10
+    treatment: mitigate
+    controls:
+      - "Nix flake pins all build inputs by hash (ADR-0006) (A.5.21)"
+      - "cargo-audit and pip-audit in CI (A.8.8)"
+      - "Reproducible build verified on 3 targets (A.5.21)"
+      - "SBOM signed per WP; provenance attestation (A.5.9)"
+      - "Private Nexus registry mirrors public packages (A.5.21)"
+    residual_likelihood: 1
+    residual_impact: 4
+    residual_score: 4
+    owner: "Head of ICT"
+    review_date: "[YYYY-MM-DD]"
+
+  - risk_id: RISK-007
+    category: availability
+    description: "Primary database (PostgreSQL) failure causes loss of voter registration access"
+    asset: "PostgreSQL primary database (db.lindela.io)"
+    threat: "Hardware failure; software defect; data corruption"
+    vulnerability: "Single primary node; complex JSONB schema"
+    likelihood: 2
+    impact: 5
+    risk_score: 10
+    treatment: mitigate
+    controls:
+      - "Hot standby at db-backup (144.91.112.190) with streaming replication (A.8.14)"
+      - "pgBackRest continuous WAL archiving; RPO <= 5 min (A.8.13)"
+      - "PG primary kill chaos scenario in WP-5.9 (A.5.29)"
+      - "RTO <= 30 min measured and proven in staging (A.5.30)"
+    residual_likelihood: 1
+    residual_impact: 3
+    residual_score: 3
+    owner: "Head of ICT"
+    review_date: "[YYYY-MM-DD]"
+
+  - risk_id: RISK-008
+    category: confidentiality
+    description: "Whistleblower identity exposed via grievance channel metadata"
+    asset: "WhistleblowerProfile (Tier A)"
+    threat: "Traffic analysis; metadata correlation; accidental logging"
+    vulnerability: "Network metadata; insufficient anonymisation at submission"
+    likelihood: 2
+    impact: 5
+    risk_score: 10
+    treatment: mitigate
+    controls:
+      - "Double opt-in with identity field hashing after confirmation (A.8.11)"
+      - "Tor-compatible submission endpoint for highest-risk reporters (A.5.14)"
+      - "Tier A telemetry redaction (A.8.11)"
+      - "Access restricted to senior officers only (A.8.3)"
+    residual_likelihood: 1
+    residual_impact: 4
+    residual_score: 4
+    owner: "DPO"
+    review_date: "[YYYY-MM-DD]"
+
+  - risk_id: RISK-009
+    category: integrity
+    description: "Biometric sensor SDK vulnerability allows template injection or spoofing"
+    asset: "Biometric templates; voter identification at polling station"
+    threat: "Adversarial attack on biometric sensor; SDK vulnerability"
+    vulnerability: "Third-party SDK; hardware dependency; limited SDK audit capability"
+    likelihood: 2
+    impact: 5
+    risk_score: 10
+    treatment: mitigate
+    controls:
+      - "ISO/NIST biometric certification required from vendor (A.5.19)"
+      - "Liveness detection required (A.8.26)"
+      - "Independent security certifier review of biometric components (A.5.35)"
+      - "Fallback manual verification at polling station (A.8.14)"
+    residual_likelihood: 1
+    residual_impact: 3
+    residual_score: 3
+    owner: "Head of ICT"
+    review_date: "[YYYY-MM-DD]"
+
+  - risk_id: RISK-010
+    category: availability
+    description: "Kafka partition loss disrupts event stream between services on election night"
+    asset: "Kafka event bus; inter-service event streams"
+    threat: "ISR shrink; network partition; broker failure"
+    vulnerability: "Distributed system complexity; election-night write volume"
+    likelihood: 2
+    impact: 4
+    risk_score: 8
+    treatment: mitigate
+    controls:
+      - "Kafka ISR shrink chaos scenario in WP-5.9 (A.5.29)"
+      - "Outbox pattern (eel-outbox-*) ensures at-least-once delivery (A.8.14)"
+      - "MirrorMaker2 for cross-DC replication (A.8.13)"
+      - "Idempotent consumers proven via test tags EC-DAT-01/02 (A.8.9)"
+    residual_likelihood: 1
+    residual_impact: 3
+    residual_score: 3
+    owner: "Head of ICT"
+    review_date: "[YYYY-MM-DD]"
+
+  - risk_id: RISK-011
+    category: confidentiality
+    description: "TLS certificate expiry exposes inter-service traffic to interception"
+    asset: "Service-to-service mTLS; SVID certificates"
+    threat: "Expired certificate; SPIRE SVID not rotated"
+    vulnerability: "Certificate management complexity; automated rotation failure"
+    likelihood: 2
+    impact: 4
+    risk_score: 8
+    treatment: mitigate
+    controls:
+      - "SVID rotation every 24 hours via SPIRE (A.8.5)"
+      - "Cert expiry chaos scenario in WP-5.9 (A.5.29)"
+      - "Certificate monitoring alerts at Grafana (A.8.16)"
+    residual_likelihood: 1
+    residual_impact: 3
+    residual_score: 3
+    owner: "Head of ICT"
+    review_date: "[YYYY-MM-DD]"
+
+  - risk_id: RISK-012
+    category: integrity
+    description: "Election results transmission from kit to RTS manipulated in transit"
+    asset: "Form 34A transmissions; RTS results"
+    threat: "Man-in-the-middle attack; compromised telco VPN"
+    vulnerability: "Telco network dependency; kit transmission over mobile network"
+    likelihood: 2
+    impact: 5
+    risk_score: 10
+    treatment: mitigate
+    controls:
+      - "HSM-signed Form 34A payloads (A.8.24)"
+      - "Telco VPN + TLS double encryption (A.5.14)"
+      - "Kit certificate attested to trusted hardware (A.8.5)"
+      - "Merkle root of all forms published; any tamper externally detectable (A.5.28)"
+    residual_likelihood: 1
+    residual_impact: 3
+    residual_score: 3
+    owner: "Head of ICT"
+    review_date: "[YYYY-MM-DD]"
+
+  - risk_id: RISK-013
+    category: availability
+    description: "SpiceDB (authz engine) becomes unavailable, blocking all authenticated requests"
+    asset: "SpiceDB authorisation service"
+    threat: "SpiceDB process failure; network partition; data corruption"
+    vulnerability: "All service requests depend on SpiceDB for authorisation"
+    likelihood: 2
+    impact: 4
+    risk_score: 8
+    treatment: mitigate
+    controls:
+      - "SpiceDB loss chaos scenario in WP-5.9 (A.5.29)"
+      - "SpiceDB deployed in HA mode with multiple replicas (A.8.14)"
+      - "Degradation mode: read-only operations continue with cached SpiceDB state (A.5.29)"
+    residual_likelihood: 1
+    residual_impact: 3
+    residual_score: 3
+    owner: "Head of ICT"
+    review_date: "[YYYY-MM-DD]"
+
+  - risk_id: RISK-014
+    category: confidentiality
+    description: "Developer laptop with Tier A test data lost or stolen"
+    asset: "Developer workstation; any test data with real PII"
+    threat: "Physical theft; loss of device"
+    vulnerability: "Devices used outside secure premises"
+    likelihood: 2
+    impact: 3
+    risk_score: 6
+    treatment: mitigate
+    controls:
+      - "MDM full-disk encryption on all devices (A.8.1)"
+      - "MDM remote wipe on reported loss (A.8.1)"
+      - "Policy: no Tier A production data on developer machines (A.8.33)"
+      - "Synthetic data only in development and staging (A.8.33)"
+    residual_likelihood: 1
+    residual_impact: 2
+    residual_score: 2
+    owner: "Head of ICT"
+    review_date: "[YYYY-MM-DD]"
+
+  - risk_id: RISK-015
+    category: integrity
+    description: "AI ballot intent model (M27) produces systematic errors that alter election outcome"
+    asset: "Ballot intent determination; election result integrity"
+    threat: "Model bias; adversarial inputs; distribution shift"
+    vulnerability: "AI model opacity; dependence on image quality"
+    likelihood: 2
+    impact: 5
+    risk_score: 10
+    treatment: mitigate
+    controls:
+      - "Model recommendation is advisory only; presiding officer makes final determination (DEC-003) (A.8.26)"
+      - "Model validated against manual counting in every by-election before General Election (A.8.29)"
+      - "Audit log of every recommendation and override (A.8.15)"
+      - "Independent security certifier reviews AI components (A.5.35)"
+    residual_likelihood: 1
+    residual_impact: 3
+    residual_score: 3
+    owner: "Head of ICT"
+    review_date: "[YYYY-MM-DD]"
+
+  - risk_id: RISK-016
+    category: availability
+    description: "Payroll system (M55) failure causes delayed salary payments for 250k election workers"
+    asset: "PayrollRun; M-Pesa B2C integration"
+    threat: "M-Pesa B2C API failure; database overload; processing error"
+    vulnerability: "Election payroll is time-critical (post-election disbursement)"
+    likelihood: 2
+    impact: 3
+    risk_score: 6
+    treatment: mitigate
+    controls:
+      - "Load test: 250k payroll <= 4 hours (A.8.6)"
+      - "M-Pesa B2C retry with idempotency key (A.8.9)"
+      - "Finance SoD: payment approved by second officer before release (A.5.3)"
+      - "Payroll degradation runbook (A.5.37)"
+    residual_likelihood: 1
+    residual_impact: 2
+    residual_score: 2
+    owner: "Head of Finance"
+    review_date: "[YYYY-MM-DD]"
+
+  - risk_id: RISK-017
+    category: confidentiality
+    description: "ODPC or court compels disclosure of voter personal data beyond DPA s.40 exceptions"
+    asset: "Voter PII (Tier A)"
+    threat: "Regulatory order; court subpoena exceeding statutory scope"
+    vulnerability: "Legal ambiguity in DPA s.40 exceptions"
+    likelihood: 2
+    impact: 4
+    risk_score: 8
+    treatment: transfer
+    controls:
+      - "Legal Counsel on retainer to challenge disproportionate orders (A.5.31)"
+      - "DPA s.40 exemption documentation prepared (compliance/dpa-toolkit/) (A.5.34)"
+      - "Consult ODPC proactively on ambiguous disclosure requests (A.5.5)"
+    residual_likelihood: 1
+    residual_impact: 3
+    residual_score: 3
+    owner: "Legal Counsel"
+    review_date: "[YYYY-MM-DD]"
+
+  - risk_id: RISK-018
+    category: availability
+    description: "Kit device battery or connectivity failure at high-volume polling station"
+    asset: "Kit device; polling station availability"
+    threat: "Connectivity loss; power failure; device hardware failure"
+    vulnerability: "Remote locations; power grid unreliability"
+    likelihood: 3
+    impact: 3
+    risk_score: 9
+    treatment: mitigate
+    controls:
+      - "7-day offline queue on kit; transmits on reconnect (A.8.14)"
+      - "Backup power pack with kit deployment (A.7.11)"
+      - "Spare kit allocation per polling centre (A.8.14)"
+      - "Manual paper fallback procedure per Elections Act s.44A (A.5.29)"
+    residual_likelihood: 2
+    residual_impact: 2
+    residual_score: 4
+    owner: "Head of Field Operations"
+    review_date: "[YYYY-MM-DD]"
+
+  - risk_id: RISK-019
+    category: integrity
+    description: "Clone mobile app impersonates official eel citizen verification app"
+    asset: "Public trust in eel platform"
+    threat: "Fraudulent app on Play Store or side-loaded"
+    vulnerability: "eel brand; public-facing mobile app"
+    likelihood: 3
+    impact: 3
+    risk_score: 9
+    treatment: mitigate
+    controls:
+      - "App signing certificate verification on install (A.8.5)"
+      - "Official download links published via IEBC website (iebc.or.ke) only (A.5.14)"
+      - "Anti-clone detection in M13 citizen app (A.8.26)"
+      - "IEBC communications campaign on official app identification (A.6.3)"
+    residual_likelihood: 2
+    residual_impact: 2
+    residual_score: 4
+    owner: "Communications Director"
+    review_date: "[YYYY-MM-DD]"
+
+  - risk_id: RISK-020
+    category: confidentiality
+    description: "Accidental inclusion of Tier A data in public Tier C result publication"
+    asset: "Tier A voter PII"
+    threat: "Developer error; misconfigured aggregation query"
+    vulnerability: "Complex aggregation pipeline; type confusion"
+    likelihood: 2
+    impact: 5
+    risk_score: 10
+    treatment: mitigate
+    controls:
+      - "PIIRestricted<T> and PIIPublic<T> type wrappers prevent mixing at compile time (A.8.11)"
+      - "Log-scanner CI job fails on Tier A pattern in public endpoints (A.8.12)"
+      - "Output reviewed by second engineer before public publication (A.5.3)"
+      - "Automated test: public API response contains no National ID, biometric, phone (A.8.29)"
+    residual_likelihood: 1
+    residual_impact: 3
+    residual_score: 3
+    owner: "DPO"
+    review_date: "[YYYY-MM-DD]"

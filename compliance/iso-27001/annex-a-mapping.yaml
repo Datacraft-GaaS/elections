@@ -1,0 +1,1014 @@
+# ISO 27001:2022 Annex A Control Mapping
+# 93 controls across clauses A.5 (Organisational), A.6 (People), A.7 (Physical), A.8 (Technological)
+# implementation_status: implemented | partial | planned | not_applicable
+
+controls:
+
+  # -------------------------------------------------------------------------
+  # A.5 Organisational controls (37 controls)
+  # -------------------------------------------------------------------------
+
+  - control_id: "A.5.1"
+    title: "Policies for information security"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "docs/policies/"
+      - "compliance/iso-27001/isms-scope.md"
+    policies:
+      - "Information Security Policy (to be authored in docs/policies/)"
+    notes: "Policy framework to be drafted and approved before certification; ISMS scope and ADRs form the architectural policy layer"
+
+  - control_id: "A.5.2"
+    title: "Information security roles and responsibilities"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "packages/authz-schema/"
+      - "platform/spicedb/"
+      - "compliance/iso-27001/isms-scope.md"
+    policies:
+      - "RACI matrix (to be authored)"
+    notes: "SpiceDB authz schema defines technical role boundaries; human RACI to be documented"
+
+  - control_id: "A.5.3"
+    title: "Segregation of duties"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "packages/authz-schema/"
+      - "services/support-admin-svc/crates/budget/"
+      - "services/support-admin-svc/crates/payroll/"
+    policies:
+      - "SoD controls enforced in M55 payroll; four-eyes on payroll runs"
+    notes: "SpiceDB RBAC enforces role separation; finance SoD: budget approval and payment release are separate roles"
+
+  - control_id: "A.5.4"
+    title: "Management responsibilities"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "compliance/iso-27001/management-review-agenda.md"
+    policies:
+      - "Management review agenda template"
+    notes: "Quarterly management review cadence established; minutes to be kept per review"
+
+  - control_id: "A.5.5"
+    title: "Contact with authorities"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "compliance/dpa-toolkit/odpc-breach-notification.md"
+      - "operations/helpdesk/"
+    policies:
+      - "Incident escalation contacts: ODPC, DCI, NCIC, KDF/KPS per incident type"
+    notes: "Authority contact list to be maintained in operations/helpdesk/authority-contacts.md"
+
+  - control_id: "A.5.6"
+    title: "Contact with special interest groups"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "docs/runbooks/"
+    policies:
+      - "Membership of FIRST or national CSIRT network to be confirmed"
+    notes: "Planned: IEBC to register with Kenya CSIRT and relevant electoral technology groups"
+
+  - control_id: "A.5.7"
+    title: "Threat intelligence"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "services/ai-platform-svc/"
+      - "services/ecc-svc/crates/anomaly/"
+      - "detection/"
+    policies:
+      - "Threat intelligence feeds via M26 and M28"
+    notes: "AI-based threat detection operational; structured threat intelligence sharing with NCIC and DCI to be formalised"
+
+  - control_id: "A.5.8"
+    title: "Information security in project management"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "docs/plans/"
+      - "docs/adr/"
+      - "tools/completeness/"
+    policies:
+      - "Security requirements embedded in WP definition-of-done (ASVS, STRIDE, DAST)"
+    notes: "Every WP requires STRIDE threat model and ASVS checklist sign-off per docs/plans/10-definition-of-done.md"
+
+  - control_id: "A.5.9"
+    title: "Inventory of information and other associated assets"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "compliance/ipr-handover/source-inventory.yaml"
+      - "compliance/ipr-handover/software-classification.yaml"
+      - "docs/plans/12-appendix-module-inventory.md"
+    policies:
+      - "Asset inventory maintained in source-inventory.yaml and module inventory"
+    notes: "Software asset inventory complete; hardware asset inventory to be added to operations/"
+
+  - control_id: "A.5.10"
+    title: "Acceptable use of information and other associated assets"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "docs/policies/"
+    policies:
+      - "Acceptable Use Policy (to be authored)"
+    notes: "Technical controls (SpiceDB, purpose-of-processing header) enforce acceptable use; policy document to be drafted"
+
+  - control_id: "A.5.11"
+    title: "Return of assets"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "operations/mdm/"
+    policies:
+      - "MDM remote-wipe capability on offboarding"
+    notes: "MDM wipe enforced on offboarding; procedure to be documented in operations/mdm/"
+
+  - control_id: "A.5.12"
+    title: "Classification of information"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "docs/adr/0016-pii-retention.md"
+      - "packages/eel-telemetry-rs/"
+    policies:
+      - "Five-tier data classification: A, B, C, D, E per ADR-0016"
+    notes: "Classification enforced via Rust type wrappers PIIRestricted<T>, PIISensitive<T>, PIIPublic<T>"
+
+  - control_id: "A.5.13"
+    title: "Labelling of information"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "packages/eel-telemetry-rs/"
+      - "packages/event-schemas/"
+    policies:
+      - "Data class label in event envelope per ADR-0015"
+    notes: "Every event envelope carries data-class label; telemetry labels Tier in trace attributes"
+
+  - control_id: "A.5.14"
+    title: "Information transfer"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "packages/eel-authn-rs/"
+      - "packages/eel-crypto-rs/"
+    policies:
+      - "All transfers over mTLS; Tier A transfers additionally signed with HSM key"
+    notes: "Kit transmissions use HSM-signed payloads over telco VPN; inter-service mTLS enforced by service mesh"
+
+  - control_id: "A.5.15"
+    title: "Access control"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "packages/authz-schema/"
+      - "docs/adr/0007-authn-authz-secrets.md"
+    policies:
+      - "Access control policy per ADR-0007: JWT + SpiceDB + purpose-of-processing header"
+    notes: "Least-privilege enforced via SpiceDB ZED schema; every reveal() call emits audit event"
+
+  - control_id: "A.5.16"
+    title: "Identity management"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "platform/keycloak/"
+      - "docs/adr/0007-authn-authz-secrets.md"
+    policies:
+      - "Keycloak at auth.lindela.io manages all human identities; service identities via SPIFFE/SPIRE SVIDs"
+    notes: "MFA enforced for all privileged accounts; SVID rotation every 24 hours"
+
+  - control_id: "A.5.17"
+    title: "Authentication information"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "packages/eel-authn-rs/"
+      - "platform/keycloak/"
+    policies:
+      - "Passwords meet NIST SP 800-63B guidelines; MFA required for all admin access"
+    notes: "Keycloak enforces password policy; kit credentials are device-attested certificates, not passwords"
+
+  - control_id: "A.5.18"
+    title: "Access rights"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "packages/authz-schema/"
+    policies:
+      - "Access rights granted via SpiceDB role assignments; reviewed quarterly"
+    notes: "Formal access review process to be documented in operations/"
+
+  - control_id: "A.5.19"
+    title: "Information security in supplier relationships"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "compliance/ipr-handover/"
+      - "integrations/"
+    policies:
+      - "Supplier security requirements in MoU templates (to be authored)"
+    notes: "GCC 15.4 IPR requirements cover supplier obligations; MoU template to be drafted for each external integration"
+
+  - control_id: "A.5.20"
+    title: "Addressing information security within supplier agreements"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "compliance/ipr-handover/gcc-15-4-handover-template.md"
+    policies:
+      - "GCC 15.4 contract terms cover source code escrow, SBOM delivery, security testing evidence"
+    notes: "Contract terms to be reviewed against ISO 27001:2022 Annex A.5.20 checklist before signature"
+
+  - control_id: "A.5.21"
+    title: "Managing information security in the ICT supply chain"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "flake.nix"
+      - "reproducibility/"
+      - "docs/adr/0006-build-supply-chain.md"
+    policies:
+      - "Nix flake pins all build inputs; SBOM signed per WP; reproducible build verified on 3 targets"
+    notes: "Supply chain security via Nix pinning and SCA (Trivy, cargo-audit); third-party library SCA in CI"
+
+  - control_id: "A.5.22"
+    title: "Monitoring, review and change management of supplier services"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "operations/"
+    policies:
+      - "Supplier service review cadence to be defined"
+    notes: "Planned: formal supplier review meetings at least annually for critical suppliers (HSM vendor, telco, biometric sensor)"
+
+  - control_id: "A.5.23"
+    title: "Information security for use of cloud services"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "platform/argocd/"
+      - "environments/"
+    policies:
+      - "All compute is on IEBC-controlled Contabo EU infrastructure; no public cloud SaaS for Tier A data"
+    notes: "Infrastructure is self-hosted; ArgoCD manages deployment; no Tier A/B data in public SaaS"
+
+  - control_id: "A.5.24"
+    title: "Information security incident management planning and preparation"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "operations/helpdesk/"
+      - "compliance/dpa-toolkit/odpc-breach-notification.md"
+      - "docs/runbooks/"
+    policies:
+      - "Incident response playbooks in docs/runbooks/"
+      - "ODPC breach notification procedure in dpa-toolkit"
+    notes: "19 runbooks cover degradation, DR, rollback; breach drill procedure defined; IRP document to be consolidated"
+
+  - control_id: "A.5.25"
+    title: "Assessment and decision on information security events"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "operations/helpdesk/"
+      - "detection/"
+    policies:
+      - "Severity triage criteria to be documented"
+    notes: "SIEM alerting via Grafana; triage criteria to be formalised in operations/helpdesk/triage-criteria.md"
+
+  - control_id: "A.5.26"
+    title: "Response to information security incidents"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "docs/runbooks/"
+      - "operations/helpdesk/"
+    policies:
+      - "Per-service degradation and rollback runbooks"
+    notes: "Response procedures in runbooks; post-incident review process to be documented"
+
+  - control_id: "A.5.27"
+    title: "Learning from information security incidents"
+    applicable: true
+    implementation_status: planned
+    platform_artefacts:
+      - "docs/audit/"
+    policies:
+      - "Post-incident review report template (to be authored)"
+    notes: "Gate evidence documents provide a model for post-incident learning; formal process to be documented"
+
+  - control_id: "A.5.28"
+    title: "Collection of evidence"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "services/transparency-svc/"
+      - "packages/eel-telemetry-rs/"
+    policies:
+      - "All audit events committed to append-only Merkle log in transparency-svc"
+    notes: "Merkle log provides tamper-evident audit trail; signed Merkle roots published publicly"
+
+  - control_id: "A.5.29"
+    title: "Information security during disruption"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "chaos/"
+      - "platform/pgbackrest/"
+      - "platform/velero/"
+      - "platform/kopia/"
+    policies:
+      - "DR scenarios tested in chaos/; RTO <= 30 min for election-critical services"
+    notes: "Automated DR failover tested; pgBackRest for PG, Velero for k8s, Kopia for object store"
+
+  - control_id: "A.5.30"
+    title: "ICT readiness for business continuity"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "docs/runbooks/"
+      - "chaos/"
+      - "environments/staging/"
+    policies:
+      - "19 runbooks; DR exercised in staging; RTO/RPO measured per chaos scenario"
+    notes: "All 19 runbooks exercised as G5 gate criterion"
+
+  - control_id: "A.5.31"
+    title: "Legal, statutory, regulatory and contractual requirements"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "compliance/"
+      - "docs/adr/0016-pii-retention.md"
+    policies:
+      - "Compliance mapped in dpa-toolkit, elections-tech-regs, iso-27001, ipr-handover"
+    notes: "Legal requirement mapping maintained in compliance/ directory"
+
+  - control_id: "A.5.32"
+    title: "Intellectual property rights"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "compliance/ipr-handover/"
+    policies:
+      - "GCC 15.4 IPR handover template; FOSS license compliance via SBOM"
+    notes: "SBOM generated per WP; license obligations for Standard Software documented in software-classification.yaml"
+
+  - control_id: "A.5.33"
+    title: "Protection of records"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "services/transparency-svc/"
+      - "platform/pgbackrest/"
+    policies:
+      - "Immutable Merkle log; encrypted backups; retention per ADR-0016"
+    notes: "Records protected by append-only log and encrypted backup with key rotation"
+
+  - control_id: "A.5.34"
+    title: "Privacy and protection of personal identifiable information"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "compliance/dpa-toolkit/"
+      - "packages/eel-telemetry-rs/"
+      - "docs/adr/0016-pii-retention.md"
+    policies:
+      - "DPA compliance via dpa-toolkit; Tier A/B enforcement via Rust type wrappers"
+    notes: "Full DPA compliance programme in compliance/dpa-toolkit/"
+
+  - control_id: "A.5.35"
+    title: "Independent review of information security"
+    applicable: true
+    implementation_status: planned
+    platform_artefacts:
+      - "compliance/elections-tech-regs/certifier-submission-template.md"
+    policies:
+      - "Independent security certifier required per Elections (Technology) Regulations Reg 14"
+    notes: "External certification required before deployment; certifier submission package template provided"
+
+  - control_id: "A.5.36"
+    title: "Compliance with policies, rules and standards for information security"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "tools/completeness/"
+      - "tools/asvs-check/"
+    policies:
+      - "ASVS L3 compliance verified by tools/asvs-check; completeness by tools/completeness"
+    notes: "Automated compliance verification in CI; internal audit checklist in internal-audit-checklist.yaml"
+
+  - control_id: "A.5.37"
+    title: "Documented operating procedures"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "docs/runbooks/"
+      - "operations/"
+    policies:
+      - "19 runbooks per WP-5.10; per-service deploy/rollback/degradation/DR runbooks"
+    notes: "All 19 runbooks required by G5 gate"
+
+  # -------------------------------------------------------------------------
+  # A.6 People controls (8 controls)
+  # -------------------------------------------------------------------------
+
+  - control_id: "A.6.1"
+    title: "Screening"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "compliance/ipr-handover/"
+      - "services/support-admin-svc/crates/hr/"
+    policies:
+      - "Background screening requirements for IEBC staff and contractors"
+    notes: "M55 hr-payroll records employment screening status; policy document to be drafted"
+
+  - control_id: "A.6.2"
+    title: "Terms and conditions of employment"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "services/support-admin-svc/crates/hr/"
+    policies:
+      - "Employment contracts include confidentiality obligations"
+    notes: "Template employment contract to include information security obligations"
+
+  - control_id: "A.6.3"
+    title: "Information security awareness, education and training"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "services/training-svc/"
+      - "services/training-svc/django/lms/"
+    policies:
+      - "M37 voter education CMS; M38 poll worker LMS; security awareness module to be added"
+    notes: "LMS infrastructure (M38) available for security awareness delivery; content to be authored"
+
+  - control_id: "A.6.4"
+    title: "Disciplinary process"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "docs/policies/"
+    policies:
+      - "Disciplinary policy (to be authored in docs/policies/)"
+    notes: "HR policy documents to include information security breach disciplinary provisions"
+
+  - control_id: "A.6.5"
+    title: "Responsibilities after termination or change of employment"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "operations/mdm/"
+      - "platform/keycloak/"
+    policies:
+      - "MDM wipe on device return; Keycloak account deactivation on termination"
+    notes: "Technical offboarding automated via MDM and Keycloak; process document to be authored"
+
+  - control_id: "A.6.6"
+    title: "Confidentiality or non-disclosure agreements"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "compliance/ipr-handover/copyright-assignment.md"
+    policies:
+      - "NDA provisions in contractor agreements per GCC 15.4"
+    notes: "NDA template to be included in contractor onboarding package"
+
+  - control_id: "A.6.7"
+    title: "Remote working"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "operations/mdm/"
+    policies:
+      - "MDM profiles enforce encryption and VPN on developer workstations"
+    notes: "Remote working policy to be authored; MDM technical controls are in place"
+
+  - control_id: "A.6.8"
+    title: "Information security event reporting"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "operations/helpdesk/"
+    policies:
+      - "Incident reporting channel: operations/helpdesk/"
+    notes: "Staff awareness of reporting channel to be included in security awareness training"
+
+  # -------------------------------------------------------------------------
+  # A.7 Physical controls (14 controls)
+  # -------------------------------------------------------------------------
+
+  - control_id: "A.7.1"
+    title: "Physical security perimeters"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "compliance/iso-27001/isms-scope.md"
+    policies:
+      - "DC perimeter security governed by DC provider contracts"
+    notes: "Primary and mirror DCs are colocation facilities; physical security controls are contractual obligations of the DC provider"
+
+  - control_id: "A.7.2"
+    title: "Physical entry controls"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts: []
+    policies:
+      - "DC access controls per colocation provider; IEBC office access controls per IEBC physical security policy"
+    notes: "Evidence of DC provider physical security controls to be obtained and retained"
+
+  - control_id: "A.7.3"
+    title: "Securing offices, rooms and facilities"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts: []
+    policies:
+      - "IEBC office physical security policy (to be referenced)"
+    notes: "Server rooms within IEBC premises to have access logs; covered by IEBC physical security policy"
+
+  - control_id: "A.7.4"
+    title: "Physical security monitoring"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts: []
+    policies:
+      - "CCTV and access log monitoring at DC and IEBC premises"
+    notes: "DC CCTV evidence from provider; IEBC premises monitoring per physical security policy"
+
+  - control_id: "A.7.5"
+    title: "Protecting against physical and environmental threats"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "platform/pgbackrest/"
+    policies:
+      - "Fire suppression, cooling, and UPS at DC level per provider SLA"
+    notes: "DC environmental controls per provider SLA; evidence to be obtained annually"
+
+  - control_id: "A.7.6"
+    title: "Working in secure areas"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts: []
+    policies:
+      - "Secure area working policy (to be authored)"
+    notes: "HSM operations require secure area procedures; procedure to be documented in tools/hsm-ceremony/"
+
+  - control_id: "A.7.7"
+    title: "Clear desk and clear screen"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "operations/mdm/"
+    policies:
+      - "MDM screen lock policy enforced (idle lock after 5 minutes)"
+    notes: "Clear desk policy to be included in information security policy document"
+
+  - control_id: "A.7.8"
+    title: "Equipment siting and protection"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts: []
+    policies:
+      - "Server hardware siting governed by DC provider; kit device siting per kit deployment guidelines"
+    notes: "Kit device storage and transport security procedures to be documented in operations/mdm/"
+
+  - control_id: "A.7.9"
+    title: "Security of assets off-premises"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "operations/mdm/"
+      - "services/inventory-svc/"
+    policies:
+      - "MDM encryption on all off-premises devices; kit device custody chain tracked in M20"
+    notes: "Kit custody chain tracked in inventory-svc; developer laptop encryption enforced by MDM"
+
+  - control_id: "A.7.10"
+    title: "Storage media"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "operations/mdm/"
+    policies:
+      - "Encrypted storage enforced on all devices by MDM; USB restriction policy"
+    notes: "USB storage restriction to be confirmed in MDM profiles"
+
+  - control_id: "A.7.11"
+    title: "Supporting utilities"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts: []
+    policies:
+      - "UPS and generator at DC per provider SLA"
+    notes: "Evidence from DC provider SLA and last test dates to be maintained"
+
+  - control_id: "A.7.12"
+    title: "Cabling security"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts: []
+    policies:
+      - "Cabling security at DC per provider standards"
+    notes: "Telco VPN provides encryption for kit transmission cables; DC cabling per provider standards"
+
+  - control_id: "A.7.13"
+    title: "Equipment maintenance"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "operations/warranty/"
+    policies:
+      - "Kit device maintenance per KEBS/OEM warranty terms (operations/warranty/)"
+    notes: "HSM vendor maintenance contract to be documented"
+
+  - control_id: "A.7.14"
+    title: "Secure disposal or re-use of equipment"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "operations/mdm/"
+    policies:
+      - "MDM remote wipe before device disposal; secure disposal procedure for storage media"
+    notes: "Disposal procedure to be documented; cryptographic erase for SSDs per NIST 800-88"
+
+  # -------------------------------------------------------------------------
+  # A.8 Technological controls (34 controls)
+  # -------------------------------------------------------------------------
+
+  - control_id: "A.8.1"
+    title: "User endpoint devices"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "operations/mdm/"
+    policies:
+      - "MDM profiles: Android Enterprise for kit devices, ABM for iOS/macOS developer devices"
+    notes: "All devices under MDM management; remote wipe, screen lock, encryption enforced"
+
+  - control_id: "A.8.2"
+    title: "Privileged access rights"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "packages/authz-schema/"
+      - "platform/keycloak/"
+    policies:
+      - "Privileged roles restricted to named individuals; PAM logging for all privileged operations"
+    notes: "SpiceDB enforces least-privilege; all privileged access logged to transparency Merkle log"
+
+  - control_id: "A.8.3"
+    title: "Information access restriction"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "packages/authz-schema/"
+      - "packages/eel-telemetry-rs/"
+    policies:
+      - "Purpose-of-processing header required for all Tier A access; SpiceDB enforces"
+    notes: "PIIRestricted<T> wrapper enforces access restriction at type level"
+
+  - control_id: "A.8.4"
+    title: "Access to source code"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "platform/gitea/"
+    policies:
+      - "Gitea repository access restricted by team role; branch protection on main"
+    notes: "Code review required before merge; signed commits enforced on main branch"
+
+  - control_id: "A.8.5"
+    title: "Secure authentication"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "packages/eel-authn-rs/"
+      - "platform/keycloak/"
+    policies:
+      - "MFA required for all human access to production systems; SPIFFE SVIDs for service-to-service"
+    notes: "Keycloak enforces MFA; SPIRE issues SVIDs with 24-hour rotation"
+
+  - control_id: "A.8.6"
+    title: "Capacity management"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "loadtest/"
+      - "platform/argocd/"
+    policies:
+      - "Load tests at module SLA in local profile; pre-prod at 1x and 5x"
+    notes: "Horizontal scaling via ArgoCD; capacity thresholds defined in loadtest/profiles/"
+
+  - control_id: "A.8.7"
+    title: "Protection against malware"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "platform/runtime-security/"
+    policies:
+      - "Falco runtime security on all nodes; image scanning in CI"
+    notes: "Container image scanning via Trivy in CI; Falco enforces runtime policy; SCA via cargo-audit"
+
+  - control_id: "A.8.8"
+    title: "Management of technical vulnerabilities"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "tools/completeness/"
+      - "tools/asvs-check/"
+    policies:
+      - "SCA in CI (cargo-audit, pip-audit, Trivy); SAST via Semgrep; DAST per WP"
+    notes: "Zero critical/high SAST/SCA/container/DAST required per definition-of-done"
+
+  - control_id: "A.8.9"
+    title: "Configuration management"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "flake.nix"
+      - "platform/argocd/"
+      - "environments/"
+    policies:
+      - "All configuration in git; Nix flake pins build inputs; ArgoCD enforces desired state"
+    notes: "GitOps: all config changes via PR review and merge; drift detection via ArgoCD"
+
+  - control_id: "A.8.10"
+    title: "Information deletion"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "compliance/dpa-toolkit/retention-schedule.yaml"
+    policies:
+      - "Nightly hard-purge job per retention-schedule.yaml; audit log of every purge"
+    notes: "Soft-delete + scheduled hard-purge; backup key rotation for effective erasure of old backups"
+
+  - control_id: "A.8.11"
+    title: "Data masking"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "packages/eel-telemetry-rs/"
+    policies:
+      - "Tier A/B fields redacted in logs via eel-telemetry log-scanner"
+    notes: "Telemetry refuses to serialise Tier A types; Tier B goes through redaction wrapper"
+
+  - control_id: "A.8.12"
+    title: "Data leakage prevention"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "packages/eel-telemetry-rs/"
+    policies:
+      - "Log-scanner CI job fails on any Tier A pattern in logs"
+    notes: "Semgrep no-bypass rule for resilience layer; log-scanner in CI pipeline"
+
+  - control_id: "A.8.13"
+    title: "Information backup"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "platform/pgbackrest/"
+      - "platform/velero/"
+      - "platform/kopia/"
+      - "platform/mirrormaker2/"
+    policies:
+      - "pgBackRest for PostgreSQL; Velero for k8s state; Kopia for object store; Kafka MirrorMaker2"
+    notes: "Backup schedules defined; restore tested in DR scenarios (WP-5.9)"
+
+  - control_id: "A.8.14"
+    title: "Redundancy of information processing facilities"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "environments/"
+      - "platform/argocd/"
+      - "chaos/"
+    policies:
+      - "Primary + mirror DC with hot standby; 5 edge sites; DR tested in chaos scenarios"
+    notes: "RTO <= 30 min for election-critical services per WP-5.9 chaos testing"
+
+  - control_id: "A.8.15"
+    title: "Logging"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "packages/eel-telemetry-rs/"
+      - "services/transparency-svc/"
+    policies:
+      - "Structured JSON logs to Loki; audit events to transparency Merkle log"
+    notes: "Tier D logs to Loki; Tier A/B audit events to immutable Merkle log; PII redaction enforced"
+
+  - control_id: "A.8.16"
+    title: "Monitoring activities"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "services/transparency-svc/"
+      - "platform/grafana/"
+    policies:
+      - "Grafana dashboards and PrometheusRule SLO burn alerts per module"
+    notes: "SLO burn alerts per WP definition-of-done; election-night monitoring runbook"
+
+  - control_id: "A.8.17"
+    title: "Clock synchronisation"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "platform/"
+    policies:
+      - "NTP synchronisation on all nodes; TimeChaos scenario tests clock skew resilience"
+    notes: "TimeChaos +/- 10 min scenario in WP-5.9; all timestamps in UTC"
+
+  - control_id: "A.8.18"
+    title: "Use of privileged utility programs"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "packages/authz-schema/"
+    policies:
+      - "Privileged utility access restricted by SpiceDB role; break-glass procedure logged"
+    notes: "Break-glass procedure to be documented in operations/ runbooks"
+
+  - control_id: "A.8.19"
+    title: "Installation of software on operational systems"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "flake.nix"
+      - "platform/argocd/"
+    policies:
+      - "All software installed via Nix flake; ArgoCD enforces desired container image; no ad-hoc installs"
+    notes: "Image immutability enforced; only approved images from registry can be deployed"
+
+  - control_id: "A.8.20"
+    title: "Networks security"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "platform/"
+      - "edge/"
+    policies:
+      - "Network segmentation via Kubernetes NetworkPolicy; mTLS between all services"
+    notes: "Service mesh enforces mTLS; external traffic through edge with DDoS protection"
+
+  - control_id: "A.8.21"
+    title: "Security of network services"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "edge/"
+      - "docs/adr/0010-edge-ddos.md"
+    policies:
+      - "Edge DDoS protection per ADR-0010; TLS 1.3 minimum on all external endpoints"
+    notes: "DDoS mitigation tested in chaos scenarios; rate limiting enforced at edge"
+
+  - control_id: "A.8.22"
+    title: "Segregation of networks"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "platform/"
+    policies:
+      - "Separate network segments for Tier A services, management, and public-facing services"
+    notes: "Kubernetes namespace isolation; NetworkPolicy enforces segment boundaries"
+
+  - control_id: "A.8.23"
+    title: "Web filtering"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts: []
+    policies:
+      - "Egress filtering via network policy; web filtering for developer workstations via MDM"
+    notes: "Egress allow-listing to be configured per service; developer web filtering via MDM profile"
+
+  - control_id: "A.8.24"
+    title: "Use of cryptography"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "packages/eel-crypto-rs/"
+      - "tools/hsm-ceremony/"
+      - "docs/adr/0005-crypto-hsm.md"
+    policies:
+      - "Cryptographic policy per ADR-0005: Ed25519/ML-DSA-65 for signatures; ML-KEM-768 for KEM"
+    notes: "Post-quantum algorithms for long-lived election records; HSM for key custody"
+
+  - control_id: "A.8.25"
+    title: "Secure development lifecycle"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "docs/plans/10-definition-of-done.md"
+      - "docs/plans/09-test-pyramid.md"
+    policies:
+      - "STRIDE threat model per WP; ASVS L3 sign-off; SAST/DAST in CI"
+    notes: "SDLC controls per definition-of-done §§10-13; every WP requires security sign-off"
+
+  - control_id: "A.8.26"
+    title: "Application security requirements"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "tools/asvs-check/"
+      - "docs/plans/10-definition-of-done.md"
+    policies:
+      - "ASVS L3 for election-critical modules; L2 for routine modules"
+    notes: "tools/asvs-check maps ASVS requirements to tagged tests; L3 checklist required for G5"
+
+  - control_id: "A.8.27"
+    title: "Secure system architecture and engineering principles"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "docs/adr/"
+      - "packages/eel-resilience-rs/"
+    policies:
+      - "Defence-in-depth per ADRs; resilience layer enforced by Semgrep no-bypass rule"
+    notes: "24 ADRs document architectural security decisions; resilience library mandatory for all services"
+
+  - control_id: "A.8.28"
+    title: "Secure coding"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "packages/eel-resilience-rs/"
+      - "scripts/"
+    policies:
+      - "Semgrep rules enforce resilience usage; memory-safe languages (Rust, Python, Elixir, Dart)"
+    notes: "No unsafe Rust blocks without documented justification; Semgrep no-bypass CI check"
+
+  - control_id: "A.8.29"
+    title: "Security testing in development and acceptance"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "tools/asvs-check/"
+      - "tools/wcag-audit/"
+      - "tools/completeness/"
+    policies:
+      - "ASVS check, WCAG audit, completeness scan all in CI"
+    notes: "Unit, property, integration, Pact, load, chaos, fuzz tests per WP; zero critical SAST required"
+
+  - control_id: "A.8.30"
+    title: "Outsourced development"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "compliance/ipr-handover/"
+    policies:
+      - "GCC 15.4 handover requirements; SBOM delivery; source code escrow"
+    notes: "Contractor code subject to same security requirements; code review mandatory before merge"
+
+  - control_id: "A.8.31"
+    title: "Separation of development, test and production environments"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "environments/"
+      - "platform/argocd/"
+    policies:
+      - "Separate environments: local, staging, pre-prod, production; ArgoCD enforces"
+    notes: "No Tier A production data in non-production environments; synthetic data only in staging"
+
+  - control_id: "A.8.32"
+    title: "Change management"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "platform/argocd/"
+      - "docs/runbooks/"
+    policies:
+      - "All changes via git PR review; ArgoCD GitOps; rollback procedure <= 15 min proven"
+    notes: "Change management via PR review + ArgoCD; post-deployment smoke tests automated"
+
+  - control_id: "A.8.33"
+    title: "Test information"
+    applicable: true
+    implementation_status: implemented
+    platform_artefacts:
+      - "environments/staging/"
+      - "tools/iam-seed/"
+    policies:
+      - "Synthetic test data only; no Tier A production data in test environments"
+    notes: "IAM seed tool generates synthetic personas for testing; testcontainers for DB isolation"
+
+  - control_id: "A.8.34"
+    title: "Protection of information systems during audit testing"
+    applicable: true
+    implementation_status: partial
+    platform_artefacts:
+      - "environments/staging/"
+    policies:
+      - "Audits and penetration tests conducted on staging, not production"
+    notes: "Staging environment is production-equivalent; production tests require change window and rollback plan"

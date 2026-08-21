@@ -1,4 +1,4 @@
-# deploy/service.yaml — governance-svc WP-5.1
+# deploy/service.yaml — governance-svc WP-5.1 + WP-5.3
 name: governance-svc
 image: harbor.eel.internal/eel/governance-svc
 artifacts:
@@ -12,6 +12,18 @@ artifacts:
     port: 8094
   - name: eel-governance-oag
     port: 8095
+  # WP-5.3 artifacts
+  - name: eel-governance-review
+    port: 8096
+  - name: eel-governance-county-coord
+    port: 8097
+  - name: eel-governance-intl-observer
+    port: 8098
+  - name: eel-governance-forensics
+    port: 8099
+  - name: eel-observer-workspace
+    port: 4020
+    runtime: elixir
 sites:
   - primary
   - mirror

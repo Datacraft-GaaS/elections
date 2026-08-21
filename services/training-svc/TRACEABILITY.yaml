@@ -1,0 +1,109 @@
+# training-svc WP-5.4 Traceability Matrix
+service: training-svc
+work_package: WP-5.4
+wave: 5
+gate: G5
+
+modules:
+  M37:
+    name: voter-education-cms
+    component: django/cms
+    fr_count: 30
+    ac_count: 12
+    ec_count: 20
+    test_prefixes: [M37-UNIT, M37-PACT, M37-INT, M37-E2E, M37-SEC, M37-A11Y, M37-LOAD, M37-CHAOS]
+    openapi: packages/openapi-contracts/training-cms/cms.yaml
+    events:
+      - eel.training.content_published.v1
+      - eel.training.content_expired.v1
+      - eel.training.content_archived.v1
+    integrations: [M11, M13, M28, M40]
+    data_classes: [B, C]
+
+  M38:
+    name: poll-worker-training-lms
+    component: django/lms
+    fr_count: 50
+    ac_count: 12
+    ec_count: 18
+    test_prefixes: [M38-UNIT, M38-PROP, M38-PACT, M38-INT, M38-E2E, M38-SEC, M38-A11Y, M38-OFFLN, M38-LOAD]
+    openapi: packages/openapi-contracts/training-lms/lms.yaml
+    events:
+      - eel.training.worker_certified.v1
+      - eel.training.worker_certification_revoked.v1
+      - eel.training.refresher_completed.v1
+      - eel.training.briefing_confirmed.v1
+      - eel.training.third_fail_triggered.v1
+    integrations: [M27, M33, M37, M15, P06]
+    data_classes: [A, B, C]
+
+  M42:
+    name: media-accreditation-portal
+    component: django/accreditation
+    fr_count: 31
+    ac_count: 12
+    ec_count: 8
+    test_prefixes: [M42-UNIT, M42-PACT, M42-INT, M42-E2E, M42-SEC, M42-A11Y, M42-LOAD]
+    openapi: packages/openapi-contracts/training-accreditation/accreditation.yaml
+    events:
+      - eel.training.media_badge_issued.v1
+      - eel.training.media_badge_revoked.v1
+      - eel.training.media_breach_referred.v1
+    integrations: [M16, M43, P05, P06]
+    data_classes: [A, B]
+
+  M43:
+    name: observer-accreditation-portal
+    component: django/accreditation
+    fr_count: 25
+    ac_count: 10
+    ec_count: 8
+    test_prefixes: [M43-UNIT, M43-PACT, M43-INT, M43-E2E, M43-SEC, M43-A11Y, M43-LOAD]
+    openapi: packages/openapi-contracts/training-accreditation/accreditation.yaml
+    events:
+      - eel.training.observer_credential_issued.v1
+      - eel.training.observer_credential_revoked.v1
+      - eel.training.observer_deployed.v1
+      - eel.training.mou_signed.v1
+    integrations: [M15, M16, M34, M42, P05, P06]
+    data_classes: [A, B]
+
+  M60:
+    name: medical-first-response
+    component: django/medical
+    fr_count: 20
+    ac_count: 8
+    ec_count: 6
+    test_prefixes: [M60-UNIT, M60-INT, M60-E2E, M60-SEC]
+    openapi: packages/openapi-contracts/training-medical/medical.yaml
+    events:
+      - eel.training.medical_incident_reported.v1
+      - eel.training.medical_cluster_alert.v1
+      - eel.training.dispatch_requested.v1
+    integrations: [M16, M31]
+    data_classes: [C]
+    phi_prohibited: true
+
+flutter_apps:
+  lms-offline:
+    path: apps/lms-offline
+    module: M38
+    platform: [android_8plus, ios_14plus]
+    offline_cache_modules: 5
+    test_prefix: M38-OFFLN
+
+  accred-scanner:
+    path: apps/accred-scanner
+    modules: [M42, M43]
+    crl_refresh_min: 5
+    verify_p99_ms: 300
+    test_prefix: [M42-SCAN, M43-SCAN]
+
+rust_crate:
+  path: crates/training-api
+  modules: [M37, M38, M42, M43, M60]
+  openapi_contracts:
+    - packages/openapi-contracts/training-cms/cms.yaml
+    - packages/openapi-contracts/training-lms/lms.yaml
+    - packages/openapi-contracts/training-accreditation/accreditation.yaml
+    - packages/openapi-contracts/training-medical/medical.yaml
