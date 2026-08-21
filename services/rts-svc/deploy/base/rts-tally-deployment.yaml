@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rts-tally
+  labels:
+    app: rts-tally
+    part-of: rts-svc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rts-tally
+  template:
+    metadata:
+      labels:
+        app: rts-tally
+    spec:
+      containers:
+        - name: rts-tally
+          image: harbor.eel.internal/eel/rts-svc/rts-tally:latest
+          env:
+            - name: DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: rts-db-secret
+                  key: url
+            - name: KAFKA_BROKERS
+              valueFrom:
+                secretKeyRef:
+                  name: rts-kafka-secret
+                  key: brokers
+            - name: TLOG_ENDPOINT
+              value: "http://transparency-svc:50052"

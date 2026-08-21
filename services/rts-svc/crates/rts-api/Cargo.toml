@@ -1,0 +1,38 @@
+[package]
+name = "rts-api"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "HTTP and gRPC API surface for rts-svc (WP-3.1)"
+
+[lib]
+name = "rts_api"
+path = "src/lib.rs"
+
+[[bin]]
+name = "rts-api"
+path = "src/main.rs"
+
+[dependencies]
+axum              = { workspace = true }
+tower             = { workspace = true }
+tonic             = { workspace = true }
+serde             = { workspace = true }
+serde_json        = { workspace = true }
+tokio             = { workspace = true }
+utoipa            = { workspace = true }
+utoipa-swagger-ui = { workspace = true }
+eel-api-server-rs = { path = "../../../../packages/eel-api-server-rs" }
+rts-domain        = { path = "../rts-domain" }
+rts-projections   = { path = "../rts-projections" }
+sqlx              = { workspace = true }
+tracing           = { workspace = true }
+tracing-subscriber = { workspace = true }
+uuid              = { workspace = true }
+thiserror         = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }
+tower = { workspace = true }

@@ -1,0 +1,31 @@
+[package]
+name = "rts-publisher"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Publication bundler and signer for rts-svc (WP-3.1)"
+
+[lib]
+name = "rts_publisher"
+path = "src/lib.rs"
+
+[[bin]]
+name = "rts-publisher"
+path = "src/main.rs"
+
+[dependencies]
+rts-projections  = { path = "../rts-projections" }
+eel-crypto-rs    = { path = "../../../../packages/eel-crypto-rs" }
+sqlx             = { workspace = true }
+tokio            = { workspace = true }
+serde            = { workspace = true }
+serde_json       = { workspace = true }
+uuid             = { workspace = true }
+thiserror        = { workspace = true }
+tracing          = { workspace = true }
+tracing-subscriber = { workspace = true }
+chrono           = { workspace = true }
+blake3           = "1"
+rts-domain       = { path = "../rts-domain" }

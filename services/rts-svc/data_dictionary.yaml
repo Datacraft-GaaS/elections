@@ -1,0 +1,66 @@
+service: rts-svc
+version: "1.0.0"
+entities:
+  - name: Form34A
+    description: "Presidential tally sheet per polling station"
+    data_class: B
+    fields:
+      - name: station_code
+        type: string
+        description: "Polling station identifier (county-constituency-station)"
+      - name: registered_voters
+        type: integer
+        pii: false
+        description: "Total registered voters at this station"
+      - name: votes_cast
+        type: integer
+        pii: false
+        description: "Total ballot papers cast (valid + rejected + spoilt)"
+      - name: valid_votes
+        type: integer
+        pii: false
+        description: "Votes counted as valid for any candidate"
+      - name: rejected_votes
+        type: integer
+        pii: false
+        description: "Ballots rejected by the presiding officer"
+      - name: spoilt_ballots
+        type: integer
+        pii: false
+        description: "Ballots spoilt before being cast"
+      - name: candidates
+        type: array[CandidateResult]
+        pii: false
+        description: "Per-candidate vote totals"
+      - name: raw_scan_ref
+        type: string
+        nullable: true
+        pii: false
+        description: "Object reference to the scanned form image"
+  - name: Form34B
+    description: "Constituency-level tally compilation"
+    data_class: B
+    fields:
+      - name: constituency_code
+        type: string
+        description: "IEBC constituency code"
+      - name: compiled_stations
+        type: array[string]
+        description: "Station stream IDs included in this compilation"
+      - name: candidate_totals
+        type: array[CandidateResult]
+        description: "Summed candidate votes across all stations"
+  - name: Form34C
+    description: "National presidential tally"
+    data_class: B
+    fields:
+      - name: compiled_constituencies
+        type: array[string]
+        description: "Constituency codes included in this tally"
+      - name: merkle_root
+        type: string
+        nullable: true
+        description: "BLAKE3 Merkle root over all Form34B leaves"
+      - name: candidate_totals
+        type: array[CandidateResult]
+        description: "Final national candidate vote totals"

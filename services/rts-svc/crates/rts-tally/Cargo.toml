@@ -1,0 +1,34 @@
+[package]
+name = "rts-tally"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Exactly-once tally consumer and aggregator for rts-svc (WP-3.1)"
+
+[lib]
+name = "rts_tally"
+path = "src/lib.rs"
+
+[[bin]]
+name = "rts-tally"
+path = "src/main.rs"
+
+[dependencies]
+eel-eventstore-rs = { path = "../../../../packages/eel-eventstore-rs", features = ["kafka"] }
+rts-domain        = { path = "../rts-domain" }
+serde             = { workspace = true }
+serde_json        = { workspace = true }
+tokio             = { workspace = true }
+rdkafka           = { workspace = true }
+tracing           = { workspace = true }
+tracing-subscriber = { workspace = true }
+uuid              = { workspace = true }
+thiserror         = { workspace = true }
+blake3            = "1"
+
+[dev-dependencies]
+serde_json = { workspace = true }
+uuid       = { workspace = true }
+chrono     = { workspace = true }

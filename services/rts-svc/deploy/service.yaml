@@ -1,23 +1,21 @@
-# deploy/service.yaml — filled by the service owner (WP-1.9 template)
-# Fields: name, image, artifacts, sites, strategy, replicas
+# deploy/service.yaml - rts-svc WP-3.1 core
 name: rts-svc
 image: harbor.eel.internal/eel/rts-svc
-artifacts: []
-# sites: leave empty to deploy to all 7 sites (primary, mirror, edge-*)
-sites: []
+artifacts:
+  - name: rts-api
+    port: 8080
+  - name: rts-tally
+    port: null
+  - name: rts-publisher
+    port: null
+  - name: rts-projections
+    port: null
+sites:
+  - primary
+  - mirror
 strategy:
   primary: blue-green
-  mirror:  blue-green
-  edge-nairobi:  rolling
-  edge-mombasa:  rolling
-  edge-kisumu:   rolling
-  edge-eldoret:  rolling
-  edge-garissa:  rolling
+  mirror: blue-green
 replicas:
-  primary:       3
-  mirror:        3
-  edge-nairobi:  2
-  edge-mombasa:  2
-  edge-kisumu:   2
-  edge-eldoret:  2
-  edge-garissa:  2
+  primary: 3
+  mirror: 3

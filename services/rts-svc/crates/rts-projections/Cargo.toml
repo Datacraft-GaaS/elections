@@ -1,0 +1,23 @@
+[package]
+name = "rts-projections"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Read-model projections for rts-svc (WP-3.1)"
+
+[lib]
+name = "rts_projections"
+path = "src/lib.rs"
+
+[dependencies]
+eel-eventstore-rs = { path = "../../../../packages/eel-eventstore-rs" }
+rts-domain        = { path = "../rts-domain" }
+sqlx              = { workspace = true }
+tokio             = { workspace = true }
+serde             = { workspace = true }
+serde_json        = { workspace = true }
+uuid              = { workspace = true }
+thiserror         = { workspace = true }
+tracing           = { workspace = true }

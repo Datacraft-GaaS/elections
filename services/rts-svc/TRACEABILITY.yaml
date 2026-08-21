@@ -1,0 +1,42 @@
+service: rts-svc
+work_package: WP-3.1
+modules:
+  - id: M10
+    name: rts-backend
+legal_requirements:
+  - id: EC-DAT-10
+    description: "Zero results allowed; arithmetic consistency required (votes_cast = valid + rejected + spoilt)"
+    implemented_in: crates/rts-domain/src/validators.rs
+    test: crates/rts-domain/tests/validators_test.rs
+  - id: EC-DAT-11
+    description: "Spoilt > valid allowed with annotation; rejected+valid > registered forbidden"
+    implemented_in: crates/rts-domain/src/validators.rs
+    test: crates/rts-domain/tests/validators_test.rs
+  - id: EC-LEG-01
+    description: "Withdrawn/deceased candidate still tallies with annotation preserved in event log"
+    implemented_in: crates/rts-domain/src/candidate_status.rs
+events:
+  - type: eel.rts.form34a_captured.v1
+    source: rts-api
+    topic: eel.rts.form34a.v1
+  - type: eel.rts.form34a_verified.v1
+    source: rts-tally
+    topic: eel.rts.form34a.v1
+  - type: eel.rts.form34a_amended.v1
+    source: rts-tally
+    topic: eel.rts.form34a.v1
+  - type: eel.rts.form34a_rejected.v1
+    source: rts-api
+    topic: eel.rts.form34a.v1
+  - type: eel.rts.form34b_compiled.v1
+    source: rts-tally
+    topic: eel.rts.form34b.v1
+  - type: eel.rts.form34c_compiled.v1
+    source: rts-tally
+    topic: eel.rts.form34c.v1
+  - type: eel.rts.tally_published.v1
+    source: rts-publisher
+    topic: eel.rts.publication.v1
+  - type: eel.rts.parallel_tally_drift.v1
+    source: rts-tally
+    topic: eel.rts.audit.v1

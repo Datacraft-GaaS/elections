@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rts-publisher
+  labels:
+    app: rts-publisher
+    part-of: rts-svc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rts-publisher
+  template:
+    metadata:
+      labels:
+        app: rts-publisher
+    spec:
+      containers:
+        - name: rts-publisher
+          image: harbor.eel.internal/eel/rts-svc/rts-publisher:latest
+          env:
+            - name: DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: rts-db-secret
+                  key: url
+            - name: PUBLICATION_INTERVAL_SECS
+              value: "300"

@@ -10,11 +10,17 @@ members = [
 exclude = [
   "tools/softhsm",
   "tools/spectral",
+  "services/bvr-svc/crates/bvr-api",
+  "services/bvr-svc/crates/bvr-domain",
+  "services/bvr-svc/crates/bvr-batch",
+  "services/bvr-svc/crates/target",
+  "services/rts-svc/crates/rts-integration-tests",
 ]
 # Cargo tolerates glob members that match no paths yet.
 # New crates under these globs are picked up automatically.
 
 [workspace.package]
+version     = "0.1.0"
 edition     = "2021"
 license     = "Apache-2.0"
 rust-version = "1.83"
@@ -83,6 +89,30 @@ anyhow          = { version = "1" }
 
 # Time
 chrono          = { version = "0.4",  features = ["serde"] }
+
+# Geo / spatial
+geo             = { version = "0.28" }
+geojson         = { version = "0.24", features = ["geo-types"] }
+
+# Archive
+tar             = { version = "0.4" }
+
+# Async utilities
+futures         = { version = "0.3" }
+
+# Byte / encoding utilities
+bytes           = { version = "1" }
+flate2          = { version = "1" }
+hex             = { version = "0.4" }
+sha2            = { version = "0.10" }
+base64          = { version = "0.22" }
+
+# gRPC / Protobuf
+prost           = { version = "0.13" }
+prost-build     = { version = "0.13" }
+
+# Benchmarking
+criterion       = { version = "0.5", features = ["html_reports"] }
 
 # Testing
 testcontainers          = { version = "0.23" }

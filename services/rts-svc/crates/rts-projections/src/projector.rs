@@ -1,0 +1,25 @@
+use eel_eventstore_rs::{EventStore, EventStoreError, StoredEvent};
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum ProjectionError {
+    #[error("projection db error: {0}")] Db(#[from] sqlx::Error),
+    #[error("projection store error: {0}")] Store(#[from] EventStoreError),
+    #[error("projection serialization error: {0}")] Serde(#[from] serde_json::Error),
+}
+
+pub struct ProjectionRunner {
+    projectors: Vec<Box<dyn Fn(StoredEvent) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), ProjectionError>> + Send>> + Send + Sync>>,
+}
+impl ProjectionRunner {
+    pub fn new() -> Self { Self { projectors: Vec::new() } }
+    pub fn add<F, Fut>(&mut self, projector: F)
+    where F: Fn(StoredEvent) -> Fut + Send + Sync + 'static, Fut: std::future::Future<Output = Result<(), ProjectionError>> + Send + 'static {
+        self.projectors.push(Box::new(move |e| Box::pin(projector(e))));
+    }
+    pub async fn run_from_store(&self, _store: &EventStore, from_version: i64) -> Result<(), ProjectionError> {
+        tracing::info!(from_version, "ProjectionRunner: starting replay (stub)");
+        Ok(())
+    }
+}
+impl Default for ProjectionRunner { fn default() -> Self { Self::new() } }

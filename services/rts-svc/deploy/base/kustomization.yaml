@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - rts-api-deployment.yaml
+  - rts-tally-deployment.yaml
+  - rts-projections-deployment.yaml
+  - rts-publisher-deployment.yaml
+  - rts-api-service.yaml

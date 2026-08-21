@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rts-projections
+  labels:
+    app: rts-projections
+    part-of: rts-svc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rts-projections
+  template:
+    metadata:
+      labels:
+        app: rts-projections
+    spec:
+      containers:
+        - name: rts-projections
+          image: harbor.eel.internal/eel/rts-svc/rts-projections:latest
+          env:
+            - name: DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: rts-db-secret
+                  key: url

@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rts-api
+  labels:
+    app: rts-api
+    part-of: rts-svc
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: rts-api
+  template:
+    metadata:
+      labels:
+        app: rts-api
+    spec:
+      containers:
+        - name: rts-api
+          image: harbor.eel.internal/eel/rts-svc/rts-api:latest
+          ports:
+            - containerPort: 8080
+              name: http
+            - containerPort: 50051
+              name: grpc
+          env:
+            - name: DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: rts-db-secret
+                  key: url
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 30

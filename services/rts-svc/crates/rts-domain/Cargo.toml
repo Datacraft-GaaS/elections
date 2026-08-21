@@ -1,0 +1,27 @@
+[package]
+name = "rts-domain"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Domain aggregates, events, and validators for the RTS service (WP-3.1)"
+
+[lib]
+name = "rts_domain"
+path = "src/lib.rs"
+
+[dependencies]
+eel-eventstore-rs = { path = "../../../../packages/eel-eventstore-rs" }
+eel-events-rs     = { path = "../../../../packages/eel-events-rs" }
+eel-hlc-rs        = { path = "../../../../packages/eel-hlc-rs" }
+serde             = { workspace = true }
+serde_json        = { workspace = true }
+uuid              = { workspace = true }
+chrono            = { workspace = true }
+thiserror         = { workspace = true }
+garde             = { workspace = true }
+tracing           = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
