@@ -1,0 +1,49 @@
+# Golden tests for field_mobile authz schema
+# Run with: zed test packages/authz-schema/field_mobile.zed packages/authz-schema/tests/field_mobile_test.yaml
+tests:
+  - name: "poll_clerk can use field session"
+    subject: "eel_user:user_poll_clerk"
+    resource: "eel_field_session:fs_001"
+    permission: "use"
+    expected: true
+    relationships:
+      - "eel_field_session:fs_001#poll_clerk@eel_user:user_poll_clerk"
+
+  - name: "poll_clerk cannot terminate field session"
+    subject: "eel_user:user_poll_clerk"
+    resource: "eel_field_session:fs_001"
+    permission: "terminate"
+    expected: false
+    relationships:
+      - "eel_field_session:fs_001#poll_clerk@eel_user:user_poll_clerk"
+
+  - name: "coordinator can terminate field session"
+    subject: "eel_user:user_county_coord"
+    resource: "eel_field_session:fs_001"
+    permission: "terminate"
+    expected: true
+    relationships:
+      - "eel_field_session:fs_001#coordinator@eel_user:user_county_coord"
+
+  - name: "any user can report field incident"
+    subject: "eel_user:user_journalist"
+    resource: "eel_field_incident:fi_001"
+    permission: "report"
+    expected: true
+    relationships: []
+
+  - name: "dispatcher can dispatch response to field incident"
+    subject: "eel_user:user_dispatcher"
+    resource: "eel_field_incident:fi_001"
+    permission: "dispatch_response"
+    expected: true
+    relationships:
+      - "eel_field_incident:fi_001#dispatcher@eel_user:user_dispatcher"
+
+  - name: "forensics_investigator can investigate tamper record"
+    subject: "eel_user:user_forensics_investigator"
+    resource: "eel_device_tamper_record:dtr_001"
+    permission: "investigate"
+    expected: true
+    relationships:
+      - "eel_device_tamper_record:dtr_001#forensics_investigator@eel_user:user_forensics_investigator"

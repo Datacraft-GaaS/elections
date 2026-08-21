@@ -1,0 +1,33 @@
+// Portal authorization schema
+// Trust domain: eel.local
+// Manages public portal content, result snapshots, and civic information
+
+definition eel_user {}
+definition eel_service {}
+
+definition eel_civic_content {
+    relation cms_editor: eel_user
+    relation cms_approver: eel_user
+    relation cms_admin: eel_user
+
+    permission publish = cms_approver + cms_admin
+    permission edit = cms_editor + cms_approver + cms_admin
+    permission delete = cms_admin
+    permission read = eel_user:*
+}
+
+definition eel_snapshot {
+    relation publisher: eel_service
+    relation admin: eel_user
+
+    permission publish = publisher + admin
+    permission read = eel_user:*
+}
+
+definition eel_portal_admin_panel {
+    relation admin: eel_user
+    relation analyst: eel_user
+
+    permission access = admin + analyst
+    permission configure = admin
+}

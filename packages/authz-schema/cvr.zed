@@ -1,0 +1,27 @@
+// CVR (Cast Vote Record) authorization schema
+// Trust domain: eel.local
+
+definition eel_user {}
+definition eel_service {}
+
+definition eel_voter_lookup_log {
+    relation lookup_service: eel_service
+    relation auditor: eel_user
+    relation data_officer: eel_user
+
+    permission record = lookup_service
+    permission read = auditor + data_officer
+    permission export = data_officer
+    permission purge = data_officer
+}
+
+definition eel_cvr_batch {
+    relation tabulator_service: eel_service
+    relation rla_auditor: eel_user
+    relation auditor: eel_user
+
+    permission submit = tabulator_service
+    permission read = rla_auditor + auditor
+    permission audit = rla_auditor
+    permission publish = tabulator_service
+}

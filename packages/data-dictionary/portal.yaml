@@ -1,0 +1,176 @@
+service: portal-svc
+context: portal
+entities:
+  - name: PublishedForm
+    store: T2
+    event_sourced: false
+    columns:
+      - name: form_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 published form identifier.
+        retention: Retain indefinitely
+      - name: form_type
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Form type code e.g. PRESIDENTIAL_RESULTS, GOVERNOR_RESULTS.
+        retention: Retain indefinitely
+      - name: station_code
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Polling station code.
+        retention: Retain indefinitely
+      - name: object_ref
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: MinIO object reference to the sealed form scan.
+        retention: Retain indefinitely
+      - name: merkle_leaf_hash
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: SHA-256 leaf hash for Merkle inclusion proof.
+        retention: Retain indefinitely
+      - name: published_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Publication timestamp.
+        retention: Retain indefinitely
+
+  - name: InclusionProof
+    store: T2
+    event_sourced: false
+    columns:
+      - name: proof_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 inclusion proof identifier.
+        retention: Retain indefinitely
+      - name: form_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: Foreign key to PublishedForm.
+        retention: Retain indefinitely
+      - name: merkle_root_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: Foreign key to MerkleRoot.
+        retention: Retain indefinitely
+      - name: sibling_hashes
+        type: jsonb
+        data_class: C
+        pii: false
+        nullable: false
+        description: Ordered array of sibling hashes for the Merkle proof path.
+        retention: Retain indefinitely
+      - name: leaf_index
+        type: integer
+        data_class: D
+        pii: false
+        nullable: false
+        description: Leaf index within the Merkle tree.
+        retention: Retain indefinitely
+
+  - name: MerkleRoot
+    store: T1-consensus
+    event_sourced: true
+    columns:
+      - name: root_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 Merkle root identifier.
+        retention: Retain indefinitely
+      - name: root_hash
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: SHA-256 Merkle root hash.
+        retention: Retain indefinitely
+      - name: tree_size
+        type: integer
+        data_class: D
+        pii: false
+        nullable: false
+        description: Number of leaves in the tree at this root.
+        retention: Retain indefinitely
+      - name: sealed_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Root sealing timestamp.
+        retention: Retain indefinitely
+
+  - name: CivicContent
+    store: T2
+    event_sourced: false
+    columns:
+      - name: content_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 content identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: content_type
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Content type e.g. FAQ, ANNOUNCEMENT, REGULATION.
+        retention: Delete at election cycle end + 7 years
+      - name: title_en
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: English title.
+        retention: Delete at election cycle end + 7 years
+      - name: title_sw
+        type: text
+        data_class: C
+        pii: false
+        nullable: true
+        description: Swahili title.
+        retention: Delete at election cycle end + 7 years
+      - name: body_ref
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: MinIO object reference to content body markdown.
+        retention: Delete at election cycle end + 7 years
+      - name: status
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Content status. One of draft, approved, published, archived.
+        retention: Delete at election cycle end + 7 years
+      - name: published_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: true
+        description: Publication timestamp. Null if not yet published.
+        retention: Delete at election cycle end + 7 years

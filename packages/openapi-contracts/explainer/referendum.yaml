@@ -1,0 +1,452 @@
+openapi: 3.1.0
+info:
+  title: eel-referendum-explainer
+  version: 1.0.0
+  description: Module M68 - Referendum Explainer. Publishes plain-language explanations of referendum questions in multiple languages for public civic education.
+  contact:
+    name: EEL Platform Team
+    email: platform@eel.local
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+tags:
+  - name: questions
+    description: Referendum question explainers
+  - name: translations
+    description: Translations in all 11 official languages
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/explainer/referendum/questions:
+    get:
+      tags: [questions]
+      operationId: listReferendumQuestions
+      summary: List referendum questions with explanations
+      description: Returns all published referendum questions with plain-language explainers. Public, tier 1, with Merkle proofs.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      security: []
+      parameters:
+        - name: language_code
+          in: query
+          schema:
+            type: string
+            x-eel-data-class: C
+          description: BCP-47 code to filter explainers by available language.
+      responses:
+        '200':
+          description: Referendum question list
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReferendumExplainerList'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags: [questions]
+      operationId: publishReferendumExplainer
+      summary: Publish referendum explainer
+      description: Creates or updates a referendum question explainer. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReferendumExplainerCreate'
+      responses:
+        '201':
+          description: Explainer published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReferendumExplainer'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/explainer/referendum/questions/{question_id}:
+    parameters:
+      - $ref: '#/components/parameters/QuestionId'
+
+    get:
+      tags: [questions]
+      operationId: getReferendumExplainer
+      summary: Get referendum question detail with plain-language explanation
+      description: Returns full explainer including implications, FAQ, media references, and legal citation. Public, tier 1, with Merkle proofs.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      security: []
+      responses:
+        '200':
+          description: Referendum explainer detail
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReferendumExplainer'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/explainer/referendum/questions/{question_id}/translations:
+    parameters:
+      - $ref: '#/components/parameters/QuestionId'
+
+    get:
+      tags: [translations]
+      operationId: getReferendumExplainerTranslations
+      summary: Get explainer translations in all 11 official languages
+      description: Returns the question text, plain-language explanation, and implication text in all available languages. Public, tier 1, with Merkle proofs.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      security: []
+      responses:
+        '200':
+          description: All available translations
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReferendumTranslationList'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by auth.eel.local (Keycloak). Trust domain eel.local.
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS client certificate for machine-to-machine calls.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+      description: UUIDv7 client-generated idempotency key.
+
+    QuestionId:
+      name: question_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+
+  headers:
+    CosignSig:
+      description: Cosign detached signature over the response body (base64url).
+      schema:
+        type: string
+        x-eel-data-class: C
+    MerkleProof:
+      description: Merkle inclusion proof in the audit log tree.
+      schema:
+        type: string
+        x-eel-data-class: C
+    SnapshotId:
+      description: Snapshot identifier from which this response was served.
+      schema:
+        type: string
+        x-eel-data-class: C
+
+  schemas:
+    ReferendumExplainerCreate:
+      type: object
+      required:
+        - question_id
+        - question_text_en
+        - question_text_sw
+        - explanation_en
+        - explanation_sw
+        - gazette_ref
+      properties:
+        question_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+          description: Stable UUIDv7 for this referendum question.
+        question_text_en:
+          type: string
+          x-eel-data-class: C
+          description: Verbatim question text in English as gazetted.
+        question_text_sw:
+          type: string
+          x-eel-data-class: C
+        explanation_en:
+          type: string
+          x-eel-data-class: C
+          description: Plain-language explanation in English.
+        explanation_sw:
+          type: string
+          x-eel-data-class: C
+        gazette_ref:
+          type: string
+          x-eel-data-class: C
+          description: Kenya Gazette reference for the referendum notice.
+
+    ReferendumExplainer:
+      allOf:
+        - $ref: '#/components/schemas/ReferendumExplainerCreate'
+        - type: object
+          required: [published_at]
+          properties:
+            implication_en:
+              type: string
+              nullable: true
+              x-eel-data-class: C
+              description: Plain-language summary of what a Yes or No vote means.
+            implication_sw:
+              type: string
+              nullable: true
+              x-eel-data-class: C
+            faq:
+              type: array
+              nullable: true
+              x-eel-data-class: C
+              items:
+                type: object
+                required: [q, a]
+                properties:
+                  q:
+                    type: string
+                    x-eel-data-class: C
+                  a:
+                    type: string
+                    x-eel-data-class: C
+            legal_reference:
+              type: string
+              nullable: true
+              x-eel-data-class: C
+              description: Citation to enabling constitutional or statutory provision.
+            media_refs:
+              type: array
+              nullable: true
+              x-eel-data-class: C
+              items:
+                type: object
+                required: [type, url, caption]
+                properties:
+                  type:
+                    type: string
+                    enum: [video, infographic, audio, document]
+                    x-eel-data-class: C
+                  url:
+                    type: string
+                    format: uri
+                    x-eel-data-class: C
+                  caption:
+                    type: string
+                    x-eel-data-class: C
+            published_at:
+              type: string
+              format: date-time
+              x-eel-data-class: C
+            updated_at:
+              type: string
+              format: date-time
+              x-eel-data-class: D
+
+    ReferendumExplainerSummary:
+      type: object
+      required: [question_id, question_text_en, question_text_sw, published_at]
+      properties:
+        question_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        question_text_en:
+          type: string
+          x-eel-data-class: C
+        question_text_sw:
+          type: string
+          x-eel-data-class: C
+        published_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+
+    ReferendumExplainerList:
+      type: object
+      required: [questions, total]
+      properties:
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReferendumExplainerSummary'
+          x-eel-data-class: C
+        total:
+          type: integer
+          x-eel-data-class: C
+
+    ReferendumTranslation:
+      type: object
+      required: [language_code, language_name, question_text, explanation]
+      properties:
+        language_code:
+          type: string
+          x-eel-data-class: C
+          description: BCP-47 language code.
+        language_name:
+          type: string
+          x-eel-data-class: C
+        question_text:
+          type: string
+          x-eel-data-class: C
+        explanation:
+          type: string
+          x-eel-data-class: C
+        implication:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+        translated_at:
+          type: string
+          format: date-time
+          nullable: true
+          x-eel-data-class: C
+
+    ReferendumTranslationList:
+      type: object
+      required: [question_id, translations]
+      properties:
+        question_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        translations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReferendumTranslation'
+          x-eel-data-class: C
+        total_languages:
+          type: integer
+          x-eel-data-class: C
+
+    ProblemDetail:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        title:
+          type: string
+          x-eel-data-class: C
+        status:
+          type: integer
+          x-eel-data-class: C
+        detail:
+          type: string
+          x-eel-data-class: C
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        trace_id:
+          type: string
+          x-eel-data-class: D
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Validation error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalError:
+      description: Internal server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'

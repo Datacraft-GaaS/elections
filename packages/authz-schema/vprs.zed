@@ -1,0 +1,32 @@
+// VPRS (Voter Pre-Registration System) authorization schema
+// Trust domain: eel.local
+
+definition eel_user {}
+definition eel_service {}
+
+definition eel_vprs_application {
+    relation applicant: eel_user
+    relation clerk: eel_user
+    relation supervisor: eel_user
+    relation data_officer: eel_user
+    relation vprs_service: eel_service
+
+    permission submit = eel_user:*
+    permission read_own = applicant
+    permission review = clerk + supervisor
+    permission approve = supervisor
+    permission reject = clerk + supervisor
+    permission cancel = applicant + supervisor
+    permission read_pii = data_officer + supervisor
+    permission audit = data_officer
+}
+
+definition eel_handoff_token {
+    relation issuer: eel_service
+    relation holder: eel_user
+    relation kit_station: eel_service
+
+    permission issue = issuer
+    permission redeem = kit_station
+    permission read_own = holder
+}

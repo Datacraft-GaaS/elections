@@ -1,0 +1,49 @@
+# Golden tests for party authz schema
+# Run with: zed test packages/authz-schema/party.zed packages/authz-schema/tests/party_test.yaml
+tests:
+  - name: "any user can read party info (wildcard)"
+    subject: "eel_user:user_journalist"
+    resource: "eel_party:party_001"
+    permission: "read"
+    expected: true
+    relationships: []
+
+  - name: "party_official can read internal party data"
+    subject: "eel_user:user_party_agent"
+    resource: "eel_party:party_001"
+    permission: "read_internal"
+    expected: true
+    relationships:
+      - "eel_party:party_001#party_official@eel_user:user_party_agent"
+
+  - name: "regulator can suspend party"
+    subject: "eel_user:user_observer"
+    resource: "eel_party:party_001"
+    permission: "suspend"
+    expected: true
+    relationships:
+      - "eel_party:party_001#regulator@eel_user:user_observer"
+
+  - name: "party_official cannot suspend party"
+    subject: "eel_user:user_party_agent"
+    resource: "eel_party:party_001"
+    permission: "suspend"
+    expected: false
+    relationships:
+      - "eel_party:party_001#party_official@eel_user:user_party_agent"
+
+  - name: "approver can approve symbol registration"
+    subject: "eel_user:user_cms_approver"
+    resource: "eel_symbol_registration:sym_001"
+    permission: "approve"
+    expected: true
+    relationships:
+      - "eel_symbol_registration:sym_001#approver@eel_user:user_cms_approver"
+
+  - name: "regulator can certify primary election"
+    subject: "eel_user:user_observer"
+    resource: "eel_primary_election:pe_001"
+    permission: "certify"
+    expected: true
+    relationships:
+      - "eel_primary_election:pe_001#regulator@eel_user:user_observer"

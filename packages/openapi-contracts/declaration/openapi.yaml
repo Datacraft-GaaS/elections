@@ -1,0 +1,1084 @@
+openapi: "3.1.0"
+
+info:
+  title: "Eel Declaration - Result Declaration & Certification"
+  version: "1.0.0"
+  description: |
+    Election result declaration and certification API.
+    Module: M51 result-declaration-certification.
+
+    Covers constituency/ward result declaration, winner certification,
+    runoff and tie declarations, post-declaration amendments, and
+    judiciary acknowledgement tracking.
+
+    Trust domain: eel.local. Auth via JWT + SpiceDB RBAC for write
+    operations; JWT-only for reads; public for petition window queries.
+
+servers:
+  - url: "https://api.eel.local"
+    description: "External API gateway"
+  - url: "https://declaration.eel.local"
+    description: "Declaration internal service"
+
+security:
+  - BearerJWT: []
+
+tags:
+  - name: declarations
+    description: "Declaration lifecycle management"
+  - name: certificates
+    description: "Winner certificate issuance and retrieval"
+  - name: petitions
+    description: "Post-declaration petition window queries"
+  - name: amendments
+    description: "Post-declaration amendments and corrections"
+  - name: judiciary
+    description: "Judiciary acknowledgement tracking"
+
+paths:
+  /api/v1/declarations:
+    post:
+      operationId: createDeclaration
+      summary: "Create a new result declaration"
+      description: |
+        Initialises a declaration record for a given election position scope.
+        Sets status to PENDING. The declaring officer must subsequently call
+        PUT /declare to commit the result. Idempotent via Idempotency-Key.
+      tags: [declarations]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 500
+        p95: 2000
+        p99: 5000
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeclarationCreateRequest"
+      responses:
+        "201":
+          description: "Declaration record created"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Declaration"
+        "400":
+          description: "Invalid request payload"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden - insufficient SpiceDB permission"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse or declaration already exists for scope"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "422":
+          description: "Validation error"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/declarations/{id}:
+    get:
+      operationId: getDeclaration
+      summary: "Retrieve a declaration by ID"
+      description: |
+        Returns the full declaration record. Responds with both
+        application/json and application/cbor. Requires bearer JWT.
+      tags: [declarations]
+      x-eel-auth: JWT
+      x-eel-tier: 2
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      parameters:
+        - $ref: "#/components/parameters/DeclarationIdPath"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: "Declaration record"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Declaration"
+            application/cbor:
+              schema:
+                $ref: "#/components/schemas/Declaration"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Declaration not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/declarations/{id}/declare:
+    put:
+      operationId: commitDeclaration
+      summary: "Commit a result declaration (declare winner)"
+      description: |
+        Transitions declaration status from PENDING to DECLARED. Records
+        the declaring officer, countersigning officer, winning candidate,
+        margins, and vote totals. Triggers certificate issuance workflow.
+        Idempotent via Idempotency-Key.
+      tags: [declarations]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 500
+        p95: 2000
+        p99: 5000
+      parameters:
+        - $ref: "#/components/parameters/DeclarationIdPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeclareRequest"
+      responses:
+        "200":
+          description: "Declaration committed"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Declaration"
+        "400":
+          description: "Invalid state transition or payload"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden - insufficient SpiceDB permission"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Declaration not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse or conflicting declaration state"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "422":
+          description: "Validation error"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/declarations/{id}/runoff:
+    put:
+      operationId: declareRunoff
+      summary: "Mark declaration as requiring a runoff election"
+      description: |
+        Transitions declaration status to RUNOFF_REQUIRED when no candidate
+        meets the constitutional threshold. Idempotent via Idempotency-Key.
+      tags: [declarations]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 500
+        p95: 2000
+        p99: 5000
+      parameters:
+        - $ref: "#/components/parameters/DeclarationIdPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunoffRequest"
+      responses:
+        "200":
+          description: "Declaration updated to runoff status"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Declaration"
+        "400":
+          description: "Invalid state transition"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Declaration not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "422":
+          description: "Validation error"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/declarations/{id}/tie:
+    put:
+      operationId: declareTie
+      summary: "Mark declaration as a tied result"
+      description: |
+        Transitions declaration status to TIE when two or more candidates
+        obtain exactly equal valid votes. Triggers lot-drawing workflow
+        per Electoral Act provisions. Idempotent via Idempotency-Key.
+      tags: [declarations]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 500
+        p95: 2000
+        p99: 5000
+      parameters:
+        - $ref: "#/components/parameters/DeclarationIdPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TieRequest"
+      responses:
+        "200":
+          description: "Declaration updated to tie status"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Declaration"
+        "400":
+          description: "Invalid state transition"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Declaration not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "422":
+          description: "Validation error"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/declarations/{id}/amend:
+    post:
+      operationId: amendDeclaration
+      summary: "Amend a declared result (post-declaration correction)"
+      description: |
+        Submits a post-declaration amendment with corrected counts and
+        supporting documentary references. Creates an amendment record
+        and increments the declaration version. Requires dual-officer
+        authorisation via SpiceDB. Idempotent via Idempotency-Key.
+        Data class B - amendment details are sensitive.
+      tags: [amendments]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 500
+        p95: 2000
+        p99: 5000
+      parameters:
+        - $ref: "#/components/parameters/DeclarationIdPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AmendmentRequest"
+      responses:
+        "200":
+          description: "Amendment applied"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Declaration"
+        "400":
+          description: "Invalid amendment or declaration not in amendable state"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Declaration not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "422":
+          description: "Validation error"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/declarations/{id}/certificate:
+    get:
+      operationId: getDeclarationCertificate
+      summary: "Retrieve the HSM-signed winner certificate"
+      description: |
+        Returns the winner certificate for a DECLARED declaration. The
+        certificate carries an HSM signature and a PDF reference for the
+        physical document. Response includes x-eel-signed header carrying
+        the cosign detached signature. Responds with both application/json
+        and application/cbor.
+      tags: [certificates]
+      x-eel-auth: JWT
+      x-eel-tier: 2
+      x-eel-signed: true
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      parameters:
+        - $ref: "#/components/parameters/DeclarationIdPath"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: "Winner certificate"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+            X-Eel-Signature:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Eel-Signature"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Certificate"
+            application/cbor:
+              schema:
+                $ref: "#/components/schemas/Certificate"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Declaration or certificate not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Declaration not yet in DECLARED state"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/declarations/{id}/petition-window:
+    get:
+      operationId: getPetitionWindow
+      summary: "Query the post-declaration petition filing window"
+      description: |
+        Public endpoint returning the petition window open/close timestamps,
+        current petition count, and active flag for a declaration. Used by
+        citizen portal and legal practitioners. No authentication required.
+        Responds with both application/json and application/cbor.
+      tags: [petitions]
+      x-eel-auth: public
+      x-eel-tier: 2
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/DeclarationIdPath"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: "Petition window details"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PetitionWindow"
+            application/cbor:
+              schema:
+                $ref: "#/components/schemas/PetitionWindow"
+        "404":
+          description: "Declaration not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/declarations/{id}/judiciary-ack:
+    put:
+      operationId: recordJudiciaryAck
+      summary: "Record judiciary acknowledgement of a declaration"
+      description: |
+        Records that the relevant court or tribunal has acknowledged receipt
+        of the declaration. Required before a petition can be formally lodged.
+        Idempotent via Idempotency-Key.
+      tags: [judiciary]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 500
+        p95: 2000
+        p99: 5000
+      parameters:
+        - $ref: "#/components/parameters/DeclarationIdPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JudiciaryAckRequest"
+      responses:
+        "200":
+          description: "Judiciary acknowledgement recorded"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Declaration"
+        "400":
+          description: "Invalid request or declaration not in acknowledgeble state"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Declaration not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "422":
+          description: "Validation error"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+components:
+  parameters:
+    DeclarationIdPath:
+      name: id
+      in: path
+      required: true
+      description: "Declaration UUIDv7 identifier"
+      schema:
+        $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: "Client-generated UUID for exactly-once semantics"
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+
+    XRequestId:
+      name: X-Request-Id
+      in: header
+      required: false
+      description: "Client-provided request tracing UUID"
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+
+  securitySchemes:
+    BearerJWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "JWT issued by eel.local Keycloak realm, verified via JWKS at https://auth.eel.local/realms/eel/protocol/openid-connect/certs"
+
+    SVIDmTLS:
+      type: mutualTLS
+      description: "SPIFFE SVID mutual TLS. Certificate must have SPIFFE URI SAN matching spiffe://eel.local/ns/*/sa/*"
+
+  schemas:
+    Declaration:
+      type: object
+      description: "Full election result declaration record."
+      required:
+        - declaration_id
+        - election_id
+        - position_code
+        - scope_code
+        - status
+        - winner_candidate_code
+        - winning_margin
+        - total_valid_votes
+        - total_registered
+        - declaring_officer_id
+        - countersign_officer_id
+        - version
+      properties:
+        declaration_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Unique declaration identifier (UUIDv7)."
+          x-eel-data-class: C
+        election_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Election this declaration belongs to."
+          x-eel-data-class: C
+        position_code:
+          type: string
+          description: "Electoral position code (e.g. PRES, GOV-047, MP-290)."
+          x-eel-data-class: C
+          example: "MP-290"
+        scope_code:
+          type: string
+          description: "Administrative scope code for the declared unit."
+          x-eel-data-class: C
+          example: "CONST-290"
+        status:
+          type: string
+          description: "Declaration lifecycle status."
+          x-eel-data-class: C
+          enum:
+            - PENDING
+            - DECLARED
+            - RUNOFF_REQUIRED
+            - TIE
+            - AMENDED
+            - JUDICIARY_ACKED
+          example: "DECLARED"
+        winner_candidate_code:
+          type: string
+          description: "Winning candidate code. Null if status is TIE or RUNOFF_REQUIRED."
+          x-eel-data-class: C
+          example: "CAND-00472"
+          nullable: true
+        winning_margin:
+          type: integer
+          minimum: 0
+          description: "Vote margin between winner and runner-up. Zero for ties."
+          x-eel-data-class: C
+          example: 3247
+        total_valid_votes:
+          type: integer
+          minimum: 0
+          description: "Total valid votes cast across all candidates."
+          x-eel-data-class: C
+          example: 48201
+        total_registered:
+          type: integer
+          minimum: 0
+          description: "Total registered voters in scope at close of rolls."
+          x-eel-data-class: C
+          example: 72400
+        turnout_pct:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 100
+          description: "Voter turnout percentage (total_valid_votes / total_registered * 100)."
+          x-eel-data-class: D
+          example: 66.58
+        declared_at:
+          type: string
+          format: date-time
+          description: "ISO 8601 timestamp when the result was formally declared."
+          x-eel-data-class: D
+          example: "2027-08-09T14:32:00Z"
+        declaring_officer_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Officer who declared the result."
+          x-eel-data-class: C
+        countersign_officer_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Officer who countersigned the declaration."
+          x-eel-data-class: C
+        version:
+          type: integer
+          minimum: 1
+          description: "Optimistic concurrency version. Increments on each amendment."
+          x-eel-data-class: D
+          example: 1
+
+    DeclarationCreateRequest:
+      type: object
+      description: "Request body to initialise a declaration record."
+      required:
+        - election_id
+        - position_code
+        - scope_code
+        - total_registered
+      properties:
+        election_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Election identifier."
+          x-eel-data-class: C
+        position_code:
+          type: string
+          description: "Electoral position code."
+          x-eel-data-class: C
+          example: "MP-290"
+        scope_code:
+          type: string
+          description: "Administrative scope code."
+          x-eel-data-class: C
+          example: "CONST-290"
+        total_registered:
+          type: integer
+          minimum: 1
+          description: "Total registered voters in scope."
+          x-eel-data-class: C
+          example: 72400
+
+    DeclareRequest:
+      type: object
+      description: "Payload to commit a result declaration."
+      required:
+        - winner_candidate_code
+        - winning_margin
+        - total_valid_votes
+        - declaring_officer_id
+        - countersign_officer_id
+      properties:
+        winner_candidate_code:
+          type: string
+          description: "Winning candidate code."
+          x-eel-data-class: C
+          example: "CAND-00472"
+        winning_margin:
+          type: integer
+          minimum: 0
+          description: "Vote margin between winner and runner-up."
+          x-eel-data-class: C
+          example: 3247
+        total_valid_votes:
+          type: integer
+          minimum: 0
+          description: "Total valid votes cast."
+          x-eel-data-class: C
+          example: 48201
+        declaring_officer_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Officer committing the declaration."
+          x-eel-data-class: C
+        countersign_officer_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Countersigning officer."
+          x-eel-data-class: C
+
+    RunoffRequest:
+      type: object
+      description: "Payload to record a runoff requirement."
+      required:
+        - reason
+        - declaring_officer_id
+      properties:
+        reason:
+          type: string
+          description: "Legal basis for runoff (e.g. 'No candidate met 50%+1 threshold')."
+          x-eel-data-class: C
+          example: "No candidate achieved the constitutional 50%+1 majority."
+        total_valid_votes:
+          type: integer
+          minimum: 0
+          description: "Total valid votes cast (for record completeness)."
+          x-eel-data-class: C
+          example: 48201
+        declaring_officer_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Officer recording the runoff requirement."
+          x-eel-data-class: C
+
+    TieRequest:
+      type: object
+      description: "Payload to record a tied result."
+      required:
+        - tied_candidate_codes
+        - tied_vote_count
+        - declaring_officer_id
+      properties:
+        tied_candidate_codes:
+          type: array
+          description: "Codes of all candidates with equal highest votes."
+          x-eel-data-class: C
+          minItems: 2
+          items:
+            type: string
+          example: ["CAND-00472", "CAND-00819"]
+        tied_vote_count:
+          type: integer
+          minimum: 0
+          description: "Votes obtained by each tied candidate."
+          x-eel-data-class: C
+          example: 24100
+        total_valid_votes:
+          type: integer
+          minimum: 0
+          description: "Total valid votes cast."
+          x-eel-data-class: C
+          example: 48201
+        declaring_officer_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Officer recording the tie."
+          x-eel-data-class: C
+
+    AmendmentRequest:
+      type: object
+      description: "Post-declaration amendment with corrected counts and authorisation."
+      required:
+        - reason
+        - corrected_counts
+        - amending_officer_id
+        - supporting_refs
+      properties:
+        reason:
+          type: string
+          description: "Reason for amendment (statutory or administrative basis)."
+          x-eel-data-class: B
+          example: "Clerical error in ward 04 tally sheet transcription."
+        corrected_counts:
+          type: object
+          description: "Map of candidate code to corrected valid vote count."
+          x-eel-data-class: B
+          additionalProperties:
+            type: integer
+            minimum: 0
+          example:
+            CAND-00472: 24103
+            CAND-00819: 24097
+        amending_officer_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Officer submitting the amendment."
+          x-eel-data-class: B
+        supporting_refs:
+          type: array
+          description: "Document or form reference IDs supporting the amendment."
+          x-eel-data-class: B
+          minItems: 1
+          items:
+            type: string
+          example: ["FORM34C-0291", "AFFIDAVIT-20270809-002"]
+
+    JudiciaryAckRequest:
+      type: object
+      description: "Payload to record judiciary acknowledgement of the declaration."
+      required:
+        - court_ref
+        - acknowledged_at
+        - acknowledging_officer_id
+      properties:
+        court_ref:
+          type: string
+          description: "Court or tribunal case/docket reference number."
+          x-eel-data-class: C
+          example: "ELEC-PET-2027-0042"
+        acknowledged_at:
+          type: string
+          format: date-time
+          description: "ISO 8601 timestamp of acknowledgement by the court."
+          x-eel-data-class: D
+          example: "2027-08-12T09:15:00Z"
+        acknowledging_officer_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Commission officer recording the acknowledgement."
+          x-eel-data-class: C
+        notes:
+          type: string
+          description: "Optional notes from the court."
+          x-eel-data-class: D
+          example: "Petition lodged by third party. Hearing set for 2027-09-01."
+
+    Certificate:
+      type: object
+      description: "HSM-signed winner certificate for a declared result."
+      required:
+        - certificate_id
+        - declaration_id
+        - issued_at
+        - valid_until
+        - issuer_id
+        - hsm_sig
+        - pdf_ref
+      properties:
+        certificate_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Unique certificate identifier (UUIDv7)."
+          x-eel-data-class: C
+        declaration_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Declaration this certificate was issued for."
+          x-eel-data-class: C
+        issued_at:
+          type: string
+          format: date-time
+          description: "ISO 8601 timestamp of certificate issuance."
+          x-eel-data-class: D
+          example: "2027-08-09T15:00:00Z"
+        valid_until:
+          type: string
+          format: date-time
+          description: "ISO 8601 expiry timestamp (typically end of petition window)."
+          x-eel-data-class: D
+          example: "2027-09-09T23:59:59Z"
+        issuer_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Commission officer or system principal that issued the certificate."
+          x-eel-data-class: C
+        hsm_sig:
+          type: string
+          description: "Base64url-encoded HSM detached signature over the certificate body."
+          x-eel-data-class: C
+          contentEncoding: base64url
+          example: "MEYCIQDabc123xyz..."
+        pdf_ref:
+          type: string
+          description: "Object store reference (S3/MinIO key) for the physical PDF certificate."
+          x-eel-data-class: C
+          example: "certificates/2027/CONST-290/CAND-00472/cert-01909c3a.pdf"
+
+    PetitionWindow:
+      type: object
+      description: "Post-declaration petition filing window details."
+      required:
+        - declaration_id
+        - window_opens
+        - window_closes
+        - petition_count
+        - is_active
+      properties:
+        declaration_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Declaration this window applies to."
+          x-eel-data-class: C
+        window_opens:
+          type: string
+          format: date-time
+          description: "ISO 8601 timestamp when the petition window opens."
+          x-eel-data-class: D
+          example: "2027-08-09T15:00:00Z"
+        window_closes:
+          type: string
+          format: date-time
+          description: "ISO 8601 timestamp when the petition window closes."
+          x-eel-data-class: D
+          example: "2027-09-09T23:59:59Z"
+        petition_count:
+          type: integer
+          minimum: 0
+          description: "Number of petitions filed against this declaration so far."
+          x-eel-data-class: D
+          example: 0
+        is_active:
+          type: boolean
+          description: "True if the window is currently open and accepting petitions."
+          x-eel-data-class: D
+          example: true

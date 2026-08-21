@@ -1,0 +1,362 @@
+service: ai-platform-svc
+context: ai_platform
+entities:
+  - name: AIModel
+    store: T2
+    event_sourced: false
+    columns:
+      - name: model_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 model identifier.
+        retention: Retain indefinitely
+      - name: model_name
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Model name and variant.
+        retention: Retain indefinitely
+      - name: model_type
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Model type. One of anomaly_detection, turnout_forecast, speech_analysis, media_verification.
+        retention: Retain indefinitely
+      - name: artifact_ref
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: MinIO object reference to model artifact.
+        retention: Retain indefinitely
+      - name: registered_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Model registration timestamp.
+        retention: Retain indefinitely
+
+  - name: ModelDeployment
+    store: T2
+    event_sourced: false
+    columns:
+      - name: deployment_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 deployment identifier.
+        retention: Retain indefinitely
+      - name: model_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: Foreign key to AIModel.
+        retention: Retain indefinitely
+      - name: environment
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Deployment environment. One of staging, production.
+        retention: Retain indefinitely
+      - name: deployed_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Deployment timestamp.
+        retention: Retain indefinitely
+      - name: retired_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: true
+        description: Retirement timestamp.
+        retention: Retain indefinitely
+
+  - name: AnomalyAlert
+    store: T2
+    event_sourced: false
+    columns:
+      - name: alert_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 alert identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: alert_type
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Alert category. One of turnout_spike, result_outlier, queue_anomaly, network_intrusion, media_disinformation, identity_fraud, device_tamper_cluster.
+        retention: Delete at election cycle end + 7 years
+      - name: severity
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Alert severity. One of info, warning, critical.
+        retention: Delete at election cycle end + 7 years
+      - name: entity_ref
+        type: text
+        data_class: D
+        pii: false
+        nullable: false
+        description: Reference to the flagged entity.
+        retention: Delete at election cycle end + 7 years
+      - name: explanation
+        type: text
+        data_class: D
+        pii: false
+        nullable: false
+        description: Human-readable anomaly explanation. Max 1000 chars.
+        retention: Delete at election cycle end + 7 years
+      - name: detected_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Detection timestamp.
+        retention: Delete at election cycle end + 7 years
+
+  - name: AnomalyAdjudication
+    store: T2
+    event_sourced: false
+    columns:
+      - name: adjudication_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 adjudication identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: alert_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: Foreign key to AnomalyAlert.
+        retention: Delete at election cycle end + 7 years
+      - name: verdict
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Adjudication verdict. One of confirmed, false_positive, escalated, referred_to_forensics.
+        retention: Delete at election cycle end + 7 years
+      - name: adjudicator_hash
+        type: text
+        data_class: B
+        pii: true
+        nullable: false
+        description: SHA-256 of adjudicator identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: decided_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Decision timestamp.
+        retention: Delete at election cycle end + 7 years
+
+  - name: MediaItem
+    store: T2
+    event_sourced: false
+    columns:
+      - name: media_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 media item identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: media_type
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Media type. One of video, audio, image, article.
+        retention: Delete at election cycle end + 7 years
+      - name: source_url_hash
+        type: text
+        data_class: D
+        pii: false
+        nullable: true
+        description: SHA-256 of source URL.
+        retention: Delete at election cycle end + 7 years
+      - name: content_hash
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: SHA-256 of media content.
+        retention: Delete at election cycle end + 7 years
+      - name: flagged_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Flagging timestamp.
+        retention: Delete at election cycle end + 7 years
+
+  - name: SpeechAdjudication
+    store: T2
+    event_sourced: false
+    columns:
+      - name: adjudication_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 adjudication identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: media_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: Foreign key to MediaItem.
+        retention: Delete at election cycle end + 7 years
+      - name: verdict
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Speech verdict. One of incitement, disinformation, acceptable, referred_legal.
+        retention: Delete at election cycle end + 7 years
+      - name: decided_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Decision timestamp.
+        retention: Delete at election cycle end + 7 years
+
+  - name: TurnoutForecast
+    store: T2
+    event_sourced: false
+    columns:
+      - name: forecast_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 forecast identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: scope_code
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Geographic scope code.
+        retention: Delete at election cycle end + 7 years
+      - name: forecast_value
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Forecast as decimal string e.g. 0.72 for 72%.
+        retention: Delete at election cycle end + 7 years
+      - name: confidence_interval
+        type: jsonb
+        data_class: C
+        pii: false
+        nullable: true
+        description: Confidence interval as JSON with lower and upper keys.
+        retention: Delete at election cycle end + 7 years
+      - name: generated_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Generation timestamp.
+        retention: Delete at election cycle end + 7 years
+
+  - name: RedTeamCampaign
+    store: T2
+    event_sourced: false
+    columns:
+      - name: campaign_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 red team campaign identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: campaign_name
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Campaign name.
+        retention: Delete at election cycle end + 7 years
+      - name: target_system
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: System under test.
+        retention: Delete at election cycle end + 7 years
+      - name: started_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Campaign start timestamp.
+        retention: Delete at election cycle end + 7 years
+      - name: completed_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: true
+        description: Completion timestamp.
+        retention: Delete at election cycle end + 7 years
+
+  - name: RedTeamFinding
+    store: T2
+    event_sourced: false
+    columns:
+      - name: finding_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 finding identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: campaign_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: Foreign key to RedTeamCampaign.
+        retention: Delete at election cycle end + 7 years
+      - name: severity
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Finding severity. One of info, low, medium, high, critical.
+        retention: Delete at election cycle end + 7 years
+      - name: description
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Finding description.
+        retention: Delete at election cycle end + 7 years
+      - name: remediated_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: true
+        description: Remediation timestamp.
+        retention: Delete at election cycle end + 7 years

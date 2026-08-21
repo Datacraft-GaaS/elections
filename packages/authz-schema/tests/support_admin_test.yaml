@@ -1,0 +1,57 @@
+# Golden tests for support_admin authz schema
+# Run with: zed test packages/authz-schema/support_admin.zed packages/authz-schema/tests/support_admin_test.yaml
+tests:
+  - name: "any user can submit special voter application"
+    subject: "eel_user:user_diaspora_voter"
+    resource: "eel_special_voter_application:sva_001"
+    permission: "submit"
+    expected: true
+    relationships: []
+
+  - name: "applicant can read own special voter application"
+    subject: "eel_user:user_diaspora_voter"
+    resource: "eel_special_voter_application:sva_001"
+    permission: "read_own"
+    expected: true
+    relationships:
+      - "eel_special_voter_application:sva_001#applicant@eel_user:user_diaspora_voter"
+
+  - name: "adjudicator can adjudicate special voter application"
+    subject: "eel_user:user_caseworker"
+    resource: "eel_special_voter_application:sva_001"
+    permission: "adjudicate"
+    expected: true
+    relationships:
+      - "eel_special_voter_application:sva_001#adjudicator@eel_user:user_caseworker"
+
+  - name: "finance_officer can create budget item"
+    subject: "eel_user:user_analyst"
+    resource: "eel_budget_item:bi_001"
+    permission: "create"
+    expected: true
+    relationships:
+      - "eel_budget_item:bi_001#finance_officer@eel_user:user_analyst"
+
+  - name: "auditor can audit budget item"
+    subject: "eel_user:user_rla_auditor"
+    resource: "eel_budget_item:bi_001"
+    permission: "audit"
+    expected: true
+    relationships:
+      - "eel_budget_item:bi_001#auditor@eel_user:user_rla_auditor"
+
+  - name: "employee can read own personnel record"
+    subject: "eel_user:user_poll_clerk"
+    resource: "eel_personnel_record:pr_001"
+    permission: "read_own"
+    expected: true
+    relationships:
+      - "eel_personnel_record:pr_001#employee@eel_user:user_poll_clerk"
+
+  - name: "employee cannot update personnel record"
+    subject: "eel_user:user_poll_clerk"
+    resource: "eel_personnel_record:pr_001"
+    permission: "update"
+    expected: false
+    relationships:
+      - "eel_personnel_record:pr_001#employee@eel_user:user_poll_clerk"

@@ -1,0 +1,41 @@
+// AI Platform authorization schema
+// Trust domain: eel.local
+
+definition eel_user {}
+definition eel_service {}
+
+definition eel_ai_model {
+    relation model_admin: eel_user
+    relation data_officer: eel_user
+    relation analyst: eel_user
+    relation model_service: eel_service
+
+    permission deploy = model_admin
+    permission read_metadata = model_admin + analyst + data_officer
+    permission run_inference = model_service + analyst
+    permission retire = model_admin
+}
+
+definition eel_anomaly_alert {
+    relation detector_service: eel_service
+    relation analyst: eel_user
+    relation adjudicator: eel_user
+    relation forensics_investigator: eel_user
+
+    permission create = detector_service
+    permission read = analyst + adjudicator + forensics_investigator
+    permission adjudicate = adjudicator
+    permission escalate = adjudicator + analyst
+    permission refer_forensics = adjudicator
+}
+
+definition eel_red_team_campaign {
+    relation red_team_lead: eel_user
+    relation sre: eel_user
+    relation analyst: eel_user
+
+    permission create = red_team_lead
+    permission execute = red_team_lead + sre
+    permission read = red_team_lead + sre + analyst
+    permission publish_findings = red_team_lead
+}

@@ -1,0 +1,103 @@
+service: vprs-svc
+context: vprs
+entities:
+  - name: VPRSApplication
+    store: T2
+    event_sourced: false
+    columns:
+      - name: app_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: Primary key. UUIDv7 application identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: id_number_hash
+        type: text
+        data_class: B
+        pii: true
+        nullable: false
+        description: SHA-256 of national ID number. Used for duplicate detection. Raw ID never stored.
+        retention: Delete on voter death or court order
+      - name: biographic_fields
+        type: jsonb
+        data_class: B
+        pii: true
+        nullable: false
+        description: SHA-256 hashes of biographic fields (name, DOB, address). Structured as {"name_hash":"...", "dob_hash":"...", "address_hash":"..."}.
+        retention: Delete on voter death or court order
+      - name: status
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Application lifecycle status. One of pending, accepted, rejected, cancelled.
+        retention: Delete at election cycle end + 7 years
+      - name: qr_token_hash
+        type: text
+        data_class: B
+        pii: true
+        nullable: true
+        description: SHA-256 of QR token for kit handoff. Cleared on redemption.
+        retention: Delete 90 days post-election
+      - name: expires_at
+        type: timestamp
+        data_class: C
+        pii: false
+        nullable: true
+        description: Token expiry timestamp. Null if no active token.
+        retention: Delete 90 days post-election
+      - name: created_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Record creation timestamp.
+        retention: Delete at election cycle end + 7 years
+      - name: updated_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Last update timestamp.
+        retention: Delete at election cycle end + 7 years
+
+  - name: AuditEvent
+    store: T1-audit
+    event_sourced: false
+    columns:
+      - name: event_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 audit event identifier.
+        retention: Retain indefinitely
+      - name: actor
+        type: text
+        data_class: B
+        pii: true
+        nullable: false
+        description: SHA-256 of actor identifier (clerk or service SPIFFE ID).
+        retention: Retain indefinitely
+      - name: action
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Action performed e.g. submit, approve, cancel.
+        retention: Retain indefinitely
+      - name: ts_hlc
+        type: text
+        data_class: D
+        pii: false
+        nullable: false
+        description: Hybrid logical clock timestamp at time of action.
+        retention: Retain indefinitely
+      - name: ip_hash
+        type: text
+        data_class: D
+        pii: false
+        nullable: false
+        description: SHA-256 of client IP address for forensic tracing.
+        retention: Delete 90 days post-election

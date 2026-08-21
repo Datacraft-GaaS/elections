@@ -1,0 +1,530 @@
+openapi: 3.1.0
+info:
+  title: eel-support-budget
+  version: 1.0.0
+  description: Module M54 - Budget and Expenditure Management. Manages budget line items, expenditure recording, and OAG-format financial exports.
+  contact:
+    name: EEL Platform Team
+    email: platform@eel.local
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+tags:
+  - name: line-items
+    description: Budget line item management
+  - name: expenditures
+    description: Expenditure recording
+  - name: reports
+    description: Budget reports and exports
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/support/budget/line-items:
+    post:
+      tags: [line-items]
+      operationId: createBudgetLineItem
+      summary: Create budget line item
+      description: Creates a new budget line item. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetLineItemCreate'
+      responses:
+        '201':
+          description: Line item created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetLineItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      tags: [line-items]
+      operationId: listBudgetLineItems
+      summary: List budget line items
+      description: Returns paginated budget line items. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: department
+          in: query
+          schema:
+            type: string
+            x-eel-data-class: C
+        - name: fiscal_year
+          in: query
+          schema:
+            type: string
+            x-eel-data-class: C
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, approved, committed, spent, closed]
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Paginated line item list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetLineItemPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/support/budget/expenditures:
+    post:
+      tags: [expenditures]
+      operationId: recordExpenditure
+      summary: Record an expenditure against a line item
+      description: Records an expenditure transaction. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpenditureCreate'
+      responses:
+        '201':
+          description: Expenditure recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expenditure'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/support/budget/reports/summary:
+    get:
+      tags: [reports]
+      operationId: getBudgetSummary
+      summary: Budget utilisation summary
+      description: Returns aggregate budget utilisation across departments. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: fiscal_year
+          in: query
+          schema:
+            type: string
+            x-eel-data-class: C
+        - name: department
+          in: query
+          schema:
+            type: string
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Budget summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/support/budget/reports/oag-export:
+    get:
+      tags: [reports]
+      operationId: getOagExport
+      summary: OAG-format export (presigned URL)
+      description: Returns a presigned MinIO URL for OAG-formatted expenditure export. Valid for 30 minutes. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: fiscal_year
+          in: query
+          required: true
+          schema:
+            type: string
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: OAG export presigned URL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportDownload'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by auth.eel.local (Keycloak). Trust domain eel.local.
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS client certificate for machine-to-machine calls.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+      description: UUIDv7 client-generated idempotency key.
+
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+        x-eel-data-class: D
+
+    PageSizeParam:
+      name: page_size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+        x-eel-data-class: D
+
+  schemas:
+    BudgetLineItemCreate:
+      type: object
+      required:
+        - department
+        - category
+        - description
+        - allocated_kes
+        - fiscal_year
+        - approval_ref
+      properties:
+        department:
+          type: string
+          x-eel-data-class: C
+        category:
+          type: string
+          x-eel-data-class: C
+        description:
+          type: string
+          maxLength: 1000
+          x-eel-data-class: C
+        allocated_kes:
+          type: integer
+          minimum: 0
+          x-eel-data-class: C
+          description: Allocated amount in Kenya Shillings (integer, no decimals).
+        fiscal_year:
+          type: string
+          pattern: '^\d{4}$'
+          x-eel-data-class: C
+        approval_ref:
+          type: string
+          x-eel-data-class: C
+          description: Reference to the authorization document.
+
+    BudgetLineItem:
+      allOf:
+        - $ref: '#/components/schemas/BudgetLineItemCreate'
+        - type: object
+          required: [line_item_id, status, spent_kes, committed_kes]
+          properties:
+            line_item_id:
+              type: string
+              format: uuid
+              x-eel-data-class: C
+            status:
+              type: string
+              enum: [draft, approved, committed, spent, closed]
+              x-eel-data-class: C
+            spent_kes:
+              type: integer
+              x-eel-data-class: C
+            committed_kes:
+              type: integer
+              x-eel-data-class: C
+            balance_kes:
+              type: integer
+              x-eel-data-class: C
+            created_at:
+              type: string
+              format: date-time
+              x-eel-data-class: D
+            updated_at:
+              type: string
+              format: date-time
+              x-eel-data-class: D
+
+    BudgetLineItemPage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BudgetLineItem'
+          x-eel-data-class: C
+        total:
+          type: integer
+          x-eel-data-class: C
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+        next_page:
+          type: integer
+          nullable: true
+          x-eel-data-class: D
+
+    ExpenditureCreate:
+      type: object
+      required:
+        - line_item_id
+        - amount_kes
+        - supplier_ref
+        - invoice_ref
+        - approved_by_hash
+        - transaction_date
+      properties:
+        line_item_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        amount_kes:
+          type: integer
+          minimum: 1
+          x-eel-data-class: C
+        supplier_ref:
+          type: string
+          x-eel-data-class: C
+        invoice_ref:
+          type: string
+          x-eel-data-class: C
+        approved_by_hash:
+          type: string
+          x-eel-data-class: B
+          description: SHA-256(salt||approver_id).
+        transaction_date:
+          type: string
+          format: date
+          x-eel-data-class: C
+
+    Expenditure:
+      allOf:
+        - $ref: '#/components/schemas/ExpenditureCreate'
+        - type: object
+          required: [expenditure_id, balance_remaining_kes, recorded_at]
+          properties:
+            expenditure_id:
+              type: string
+              format: uuid
+              x-eel-data-class: C
+            balance_remaining_kes:
+              type: integer
+              x-eel-data-class: C
+            recorded_at:
+              type: string
+              format: date-time
+              x-eel-data-class: D
+
+    BudgetSummary:
+      type: object
+      required: [fiscal_year, total_allocated_kes, total_spent_kes, total_committed_kes, departments]
+      properties:
+        fiscal_year:
+          type: string
+          x-eel-data-class: C
+        total_allocated_kes:
+          type: integer
+          x-eel-data-class: C
+        total_spent_kes:
+          type: integer
+          x-eel-data-class: C
+        total_committed_kes:
+          type: integer
+          x-eel-data-class: C
+        utilisation_pct:
+          type: number
+          format: float
+          x-eel-data-class: C
+        departments:
+          type: array
+          x-eel-data-class: C
+          items:
+            type: object
+            properties:
+              department:
+                type: string
+                x-eel-data-class: C
+              allocated_kes:
+                type: integer
+                x-eel-data-class: C
+              spent_kes:
+                type: integer
+                x-eel-data-class: C
+              utilisation_pct:
+                type: number
+                format: float
+                x-eel-data-class: C
+
+    ExportDownload:
+      type: object
+      required: [url, expires_at, fiscal_year]
+      properties:
+        url:
+          type: string
+          format: uri
+          x-eel-data-class: E
+          description: Presigned MinIO URL. Valid for 30 minutes.
+        expires_at:
+          type: string
+          format: date-time
+          x-eel-data-class: E
+        fiscal_year:
+          type: string
+          x-eel-data-class: C
+        generated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    ProblemDetail:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        title:
+          type: string
+          x-eel-data-class: C
+        status:
+          type: integer
+          x-eel-data-class: C
+        detail:
+          type: string
+          x-eel-data-class: C
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        trace_id:
+          type: string
+          x-eel-data-class: D
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Validation error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalError:
+      description: Internal server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'

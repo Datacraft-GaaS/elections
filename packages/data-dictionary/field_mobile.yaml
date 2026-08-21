@@ -1,0 +1,183 @@
+service: field-mobile-svc
+context: field_mobile
+entities:
+  - name: MobileSession
+    store: T2
+    event_sourced: false
+    columns:
+      - name: session_id
+        type: uuid
+        data_class: E
+        pii: false
+        nullable: false
+        description: UUIDv7 session identifier.
+        retention: Delete 30 days post-session
+      - name: device_id_hash
+        type: text
+        data_class: E
+        pii: false
+        nullable: false
+        description: SHA-256 of device hardware identifier.
+        retention: Delete 30 days post-session
+      - name: role
+        type: text
+        data_class: D
+        pii: false
+        nullable: false
+        description: Operator role. One of poll_clerk, presiding_officer, returning_officer.
+        retention: Delete 30 days post-session
+      - name: app_version
+        type: text
+        data_class: D
+        pii: false
+        nullable: false
+        description: Application version string.
+        retention: Delete 30 days post-session
+      - name: platform
+        type: text
+        data_class: D
+        pii: false
+        nullable: false
+        description: Device platform. One of android, ios.
+        retention: Delete 30 days post-session
+      - name: created_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Session creation timestamp.
+        retention: Delete 30 days post-session
+      - name: expires_at
+        type: timestamp
+        data_class: E
+        pii: false
+        nullable: false
+        description: Session expiry timestamp.
+        retention: Delete 30 days post-session
+
+  - name: FieldIncident
+    store: T2
+    event_sourced: false
+    columns:
+      - name: incident_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 incident identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: station_code
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Polling station code.
+        retention: Delete at election cycle end + 7 years
+      - name: incident_type
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Incident category.
+        retention: Delete at election cycle end + 7 years
+      - name: severity
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Severity level. One of low, medium, high, critical.
+        retention: Delete at election cycle end + 7 years
+      - name: description
+        type: text
+        data_class: C
+        pii: false
+        nullable: true
+        description: Incident narrative. Screened for PII.
+        retention: Delete at election cycle end + 7 years
+      - name: reported_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Report timestamp.
+        retention: Delete at election cycle end + 7 years
+      - name: resolved_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: true
+        description: Resolution timestamp.
+        retention: Delete at election cycle end + 7 years
+
+  - name: DispatchAssignment
+    store: T2
+    event_sourced: false
+    columns:
+      - name: assignment_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 dispatch assignment identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: incident_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: Foreign key to FieldIncident.
+        retention: Delete at election cycle end + 7 years
+      - name: responder_role
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Responder role. One of police, medical, logistics, supervisor.
+        retention: Delete at election cycle end + 7 years
+      - name: dispatched_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Dispatch timestamp.
+        retention: Delete at election cycle end + 7 years
+      - name: acknowledged_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: true
+        description: Acknowledgment timestamp.
+        retention: Delete at election cycle end + 7 years
+
+  - name: SupportTicket
+    store: T2
+    event_sourced: false
+    columns:
+      - name: ticket_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 support ticket identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: requester_hash
+        type: text
+        data_class: D
+        pii: false
+        nullable: false
+        description: SHA-256 of requesting clerk or officer identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: issue_type
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Issue category. One of biometric_failure, connectivity, power, software_crash, other.
+        retention: Delete at election cycle end + 7 years
+      - name: status
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Ticket status. One of open, in_progress, resolved, escalated.
+        retention: Delete at election cycle end + 7 years

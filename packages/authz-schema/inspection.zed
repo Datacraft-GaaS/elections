@@ -1,0 +1,31 @@
+// Inspection authorization schema
+// Trust domain: eel.local
+
+definition eel_user {}
+definition eel_service {}
+
+definition eel_inspection_task {
+    relation inspector: eel_user
+    relation supervisor: eel_user
+    relation observer: eel_user
+    relation forensics_investigator: eel_user
+
+    permission create = supervisor
+    permission execute = inspector
+    permission observe = observer
+    permission read = inspector + supervisor + observer + forensics_investigator
+    permission complete = inspector + supervisor
+    permission escalate = inspector + supervisor
+}
+
+definition eel_inspection_finding {
+    relation author: eel_user
+    relation reviewer: eel_user
+    relation forensics_investigator: eel_user
+
+    permission record = author
+    permission review = reviewer
+    permission read = author + reviewer + forensics_investigator
+    permission escalate_forensics = reviewer
+    permission seal = reviewer
+}

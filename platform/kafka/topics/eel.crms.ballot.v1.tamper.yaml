@@ -1,0 +1,16 @@
+# Topic: eel.crms.ballot.v1.tamper (Tamper Detection)
+name: eel.crms.ballot.v1.tamper
+partitions: 12
+replication_factor: 3
+config:
+  min.insync.replicas: "2"
+  unclean.leader.election.enable: "false"
+  acks: "all"
+  retention.ms: "7776000000"
+  tiered.storage.enable: "false"
+  remote.storage.manager: "eel-minio-tiered-storage"
+retention_class: tamper
+owner: crms-svc
+description: Ballot integrity tamper detection events. Captures out-of-sequence events, hash chain breaks, and signature verification failures on the ballot topic. 90-day forensic retention.
+source_topic: eel.crms.ballot.v1
+partition_key: eel_stream_id

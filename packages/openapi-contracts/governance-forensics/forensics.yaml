@@ -1,0 +1,527 @@
+openapi: 3.1.0
+info:
+  title: eel-governance-forensics
+  version: 1.0.0
+  description: >
+    Module M66: Election Financial Forensics.
+    Manages forensic investigations into financial, ballot, and register irregularities.
+    Supports evidence attachment and referral to prosecution or oversight bodies.
+  contact:
+    name: EEL Platform Team
+    email: platform@eel.local
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+tags:
+  - name: investigations
+    description: Forensic investigation lifecycle
+  - name: evidence
+    description: Investigation evidence attachments
+  - name: findings
+    description: Forensic findings and referrals
+
+security:
+  - bearerAuth: []
+  - mtls: []
+
+paths:
+  /api/v1/governance/forensics/investigations:
+    post:
+      operationId: initiateForensicInvestigation
+      tags: [investigations]
+      summary: Initiate a forensic investigation
+      description: >
+        Creates a new forensic investigation record. Initiator identity is stored
+        as a hash. Tier 3 endpoint. Idempotent via Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForensicInvestigationRequest"
+      responses:
+        "201":
+          description: Investigation initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForensicInvestigation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    get:
+      operationId: listForensicInvestigations
+      tags: [investigations]
+      summary: List forensic investigations
+      description: Paginated list of forensic investigations. Tier 3 endpoint.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+        - name: investigation_type
+          in: query
+          schema:
+            type: string
+            enum: [financial, ballot, register]
+            x-eel-data-class: C
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [initiated, evidence_gathering, analysis, report_draft, closed]
+            x-eel-data-class: C
+      responses:
+        "200":
+          description: Investigation list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForensicInvestigationPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/governance/forensics/investigations/{investigation_id}:
+    get:
+      operationId: getForensicInvestigation
+      tags: [investigations]
+      summary: Get forensic investigation detail
+      description: Returns full detail for a specific investigation. Tier 3 endpoint.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      parameters:
+        - $ref: "#/components/parameters/InvestigationIdPath"
+      responses:
+        "200":
+          description: Investigation detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForensicInvestigation"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/governance/forensics/investigations/{investigation_id}/evidence:
+    post:
+      operationId: attachEvidence
+      tags: [evidence]
+      summary: Attach evidence to an investigation
+      description: >
+        Attaches a piece of evidence to an investigation. The hash and storage reference
+        allow content-addressed retrieval from MinIO. Tier 3 endpoint. Idempotent via Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      parameters:
+        - $ref: "#/components/parameters/InvestigationIdPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvidenceAttachmentRequest"
+      responses:
+        "201":
+          description: Evidence attached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceAttachment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/governance/forensics/investigations/{investigation_id}/findings:
+    post:
+      operationId: addForensicFinding
+      tags: [findings]
+      summary: Add a forensic finding
+      description: >
+        Records a finding from the investigation. Financial findings include an
+        optional KES amount. Referral to DPP, EACC, or KRA can be flagged.
+        Tier 3 endpoint. Idempotent via Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      parameters:
+        - $ref: "#/components/parameters/InvestigationIdPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForensicFindingRequest"
+      responses:
+        "201":
+          description: Finding recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForensicFinding"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by eel.local identity provider
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS client certificate for tier 3 operations
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUIDv7 idempotency key
+    InvestigationIdPath:
+      name: investigation_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSizeParam:
+      name: page_size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+
+  schemas:
+    Problem:
+      type: object
+      description: RFC 9457 problem detail
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        title:
+          type: string
+          x-eel-data-class: D
+        status:
+          type: integer
+          x-eel-data-class: D
+        detail:
+          type: string
+          x-eel-data-class: D
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        trace_id:
+          type: string
+          x-eel-data-class: E
+
+    PageMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+        total:
+          type: integer
+          x-eel-data-class: D
+        total_pages:
+          type: integer
+          x-eel-data-class: D
+
+    ForensicInvestigationRequest:
+      type: object
+      required: [investigation_type, subject_ref, trigger_event_id, initiated_by_hash]
+      properties:
+        investigation_type:
+          type: string
+          enum: [financial, ballot, register]
+          x-eel-data-class: C
+        subject_ref:
+          type: string
+          description: Opaque reference to the entity under investigation
+          x-eel-data-class: C
+        trigger_event_id:
+          type: string
+          format: uuid
+          description: UUIDv7 of the event that triggered this investigation
+          x-eel-data-class: C
+        initiated_by_hash:
+          type: string
+          description: SHA-256 hash of initiating officer identity
+          x-eel-data-class: B
+
+    ForensicInvestigation:
+      type: object
+      required: [investigation_id, investigation_type, subject_ref, trigger_event_id, initiated_by_hash, status, created_at]
+      properties:
+        investigation_id:
+          type: string
+          format: uuid
+          description: UUIDv7 investigation identifier
+          x-eel-data-class: C
+        investigation_type:
+          type: string
+          enum: [financial, ballot, register]
+          x-eel-data-class: C
+        subject_ref:
+          type: string
+          x-eel-data-class: C
+        trigger_event_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        initiated_by_hash:
+          type: string
+          x-eel-data-class: B
+        status:
+          type: string
+          enum: [initiated, evidence_gathering, analysis, report_draft, closed]
+          x-eel-data-class: C
+        created_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        updated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+
+    ForensicInvestigationPage:
+      type: object
+      required: [items, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ForensicInvestigation"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+
+    EvidenceAttachmentRequest:
+      type: object
+      required: [evidence_type, source, hash, storage_ref]
+      properties:
+        evidence_type:
+          type: string
+          description: Type descriptor (e.g. bank_statement, form_scan, register_extract)
+          x-eel-data-class: C
+        source:
+          type: string
+          description: Origin of the evidence
+          x-eel-data-class: C
+        hash:
+          type: string
+          description: SHA-256 hex digest of the evidence file
+          x-eel-data-class: C
+        storage_ref:
+          type: string
+          description: MinIO object key for the evidence file
+          x-eel-data-class: C
+
+    EvidenceAttachment:
+      type: object
+      required: [attachment_id, investigation_id, evidence_type, source, hash, storage_ref, attached_at]
+      properties:
+        attachment_id:
+          type: string
+          format: uuid
+          description: UUIDv7 attachment identifier
+          x-eel-data-class: C
+        investigation_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        evidence_type:
+          type: string
+          x-eel-data-class: C
+        source:
+          type: string
+          x-eel-data-class: C
+        hash:
+          type: string
+          x-eel-data-class: C
+        storage_ref:
+          type: string
+          x-eel-data-class: C
+        attached_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+
+    ForensicFindingRequest:
+      type: object
+      required: [finding_type, description, referral]
+      properties:
+        finding_type:
+          type: string
+          description: Category of finding (e.g. procurement_irregularity, vote_buying, ghost_voter)
+          x-eel-data-class: C
+        amount_kes:
+          type: integer
+          description: Amount in Kenyan Shillings implicated (financial findings only)
+          nullable: true
+          x-eel-data-class: C
+        description:
+          type: string
+          maxLength: 10000
+          x-eel-data-class: C
+        referral:
+          type: string
+          enum: [DPP, EACC, KRA, none]
+          description: "DPP: Director of Public Prosecutions, EACC: Ethics and Anti-Corruption Commission, KRA: Kenya Revenue Authority"
+          x-eel-data-class: C
+
+    ForensicFinding:
+      type: object
+      required: [finding_id, investigation_id, finding_type, description, referral, created_at]
+      properties:
+        finding_id:
+          type: string
+          format: uuid
+          description: UUIDv7 finding identifier
+          x-eel-data-class: C
+        investigation_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        finding_type:
+          type: string
+          x-eel-data-class: C
+        amount_kes:
+          type: integer
+          nullable: true
+          x-eel-data-class: C
+        description:
+          type: string
+          x-eel-data-class: C
+        referral:
+          type: string
+          enum: [DPP, EACC, KRA, none]
+          x-eel-data-class: C
+        created_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Forbidden:
+      description: Forbidden
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotFound:
+      description: Not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Conflict:
+      description: Conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    UnprocessableEntity:
+      description: Unprocessable entity
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    InternalError:
+      description: Internal server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"

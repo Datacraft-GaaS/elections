@@ -1,0 +1,58 @@
+# Golden tests for crms authz schema
+# Run with: zed test packages/authz-schema/crms.zed packages/authz-schema/tests/crms_test.yaml
+tests:
+  - name: "submitter can submit nomination"
+    subject: "eel_user:user_candidate"
+    resource: "eel_nomination:nom_001"
+    permission: "submit"
+    expected: true
+    relationships:
+      - "eel_nomination:nom_001#submitter@eel_user:user_candidate"
+
+  - name: "party_agent can read nomination"
+    subject: "eel_user:user_party_agent"
+    resource: "eel_nomination:nom_001"
+    permission: "read"
+    expected: true
+    relationships:
+      - "eel_nomination:nom_001#party_agent@eel_user:user_party_agent"
+
+  - name: "party_agent cannot approve nomination"
+    subject: "eel_user:user_party_agent"
+    resource: "eel_nomination:nom_001"
+    permission: "approve"
+    expected: false
+    relationships:
+      - "eel_nomination:nom_001#party_agent@eel_user:user_party_agent"
+
+  - name: "approver can approve nomination"
+    subject: "eel_user:user_cms_approver"
+    resource: "eel_nomination:nom_001"
+    permission: "approve"
+    expected: true
+    relationships:
+      - "eel_nomination:nom_001#approver@eel_user:user_cms_approver"
+
+  - name: "auditor can read clearance decision"
+    subject: "eel_user:user_rla_auditor"
+    resource: "eel_clearance_decision:cd_001"
+    permission: "read"
+    expected: true
+    relationships:
+      - "eel_clearance_decision:cd_001#auditor@eel_user:user_rla_auditor"
+
+  - name: "designer can design ballot"
+    subject: "eel_user:user_cms_editor"
+    resource: "eel_ballot_design:bd_001"
+    permission: "design"
+    expected: true
+    relationships:
+      - "eel_ballot_design:bd_001#designer@eel_user:user_cms_editor"
+
+  - name: "designer cannot approve ballot"
+    subject: "eel_user:user_cms_editor"
+    resource: "eel_ballot_design:bd_001"
+    permission: "approve"
+    expected: false
+    relationships:
+      - "eel_ballot_design:bd_001#designer@eel_user:user_cms_editor"

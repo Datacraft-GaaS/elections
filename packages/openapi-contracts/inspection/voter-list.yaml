@@ -1,0 +1,294 @@
+openapi: 3.1.0
+info:
+  title: eel-voter-list-inspection
+  version: 1.0.0
+  description: Module M64 - Voter List Public Inspection. Provides inspection-specific endpoints for published register snapshots and anti-enumeration voter searches.
+  contact:
+    name: EEL Platform Team
+    email: platform@eel.local
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+tags:
+  - name: snapshots
+    description: Published voter register snapshots for inspection
+  - name: search
+    description: Anti-enumeration voter register search
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/inspection/voter-list/snapshots:
+    get:
+      tags: [snapshots]
+      operationId: listVoterListSnapshots
+      summary: List published voter register snapshots
+      description: Returns published snapshots available for public inspection. Contains station-level counts only, no individual records. Public, tier 1, with Merkle proofs.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      security: []
+      responses:
+        '200':
+          description: Snapshot list
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnapshotList'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/inspection/voter-list/snapshots/{snapshot_id}:
+    parameters:
+      - name: snapshot_id
+        in: path
+        required: true
+        schema:
+          type: string
+          x-eel-data-class: C
+
+    get:
+      tags: [snapshots]
+      operationId: getVoterListSnapshot
+      summary: Get snapshot metadata and download URL
+      description: Returns snapshot metadata and a presigned CSV download URL for the anonymised aggregate. Public, tier 1.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      security: []
+      responses:
+        '200':
+          description: Snapshot detail and download URL
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnapshotDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/inspection/voter-list/search:
+    get:
+      tags: [search]
+      operationId: searchVoterList
+      summary: Search voter list by hashed ID
+      description: Checks whether a voter is on the register. Returns station name only if found. Anti-enumeration rate limit applies (5 req/IP/min). Constant-time response. Public with rate limit.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      security: []
+      parameters:
+        - name: id_hash
+          in: query
+          required: true
+          schema:
+            type: string
+            x-eel-data-class: A
+          description: SHA-256(daily_salt||id_number). Daily salt is published at /api/v1/inspection/voter-list/salt.
+      responses:
+        '200':
+          description: Search result (always 200 to resist enumeration)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoterSearchResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by auth.eel.local (Keycloak). Trust domain eel.local.
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS client certificate for machine-to-machine calls.
+
+  headers:
+    CosignSig:
+      description: Cosign detached signature over the response body (base64url).
+      schema:
+        type: string
+        x-eel-data-class: C
+    MerkleProof:
+      description: Merkle inclusion proof in the audit log tree.
+      schema:
+        type: string
+        x-eel-data-class: C
+    SnapshotId:
+      description: Snapshot identifier from which this response was served.
+      schema:
+        type: string
+        x-eel-data-class: C
+
+  schemas:
+    SnapshotSummary:
+      type: object
+      required: [snapshot_id, published_at, register_date, station_count, total_registered]
+      properties:
+        snapshot_id:
+          type: string
+          x-eel-data-class: C
+        published_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        register_date:
+          type: string
+          format: date
+          x-eel-data-class: C
+          description: Date of the underlying register this snapshot reflects.
+        station_count:
+          type: integer
+          x-eel-data-class: C
+        total_registered:
+          type: integer
+          x-eel-data-class: C
+        hash:
+          type: string
+          x-eel-data-class: C
+          description: SHA-256 of the snapshot bundle.
+
+    SnapshotList:
+      type: object
+      required: [snapshots, total]
+      properties:
+        snapshots:
+          type: array
+          items:
+            $ref: '#/components/schemas/SnapshotSummary'
+          x-eel-data-class: C
+        total:
+          type: integer
+          x-eel-data-class: C
+
+    SnapshotDetail:
+      allOf:
+        - $ref: '#/components/schemas/SnapshotSummary'
+        - type: object
+          required: [download_url, download_expires_at]
+          properties:
+            download_url:
+              type: string
+              format: uri
+              x-eel-data-class: C
+              description: Presigned MinIO URL for anonymised aggregate CSV. Expires in 1 hour.
+            download_expires_at:
+              type: string
+              format: date-time
+              x-eel-data-class: C
+            county_breakdown:
+              type: array
+              x-eel-data-class: C
+              items:
+                type: object
+                properties:
+                  county_code:
+                    type: string
+                    x-eel-data-class: C
+                  county_name:
+                    type: string
+                    x-eel-data-class: C
+                  station_count:
+                    type: integer
+                    x-eel-data-class: C
+                  registered:
+                    type: integer
+                    x-eel-data-class: C
+
+    VoterSearchResult:
+      type: object
+      required: [found]
+      properties:
+        found:
+          type: boolean
+          x-eel-data-class: C
+        polling_station_name:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+          description: Name of registered polling station. Null when not found.
+
+    ProblemDetail:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        title:
+          type: string
+          x-eel-data-class: C
+        status:
+          type: integer
+          x-eel-data-class: C
+        detail:
+          type: string
+          x-eel-data-class: C
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        trace_id:
+          type: string
+          x-eel-data-class: D
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    TooManyRequests:
+      description: Rate limit exceeded
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalError:
+      description: Internal server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'

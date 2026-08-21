@@ -1,0 +1,209 @@
+service: party-svc
+context: party
+entities:
+  - name: PartyRegistration
+    store: T2
+    event_sourced: false
+    columns:
+      - name: registration_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 registration identifier.
+        retention: Retain indefinitely
+      - name: party_name
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Full official party name.
+        retention: Retain indefinitely
+      - name: abbreviation
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Party abbreviation e.g. ODM, UDA, WIPER.
+        retention: Retain indefinitely
+      - name: leader_id_hash
+        type: text
+        data_class: B
+        pii: true
+        nullable: false
+        description: SHA-256 of party leader national ID. PII hashed at source.
+        retention: Retain indefinitely
+      - name: national_office_address
+        type: text
+        data_class: B
+        pii: true
+        nullable: false
+        description: Physical address of national party office. PII data class B.
+        retention: Retain indefinitely
+      - name: status
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Party status. One of pending, registered, suspended, dissolved.
+        retention: Retain indefinitely
+      - name: submitted_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Application submission timestamp.
+        retention: Retain indefinitely
+      - name: registered_at
+        type: timestamp
+        data_class: C
+        pii: false
+        nullable: true
+        description: Official registration timestamp. Null if not yet registered.
+        retention: Retain indefinitely
+
+  - name: Party
+    store: T2
+    event_sourced: false
+    columns:
+      - name: party_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 party identifier.
+        retention: Retain indefinitely
+      - name: registration_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: Foreign key to PartyRegistration.
+        retention: Retain indefinitely
+      - name: constitution_ref
+        type: text
+        data_class: C
+        pii: false
+        nullable: true
+        description: MinIO object reference to party constitution document.
+        retention: Retain indefinitely
+      - name: symbol_ref
+        type: text
+        data_class: C
+        pii: false
+        nullable: true
+        description: MinIO object reference to approved party symbol image.
+        retention: Retain indefinitely
+
+  - name: PrimaryElection
+    store: T2
+    event_sourced: false
+    columns:
+      - name: primary_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 primary election identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: party_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: Sponsoring party identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: position_code
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Position contested in primary.
+        retention: Delete at election cycle end + 7 years
+      - name: status
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Primary election status.
+        retention: Delete at election cycle end + 7 years
+      - name: held_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: true
+        description: Primary election date.
+        retention: Delete at election cycle end + 7 years
+
+  - name: PrimaryResults
+    store: T2
+    event_sourced: false
+    columns:
+      - name: result_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 result record identifier.
+        retention: Retain indefinitely
+      - name: primary_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: Foreign key to PrimaryElection.
+        retention: Retain indefinitely
+      - name: winner_candidate_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: true
+        description: Winning candidate identifier. Null if disputed.
+        retention: Retain indefinitely
+      - name: certified_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: true
+        description: Certification timestamp.
+        retention: Retain indefinitely
+
+  - name: SymbolRegistration
+    store: T2
+    event_sourced: false
+    columns:
+      - name: symbol_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 symbol registration identifier.
+        retention: Retain indefinitely
+      - name: party_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: Foreign key to Party.
+        retention: Retain indefinitely
+      - name: symbol_ref
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: MinIO object reference to symbol image file.
+        retention: Retain indefinitely
+      - name: status
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Symbol registration status. One of submitted, approved, rejected.
+        retention: Retain indefinitely
+      - name: approved_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: true
+        description: Approval timestamp.
+        retention: Retain indefinitely

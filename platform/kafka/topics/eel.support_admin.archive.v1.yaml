@@ -1,0 +1,17 @@
+# Topic: eel.support_admin.archive.v1
+name: eel.support_admin.archive.v1
+partitions: 12
+replication_factor: 3
+config:
+  min.insync.replicas: "2"
+  unclean.leader.election.enable: "false"
+  acks: "all"
+  retention.ms: "-1"
+  tiered.storage.enable: "true"
+  remote.storage.manager: "eel-minio-tiered-storage"
+retention_class: event-source
+owner: support-admin-svc
+description: Post-election archival collection sealing events. Infinite retention with tiered storage. Captures ballot paper, results form, and audit log archival milestones.
+event_types:
+  - eel.support_admin.collection_sealed.v1
+partition_key: eel_stream_id

@@ -1,0 +1,40 @@
+// Field Mobile authorization schema
+// Trust domain: eel.local
+
+definition eel_user {}
+definition eel_service {}
+
+definition eel_field_session {
+    relation poll_clerk: eel_user
+    relation presiding_officer: eel_user
+    relation coordinator: eel_user
+    relation mobile_service: eel_service
+
+    permission create = mobile_service
+    permission use = poll_clerk + presiding_officer
+    permission terminate = presiding_officer + coordinator + mobile_service
+    permission read = poll_clerk + presiding_officer + coordinator
+}
+
+definition eel_field_incident {
+    relation reporter: eel_user
+    relation dispatcher: eel_user
+    relation coordinator: eel_user
+    relation observer: eel_user
+
+    permission report = eel_user:*
+    permission read = reporter + dispatcher + coordinator + observer
+    permission dispatch_response = dispatcher + coordinator
+    permission resolve = coordinator
+    permission escalate = coordinator
+}
+
+definition eel_device_tamper_record {
+    relation tamper_detector: eel_service
+    relation forensics_investigator: eel_user
+    relation sre: eel_user
+
+    permission record = tamper_detector
+    permission read = forensics_investigator + sre
+    permission investigate = forensics_investigator
+}

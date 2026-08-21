@@ -1,0 +1,49 @@
+# Golden tests for governance authz schema
+# Run with: zed test packages/authz-schema/governance.zed packages/authz-schema/tests/governance_test.yaml
+tests:
+  - name: "rla_auditor can record count during RLA audit"
+    subject: "eel_user:user_rla_auditor"
+    resource: "eel_rla_audit:rla_001"
+    permission: "record_count"
+    expected: true
+    relationships:
+      - "eel_rla_audit:rla_001#rla_auditor@eel_user:user_rla_auditor"
+
+  - name: "party_agent can observe RLA audit"
+    subject: "eel_user:user_party_agent"
+    resource: "eel_rla_audit:rla_001"
+    permission: "observe"
+    expected: true
+    relationships:
+      - "eel_rla_audit:rla_001#party_agent@eel_user:user_party_agent"
+
+  - name: "rla_auditor cannot initiate RLA audit"
+    subject: "eel_user:user_rla_auditor"
+    resource: "eel_rla_audit:rla_001"
+    permission: "initiate"
+    expected: false
+    relationships:
+      - "eel_rla_audit:rla_001#rla_auditor@eel_user:user_rla_auditor"
+
+  - name: "any user can submit recall petition"
+    subject: "eel_user:user_diaspora_voter"
+    resource: "eel_recall_petition:rp_001"
+    permission: "submit"
+    expected: true
+    relationships: []
+
+  - name: "judge can adjudicate court petition"
+    subject: "eel_user:user_observer"
+    resource: "eel_court_petition:cp_001"
+    permission: "adjudicate"
+    expected: true
+    relationships:
+      - "eel_court_petition:cp_001#judge@eel_user:user_observer"
+
+  - name: "respondent cannot publish judgment"
+    subject: "eel_user:user_party_agent"
+    resource: "eel_court_petition:cp_001"
+    permission: "publish_judgment"
+    expected: false
+    relationships:
+      - "eel_court_petition:cp_001#respondent@eel_user:user_party_agent"

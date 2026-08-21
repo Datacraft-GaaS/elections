@@ -1,0 +1,29 @@
+// Gazette (official election gazette) authorization schema
+// Trust domain: eel.local
+
+definition eel_user {}
+definition eel_service {}
+
+definition eel_gazette_notice {
+    relation editor: eel_user
+    relation approver: eel_user
+    relation publisher_service: eel_service
+
+    permission draft = editor
+    permission approve = approver
+    permission publish = publisher_service + approver
+    permission read = eel_user:*
+    permission retract = approver
+}
+
+definition eel_official_result {
+    relation returning_officer: eel_user
+    relation approver: eel_user
+    relation observer: eel_user
+
+    permission declare = returning_officer
+    permission certify = approver
+    permission observe = observer
+    permission read = eel_user:*
+    permission gazette = approver
+}

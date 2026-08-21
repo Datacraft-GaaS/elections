@@ -1,0 +1,735 @@
+openapi: 3.1.0
+info:
+  title: eel-field-mobile-support
+  version: 1.0.0
+  description: >
+    Module M32 - Field Support. Technical support ticket management and
+    offline knowledge base for field officers experiencing kit failures,
+    network issues, or software problems. Mobile-origin calls require the
+    X-Eel-Attest header. Back-office ticket management endpoints are tier 3
+    (JWT + SpiceDB, no attestation required).
+  contact:
+    name: eel platform team
+    url: https://eel.local/support
+servers:
+  - url: https://api.eel.local
+    description: production
+  - url: https://staging.api.eel.local
+    description: staging
+
+tags:
+  - name: tickets
+    description: Field support ticket lifecycle
+  - name: knowledge-base
+    description: Offline-capable troubleshooting guide articles
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/mobile/support/tickets:
+    post:
+      tags: [tickets]
+      operationId: createSupportTicket
+      summary: Open a field support ticket (M32)
+      description: >
+        Submitted from the field officer's mobile app when experiencing a
+        kit or software issue. Requires X-Eel-Attest attestation token.
+        Idempotent on Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 400
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EelAttest'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupportTicketRequest'
+      responses:
+        '201':
+          description: Support ticket created
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportTicket'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags: [tickets]
+      operationId: listSupportTickets
+      summary: List support tickets (back-office, tier 3)
+      description: >
+        Paginated list of all support tickets. Requires JWT + SpiceDB. No
+        X-Eel-Attest required (back-office access only).
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageCursor'
+        - $ref: '#/components/parameters/PageLimit'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, triaged, in_progress, resolved]
+            x-eel-data-class: D
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [low, medium, high, critical]
+            x-eel-data-class: D
+        - name: issue_type
+          in: query
+          schema:
+            type: string
+            enum: [kit_failure, network, software, other]
+            x-eel-data-class: D
+        - name: station_code
+          in: query
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Paginated ticket list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportTicketPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/mobile/support/tickets/{ticket_id}:
+    get:
+      tags: [tickets]
+      operationId: getSupportTicket
+      summary: Get a support ticket by ID
+      description: >
+        Retrieve full ticket detail. Accessible to the originating field
+        officer (with X-Eel-Attest) and to back-office technicians (without).
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 400
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EelAttest'
+        - $ref: '#/components/parameters/TicketId'
+      responses:
+        '200':
+          description: Support ticket detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportTicket'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    patch:
+      tags: [tickets]
+      operationId: updateSupportTicket
+      summary: Update a support ticket (technician, back-office tier 3)
+      description: >
+        Allows a technician to update ticket status, add resolution notes, and
+        record the resolving officer hash. No X-Eel-Attest required (back-
+        office). Idempotent on Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TicketId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketUpdate'
+      responses:
+        '200':
+          description: Ticket updated
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportTicket'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/mobile/support/knowledge-base:
+    get:
+      tags: [knowledge-base]
+      operationId: listKnowledgeBaseArticles
+      summary: List troubleshooting guide articles
+      description: >
+        Returns a paginated list of knowledge base article summaries. Designed
+        for offline caching. Includes ETag / Last-Modified to support
+        conditional GET from mobile clients. Requires X-Eel-Attest.
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 400
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EelAttest'
+        - $ref: '#/components/parameters/PageCursor'
+        - $ref: '#/components/parameters/PageLimit'
+        - name: category
+          in: query
+          description: Filter articles by category
+          schema:
+            type: string
+            enum: [kit_failure, network, software, election_procedure, other]
+            x-eel-data-class: D
+        - name: lang
+          in: query
+          description: ISO 639-1 language code for article content (default en)
+          schema:
+            type: string
+            maxLength: 5
+            default: en
+            x-eel-data-class: D
+      responses:
+        '200':
+          description: Paginated article list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticlePage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/mobile/support/knowledge-base/{article_id}:
+    get:
+      tags: [knowledge-base]
+      operationId: getKnowledgeBaseArticle
+      summary: Get a knowledge base article by ID
+      description: >
+        Returns the full article content including step-by-step instructions
+        and related article references. Supports conditional GET (ETag).
+        Requires X-Eel-Attest.
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 400
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EelAttest'
+        - $ref: '#/components/parameters/ArticleId'
+        - name: lang
+          in: query
+          schema:
+            type: string
+            maxLength: 5
+            default: en
+            x-eel-data-class: D
+      responses:
+        '200':
+          description: Article detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+        '304':
+          description: Not modified (conditional GET hit)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by eel.local identity provider (SpiceDB-checked on every request)
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS for service-to-service calls within eel.local trust domain
+
+  parameters:
+    EelAttest:
+      name: X-Eel-Attest
+      in: header
+      required: true
+      description: >
+        Google Play Integrity verdict token (Android) or Apple App Attest
+        assertion (iOS) per ADR-0021. Required on all mobile-origin calls.
+      schema:
+        type: string
+        minLength: 32
+        x-eel-data-class: E
+
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Client-generated UUIDv7 for idempotent request deduplication (TTL 24 h)
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: E
+
+    TicketId:
+      name: ticket_id
+      in: path
+      required: true
+      description: UUIDv7 support ticket identifier
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+
+    ArticleId:
+      name: article_id
+      in: path
+      required: true
+      description: Stable slug or UUIDv7 identifier of the knowledge base article
+      schema:
+        type: string
+        maxLength: 128
+        x-eel-data-class: D
+
+    PageCursor:
+      name: cursor
+      in: query
+      description: Opaque pagination cursor from a previous response
+      schema:
+        type: string
+        x-eel-data-class: E
+
+    PageLimit:
+      name: limit
+      in: query
+      description: Maximum items to return (1-100)
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+        x-eel-data-class: E
+
+  headers:
+    CosignSig:
+      description: Sigstore cosign signature over the response body
+      schema:
+        type: string
+        x-eel-data-class: C
+    MerkleProof:
+      description: Merkle proof anchoring this response to the audit ledger
+      schema:
+        type: string
+        x-eel-data-class: C
+    SnapshotId:
+      description: Snapshot identifier for response reproducibility
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+
+  schemas:
+    DeviceInfo:
+      type: object
+      description: Non-identifying device diagnostic info
+      properties:
+        model:
+          type: string
+          maxLength: 128
+          description: Device model string (manufacturer + model, no serial)
+          x-eel-data-class: D
+        os_version:
+          type: string
+          maxLength: 64
+          x-eel-data-class: D
+        battery_pct:
+          type: integer
+          minimum: 0
+          maximum: 100
+          x-eel-data-class: D
+        storage_free_mb:
+          type: integer
+          minimum: 0
+          x-eel-data-class: D
+        network_type:
+          type: string
+          enum: [wifi, cellular_4g, cellular_3g, cellular_2g, offline]
+          x-eel-data-class: D
+
+    SupportTicketRequest:
+      type: object
+      required: [station_code, issue_type, description, severity]
+      properties:
+        station_code:
+          type: string
+          maxLength: 32
+          x-eel-data-class: C
+        kit_id_hash:
+          type: string
+          description: SHA-256 hash of the affected kit hardware identifier
+          pattern: '^[0-9a-f]{64}$'
+          nullable: true
+          x-eel-data-class: D
+        issue_type:
+          type: string
+          enum: [kit_failure, network, software, other]
+          x-eel-data-class: D
+        description:
+          type: string
+          maxLength: 4096
+          x-eel-data-class: D
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+          x-eel-data-class: D
+        device_info:
+          $ref: '#/components/schemas/DeviceInfo'
+        knowledge_base_article_tried:
+          type: string
+          maxLength: 128
+          description: Article ID the officer already consulted before raising this ticket
+          nullable: true
+          x-eel-data-class: D
+
+    SupportTicket:
+      type: object
+      required:
+        - ticket_id
+        - station_code
+        - issue_type
+        - severity
+        - status
+        - created_at
+      properties:
+        ticket_id:
+          type: string
+          format: uuid
+          description: UUIDv7 ticket identifier
+          x-eel-data-class: C
+        station_code:
+          type: string
+          x-eel-data-class: C
+        kit_id_hash:
+          type: string
+          nullable: true
+          x-eel-data-class: D
+        issue_type:
+          type: string
+          enum: [kit_failure, network, software, other]
+          x-eel-data-class: D
+        description:
+          type: string
+          x-eel-data-class: D
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+          x-eel-data-class: D
+        status:
+          type: string
+          enum: [open, triaged, in_progress, resolved]
+          x-eel-data-class: D
+        resolution_notes:
+          type: string
+          nullable: true
+          x-eel-data-class: D
+        resolved_by_hash:
+          type: string
+          nullable: true
+          description: SHA-256 hash of the resolving technician identifier
+          x-eel-data-class: B
+        device_info:
+          $ref: '#/components/schemas/DeviceInfo'
+        created_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        updated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+          x-eel-data-class: D
+
+    SupportTicketPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupportTicket'
+          x-eel-data-class: D
+        next_cursor:
+          type: string
+          nullable: true
+          x-eel-data-class: E
+        total_count:
+          type: integer
+          x-eel-data-class: D
+
+    TicketUpdate:
+      type: object
+      minProperties: 1
+      properties:
+        status:
+          type: string
+          enum: [triaged, in_progress, resolved]
+          x-eel-data-class: D
+        resolution_notes:
+          type: string
+          maxLength: 4096
+          x-eel-data-class: D
+        resolved_by_hash:
+          type: string
+          description: SHA-256 hash of the resolving technician identifier
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: B
+
+    ArticleSummary:
+      type: object
+      required: [article_id, title, category, version, updated_at]
+      properties:
+        article_id:
+          type: string
+          description: Stable slug or UUIDv7 identifier
+          x-eel-data-class: D
+        title:
+          type: string
+          maxLength: 256
+          x-eel-data-class: D
+        category:
+          type: string
+          enum: [kit_failure, network, software, election_procedure, other]
+          x-eel-data-class: D
+        summary:
+          type: string
+          maxLength: 512
+          description: One-paragraph synopsis for list views
+          x-eel-data-class: D
+        version:
+          type: integer
+          description: Article revision number (monotonically increasing)
+          x-eel-data-class: D
+        updated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    ArticlePage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArticleSummary'
+          x-eel-data-class: D
+        next_cursor:
+          type: string
+          nullable: true
+          x-eel-data-class: E
+
+    ArticleStep:
+      type: object
+      required: [step_number, instruction]
+      properties:
+        step_number:
+          type: integer
+          minimum: 1
+          x-eel-data-class: D
+        instruction:
+          type: string
+          maxLength: 2048
+          x-eel-data-class: D
+        image_ref:
+          type: string
+          description: MinIO object key for an optional step illustration
+          nullable: true
+          x-eel-data-class: D
+
+    Article:
+      type: object
+      required:
+        - article_id
+        - title
+        - category
+        - body
+        - steps
+        - version
+        - updated_at
+      properties:
+        article_id:
+          type: string
+          x-eel-data-class: D
+        title:
+          type: string
+          x-eel-data-class: D
+        category:
+          type: string
+          enum: [kit_failure, network, software, election_procedure, other]
+          x-eel-data-class: D
+        body:
+          type: string
+          description: Full article body in plain text (Markdown-safe subset)
+          x-eel-data-class: D
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArticleStep'
+          x-eel-data-class: D
+        related_article_ids:
+          type: array
+          items:
+            type: string
+          x-eel-data-class: D
+        version:
+          type: integer
+          x-eel-data-class: D
+        updated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    ProblemDetail:
+      type: object
+      description: RFC 9457 problem detail
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: E
+        title:
+          type: string
+          x-eel-data-class: E
+        status:
+          type: integer
+          x-eel-data-class: E
+        detail:
+          type: string
+          x-eel-data-class: E
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: E
+        trace_id:
+          type: string
+          x-eel-data-class: E
+
+  responses:
+    BadRequest:
+      description: Request body or parameters failed validation
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Missing or invalid JWT or attestation token
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: SpiceDB authorization denied
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Idempotency-Key collision or state conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Semantic validation error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'

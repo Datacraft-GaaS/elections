@@ -1,0 +1,1049 @@
+openapi: "3.1.0"
+
+info:
+  title: "Eel Ballot Serial - Ballot Serial Number Management"
+  version: "1.0.0"
+  description: |
+    Ballot serial number lifecycle management API.
+    Module: M63 ballot-serial-management.
+
+    Covers ballot pack assignment to polling stations, receipt
+    confirmation, spoilt ballot recording, reconciliation reporting,
+    and discrepancy resolution.
+
+    Trust domain: eel.local. Auth via JWT + SpiceDB RBAC throughout.
+
+servers:
+  - url: "https://api.eel.local"
+    description: "External API gateway"
+  - url: "https://ballot-serial.eel.local"
+    description: "Ballot serial internal service"
+
+security:
+  - BearerJWT: []
+
+tags:
+  - name: assignments
+    description: "Ballot pack assignment to polling stations"
+  - name: receipts
+    description: "Ballot receipt confirmation at polling stations"
+  - name: spoilt
+    description: "Spoilt ballot recording"
+  - name: reconciliation
+    description: "Ballot reconciliation reports and discrepancy resolution"
+
+paths:
+  /api/v1/ballot-serial/assignments:
+    get:
+      operationId: listBallotAssignments
+      summary: "List ballot assignments (audit view)"
+      description: |
+        Returns all ballot pack assignments. Tier 4 audit-level endpoint
+        requiring elevated SpiceDB role. Supports filtering by election_id
+        and station_code via query parameters.
+      tags: [assignments]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 4
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      parameters:
+        - name: election_id
+          in: query
+          required: false
+          description: "Filter by election UUIDv7"
+          schema:
+            $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+        - name: station_code
+          in: query
+          required: false
+          description: "Filter by polling station code"
+          schema:
+            type: string
+            x-eel-data-class: C
+        - name: page
+          in: query
+          required: false
+          description: "Page number (1-based)"
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            x-eel-data-class: D
+        - name: page_size
+          in: query
+          required: false
+          description: "Records per page (max 200)"
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+            x-eel-data-class: D
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: "List of ballot assignments"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BallotAssignmentList"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden - requires audit-level SpiceDB role"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+    post:
+      operationId: createBallotAssignment
+      summary: "Assign a serial range of ballot papers to a polling station"
+      description: |
+        Records the assignment of a contiguous serial number range to a
+        polling station for a given election and position. Triggers
+        custody chain event. Idempotent via Idempotency-Key.
+      tags: [assignments]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BallotAssignmentRequest"
+      responses:
+        "201":
+          description: "Ballot assignment created"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BallotAssignment"
+        "400":
+          description: "Invalid request - overlapping serial range or bad payload"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse or serial range conflict"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "422":
+          description: "Validation error"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/ballot-serial/receipts:
+    post:
+      operationId: createBallotReceipt
+      summary: "Record receipt of ballot papers at a polling station"
+      description: |
+        Confirms that the presiding officer at a polling station has
+        physically received the assigned ballot papers. Records any
+        discrepancy between assigned and received counts. Idempotent
+        via Idempotency-Key.
+      tags: [receipts]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BallotReceiptRequest"
+      responses:
+        "201":
+          description: "Ballot receipt recorded"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BallotReceipt"
+        "400":
+          description: "Invalid request payload"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Assignment not found for station/election combination"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse or receipt already recorded"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "422":
+          description: "Validation error"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/ballot-serial/spoilt:
+    post:
+      operationId: recordSpoiltBallot
+      summary: "Record a spoilt ballot paper"
+      description: |
+        Records a single spoilt ballot paper with its serial number and
+        reason. Serial number and officer identity are sensitive (data
+        class B). Each spoilt ballot must have a unique serial number.
+        Idempotent via Idempotency-Key.
+      tags: [spoilt]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpoiltBallotRequest"
+      responses:
+        "201":
+          description: "Spoilt ballot recorded"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpoiltBallot"
+        "400":
+          description: "Invalid request payload"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Serial number not found in assignment records"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse or serial already recorded as spoilt"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "422":
+          description: "Validation error"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/ballot-serial/reconcile:
+    post:
+      operationId: submitReconcileReport
+      summary: "Submit a ballot reconciliation report for a polling station"
+      description: |
+        Submits end-of-poll ballot reconciliation figures for a station.
+        System validates that assigned = issued + spoilt + returned +
+        discrepancy. Idempotent via Idempotency-Key.
+      tags: [reconciliation]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReconcileReportRequest"
+      responses:
+        "201":
+          description: "Reconciliation report submitted"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReconcileReport"
+        "400":
+          description: "Reconciliation figures do not balance"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Assignment or receipt not found for station"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse or reconciliation already submitted"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "422":
+          description: "Validation error"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/ballot-serial/reconcile/{station_id}:
+    get:
+      operationId: getReconcileReport
+      summary: "Retrieve the reconciliation report for a polling station"
+      description: |
+        Returns the current reconciliation report for the specified
+        polling station. Returns the most recent report if multiple
+        election contexts exist; use query parameter election_id to
+        target a specific election.
+      tags: [reconciliation]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      parameters:
+        - $ref: "#/components/parameters/StationIdPath"
+        - name: election_id
+          in: query
+          required: false
+          description: "Filter by election UUIDv7"
+          schema:
+            $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: "Reconciliation report"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReconcileReport"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Station or reconciliation report not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/ballot-serial/reconcile/{id}/resolve:
+    put:
+      operationId: resolveReconcileDiscrepancy
+      summary: "Resolve a reconciliation discrepancy"
+      description: |
+        Marks a reconciliation discrepancy as resolved with an explanation
+        and supporting officer authorisation. Transitions reconcile status
+        from DISCREPANCY to RESOLVED. Idempotent via Idempotency-Key.
+      tags: [reconciliation]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      parameters:
+        - $ref: "#/components/parameters/ReconcileIdPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReconcileResolveRequest"
+      responses:
+        "200":
+          description: "Discrepancy resolved"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReconcileReport"
+        "400":
+          description: "Report not in DISCREPANCY state or invalid payload"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Reconciliation report not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "422":
+          description: "Validation error"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+components:
+  parameters:
+    StationIdPath:
+      name: station_id
+      in: path
+      required: true
+      description: "Polling station code"
+      schema:
+        type: string
+        x-eel-data-class: C
+
+    ReconcileIdPath:
+      name: id
+      in: path
+      required: true
+      description: "Reconciliation report UUIDv7 identifier"
+      schema:
+        $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: "Client-generated UUID for exactly-once semantics"
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+
+    XRequestId:
+      name: X-Request-Id
+      in: header
+      required: false
+      description: "Client-provided request tracing UUID"
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+
+  securitySchemes:
+    BearerJWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "JWT issued by eel.local Keycloak realm, verified via JWKS at https://auth.eel.local/realms/eel/protocol/openid-connect/certs"
+
+    SVIDmTLS:
+      type: mutualTLS
+      description: "SPIFFE SVID mutual TLS. Certificate must have SPIFFE URI SAN matching spiffe://eel.local/ns/*/sa/*"
+
+  schemas:
+    BallotAssignment:
+      type: object
+      description: "A ballot paper pack assignment to a polling station."
+      required:
+        - assignment_id
+        - station_code
+        - election_id
+        - serial_range_start
+        - serial_range_end
+        - ballot_count
+        - position_code
+        - assigned_at
+        - officer_id
+      properties:
+        assignment_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Unique assignment identifier (UUIDv7)."
+          x-eel-data-class: C
+        station_code:
+          type: string
+          description: "Polling station code receiving the ballots."
+          x-eel-data-class: C
+          example: "PS-047-002"
+        election_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Election these ballots are assigned for."
+          x-eel-data-class: C
+        serial_range_start:
+          type: integer
+          minimum: 1
+          description: "First serial number in the assigned range (inclusive)."
+          x-eel-data-class: C
+          example: 100001
+        serial_range_end:
+          type: integer
+          minimum: 1
+          description: "Last serial number in the assigned range (inclusive)."
+          x-eel-data-class: C
+          example: 100800
+        ballot_count:
+          type: integer
+          minimum: 1
+          description: "Total ballot papers in the assignment (serial_range_end - serial_range_start + 1)."
+          x-eel-data-class: C
+          example: 800
+        position_code:
+          type: string
+          description: "Electoral position these ballots are for."
+          x-eel-data-class: C
+          example: "MP-290"
+        assigned_at:
+          type: string
+          format: date-time
+          description: "ISO 8601 timestamp when assignment was created."
+          x-eel-data-class: D
+          example: "2027-08-08T07:00:00Z"
+        officer_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Officer who created the assignment."
+          x-eel-data-class: C
+
+    BallotAssignmentRequest:
+      type: object
+      description: "Request body to assign a serial range to a polling station."
+      required:
+        - station_code
+        - election_id
+        - serial_range_start
+        - serial_range_end
+        - position_code
+        - officer_id
+      properties:
+        station_code:
+          type: string
+          description: "Polling station code."
+          x-eel-data-class: C
+          example: "PS-047-002"
+        election_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Election identifier."
+          x-eel-data-class: C
+        serial_range_start:
+          type: integer
+          minimum: 1
+          description: "First serial number (inclusive)."
+          x-eel-data-class: C
+          example: 100001
+        serial_range_end:
+          type: integer
+          minimum: 1
+          description: "Last serial number (inclusive). Must be >= serial_range_start."
+          x-eel-data-class: C
+          example: 100800
+        position_code:
+          type: string
+          description: "Electoral position these ballots cover."
+          x-eel-data-class: C
+          example: "MP-290"
+        officer_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Assigning officer."
+          x-eel-data-class: C
+
+    BallotAssignmentList:
+      type: object
+      description: "Paginated list of ballot assignments."
+      required:
+        - items
+        - total
+        - page
+        - page_size
+      properties:
+        items:
+          type: array
+          x-eel-data-class: C
+          items:
+            $ref: "#/components/schemas/BallotAssignment"
+        total:
+          type: integer
+          minimum: 0
+          description: "Total number of matching assignments."
+          x-eel-data-class: C
+          example: 142
+        page:
+          type: integer
+          minimum: 1
+          description: "Current page number."
+          x-eel-data-class: D
+          example: 1
+        page_size:
+          type: integer
+          minimum: 1
+          description: "Records per page."
+          x-eel-data-class: D
+          example: 50
+
+    BallotReceipt:
+      type: object
+      description: "Confirmation that a polling station received its ballot papers."
+      required:
+        - receipt_id
+        - station_code
+        - election_id
+        - serials_received
+        - received_count
+        - received_at
+        - officer_id
+      properties:
+        receipt_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Unique receipt identifier (UUIDv7)."
+          x-eel-data-class: C
+        station_code:
+          type: string
+          description: "Polling station that received the ballots."
+          x-eel-data-class: C
+          example: "PS-047-002"
+        election_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Election the receipt applies to."
+          x-eel-data-class: C
+        serials_received:
+          type: array
+          description: "List of actual serial numbers physically received."
+          x-eel-data-class: C
+          items:
+            type: integer
+            minimum: 1
+          example: [100001, 100002, 100003]
+        received_count:
+          type: integer
+          minimum: 0
+          description: "Count of ballot papers physically received."
+          x-eel-data-class: C
+          example: 798
+        discrepancy_count:
+          type: integer
+          description: "Difference between assigned and received counts (signed). Negative means shortage."
+          x-eel-data-class: D
+          example: -2
+        received_at:
+          type: string
+          format: date-time
+          description: "ISO 8601 timestamp of physical receipt."
+          x-eel-data-class: D
+          example: "2027-08-09T05:45:00Z"
+        officer_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Presiding officer confirming receipt."
+          x-eel-data-class: C
+
+    BallotReceiptRequest:
+      type: object
+      description: "Request body to confirm ballot receipt at a polling station."
+      required:
+        - station_code
+        - election_id
+        - serials_received
+        - received_count
+        - officer_id
+      properties:
+        station_code:
+          type: string
+          description: "Polling station code."
+          x-eel-data-class: C
+          example: "PS-047-002"
+        election_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Election identifier."
+          x-eel-data-class: C
+        serials_received:
+          type: array
+          description: "Serial numbers physically received."
+          x-eel-data-class: C
+          minItems: 1
+          items:
+            type: integer
+            minimum: 1
+          example: [100001, 100002, 100003]
+        received_count:
+          type: integer
+          minimum: 0
+          description: "Count of ballot papers physically received."
+          x-eel-data-class: C
+          example: 798
+        officer_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Presiding officer."
+          x-eel-data-class: C
+
+    SpoiltBallot:
+      type: object
+      description: "A spoilt ballot paper record. Serial number and officer are sensitive."
+      required:
+        - spoilt_id
+        - station_code
+        - serial_number
+        - reason
+        - spoilt_at
+        - officer_id
+      properties:
+        spoilt_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Unique spoilt ballot identifier (UUIDv7)."
+          x-eel-data-class: C
+        station_code:
+          type: string
+          description: "Polling station where the ballot was spoilt."
+          x-eel-data-class: C
+          example: "PS-047-002"
+        serial_number:
+          type: integer
+          minimum: 1
+          description: "Serial number of the spoilt ballot paper. Data class B - sensitive."
+          x-eel-data-class: B
+          example: 100247
+        reason:
+          type: string
+          description: "Reason the ballot was spoilt. Data class B - sensitive."
+          x-eel-data-class: B
+          example: "Voter marked more than one candidate."
+        spoilt_at:
+          type: string
+          format: date-time
+          description: "ISO 8601 timestamp when the ballot was spoilt."
+          x-eel-data-class: D
+          example: "2027-08-09T11:22:00Z"
+        officer_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Officer recording the spoilt ballot. Data class B - sensitive."
+          x-eel-data-class: B
+
+    SpoiltBallotRequest:
+      type: object
+      description: "Request body to record a spoilt ballot paper."
+      required:
+        - station_code
+        - serial_number
+        - reason
+        - officer_id
+      properties:
+        station_code:
+          type: string
+          description: "Polling station code."
+          x-eel-data-class: C
+          example: "PS-047-002"
+        serial_number:
+          type: integer
+          minimum: 1
+          description: "Serial number of the spoilt ballot. Sensitive."
+          x-eel-data-class: B
+          example: 100247
+        reason:
+          type: string
+          description: "Reason for spoiling. Sensitive."
+          x-eel-data-class: B
+          example: "Voter marked more than one candidate."
+        officer_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Recording officer. Sensitive."
+          x-eel-data-class: B
+
+    ReconcileReport:
+      type: object
+      description: "End-of-poll ballot reconciliation report for a polling station."
+      required:
+        - reconcile_id
+        - station_code
+        - election_id
+        - assigned_count
+        - received_count
+        - issued_count
+        - spoilt_count
+        - returned_count
+        - discrepancy
+        - status
+      properties:
+        reconcile_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Unique reconciliation report identifier (UUIDv7)."
+          x-eel-data-class: C
+        station_code:
+          type: string
+          description: "Polling station this report covers."
+          x-eel-data-class: C
+          example: "PS-047-002"
+        election_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Election this reconciliation covers."
+          x-eel-data-class: C
+        assigned_count:
+          type: integer
+          minimum: 0
+          description: "Total ballot papers assigned to the station."
+          x-eel-data-class: C
+          example: 800
+        received_count:
+          type: integer
+          minimum: 0
+          description: "Total ballot papers confirmed received by station."
+          x-eel-data-class: C
+          example: 798
+        issued_count:
+          type: integer
+          minimum: 0
+          description: "Ballot papers issued to voters (counter foil count)."
+          x-eel-data-class: C
+          example: 610
+        spoilt_count:
+          type: integer
+          minimum: 0
+          description: "Ballot papers recorded as spoilt."
+          x-eel-data-class: C
+          example: 12
+        returned_count:
+          type: integer
+          minimum: 0
+          description: "Unused ballot papers returned to the returning officer."
+          x-eel-data-class: C
+          example: 176
+        discrepancy:
+          type: integer
+          description: "Net unaccounted ballots (received - issued - spoilt - returned). Zero is balanced."
+          x-eel-data-class: C
+          example: 0
+        status:
+          type: string
+          description: "Reconciliation status."
+          x-eel-data-class: C
+          enum:
+            - PENDING
+            - BALANCED
+            - DISCREPANCY
+            - RESOLVED
+          example: "BALANCED"
+        resolution_note:
+          type: string
+          description: "Explanation of how a discrepancy was resolved. Present only when status is RESOLVED."
+          x-eel-data-class: C
+          example: "Two ballots confirmed destroyed due to water damage. Affidavit AFFIDAVIT-20270809-007 on file."
+
+    ReconcileReportRequest:
+      type: object
+      description: "Request body to submit an end-of-poll reconciliation report."
+      required:
+        - station_code
+        - election_id
+        - issued_count
+        - spoilt_count
+        - returned_count
+      properties:
+        station_code:
+          type: string
+          description: "Polling station code."
+          x-eel-data-class: C
+          example: "PS-047-002"
+        election_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Election identifier."
+          x-eel-data-class: C
+        issued_count:
+          type: integer
+          minimum: 0
+          description: "Ballot papers issued to voters."
+          x-eel-data-class: C
+          example: 610
+        spoilt_count:
+          type: integer
+          minimum: 0
+          description: "Spoilt ballot papers."
+          x-eel-data-class: C
+          example: 12
+        returned_count:
+          type: integer
+          minimum: 0
+          description: "Unused ballots returned."
+          x-eel-data-class: C
+          example: 176
+
+    ReconcileResolveRequest:
+      type: object
+      description: "Request body to resolve a reconciliation discrepancy."
+      required:
+        - resolution_note
+        - resolving_officer_id
+        - supporting_refs
+      properties:
+        resolution_note:
+          type: string
+          description: "Explanation of the discrepancy resolution."
+          x-eel-data-class: C
+          example: "Two ballots confirmed destroyed due to water damage."
+        resolving_officer_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Officer authorising the resolution."
+          x-eel-data-class: C
+        supporting_refs:
+          type: array
+          description: "Supporting document references (affidavits, incident reports)."
+          x-eel-data-class: C
+          minItems: 1
+          items:
+            type: string
+          example: ["AFFIDAVIT-20270809-007"]

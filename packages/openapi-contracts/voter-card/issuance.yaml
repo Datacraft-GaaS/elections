@@ -1,0 +1,398 @@
+openapi: 3.1.0
+info:
+  title: eel-voter-card
+  version: 1.0.0
+  description: Module M53 - Voter ID Card Issuance. Manages first-issue, replacement, and correction requests for voter ID cards, collection confirmation, and collection centre listings.
+  contact:
+    name: EEL Platform Team
+    email: platform@eel.local
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+tags:
+  - name: requests
+    description: Voter card request lifecycle
+  - name: collection
+    description: Collection confirmation and centres
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/voter-card/requests:
+    post:
+      tags: [requests]
+      operationId: requestVoterCard
+      summary: Request voter ID card
+      description: Submits a voter ID card request (first issue, replacement, or correction). Idempotent on Idempotency-Key. Requires JWT.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoterCardRequestCreate'
+      responses:
+        '201':
+          description: Voter card request submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoterCardRequest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/voter-card/requests/{request_id}:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+
+    get:
+      tags: [requests]
+      operationId: getVoterCardRequest
+      summary: Get voter card request status
+      description: Returns request status and collection details. Requires JWT.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Voter card request detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoterCardRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/voter-card/requests/{request_id}/collection-confirmation:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+
+    post:
+      tags: [collection]
+      operationId: confirmVoterCardCollection
+      summary: Confirm voter card collection
+      description: Records that a voter has collected their card. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionConfirmation'
+      responses:
+        '201':
+          description: Collection confirmed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoterCardRequest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/voter-card/collection-centres:
+    get:
+      tags: [collection]
+      operationId: listCollectionCentres
+      summary: List voter card collection centres
+      description: Returns all active collection centres. Public, tier 1, with Merkle proofs.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      security: []
+      parameters:
+        - name: county_code
+          in: query
+          schema:
+            type: string
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Collection centres list
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionCentreList'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by auth.eel.local (Keycloak). Trust domain eel.local.
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS client certificate for machine-to-machine calls.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+      description: UUIDv7 client-generated idempotency key.
+
+    RequestId:
+      name: request_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+
+  headers:
+    CosignSig:
+      description: Cosign detached signature over the response body (base64url).
+      schema:
+        type: string
+        x-eel-data-class: C
+    MerkleProof:
+      description: Merkle inclusion proof in the audit log tree.
+      schema:
+        type: string
+        x-eel-data-class: C
+    SnapshotId:
+      description: Snapshot identifier from which this response was served.
+      schema:
+        type: string
+        x-eel-data-class: C
+
+  schemas:
+    VoterCardRequestCreate:
+      type: object
+      required:
+        - voter_id_hash
+        - request_type
+        - reason
+        - preferred_collection_centre
+      properties:
+        voter_id_hash:
+          type: string
+          x-eel-data-class: A
+          description: SHA-256(salt||voter_id). Stored in class A vault.
+        request_type:
+          type: string
+          enum: [first_issue, replacement, correction]
+          x-eel-data-class: C
+        reason:
+          type: string
+          maxLength: 1000
+          x-eel-data-class: C
+        preferred_collection_centre:
+          type: string
+          x-eel-data-class: C
+          description: Collection centre code.
+
+    VoterCardRequest:
+      allOf:
+        - $ref: '#/components/schemas/VoterCardRequestCreate'
+        - type: object
+          required: [request_id, status, submitted_at]
+          properties:
+            request_id:
+              type: string
+              format: uuid
+              x-eel-data-class: C
+            status:
+              type: string
+              enum: [submitted, printing, ready, collected, cancelled]
+              x-eel-data-class: C
+            submitted_at:
+              type: string
+              format: date-time
+              x-eel-data-class: C
+            ready_at:
+              type: string
+              format: date-time
+              nullable: true
+              x-eel-data-class: C
+            collected_at:
+              type: string
+              format: date-time
+              nullable: true
+              x-eel-data-class: C
+            updated_at:
+              type: string
+              format: date-time
+              x-eel-data-class: D
+
+    CollectionConfirmation:
+      type: object
+      required: [collected_at, collection_centre_code, officer_hash]
+      properties:
+        collected_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        collection_centre_code:
+          type: string
+          x-eel-data-class: C
+        officer_hash:
+          type: string
+          x-eel-data-class: B
+          description: SHA-256(salt||officer_id).
+
+    CollectionCentre:
+      type: object
+      required: [centre_code, name, county_code, address, open]
+      properties:
+        centre_code:
+          type: string
+          x-eel-data-class: C
+        name:
+          type: string
+          x-eel-data-class: C
+        county_code:
+          type: string
+          x-eel-data-class: C
+        address:
+          type: string
+          x-eel-data-class: C
+        operating_hours:
+          type: string
+          x-eel-data-class: C
+        open:
+          type: boolean
+          x-eel-data-class: C
+
+    CollectionCentreList:
+      type: object
+      required: [centres, total]
+      properties:
+        centres:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollectionCentre'
+          x-eel-data-class: C
+        total:
+          type: integer
+          x-eel-data-class: C
+
+    ProblemDetail:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        title:
+          type: string
+          x-eel-data-class: C
+        status:
+          type: integer
+          x-eel-data-class: C
+        detail:
+          type: string
+          x-eel-data-class: C
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        trace_id:
+          type: string
+          x-eel-data-class: D
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Validation error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalError:
+      description: Internal server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'

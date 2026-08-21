@@ -1,0 +1,49 @@
+# Golden tests for queue authz schema
+# Run with: zed test packages/authz-schema/queue.zed packages/authz-schema/tests/queue_test.yaml
+tests:
+  - name: "poll_clerk can record queue observation"
+    subject: "eel_user:user_poll_clerk"
+    resource: "eel_queue_station:qs_001"
+    permission: "record_observation"
+    expected: true
+    relationships:
+      - "eel_queue_station:qs_001#poll_clerk@eel_user:user_poll_clerk"
+
+  - name: "any user can read aggregate queue data"
+    subject: "eel_user:user_journalist"
+    resource: "eel_queue_station:qs_001"
+    permission: "read_aggregate"
+    expected: true
+    relationships: []
+
+  - name: "observer can read live queue data"
+    subject: "eel_user:user_observer"
+    resource: "eel_queue_station:qs_001"
+    permission: "read_live"
+    expected: true
+    relationships:
+      - "eel_queue_station:qs_001#observer@eel_user:user_observer"
+
+  - name: "poll_clerk cannot manage queue station"
+    subject: "eel_user:user_poll_clerk"
+    resource: "eel_queue_station:qs_001"
+    permission: "manage"
+    expected: false
+    relationships:
+      - "eel_queue_station:qs_001#poll_clerk@eel_user:user_poll_clerk"
+
+  - name: "coordinator can manage queue station"
+    subject: "eel_user:user_county_coord"
+    resource: "eel_queue_station:qs_001"
+    permission: "manage"
+    expected: true
+    relationships:
+      - "eel_queue_station:qs_001#coordinator@eel_user:user_county_coord"
+
+  - name: "coordinator can configure queue dashboard"
+    subject: "eel_user:user_county_coord"
+    resource: "eel_queue_dashboard:qd_001"
+    permission: "configure"
+    expected: true
+    relationships:
+      - "eel_queue_dashboard:qd_001#coordinator@eel_user:user_county_coord"

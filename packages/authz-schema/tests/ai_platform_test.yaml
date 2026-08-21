@@ -1,0 +1,50 @@
+# Golden tests for ai_platform authz schema
+# Run with: zed test packages/authz-schema/ai_platform.zed packages/authz-schema/tests/ai_platform_test.yaml
+tests:
+  - name: "model_admin can deploy AI model"
+    subject: "eel_user:user_sre"
+    resource: "eel_ai_model:model_001"
+    permission: "deploy"
+    expected: true
+    relationships:
+      - "eel_ai_model:model_001#model_admin@eel_user:user_sre"
+
+  - name: "analyst can run inference"
+    subject: "eel_user:user_analyst"
+    resource: "eel_ai_model:model_001"
+    permission: "run_inference"
+    expected: true
+    relationships:
+      - "eel_ai_model:model_001#analyst@eel_user:user_analyst"
+
+  - name: "analyst cannot deploy AI model"
+    subject: "eel_user:user_analyst"
+    resource: "eel_ai_model:model_001"
+    permission: "deploy"
+    expected: false
+    relationships:
+      - "eel_ai_model:model_001#analyst@eel_user:user_analyst"
+
+  - name: "adjudicator can adjudicate anomaly alert"
+    subject: "eel_user:user_caseworker"
+    resource: "eel_anomaly_alert:aa_001"
+    permission: "adjudicate"
+    expected: true
+    relationships:
+      - "eel_anomaly_alert:aa_001#adjudicator@eel_user:user_caseworker"
+
+  - name: "forensics_investigator can read anomaly alert"
+    subject: "eel_user:user_forensics_investigator"
+    resource: "eel_anomaly_alert:aa_001"
+    permission: "read"
+    expected: true
+    relationships:
+      - "eel_anomaly_alert:aa_001#forensics_investigator@eel_user:user_forensics_investigator"
+
+  - name: "sre can execute red team campaign"
+    subject: "eel_user:user_sre"
+    resource: "eel_red_team_campaign:rt_001"
+    permission: "execute"
+    expected: true
+    relationships:
+      - "eel_red_team_campaign:rt_001#sre@eel_user:user_sre"

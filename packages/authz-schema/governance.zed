@@ -1,0 +1,58 @@
+// Governance authorization schema
+// Trust domain: eel.local
+// Covers RLA audits, recall petitions, court petitions, and post-election review
+
+definition eel_user {}
+definition eel_service {}
+
+definition eel_rla_audit {
+    relation rla_auditor: eel_user
+    relation coordinator: eel_user
+    relation observer: eel_user
+    relation party_agent: eel_user
+    relation audit_service: eel_service
+
+    permission initiate = coordinator
+    permission sample = rla_auditor + audit_service
+    permission record_count = rla_auditor
+    permission observe = observer + party_agent
+    permission read = rla_auditor + coordinator + observer + party_agent
+    permission complete = coordinator
+    permission publish_result = coordinator
+}
+
+definition eel_recall_petition {
+    relation petitioner: eel_user
+    relation verifier: eel_user
+    relation observer: eel_user
+
+    permission submit = eel_user:*
+    permission verify = verifier
+    permission read_status = eel_user:*
+    permission certify = verifier
+    permission observe = observer
+}
+
+definition eel_court_petition {
+    relation petitioner: eel_user
+    relation registrar: eel_user
+    relation judge: eel_user
+    relation respondent: eel_user
+    relation public: eel_user
+
+    permission file = petitioner
+    permission register = registrar
+    permission adjudicate = judge
+    permission read = petitioner + registrar + judge + respondent
+    permission publish_judgment = judge
+}
+
+definition eel_by_election {
+    relation coordinator: eel_user
+    relation observer: eel_user
+
+    permission schedule = coordinator
+    permission manage = coordinator
+    permission observe = observer
+    permission read = eel_user:*
+}

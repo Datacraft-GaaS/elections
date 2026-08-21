@@ -1,0 +1,50 @@
+# Golden tests for inventory authz schema
+# Run with: zed test packages/authz-schema/inventory.zed packages/authz-schema/tests/inventory_test.yaml
+tests:
+  - name: "store_keeper can receive inventory item"
+    subject: "eel_user:user_poll_clerk"
+    resource: "eel_inventory_item:item_001"
+    permission: "receive"
+    expected: true
+    relationships:
+      - "eel_inventory_item:item_001#store_keeper@eel_user:user_poll_clerk"
+
+  - name: "auditor can count inventory"
+    subject: "eel_user:user_rla_auditor"
+    resource: "eel_inventory_item:item_001"
+    permission: "count"
+    expected: true
+    relationships:
+      - "eel_inventory_item:item_001#auditor@eel_user:user_rla_auditor"
+
+  - name: "auditor cannot dispatch inventory"
+    subject: "eel_user:user_rla_auditor"
+    resource: "eel_inventory_item:item_001"
+    permission: "dispatch"
+    expected: false
+    relationships:
+      - "eel_inventory_item:item_001#auditor@eel_user:user_rla_auditor"
+
+  - name: "logistics_officer can dispatch inventory"
+    subject: "eel_user:user_dispatcher"
+    resource: "eel_inventory_item:item_001"
+    permission: "dispatch"
+    expected: true
+    relationships:
+      - "eel_inventory_item:item_001#logistics_officer@eel_user:user_dispatcher"
+
+  - name: "logistics_officer can track supply chain"
+    subject: "eel_user:user_dispatcher"
+    resource: "eel_supply_chain:sc_001"
+    permission: "track"
+    expected: true
+    relationships:
+      - "eel_supply_chain:sc_001#logistics_officer@eel_user:user_dispatcher"
+
+  - name: "store_keeper cannot report shortfall without role"
+    subject: "eel_user:user_analyst"
+    resource: "eel_inventory_item:item_001"
+    permission: "report_shortfall"
+    expected: false
+    relationships:
+      - "eel_inventory_item:item_001#auditor@eel_user:user_analyst"

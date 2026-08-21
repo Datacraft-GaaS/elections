@@ -1,0 +1,49 @@
+service: cvr-svc
+context: cvr
+entities:
+  - name: VoterLookupLog
+    store: T2
+    event_sourced: false
+    columns:
+      - name: log_id
+        type: uuid
+        data_class: D
+        pii: false
+        nullable: false
+        description: UUIDv7 lookup log identifier.
+        retention: Delete 90 days post-election
+      - name: id_hash
+        type: text
+        data_class: A
+        pii: true
+        nullable: false
+        description: SHA-256 of voter national ID queried. Class A - most sensitive. Raw ID never stored.
+        retention: Delete 90 days post-election
+      - name: found
+        type: boolean
+        data_class: D
+        pii: false
+        nullable: false
+        description: "Whether the voter was found in the register. Note: voter register itself lives in bvr-svc, not cvr-svc."
+        retention: Delete 90 days post-election
+      - name: station_code
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Polling station code where lookup was performed.
+        retention: Delete 90 days post-election
+      - name: looked_up_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Lookup timestamp.
+        retention: Delete 90 days post-election
+      - name: requester_hash
+        type: text
+        data_class: D
+        pii: false
+        nullable: false
+        description: SHA-256 of poll clerk identifier performing the lookup.
+        retention: Delete 90 days post-election

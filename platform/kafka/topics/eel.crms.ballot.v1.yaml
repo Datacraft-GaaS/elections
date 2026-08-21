@@ -1,0 +1,18 @@
+# Topic: eel.crms.ballot.v1
+name: eel.crms.ballot.v1
+partitions: 12
+replication_factor: 3
+config:
+  min.insync.replicas: "2"
+  unclean.leader.election.enable: "false"
+  acks: "all"
+  retention.ms: "-1"
+  tiered.storage.enable: "true"
+  remote.storage.manager: "eel-minio-tiered-storage"
+retention_class: event-source
+signed: true
+owner: crms-svc
+description: Ballot design and proof publication events. Infinite retention with tiered storage. All events are HSM-signed for integrity verification.
+event_types:
+  - eel.crms.ballot_proof_published.v1
+partition_key: eel_stream_id

@@ -1,0 +1,29 @@
+// Inventory authorization schema
+// Trust domain: eel.local
+
+definition eel_user {}
+definition eel_service {}
+
+definition eel_inventory_item {
+    relation store_keeper: eel_user
+    relation logistics_officer: eel_user
+    relation coordinator: eel_user
+    relation auditor: eel_user
+
+    permission receive = store_keeper + logistics_officer
+    permission dispatch = logistics_officer + coordinator
+    permission count = store_keeper + logistics_officer + auditor
+    permission report_shortfall = store_keeper + logistics_officer
+    permission read = store_keeper + logistics_officer + coordinator + auditor
+    permission audit = auditor
+}
+
+definition eel_supply_chain {
+    relation logistics_officer: eel_user
+    relation coordinator: eel_user
+    relation supplier_service: eel_service
+
+    permission manage = logistics_officer + coordinator
+    permission track = logistics_officer + coordinator
+    permission read = logistics_officer + coordinator
+}

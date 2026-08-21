@@ -1,0 +1,19 @@
+# Topic: eel.governance.rla.v1
+name: eel.governance.rla.v1
+partitions: 12
+replication_factor: 3
+config:
+  min.insync.replicas: "2"
+  unclean.leader.election.enable: "false"
+  acks: "all"
+  retention.ms: "-1"
+  tiered.storage.enable: "true"
+  remote.storage.manager: "eel-minio-tiered-storage"
+retention_class: event-source
+signed: true
+owner: governance-svc
+description: Risk-limiting audit lifecycle events. Infinite retention with tiered storage. All events signed by the RLA coordinator HSM key for evidentiary integrity.
+event_types:
+  - eel.governance.rla_audit_initiated.v1
+  - eel.governance.rla_audit_complete.v1
+partition_key: eel_stream_id

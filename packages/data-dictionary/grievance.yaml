@@ -1,0 +1,124 @@
+service: grievance-svc
+context: grievance
+entities:
+  - name: Complaint
+    store: T2
+    event_sourced: false
+    columns:
+      - name: complaint_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 complaint identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: complainant_id_hash
+        type: text
+        data_class: A
+        pii: true
+        nullable: false
+        description: SHA-256 of complainant national ID. Class A due to potential safety risk to complainant.
+        retention: Delete 90 days post-election
+      - name: channel
+        type: text
+        data_class: D
+        pii: false
+        nullable: false
+        description: Submission channel. One of ussd, web, mobile_app, call_centre, walk_in.
+        retention: Delete at election cycle end + 7 years
+      - name: complaint_type
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Complaint category. One of voter_intimidation, ballot_tampering, procedural_violation, observer_exclusion, counting_dispute, other.
+        retention: Delete at election cycle end + 7 years
+      - name: station_code
+        type: text
+        data_class: C
+        pii: false
+        nullable: true
+        description: Polling station code. Null if complaint is not station-specific.
+        retention: Delete at election cycle end + 7 years
+      - name: description
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Complaint narrative. Screened for PII before storage.
+        retention: Delete at election cycle end + 7 years
+      - name: status
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Complaint status. One of submitted, under_review, resolved, referred, withdrawn.
+        retention: Delete at election cycle end + 7 years
+      - name: reference_code
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Human-readable reference code e.g. GRV-2027-00001.
+        retention: Delete at election cycle end + 7 years
+      - name: submitted_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Submission timestamp.
+        retention: Delete at election cycle end + 7 years
+      - name: resolved_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: true
+        description: Resolution timestamp. Null if unresolved.
+        retention: Delete at election cycle end + 7 years
+
+  - name: ComplaintUpdate
+    store: T2
+    event_sourced: false
+    columns:
+      - name: update_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 update record identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: complaint_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: Foreign key to Complaint.
+        retention: Delete at election cycle end + 7 years
+      - name: actor_hash
+        type: text
+        data_class: B
+        pii: true
+        nullable: false
+        description: SHA-256 of caseworker identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: new_status
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Status after this update.
+        retention: Delete at election cycle end + 7 years
+      - name: note
+        type: text
+        data_class: C
+        pii: false
+        nullable: true
+        description: Caseworker note. Screened for PII.
+        retention: Delete at election cycle end + 7 years
+      - name: updated_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Update timestamp.
+        retention: Delete at election cycle end + 7 years

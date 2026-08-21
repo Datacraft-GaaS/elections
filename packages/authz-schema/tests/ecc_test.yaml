@@ -1,0 +1,50 @@
+# Golden tests for ecc authz schema
+# Run with: zed test packages/authz-schema/ecc.zed packages/authz-schema/tests/ecc_test.yaml
+tests:
+  - name: "coordinator can manage coordination room"
+    subject: "eel_user:user_county_coord"
+    resource: "eel_coordination_room:room_001"
+    permission: "manage"
+    expected: true
+    relationships:
+      - "eel_coordination_room:room_001#coordinator@eel_user:user_county_coord"
+
+  - name: "county_coord can join coordination room"
+    subject: "eel_user:user_county_coord"
+    resource: "eel_coordination_room:room_001"
+    permission: "join"
+    expected: true
+    relationships:
+      - "eel_coordination_room:room_001#county_coord@eel_user:user_county_coord"
+
+  - name: "observer can only observe, not manage"
+    subject: "eel_user:user_observer"
+    resource: "eel_coordination_room:room_001"
+    permission: "manage"
+    expected: false
+    relationships:
+      - "eel_coordination_room:room_001#observer@eel_user:user_observer"
+
+  - name: "dispatcher can create dispatch order"
+    subject: "eel_user:user_dispatcher"
+    resource: "eel_dispatch_order:do_001"
+    permission: "create"
+    expected: true
+    relationships:
+      - "eel_dispatch_order:do_001#dispatcher@eel_user:user_dispatcher"
+
+  - name: "recipient can acknowledge dispatch order"
+    subject: "eel_user:user_poll_clerk"
+    resource: "eel_dispatch_order:do_001"
+    permission: "acknowledge"
+    expected: true
+    relationships:
+      - "eel_dispatch_order:do_001#recipient@eel_user:user_poll_clerk"
+
+  - name: "reader cannot approve situation report"
+    subject: "eel_user:user_analyst"
+    resource: "eel_situation_report:sr_001"
+    permission: "approve"
+    expected: false
+    relationships:
+      - "eel_situation_report:sr_001#reader@eel_user:user_analyst"

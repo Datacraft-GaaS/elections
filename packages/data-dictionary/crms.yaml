@@ -1,0 +1,230 @@
+service: crms-svc
+context: crms
+entities:
+  - name: Candidate
+    store: T2
+    event_sourced: false
+    columns:
+      - name: candidate_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 candidate identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: party_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: true
+        description: Sponsoring party identifier. Null for independent candidates.
+        retention: Delete at election cycle end + 7 years
+      - name: position_code
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Election position code e.g. PRES, GOV-047, MP-013.
+        retention: Delete at election cycle end + 7 years
+      - name: constituency_code
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Constituency administrative code.
+        retention: Delete at election cycle end + 7 years
+      - name: gender
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Gender code. One of M, F, X.
+        retention: Delete at election cycle end + 7 years
+      - name: status
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Candidate lifecycle status. One of submitted, under_review, cleared, rejected, approved.
+        retention: Delete at election cycle end + 7 years
+      - name: created_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Record creation timestamp.
+        retention: Delete at election cycle end + 7 years
+      - name: updated_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Last update timestamp.
+        retention: Delete at election cycle end + 7 years
+
+  - name: Nomination
+    store: T2
+    event_sourced: false
+    columns:
+      - name: nomination_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 nomination identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: candidate_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: Foreign key to Candidate.
+        retention: Delete at election cycle end + 7 years
+      - name: nomination_form_ref
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: MinIO object reference to sealed nomination form PDF.
+        retention: Retain indefinitely
+      - name: submitted_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Submission timestamp.
+        retention: Delete at election cycle end + 7 years
+      - name: status
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Nomination status. One of submitted, valid, invalid, withdrawn.
+        retention: Delete at election cycle end + 7 years
+
+  - name: ClearanceDecision
+    store: T2
+    event_sourced: false
+    columns:
+      - name: decision_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 clearance decision identifier.
+        retention: Retain indefinitely
+      - name: candidate_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: Foreign key to Candidate.
+        retention: Retain indefinitely
+      - name: source
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Clearing agency. One of DPP, EACC, KRA, HELB, CID.
+        retention: Retain indefinitely
+      - name: verdict
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Clearance verdict. One of cleared, flagged, disqualified.
+        retention: Retain indefinitely
+      - name: decided_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Decision timestamp.
+        retention: Retain indefinitely
+      - name: evidence_ref
+        type: text
+        data_class: C
+        pii: false
+        nullable: true
+        description: MinIO object reference to supporting evidence.
+        retention: Retain indefinitely
+
+  - name: BallotProof
+    store: T1-consensus
+    event_sourced: true
+    columns:
+      - name: proof_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 ballot proof identifier.
+        retention: Retain indefinitely
+      - name: election_id
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Election identifier.
+        retention: Retain indefinitely
+      - name: position_code
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Election position for this ballot design.
+        retention: Retain indefinitely
+      - name: ballot_hash
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: SHA-256 of ballot design file.
+        retention: Retain indefinitely
+      - name: printer_sig
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Printer HSM Ed25519 signature base64url.
+        retention: Retain indefinitely
+      - name: approved_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Approval timestamp.
+        retention: Retain indefinitely
+
+  - name: AuditEvent
+    store: T1-audit
+    event_sourced: false
+    columns:
+      - name: event_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 audit event identifier.
+        retention: Retain indefinitely
+      - name: actor_hash
+        type: text
+        data_class: B
+        pii: true
+        nullable: false
+        description: SHA-256 of actor identifier.
+        retention: Retain indefinitely
+      - name: action
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Action performed.
+        retention: Retain indefinitely
+      - name: ts_hlc
+        type: text
+        data_class: D
+        pii: false
+        nullable: false
+        description: Hybrid logical clock timestamp.
+        retention: Retain indefinitely

@@ -1,0 +1,28 @@
+// Boundary (administrative boundary) authorization schema
+// Trust domain: eel.local
+
+definition eel_user {}
+definition eel_service {}
+
+definition eel_boundary {
+    relation boundary_admin: eel_user
+    relation county_coord: eel_user
+    relation auditor: eel_user
+
+    permission create = boundary_admin
+    permission update = boundary_admin
+    permission read = eel_user:*
+    permission audit = auditor
+    permission certify = boundary_admin
+}
+
+definition eel_station_record {
+    relation station_admin: eel_user
+    relation county_coord: eel_user
+    relation data_officer: eel_user
+
+    permission create = station_admin
+    permission update = station_admin + county_coord
+    permission read = eel_user:*
+    permission export = data_officer + station_admin
+}

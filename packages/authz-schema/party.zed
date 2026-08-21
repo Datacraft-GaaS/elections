@@ -1,0 +1,41 @@
+// Party authorization schema
+// Trust domain: eel.local
+
+definition eel_user {}
+definition eel_service {}
+
+definition eel_party {
+    relation registrar: eel_user
+    relation party_official: eel_user
+    relation regulator: eel_user
+    relation analyst: eel_user
+
+    permission register = registrar
+    permission update = party_official + registrar
+    permission suspend = regulator
+    permission dissolve = regulator
+    permission read = eel_user:*
+    permission read_internal = party_official + registrar + regulator + analyst
+}
+
+definition eel_symbol_registration {
+    relation applicant: eel_user
+    relation approver: eel_user
+
+    permission apply = applicant
+    permission approve = approver
+    permission reject = approver
+    permission read = eel_user:*
+}
+
+definition eel_primary_election {
+    relation party_official: eel_user
+    relation observer: eel_user
+    relation party_agent: eel_user
+    relation regulator: eel_user
+
+    permission manage = party_official
+    permission observe = observer + regulator
+    permission read = eel_user:*
+    permission certify = regulator
+}

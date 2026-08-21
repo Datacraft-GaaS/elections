@@ -1,0 +1,17 @@
+# Topic: eel.queue.observation.v1
+name: eel.queue.observation.v1
+partitions: 32
+replication_factor: 3
+config:
+  min.insync.replicas: "2"
+  unclean.leader.election.enable: "false"
+  acks: "all"
+  retention.ms: "604800000"
+  tiered.storage.enable: "false"
+  remote.storage.manager: "eel-minio-tiered-storage"
+retention_class: analytics
+owner: queue-svc
+description: Real-time queue observation telemetry from polling stations. High-volume topic (32 partitions) feeding the queue management dashboard. Short retention as data feeds analytics aggregates.
+event_types:
+  - eel.queue.queue_observation_recorded.v1
+partition_key: eel_stream_id

@@ -1,0 +1,17 @@
+# Topic: eel.governance.recall.v1
+name: eel.governance.recall.v1
+partitions: 12
+replication_factor: 3
+config:
+  min.insync.replicas: "2"
+  unclean.leader.election.enable: "false"
+  acks: "all"
+  retention.ms: "2592000000"
+  tiered.storage.enable: "false"
+  remote.storage.manager: "eel-minio-tiered-storage"
+retention_class: operational
+owner: governance-svc
+description: Recall petition lifecycle events. Tracks petition verification milestones including threshold achievement.
+event_types:
+  - eel.governance.recall_threshold_met.v1
+partition_key: eel_stream_id

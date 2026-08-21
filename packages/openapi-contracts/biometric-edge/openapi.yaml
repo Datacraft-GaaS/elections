@@ -1,0 +1,842 @@
+openapi: "3.1.0"
+
+info:
+  title: "Eel Biometric Edge Device API"
+  version: "1.0.0"
+  description: |
+    Biometric edge device communication API. Handles enrolment capture ingest,
+    real-time identification, device configuration pull, hardware attestation,
+    and liveness heartbeats from field-deployed biometric kits.
+
+    Modules: M01 bvr-device, M05 bvi-device.
+
+    Trust domain: eel.local. All endpoints require SPIFFE/SPIRE SVID mTLS.
+    No JWT or public access. Tier 5 endpoints carry biometric data and require
+    both JSON and CBOR content negotiation for bandwidth-constrained field links.
+
+    Data classification follows eel data governance policy:
+      A = Biometric (strictest), B = PII, C = Sensitive operational, D = Non-sensitive.
+
+servers:
+  - url: "https://biometric-edge.eel.local"
+    description: "Biometric edge internal service (SVID mTLS required)"
+
+security:
+  - SVIDmTLS: []
+
+tags:
+  - name: enrolment
+    description: "Biometric capture ingest for voter enrolment"
+  - name: identification
+    description: "Real-time 1:N identification against enrolled biometric references"
+  - name: config
+    description: "Device configuration retrieval"
+  - name: attestation
+    description: "TPM-based hardware attestation"
+  - name: heartbeat
+    description: "Device liveness and telemetry reporting"
+
+paths:
+  /api/v1/biometric-edge/enrolments:
+    post:
+      operationId: submitEdgeEnrolment
+      summary: "Submit biometric enrolment capture from edge device"
+      description: |
+        Receives a biometric enrolment record captured at the edge device.
+        The device performs local quality screening before submission.
+        The backend triggers ABIS deduplication and transparency log append.
+        Idempotent via Idempotency-Key — replay-safe for intermittent field links.
+        Data-class A (biometric): encrypted in transit, stored encrypted at rest,
+        access requires elevated SVID identity.
+      tags: [enrolment]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: 5
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EdgeEnrolmentRequest"
+            example:
+              device_serial: "BVRD-KE-00412"
+              capture_timestamp: "2026-08-21T09:14:00Z"
+              biometric_ref: "v1:sha256:9f4a2b..."
+              modality: "fingerprint"
+              quality_score: 87
+              device_sig: "MEUCIQDxyz..."
+              station_code: "001-042-003"
+              national_id_hash: "sha256:3a5d9f..."
+          application/cbor:
+            schema:
+              $ref: "#/components/schemas/EdgeEnrolmentRequest"
+      responses:
+        "202":
+          description: "Enrolment accepted for ABIS processing"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EdgeEnrolmentAccepted"
+            application/cbor:
+              schema:
+                $ref: "#/components/schemas/EdgeEnrolmentAccepted"
+        "400":
+          description: "Malformed request body"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key already used with a different payload"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "422":
+          description: "Validation error — quality score below threshold, unknown modality, etc."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "ABIS or transparency log temporarily unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/biometric-edge/identifications:
+    post:
+      operationId: submitEdgeIdentification
+      summary: "Submit biometric identification request from edge device"
+      description: |
+        Triggers a 1:N biometric search against the enrolled voter register
+        within the scoped station. Used during polling day verification.
+        Response indicates match/no-match with a confidence score.
+        Idempotent per session_id — prevents duplicate identification events
+        on flaky field links.
+        Data-class A (biometric): same controls as enrolment.
+      tags: [identification]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: 5
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EdgeIdentificationRequest"
+            example:
+              device_serial: "BVID-KE-00217"
+              capture_timestamp: "2026-08-21T07:42:00Z"
+              biometric_ref: "v1:sha256:8b3e1c..."
+              modality: "iris"
+              quality_score: 92
+              device_sig: "MEUCIQAbc..."
+              station_code: "001-042-003"
+              session_id: "01933b2a-7d4c-7e5f-a1b2-3c4d5e6f7a8b"
+          application/cbor:
+            schema:
+              $ref: "#/components/schemas/EdgeIdentificationRequest"
+      responses:
+        "200":
+          description: "Identification result — match or no-match"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EdgeIdentificationResult"
+            application/cbor:
+              schema:
+                $ref: "#/components/schemas/EdgeIdentificationResult"
+        "400":
+          description: "Malformed request body"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key already used with a different payload"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "422":
+          description: "Validation error — quality too low, unknown station, etc."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "ABIS or voter register temporarily unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/biometric-edge/config:
+    get:
+      operationId: getDeviceConfig
+      summary: "Retrieve device configuration for a registered edge device"
+      description: |
+        Returns the current operational configuration for the requesting device,
+        scoped to its station assignment. Devices poll this on startup and at
+        sync_interval_s thereafter. Configuration drives threshold tuning,
+        modality enablement, and election context.
+        Data-class C: sensitive operational data, not biometric.
+      tags: [config]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+        - name: device_serial
+          in: query
+          required: true
+          description: "Serial number of the requesting device (must match SVID SPIFFE ID)."
+          schema:
+            type: string
+            pattern: "^[A-Z]{2,6}-[A-Z]{2}-\\d{4,8}$"
+            x-eel-data-class: C
+          example: "BVRD-KE-00412"
+      responses:
+        "200":
+          description: "Current device configuration"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+            Cache-Control:
+              schema:
+                type: string
+              description: "max-age matches sync_interval_s"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EdgeConfig"
+        "403":
+          description: "Device SVID does not match requested device_serial"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Device not registered in this trust domain"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Configuration store unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/biometric-edge/attestation:
+    post:
+      operationId: submitDeviceAttestation
+      summary: "Submit TPM-based hardware attestation evidence"
+      description: |
+        Accepts a TPM 2.0 quote signed by the device's attestation key along
+        with firmware hash and boot log hash. The backend verifies the quote
+        against the registered EK certificate and stored golden PCR values.
+        Devices must successfully attest before tier-5 endpoints are unblocked.
+        Idempotent — repeated submission of an identical quote is safe.
+        Data-class C: no biometric content, but attestation evidence is operationally
+        sensitive and must not be exposed publicly.
+      tags: [attestation]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttestationRequest"
+            example:
+              device_serial: "BVRD-KE-00412"
+              tpm_quote: "base64url:AAIB..."
+              firmware_hash: "sha256:4c2a9f..."
+              boot_log_hash: "sha256:7e1b3d..."
+              timestamp: "2026-08-21T06:00:00Z"
+              device_sig: "MEUCIQDxyz..."
+      responses:
+        "200":
+          description: "Attestation verified — device is trusted for tier-5 operations"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttestationResult"
+        "400":
+          description: "Malformed attestation evidence"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Attestation failed — PCR mismatch, replay detected, or unknown EK"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key already used with a different payload"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Attestation service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/biometric-edge/heartbeat:
+    post:
+      operationId: submitDeviceHeartbeat
+      summary: "Report device liveness and operational telemetry"
+      description: |
+        Periodic liveness ping from an edge device. Carries non-sensitive
+        operational telemetry: battery level, temperature, GPS position,
+        and cellular signal. Used by field ops dashboards to monitor device
+        health without biometric data exposure.
+        Idempotent — duplicate heartbeats within the same timestamp window are
+        deduplicated server-side.
+        Data-class D: no PII or biometric content.
+      tags: [heartbeat]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: 5
+      x-eel-sla:
+        p50: 50
+        p95: 100
+        p99: 200
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HeartbeatRequest"
+            example:
+              device_serial: "BVRD-KE-00412"
+              station_code: "001-042-003"
+              battery_pct: 73
+              temperature_c: 34.2
+              gps_lat: -1.286389
+              gps_lon: 36.817223
+              timestamp: "2026-08-21T09:00:00Z"
+              signal_bars: 3
+          application/cbor:
+            schema:
+              $ref: "#/components/schemas/HeartbeatRequest"
+      responses:
+        "204":
+          description: "Heartbeat recorded"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+        "400":
+          description: "Malformed heartbeat payload"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key already used with a different payload"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Telemetry store unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+components:
+  securitySchemes:
+    SVIDmTLS:
+      type: mutualTLS
+      description: |
+        SPIFFE/SPIRE SVID mutual TLS. The device SPIFFE ID must match the pattern
+        spiffe://eel.local/biometric-edge/{device_serial}. The backend validates
+        the SVID against the trust bundle and checks device registration status.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: "Client-generated idempotency key (UUID v4 or v7). Same key with same payload replays the original response; different payload returns 409."
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+      example: "01933b2a-7d4c-7e5f-a1b2-3c4d5e6f7a8b"
+
+    XRequestId:
+      name: X-Request-Id
+      in: header
+      required: false
+      description: "Client-supplied request correlation ID. Echoed in response header."
+      schema:
+        type: string
+        maxLength: 128
+        x-eel-data-class: D
+      example: "req-2026082109140001"
+
+  schemas:
+    EdgeEnrolmentRequest:
+      type: object
+      description: "Biometric enrolment capture submitted by an edge device after local quality screening."
+      required:
+        - device_serial
+        - capture_timestamp
+        - biometric_ref
+        - modality
+        - quality_score
+        - device_sig
+        - station_code
+        - national_id_hash
+      properties:
+        device_serial:
+          type: string
+          pattern: "^[A-Z]{2,6}-[A-Z]{2}-\\d{4,8}$"
+          description: "Manufacturer serial number of the capturing device. Must match the SVID SPIFFE ID."
+          x-eel-data-class: C
+          example: "BVRD-KE-00412"
+        capture_timestamp:
+          type: string
+          format: date-time
+          description: "ISO 8601 UTC timestamp of biometric capture at the device."
+          x-eel-data-class: C
+          example: "2026-08-21T09:14:00Z"
+        biometric_ref:
+          type: string
+          description: |
+            Opaque reference to the biometric template stored in the secure enclave.
+            Format: v{version}:{hash_alg}:{hex_digest}. Never the raw template.
+          x-eel-data-class: A
+          example: "v1:sha256:9f4a2b3c..."
+        modality:
+          type: string
+          enum: [fingerprint, iris, face, palm]
+          description: "Biometric modality used for this capture."
+          x-eel-data-class: A
+          example: "fingerprint"
+        quality_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: "NIST NFIQ 2.0 quality score (fingerprint) or equivalent vendor quality metric."
+          x-eel-data-class: D
+          example: 87
+        device_sig:
+          type: string
+          description: "ECDSA P-256 signature over the canonical JSON of this payload, base64url encoded."
+          x-eel-data-class: C
+          example: "MEUCIQDxyz..."
+        station_code:
+          type: string
+          pattern: "^\\d{3}-\\d{3}-\\d{3}$"
+          description: "Polling station code (county-constituency-station)."
+          x-eel-data-class: C
+          example: "001-042-003"
+        national_id_hash:
+          type: string
+          description: "SHA-256 hash of the national ID number, hex encoded. Allows deduplication without storing plaintext ID."
+          x-eel-data-class: A
+          example: "sha256:3a5d9f..."
+      additionalProperties: false
+
+    EdgeEnrolmentAccepted:
+      type: object
+      description: "Acknowledgement of accepted enrolment. The job is queued; final status is async."
+      required:
+        - job_id
+        - accepted_at
+      properties:
+        job_id:
+          type: string
+          format: uuid
+          description: "UUID7 job identifier for tracking the ABIS deduplication workflow."
+          x-eel-data-class: D
+          example: "01933b2a-7d4c-7e5f-a1b2-3c4d5e6f7a8b"
+        accepted_at:
+          type: string
+          format: date-time
+          description: "Server timestamp when the enrolment was accepted."
+          x-eel-data-class: D
+          example: "2026-08-21T09:14:01Z"
+        estimated_completion_s:
+          type: integer
+          description: "Estimated seconds until ABIS processing completes."
+          x-eel-data-class: D
+          example: 30
+      additionalProperties: false
+
+    EdgeIdentificationRequest:
+      type: object
+      description: "Biometric identification request submitted by an edge device during polling day verification."
+      required:
+        - device_serial
+        - capture_timestamp
+        - biometric_ref
+        - modality
+        - quality_score
+        - device_sig
+        - station_code
+        - session_id
+      properties:
+        device_serial:
+          type: string
+          pattern: "^[A-Z]{2,6}-[A-Z]{2}-\\d{4,8}$"
+          description: "Serial number of the identifying device."
+          x-eel-data-class: C
+          example: "BVID-KE-00217"
+        capture_timestamp:
+          type: string
+          format: date-time
+          description: "ISO 8601 UTC timestamp of biometric capture at the device."
+          x-eel-data-class: C
+          example: "2026-08-21T07:42:00Z"
+        biometric_ref:
+          type: string
+          description: "Opaque reference to the biometric probe stored in the secure enclave."
+          x-eel-data-class: A
+          example: "v1:sha256:8b3e1c..."
+        modality:
+          type: string
+          enum: [fingerprint, iris, face, palm]
+          description: "Biometric modality used for this probe."
+          x-eel-data-class: A
+          example: "iris"
+        quality_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: "Quality score of the probe capture."
+          x-eel-data-class: D
+          example: 92
+        device_sig:
+          type: string
+          description: "ECDSA P-256 signature over the canonical JSON of this payload, base64url encoded."
+          x-eel-data-class: C
+          example: "MEUCIQAbc..."
+        station_code:
+          type: string
+          pattern: "^\\d{3}-\\d{3}-\\d{3}$"
+          description: "Polling station code scoping the search population."
+          x-eel-data-class: C
+          example: "001-042-003"
+        session_id:
+          type: string
+          format: uuid
+          description: "UUID7 voter interaction session. Used as secondary idempotency scope — one identification result per session."
+          x-eel-data-class: C
+          example: "01933b2a-7d4c-7e5f-a1b2-3c4d5e6f7a8b"
+      additionalProperties: false
+
+    EdgeIdentificationResult:
+      type: object
+      description: "Result of the 1:N biometric identification search."
+      required:
+        - session_id
+        - matched
+        - confidence_score
+        - responded_at
+      properties:
+        session_id:
+          type: string
+          format: uuid
+          description: "Echo of the session_id from the request."
+          x-eel-data-class: C
+          example: "01933b2a-7d4c-7e5f-a1b2-3c4d5e6f7a8b"
+        matched:
+          type: boolean
+          description: "True if a match was found above the configured identification_threshold."
+          x-eel-data-class: D
+          example: true
+        confidence_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: "Confidence score of the best match (0–1). Present regardless of matched flag."
+          x-eel-data-class: D
+          example: 0.974
+        voter_ref:
+          type: string
+          description: "Opaque voter reference returned only on positive match. Not the voter ID."
+          x-eel-data-class: A
+          example: "vref:sha256:7f2a1b..."
+        responded_at:
+          type: string
+          format: date-time
+          description: "Server timestamp of the identification decision."
+          x-eel-data-class: D
+          example: "2026-08-21T07:42:00Z"
+      additionalProperties: false
+
+    EdgeConfig:
+      type: object
+      description: "Operational configuration delivered to an edge device on startup and periodic sync."
+      required:
+        - device_serial
+        - station_code
+        - election_id
+        - enrolment_threshold
+        - identification_threshold
+        - allowed_modalities
+        - sync_interval_s
+        - firmware_version
+      properties:
+        device_serial:
+          type: string
+          description: "Serial number this configuration applies to."
+          x-eel-data-class: C
+          example: "BVRD-KE-00412"
+        station_code:
+          type: string
+          description: "Polling station this device is currently assigned to."
+          x-eel-data-class: C
+          example: "001-042-003"
+        election_id:
+          type: string
+          format: uuid
+          description: "UUID7 of the active election event."
+          x-eel-data-class: C
+          example: "01933b2a-0000-7000-8000-000000000001"
+        enrolment_threshold:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: "Minimum quality score required to accept an enrolment capture."
+          x-eel-data-class: C
+          example: 70
+        identification_threshold:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: "Minimum confidence score required for a positive identification match."
+          x-eel-data-class: C
+          example: 0.92
+        allowed_modalities:
+          type: array
+          items:
+            type: string
+            enum: [fingerprint, iris, face, palm]
+          minItems: 1
+          description: "Biometric modalities enabled for this device and station."
+          x-eel-data-class: C
+          example: [fingerprint, iris]
+        sync_interval_s:
+          type: integer
+          minimum: 60
+          maximum: 86400
+          description: "Seconds between configuration sync polls."
+          x-eel-data-class: D
+          example: 300
+        firmware_version:
+          type: string
+          description: "Expected firmware version string. Device should alert if running a different version."
+          x-eel-data-class: D
+          example: "2.7.4"
+      additionalProperties: false
+
+    AttestationRequest:
+      type: object
+      description: "TPM 2.0 hardware attestation evidence bundle from an edge device."
+      required:
+        - device_serial
+        - tpm_quote
+        - firmware_hash
+        - boot_log_hash
+        - timestamp
+        - device_sig
+      properties:
+        device_serial:
+          type: string
+          description: "Serial number of the attesting device."
+          x-eel-data-class: C
+          example: "BVRD-KE-00412"
+        tpm_quote:
+          type: string
+          contentEncoding: base64url
+          description: "TPM 2.0 TPM2B_ATTEST quote structure, base64url encoded. Signed by the device AK."
+          x-eel-data-class: C
+          example: "base64url:AAIB..."
+        firmware_hash:
+          type: string
+          description: "SHA-256 hash of the installed firmware image, hex encoded."
+          x-eel-data-class: C
+          example: "sha256:4c2a9f..."
+        boot_log_hash:
+          type: string
+          description: "SHA-256 hash of the UEFI/BIOS boot event log, hex encoded."
+          x-eel-data-class: C
+          example: "sha256:7e1b3d..."
+        timestamp:
+          type: string
+          format: date-time
+          description: "Device-local timestamp of attestation evidence generation."
+          x-eel-data-class: C
+          example: "2026-08-21T06:00:00Z"
+        device_sig:
+          type: string
+          description: "ECDSA P-256 signature over the canonical JSON of this payload."
+          x-eel-data-class: C
+          example: "MEUCIQDxyz..."
+      additionalProperties: false
+
+    AttestationResult:
+      type: object
+      description: "Result of TPM attestation verification."
+      required:
+        - device_serial
+        - trusted
+        - verified_at
+        - valid_until
+      properties:
+        device_serial:
+          type: string
+          description: "Serial number of the attested device."
+          x-eel-data-class: C
+          example: "BVRD-KE-00412"
+        trusted:
+          type: boolean
+          description: "True if all PCRs match the golden values and the quote signature is valid."
+          x-eel-data-class: D
+          example: true
+        verified_at:
+          type: string
+          format: date-time
+          description: "Server timestamp of attestation verification."
+          x-eel-data-class: D
+          example: "2026-08-21T06:00:01Z"
+        valid_until:
+          type: string
+          format: date-time
+          description: "Attestation token expiry. Device must re-attest before this time."
+          x-eel-data-class: D
+          example: "2026-08-21T18:00:01Z"
+        pcr_mismatches:
+          type: array
+          items:
+            type: integer
+          description: "PCR indices that did not match golden values (empty on success)."
+          x-eel-data-class: D
+          example: []
+      additionalProperties: false
+
+    HeartbeatRequest:
+      type: object
+      description: "Liveness and operational telemetry payload from an edge device."
+      required:
+        - device_serial
+        - station_code
+        - battery_pct
+        - temperature_c
+        - gps_lat
+        - gps_lon
+        - timestamp
+        - signal_bars
+      properties:
+        device_serial:
+          type: string
+          description: "Serial number of the reporting device."
+          x-eel-data-class: C
+          example: "BVRD-KE-00412"
+        station_code:
+          type: string
+          description: "Current station assignment of the device."
+          x-eel-data-class: C
+          example: "001-042-003"
+        battery_pct:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: "Battery charge percentage."
+          x-eel-data-class: D
+          example: 73
+        temperature_c:
+          type: number
+          format: float
+          description: "Device internal temperature in Celsius."
+          x-eel-data-class: D
+          example: 34.2
+        gps_lat:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+          description: "GPS latitude of the device (WGS84)."
+          x-eel-data-class: D
+          example: -1.286389
+        gps_lon:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+          description: "GPS longitude of the device (WGS84)."
+          x-eel-data-class: D
+          example: 36.817223
+        timestamp:
+          type: string
+          format: date-time
+          description: "Device-local UTC timestamp of heartbeat generation."
+          x-eel-data-class: D
+          example: "2026-08-21T09:00:00Z"
+        signal_bars:
+          type: integer
+          minimum: 0
+          maximum: 5
+          description: "Cellular signal strength in bars (0 = no signal)."
+          x-eel-data-class: D
+          example: 3
+      additionalProperties: false

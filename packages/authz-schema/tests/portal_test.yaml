@@ -1,0 +1,57 @@
+# Golden tests for portal authz schema
+# Run with: zed test packages/authz-schema/portal.zed packages/authz-schema/tests/portal_test.yaml
+tests:
+  - name: "cms_editor can edit civic content"
+    subject: "eel_user:user_cms_editor"
+    resource: "eel_civic_content:homepage"
+    permission: "edit"
+    expected: true
+    relationships:
+      - "eel_civic_content:homepage#cms_editor@eel_user:user_cms_editor"
+
+  - name: "cms_editor cannot publish civic content"
+    subject: "eel_user:user_cms_editor"
+    resource: "eel_civic_content:homepage"
+    permission: "publish"
+    expected: false
+    relationships:
+      - "eel_civic_content:homepage#cms_editor@eel_user:user_cms_editor"
+
+  - name: "cms_approver can publish civic content"
+    subject: "eel_user:user_cms_approver"
+    resource: "eel_civic_content:homepage"
+    permission: "publish"
+    expected: true
+    relationships:
+      - "eel_civic_content:homepage#cms_approver@eel_user:user_cms_approver"
+
+  - name: "anonymous user can read civic content (wildcard)"
+    subject: "eel_user:user_diaspora_voter"
+    resource: "eel_civic_content:homepage"
+    permission: "read"
+    expected: true
+    relationships: []
+
+  - name: "cms_admin can delete civic content"
+    subject: "eel_user:user_cms_admin"
+    resource: "eel_civic_content:homepage"
+    permission: "delete"
+    expected: true
+    relationships:
+      - "eel_civic_content:homepage#cms_admin@eel_user:user_cms_admin"
+
+  - name: "analyst can access portal admin panel"
+    subject: "eel_user:user_analyst"
+    resource: "eel_portal_admin_panel:main"
+    permission: "access"
+    expected: true
+    relationships:
+      - "eel_portal_admin_panel:main#analyst@eel_user:user_analyst"
+
+  - name: "analyst cannot configure portal admin panel"
+    subject: "eel_user:user_analyst"
+    resource: "eel_portal_admin_panel:main"
+    permission: "configure"
+    expected: false
+    relationships:
+      - "eel_portal_admin_panel:main#analyst@eel_user:user_analyst"

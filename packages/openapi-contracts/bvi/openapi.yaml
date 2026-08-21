@@ -1,0 +1,1410 @@
+openapi: 3.1.0
+info:
+  title: Biometric Voter Identification API
+  description: |
+    Modules M05 (bvi-device), M06 (bvi-backend), M07 (bvv).
+
+    Provides biometric identification sessions, voter match decisions, device
+    telemetry, distress signalling, configuration push, and turnout reporting
+    for election day operations.
+
+    ## Transport Security
+    - **Internal endpoints** (device-to-backend): SVID mTLS (SPIFFE Workload
+      API). The device certificate SVID is verified by the backend; no separate
+      bearer token is required.
+    - **Tier 2 endpoints**: JWT bearer, no SpiceDB check (aggregate read-only).
+    - **Tier 3 endpoints**: JWT bearer + SpiceDB relationship-based authorization.
+
+    ## Data Classification
+    - **A** — biometric templates / raw features (never logged, never cached)
+    - **B** — voter-linked personal data (encrypted at rest, access audited)
+    - **C** — controlled operational data
+    - **D** — aggregate / public-safe statistics
+
+    ## Idempotency
+    All write operations accept an `Idempotency-Key` header (UUID v4/v7).
+    The server deduplicates side-effects for 24 hours.
+
+    ## SLA
+    - Identification: p50 500 ms, p95 1500 ms, p99 3000 ms
+    - Config / turnout reads: p50 50 ms, p95 200 ms, p99 500 ms
+    - All other operations: p50 200 ms, p95 500 ms, p99 1000 ms
+
+    ## Content Negotiation (Tier 2)
+    Tier 2 aggregate endpoints support both `application/json` and
+    `application/cbor` for bandwidth-constrained links. Clients SHOULD send
+    `Accept: application/cbor` when operating over LPWAN / VSAT.
+  version: 1.0.0
+  contact:
+    name: EEL Platform Engineering
+    email: platform@eel.internal
+  license:
+    name: Proprietary
+    identifier: LicenseRef-EEL-INTERNAL
+
+servers:
+  - url: https://bvi.internal.eel.io
+    description: Internal mTLS endpoint (devices only)
+  - url: https://api.eel.internal
+    description: Public API gateway (JWT endpoints)
+  - url: https://api.staging.eel.internal
+    description: Staging
+
+tags:
+  - name: Sessions
+    description: BVI device session lifecycle
+  - name: Identification
+    description: Voter biometric identification events
+  - name: Telemetry
+    description: Device health and environmental telemetry
+  - name: Distress
+    description: Duress and incident signalling from devices
+  - name: Config
+    description: Station configuration delivery
+  - name: Kits
+    description: BVI kit management and health monitoring
+  - name: Turnout
+    description: Aggregated voter turnout statistics
+  - name: Voters
+    description: Voter station assignment lookups
+
+paths:
+  /api/v1/bvi/sessions:
+    post:
+      operationId: openBviSession
+      summary: Open a new BVI device session
+      description: |
+        Called by the BVI device at poll-open to establish a session. A device
+        may have at most one active session per election day; attempting to open
+        a second returns 409. The session identifier is used to correlate all
+        subsequent identification events from the same device.
+      tags: [Sessions]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: internal
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BviSessionCreate'
+            example:
+              station_code: POLL-NRB-001
+              device_serial: BVI-KIT-00342
+              election_id: elec-2026-general
+      responses:
+        '201':
+          description: Session opened
+          headers:
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BviSession'
+              example:
+                session_id: ses-01924d50-aaaa-7b1c-8d2e-1f3a4b5c6d7e
+                station_code: POLL-NRB-001
+                device_serial: BVI-KIT-00342
+                election_id: elec-2026-general
+                status: active
+                opened_at: '2026-08-09T06:00:00Z'
+                closed_at: null
+                identifications_count: 0
+        '200':
+          description: Duplicate idempotency key — returning original session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BviSession'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/MtlsUnauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/bvi/sessions/{id}/close:
+    patch:
+      operationId: closeBviSession
+      summary: Close a BVI device session
+      description: |
+        Called at poll-close or on device shutdown. Marks the session as closed
+        and finalises the identification count. Idempotent — closing an already-
+        closed session returns 200 with the existing record.
+      tags: [Sessions]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: internal
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                closed_at:
+                  type: string
+                  format: date-time
+                  description: Device-local close timestamp (UTC). Defaults to server time.
+                  x-eel-data-class: D
+      responses:
+        '200':
+          description: Session closed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BviSession'
+              example:
+                session_id: ses-01924d50-aaaa-7b1c-8d2e-1f3a4b5c6d7e
+                station_code: POLL-NRB-001
+                device_serial: BVI-KIT-00342
+                election_id: elec-2026-general
+                status: closed
+                opened_at: '2026-08-09T06:00:00Z'
+                closed_at: '2026-08-09T18:00:00Z'
+                identifications_count: 487
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/MtlsUnauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/bvi/identifications:
+    post:
+      operationId: recordIdentification
+      summary: Record a voter biometric identification event
+      description: |
+        Submitted by the BVI device immediately after a match decision is reached.
+        The `biometric_ref` field is a reference token to the encrypted biometric
+        template stored in the secure enclave — it is **never** the raw template.
+        The server re-validates the match decision against the stored record and
+        may override a `no_match` decision if the stored score exceeds the
+        configured `match_threshold`.
+
+        Data-class B fields are encrypted at rest (AES-256-GCM, per-tenant key
+        in OpenBao). Access is audit-logged at row level.
+      tags: [Identification]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: internal
+      x-eel-sla:
+        p50: 500
+        p95: 1500
+        p99: 3000
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdentificationCreate'
+            example:
+              session_id: ses-01924d50-aaaa-7b1c-8d2e-1f3a4b5c6d7e
+              voter_id: vtr-KE-2026-00481293
+              biometric_ref: bref-enc-7f3a1b2c9d4e5f6a
+              match_score: 0.983
+              decision: match
+              identified_at: '2026-08-09T09:14:37Z'
+              device_serial: BVI-KIT-00342
+      responses:
+        '201':
+          description: Identification recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Identification'
+              example:
+                identification_id: idn-01924d51-bbbb-7b1c-8d2e-1f3a4b5c6d7e
+                session_id: ses-01924d50-aaaa-7b1c-8d2e-1f3a4b5c6d7e
+                voter_id: vtr-KE-2026-00481293
+                biometric_ref: bref-enc-7f3a1b2c9d4e5f6a
+                match_score: 0.983
+                decision: match
+                identified_at: '2026-08-09T09:14:37Z'
+                device_serial: BVI-KIT-00342
+        '200':
+          description: Duplicate idempotency key — returning original record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Identification'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/MtlsUnauthorized'
+        '409':
+          description: Voter already identified in this session
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: https://errors.eel.internal/bvi/already_identified
+                title: Conflict
+                status: 409
+                detail: >-
+                  Voter vtr-KE-2026-00481293 has already been identified in
+                  session ses-01924d50-aaaa-7b1c-8d2e-1f3a4b5c6d7e.
+                instance: /api/v1/bvi/identifications
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/bvi/telemetry:
+    post:
+      operationId: submitTelemetry
+      summary: Submit device health telemetry
+      description: |
+        Devices submit telemetry readings on a configurable interval (default 60 s).
+        Data-class D — no voter or officer identifiers; safe to aggregate and
+        forward to Prometheus/Loki without redaction.
+      tags: [Telemetry]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: internal
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TelemetryCreate'
+            example:
+              device_serial: BVI-KIT-00342
+              station_code: POLL-NRB-001
+              battery_pct: 78
+              signal_strength_dbm: -67
+              temperature_c: 32.4
+              timestamp: '2026-08-09T09:00:00Z'
+      responses:
+        '204':
+          description: Telemetry accepted
+        '200':
+          description: Duplicate idempotency key — telemetry already recorded
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/MtlsUnauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/bvi/distress:
+    post:
+      operationId: raiseDistress
+      summary: Raise a distress or duress signal from a device
+      description: |
+        Silent panic alert from a BVI device. Triggers an immediate notification
+        to the security operations centre. The `distress_type` field distinguishes
+        technical failures from human duress events (e.g. `officer_duress`).
+        All distress events are persisted even if the NOC notification pipeline
+        is temporarily unavailable.
+      tags: [Distress]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: internal
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DistressCreate'
+            example:
+              station_code: POLL-NRB-001
+              device_serial: BVI-KIT-00342
+              distress_type: officer_duress
+              details: Officer pressed duress key sequence
+              raised_at: '2026-08-09T10:22:05Z'
+      responses:
+        '201':
+          description: Distress signal recorded and NOC notified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Distress'
+              example:
+                distress_id: dst-01924d55-cccc-7b1c-8d2e-1f3a4b5c6d7e
+                station_code: POLL-NRB-001
+                device_serial: BVI-KIT-00342
+                distress_type: officer_duress
+                details: Officer pressed duress key sequence
+                raised_at: '2026-08-09T10:22:05Z'
+        '200':
+          description: Duplicate idempotency key — returning original record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Distress'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/MtlsUnauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/bvi/config/{station_code}:
+    get:
+      operationId: getStationConfig
+      summary: Fetch BVI configuration for a station
+      description: |
+        Devices pull configuration at boot and after re-association. The response
+        is heavily cached (`Cache-Control: max-age=300`) because config changes
+        are applied via a separate push channel. Pass `Cache-Control: no-cache`
+        to force a fresh fetch (e.g. after a push notification).
+      tags: [Config]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: internal
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - name: station_code
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Station identifier
+          example: POLL-NRB-001
+        - name: election_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Election context
+          example: elec-2026-general
+      responses:
+        '200':
+          description: Station configuration
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+              example: max-age=300, private
+            ETag:
+              schema:
+                type: string
+              example: '"cfg-v42-nrb001"'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BviConfig'
+              example:
+                station_code: POLL-NRB-001
+                election_id: elec-2026-general
+                match_threshold: 0.95
+                allowed_modalities: [fingerprint, iris]
+                timeout_s: 30
+                fallback_allowed: false
+        '304':
+          description: Config unchanged (ETag match)
+        '401':
+          $ref: '#/components/responses/MtlsUnauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/bvi/kits/{serial}/revoke:
+    post:
+      operationId: revokeKit
+      summary: Revoke a BVI kit
+      description: |
+        Immediately invalidates the kit's SVID and blacklists its device_serial.
+        Any in-flight session from the revoked kit is forcibly closed. The kit's
+        certificate is added to the CRL distributed via SPIFFE. Use when a kit
+        is reported stolen, compromised, or tampered with.
+      tags: [Kits]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: serial
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Kit serial number
+          example: BVI-KIT-00342
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason, officer_id]
+              properties:
+                reason:
+                  type: string
+                  enum: [stolen, tampered, compromised, defective, reassigned]
+                  x-eel-data-class: C
+                officer_id:
+                  type: string
+                  description: Officer authorising the revocation
+                  x-eel-data-class: C
+            example:
+              reason: stolen
+              officer_id: off-8f3a2d1e
+      responses:
+        '200':
+          description: Kit revoked
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [serial, revoked_at, reason]
+                properties:
+                  serial:
+                    type: string
+                    x-eel-data-class: C
+                  revoked_at:
+                    type: string
+                    format: date-time
+                    x-eel-data-class: D
+                  reason:
+                    type: string
+                    x-eel-data-class: C
+              example:
+                serial: BVI-KIT-00342
+                revoked_at: '2026-08-09T11:00:00Z'
+                reason: stolen
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/bvi/turnout:
+    get:
+      operationId: getTurnout
+      summary: Get aggregated voter turnout statistics
+      description: |
+        Returns real-time turnout aggregates. Data-class D — no voter identifiers.
+        Available at tier 2 (JWT only, no SpiceDB) because the data is safe for
+        wider distribution. Supports `application/cbor` for bandwidth-constrained
+        links.
+
+        Scope can be narrowed by `election_id`, `county_code`, `constituency_code`,
+        or `station_code`. Omitting all scope parameters returns national totals.
+
+        Results are cached with a 30-second TTL at the CDN layer.
+      tags: [Turnout]
+      x-eel-auth: JWT
+      x-eel-tier: 2
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: election_id
+          in: query
+          required: true
+          schema:
+            type: string
+          example: elec-2026-general
+        - name: county_code
+          in: query
+          schema:
+            type: string
+          example: KE-030
+        - name: constituency_code
+          in: query
+          schema:
+            type: string
+          example: KE-030-001
+        - name: station_code
+          in: query
+          schema:
+            type: string
+          example: POLL-NRB-001
+      responses:
+        '200':
+          description: Turnout summary
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+              example: public, max-age=30
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TurnoutSummary'
+              example:
+                election_id: elec-2026-general
+                scope: national
+                scope_code: KE
+                total_identified: 4182930
+                total_registered: 22026000
+                turnout_pct: 18.99
+                as_of: '2026-08-09T12:00:00Z'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/TurnoutSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/bvi/kits/health:
+    get:
+      operationId: listKitsHealth
+      summary: List kit health status for the caller's scope
+      description: |
+        Returns health telemetry for all kits within the caller's SpiceDB scope.
+        Useful for NOC dashboards and field supervisors. Data-class D — device
+        identifiers and aggregate counts only, no voter data.
+      tags: [Kits]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: station_code
+          in: query
+          schema:
+            type: string
+          description: Filter to a specific station
+        - name: online
+          in: query
+          schema:
+            type: boolean
+          description: Filter by online status
+        - $ref: '#/components/parameters/PageCursor'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Kit health list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KitHealthPage'
+              example:
+                items:
+                  - serial: BVI-KIT-00342
+                    station_code: POLL-NRB-001
+                    battery_pct: 78
+                    online: true
+                    last_seen: '2026-08-09T12:00:00Z'
+                    identification_count_today: 487
+                    error_count_today: 2
+                total: 1
+                next_cursor: null
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/bvi/voters/{voter_id}/station:
+    get:
+      operationId: getVoterStation
+      summary: Get the assigned polling station for a voter
+      description: |
+        Returns the voter's registered polling station. Data-class B — voter
+        identifiers are encrypted at rest and access is audit-logged. The caller
+        must hold the `voter_station:read` permission in SpiceDB.
+
+        This endpoint does **not** confirm voter eligibility; it is a station-
+        assignment lookup only.
+      tags: [Voters]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: voter_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Voter identifier (opaque, not NIDN)
+          example: vtr-KE-2026-00481293
+        - name: election_id
+          in: query
+          required: true
+          schema:
+            type: string
+          example: elec-2026-general
+      responses:
+        '200':
+          description: Voter station assignment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoterStation'
+              example:
+                voter_id: vtr-KE-2026-00481293
+                station_code: POLL-NRB-001
+                polling_station_name: Nairobi Primary School Stream A
+                constituency_code: KE-030-001
+                county_code: KE-030
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Keycloak-issued JWT. SpiceDB enforces fine-grained permissions on tier 3 endpoints.
+
+    SVIDmTLS:
+      type: mutualTLS
+      description: >-
+        SPIFFE SVID presented in the TLS client certificate. The backend
+        validates the SVID chain against the SPIFFE trust bundle and checks
+        the SPIFFE ID matches the expected workload URI pattern
+        `spiffe://eel.internal/bvi-device/{device_serial}`.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        minLength: 36
+        maxLength: 36
+      description: >-
+        Client-generated UUID v4/v7. The server caches the response for 24
+        hours and replays it on repeated requests with the same key.
+      example: 01924d35-0000-7000-8000-000000000001
+
+    SessionId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: BVI session identifier
+      example: ses-01924d50-aaaa-7b1c-8d2e-1f3a4b5c6d7e
+
+    PageCursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Opaque pagination cursor from a previous response
+
+    PageSize:
+      name: page_size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+      description: Maximum items per page
+
+  schemas:
+    # ---- Domain schemas ----
+
+    BviSession:
+      type: object
+      required:
+        - session_id
+        - station_code
+        - device_serial
+        - election_id
+        - status
+        - opened_at
+        - identifications_count
+      properties:
+        session_id:
+          type: string
+          description: Unique session identifier (UUID7 prefixed)
+          x-eel-data-class: C
+          example: ses-01924d50-aaaa-7b1c-8d2e-1f3a4b5c6d7e
+        station_code:
+          type: string
+          description: Polling station code
+          x-eel-data-class: C
+          example: POLL-NRB-001
+        device_serial:
+          type: string
+          description: BVI kit serial number
+          x-eel-data-class: C
+          example: BVI-KIT-00342
+        election_id:
+          type: string
+          description: Election the session is associated with
+          x-eel-data-class: C
+          example: elec-2026-general
+        status:
+          type: string
+          enum: [active, closed, revoked]
+          x-eel-data-class: C
+        opened_at:
+          type: string
+          format: date-time
+          description: Session open timestamp (UTC)
+          x-eel-data-class: D
+        closed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Session close timestamp (UTC); null if still active
+          x-eel-data-class: D
+        identifications_count:
+          type: integer
+          minimum: 0
+          description: Number of identification events recorded in this session
+          x-eel-data-class: D
+
+    BviSessionCreate:
+      type: object
+      required:
+        - station_code
+        - device_serial
+        - election_id
+      properties:
+        station_code:
+          type: string
+          x-eel-data-class: C
+        device_serial:
+          type: string
+          x-eel-data-class: C
+        election_id:
+          type: string
+          x-eel-data-class: C
+
+    Identification:
+      type: object
+      required:
+        - identification_id
+        - session_id
+        - voter_id
+        - biometric_ref
+        - match_score
+        - decision
+        - identified_at
+        - device_serial
+      properties:
+        identification_id:
+          type: string
+          description: Unique identification event identifier
+          x-eel-data-class: C
+        session_id:
+          type: string
+          description: Parent BVI session
+          x-eel-data-class: C
+        voter_id:
+          type: string
+          description: Voter identifier — encrypted at rest, access audited
+          x-eel-data-class: B
+        biometric_ref:
+          type: string
+          description: >-
+            Reference token to the encrypted biometric template in the secure
+            enclave. Never contains raw biometric data.
+          x-eel-data-class: A
+        match_score:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: Similarity score returned by the matcher
+          x-eel-data-class: C
+        decision:
+          type: string
+          enum: [match, no_match, fallback_used, ambiguous]
+          description: Final identification decision
+          x-eel-data-class: C
+        identified_at:
+          type: string
+          format: date-time
+          description: Device-local timestamp of the identification event (UTC)
+          x-eel-data-class: D
+        device_serial:
+          type: string
+          x-eel-data-class: C
+
+    IdentificationCreate:
+      type: object
+      required:
+        - session_id
+        - voter_id
+        - biometric_ref
+        - match_score
+        - decision
+        - identified_at
+        - device_serial
+      properties:
+        session_id:
+          type: string
+          x-eel-data-class: C
+        voter_id:
+          type: string
+          x-eel-data-class: B
+        biometric_ref:
+          type: string
+          x-eel-data-class: A
+        match_score:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          x-eel-data-class: C
+        decision:
+          type: string
+          enum: [match, no_match, fallback_used, ambiguous]
+          x-eel-data-class: C
+        identified_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        device_serial:
+          type: string
+          x-eel-data-class: C
+
+    Telemetry:
+      type: object
+      required:
+        - telemetry_id
+        - device_serial
+        - station_code
+        - battery_pct
+        - signal_strength_dbm
+        - temperature_c
+        - timestamp
+      properties:
+        telemetry_id:
+          type: string
+          description: Unique telemetry record identifier
+          x-eel-data-class: C
+        device_serial:
+          type: string
+          x-eel-data-class: C
+        station_code:
+          type: string
+          x-eel-data-class: C
+        battery_pct:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Battery state of charge, percent
+          x-eel-data-class: D
+        signal_strength_dbm:
+          type: number
+          format: float
+          description: RSSI in dBm; null when no radio link
+          nullable: true
+          x-eel-data-class: D
+        temperature_c:
+          type: number
+          format: float
+          description: Ambient temperature in degrees Celsius
+          x-eel-data-class: D
+        timestamp:
+          type: string
+          format: date-time
+          description: Device-local timestamp (UTC)
+          x-eel-data-class: D
+
+    TelemetryCreate:
+      type: object
+      required:
+        - device_serial
+        - station_code
+        - battery_pct
+        - timestamp
+      properties:
+        device_serial:
+          type: string
+          x-eel-data-class: C
+        station_code:
+          type: string
+          x-eel-data-class: C
+        battery_pct:
+          type: integer
+          minimum: 0
+          maximum: 100
+          x-eel-data-class: D
+        signal_strength_dbm:
+          type: number
+          format: float
+          nullable: true
+          x-eel-data-class: D
+        temperature_c:
+          type: number
+          format: float
+          nullable: true
+          x-eel-data-class: D
+        timestamp:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    Distress:
+      type: object
+      required:
+        - distress_id
+        - station_code
+        - device_serial
+        - distress_type
+        - details
+        - raised_at
+      properties:
+        distress_id:
+          type: string
+          description: Unique distress event identifier
+          x-eel-data-class: C
+        station_code:
+          type: string
+          x-eel-data-class: C
+        device_serial:
+          type: string
+          x-eel-data-class: C
+        distress_type:
+          type: string
+          enum:
+            - officer_duress
+            - device_tamper
+            - power_failure
+            - network_failure
+            - physical_intrusion
+            - other
+          x-eel-data-class: C
+        details:
+          type: string
+          description: Free-text detail from device firmware or officer
+          x-eel-data-class: C
+        raised_at:
+          type: string
+          format: date-time
+          description: Device-local timestamp when distress was triggered (UTC)
+          x-eel-data-class: D
+
+    DistressCreate:
+      type: object
+      required:
+        - station_code
+        - device_serial
+        - distress_type
+        - raised_at
+      properties:
+        station_code:
+          type: string
+          x-eel-data-class: C
+        device_serial:
+          type: string
+          x-eel-data-class: C
+        distress_type:
+          type: string
+          enum:
+            - officer_duress
+            - device_tamper
+            - power_failure
+            - network_failure
+            - physical_intrusion
+            - other
+          x-eel-data-class: C
+        details:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+        raised_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    BviConfig:
+      type: object
+      required:
+        - station_code
+        - election_id
+        - match_threshold
+        - allowed_modalities
+        - timeout_s
+        - fallback_allowed
+      properties:
+        station_code:
+          type: string
+          x-eel-data-class: C
+        election_id:
+          type: string
+          x-eel-data-class: C
+        match_threshold:
+          type: number
+          format: float
+          minimum: 0.5
+          maximum: 1.0
+          description: Minimum match score required to grant identification
+          x-eel-data-class: C
+          example: 0.95
+        allowed_modalities:
+          type: array
+          items:
+            type: string
+            enum: [fingerprint, iris, face, palm]
+          minItems: 1
+          description: Biometric modalities enabled at this station
+          x-eel-data-class: C
+        timeout_s:
+          type: integer
+          minimum: 5
+          maximum: 120
+          description: Identification attempt timeout in seconds
+          x-eel-data-class: D
+          example: 30
+        fallback_allowed:
+          type: boolean
+          description: Whether manual ID fallback is permitted when biometric fails
+          x-eel-data-class: C
+
+    KitHealth:
+      type: object
+      required:
+        - serial
+        - station_code
+        - battery_pct
+        - online
+        - last_seen
+        - identification_count_today
+        - error_count_today
+      properties:
+        serial:
+          type: string
+          description: Kit serial number
+          x-eel-data-class: C
+        station_code:
+          type: string
+          x-eel-data-class: C
+        battery_pct:
+          type: integer
+          minimum: 0
+          maximum: 100
+          nullable: true
+          description: Last reported battery percentage; null if never received
+          x-eel-data-class: D
+        online:
+          type: boolean
+          description: True if a telemetry heartbeat was received within the last 90 s
+          x-eel-data-class: D
+        last_seen:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of last telemetry heartbeat; null if never seen
+          x-eel-data-class: D
+        identification_count_today:
+          type: integer
+          minimum: 0
+          description: Total identifications recorded today (UTC day)
+          x-eel-data-class: D
+        error_count_today:
+          type: integer
+          minimum: 0
+          description: Total device errors recorded today (UTC day)
+          x-eel-data-class: D
+
+    KitHealthPage:
+      type: object
+      required: [items, total, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/KitHealth'
+        total:
+          type: integer
+          x-eel-data-class: D
+        next_cursor:
+          type: string
+          nullable: true
+          x-eel-data-class: D
+
+    TurnoutSummary:
+      type: object
+      required:
+        - election_id
+        - scope
+        - scope_code
+        - total_identified
+        - total_registered
+        - turnout_pct
+        - as_of
+      properties:
+        election_id:
+          type: string
+          x-eel-data-class: C
+        scope:
+          type: string
+          enum: [national, county, constituency, station]
+          description: Geographic scope of the aggregate
+          x-eel-data-class: D
+        scope_code:
+          type: string
+          description: ISO or internal code matching the scope level
+          x-eel-data-class: D
+          example: KE-030
+        total_identified:
+          type: integer
+          minimum: 0
+          description: Voters biometrically identified at or below this scope
+          x-eel-data-class: D
+        total_registered:
+          type: integer
+          minimum: 0
+          description: Registered voters in scope
+          x-eel-data-class: D
+        turnout_pct:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 100.0
+          description: Turnout as a percentage (2 d.p.)
+          x-eel-data-class: D
+        as_of:
+          type: string
+          format: date-time
+          description: Timestamp at which the aggregate was computed (UTC)
+          x-eel-data-class: D
+
+    VoterStation:
+      type: object
+      required:
+        - voter_id
+        - station_code
+        - polling_station_name
+        - constituency_code
+        - county_code
+      properties:
+        voter_id:
+          type: string
+          description: Opaque voter identifier — not the National ID number
+          x-eel-data-class: B
+        station_code:
+          type: string
+          description: Assigned polling station code
+          x-eel-data-class: B
+        polling_station_name:
+          type: string
+          description: Human-readable polling station name
+          x-eel-data-class: B
+          example: Nairobi Primary School Stream A
+        constituency_code:
+          type: string
+          description: Constituency identifier
+          x-eel-data-class: B
+          example: KE-030-001
+        county_code:
+          type: string
+          description: County identifier
+          x-eel-data-class: B
+          example: KE-030
+
+    # ---- Error schema ----
+
+    Problem:
+      type: object
+      description: RFC 9457 Problem Details
+      required: [type, title, status, detail, instance]
+      properties:
+        type:
+          type: string
+          format: uri
+          description: Problem type URI
+        title:
+          type: string
+          description: Human-readable short title
+        status:
+          type: integer
+          description: HTTP status code
+        detail:
+          type: string
+          description: Human-readable explanation of this occurrence
+        instance:
+          type: string
+          format: uri-reference
+          description: URI identifying this specific occurrence
+        trace_id:
+          type: string
+          description: Distributed trace identifier for correlation
+          example: 4bf92f3577b34da6a3ce929d0e0e4736
+
+  # ---- Shared error responses ----
+
+  responses:
+    BadRequest:
+      description: Bad request — malformed input
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://errors.eel.internal/common/bad_request
+            title: Bad Request
+            status: 400
+            detail: 'device_serial: field is required'
+            instance: /api/v1/bvi/sessions
+
+    Unauthorized:
+      description: Missing or invalid JWT
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://errors.eel.internal/common/unauthorized
+            title: Unauthorized
+            status: 401
+            detail: Bearer token is missing or has expired.
+            instance: /api/v1/bvi/turnout
+
+    MtlsUnauthorized:
+      description: Missing or invalid SVID client certificate
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://errors.eel.internal/common/mtls_required
+            title: Unauthorized
+            status: 401
+            detail: >-
+              A valid SPIFFE SVID client certificate is required for this
+              endpoint. Ensure the device workload API has a valid certificate
+              bundle.
+            instance: /api/v1/bvi/sessions
+
+    Forbidden:
+      description: Valid JWT but SpiceDB permission check failed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://errors.eel.internal/common/forbidden
+            title: Forbidden
+            status: 403
+            detail: Caller does not hold the required permission for this resource.
+            instance: /api/v1/bvi/voters/vtr-KE-2026-00481293/station
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://errors.eel.internal/common/not_found
+            title: Not Found
+            status: 404
+            detail: No resource found with the provided identifier.
+            instance: /api/v1/bvi/sessions/ses-unknown
+
+    Conflict:
+      description: State conflict — resource already exists or concurrent modification
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://errors.eel.internal/common/conflict
+            title: Conflict
+            status: 409
+            detail: An active session already exists for this device and election day.
+            instance: /api/v1/bvi/sessions
+
+    UnprocessableEntity:
+      description: Semantically invalid request — validation passed but business rule failed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://errors.eel.internal/bvi/invalid_session_state
+            title: Unprocessable Entity
+            status: 422
+            detail: Cannot record an identification on a closed session.
+            instance: /api/v1/bvi/identifications
+
+    InternalError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://errors.eel.internal/common/internal_error
+            title: Internal Server Error
+            status: 500
+            detail: An unexpected error occurred. Use trace_id to report this incident.
+            instance: /api/v1/bvi/sessions
+            trace_id: 4bf92f3577b34da6a3ce929d0e0e4736

@@ -1,0 +1,49 @@
+# Golden tests for training authz schema
+# Run with: zed test packages/authz-schema/training.zed packages/authz-schema/tests/training_test.yaml
+tests:
+  - name: "content_author can create training content"
+    subject: "eel_user:user_cms_editor"
+    resource: "eel_training_content:tc_001"
+    permission: "create"
+    expected: true
+    relationships:
+      - "eel_training_content:tc_001#content_author@eel_user:user_cms_editor"
+
+  - name: "trainee can read training content"
+    subject: "eel_user:user_poll_clerk"
+    resource: "eel_training_content:tc_001"
+    permission: "read"
+    expected: true
+    relationships:
+      - "eel_training_content:tc_001#trainee@eel_user:user_poll_clerk"
+
+  - name: "trainee cannot publish training content"
+    subject: "eel_user:user_poll_clerk"
+    resource: "eel_training_content:tc_001"
+    permission: "publish"
+    expected: false
+    relationships:
+      - "eel_training_content:tc_001#trainee@eel_user:user_poll_clerk"
+
+  - name: "any user can submit accreditation application"
+    subject: "eel_user:user_observer"
+    resource: "eel_accreditation_application:aa_001"
+    permission: "submit"
+    expected: true
+    relationships: []
+
+  - name: "applicant can only read own accreditation application"
+    subject: "eel_user:user_observer"
+    resource: "eel_accreditation_application:aa_001"
+    permission: "read_own"
+    expected: true
+    relationships:
+      - "eel_accreditation_application:aa_001#applicant@eel_user:user_observer"
+
+  - name: "holder can read own certificate"
+    subject: "eel_user:user_poll_clerk"
+    resource: "eel_certificate:cert_001"
+    permission: "read_own"
+    expected: true
+    relationships:
+      - "eel_certificate:cert_001#holder@eel_user:user_poll_clerk"

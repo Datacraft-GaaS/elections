@@ -1,0 +1,17 @@
+# Topic: eel.field_mobile.tamper.v1
+name: eel.field_mobile.tamper.v1
+partitions: 12
+replication_factor: 3
+config:
+  min.insync.replicas: "2"
+  unclean.leader.election.enable: "false"
+  acks: "all"
+  retention.ms: "7776000000"
+  tiered.storage.enable: "false"
+  remote.storage.manager: "eel-minio-tiered-storage"
+retention_class: tamper
+owner: field-mobile-svc
+description: Device tamper detection events from field mobile devices. 90-day retention for forensic investigation. Events are treated as security evidence.
+event_types:
+  - eel.field_mobile.device_tamper_detected.v1
+partition_key: eel_stream_id

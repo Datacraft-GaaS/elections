@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.eel.local/governance/recall/recall_threshold_met/v1.json",
+  "title": "eel.governance.recall_threshold_met.v1",
+  "type": "object",
+  "required": ["specversion","id","type","source","subject","time","datacontenttype","data","eel_stream_id","eel_seq","eel_hlc","eel_prev_hash","eel_correlation_id","eel_causation_id","eel_producer_key_id","eel_signature","eel_election_id","eel_data_class"],
+  "properties": {
+    "specversion": {"const": "1.0"},
+    "id": {"type": "string", "format": "uuid", "description": "UUIDv7 event identifier"},
+    "type": {"const": "eel.governance.recall_threshold_met.v1"},
+    "source": {"const": "spiffe://eel.local/service/governance-svc"},
+    "subject": {"type": "string", "description": "Petition identifier"},
+    "time": {"type": "string", "format": "date-time"},
+    "datacontenttype": {"const": "application/json"},
+    "dataschema": {"const": "https://schemas.eel.local/governance/recall/recall_threshold_met/v1.json"},
+    "data": {
+      "type": "object",
+      "required": ["petition_id","constituency_code","verified_count","threshold_required","verified_at"],
+      "properties": {
+        "petition_id": {"type": "string", "format": "uuid"},
+        "constituency_code": {"type": "string"},
+        "verified_count": {"type": "integer", "minimum": 0},
+        "threshold_required": {"type": "integer", "minimum": 0},
+        "verified_at": {"type": "string", "format": "date-time"}
+      },
+      "additionalProperties": false
+    },
+    "eel_stream_id": {"type": "string", "format": "uuid", "description": "Event stream identifier"},
+    "eel_seq": {"type": "integer", "minimum": 0, "description": "Monotonic sequence number within stream"},
+    "eel_hlc": {"type": "string", "description": "Hybrid logical clock timestamp"},
+    "eel_prev_hash": {"type": "string", "description": "sha256 hash of previous event in stream"},
+    "eel_correlation_id": {"type": "string", "format": "uuid", "description": "Correlation identifier for tracing"},
+    "eel_causation_id": {"type": ["string", "null"], "format": "uuid", "description": "Causation event identifier"},
+    "eel_producer_key_id": {"type": "string", "description": "Key identifier used for signature"},
+    "eel_signature": {"type": "string", "description": "Ed25519 signature base64url"},
+    "eel_election_id": {"type": "string", "description": "Election identifier"},
+    "eel_data_class": {"const": "C", "description": "Data classification level"}
+  },
+  "additionalProperties": false
+}

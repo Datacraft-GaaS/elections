@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.eel.local/governance/rla/rla_audit_initiated/v1.json",
+  "title": "eel.governance.rla_audit_initiated.v1",
+  "type": "object",
+  "required": ["specversion","id","type","source","subject","time","datacontenttype","data","eel_stream_id","eel_seq","eel_hlc","eel_prev_hash","eel_correlation_id","eel_causation_id","eel_producer_key_id","eel_signature","eel_election_id","eel_data_class"],
+  "properties": {
+    "specversion": {"const": "1.0"},
+    "id": {"type": "string", "format": "uuid", "description": "UUIDv7 event identifier"},
+    "type": {"const": "eel.governance.rla_audit_initiated.v1"},
+    "source": {"const": "spiffe://eel.local/service/governance-svc"},
+    "subject": {"type": "string", "description": "Audit identifier"},
+    "time": {"type": "string", "format": "date-time"},
+    "datacontenttype": {"const": "application/json"},
+    "dataschema": {"const": "https://schemas.eel.local/governance/rla/rla_audit_initiated/v1.json"},
+    "data": {
+      "type": "object",
+      "required": ["audit_id","election_id","contest_code","risk_limit","method","seed","initiated_at"],
+      "properties": {
+        "audit_id": {"type": "string", "format": "uuid"},
+        "election_id": {"type": "string"},
+        "contest_code": {"type": "string"},
+        "risk_limit": {"type": "number", "minimum": 0.01, "maximum": 0.25, "description": "Risk limit as decimal e.g. 0.05 for 5%"},
+        "method": {"type": "string", "enum": ["ballot_polling","ballot_comparison","hybrid"]},
+        "seed": {"type": "string", "description": "Public random seed for sample selection"},
+        "initiated_at": {"type": "string", "format": "date-time"}
+      },
+      "additionalProperties": false
+    },
+    "eel_stream_id": {"type": "string", "format": "uuid", "description": "Event stream identifier"},
+    "eel_seq": {"type": "integer", "minimum": 0, "description": "Monotonic sequence number within stream"},
+    "eel_hlc": {"type": "string", "description": "Hybrid logical clock timestamp"},
+    "eel_prev_hash": {"type": "string", "description": "sha256 hash of previous event in stream"},
+    "eel_correlation_id": {"type": "string", "format": "uuid", "description": "Correlation identifier for tracing"},
+    "eel_causation_id": {"type": ["string", "null"], "format": "uuid", "description": "Causation event identifier"},
+    "eel_producer_key_id": {"type": "string", "description": "Key identifier used for signature"},
+    "eel_signature": {"type": "string", "description": "Ed25519 signature base64url"},
+    "eel_election_id": {"type": "string", "description": "Election identifier"},
+    "eel_data_class": {"const": "C", "description": "Data classification level"}
+  },
+  "additionalProperties": false
+}

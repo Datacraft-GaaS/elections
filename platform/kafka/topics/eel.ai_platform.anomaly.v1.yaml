@@ -1,0 +1,18 @@
+# Topic: eel.ai_platform.anomaly.v1
+name: eel.ai_platform.anomaly.v1
+partitions: 32
+replication_factor: 3
+config:
+  min.insync.replicas: "2"
+  unclean.leader.election.enable: "false"
+  acks: "all"
+  retention.ms: "2592000000"
+  tiered.storage.enable: "false"
+  remote.storage.manager: "eel-minio-tiered-storage"
+retention_class: operational
+owner: ai-platform-svc
+description: AI-generated anomaly detection alerts and adjudication decisions. High-volume (32 partitions). Covers turnout spikes, result outliers, network intrusions, and media disinformation.
+event_types:
+  - eel.ai_platform.anomaly_detected.v1
+  - eel.ai_platform.anomaly_adjudicated.v1
+partition_key: eel_stream_id

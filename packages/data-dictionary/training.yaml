@@ -1,0 +1,256 @@
+service: training-svc
+context: training
+entities:
+  - name: ContentItem
+    store: T2
+    event_sourced: false
+    columns:
+      - name: content_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 content item identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: content_type
+        type: text
+        data_class: D
+        pii: false
+        nullable: false
+        description: Content format. One of video, pdf, quiz, infographic.
+        retention: Delete at election cycle end + 7 years
+      - name: title_en
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: English title.
+        retention: Delete at election cycle end + 7 years
+      - name: title_sw
+        type: text
+        data_class: C
+        pii: false
+        nullable: true
+        description: Swahili title.
+        retention: Delete at election cycle end + 7 years
+      - name: status
+        type: text
+        data_class: D
+        pii: false
+        nullable: false
+        description: Content status. One of draft, approved, published, archived.
+        retention: Delete at election cycle end + 7 years
+      - name: published_at
+        type: timestamp
+        data_class: C
+        pii: false
+        nullable: true
+        description: Publication timestamp.
+        retention: Delete at election cycle end + 7 years
+
+  - name: Enrolment
+    store: T2
+    event_sourced: false
+    columns:
+      - name: enrolment_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 enrolment identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: trainee_id_hash
+        type: text
+        data_class: B
+        pii: true
+        nullable: false
+        description: SHA-256 of trainee national ID.
+        retention: Delete at election cycle end + 7 years
+      - name: content_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: Foreign key to ContentItem.
+        retention: Delete at election cycle end + 7 years
+      - name: completed_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: true
+        description: Completion timestamp.
+        retention: Delete at election cycle end + 7 years
+      - name: score
+        type: integer
+        data_class: C
+        pii: false
+        nullable: true
+        description: Assessment score out of 100.
+        retention: Delete at election cycle end + 7 years
+
+  - name: Certificate
+    store: T2
+    event_sourced: false
+    columns:
+      - name: certificate_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 certificate identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: trainee_id_hash
+        type: text
+        data_class: B
+        pii: true
+        nullable: false
+        description: SHA-256 of certificate holder national ID.
+        retention: Delete at election cycle end + 7 years
+      - name: certificate_type
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Certificate type. One of poll_clerk, presiding_officer, returning_officer, observer.
+        retention: Delete at election cycle end + 7 years
+      - name: issued_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Issuance timestamp.
+        retention: Delete at election cycle end + 7 years
+      - name: expires_at
+        type: timestamp
+        data_class: C
+        pii: false
+        nullable: true
+        description: Expiry timestamp.
+        retention: Delete at election cycle end + 7 years
+      - name: revoked_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: true
+        description: Revocation timestamp.
+        retention: Delete at election cycle end + 7 years
+
+  - name: AccreditationApplication
+    store: T2
+    event_sourced: false
+    columns:
+      - name: application_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 accreditation application identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: applicant_name_hash
+        type: text
+        data_class: B
+        pii: true
+        nullable: false
+        description: SHA-256 of applicant full name.
+        retention: Delete at election cycle end + 7 years
+      - name: organisation
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Applicant organisation name.
+        retention: Delete at election cycle end + 7 years
+      - name: application_type
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Accreditation type. One of domestic_observer, international_observer, party_agent, journalist, media.
+        retention: Delete at election cycle end + 7 years
+      - name: badge_number
+        type: text
+        data_class: C
+        pii: false
+        nullable: true
+        description: Assigned badge number. Null until approved.
+        retention: Delete at election cycle end + 7 years
+      - name: status
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Application status. One of submitted, approved, rejected, revoked.
+        retention: Delete at election cycle end + 7 years
+
+  - name: MedicalPersonnel
+    store: T2
+    event_sourced: false
+    columns:
+      - name: personnel_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 medical personnel identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: name_hash
+        type: text
+        data_class: B
+        pii: true
+        nullable: false
+        description: SHA-256 of personnel name.
+        retention: Delete at election cycle end + 7 years
+      - name: registration_number_hash
+        type: text
+        data_class: B
+        pii: true
+        nullable: false
+        description: SHA-256 of medical council registration number.
+        retention: Delete at election cycle end + 7 years
+      - name: assigned_station_code
+        type: text
+        data_class: C
+        pii: false
+        nullable: true
+        description: Assigned polling station.
+        retention: Delete at election cycle end + 7 years
+
+  - name: MedicalIncident
+    store: T2
+    event_sourced: false
+    columns:
+      - name: incident_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 medical incident identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: station_code
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Polling station where incident occurred.
+        retention: Delete at election cycle end + 7 years
+      - name: incident_type
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Medical incident type. One of fainting, cardiac, violence_injury, heat_exhaustion, other.
+        retention: Delete at election cycle end + 7 years
+      - name: severity
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Severity. One of minor, moderate, severe, critical.
+        retention: Delete at election cycle end + 7 years
+      - name: reported_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Report timestamp.
+        retention: Delete at election cycle end + 7 years

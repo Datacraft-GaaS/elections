@@ -1,0 +1,1352 @@
+openapi: 3.1.0
+info:
+  title: Custody Chain & Inventory Management API
+  description: |
+    Module M20 — inventory-management (custody events).
+    Tracks physical electoral assets through chain-of-custody events, seal
+    integrity, reserves management, and reconciliation reporting.
+
+    ## Security
+    All endpoints require JWT bearer token validated against Keycloak, with
+    authorization decisions delegated to SpiceDB (relationship-based access
+    control). See `x-eel-auth` extension on each operation.
+
+    ## Data Classification
+    Property annotations use `x-eel-data-class`:
+    - **A** — secret / biometric
+    - **B** — sensitive personal data (voter-linked)
+    - **C** — controlled operational data
+    - **D** — aggregate / public-safe statistics
+
+    ## Idempotency
+    All write operations require an `Idempotency-Key` header (UUID v4/v7).
+    Replayed requests with the same key return the cached response; the server
+    guarantees exactly-once side-effects for 24 hours.
+
+    ## SLA
+    All endpoints: p50 200 ms, p95 500 ms, p99 1000 ms.
+  version: 1.0.0
+  contact:
+    name: EEL Platform Engineering
+    email: platform@eel.internal
+  license:
+    name: Proprietary
+    identifier: LicenseRef-EEL-INTERNAL
+
+servers:
+  - url: https://api.eel.internal
+    description: Production (internal)
+  - url: https://api.staging.eel.internal
+    description: Staging
+
+tags:
+  - name: Assets
+    description: Electoral asset registration and custody transfers
+  - name: Seals
+    description: Tamper-evident seal lifecycle
+  - name: Reserves
+    description: Reserve stock monitoring
+  - name: Reconciliation
+    description: Physical reconciliation sessions and reports
+  - name: Summary
+    description: Aggregate custody statistics
+
+paths:
+  /api/v1/custody/assets:
+    post:
+      operationId: registerAsset
+      summary: Register a new electoral asset
+      description: |
+        Creates an asset record and establishes initial custody. Idempotent on
+        `Idempotency-Key`; duplicate keys with identical body return 200 with the
+        original record.
+      tags: [Assets]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetCreate'
+            example:
+              asset_type: ballot_box
+              serial_number: BB-2026-00142
+              description: Standard metal ballot box, 50L
+              current_custodian_id: off-8f3a2d1e
+              current_location: CMS-NRB-CENTRAL
+              condition: new
+      responses:
+        '201':
+          description: Asset registered
+          headers:
+            Location:
+              schema:
+                type: string
+              description: URL of the created asset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+              example:
+                asset_id: ast-01924d38-7c1f-7a2b-9e3c-0f4b5c6d7e8f
+                asset_type: ballot_box
+                serial_number: BB-2026-00142
+                description: Standard metal ballot box, 50L
+                current_custodian_id: off-8f3a2d1e
+                current_location: CMS-NRB-CENTRAL
+                status: in_custody
+                condition: new
+                created_at: '2026-01-15T08:00:00Z'
+                updated_at: '2026-01-15T08:00:00Z'
+        '200':
+          description: Duplicate idempotency key — returning original record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      operationId: listAssets
+      summary: List assets with optional filters
+      description: Returns a paginated list of assets visible to the caller's SpiceDB scope.
+      tags: [Assets]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: asset_type
+          in: query
+          schema:
+            type: string
+            enum: [ballot_box, ream_paper, stamp_set, result_form, biometric_kit, seal, other]
+          description: Filter by asset type
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [in_custody, in_transit, reconciled, missing, disposed]
+          description: Filter by custody status
+        - name: custodian_id
+          in: query
+          schema:
+            type: string
+          description: Filter by current custodian identifier
+        - name: location
+          in: query
+          schema:
+            type: string
+          description: Filter by current location code
+        - $ref: '#/components/parameters/PageCursor'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Paginated asset list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/custody/assets/{id}/custody:
+    patch:
+      operationId: transferCustody
+      summary: Transfer asset custody
+      description: |
+        Records a chain-of-custody transfer event. Both the outgoing and incoming
+        custodians must be resolvable officer identifiers. The `witness_id` field
+        is required when `reason` is `election_day_deployment`.
+      tags: [Assets]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AssetId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustodyTransferCreate'
+            example:
+              to_custodian_id: off-99a1b2c3
+              to_location: POLL-NRB-001
+              reason: election_day_deployment
+              officer_id: off-8f3a2d1e
+              witness_id: off-77d4e5f6
+      responses:
+        '200':
+          description: Custody transferred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustodyTransfer'
+              example:
+                transfer_id: xfr-01924d3a-1111-7a2b-9e3c-0f4b5c6d7e8f
+                asset_id: ast-01924d38-7c1f-7a2b-9e3c-0f4b5c6d7e8f
+                from_custodian_id: off-8f3a2d1e
+                to_custodian_id: off-99a1b2c3
+                from_location: CMS-NRB-CENTRAL
+                to_location: POLL-NRB-001
+                reason: election_day_deployment
+                transferred_at: '2026-08-09T06:00:00Z'
+                officer_id: off-8f3a2d1e
+                witness_id: off-77d4e5f6
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/custody/assets/{id}/history:
+    get:
+      operationId: getAssetHistory
+      summary: Get full custody history for an asset
+      description: Returns all custody transfer events for the asset in chronological order.
+      tags: [Assets]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AssetId'
+        - $ref: '#/components/parameters/PageCursor'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Custody history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustodyTransferPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/custody/seals:
+    post:
+      operationId: createSeal
+      summary: Apply a tamper-evident seal to an asset
+      description: |
+        Records the application of a numbered seal to an asset. The asset must be
+        in `in_custody` status. A single asset may have at most one active seal
+        at a time; attempting to seal an already-sealed asset returns 409.
+      tags: [Seals]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SealCreate'
+            example:
+              asset_id: ast-01924d38-7c1f-7a2b-9e3c-0f4b5c6d7e8f
+              seal_number: SL-2026-0048821
+              sealed_by_id: off-8f3a2d1e
+      responses:
+        '201':
+          description: Seal applied
+          headers:
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Seal'
+              example:
+                seal_id: sel-01924d3b-cccc-7a2b-9e3c-0f4b5c6d7e8f
+                asset_id: ast-01924d38-7c1f-7a2b-9e3c-0f4b5c6d7e8f
+                seal_number: SL-2026-0048821
+                sealed_by_id: off-8f3a2d1e
+                sealed_at: '2026-08-09T07:30:00Z'
+                status: intact
+        '200':
+          description: Duplicate idempotency key — returning original record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Seal'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/custody/seals/{id}/break:
+    patch:
+      operationId: breakSeal
+      summary: Break a seal (dual-officer)
+      description: |
+        Records the authorised breaking of a seal. This is a **dual-control**
+        operation: `broken_by_id` and `countersign_id` must be distinct officer
+        identifiers, both must hold the `seal_break` permission in SpiceDB for
+        the relevant asset, and neither may be the same as the `sealed_by_id`
+        officer.
+
+        If dual-control validation fails the server returns 403 with problem type
+        `dual_control_required`.
+      tags: [Seals]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      x-eel-dual-control: true
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/SealId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SealBreakCreate'
+            example:
+              broken_by_id: off-99a1b2c3
+              countersign_id: off-77d4e5f6
+              reason: count_commencement
+      responses:
+        '200':
+          description: Seal broken
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SealBreak'
+              example:
+                break_id: brk-01924d3c-aaaa-7a2b-9e3c-0f4b5c6d7e8f
+                seal_id: sel-01924d3b-cccc-7a2b-9e3c-0f4b5c6d7e8f
+                broken_by_id: off-99a1b2c3
+                countersign_id: off-77d4e5f6
+                reason: count_commencement
+                broken_at: '2026-08-09T18:00:05Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden — may indicate dual-control failure
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                dual_control:
+                  summary: Dual-control validation failed
+                  value:
+                    type: https://errors.eel.internal/custody/dual_control_required
+                    title: Dual Control Required
+                    status: 403
+                    detail: >-
+                      broken_by_id and countersign_id must be distinct officers
+                      both holding the seal_break permission. Neither may match
+                      the original sealing officer.
+                    instance: /api/v1/custody/seals/sel-01924d3b-cccc-7a2b-9e3c-0f4b5c6d7e8f/break
+                generic_forbidden:
+                  summary: Insufficient SpiceDB permission
+                  value:
+                    type: https://errors.eel.internal/common/forbidden
+                    title: Forbidden
+                    status: 403
+                    detail: Caller does not hold seal_break permission for this asset.
+                    instance: /api/v1/custody/seals/sel-01924d3b-cccc-7a2b-9e3c-0f4b5c6d7e8f/break
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/custody/reserves:
+    get:
+      operationId: listReserves
+      summary: List reserve stock levels
+      description: Returns current reserve inventory with threshold breach indicators.
+      tags: [Reserves]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: asset_type
+          in: query
+          schema:
+            type: string
+            enum: [ballot_box, ream_paper, stamp_set, result_form, biometric_kit, seal, other]
+        - name: location
+          in: query
+          schema:
+            type: string
+        - name: below_threshold
+          in: query
+          schema:
+            type: boolean
+          description: When true, return only reserves below their minimum threshold
+        - $ref: '#/components/parameters/PageCursor'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Reserve stock list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservePage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/custody/summary:
+    get:
+      operationId: getCustodySummary
+      summary: Get aggregate custody statistics
+      description: |
+        Returns a real-time aggregate snapshot. Data-class D — aggregate counts
+        only, no individual asset identifiers. Results are cached with a 60-second
+        TTL; callers may pass `Cache-Control: no-cache` to force a fresh
+        computation (subject to rate-limiting).
+      tags: [Summary]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: election_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Election scope for the summary
+          example: elec-2026-general
+        - name: station_code
+          in: query
+          schema:
+            type: string
+          description: Narrow to a single station (optional)
+      responses:
+        '200':
+          description: Custody summary
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+              example: max-age=60
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustodySummary'
+              example:
+                total_assets: 4820
+                assets_in_custody: 4711
+                assets_in_transit: 96
+                broken_seals_today: 312
+                discrepancy_count: 3
+                generated_at: '2026-08-09T18:05:00Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/custody/reconcile:
+    post:
+      operationId: startReconciliation
+      summary: Start a physical reconciliation session
+      description: |
+        Opens a reconciliation session for a station. The session records expected
+        vs. found asset counts and generates a discrepancy report when closed.
+        Only one active session per station per election is allowed.
+      tags: [Reconciliation]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReconcileCreate'
+            example:
+              station_code: POLL-NRB-001
+              election_id: elec-2026-general
+              assets_expected: 12
+              assets_found: 12
+              discrepancies: []
+              officer_id: off-8f3a2d1e
+      responses:
+        '201':
+          description: Reconciliation record created
+          headers:
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReconcileReport'
+        '200':
+          description: Duplicate idempotency key — returning existing record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReconcileReport'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/custody/reconcile/{id}/report:
+    get:
+      operationId: getReconcileReport
+      summary: Fetch a reconciliation report
+      description: Returns the full reconciliation report including all discrepancy details.
+      tags: [Reconciliation]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Reconciliation session identifier
+          example: rec-01924d40-ffff-7a2b-9e3c-0f4b5c6d7e8f
+      responses:
+        '200':
+          description: Reconciliation report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReconcileReport'
+              example:
+                reconcile_id: rec-01924d40-ffff-7a2b-9e3c-0f4b5c6d7e8f
+                station_code: POLL-NRB-001
+                election_id: elec-2026-general
+                assets_expected: 12
+                assets_found: 11
+                discrepancies:
+                  - asset_type: stamp_set
+                    serial_number: SS-2026-00077
+                    issue: missing
+                status: discrepancy_found
+                officer_id: off-8f3a2d1e
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Keycloak-issued JWT. SpiceDB enforces fine-grained permissions server-side.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        minLength: 36
+        maxLength: 36
+      description: >-
+        Client-generated UUID v4/v7. The server caches the response for 24 hours
+        and replays it on repeated requests with the same key.
+      example: 01924d35-0000-7000-8000-000000000001
+
+    AssetId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Asset identifier
+      example: ast-01924d38-7c1f-7a2b-9e3c-0f4b5c6d7e8f
+
+    SealId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Seal identifier
+      example: sel-01924d3b-cccc-7a2b-9e3c-0f4b5c6d7e8f
+
+    PageCursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Opaque pagination cursor from a previous response
+
+    PageSize:
+      name: page_size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+      description: Maximum items per page
+
+  schemas:
+    # ---- Domain schemas ----
+
+    Asset:
+      type: object
+      required:
+        - asset_id
+        - asset_type
+        - serial_number
+        - current_custodian_id
+        - current_location
+        - status
+        - condition
+        - created_at
+        - updated_at
+      properties:
+        asset_id:
+          type: string
+          description: Unique asset identifier (UUID7 prefixed)
+          x-eel-data-class: C
+          example: ast-01924d38-7c1f-7a2b-9e3c-0f4b5c6d7e8f
+        asset_type:
+          type: string
+          enum: [ballot_box, ream_paper, stamp_set, result_form, biometric_kit, seal, other]
+          description: Asset category
+          x-eel-data-class: C
+        serial_number:
+          type: string
+          description: Manufacturer or authority serial number
+          x-eel-data-class: C
+          example: BB-2026-00142
+        description:
+          type: string
+          description: Free-text description
+          x-eel-data-class: C
+          example: Standard metal ballot box, 50L
+        current_custodian_id:
+          type: string
+          description: Officer identifier currently holding custody
+          x-eel-data-class: C
+          example: off-8f3a2d1e
+        current_location:
+          type: string
+          description: Location code (station, warehouse, or transit hub)
+          x-eel-data-class: C
+          example: CMS-NRB-CENTRAL
+        status:
+          type: string
+          enum: [in_custody, in_transit, reconciled, missing, disposed]
+          description: Current custody status
+          x-eel-data-class: C
+        condition:
+          type: string
+          enum: [new, good, fair, damaged, condemned]
+          description: Physical condition assessment
+          x-eel-data-class: C
+        created_at:
+          type: string
+          format: date-time
+          description: Record creation timestamp (UTC ISO 8601)
+          x-eel-data-class: D
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp (UTC ISO 8601)
+          x-eel-data-class: D
+
+    AssetCreate:
+      type: object
+      required:
+        - asset_type
+        - serial_number
+        - current_custodian_id
+        - current_location
+        - condition
+      properties:
+        asset_type:
+          type: string
+          enum: [ballot_box, ream_paper, stamp_set, result_form, biometric_kit, seal, other]
+          x-eel-data-class: C
+        serial_number:
+          type: string
+          x-eel-data-class: C
+        description:
+          type: string
+          x-eel-data-class: C
+        current_custodian_id:
+          type: string
+          x-eel-data-class: C
+        current_location:
+          type: string
+          x-eel-data-class: C
+        condition:
+          type: string
+          enum: [new, good, fair, damaged, condemned]
+          x-eel-data-class: C
+
+    AssetPage:
+      type: object
+      required: [items, total, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Asset'
+        total:
+          type: integer
+          description: Total matching assets
+          x-eel-data-class: D
+        next_cursor:
+          type: string
+          nullable: true
+          description: Cursor for the next page; null when exhausted
+          x-eel-data-class: D
+
+    CustodyTransfer:
+      type: object
+      required:
+        - transfer_id
+        - asset_id
+        - from_custodian_id
+        - to_custodian_id
+        - from_location
+        - to_location
+        - reason
+        - transferred_at
+        - officer_id
+      properties:
+        transfer_id:
+          type: string
+          description: Unique transfer event identifier
+          x-eel-data-class: C
+        asset_id:
+          type: string
+          x-eel-data-class: C
+        from_custodian_id:
+          type: string
+          x-eel-data-class: C
+        to_custodian_id:
+          type: string
+          x-eel-data-class: C
+        from_location:
+          type: string
+          x-eel-data-class: C
+        to_location:
+          type: string
+          x-eel-data-class: C
+        reason:
+          type: string
+          enum:
+            - initial_assignment
+            - election_day_deployment
+            - post_election_return
+            - maintenance
+            - reallocation
+            - reconciliation
+          x-eel-data-class: C
+        transferred_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        officer_id:
+          type: string
+          description: Officer who authorised the transfer
+          x-eel-data-class: C
+        witness_id:
+          type: string
+          nullable: true
+          description: Witnessing officer (required for election_day_deployment)
+          x-eel-data-class: C
+
+    CustodyTransferCreate:
+      type: object
+      required:
+        - to_custodian_id
+        - to_location
+        - reason
+        - officer_id
+      properties:
+        to_custodian_id:
+          type: string
+          x-eel-data-class: C
+        to_location:
+          type: string
+          x-eel-data-class: C
+        reason:
+          type: string
+          enum:
+            - initial_assignment
+            - election_day_deployment
+            - post_election_return
+            - maintenance
+            - reallocation
+            - reconciliation
+          x-eel-data-class: C
+        officer_id:
+          type: string
+          x-eel-data-class: C
+        witness_id:
+          type: string
+          x-eel-data-class: C
+
+    CustodyTransferPage:
+      type: object
+      required: [items, total, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustodyTransfer'
+        total:
+          type: integer
+          x-eel-data-class: D
+        next_cursor:
+          type: string
+          nullable: true
+          x-eel-data-class: D
+
+    Seal:
+      type: object
+      required:
+        - seal_id
+        - asset_id
+        - seal_number
+        - sealed_by_id
+        - sealed_at
+        - status
+      properties:
+        seal_id:
+          type: string
+          description: Unique seal identifier
+          x-eel-data-class: C
+        asset_id:
+          type: string
+          x-eel-data-class: C
+        seal_number:
+          type: string
+          description: Physical seal serial printed on the tag
+          x-eel-data-class: C
+          example: SL-2026-0048821
+        sealed_by_id:
+          type: string
+          description: Officer who applied the seal
+          x-eel-data-class: C
+        sealed_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        status:
+          type: string
+          enum: [intact, broken, voided]
+          x-eel-data-class: C
+
+    SealCreate:
+      type: object
+      required:
+        - asset_id
+        - seal_number
+        - sealed_by_id
+      properties:
+        asset_id:
+          type: string
+          x-eel-data-class: C
+        seal_number:
+          type: string
+          x-eel-data-class: C
+        sealed_by_id:
+          type: string
+          x-eel-data-class: C
+
+    SealBreak:
+      type: object
+      required:
+        - break_id
+        - seal_id
+        - broken_by_id
+        - countersign_id
+        - reason
+        - broken_at
+      properties:
+        break_id:
+          type: string
+          description: Unique break-event identifier
+          x-eel-data-class: C
+        seal_id:
+          type: string
+          x-eel-data-class: C
+        broken_by_id:
+          type: string
+          description: Primary officer who broke the seal
+          x-eel-data-class: C
+        countersign_id:
+          type: string
+          description: Counter-signing officer (dual-control)
+          x-eel-data-class: C
+        reason:
+          type: string
+          enum:
+            - count_commencement
+            - inspection
+            - evidence_seizure
+            - authorised_recount
+          x-eel-data-class: C
+        broken_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    SealBreakCreate:
+      type: object
+      required:
+        - broken_by_id
+        - countersign_id
+        - reason
+      properties:
+        broken_by_id:
+          type: string
+          x-eel-data-class: C
+        countersign_id:
+          type: string
+          x-eel-data-class: C
+        reason:
+          type: string
+          enum:
+            - count_commencement
+            - inspection
+            - evidence_seizure
+            - authorised_recount
+          x-eel-data-class: C
+
+    Reserve:
+      type: object
+      required:
+        - reserve_id
+        - asset_type
+        - location
+        - quantity
+        - min_threshold
+        - status
+      properties:
+        reserve_id:
+          type: string
+          description: Unique reserve record identifier
+          x-eel-data-class: C
+        asset_type:
+          type: string
+          enum: [ballot_box, ream_paper, stamp_set, result_form, biometric_kit, seal, other]
+          x-eel-data-class: C
+        location:
+          type: string
+          description: Warehouse or depot location code
+          x-eel-data-class: C
+          example: DEPOT-NAIROBI-EAST
+        quantity:
+          type: integer
+          minimum: 0
+          description: Units currently on hand
+          x-eel-data-class: C
+        min_threshold:
+          type: integer
+          minimum: 0
+          description: Minimum stock level triggering a low-stock alert
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [adequate, low, critical, depleted]
+          description: Computed from quantity vs. min_threshold
+          x-eel-data-class: C
+
+    ReservePage:
+      type: object
+      required: [items, total, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Reserve'
+        total:
+          type: integer
+          x-eel-data-class: D
+        next_cursor:
+          type: string
+          nullable: true
+          x-eel-data-class: D
+
+    CustodySummary:
+      type: object
+      required:
+        - total_assets
+        - assets_in_custody
+        - assets_in_transit
+        - broken_seals_today
+        - discrepancy_count
+        - generated_at
+      properties:
+        total_assets:
+          type: integer
+          description: Total registered assets in scope
+          x-eel-data-class: D
+        assets_in_custody:
+          type: integer
+          description: Assets with status in_custody
+          x-eel-data-class: D
+        assets_in_transit:
+          type: integer
+          description: Assets with status in_transit
+          x-eel-data-class: D
+        broken_seals_today:
+          type: integer
+          description: Seal-break events recorded on the current calendar day (UTC)
+          x-eel-data-class: D
+        discrepancy_count:
+          type: integer
+          description: Open discrepancies from reconciliation sessions
+          x-eel-data-class: D
+        generated_at:
+          type: string
+          format: date-time
+          description: Timestamp at which the snapshot was computed
+          x-eel-data-class: D
+
+    Discrepancy:
+      type: object
+      required: [asset_type, issue]
+      properties:
+        asset_type:
+          type: string
+          x-eel-data-class: C
+        serial_number:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+        issue:
+          type: string
+          enum: [missing, extra, damaged, wrong_location]
+          x-eel-data-class: C
+        notes:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+
+    ReconcileReport:
+      type: object
+      required:
+        - reconcile_id
+        - station_code
+        - election_id
+        - assets_expected
+        - assets_found
+        - discrepancies
+        - status
+        - officer_id
+      properties:
+        reconcile_id:
+          type: string
+          description: Unique reconciliation session identifier
+          x-eel-data-class: C
+        station_code:
+          type: string
+          description: Polling station or depot being reconciled
+          x-eel-data-class: C
+          example: POLL-NRB-001
+        election_id:
+          type: string
+          x-eel-data-class: C
+          example: elec-2026-general
+        assets_expected:
+          type: integer
+          description: Total assets the system expected to find at the station
+          x-eel-data-class: C
+        assets_found:
+          type: integer
+          description: Total assets physically verified
+          x-eel-data-class: C
+        discrepancies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Discrepancy'
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [pending, in_progress, reconciled, discrepancy_found]
+          x-eel-data-class: C
+        officer_id:
+          type: string
+          description: Officer conducting the reconciliation
+          x-eel-data-class: C
+
+    ReconcileCreate:
+      type: object
+      required:
+        - station_code
+        - election_id
+        - assets_expected
+        - assets_found
+        - discrepancies
+        - officer_id
+      properties:
+        station_code:
+          type: string
+          x-eel-data-class: C
+        election_id:
+          type: string
+          x-eel-data-class: C
+        assets_expected:
+          type: integer
+          x-eel-data-class: C
+        assets_found:
+          type: integer
+          x-eel-data-class: C
+        discrepancies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Discrepancy'
+          x-eel-data-class: C
+        officer_id:
+          type: string
+          x-eel-data-class: C
+
+    # ---- Error schema ----
+
+    Problem:
+      type: object
+      description: RFC 9457 Problem Details
+      required: [type, title, status, detail, instance]
+      properties:
+        type:
+          type: string
+          format: uri
+          description: Problem type URI
+        title:
+          type: string
+          description: Human-readable short title
+        status:
+          type: integer
+          description: HTTP status code
+        detail:
+          type: string
+          description: Human-readable explanation of this occurrence
+        instance:
+          type: string
+          format: uri-reference
+          description: URI identifying this specific occurrence
+        trace_id:
+          type: string
+          description: Distributed trace identifier for correlation
+          example: 4bf92f3577b34da6a3ce929d0e0e4736
+
+  # ---- Shared error responses ----
+
+  responses:
+    BadRequest:
+      description: Bad request — malformed input
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://errors.eel.internal/common/bad_request
+            title: Bad Request
+            status: 400
+            detail: 'serial_number: field is required'
+            instance: /api/v1/custody/assets
+
+    Unauthorized:
+      description: Missing or invalid JWT
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://errors.eel.internal/common/unauthorized
+            title: Unauthorized
+            status: 401
+            detail: Bearer token is missing or has expired.
+            instance: /api/v1/custody/assets
+
+    Forbidden:
+      description: Valid JWT but SpiceDB permission check failed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://errors.eel.internal/common/forbidden
+            title: Forbidden
+            status: 403
+            detail: Caller does not hold the required permission for this resource.
+            instance: /api/v1/custody/assets
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://errors.eel.internal/common/not_found
+            title: Not Found
+            status: 404
+            detail: No asset found with the provided identifier.
+            instance: /api/v1/custody/assets/ast-unknown
+
+    Conflict:
+      description: State conflict — resource already exists or concurrent modification
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://errors.eel.internal/common/conflict
+            title: Conflict
+            status: 409
+            detail: An asset with this serial number already exists.
+            instance: /api/v1/custody/assets
+
+    UnprocessableEntity:
+      description: Semantically invalid request — validation passed but business rule failed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://errors.eel.internal/custody/invalid_transition
+            title: Unprocessable Entity
+            status: 422
+            detail: Asset is already sealed; break the existing seal before applying a new one.
+            instance: /api/v1/custody/seals
+
+    InternalError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://errors.eel.internal/common/internal_error
+            title: Internal Server Error
+            status: 500
+            detail: An unexpected error occurred. Use trace_id to report this incident.
+            instance: /api/v1/custody/assets
+            trace_id: 4bf92f3577b34da6a3ce929d0e0e4736

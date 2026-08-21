@@ -1,0 +1,422 @@
+openapi: 3.1.0
+info:
+  title: eel-cvr
+  version: 1.0.0
+  description: Module M35 - CVR (Continuous Voter Register). Provides voter registration lookups, aggregate statistics, bulk register snapshots, and USSD session hooks. Anti-enumeration controls apply to all lookup endpoints.
+  contact:
+    name: EEL Platform Team
+    email: platform@eel.local
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+tags:
+  - name: lookups
+    description: Voter registration lookups (anti-enumeration)
+  - name: register
+    description: Register snapshots and statistics
+  - name: ussd
+    description: USSD session hooks
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/cvr/lookups:
+    post:
+      tags: [lookups]
+      operationId: voterLookup
+      summary: Voter registration lookup
+      description: Checks voter registration status by hashed ID. Constant-time response regardless of found/not-found to resist timing attacks. Rate-limited at 10 req/IP/min. Public with rate limit.
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 400
+        availability: "99.9%"
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: X-Forwarded-For
+          in: header
+          required: false
+          schema:
+            type: string
+            x-eel-data-class: E
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoterLookup'
+      responses:
+        '200':
+          description: Lookup result (always 200 regardless of found status to resist enumeration)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoterLookupResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/cvr/register/snapshot:
+    get:
+      tags: [register]
+      operationId: getRegisterSnapshot
+      summary: Bulk register download (anonymised aggregate)
+      description: Returns a presigned MinIO URL for a signed Parquet/CSV export. Contains station-level counts only — no individual records. Tier 4, requires JWT, SpiceDB, and explicit bulk-access scope.
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 400
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: as_of
+          in: query
+          schema:
+            type: string
+            format: date
+            x-eel-data-class: C
+          description: Snapshot date. Defaults to the latest sealed snapshot.
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [parquet, csv]
+            default: parquet
+            x-eel-data-class: D
+      responses:
+        '200':
+          description: Snapshot download metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnapshotDownload'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/cvr/register/stats:
+    get:
+      tags: [register]
+      operationId: getRegisterStats
+      summary: Aggregate register statistics
+      description: Returns county and constituency voter counts. No individual records. Public, tier 1, with Merkle proofs.
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 400
+        availability: "99.9%"
+      security: []
+      parameters:
+        - name: county_code
+          in: query
+          schema:
+            type: string
+            x-eel-data-class: C
+        - name: constituency_code
+          in: query
+          schema:
+            type: string
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Aggregate register statistics
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterStats'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/cvr/ussd/sessions:
+    post:
+      tags: [ussd]
+      operationId: handleUssdSession
+      summary: USSD session hook for voter lookup
+      description: Handles USSD gateway callbacks for voter self-lookup. mTLS required. Idempotent on Idempotency-Key plus session_id.
+      x-eel-sla:
+        p95_ms: 150
+        p99_ms: 400
+        availability: "99.9%"
+      security:
+        - mtls: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/USSDSessionRequest'
+      responses:
+        '200':
+          description: USSD response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/USSDSessionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by auth.eel.local (Keycloak). Trust domain eel.local.
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS client certificate. Required for USSD gateway endpoints.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+      description: UUIDv7 client-generated idempotency key.
+
+  headers:
+    CosignSig:
+      description: Cosign detached signature over the response body (base64url).
+      schema:
+        type: string
+        x-eel-data-class: C
+    MerkleProof:
+      description: Merkle inclusion proof in the audit log tree.
+      schema:
+        type: string
+        x-eel-data-class: C
+    SnapshotId:
+      description: Snapshot identifier from which this response was served.
+      schema:
+        type: string
+        x-eel-data-class: C
+
+  schemas:
+    VoterLookup:
+      type: object
+      required: [id_number_hash]
+      properties:
+        id_number_hash:
+          type: string
+          x-eel-data-class: A
+          description: SHA-256(server_salt||id_number). Server salt rotates daily. Hash must be computed client-side using the published daily salt.
+        station_code:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+          description: Optional filter to check registration at a specific station.
+
+    VoterLookupResult:
+      type: object
+      required: [registered]
+      properties:
+        registered:
+          type: boolean
+          x-eel-data-class: C
+        polling_station_name:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+          description: Station name if registered. Never includes raw PII.
+        ward:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+        constituency:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+
+    SnapshotDownload:
+      type: object
+      required:
+        - snapshot_id
+        - url
+        - expires_at
+        - record_count
+        - generated_at
+        - hash
+      properties:
+        snapshot_id:
+          type: string
+          x-eel-data-class: C
+        url:
+          type: string
+          format: uri
+          x-eel-data-class: D
+          description: Presigned MinIO URL. Valid for 2 hours.
+        expires_at:
+          type: string
+          format: date-time
+          x-eel-data-class: E
+        record_count:
+          type: integer
+          x-eel-data-class: C
+          description: Number of station-level aggregate rows in the export.
+        generated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        hash:
+          type: string
+          x-eel-data-class: C
+          description: SHA-256 of the export file for integrity verification.
+
+    RegisterStats:
+      type: object
+      required: [total_registered, counties, as_of]
+      properties:
+        total_registered:
+          type: integer
+          x-eel-data-class: C
+        as_of:
+          type: string
+          format: date
+          x-eel-data-class: C
+        counties:
+          type: array
+          x-eel-data-class: C
+          items:
+            type: object
+            properties:
+              county_code:
+                type: string
+                x-eel-data-class: C
+              county_name:
+                type: string
+                x-eel-data-class: C
+              registered:
+                type: integer
+                x-eel-data-class: C
+              constituencies:
+                type: array
+                x-eel-data-class: C
+                items:
+                  type: object
+                  properties:
+                    constituency_code:
+                      type: string
+                      x-eel-data-class: C
+                    constituency_name:
+                      type: string
+                      x-eel-data-class: C
+                    registered:
+                      type: integer
+                      x-eel-data-class: C
+
+    USSDSessionRequest:
+      type: object
+      required: [session_id, msisdn_hash, text, service_code]
+      properties:
+        session_id:
+          type: string
+          x-eel-data-class: E
+          description: Gateway session identifier. Ephemeral.
+        msisdn_hash:
+          type: string
+          x-eel-data-class: A
+          description: SHA-256(salt||msisdn). Never raw MSISDN.
+        text:
+          type: string
+          maxLength: 182
+          x-eel-data-class: E
+          description: Concatenated USSD input string. Ephemeral after processing.
+        service_code:
+          type: string
+          x-eel-data-class: C
+
+    USSDSessionResponse:
+      type: object
+      required: [response_text, action]
+      properties:
+        response_text:
+          type: string
+          maxLength: 182
+          x-eel-data-class: C
+          description: Text to display to the subscriber.
+        action:
+          type: string
+          enum: [CON, END]
+          x-eel-data-class: C
+          description: CON continues the session; END terminates it.
+
+    ProblemDetail:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        title:
+          type: string
+          x-eel-data-class: C
+        status:
+          type: integer
+          x-eel-data-class: C
+        detail:
+          type: string
+          x-eel-data-class: C
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        trace_id:
+          type: string
+          x-eel-data-class: D
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    TooManyRequests:
+      description: Rate limit exceeded
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalError:
+      description: Internal server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'

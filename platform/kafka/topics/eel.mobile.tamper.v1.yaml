@@ -1,0 +1,17 @@
+# Topic: eel.mobile.tamper.v1
+name: eel.mobile.tamper.v1
+partitions: 12
+replication_factor: 3
+config:
+  min.insync.replicas: "2"
+  unclean.leader.election.enable: "false"
+  acks: "all"
+  retention.ms: "7776000000"
+  tiered.storage.enable: "false"
+  remote.storage.manager: "eel-minio-tiered-storage"
+retention_class: tamper
+owner: mobile-svc
+description: Voter-facing mobile app tamper detection events. 90-day forensic retention. Triggers session termination or remote wipe.
+event_types:
+  - eel.mobile.tamper_detected.v1
+partition_key: eel_stream_id

@@ -1,0 +1,49 @@
+# Golden tests for boundary authz schema
+# Run with: zed test packages/authz-schema/boundary.zed packages/authz-schema/tests/boundary_test.yaml
+tests:
+  - name: "any user can read boundary (wildcard)"
+    subject: "eel_user:user_researcher"
+    resource: "eel_boundary:boundary_001"
+    permission: "read"
+    expected: true
+    relationships: []
+
+  - name: "boundary_admin can create boundary"
+    subject: "eel_user:user_cms_admin"
+    resource: "eel_boundary:boundary_001"
+    permission: "create"
+    expected: true
+    relationships:
+      - "eel_boundary:boundary_001#boundary_admin@eel_user:user_cms_admin"
+
+  - name: "county_coord cannot certify boundary"
+    subject: "eel_user:user_county_coord"
+    resource: "eel_boundary:boundary_001"
+    permission: "certify"
+    expected: false
+    relationships:
+      - "eel_boundary:boundary_001#county_coord@eel_user:user_county_coord"
+
+  - name: "auditor can audit boundary"
+    subject: "eel_user:user_rla_auditor"
+    resource: "eel_boundary:boundary_001"
+    permission: "audit"
+    expected: true
+    relationships:
+      - "eel_boundary:boundary_001#auditor@eel_user:user_rla_auditor"
+
+  - name: "county_coord can update station record"
+    subject: "eel_user:user_county_coord"
+    resource: "eel_station_record:sr_001"
+    permission: "update"
+    expected: true
+    relationships:
+      - "eel_station_record:sr_001#county_coord@eel_user:user_county_coord"
+
+  - name: "data_officer can export station record"
+    subject: "eel_user:user_data_officer"
+    resource: "eel_station_record:sr_001"
+    permission: "export"
+    expected: true
+    relationships:
+      - "eel_station_record:sr_001#data_officer@eel_user:user_data_officer"

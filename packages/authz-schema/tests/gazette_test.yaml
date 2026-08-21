@@ -1,0 +1,49 @@
+# Golden tests for gazette authz schema
+# Run with: zed test packages/authz-schema/gazette.zed packages/authz-schema/tests/gazette_test.yaml
+tests:
+  - name: "editor can draft gazette notice"
+    subject: "eel_user:user_cms_editor"
+    resource: "eel_gazette_notice:gn_001"
+    permission: "draft"
+    expected: true
+    relationships:
+      - "eel_gazette_notice:gn_001#editor@eel_user:user_cms_editor"
+
+  - name: "any user can read gazette notice (wildcard)"
+    subject: "eel_user:user_journalist"
+    resource: "eel_gazette_notice:gn_001"
+    permission: "read"
+    expected: true
+    relationships: []
+
+  - name: "editor cannot approve gazette notice"
+    subject: "eel_user:user_cms_editor"
+    resource: "eel_gazette_notice:gn_001"
+    permission: "approve"
+    expected: false
+    relationships:
+      - "eel_gazette_notice:gn_001#editor@eel_user:user_cms_editor"
+
+  - name: "approver can retract gazette notice"
+    subject: "eel_user:user_cms_approver"
+    resource: "eel_gazette_notice:gn_001"
+    permission: "retract"
+    expected: true
+    relationships:
+      - "eel_gazette_notice:gn_001#approver@eel_user:user_cms_approver"
+
+  - name: "returning_officer can declare official result"
+    subject: "eel_user:user_observer"
+    resource: "eel_official_result:or_001"
+    permission: "declare"
+    expected: true
+    relationships:
+      - "eel_official_result:or_001#returning_officer@eel_user:user_observer"
+
+  - name: "observer cannot certify official result"
+    subject: "eel_user:user_observer"
+    resource: "eel_official_result:or_001"
+    permission: "certify"
+    expected: false
+    relationships:
+      - "eel_official_result:or_001#observer@eel_user:user_observer"

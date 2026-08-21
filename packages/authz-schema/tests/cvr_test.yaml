@@ -1,0 +1,50 @@
+# Golden tests for cvr authz schema
+# Run with: zed test packages/authz-schema/cvr.zed packages/authz-schema/tests/cvr_test.yaml
+tests:
+  - name: "auditor can read voter lookup log"
+    subject: "eel_user:user_rla_auditor"
+    resource: "eel_voter_lookup_log:vll_001"
+    permission: "read"
+    expected: true
+    relationships:
+      - "eel_voter_lookup_log:vll_001#auditor@eel_user:user_rla_auditor"
+
+  - name: "data_officer can export voter lookup log"
+    subject: "eel_user:user_data_officer"
+    resource: "eel_voter_lookup_log:vll_001"
+    permission: "export"
+    expected: true
+    relationships:
+      - "eel_voter_lookup_log:vll_001#data_officer@eel_user:user_data_officer"
+
+  - name: "auditor cannot purge voter lookup log"
+    subject: "eel_user:user_rla_auditor"
+    resource: "eel_voter_lookup_log:vll_001"
+    permission: "purge"
+    expected: false
+    relationships:
+      - "eel_voter_lookup_log:vll_001#auditor@eel_user:user_rla_auditor"
+
+  - name: "rla_auditor can audit CVR batch"
+    subject: "eel_user:user_rla_auditor"
+    resource: "eel_cvr_batch:batch_001"
+    permission: "audit"
+    expected: true
+    relationships:
+      - "eel_cvr_batch:batch_001#rla_auditor@eel_user:user_rla_auditor"
+
+  - name: "general auditor can read CVR batch"
+    subject: "eel_user:user_rla_auditor"
+    resource: "eel_cvr_batch:batch_001"
+    permission: "read"
+    expected: true
+    relationships:
+      - "eel_cvr_batch:batch_001#auditor@eel_user:user_rla_auditor"
+
+  - name: "rla_auditor cannot publish CVR batch"
+    subject: "eel_user:user_rla_auditor"
+    resource: "eel_cvr_batch:batch_001"
+    permission: "publish"
+    expected: false
+    relationships:
+      - "eel_cvr_batch:batch_001#rla_auditor@eel_user:user_rla_auditor"

@@ -1,0 +1,17 @@
+# Topic: eel.portal.audit.v1
+name: eel.portal.audit.v1
+partitions: 12
+replication_factor: 3
+config:
+  min.insync.replicas: "2"
+  unclean.leader.election.enable: "false"
+  acks: "all"
+  retention.ms: "604800000"
+  tiered.storage.enable: "false"
+  remote.storage.manager: "eel-minio-tiered-storage"
+retention_class: analytics
+owner: portal-svc
+description: Public portal audit events including snapshot publication and delivery. Short retention as data is aggregated into analytics pipeline.
+event_types:
+  - eel.portal.snapshot_served.v1
+partition_key: eel_stream_id

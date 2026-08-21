@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.eel.local/field_mobile/tamper/device_tamper_detected/v1.json",
+  "title": "eel.field_mobile.device_tamper_detected.v1",
+  "type": "object",
+  "required": ["specversion","id","type","source","subject","time","datacontenttype","data","eel_stream_id","eel_seq","eel_hlc","eel_prev_hash","eel_correlation_id","eel_causation_id","eel_producer_key_id","eel_signature","eel_election_id","eel_data_class"],
+  "properties": {
+    "specversion": {"const": "1.0"},
+    "id": {"type": "string", "format": "uuid", "description": "UUIDv7 event identifier"},
+    "type": {"const": "eel.field_mobile.device_tamper_detected.v1"},
+    "source": {"const": "spiffe://eel.local/service/field-mobile-svc"},
+    "subject": {"type": "string", "description": "Device identifier"},
+    "time": {"type": "string", "format": "date-time"},
+    "datacontenttype": {"const": "application/json"},
+    "dataschema": {"const": "https://schemas.eel.local/field_mobile/tamper/device_tamper_detected/v1.json"},
+    "data": {
+      "type": "object",
+      "required": ["device_id_hash","app_version","tamper_type","detected_at"],
+      "properties": {
+        "device_id_hash": {"type": "string", "description": "SHA-256 of device identifier - data class D"},
+        "app_version": {"type": "string"},
+        "tamper_type": {"type": "string", "enum": ["root_detected","debugger_attached","binary_modified","emulator_detected","hook_detected","certificate_pinning_bypass"]},
+        "detected_at": {"type": "string", "format": "date-time"}
+      },
+      "additionalProperties": false
+    },
+    "eel_stream_id": {"type": "string", "format": "uuid", "description": "Event stream identifier"},
+    "eel_seq": {"type": "integer", "minimum": 0, "description": "Monotonic sequence number within stream"},
+    "eel_hlc": {"type": "string", "description": "Hybrid logical clock timestamp"},
+    "eel_prev_hash": {"type": "string", "description": "sha256 hash of previous event in stream"},
+    "eel_correlation_id": {"type": "string", "format": "uuid", "description": "Correlation identifier for tracing"},
+    "eel_causation_id": {"type": ["string", "null"], "format": "uuid", "description": "Causation event identifier"},
+    "eel_producer_key_id": {"type": "string", "description": "Key identifier used for signature"},
+    "eel_signature": {"type": "string", "description": "Ed25519 signature base64url"},
+    "eel_election_id": {"type": "string", "description": "Election identifier"},
+    "eel_data_class": {"const": "D", "description": "Data classification level"}
+  },
+  "additionalProperties": false
+}

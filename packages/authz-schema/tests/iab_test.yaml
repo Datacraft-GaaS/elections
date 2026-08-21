@@ -1,0 +1,50 @@
+# Golden tests for iab authz schema
+# Run with: zed test packages/authz-schema/iab.zed packages/authz-schema/tests/iab_test.yaml
+tests:
+  - name: "board_member can initiate integrity review"
+    subject: "eel_user:user_observer"
+    resource: "eel_integrity_review:ir_001"
+    permission: "initiate"
+    expected: true
+    relationships:
+      - "eel_integrity_review:ir_001#board_member@eel_user:user_observer"
+
+  - name: "forensics_investigator can investigate"
+    subject: "eel_user:user_forensics_investigator"
+    resource: "eel_integrity_review:ir_001"
+    permission: "investigate"
+    expected: true
+    relationships:
+      - "eel_integrity_review:ir_001#forensics_investigator@eel_user:user_forensics_investigator"
+
+  - name: "auditor cannot conclude integrity review"
+    subject: "eel_user:user_rla_auditor"
+    resource: "eel_integrity_review:ir_001"
+    permission: "conclude"
+    expected: false
+    relationships:
+      - "eel_integrity_review:ir_001#auditor@eel_user:user_rla_auditor"
+
+  - name: "custodian can seal evidence record"
+    subject: "eel_user:user_caseworker"
+    resource: "eel_evidence_record:er_001"
+    permission: "seal"
+    expected: true
+    relationships:
+      - "eel_evidence_record:er_001#custodian@eel_user:user_caseworker"
+
+  - name: "investigator cannot seal evidence record"
+    subject: "eel_user:user_forensics_investigator"
+    resource: "eel_evidence_record:er_001"
+    permission: "seal"
+    expected: false
+    relationships:
+      - "eel_evidence_record:er_001#investigator@eel_user:user_forensics_investigator"
+
+  - name: "reviewer can escalate security finding"
+    subject: "eel_user:user_sre"
+    resource: "eel_security_finding:sf_001"
+    permission: "escalate"
+    expected: true
+    relationships:
+      - "eel_security_finding:sf_001#reviewer@eel_user:user_sre"

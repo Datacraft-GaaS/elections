@@ -1,0 +1,17 @@
+# Topic: eel.inventory.shortfall.v1
+name: eel.inventory.shortfall.v1
+partitions: 12
+replication_factor: 3
+config:
+  min.insync.replicas: "2"
+  unclean.leader.election.enable: "false"
+  acks: "all"
+  retention.ms: "2592000000"
+  tiered.storage.enable: "false"
+  remote.storage.manager: "eel-minio-tiered-storage"
+retention_class: operational
+owner: inventory-svc
+description: Electoral material shortfall reporting events. Constituency-level shortfall alerts for ballot papers, boxes, biometric kits, and other materials.
+event_types:
+  - eel.inventory.shortfall_reported.v1
+partition_key: eel_stream_id

@@ -1,0 +1,30 @@
+// Grievance authorization schema
+// Trust domain: eel.local
+
+definition eel_user {}
+definition eel_service {}
+
+definition eel_complaint {
+    relation complainant: eel_user
+    relation caseworker: eel_user
+    relation supervisor: eel_user
+    relation observer: eel_user
+
+    permission submit = eel_user:*
+    permission read_own = complainant
+    permission read = caseworker + supervisor
+    permission update_status = caseworker + supervisor
+    permission resolve = caseworker + supervisor
+    permission escalate = caseworker + supervisor
+    permission observe = observer
+}
+
+definition eel_grievance_report {
+    relation analyst: eel_user
+    relation supervisor: eel_user
+    relation data_officer: eel_user
+
+    permission create = analyst + supervisor
+    permission read = analyst + supervisor
+    permission export = data_officer + supervisor
+}

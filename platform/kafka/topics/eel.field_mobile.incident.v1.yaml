@@ -1,0 +1,17 @@
+# Topic: eel.field_mobile.incident.v1
+name: eel.field_mobile.incident.v1
+partitions: 32
+replication_factor: 3
+config:
+  min.insync.replicas: "2"
+  unclean.leader.election.enable: "false"
+  acks: "all"
+  retention.ms: "2592000000"
+  tiered.storage.enable: "false"
+  remote.storage.manager: "eel-minio-tiered-storage"
+retention_class: operational
+owner: field-mobile-svc
+description: Field incident reports from polling stations. High-volume (32 partitions) covering violence, equipment failure, power outages, and crowd disorder during election day.
+event_types:
+  - eel.field_mobile.incident_reported.v1
+partition_key: eel_stream_id

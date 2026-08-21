@@ -1,0 +1,40 @@
+// IAB (Integrity and Assurance Board) authorization schema
+// Trust domain: eel.local
+
+definition eel_user {}
+definition eel_service {}
+
+definition eel_integrity_review {
+    relation board_member: eel_user
+    relation investigator: eel_user
+    relation auditor: eel_user
+    relation forensics_investigator: eel_user
+
+    permission initiate = board_member
+    permission investigate = investigator + forensics_investigator
+    permission audit = auditor
+    permission read = board_member + investigator + auditor + forensics_investigator
+    permission conclude = board_member
+}
+
+definition eel_evidence_record {
+    relation custodian: eel_user
+    relation investigator: eel_user
+    relation auditor: eel_user
+
+    permission submit = custodian + investigator
+    permission read = investigator + auditor
+    permission seal = custodian
+}
+
+definition eel_security_finding {
+    relation reporter: eel_user
+    relation reviewer: eel_user
+    relation forensics_investigator: eel_user
+
+    permission report = reporter
+    permission review = reviewer
+    permission investigate = forensics_investigator
+    permission read = reporter + reviewer + forensics_investigator
+    permission escalate = reviewer
+}

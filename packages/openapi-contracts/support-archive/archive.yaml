@@ -1,0 +1,481 @@
+openapi: 3.1.0
+info:
+  title: eel-support-archive
+  version: 1.0.0
+  description: Module M69 - Long-Term Archive. Manages archival collections and retrieval requests for election records with full custody chain tracking.
+  contact:
+    name: EEL Platform Team
+    email: platform@eel.local
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+tags:
+  - name: collections
+    description: Archival collection management
+  - name: retrieval
+    description: Archive retrieval requests
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/support/archive/collections:
+    post:
+      tags: [collections]
+      operationId: createArchivalCollection
+      summary: Create archival collection
+      description: Creates an archival collection record for sealed election materials. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArchivalCollectionCreate'
+      responses:
+        '201':
+          description: Archival collection created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArchivalCollection'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      tags: [collections]
+      operationId: listArchivalCollections
+      summary: List archival collections
+      description: Returns paginated archival collections. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: election_id
+          in: query
+          schema:
+            type: string
+            x-eel-data-class: C
+        - name: collection_type
+          in: query
+          schema:
+            type: string
+            enum: [forms, registers, results, audio, video]
+            x-eel-data-class: C
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, ingesting, sealed, corrupted]
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Paginated collections list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArchivalCollectionPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/support/archive/collections/{collection_id}:
+    parameters:
+      - $ref: '#/components/parameters/CollectionId'
+
+    get:
+      tags: [collections]
+      operationId: getArchivalCollection
+      summary: Get archival collection detail
+      description: Returns collection metadata and status. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Archival collection detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArchivalCollection'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/support/archive/retrieval-requests:
+    post:
+      tags: [retrieval]
+      operationId: createRetrievalRequest
+      summary: Request archive retrieval
+      description: Creates an archive retrieval request for audit, legal, or FOI purposes. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RetrievalRequestCreate'
+      responses:
+        '201':
+          description: Retrieval request created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetrievalRequest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/support/archive/retrieval-requests/{request_id}:
+    parameters:
+      - name: request_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+
+    get:
+      tags: [retrieval]
+      operationId: getRetrievalRequest
+      summary: Get retrieval request status
+      description: Returns retrieval request status and download URL when ready. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Retrieval request detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetrievalRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by auth.eel.local (Keycloak). Trust domain eel.local.
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS client certificate for machine-to-machine calls.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+      description: UUIDv7 client-generated idempotency key.
+
+    CollectionId:
+      name: collection_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+        x-eel-data-class: D
+
+    PageSizeParam:
+      name: page_size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 50
+        default: 20
+        x-eel-data-class: D
+
+  schemas:
+    ArchivalCollectionCreate:
+      type: object
+      required:
+        - election_id
+        - collection_type
+        - source_module
+        - item_count
+        - total_size_bytes
+        - checksum
+        - custody_chain_ref
+      properties:
+        election_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        collection_type:
+          type: string
+          enum: [forms, registers, results, audio, video]
+          x-eel-data-class: C
+        source_module:
+          type: string
+          x-eel-data-class: C
+          description: Module identifier that produced these records (e.g. M35, M08).
+        item_count:
+          type: integer
+          minimum: 0
+          x-eel-data-class: C
+        total_size_bytes:
+          type: integer
+          minimum: 0
+          x-eel-data-class: D
+        checksum:
+          type: string
+          x-eel-data-class: C
+          description: SHA-256 of the sealed archive bundle.
+        custody_chain_ref:
+          type: string
+          x-eel-data-class: C
+          description: Reference to custody chain document in MinIO.
+
+    ArchivalCollection:
+      allOf:
+        - $ref: '#/components/schemas/ArchivalCollectionCreate'
+        - type: object
+          required: [collection_id, status, created_at]
+          properties:
+            collection_id:
+              type: string
+              format: uuid
+              x-eel-data-class: C
+            status:
+              type: string
+              enum: [pending, ingesting, sealed, corrupted]
+              x-eel-data-class: C
+            sealed_at:
+              type: string
+              format: date-time
+              nullable: true
+              x-eel-data-class: C
+            created_at:
+              type: string
+              format: date-time
+              x-eel-data-class: D
+            updated_at:
+              type: string
+              format: date-time
+              x-eel-data-class: D
+
+    ArchivalCollectionPage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArchivalCollection'
+          x-eel-data-class: C
+        total:
+          type: integer
+          x-eel-data-class: C
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+        next_page:
+          type: integer
+          nullable: true
+          x-eel-data-class: D
+
+    RetrievalRequestCreate:
+      type: object
+      required:
+        - collection_id
+        - purpose
+        - authorisation_ref
+        - requester_hash
+      properties:
+        collection_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        purpose:
+          type: string
+          enum: [audit, legal, research, FOI]
+          x-eel-data-class: C
+        authorisation_ref:
+          type: string
+          x-eel-data-class: C
+          description: Reference to the authorising document (court order, audit mandate, etc.).
+        requester_hash:
+          type: string
+          x-eel-data-class: B
+          description: SHA-256(salt||requester_id).
+
+    RetrievalRequest:
+      allOf:
+        - $ref: '#/components/schemas/RetrievalRequestCreate'
+        - type: object
+          required: [request_id, status, requested_at]
+          properties:
+            request_id:
+              type: string
+              format: uuid
+              x-eel-data-class: C
+            status:
+              type: string
+              enum: [pending, approved, ready, delivered, denied]
+              x-eel-data-class: C
+            download_url:
+              type: string
+              format: uri
+              nullable: true
+              x-eel-data-class: C
+              description: Presigned MinIO URL when status is ready. Expires in 4 hours.
+            requested_at:
+              type: string
+              format: date-time
+              x-eel-data-class: C
+            processed_at:
+              type: string
+              format: date-time
+              nullable: true
+              x-eel-data-class: D
+
+    ProblemDetail:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        title:
+          type: string
+          x-eel-data-class: C
+        status:
+          type: integer
+          x-eel-data-class: C
+        detail:
+          type: string
+          x-eel-data-class: C
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        trace_id:
+          type: string
+          x-eel-data-class: D
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Validation error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalError:
+      description: Internal server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'

@@ -1,0 +1,58 @@
+# Golden tests for inspection authz schema
+# Run with: zed test packages/authz-schema/inspection.zed packages/authz-schema/tests/inspection_test.yaml
+tests:
+  - name: "supervisor can create inspection task"
+    subject: "eel_user:user_county_coord"
+    resource: "eel_inspection_task:it_001"
+    permission: "create"
+    expected: true
+    relationships:
+      - "eel_inspection_task:it_001#supervisor@eel_user:user_county_coord"
+
+  - name: "inspector can execute inspection task"
+    subject: "eel_user:user_observer"
+    resource: "eel_inspection_task:it_001"
+    permission: "execute"
+    expected: true
+    relationships:
+      - "eel_inspection_task:it_001#inspector@eel_user:user_observer"
+
+  - name: "inspector cannot create inspection task"
+    subject: "eel_user:user_observer"
+    resource: "eel_inspection_task:it_001"
+    permission: "create"
+    expected: false
+    relationships:
+      - "eel_inspection_task:it_001#inspector@eel_user:user_observer"
+
+  - name: "forensics_investigator can read inspection task"
+    subject: "eel_user:user_forensics_investigator"
+    resource: "eel_inspection_task:it_001"
+    permission: "read"
+    expected: true
+    relationships:
+      - "eel_inspection_task:it_001#forensics_investigator@eel_user:user_forensics_investigator"
+
+  - name: "author can record inspection finding"
+    subject: "eel_user:user_observer"
+    resource: "eel_inspection_finding:if_001"
+    permission: "record"
+    expected: true
+    relationships:
+      - "eel_inspection_finding:if_001#author@eel_user:user_observer"
+
+  - name: "reviewer can seal inspection finding"
+    subject: "eel_user:user_county_coord"
+    resource: "eel_inspection_finding:if_001"
+    permission: "seal"
+    expected: true
+    relationships:
+      - "eel_inspection_finding:if_001#reviewer@eel_user:user_county_coord"
+
+  - name: "author cannot seal own inspection finding"
+    subject: "eel_user:user_observer"
+    resource: "eel_inspection_finding:if_001"
+    permission: "seal"
+    expected: false
+    relationships:
+      - "eel_inspection_finding:if_001#author@eel_user:user_observer"

@@ -1,0 +1,27 @@
+// Queue management authorization schema
+// Trust domain: eel.local
+
+definition eel_user {}
+definition eel_service {}
+
+definition eel_queue_station {
+    relation poll_clerk: eel_user
+    relation presiding_officer: eel_user
+    relation coordinator: eel_user
+    relation observer: eel_user
+    relation queue_sensor: eel_service
+
+    permission record_observation = poll_clerk + presiding_officer + queue_sensor
+    permission read_live = poll_clerk + presiding_officer + coordinator + observer
+    permission read_aggregate = eel_user:*
+    permission manage = presiding_officer + coordinator
+}
+
+definition eel_queue_dashboard {
+    relation analyst: eel_user
+    relation coordinator: eel_user
+
+    permission view = analyst + coordinator
+    permission export = analyst + coordinator
+    permission configure = coordinator
+}

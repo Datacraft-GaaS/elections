@@ -1,0 +1,16 @@
+# Topic: eel.crms.candidate.v1.dlq (Dead-Letter Queue)
+name: eel.crms.candidate.v1.dlq
+partitions: 12
+replication_factor: 3
+config:
+  min.insync.replicas: "2"
+  unclean.leader.election.enable: "false"
+  acks: "all"
+  retention.ms: "7776000000"
+  tiered.storage.enable: "false"
+  remote.storage.manager: "eel-minio-tiered-storage"
+retention_class: dlq
+owner: crms-svc
+description: Dead-letter queue for eel.crms.candidate.v1. Failed messages land here for operator inspection and replay. 90-day retention for forensic replay.
+source_topic: eel.crms.candidate.v1
+partition_key: eel_stream_id

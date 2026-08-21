@@ -1,0 +1,17 @@
+# Topic: eel.party.registration.v1
+name: eel.party.registration.v1
+partitions: 12
+replication_factor: 3
+config:
+  min.insync.replicas: "2"
+  unclean.leader.election.enable: "false"
+  acks: "all"
+  retention.ms: "2592000000"
+  tiered.storage.enable: "false"
+  remote.storage.manager: "eel-minio-tiered-storage"
+retention_class: operational
+owner: party-svc
+description: Political party registration lifecycle events. Captures party formation, registration, symbol approval, and status changes.
+event_types:
+  - eel.party.party_registered.v1
+partition_key: eel_stream_id

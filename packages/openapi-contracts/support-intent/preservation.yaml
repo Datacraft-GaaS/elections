@@ -1,0 +1,459 @@
+openapi: 3.1.0
+info:
+  title: eel-support-intent
+  version: 1.0.0
+  description: Module M27 - Intent Preservation. Manages disputed ballot adjudication and intent-of-voter determinations at polling stations.
+  contact:
+    name: EEL Platform Team
+    email: platform@eel.local
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+tags:
+  - name: adjudications
+    description: Ballot intent adjudication records
+  - name: disputes
+    description: Disputed ballot flagging
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/support/intent/adjudications:
+    post:
+      tags: [adjudications]
+      operationId: recordIntentAdjudication
+      summary: Record intent adjudication for disputed ballot
+      description: Records the adjudicator's determination on a disputed ballot. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntentAdjudicationCreate'
+      responses:
+        '201':
+          description: Adjudication recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntentAdjudication'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      tags: [adjudications]
+      operationId: listIntentAdjudications
+      summary: List intent adjudications
+      description: Returns paginated adjudication records. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: decision
+          in: query
+          schema:
+            type: string
+            enum: [valid, invalid, spoilt]
+            x-eel-data-class: C
+        - name: station_code
+          in: query
+          schema:
+            type: string
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Paginated adjudication list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntentAdjudicationPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/support/intent/adjudications/{adjudication_id}:
+    parameters:
+      - $ref: '#/components/parameters/AdjudicationId'
+
+    get:
+      tags: [adjudications]
+      operationId: getIntentAdjudication
+      summary: Get adjudication detail
+      description: Returns a single adjudication record. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Adjudication detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntentAdjudication'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/support/intent/disputes/{station_code}:
+    parameters:
+      - name: station_code
+        in: path
+        required: true
+        schema:
+          type: string
+          x-eel-data-class: C
+
+    get:
+      tags: [disputes]
+      operationId: getDisputedBallotsByStation
+      summary: Disputed ballots for a polling station
+      description: Returns all disputed ballot flags for a given station. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Disputed ballots for station
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotDisputeList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/support/intent/disputes:
+    post:
+      tags: [disputes]
+      operationId: flagDisputedBallot
+      summary: Flag ballot as disputed
+      description: Records a dispute flag on a ballot. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BallotDisputeCreate'
+      responses:
+        '201':
+          description: Dispute flagged
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotDispute'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by auth.eel.local (Keycloak). Trust domain eel.local.
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS client certificate for machine-to-machine calls.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+      description: UUIDv7 client-generated idempotency key.
+
+    AdjudicationId:
+      name: adjudication_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+        x-eel-data-class: D
+
+    PageSizeParam:
+      name: page_size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+        x-eel-data-class: D
+
+  schemas:
+    IntentAdjudicationCreate:
+      type: object
+      required:
+        - ballot_id_hash
+        - adjudicator_id_hash
+        - decision
+        - reason
+        - evidence_ref
+      properties:
+        ballot_id_hash:
+          type: string
+          x-eel-data-class: B
+          description: SHA-256(salt||ballot_id).
+        adjudicator_id_hash:
+          type: string
+          x-eel-data-class: B
+          description: SHA-256(salt||adjudicator_id).
+        decision:
+          type: string
+          enum: [valid, invalid, spoilt]
+          x-eel-data-class: C
+        reason:
+          type: string
+          maxLength: 2000
+          x-eel-data-class: C
+        evidence_ref:
+          type: string
+          x-eel-data-class: C
+          description: Object storage reference to photographic evidence.
+
+    IntentAdjudication:
+      allOf:
+        - $ref: '#/components/schemas/IntentAdjudicationCreate'
+        - type: object
+          required: [adjudication_id, decided_at]
+          properties:
+            adjudication_id:
+              type: string
+              format: uuid
+              x-eel-data-class: C
+            decided_at:
+              type: string
+              format: date-time
+              x-eel-data-class: C
+
+    IntentAdjudicationPage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/IntentAdjudication'
+          x-eel-data-class: C
+        total:
+          type: integer
+          x-eel-data-class: C
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+        next_page:
+          type: integer
+          nullable: true
+          x-eel-data-class: D
+
+    BallotDisputeCreate:
+      type: object
+      required:
+        - ballot_id_hash
+        - station_code
+        - reason
+        - flagged_by_hash
+      properties:
+        ballot_id_hash:
+          type: string
+          x-eel-data-class: B
+          description: SHA-256(salt||ballot_id).
+        station_code:
+          type: string
+          x-eel-data-class: C
+        reason:
+          type: string
+          maxLength: 2000
+          x-eel-data-class: C
+        flagged_by_hash:
+          type: string
+          x-eel-data-class: B
+          description: SHA-256(salt||officer_id).
+
+    BallotDispute:
+      allOf:
+        - $ref: '#/components/schemas/BallotDisputeCreate'
+        - type: object
+          required: [dispute_id, flagged_at, adjudicated]
+          properties:
+            dispute_id:
+              type: string
+              format: uuid
+              x-eel-data-class: C
+            flagged_at:
+              type: string
+              format: date-time
+              x-eel-data-class: C
+            adjudicated:
+              type: boolean
+              x-eel-data-class: C
+            adjudication_id:
+              type: string
+              format: uuid
+              nullable: true
+              x-eel-data-class: C
+
+    BallotDisputeList:
+      type: object
+      required: [station_code, disputes, total]
+      properties:
+        station_code:
+          type: string
+          x-eel-data-class: C
+        disputes:
+          type: array
+          items:
+            $ref: '#/components/schemas/BallotDispute'
+          x-eel-data-class: C
+        total:
+          type: integer
+          x-eel-data-class: C
+
+    ProblemDetail:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        title:
+          type: string
+          x-eel-data-class: C
+        status:
+          type: integer
+          x-eel-data-class: C
+        detail:
+          type: string
+          x-eel-data-class: C
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        trace_id:
+          type: string
+          x-eel-data-class: D
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Validation error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalError:
+      description: Internal server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'

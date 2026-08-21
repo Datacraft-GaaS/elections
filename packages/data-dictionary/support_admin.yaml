@@ -1,0 +1,343 @@
+service: support-admin-svc
+context: support_admin
+entities:
+  - name: SpecialVoterApplication
+    store: T2
+    event_sourced: false
+    columns:
+      - name: application_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 application identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: applicant_id_hash
+        type: text
+        data_class: A
+        pii: true
+        nullable: false
+        description: SHA-256 of applicant national ID. Class A due to vulnerability status.
+        retention: Delete at election cycle end + 7 years
+      - name: category
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Special voter category. One of prisoner, hospital_patient, homebound_disabled, diaspora_emergency.
+        retention: Delete at election cycle end + 7 years
+      - name: status
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Application status. One of submitted, under_review, approved, rejected.
+        retention: Delete at election cycle end + 7 years
+      - name: submitted_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Submission timestamp.
+        retention: Delete at election cycle end + 7 years
+
+  - name: IntentAdjudication
+    store: T2
+    event_sourced: false
+    columns:
+      - name: adjudication_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 adjudication record identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: application_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: Foreign key to SpecialVoterApplication.
+        retention: Delete at election cycle end + 7 years
+      - name: adjudicator_hash
+        type: text
+        data_class: B
+        pii: true
+        nullable: false
+        description: SHA-256 of adjudicator identifier.
+        retention: Delete at election cycle end + 7 years
+      - name: outcome
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Adjudication outcome. One of approved, rejected, referred.
+        retention: Delete at election cycle end + 7 years
+      - name: decided_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Decision timestamp.
+        retention: Delete at election cycle end + 7 years
+
+  - name: BudgetLineItem
+    store: T2
+    event_sourced: false
+    columns:
+      - name: line_item_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 budget line item identifier.
+        retention: Retain indefinitely
+      - name: election_id
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Election identifier.
+        retention: Retain indefinitely
+      - name: category
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Budget category. One of materials, personnel, logistics, technology, facilities.
+        retention: Retain indefinitely
+      - name: description
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Line item description.
+        retention: Retain indefinitely
+      - name: budgeted_amount_kes
+        type: integer
+        data_class: C
+        pii: false
+        nullable: false
+        description: Budgeted amount in Kenya Shillings (integer paise).
+        retention: Retain indefinitely
+      - name: approved_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: true
+        description: Approval timestamp.
+        retention: Retain indefinitely
+
+  - name: Expenditure
+    store: T2
+    event_sourced: false
+    columns:
+      - name: expenditure_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 expenditure record identifier.
+        retention: Retain indefinitely
+      - name: line_item_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: Foreign key to BudgetLineItem.
+        retention: Retain indefinitely
+      - name: amount_kes
+        type: integer
+        data_class: C
+        pii: false
+        nullable: false
+        description: Amount spent in Kenya Shillings.
+        retention: Retain indefinitely
+      - name: vendor_hash
+        type: text
+        data_class: B
+        pii: true
+        nullable: false
+        description: SHA-256 of vendor identifier.
+        retention: Retain indefinitely
+      - name: spent_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Expenditure timestamp.
+        retention: Retain indefinitely
+
+  - name: PersonnelRecord
+    store: T2
+    event_sourced: false
+    columns:
+      - name: personnel_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 personnel record identifier.
+        retention: Delete 7 years post-registration
+      - name: name_hash
+        type: text
+        data_class: B
+        pii: true
+        nullable: false
+        description: SHA-256 of personnel name.
+        retention: Delete 7 years post-registration
+      - name: role
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Assigned role.
+        retention: Delete 7 years post-registration
+      - name: station_code
+        type: text
+        data_class: C
+        pii: false
+        nullable: true
+        description: Assigned station code.
+        retention: Delete 7 years post-registration
+      - name: hired_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Hire timestamp.
+        retention: Delete 7 years post-registration
+
+  - name: Disbursement
+    store: T2
+    event_sourced: false
+    columns:
+      - name: disbursement_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 disbursement record identifier.
+        retention: Retain indefinitely
+      - name: personnel_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: Foreign key to PersonnelRecord.
+        retention: Retain indefinitely
+      - name: amount_kes
+        type: integer
+        data_class: C
+        pii: false
+        nullable: false
+        description: Disbursed amount in Kenya Shillings.
+        retention: Retain indefinitely
+      - name: disbursed_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Disbursement timestamp.
+        retention: Retain indefinitely
+
+  - name: ArchivalCollection
+    store: T1-audit
+    event_sourced: false
+    columns:
+      - name: collection_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 archival collection identifier.
+        retention: Retain indefinitely
+      - name: election_id
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Election identifier.
+        retention: Retain indefinitely
+      - name: collection_type
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Collection type. One of ballot_papers, results_forms, biometric_data, audit_logs, video_footage, complaints_archive.
+        retention: Retain indefinitely
+      - name: item_count
+        type: integer
+        data_class: C
+        pii: false
+        nullable: false
+        description: Number of items in the collection.
+        retention: Retain indefinitely
+      - name: checksum
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: SHA-256 checksum of collection manifest.
+        retention: Retain indefinitely
+      - name: sealed_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Sealing timestamp.
+        retention: Retain indefinitely
+      - name: object_ref
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: MinIO object reference to archived collection.
+        retention: Retain indefinitely
+
+  - name: RetrievalRequest
+    store: T2
+    event_sourced: false
+    columns:
+      - name: request_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 retrieval request identifier.
+        retention: Retain indefinitely
+      - name: collection_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: Foreign key to ArchivalCollection.
+        retention: Retain indefinitely
+      - name: requester_hash
+        type: text
+        data_class: B
+        pii: true
+        nullable: false
+        description: SHA-256 of requester identifier.
+        retention: Retain indefinitely
+      - name: legal_basis
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Legal basis for retrieval e.g. court order, parliamentary committee.
+        retention: Retain indefinitely
+      - name: requested_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Request timestamp.
+        retention: Retain indefinitely
+      - name: fulfilled_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: true
+        description: Fulfillment timestamp.
+        retention: Retain indefinitely

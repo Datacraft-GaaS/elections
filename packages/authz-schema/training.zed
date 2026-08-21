@@ -1,0 +1,42 @@
+// Training and accreditation authorization schema
+// Trust domain: eel.local
+
+definition eel_user {}
+definition eel_service {}
+
+definition eel_training_content {
+    relation content_author: eel_user
+    relation content_approver: eel_user
+    relation trainee: eel_user
+
+    permission create = content_author
+    permission approve = content_approver
+    permission read = trainee + content_author + content_approver
+    permission publish = content_approver
+    permission delete = content_approver
+}
+
+definition eel_accreditation_application {
+    relation applicant: eel_user
+    relation reviewer: eel_user
+    relation approver: eel_user
+    relation observer: eel_user
+
+    permission submit = eel_user:*
+    permission review = reviewer
+    permission approve = approver
+    permission reject = approver
+    permission read_own = applicant
+    permission read = reviewer + approver
+}
+
+definition eel_certificate {
+    relation holder: eel_user
+    relation issuer: eel_user
+    relation verifier_service: eel_service
+
+    permission issue = issuer
+    permission verify = verifier_service
+    permission read_own = holder
+    permission revoke = issuer
+}

@@ -1,0 +1,42 @@
+// CRMS (Candidate Registration and Management) authorization schema
+// Trust domain: eel.local
+
+definition eel_user {}
+definition eel_service {}
+
+definition eel_nomination {
+    relation submitter: eel_user
+    relation reviewer: eel_user
+    relation approver: eel_user
+    relation party_agent: eel_user
+    relation auditor: eel_user
+
+    permission submit = submitter
+    permission review = reviewer + approver
+    permission approve = approver
+    permission read = submitter + reviewer + approver + party_agent + auditor
+    permission withdraw = submitter
+}
+
+definition eel_clearance_decision {
+    relation clearing_agency: eel_service
+    relation reviewer: eel_user
+    relation auditor: eel_user
+
+    permission record = clearing_agency
+    permission read = reviewer + auditor
+    permission override = reviewer
+}
+
+definition eel_ballot_design {
+    relation designer: eel_user
+    relation approver: eel_user
+    relation printer_service: eel_service
+    relation public: eel_user
+
+    permission design = designer
+    permission approve = approver
+    permission print = printer_service
+    permission read = designer + approver + printer_service
+    permission publish_proof = approver
+}

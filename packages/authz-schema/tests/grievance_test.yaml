@@ -1,0 +1,49 @@
+# Golden tests for grievance authz schema
+# Run with: zed test packages/authz-schema/grievance.zed packages/authz-schema/tests/grievance_test.yaml
+tests:
+  - name: "any user can submit complaint (wildcard)"
+    subject: "eel_user:user_diaspora_voter"
+    resource: "eel_complaint:comp_001"
+    permission: "submit"
+    expected: true
+    relationships: []
+
+  - name: "complainant can read own complaint"
+    subject: "eel_user:user_diaspora_voter"
+    resource: "eel_complaint:comp_001"
+    permission: "read_own"
+    expected: true
+    relationships:
+      - "eel_complaint:comp_001#complainant@eel_user:user_diaspora_voter"
+
+  - name: "complainant cannot read all complaints"
+    subject: "eel_user:user_diaspora_voter"
+    resource: "eel_complaint:comp_001"
+    permission: "read"
+    expected: false
+    relationships:
+      - "eel_complaint:comp_001#complainant@eel_user:user_diaspora_voter"
+
+  - name: "caseworker can resolve complaint"
+    subject: "eel_user:user_caseworker"
+    resource: "eel_complaint:comp_001"
+    permission: "resolve"
+    expected: true
+    relationships:
+      - "eel_complaint:comp_001#caseworker@eel_user:user_caseworker"
+
+  - name: "data_officer can export grievance report"
+    subject: "eel_user:user_data_officer"
+    resource: "eel_grievance_report:gr_001"
+    permission: "export"
+    expected: true
+    relationships:
+      - "eel_grievance_report:gr_001#data_officer@eel_user:user_data_officer"
+
+  - name: "analyst cannot export grievance report without data_officer role"
+    subject: "eel_user:user_analyst"
+    resource: "eel_grievance_report:gr_001"
+    permission: "export"
+    expected: false
+    relationships:
+      - "eel_grievance_report:gr_001#analyst@eel_user:user_analyst"

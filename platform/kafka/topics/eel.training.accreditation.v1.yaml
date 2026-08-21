@@ -1,0 +1,17 @@
+# Topic: eel.training.accreditation.v1
+name: eel.training.accreditation.v1
+partitions: 12
+replication_factor: 3
+config:
+  min.insync.replicas: "2"
+  unclean.leader.election.enable: "false"
+  acks: "all"
+  retention.ms: "2592000000"
+  tiered.storage.enable: "false"
+  remote.storage.manager: "eel-minio-tiered-storage"
+retention_class: operational
+owner: training-svc
+description: Observer and party agent accreditation events. Covers domestic observers, international observers, journalists, and media accreditation.
+event_types:
+  - eel.training.observer_accredited.v1
+partition_key: eel_stream_id

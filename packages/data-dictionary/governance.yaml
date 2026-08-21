@@ -1,0 +1,364 @@
+service: governance-svc
+context: governance
+entities:
+  - name: RLAAudit
+    store: T1-consensus
+    event_sourced: true
+    columns:
+      - name: audit_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 RLA audit identifier.
+        retention: Retain indefinitely
+      - name: election_id
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Election identifier.
+        retention: Retain indefinitely
+      - name: contest_code
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Contest being audited.
+        retention: Retain indefinitely
+      - name: risk_limit
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Risk limit as decimal string e.g. 0.05.
+        retention: Retain indefinitely
+      - name: method
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Audit method. One of ballot_polling, ballot_comparison, hybrid.
+        retention: Retain indefinitely
+      - name: seed
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Public random seed for sample selection.
+        retention: Retain indefinitely
+      - name: final_p_value
+        type: text
+        data_class: C
+        pii: false
+        nullable: true
+        description: Final p-value as decimal string. Null until audit complete.
+        retention: Retain indefinitely
+      - name: risk_limit_met
+        type: boolean
+        data_class: C
+        pii: false
+        nullable: true
+        description: Whether risk limit was met. Null until audit complete.
+        retention: Retain indefinitely
+      - name: status
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Audit status. One of initiated, sampling, counting, complete.
+        retention: Retain indefinitely
+      - name: initiated_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Audit initiation timestamp.
+        retention: Retain indefinitely
+      - name: completed_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: true
+        description: Completion timestamp. Null until complete.
+        retention: Retain indefinitely
+
+  - name: RLASample
+    store: T2
+    event_sourced: false
+    columns:
+      - name: sample_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 sample record identifier.
+        retention: Retain indefinitely
+      - name: audit_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: Foreign key to RLAAudit.
+        retention: Retain indefinitely
+      - name: ballot_ref
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Reference to the sampled ballot.
+        retention: Retain indefinitely
+      - name: manual_interpretation
+        type: jsonb
+        data_class: C
+        pii: false
+        nullable: true
+        description: Manual tally interpretation by auditor.
+        retention: Retain indefinitely
+
+  - name: ManualCount
+    store: T2
+    event_sourced: false
+    columns:
+      - name: count_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 manual count identifier.
+        retention: Retain indefinitely
+      - name: station_code
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Polling station code.
+        retention: Retain indefinitely
+      - name: position_code
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Election position.
+        retention: Retain indefinitely
+      - name: tally
+        type: jsonb
+        data_class: C
+        pii: false
+        nullable: false
+        description: Manual tally keyed by candidate_id.
+        retention: Retain indefinitely
+      - name: counted_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Count timestamp.
+        retention: Retain indefinitely
+
+  - name: RecallPetition
+    store: T2
+    event_sourced: false
+    columns:
+      - name: petition_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 recall petition identifier.
+        retention: Retain indefinitely
+      - name: constituency_code
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Constituency of the MP subject to recall.
+        retention: Retain indefinitely
+      - name: mp_candidate_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: Identifier of the MP subject to recall.
+        retention: Retain indefinitely
+      - name: verified_count
+        type: integer
+        data_class: C
+        pii: false
+        nullable: false
+        description: Number of verified signatures.
+        retention: Retain indefinitely
+      - name: threshold_required
+        type: integer
+        data_class: C
+        pii: false
+        nullable: false
+        description: Signature threshold required for recall.
+        retention: Retain indefinitely
+      - name: status
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Petition status. One of collecting, verifying, threshold_met, failed, by_election_triggered.
+        retention: Retain indefinitely
+
+  - name: RecallSignature
+    store: T2
+    event_sourced: false
+    columns:
+      - name: signature_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 signature record identifier.
+        retention: Delete 90 days post-election
+      - name: petition_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: Foreign key to RecallPetition.
+        retention: Delete 90 days post-election
+      - name: voter_id_hash
+        type: text
+        data_class: A
+        pii: true
+        nullable: false
+        description: SHA-256 of voter national ID. Class A due to political sensitivity.
+        retention: Delete 90 days post-election
+      - name: verified
+        type: boolean
+        data_class: C
+        pii: false
+        nullable: false
+        description: Whether signature has been verified against voter roll.
+        retention: Delete 90 days post-election
+
+  - name: CourtPetition
+    store: T2
+    event_sourced: false
+    columns:
+      - name: petition_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 court petition identifier.
+        retention: Retain indefinitely
+      - name: election_id
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Election being contested.
+        retention: Retain indefinitely
+      - name: petitioner_hash
+        type: text
+        data_class: B
+        pii: true
+        nullable: false
+        description: SHA-256 of petitioner identifier.
+        retention: Retain indefinitely
+      - name: respondent_hash
+        type: text
+        data_class: B
+        pii: true
+        nullable: true
+        description: SHA-256 of respondent identifier. Null if respondent is the commission.
+        retention: Retain indefinitely
+      - name: status
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Petition status. One of filed, registered, hearing, judgment_delivered, appealed.
+        retention: Retain indefinitely
+      - name: filed_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Filing timestamp.
+        retention: Retain indefinitely
+
+  - name: CourtJudgment
+    store: T2
+    event_sourced: false
+    columns:
+      - name: judgment_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 judgment identifier.
+        retention: Retain indefinitely
+      - name: petition_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: Foreign key to CourtPetition.
+        retention: Retain indefinitely
+      - name: outcome
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Judgment outcome. One of dismissed, upheld, partial_uphold, null_void.
+        retention: Retain indefinitely
+      - name: judgment_ref
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: MinIO object reference to judgment document.
+        retention: Retain indefinitely
+      - name: delivered_at
+        type: timestamp
+        data_class: D
+        pii: false
+        nullable: false
+        description: Judgment delivery timestamp.
+        retention: Retain indefinitely
+
+  - name: ByElection
+    store: T2
+    event_sourced: false
+    columns:
+      - name: by_election_id
+        type: uuid
+        data_class: C
+        pii: false
+        nullable: false
+        description: UUIDv7 by-election identifier.
+        retention: Retain indefinitely
+      - name: constituency_code
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Constituency for the by-election.
+        retention: Retain indefinitely
+      - name: trigger_reason
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: Trigger reason. One of court_nullified, death, recall, resignation.
+        retention: Retain indefinitely
+      - name: scheduled_date
+        type: timestamp
+        data_class: C
+        pii: false
+        nullable: true
+        description: Scheduled election date.
+        retention: Retain indefinitely
+      - name: status
+        type: text
+        data_class: C
+        pii: false
+        nullable: false
+        description: By-election status. One of scheduled, ongoing, complete, cancelled.
+        retention: Retain indefinitely

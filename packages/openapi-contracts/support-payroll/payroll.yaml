@@ -1,0 +1,559 @@
+openapi: 3.1.0
+info:
+  title: eel-support-payroll
+  version: 1.0.0
+  description: Module M55 - HR and Payroll for election personnel. Manages personnel records, disbursement jobs, and county payroll reports.
+  contact:
+    name: EEL Platform Team
+    email: platform@eel.local
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+tags:
+  - name: personnel
+    description: Election personnel HR records
+  - name: disbursements
+    description: Payment disbursement jobs
+  - name: reports
+    description: Payroll reports
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/support/payroll/personnel:
+    post:
+      tags: [personnel]
+      operationId: registerPersonnel
+      summary: Register election personnel
+      description: Creates a personnel HR record. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonnelRecordCreate'
+      responses:
+        '201':
+          description: Personnel record created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonnelRecord'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      tags: [personnel]
+      operationId: listPersonnel
+      summary: List election personnel
+      description: Returns paginated personnel list. No PII fields in list response. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: county_code
+          in: query
+          schema:
+            type: string
+            x-eel-data-class: C
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [RO, ARO, PRO, clerk, agent, technical]
+            x-eel-data-class: C
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive]
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Paginated personnel list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonnelPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/support/payroll/disbursements:
+    post:
+      tags: [disbursements]
+      operationId: initiateDisbursement
+      summary: Initiate payment disbursement
+      description: Queues a disbursement batch job for payroll processing. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DisbursementCreate'
+      responses:
+        '201':
+          description: Disbursement job queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisbursementJob'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/support/payroll/disbursements/{job_id}:
+    parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+
+    get:
+      tags: [disbursements]
+      operationId: getDisbursementJob
+      summary: Get disbursement job status
+      description: Returns disbursement job status and batch summary. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Disbursement job detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisbursementJob'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/support/payroll/reports/county/{county_code}:
+    parameters:
+      - name: county_code
+        in: path
+        required: true
+        schema:
+          type: string
+          x-eel-data-class: C
+
+    get:
+      tags: [reports]
+      operationId: getCountyPayrollReport
+      summary: Payroll summary by county
+      description: Returns aggregate payroll figures for a county. No individual PII. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: disbursement_date_from
+          in: query
+          schema:
+            type: string
+            format: date
+            x-eel-data-class: C
+        - name: disbursement_date_to
+          in: query
+          schema:
+            type: string
+            format: date
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: County payroll summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CountyPayrollReport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by auth.eel.local (Keycloak). Trust domain eel.local.
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS client certificate for machine-to-machine calls.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+      description: UUIDv7 client-generated idempotency key.
+
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+        x-eel-data-class: D
+
+    PageSizeParam:
+      name: page_size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+        x-eel-data-class: D
+
+  schemas:
+    PersonnelRecordCreate:
+      type: object
+      required:
+        - personnel_id_hash
+        - role
+        - county_code
+        - phone_hash
+        - bank_account_hash
+        - id_number_hash
+        - hired_at
+      properties:
+        personnel_id_hash:
+          type: string
+          x-eel-data-class: B
+          description: SHA-256(salt||personnel_id).
+        role:
+          type: string
+          enum: [RO, ARO, PRO, clerk, agent, technical]
+          x-eel-data-class: C
+        county_code:
+          type: string
+          x-eel-data-class: C
+        phone_hash:
+          type: string
+          x-eel-data-class: A
+          description: SHA-256(salt||phone). Stored in class A vault.
+        bank_account_hash:
+          type: string
+          x-eel-data-class: A
+          description: SHA-256(salt||account_number). Stored in class A vault.
+        id_number_hash:
+          type: string
+          x-eel-data-class: A
+          description: SHA-256(salt||id_number). Stored in class A vault.
+        hired_at:
+          type: string
+          format: date
+          x-eel-data-class: B
+
+    PersonnelRecord:
+      allOf:
+        - $ref: '#/components/schemas/PersonnelRecordCreate'
+        - type: object
+          required: [record_id, status]
+          properties:
+            record_id:
+              type: string
+              format: uuid
+              x-eel-data-class: C
+            status:
+              type: string
+              enum: [active, inactive]
+              x-eel-data-class: C
+            created_at:
+              type: string
+              format: date-time
+              x-eel-data-class: D
+
+    PersonnelSummary:
+      type: object
+      required: [record_id, role, county_code, status]
+      properties:
+        record_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        role:
+          type: string
+          enum: [RO, ARO, PRO, clerk, agent, technical]
+          x-eel-data-class: C
+        county_code:
+          type: string
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [active, inactive]
+          x-eel-data-class: C
+        hired_at:
+          type: string
+          format: date
+          x-eel-data-class: C
+
+    PersonnelPage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PersonnelSummary'
+          x-eel-data-class: C
+        total:
+          type: integer
+          x-eel-data-class: C
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+        next_page:
+          type: integer
+          nullable: true
+          x-eel-data-class: D
+
+    DisbursementCreate:
+      type: object
+      required:
+        - batch_ref
+        - personnel_ids_hash
+        - role
+        - day_rate_kes
+        - days_worked
+        - disbursement_date
+      properties:
+        batch_ref:
+          type: string
+          x-eel-data-class: C
+        personnel_ids_hash:
+          type: array
+          x-eel-data-class: B
+          items:
+            type: string
+            x-eel-data-class: B
+          description: Array of SHA-256(salt||personnel_id).
+        role:
+          type: string
+          enum: [RO, ARO, PRO, clerk, agent, technical]
+          x-eel-data-class: C
+        day_rate_kes:
+          type: integer
+          minimum: 0
+          x-eel-data-class: C
+        days_worked:
+          type: integer
+          minimum: 0
+          x-eel-data-class: C
+        disbursement_date:
+          type: string
+          format: date
+          x-eel-data-class: C
+
+    DisbursementJob:
+      allOf:
+        - $ref: '#/components/schemas/DisbursementCreate'
+        - type: object
+          required: [job_id, status, queued_at]
+          properties:
+            job_id:
+              type: string
+              format: uuid
+              x-eel-data-class: C
+            status:
+              type: string
+              enum: [queued, processing, complete, failed]
+              x-eel-data-class: D
+            queued_at:
+              type: string
+              format: date-time
+              x-eel-data-class: D
+            completed_at:
+              type: string
+              format: date-time
+              nullable: true
+              x-eel-data-class: D
+            total_amount_kes:
+              type: integer
+              nullable: true
+              x-eel-data-class: C
+            error_detail:
+              type: string
+              nullable: true
+              x-eel-data-class: D
+
+    CountyPayrollReport:
+      type: object
+      required: [county_code, total_disbursed_kes, headcount, by_role]
+      properties:
+        county_code:
+          type: string
+          x-eel-data-class: C
+        total_disbursed_kes:
+          type: integer
+          x-eel-data-class: C
+        headcount:
+          type: integer
+          x-eel-data-class: C
+        period_from:
+          type: string
+          format: date
+          nullable: true
+          x-eel-data-class: C
+        period_to:
+          type: string
+          format: date
+          nullable: true
+          x-eel-data-class: C
+        by_role:
+          type: array
+          x-eel-data-class: C
+          items:
+            type: object
+            properties:
+              role:
+                type: string
+                x-eel-data-class: C
+              headcount:
+                type: integer
+                x-eel-data-class: C
+              total_kes:
+                type: integer
+                x-eel-data-class: C
+
+    ProblemDetail:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        title:
+          type: string
+          x-eel-data-class: C
+        status:
+          type: integer
+          x-eel-data-class: C
+        detail:
+          type: string
+          x-eel-data-class: C
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        trace_id:
+          type: string
+          x-eel-data-class: D
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Validation error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalError:
+      description: Internal server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'

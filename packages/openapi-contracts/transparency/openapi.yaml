@@ -1,0 +1,879 @@
+openapi: "3.1.0"
+
+info:
+  title: "Eel Transparency Log API"
+  version: "1.0.0"
+  description: |
+    Transparency log API providing publicly verifiable, append-only audit
+    capabilities for the election system. Implements a Certificate Transparency
+    (RFC 6962) style Merkle tree with HSM-signed Signed Tree Heads (STH) and
+    multi-witness cosignatures.
+
+    Module: P05 transparency-log (ADR-0017).
+
+    Trust domain: eel.local.
+    - Tier 1 (STH): public, no auth, cacheable, signed responses with Merkle proofs.
+    - Tier 2 (proofs/entries): JWT bearer, dual JSON+CBOR content.
+    - Tier 2 (leaf append): internal SVID mTLS, idempotent, used by backend services only.
+
+    All tier-1 responses carry X-Eel-Signature, X-Eel-Merkle-Proof, and
+    X-Eel-Snapshot-Id headers enabling client-side STH verification without
+    an additional round-trip.
+
+servers:
+  - url: "https://transparency.eel.local"
+    description: "Transparency log internal service"
+  - url: "https://api.eel.local"
+    description: "External API gateway"
+
+security:
+  - BearerJWT: []
+
+tags:
+  - name: sth
+    description: "Signed Tree Head retrieval — public, no auth"
+  - name: proof
+    description: "Inclusion and consistency proofs — JWT required"
+  - name: entries
+    description: "Log entry retrieval — JWT required, rate-limited"
+  - name: append
+    description: "Leaf append — internal SVID mTLS only"
+
+paths:
+  /api/v1/log/sth/latest:
+    get:
+      operationId: getLatestSTH
+      summary: "Retrieve the latest Signed Tree Head"
+      description: |
+        Returns the most recent Signed Tree Head for the transparency log.
+        The STH is signed by the election HSM and cosigned by registered witnesses.
+        Publicly accessible without authentication. Responses are cached at the
+        CDN/gateway layer; max-age is bounded by STH update frequency (typically 60s).
+
+        Response headers carry a detached signature over the STH body
+        (X-Eel-Signature), the Merkle root in X-Eel-Merkle-Proof, and a
+        snapshot identifier in X-Eel-Snapshot-Id for client-side cross-checking.
+      tags: [sth]
+      x-eel-auth: public
+      x-eel-tier: 1
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: "Latest Signed Tree Head"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+            X-Eel-Signature:
+              schema:
+                type: string
+              description: "HSM ECDSA P-384 detached signature over the canonical JSON body, base64url encoded."
+            X-Eel-Merkle-Proof:
+              schema:
+                type: string
+              description: "Base64url-encoded current Merkle root hash. Matches root_hash in the body."
+            X-Eel-Snapshot-Id:
+              schema:
+                type: string
+              description: "Opaque snapshot identifier (tree_size:root_hash) for deterministic client-side caching."
+            Cache-Control:
+              schema:
+                type: string
+              description: "Cacheability directive. max-age ≤ STH rotation interval."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignedTreeHead"
+        "503":
+          description: "Log service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/log/sth/{tree_size}:
+    get:
+      operationId: getSTHByTreeSize
+      summary: "Retrieve a Signed Tree Head for a specific tree size"
+      description: |
+        Returns the STH that was published when the tree reached tree_size leaves.
+        Enables clients to verify that a specific historical tree state was committed
+        by the HSM. Immutable once the tree has grown past tree_size — cacheable
+        indefinitely.
+
+        Same signature response headers as /sth/latest.
+      tags: [sth]
+      x-eel-auth: public
+      x-eel-tier: 1
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+        - name: tree_size
+          in: path
+          required: true
+          description: "The tree size (number of leaves) of the requested STH snapshot."
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            x-eel-data-class: D
+          example: 1048576
+      responses:
+        "200":
+          description: "Signed Tree Head for the requested tree size"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+            X-Eel-Signature:
+              schema:
+                type: string
+              description: "HSM detached signature over the body."
+            X-Eel-Merkle-Proof:
+              schema:
+                type: string
+              description: "Base64url Merkle root matching body root_hash."
+            X-Eel-Snapshot-Id:
+              schema:
+                type: string
+              description: "Opaque snapshot identifier."
+            Cache-Control:
+              schema:
+                type: string
+              description: "immutable — this STH will not change."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignedTreeHead"
+        "404":
+          description: "Tree has not yet reached the requested size"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Log service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/log/inclusion/{leaf_hash}:
+    get:
+      operationId: getInclusionProof
+      summary: "Retrieve an inclusion proof for a leaf hash"
+      description: |
+        Returns a Merkle inclusion proof proving that the leaf identified by
+        leaf_hash is part of the tree at the given (or latest) tree size.
+        The proof is a sequence of sibling hashes sufficient to recompute the
+        root from leaf_hash. JWT authentication required.
+      tags: [proof]
+      x-eel-auth: JWT
+      x-eel-tier: 2
+      x-eel-sla:
+        p50: 100
+        p95: 300
+        p99: 800
+      security:
+        - BearerJWT: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+        - name: leaf_hash
+          in: path
+          required: true
+          description: "SHA-256 hash of the leaf data, hex encoded (64 hex chars)."
+          schema:
+            type: string
+            pattern: "^[0-9a-f]{64}$"
+            x-eel-data-class: C
+          example: "9f4a2b3c1d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a"
+        - name: tree_size
+          in: query
+          required: false
+          description: "Tree size to prove inclusion against. Defaults to the latest STH tree size."
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            x-eel-data-class: D
+          example: 1048576
+      responses:
+        "200":
+          description: "Inclusion proof for the requested leaf"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InclusionProof"
+            application/cbor:
+              schema:
+                $ref: "#/components/schemas/InclusionProof"
+        "401":
+          description: "Missing or invalid JWT"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Leaf hash not found in the log at the requested tree size"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Log service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/log/consistency/{from_size}/{to_size}:
+    get:
+      operationId: getConsistencyProof
+      summary: "Retrieve a consistency proof between two tree sizes"
+      description: |
+        Returns a Merkle consistency proof showing that the tree of size to_size
+        is a consistent append-only extension of the tree of size from_size.
+        Both STHs must exist. JWT authentication required.
+
+        Use this to verify that a previously observed STH is still part of the
+        current tree without re-fetching all entries.
+      tags: [proof]
+      x-eel-auth: JWT
+      x-eel-tier: 2
+      x-eel-sla:
+        p50: 100
+        p95: 300
+        p99: 800
+      security:
+        - BearerJWT: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+        - name: from_size
+          in: path
+          required: true
+          description: "Earlier tree size (the smaller, already-trusted STH)."
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            x-eel-data-class: D
+          example: 524288
+        - name: to_size
+          in: path
+          required: true
+          description: "Later tree size (the larger STH to prove consistency against)."
+          schema:
+            type: integer
+            format: int64
+            minimum: 2
+            x-eel-data-class: D
+          example: 1048576
+      responses:
+        "200":
+          description: "Consistency proof between the two tree sizes"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsistencyProof"
+            application/cbor:
+              schema:
+                $ref: "#/components/schemas/ConsistencyProof"
+        "400":
+          description: "from_size >= to_size or other invalid parameter combination"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "401":
+          description: "Missing or invalid JWT"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "One or both tree sizes do not have a committed STH"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Log service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/log/entries:
+    get:
+      operationId: getLogEntries
+      summary: "Retrieve paginated log entries"
+      description: |
+        Returns a page of log entries ordered by leaf index ascending.
+        Useful for auditors downloading the full log for independent verification.
+        Rate-limited: 100 req/min per JWT subject. Rate limit headers follow
+        IETF draft-ietf-httpapi-ratelimit-headers.
+        JWT authentication required.
+      tags: [entries]
+      x-eel-auth: JWT
+      x-eel-tier: 2
+      x-eel-sla:
+        p50: 100
+        p95: 300
+        p99: 800
+      security:
+        - BearerJWT: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+        - name: start
+          in: query
+          required: true
+          description: "First leaf index to return (inclusive, zero-based)."
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+            x-eel-data-class: D
+          example: 0
+        - name: end
+          in: query
+          required: true
+          description: "Last leaf index to return (inclusive). Maximum window: start+999."
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+            x-eel-data-class: D
+          example: 999
+        - name: entry_type
+          in: query
+          required: false
+          description: "Filter by entry type."
+          schema:
+            type: string
+            enum: [enrolment, identification, credential_issue, credential_revoke, result_tally]
+            x-eel-data-class: C
+          example: enrolment
+      responses:
+        "200":
+          description: "Page of log entries"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+            RateLimit-Limit:
+              schema:
+                type: integer
+              description: "Maximum requests allowed in the current rate-limit window."
+            RateLimit-Remaining:
+              schema:
+                type: integer
+              description: "Requests remaining in the current rate-limit window."
+            RateLimit-Reset:
+              schema:
+                type: integer
+              description: "Unix timestamp (seconds) when the rate-limit window resets."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogEntriesPage"
+            application/cbor:
+              schema:
+                $ref: "#/components/schemas/LogEntriesPage"
+        "400":
+          description: "Invalid range — window exceeds 1000 or end < start"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "401":
+          description: "Missing or invalid JWT"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "429":
+          description: "Rate limit exceeded"
+          headers:
+            RateLimit-Limit:
+              schema:
+                type: integer
+            RateLimit-Remaining:
+              schema:
+                type: integer
+            RateLimit-Reset:
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Log service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/log/leaves:
+    post:
+      operationId: appendLeaf
+      summary: "Append a leaf to the transparency log"
+      description: |
+        Internal endpoint for backend services to append a new leaf to the
+        transparency log. Accepts a hash of the entry data plus metadata.
+        The log service queues the leaf for inclusion in the next STH rotation.
+        Idempotent via Idempotency-Key — the same data_hash from the same
+        submitter_id is a no-op, returning the existing leaf_index.
+
+        Only reachable via SVID mTLS. Not exposed through the external gateway.
+      tags: [append]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: 2
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeafAppendRequest"
+            example:
+              entry_type: "enrolment"
+              data_hash: "sha256:9f4a2b3c1d5e6f7a..."
+              submitter_id: "spiffe://eel.local/bvr-backend"
+              submitter_sig: "MEUCIQDxyz..."
+              hlc: "2026-08-21T09:14:00.123456789Z"
+      responses:
+        "201":
+          description: "Leaf accepted and queued for STH inclusion"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeafAppendResult"
+        "200":
+          description: "Idempotent replay — leaf already exists, returning existing index"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeafAppendResult"
+        "400":
+          description: "Malformed request body"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "SVID not authorised to append this entry_type"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reused with different payload"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "422":
+          description: "Validation error — unknown entry_type, invalid hash format, etc."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Log write queue unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+components:
+  securitySchemes:
+    BearerJWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "OIDC JWT issued by the Eel IAM service. Must carry sub, aud=transparency-log, and the eel:log:read scope."
+    SVIDmTLS:
+      type: mutualTLS
+      description: "SPIFFE/SPIRE SVID mutual TLS for internal service-to-service communication."
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: "Client-generated UUID v4/v7 idempotency key. Replay of same key + same payload is safe; different payload returns 409."
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+      example: "01933b2a-7d4c-7e5f-a1b2-3c4d5e6f7a8b"
+
+    XRequestId:
+      name: X-Request-Id
+      in: header
+      required: false
+      description: "Client-supplied request correlation ID. Echoed in response headers."
+      schema:
+        type: string
+        maxLength: 128
+        x-eel-data-class: D
+      example: "req-2026082109140001"
+
+  schemas:
+    SignedTreeHead:
+      type: object
+      description: |
+        Signed Tree Head (STH) for the Eel transparency log. Signed by the election
+        HSM (ECDSA P-384) and optionally cosigned by external witnesses.
+      required:
+        - tree_size
+        - root_hash
+        - timestamp
+        - hsm_sig
+        - witness_cosigs
+      properties:
+        tree_size:
+          type: integer
+          format: int64
+          minimum: 0
+          description: "Number of leaves in the tree at the time this STH was produced."
+          x-eel-data-class: D
+          example: 1048576
+        root_hash:
+          type: string
+          description: "SHA-256 Merkle root hash of the tree, hex encoded."
+          x-eel-data-class: C
+          example: "9f4a2b3c1d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a"
+        timestamp:
+          type: string
+          format: date-time
+          description: "ISO 8601 UTC timestamp when this STH was signed by the HSM."
+          x-eel-data-class: D
+          example: "2026-08-21T09:00:00Z"
+        hsm_sig:
+          type: string
+          contentEncoding: base64url
+          description: "HSM ECDSA P-384 signature over (tree_size || timestamp || root_hash), base64url encoded."
+          x-eel-data-class: C
+          example: "base64url:MEYCIQDX..."
+        witness_cosigs:
+          type: array
+          description: "Array of witness cosignatures from registered external monitors."
+          x-eel-data-class: C
+          items:
+            $ref: "#/components/schemas/WitnessCosig"
+      additionalProperties: false
+
+    WitnessCosig:
+      type: object
+      description: "A cosignature from a registered transparency witness."
+      required:
+        - witness_id
+        - cosig
+        - cosigned_at
+      properties:
+        witness_id:
+          type: string
+          description: "Unique identifier of the witness (typically its SPIFFE ID or DNS name)."
+          x-eel-data-class: C
+          example: "spiffe://witness.eel.local/intl-observer-01"
+        cosig:
+          type: string
+          contentEncoding: base64url
+          description: "Witness signature over the canonical STH body, base64url encoded."
+          x-eel-data-class: C
+          example: "base64url:MEYCIQDZ..."
+        cosigned_at:
+          type: string
+          format: date-time
+          description: "Timestamp when the witness cosigned this STH."
+          x-eel-data-class: C
+          example: "2026-08-21T09:00:05Z"
+      additionalProperties: false
+
+    InclusionProof:
+      type: object
+      description: "Merkle inclusion proof for a specific leaf in the log."
+      required:
+        - leaf_index
+        - leaf_hash
+        - tree_size
+        - root_hash
+        - proof_hashes
+        - computed_at
+      properties:
+        leaf_index:
+          type: integer
+          format: int64
+          minimum: 0
+          description: "Zero-based index of the leaf in the log."
+          x-eel-data-class: D
+          example: 42
+        leaf_hash:
+          type: string
+          description: "SHA-256 hash of the leaf data as stored in the log, hex encoded."
+          x-eel-data-class: C
+          example: "9f4a2b3c1d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a"
+        tree_size:
+          type: integer
+          format: int64
+          minimum: 1
+          description: "Tree size used to generate this proof."
+          x-eel-data-class: D
+          example: 1048576
+        root_hash:
+          type: string
+          description: "Merkle root of the tree at tree_size, hex encoded."
+          x-eel-data-class: C
+          example: "7f2a1b3c..."
+        proof_hashes:
+          type: array
+          description: "Ordered sibling hashes. Combine left-to-right with leaf_hash to recompute root_hash."
+          x-eel-data-class: C
+          items:
+            type: string
+          example:
+            - "ab12cd34..."
+            - "ef56gh78..."
+        computed_at:
+          type: string
+          format: date-time
+          description: "Server timestamp when this proof was computed."
+          x-eel-data-class: D
+          example: "2026-08-21T09:01:00Z"
+      additionalProperties: false
+
+    ConsistencyProof:
+      type: object
+      description: "Merkle consistency proof between two tree sizes."
+      required:
+        - from_size
+        - to_size
+        - proof_hashes
+        - computed_at
+      properties:
+        from_size:
+          type: integer
+          format: int64
+          minimum: 1
+          description: "Earlier (trusted) tree size."
+          x-eel-data-class: D
+          example: 524288
+        to_size:
+          type: integer
+          format: int64
+          minimum: 2
+          description: "Later (to-verify) tree size."
+          x-eel-data-class: D
+          example: 1048576
+        proof_hashes:
+          type: array
+          description: "Ordered hashes needed to verify consistency. An empty array means from_size == to_size or to_size is a power-of-two extension."
+          x-eel-data-class: C
+          items:
+            type: string
+          example:
+            - "cd78ef12..."
+            - "ab34gh56..."
+        computed_at:
+          type: string
+          format: date-time
+          description: "Server timestamp when this proof was computed."
+          x-eel-data-class: D
+          example: "2026-08-21T09:02:00Z"
+      additionalProperties: false
+
+    LogEntry:
+      type: object
+      description: "A single entry in the transparency log."
+      required:
+        - leaf_index
+        - leaf_hash
+        - timestamp
+        - entry_type
+        - data_hash
+        - submitter_id
+      properties:
+        leaf_index:
+          type: integer
+          format: int64
+          minimum: 0
+          description: "Zero-based position of this entry in the log."
+          x-eel-data-class: D
+          example: 42
+        leaf_hash:
+          type: string
+          description: "SHA-256 hash of this leaf's canonical serialisation, hex encoded."
+          x-eel-data-class: C
+          example: "9f4a2b3c..."
+        timestamp:
+          type: string
+          format: date-time
+          description: "Hybrid Logical Clock (HLC) timestamp when this leaf was committed."
+          x-eel-data-class: D
+          example: "2026-08-21T09:14:00.123456789Z"
+        entry_type:
+          type: string
+          enum: [enrolment, identification, credential_issue, credential_revoke, result_tally]
+          description: "Semantic type of the logged event."
+          x-eel-data-class: C
+          example: "enrolment"
+        data_hash:
+          type: string
+          description: "SHA-256 hash of the original entry data (the artifact whose integrity this log records)."
+          x-eel-data-class: C
+          example: "sha256:3a5d9f..."
+        submitter_id:
+          type: string
+          description: "SPIFFE ID of the service that submitted this leaf."
+          x-eel-data-class: C
+          example: "spiffe://eel.local/bvr-backend"
+        extra_data:
+          type: string
+          contentEncoding: base64url
+          description: "Optional opaque metadata attached by the submitter, base64url encoded. Max 512 bytes."
+          x-eel-data-class: C
+          example: "base64url:eyJ..."
+      additionalProperties: false
+
+    LogEntriesPage:
+      type: object
+      description: "A paginated page of log entries."
+      required:
+        - entries
+        - start
+        - end
+        - tree_size
+      properties:
+        entries:
+          type: array
+          description: "Log entries in this page, ordered by leaf_index ascending."
+          x-eel-data-class: C
+          items:
+            $ref: "#/components/schemas/LogEntry"
+        start:
+          type: integer
+          format: int64
+          description: "First leaf_index in this page (inclusive)."
+          x-eel-data-class: D
+          example: 0
+        end:
+          type: integer
+          format: int64
+          description: "Last leaf_index in this page (inclusive)."
+          x-eel-data-class: D
+          example: 999
+        tree_size:
+          type: integer
+          format: int64
+          description: "Tree size at the time this page was generated."
+          x-eel-data-class: D
+          example: 1048576
+      additionalProperties: false
+
+    LeafAppendRequest:
+      type: object
+      description: "Request to append a new leaf to the transparency log."
+      required:
+        - entry_type
+        - data_hash
+        - submitter_id
+        - submitter_sig
+        - hlc
+      properties:
+        entry_type:
+          type: string
+          enum: [enrolment, identification, credential_issue, credential_revoke, result_tally]
+          description: "Semantic type of the event being logged."
+          x-eel-data-class: C
+          example: "enrolment"
+        data_hash:
+          type: string
+          description: "SHA-256 hash of the original event data (not the data itself), hex encoded."
+          x-eel-data-class: C
+          example: "sha256:9f4a2b3c..."
+        submitter_id:
+          type: string
+          description: "SPIFFE ID of the calling service. Must match the SVID presented in mTLS."
+          x-eel-data-class: C
+          example: "spiffe://eel.local/bvr-backend"
+        submitter_sig:
+          type: string
+          contentEncoding: base64url
+          description: "ECDSA P-256 signature over the canonical JSON of this payload signed by the submitter's SVID private key."
+          x-eel-data-class: C
+          example: "base64url:MEUCIQDX..."
+        hlc:
+          type: string
+          format: date-time
+          description: "Hybrid Logical Clock timestamp from the submitter, used to establish causal ordering."
+          x-eel-data-class: D
+          example: "2026-08-21T09:14:00.123456789Z"
+        extra_data:
+          type: string
+          contentEncoding: base64url
+          description: "Optional opaque submitter metadata, base64url encoded. Max 512 bytes."
+          x-eel-data-class: C
+          example: "base64url:eyJ..."
+      additionalProperties: false
+
+    LeafAppendResult:
+      type: object
+      description: "Acknowledgement of a successfully queued leaf append."
+      required:
+        - leaf_hash
+        - queued_at
+        - estimated_inclusion_s
+      properties:
+        leaf_index:
+          type: integer
+          format: int64
+          minimum: 0
+          description: "Assigned leaf index. Present only after the leaf is included in an STH."
+          x-eel-data-class: D
+          example: 1048577
+        leaf_hash:
+          type: string
+          description: "SHA-256 hash of the serialised leaf as it will appear in the tree, hex encoded."
+          x-eel-data-class: C
+          example: "9f4a2b3c..."
+        queued_at:
+          type: string
+          format: date-time
+          description: "Server timestamp when the leaf was accepted into the append queue."
+          x-eel-data-class: D
+          example: "2026-08-21T09:14:01Z"
+        estimated_inclusion_s:
+          type: integer
+          description: "Estimated seconds until this leaf appears in a signed STH."
+          x-eel-data-class: D
+          example: 60
+      additionalProperties: false

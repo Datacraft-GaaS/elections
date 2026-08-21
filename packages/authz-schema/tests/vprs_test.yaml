@@ -1,0 +1,49 @@
+# Golden tests for vprs authz schema
+# Run with: zed test packages/authz-schema/vprs.zed packages/authz-schema/tests/vprs_test.yaml
+tests:
+  - name: "any user can submit VPRS application"
+    subject: "eel_user:user_diaspora_voter"
+    resource: "eel_vprs_application:vprs_001"
+    permission: "submit"
+    expected: true
+    relationships: []
+
+  - name: "applicant can read own VPRS application"
+    subject: "eel_user:user_diaspora_voter"
+    resource: "eel_vprs_application:vprs_001"
+    permission: "read_own"
+    expected: true
+    relationships:
+      - "eel_vprs_application:vprs_001#applicant@eel_user:user_diaspora_voter"
+
+  - name: "clerk can review VPRS application"
+    subject: "eel_user:user_poll_clerk"
+    resource: "eel_vprs_application:vprs_001"
+    permission: "review"
+    expected: true
+    relationships:
+      - "eel_vprs_application:vprs_001#clerk@eel_user:user_poll_clerk"
+
+  - name: "clerk cannot approve VPRS application"
+    subject: "eel_user:user_poll_clerk"
+    resource: "eel_vprs_application:vprs_001"
+    permission: "approve"
+    expected: false
+    relationships:
+      - "eel_vprs_application:vprs_001#clerk@eel_user:user_poll_clerk"
+
+  - name: "supervisor can approve VPRS application"
+    subject: "eel_user:user_county_coord"
+    resource: "eel_vprs_application:vprs_001"
+    permission: "approve"
+    expected: true
+    relationships:
+      - "eel_vprs_application:vprs_001#supervisor@eel_user:user_county_coord"
+
+  - name: "data_officer can audit VPRS applications"
+    subject: "eel_user:user_data_officer"
+    resource: "eel_vprs_application:vprs_001"
+    permission: "audit"
+    expected: true
+    relationships:
+      - "eel_vprs_application:vprs_001#data_officer@eel_user:user_data_officer"

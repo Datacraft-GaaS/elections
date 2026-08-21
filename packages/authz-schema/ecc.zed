@@ -1,0 +1,39 @@
+// ECC (Electoral Coordination Centre) authorization schema
+// Trust domain: eel.local
+
+definition eel_user {}
+definition eel_service {}
+
+definition eel_coordination_room {
+    relation coordinator: eel_user
+    relation county_coord: eel_user
+    relation observer: eel_user
+    relation sre: eel_user
+
+    permission manage = coordinator
+    permission join = coordinator + county_coord + sre
+    permission observe = observer
+    permission read_status = coordinator + county_coord + observer + sre
+}
+
+definition eel_dispatch_order {
+    relation dispatcher: eel_user
+    relation coordinator: eel_user
+    relation recipient: eel_user
+
+    permission create = dispatcher + coordinator
+    permission update = dispatcher + coordinator
+    permission acknowledge = recipient
+    permission read = dispatcher + coordinator + recipient
+}
+
+definition eel_situation_report {
+    relation author: eel_user
+    relation approver: eel_user
+    relation reader: eel_user
+
+    permission create = author
+    permission approve = approver
+    permission read = author + approver + reader
+    permission publish = approver
+}

@@ -1,0 +1,464 @@
+openapi: 3.1.0
+info:
+  title: eel-dereg-appeal
+  version: 1.0.0
+  description: Module M36 - Voter Deregistration Appeal. Allows voters to challenge deregistration decisions and provides USSD status check integration.
+  contact:
+    name: EEL Platform Team
+    email: platform@eel.local
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+tags:
+  - name: appeals
+    description: Deregistration appeal lifecycle
+  - name: decisions
+    description: Appeal decisions
+  - name: ussd
+    description: USSD appeal status check
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/dereg/appeals:
+    post:
+      tags: [appeals]
+      operationId: fileDeregAppeal
+      summary: File deregistration appeal
+      description: Submits an appeal against a deregistration decision. Idempotent on Idempotency-Key. Requires JWT.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeregAppealCreate'
+      responses:
+        '201':
+          description: Appeal submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeregAppeal'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      tags: [appeals]
+      operationId: listDeregAppeals
+      summary: List deregistration appeals (admin)
+      description: Returns paginated list of all appeals. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [submitted, under_review, upheld, dismissed]
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Paginated appeal list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeregAppealPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/dereg/appeals/{appeal_id}:
+    parameters:
+      - $ref: '#/components/parameters/AppealId'
+
+    get:
+      tags: [appeals]
+      operationId: getDeregAppeal
+      summary: Get appeal status (citizen)
+      description: Returns appeal status visible to the applicant. Requires JWT.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Appeal detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeregAppeal'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/dereg/appeals/{appeal_id}/decisions:
+    parameters:
+      - $ref: '#/components/parameters/AppealId'
+
+    post:
+      tags: [decisions]
+      operationId: decideDeregAppeal
+      summary: Record appeal decision
+      description: Records an upheld or dismissed decision. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppealDecisionCreate'
+      responses:
+        '201':
+          description: Decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppealDecision'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/dereg/ussd/sessions:
+    post:
+      tags: [ussd]
+      operationId: handleDeregUssdSession
+      summary: USSD appeal status check
+      description: Handles USSD gateway callbacks for appeal status self-service. mTLS required. Idempotent on Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      security:
+        - mtls: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeregUSSDRequest'
+      responses:
+        '200':
+          description: USSD response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeregUSSDResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by auth.eel.local (Keycloak). Trust domain eel.local.
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS client certificate for USSD gateway calls.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+      description: UUIDv7 client-generated idempotency key.
+
+    AppealId:
+      name: appeal_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+        x-eel-data-class: D
+
+    PageSizeParam:
+      name: page_size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+        x-eel-data-class: D
+
+  schemas:
+    DeregAppealCreate:
+      type: object
+      required:
+        - voter_id_hash
+        - deregistration_ref
+        - grounds
+        - supporting_doc_hash
+      properties:
+        voter_id_hash:
+          type: string
+          x-eel-data-class: A
+          description: SHA-256(salt||voter_id). Stored in class A vault.
+        deregistration_ref:
+          type: string
+          x-eel-data-class: C
+          description: Reference number on the deregistration notice.
+        grounds:
+          type: string
+          maxLength: 3000
+          x-eel-data-class: C
+        supporting_doc_hash:
+          type: string
+          x-eel-data-class: A
+          description: SHA-256 of attached supporting document.
+
+    DeregAppeal:
+      allOf:
+        - $ref: '#/components/schemas/DeregAppealCreate'
+        - type: object
+          required: [appeal_id, status, submitted_at]
+          properties:
+            appeal_id:
+              type: string
+              format: uuid
+              x-eel-data-class: C
+            status:
+              type: string
+              enum: [submitted, under_review, upheld, dismissed]
+              x-eel-data-class: C
+            submitted_at:
+              type: string
+              format: date-time
+              x-eel-data-class: C
+            updated_at:
+              type: string
+              format: date-time
+              x-eel-data-class: D
+
+    DeregAppealPage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeregAppeal'
+          x-eel-data-class: C
+        total:
+          type: integer
+          x-eel-data-class: C
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+        next_page:
+          type: integer
+          nullable: true
+          x-eel-data-class: D
+
+    AppealDecisionCreate:
+      type: object
+      required: [verdict, grounds, decided_by_hash]
+      properties:
+        verdict:
+          type: string
+          enum: [upheld, dismissed]
+          x-eel-data-class: C
+        grounds:
+          type: string
+          maxLength: 3000
+          x-eel-data-class: C
+        decided_by_hash:
+          type: string
+          x-eel-data-class: B
+          description: SHA-256(salt||officer_id).
+
+    AppealDecision:
+      allOf:
+        - $ref: '#/components/schemas/AppealDecisionCreate'
+        - type: object
+          required: [decision_id, reinstated, decided_at]
+          properties:
+            decision_id:
+              type: string
+              format: uuid
+              x-eel-data-class: C
+            reinstated:
+              type: boolean
+              x-eel-data-class: C
+              description: True if the voter has been reinstated to the register.
+            decided_at:
+              type: string
+              format: date-time
+              x-eel-data-class: C
+
+    DeregUSSDRequest:
+      type: object
+      required: [session_id, msisdn_hash, text, service_code]
+      properties:
+        session_id:
+          type: string
+          x-eel-data-class: E
+        msisdn_hash:
+          type: string
+          x-eel-data-class: A
+        text:
+          type: string
+          maxLength: 182
+          x-eel-data-class: E
+        service_code:
+          type: string
+          x-eel-data-class: C
+
+    DeregUSSDResponse:
+      type: object
+      required: [response_text, action]
+      properties:
+        response_text:
+          type: string
+          maxLength: 182
+          x-eel-data-class: C
+        action:
+          type: string
+          enum: [CON, END]
+          x-eel-data-class: C
+
+    ProblemDetail:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        title:
+          type: string
+          x-eel-data-class: C
+        status:
+          type: integer
+          x-eel-data-class: C
+        detail:
+          type: string
+          x-eel-data-class: C
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        trace_id:
+          type: string
+          x-eel-data-class: D
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Validation error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalError:
+      description: Internal server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'

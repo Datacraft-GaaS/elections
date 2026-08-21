@@ -1,0 +1,706 @@
+openapi: 3.1.0
+info:
+  title: eel-field-mobile-dispatch
+  version: 1.0.0
+  description: >
+    Module M33 - Personnel Dispatch. Back-office dispatch management API for
+    creating, bulk-assigning, and monitoring field officer assignments across
+    polling stations. Consumed by the dispatcher role in the mobile BFF and
+    by back-office web tooling. Tier 3 throughout (JWT + SpiceDB).
+  contact:
+    name: eel platform team
+    url: https://eel.local/support
+servers:
+  - url: https://api.eel.local
+    description: production
+  - url: https://staging.api.eel.local
+    description: staging
+
+tags:
+  - name: assignments
+    description: Individual dispatch assignment lifecycle
+  - name: bulk
+    description: Bulk assignment operations
+  - name: coverage
+    description: Constituency staffing coverage analysis
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/mobile/dispatch/assignments:
+    post:
+      tags: [assignments]
+      operationId: createDispatchAssignment
+      summary: Create a personnel dispatch assignment
+      description: >
+        Creates a single dispatch assignment linking a personnel officer hash
+        to a polling station for a specific election day role. Idempotent on
+        Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentCreate'
+      responses:
+        '201':
+          description: Assignment created
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DispatchAssignment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags: [assignments]
+      operationId: listDispatchAssignments
+      summary: List dispatch assignments with filters
+      description: >
+        Paginated list of dispatch assignments. Filterable by station_code,
+        county_code, status, and election date.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageCursor'
+        - $ref: '#/components/parameters/PageLimit'
+        - name: station_code
+          in: query
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+        - name: county_code
+          in: query
+          schema:
+            type: string
+            pattern: '^\d{3}$'
+            x-eel-data-class: C
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed, on_site, completed, cancelled]
+            x-eel-data-class: C
+        - name: election_day
+          in: query
+          schema:
+            type: string
+            format: date
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Paginated assignment list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DispatchAssignmentPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/mobile/dispatch/assignments/{assignment_id}:
+    get:
+      tags: [assignments]
+      operationId: getDispatchAssignment
+      summary: Get a dispatch assignment by ID
+      description: Retrieve full details of a single assignment.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AssignmentId'
+      responses:
+        '200':
+          description: Assignment detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DispatchAssignment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    patch:
+      tags: [assignments]
+      operationId: updateDispatchAssignment
+      summary: Update a dispatch assignment (reassign or cancel)
+      description: >
+        Partial update supporting reassignment to a different station or
+        officer, status transitions, and cancellation. Idempotent on
+        Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AssignmentId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentPatch'
+      responses:
+        '200':
+          description: Assignment updated
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DispatchAssignment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/mobile/dispatch/bulk-assignments:
+    post:
+      tags: [bulk]
+      operationId: createBulkAssignments
+      summary: Bulk assign personnel from a CSV upload
+      description: >
+        Triggers a bulk assignment job from a pre-uploaded CSV file in MinIO
+        (provided as a presigned object reference). Supports dry-run validation.
+        Idempotent on Idempotency-Key. Use GET /bulk-assignments/{job_id} to
+        poll job status.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkAssignRequest'
+      responses:
+        '201':
+          description: Bulk assignment job queued
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkAssignJob'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/mobile/dispatch/coverage/{constituency_code}:
+    get:
+      tags: [coverage]
+      operationId: getConstituencyCoverage
+      summary: Get staffing coverage analysis for a constituency
+      description: >
+        Returns a breakdown of how many polling stations in the constituency
+        are fully staffed, understaffed, or unstaffed, along with per-station
+        assignment counts. Useful for dispatch planning. No PII returned.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: constituency_code
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+        - name: election_day
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Constituency staffing coverage analysis
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstituencyCoverage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by eel.local identity provider (SpiceDB-checked on every request)
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS for service-to-service calls within eel.local trust domain
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Client-generated UUIDv7 for idempotent request deduplication (TTL 24 h)
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: E
+
+    AssignmentId:
+      name: assignment_id
+      in: path
+      required: true
+      description: UUIDv7 dispatch assignment identifier
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+
+    PageCursor:
+      name: cursor
+      in: query
+      description: Opaque pagination cursor from a previous response
+      schema:
+        type: string
+        x-eel-data-class: E
+
+    PageLimit:
+      name: limit
+      in: query
+      description: Maximum items to return (1-100)
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+        x-eel-data-class: E
+
+  headers:
+    CosignSig:
+      description: Sigstore cosign signature over the response body
+      schema:
+        type: string
+        x-eel-data-class: C
+    MerkleProof:
+      description: Merkle proof anchoring this response to the audit ledger
+      schema:
+        type: string
+        x-eel-data-class: C
+    SnapshotId:
+      description: Snapshot identifier for response reproducibility
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+
+  schemas:
+    AssignmentCreate:
+      type: object
+      required:
+        - personnel_id_hash
+        - station_code
+        - role
+        - report_by
+        - election_day
+      properties:
+        personnel_id_hash:
+          type: string
+          description: SHA-256 hash of the assigned officer national identifier
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: B
+        station_code:
+          type: string
+          maxLength: 32
+          x-eel-data-class: C
+        role:
+          type: string
+          maxLength: 128
+          description: Role the officer will fill at the station (e.g. presiding_officer)
+          x-eel-data-class: C
+        report_by:
+          type: string
+          format: date-time
+          description: Mandatory station report time
+          x-eel-data-class: C
+        election_day:
+          type: string
+          format: date
+          x-eel-data-class: C
+        notes:
+          type: string
+          maxLength: 1024
+          x-eel-data-class: D
+
+    DispatchAssignment:
+      type: object
+      required:
+        - assignment_id
+        - personnel_id_hash
+        - station_code
+        - role
+        - report_by
+        - election_day
+        - status
+        - created_at
+      properties:
+        assignment_id:
+          type: string
+          format: uuid
+          description: UUIDv7 assignment identifier
+          x-eel-data-class: C
+        personnel_id_hash:
+          type: string
+          x-eel-data-class: B
+        station_code:
+          type: string
+          x-eel-data-class: C
+        role:
+          type: string
+          x-eel-data-class: C
+        report_by:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        election_day:
+          type: string
+          format: date
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [pending, confirmed, on_site, completed, cancelled]
+          x-eel-data-class: C
+        actual_arrival:
+          type: string
+          format: date-time
+          nullable: true
+          x-eel-data-class: C
+        notes:
+          type: string
+          nullable: true
+          x-eel-data-class: D
+        created_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        updated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    DispatchAssignmentPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DispatchAssignment'
+          x-eel-data-class: C
+        next_cursor:
+          type: string
+          nullable: true
+          x-eel-data-class: E
+        total_count:
+          type: integer
+          x-eel-data-class: C
+
+    AssignmentPatch:
+      type: object
+      minProperties: 1
+      properties:
+        station_code:
+          type: string
+          maxLength: 32
+          description: Reassign to a different station
+          x-eel-data-class: C
+        personnel_id_hash:
+          type: string
+          description: Reassign to a different officer
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: B
+        report_by:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [cancelled]
+          description: Only 'cancelled' may be set via PATCH; other transitions are managed by the BFF
+          x-eel-data-class: C
+        notes:
+          type: string
+          maxLength: 1024
+          x-eel-data-class: D
+
+    BulkAssignRequest:
+      type: object
+      required: [upload_ref]
+      properties:
+        upload_ref:
+          type: string
+          maxLength: 512
+          description: MinIO presigned object reference (opaque key) pointing to the CSV
+          x-eel-data-class: D
+        dry_run:
+          type: boolean
+          description: If true, validate CSV and return error list without persisting any assignments
+          default: false
+          x-eel-data-class: E
+        election_day:
+          type: string
+          format: date
+          description: Election day date to apply to all rows; overrides any date column in CSV
+          x-eel-data-class: C
+
+    BulkAssignJob:
+      type: object
+      required: [job_id, status, dry_run, submitted_at]
+      properties:
+        job_id:
+          type: string
+          format: uuid
+          description: UUIDv7 job identifier for polling
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [queued, validating, complete, failed]
+          x-eel-data-class: D
+        dry_run:
+          type: boolean
+          x-eel-data-class: E
+        submitted_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        created_count:
+          type: integer
+          nullable: true
+          description: Number of assignments created (available when status is complete)
+          x-eel-data-class: D
+        error_count:
+          type: integer
+          nullable: true
+          x-eel-data-class: D
+        error_report_ref:
+          type: string
+          nullable: true
+          description: MinIO reference to the row-level error report
+          x-eel-data-class: D
+
+    StationCoverage:
+      type: object
+      required: [station_code, required_count, assigned_count, coverage_status]
+      properties:
+        station_code:
+          type: string
+          x-eel-data-class: C
+        required_count:
+          type: integer
+          description: Expected number of officers for this station
+          x-eel-data-class: C
+        assigned_count:
+          type: integer
+          description: Confirmed officers assigned
+          x-eel-data-class: C
+        coverage_status:
+          type: string
+          enum: [fully_staffed, understaffed, unstaffed]
+          x-eel-data-class: C
+
+    ConstituencyCoverage:
+      type: object
+      required:
+        - constituency_code
+        - election_day
+        - total_stations
+        - fully_staffed_count
+        - understaffed_count
+        - unstaffed_count
+        - stations
+      properties:
+        constituency_code:
+          type: string
+          x-eel-data-class: C
+        election_day:
+          type: string
+          format: date
+          x-eel-data-class: C
+        total_stations:
+          type: integer
+          x-eel-data-class: C
+        fully_staffed_count:
+          type: integer
+          x-eel-data-class: C
+        understaffed_count:
+          type: integer
+          x-eel-data-class: C
+        unstaffed_count:
+          type: integer
+          x-eel-data-class: C
+        coverage_pct:
+          type: number
+          format: float
+          description: Fraction of stations at full staff (0.0-1.0)
+          x-eel-data-class: C
+        stations:
+          type: array
+          items:
+            $ref: '#/components/schemas/StationCoverage'
+          x-eel-data-class: C
+
+    ProblemDetail:
+      type: object
+      description: RFC 9457 problem detail
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: E
+        title:
+          type: string
+          x-eel-data-class: E
+        status:
+          type: integer
+          x-eel-data-class: E
+        detail:
+          type: string
+          x-eel-data-class: E
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: E
+        trace_id:
+          type: string
+          x-eel-data-class: E
+
+  responses:
+    BadRequest:
+      description: Request body or parameters failed validation
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Missing or invalid JWT
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: SpiceDB authorization denied
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Idempotency-Key collision or assignment conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Semantic validation error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'

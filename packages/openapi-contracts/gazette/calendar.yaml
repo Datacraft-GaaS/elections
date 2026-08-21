@@ -1,0 +1,583 @@
+openapi: 3.1.0
+info:
+  title: eel-gazette-calendar
+  version: 1.0.0
+  description: Modules M52 (Election Calendar Gazette) and M64 (Voter List Public Inspection). Manages gazette notices, inspection windows, and voter list objections.
+  contact:
+    name: EEL Platform Team
+    email: platform@eel.local
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+tags:
+  - name: notices
+    description: Gazette notice publication and retrieval
+  - name: inspection
+    description: Voter list inspection windows
+  - name: objections
+    description: Voter list objections during inspection window
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/gazette/notices:
+    get:
+      tags: [notices]
+      operationId: listGazetteNotices
+      summary: List gazette notices
+      description: Returns published gazette notices including election dates, nomination deadlines, and results declarations. Public, tier 1, with Merkle proofs.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      security: []
+      parameters:
+        - name: notice_type
+          in: query
+          schema:
+            type: string
+            enum: [election_date, nomination_deadline, results_declaration, inspection_window]
+            x-eel-data-class: C
+        - name: effective_from
+          in: query
+          schema:
+            type: string
+            format: date
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Gazette notice list
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GazetteNoticePage'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags: [notices]
+      operationId: publishGazetteNotice
+      summary: Publish gazette notice
+      description: Creates and publishes a gazette notice. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GazetteNoticeCreate'
+      responses:
+        '201':
+          description: Gazette notice published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GazetteNotice'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/gazette/notices/{notice_id}:
+    parameters:
+      - $ref: '#/components/parameters/NoticeId'
+
+    get:
+      tags: [notices]
+      operationId: getGazetteNotice
+      summary: Get gazette notice detail
+      description: Returns full gazette notice including legal instrument and effective dates. Public, tier 1.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      security: []
+      responses:
+        '200':
+          description: Gazette notice detail
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GazetteNotice'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/gazette/inspection/windows:
+    get:
+      tags: [inspection]
+      operationId: listInspectionWindows
+      summary: List voter list inspection windows
+      description: Returns scheduled public inspection windows for the voter register. Public, tier 1, with Merkle proofs.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      security: []
+      responses:
+        '200':
+          description: Inspection window list
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InspectionWindowList'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/gazette/inspection/windows/{window_id}:
+    parameters:
+      - name: window_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+
+    get:
+      tags: [inspection]
+      operationId: getInspectionWindow
+      summary: Get inspection window detail
+      description: Returns date range, venues, and status of an inspection window. Public, tier 1.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      security: []
+      responses:
+        '200':
+          description: Inspection window detail
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InspectionWindow'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/gazette/inspection/objections:
+    post:
+      tags: [objections]
+      operationId: fileListObjection
+      summary: File voter list objection
+      description: Submits an objection against the voter register during an active inspection window. Idempotent on Idempotency-Key. Public with optional JWT, rate limited.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+        - {}
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListObjectionCreate'
+      responses:
+        '201':
+          description: Objection filed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListObjection'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/gazette/inspection/objections/{reference_code}:
+    parameters:
+      - name: reference_code
+        in: path
+        required: true
+        schema:
+          type: string
+          x-eel-data-class: C
+        description: Reference code returned on objection submission.
+
+    get:
+      tags: [objections]
+      operationId: getObjectionStatus
+      summary: Get objection status by reference code
+      description: Returns objection review status. Public with reference code.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      security: []
+      responses:
+        '200':
+          description: Objection status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListObjection'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by auth.eel.local (Keycloak). Trust domain eel.local.
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS client certificate for machine-to-machine calls.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+      description: UUIDv7 client-generated idempotency key.
+
+    NoticeId:
+      name: notice_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+
+  headers:
+    CosignSig:
+      description: Cosign detached signature over the response body (base64url).
+      schema:
+        type: string
+        x-eel-data-class: C
+    MerkleProof:
+      description: Merkle inclusion proof in the audit log tree.
+      schema:
+        type: string
+        x-eel-data-class: C
+    SnapshotId:
+      description: Snapshot identifier from which this response was served.
+      schema:
+        type: string
+        x-eel-data-class: C
+
+  schemas:
+    GazetteNoticeCreate:
+      type: object
+      required:
+        - notice_type
+        - title_en
+        - title_sw
+        - content_html_en
+        - gazette_ref
+        - effective_from
+      properties:
+        notice_type:
+          type: string
+          enum: [election_date, nomination_deadline, results_declaration, inspection_window]
+          x-eel-data-class: C
+        title_en:
+          type: string
+          maxLength: 500
+          x-eel-data-class: C
+        title_sw:
+          type: string
+          maxLength: 500
+          x-eel-data-class: C
+        content_html_en:
+          type: string
+          x-eel-data-class: C
+        gazette_ref:
+          type: string
+          x-eel-data-class: C
+          description: Official Kenya Gazette reference number.
+        effective_from:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        effective_until:
+          type: string
+          format: date-time
+          nullable: true
+          x-eel-data-class: C
+        scope_code:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+          description: Geographic scope (county code, constituency code, or national).
+        legal_instrument:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+          description: Reference to enabling legislation or legal instrument.
+
+    GazetteNotice:
+      allOf:
+        - $ref: '#/components/schemas/GazetteNoticeCreate'
+        - type: object
+          required: [notice_id, published_at]
+          properties:
+            notice_id:
+              type: string
+              format: uuid
+              x-eel-data-class: C
+            published_at:
+              type: string
+              format: date-time
+              x-eel-data-class: C
+
+    GazetteNoticePage:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/GazetteNotice'
+          x-eel-data-class: C
+        total:
+          type: integer
+          x-eel-data-class: C
+
+    InspectionWindow:
+      type: object
+      required: [window_id, opens_at, closes_at, status, venues]
+      properties:
+        window_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        opens_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        closes_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [scheduled, open, closed]
+          x-eel-data-class: C
+        gazette_notice_id:
+          type: string
+          format: uuid
+          nullable: true
+          x-eel-data-class: C
+        venues:
+          type: array
+          x-eel-data-class: C
+          items:
+            type: object
+            properties:
+              county_code:
+                type: string
+                x-eel-data-class: C
+              venue_name:
+                type: string
+                x-eel-data-class: C
+              address:
+                type: string
+                x-eel-data-class: C
+
+    InspectionWindowList:
+      type: object
+      required: [windows, total]
+      properties:
+        windows:
+          type: array
+          items:
+            $ref: '#/components/schemas/InspectionWindow'
+          x-eel-data-class: C
+        total:
+          type: integer
+          x-eel-data-class: C
+
+    ListObjectionCreate:
+      type: object
+      required:
+        - objection_type
+        - subject_id_hash
+        - grounds
+      properties:
+        objection_type:
+          type: string
+          enum: [incorrect_name, wrong_station, deceased, duplicate, not_registered]
+          x-eel-data-class: C
+        subject_id_hash:
+          type: string
+          x-eel-data-class: A
+          description: SHA-256(salt||id_number) of the voter record under objection.
+        grounds:
+          type: string
+          maxLength: 2000
+          x-eel-data-class: C
+        supporting_doc_hash:
+          type: string
+          nullable: true
+          x-eel-data-class: A
+          description: SHA-256 of supporting document (optional).
+
+    ListObjection:
+      allOf:
+        - $ref: '#/components/schemas/ListObjectionCreate'
+        - type: object
+          required: [objection_id, reference_code, status, submitted_at]
+          properties:
+            objection_id:
+              type: string
+              format: uuid
+              x-eel-data-class: C
+            reference_code:
+              type: string
+              x-eel-data-class: C
+              description: Human-readable reference for status tracking.
+            status:
+              type: string
+              enum: [submitted, reviewed, upheld, dismissed]
+              x-eel-data-class: C
+            submitted_at:
+              type: string
+              format: date-time
+              x-eel-data-class: C
+            reviewed_at:
+              type: string
+              format: date-time
+              nullable: true
+              x-eel-data-class: C
+
+    ProblemDetail:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        title:
+          type: string
+          x-eel-data-class: C
+        status:
+          type: integer
+          x-eel-data-class: C
+        detail:
+          type: string
+          x-eel-data-class: C
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: C
+        trace_id:
+          type: string
+          x-eel-data-class: D
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Validation error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    TooManyRequests:
+      description: Rate limit exceeded
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalError:
+      description: Internal server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'

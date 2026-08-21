@@ -1,0 +1,50 @@
+// Support and administration authorization schema
+// Trust domain: eel.local
+
+definition eel_user {}
+definition eel_service {}
+
+definition eel_special_voter_application {
+    relation applicant: eel_user
+    relation adjudicator: eel_user
+    relation data_officer: eel_user
+
+    permission submit = eel_user:*
+    permission adjudicate = adjudicator
+    permission read_own = applicant
+    permission read = adjudicator + data_officer
+}
+
+definition eel_budget_item {
+    relation finance_officer: eel_user
+    relation approver: eel_user
+    relation auditor: eel_user
+
+    permission create = finance_officer
+    permission approve = approver
+    permission read = finance_officer + approver + auditor
+    permission audit = auditor
+}
+
+definition eel_archival_collection {
+    relation archivist: eel_user
+    relation auditor: eel_user
+    relation data_officer: eel_user
+    relation archive_service: eel_service
+
+    permission seal = archivist + archive_service
+    permission retrieve = archivist + data_officer
+    permission audit = auditor
+    permission read_metadata = archivist + auditor + data_officer
+}
+
+definition eel_personnel_record {
+    relation hr_officer: eel_user
+    relation employee: eel_user
+    relation data_officer: eel_user
+
+    permission create = hr_officer
+    permission update = hr_officer
+    permission read_own = employee
+    permission read = hr_officer + data_officer
+}
