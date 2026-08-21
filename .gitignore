@@ -30,6 +30,10 @@ Thumbs.db
 .vscode/
 *.swp
 
+# local session state (oh-my-claudecode, etc.)
+.omc/
+.claude/
+
 # logs / coverage
 *.log
 coverage/
