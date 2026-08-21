@@ -1,0 +1,29 @@
+[package]
+name        = "eel-abis-fp-dl-onnx"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "Deep-learning fingerprint matcher via ONNX Runtime (DeepPrint-style embedding + cosine similarity)"
+
+[lib]
+name = "eel_abis_fp_dl_onnx"
+path = "src/lib.rs"
+
+[[test]]
+name = "dl_test"
+path = "tests/dl_test.rs"
+
+[features]
+# Enable actual ONNX Runtime inference.  When disabled, the crate uses a
+# deterministic hash-based pseudo-embedding so tests pass without a model file.
+onnx = ["dep:ort"]
+
+[dependencies]
+thiserror  = { workspace = true }
+tracing    = { workspace = true }
+serde      = { workspace = true }
+sha2       = { workspace = true }
+ort        = { workspace = true, optional = true }
+
+[dev-dependencies]

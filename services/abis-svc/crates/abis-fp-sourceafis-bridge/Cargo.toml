@@ -1,0 +1,21 @@
+[package]
+name        = "eel-abis-fp-sourceafis-bridge"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "Native Rust reimplementation of the SourceAFIS fingerprint matching algorithm (Rob Wozniak, MPL-2.0)"
+
+[lib]
+name = "eel_abis_fp_sourceafis_bridge"
+path = "src/lib.rs"
+
+[[test]]
+name = "sourceafis_test"
+path = "tests/sourceafis_test.rs"
+
+[dependencies]
+thiserror  = { workspace = true }
+tracing    = { workspace = true }
+serde      = { workspace = true }
+sha2       = { workspace = true }

@@ -1,0 +1,21 @@
+[package]
+name        = "eel-abis-fp-fpvte"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "NIST FpVTE + PFT-III validation harness for the eel ABIS fingerprint pipeline"
+
+[lib]
+name = "eel_abis_fp_fpvte"
+path = "src/lib.rs"
+
+[[test]]
+name = "fpvte_test"
+path = "tests/fpvte_test.rs"
+
+[dependencies]
+thiserror  = { workspace = true }
+tracing    = { workspace = true }
+serde      = { workspace = true }
+serde_json = { workspace = true }
