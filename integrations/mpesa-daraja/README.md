@@ -1,48 +1,102 @@
-# integrations/mpesa-daraja
+# M-Pesa Daraja Gateway
 
-M-Pesa Daraja C2B + B2C payments adapter
+Safaricom merchant payment API for C2B customer-to-business payments (Paybill) and B2C bulk payouts. Handles nomination fee collection, HR payroll distribution, and citizen verification callbacks.
 
-## Wire protocol
+## MoU Status
 
-Safaricom Daraja REST API; OAuth2 client_credentials; C2B RegisterURL/Validate/Confirm; B2C PaymentRequest.
+Daraja commercial agreement with Safaricom (signed). NDA covers shortcode licensing (shortcode 123456) and monthly subscription. Currently valid for production use.
 
-### Endpoints
+## Endpoint
 
-| Path | Description |
-|---|---|
-| `/mpesa/c2b/register` | Register C2B URL |
-| `/mpesa/c2b/callback` | Receive payment notification |
-| `/mpesa/b2c/pay` | Initiate B2C payment |
+Production: https://api.safaricom.co.ke/mpesa/
+Sandbox: https://sandbox.safaricom.co.ke/mpesa/
 
+## Protocol and Authentication
 
-### PII classes (ADR-0016)
+REST over HTTPS with JSON payloads. OAuth2 client-credentials flow for token generation:
 
-| Field | Tier |
-|---|---|
-| phoneNumber | A (Restricted) |
-| amount | B (Internal) |
-| accountReference | B (Internal) |
-| transactionId | B (Internal) |
+```
+POST https://api.safaricom.co.ke/oauth/v1/generate
+Authorization: Basic base64(consumer_key:consumer_secret)
+grant_type=client_credentials
+```
 
-## Circuit breaker
+Token TTL: 3600 seconds. Adapter caches and auto-refreshes.
 
-| Param | Value |
-|---|---|
-| failure threshold | 5 consecutive errors |
-| open duration | 30 s |
-| retry budget | 3 retries, exponential backoff, max 10 s |
+## Request and Response Shape
 
-Configured via `eel-resilience-py` `CircuitBreaker`.
+**C2B Callback (incoming):**
+`{TransactionType, TransID, TransTime, TransAmount, BusinessShortCode, BillRefNumber, MSISDN, FirstName, LastName, MiddleName}`
 
-## Latency injection (double)
+**STK Push (outgoing):**
+`{BusinessShortCode, Password, Timestamp, TransactionType, Amount, PartyA, PartyB, PhoneNumber, CallBackURL, AccountReference, TransactionDesc}`
 
-| Env var | Default | Effect |
-|---|---|---|
-| MPESA_DARAJA_LATENCY_MS | 0 | ms delay added to every response |
-| MPESA_DARAJA_ERROR_RATE | 0 | fraction of requests returning 503 |
+**STK Push Response:**
+`{MerchantRequestID, CheckoutRequestID, ResponseCode, ResponseDescription, CustomerMessage}`
 
-## SLA / back-pressure
+**B2C Callback (result):**
+`{Result: {ResultType, ResultCode, ResultDesc, OriginatorConversationID, ConversationID, TransactionID, ResultParameters}}`
 
-Upstream SLA: 95th-percentile < 2 s. Adapter timeout: 10 s hard.
-Back-pressure: circuit opens after 5 failures; callers receive 503 with
-`Retry-After: 30`.
+## Sample Curl
+
+```bash
+# OAuth token request
+curl -u "$MPESA_CONSUMER_KEY:$MPESA_CONSUMER_SECRET" \
+  -d "grant_type=client_credentials" \
+  https://api.safaricom.co.ke/oauth/v1/generate
+
+# STK push
+curl -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"BusinessShortCode":"123456","Password":"encoded","Timestamp":"20241321120000","TransactionType":"CustomerPayBillOnline","Amount":"50","PartyA":"254700000000","PartyB":"123456","PhoneNumber":"254700000000","CallBackURL":"https://eel.iebc.or.ke/mpesa/callback","AccountReference":"M47-FEE-001","TransactionDesc":"Nomination fee"}' \
+  https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest
+```
+
+## Health Probe
+
+GET to OAuth token endpoint with dummy credentials. Returns 401 if gateway is reachable.
+
+## Rate Limits
+
+C2B callback: 1000 requests/minute per shortcode.
+B2C transaction: 5000 transactions/day per employer (configurable via Safaricom).
+STK push: synchronous with 180s client timeout.
+
+## PII Enforcement
+
+MSISDN and names are medium sensitivity. Logs mask phone numbers and redact full names. Response callbacks are stripped of customer PII. No phone or name storage in logs beyond request correlation.
+
+## Chaos Toggle
+
+MPESA_CHAOS=true enables injection in double (test only). Causes random delays and 5% error rate.
+
+## Fallback Behavior
+
+On adapter unavailability or timeout, payment is queued in m47_payment_pending. Manual reconciliation job (hourly) fetches status from Daraja and reconciles. Operator can manually resolve via admin UI.
+
+## Circuit Breaker Policy
+
+Threshold: 5 consecutive failures
+Open duration: 30 seconds
+Rationale: prevents duplicate callback retry storms during Daraja slowdown
+Half-open: permits 1 probe request before reset
+
+## Environment Variables
+
+MPESA_ENV: "sandbox" or "production" (default: sandbox)
+MPESA_CONSUMER_KEY: OAuth consumer key
+MPESA_CONSUMER_SECRET: OAuth consumer secret
+MPESA_SHORTCODE: Business short code (123456)
+MPESA_PASSKEY: Online passkey for STK push
+MPESA_CALLBACK_URL: Public HTTPS URL for C2B callbacks
+MPESA_TIMEOUT_SEC: Request timeout (default: 30)
+MPESA_CHAOS: "true" enables chaos (sandbox only)
+
+## Related Modules
+
+M47 (nomination-fees), M55 (hr-payroll), M13 (citizen-verify)
+
+## Runbook
+
+docs/runbooks/mpesa-daraja-reconciliation.md (manual reconciliation, dispute resolution)
+

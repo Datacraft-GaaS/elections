@@ -1,41 +1,64 @@
 # integrations/iprs
 
-I01 IPRS national-ID validation adapter.
+I01 IPRS (Integrated Population Registration System) national-ID validation adapter.
 
-## Wire protocol
+## Purpose
 
-IPRS exposes an OAuth 2.0 client-credentials token endpoint and a REST/SOAP
-verification endpoint. This adapter wraps both behind an internal
-`POST /iprs/verify` endpoint.
+Validates citizen identity against IPRS: fetches name, DOB, gender, phone, postal address for voter registration and BVI (biometric verification integration).
 
-### PII classes (ADR-0016)
+## Endpoint
 
-| Field | Tier |
-|---|---|
-| national_id | A (Restricted) |
-| full_name | A (Restricted) |
-| dob | A (Restricted) |
+REST primary, SOAP legacy fallback. URL template: `https://api.iprs.go.ke/v2/{resource}` (exact URL under MoU NDA).
+
+## Authentication
+
+SAML 2.0 bearer assertion + mTLS client certificate. See `adapter/saml.py` for token refresh flow.
+
+## Modules using this adapter
+
+M01 (bvr-device), M02 (bvr-backend), M04 (vprs), M35 (cvr), M36 (dereg-appeal), M53 (voter-id-card).
+
+## Request/response
+
+PersonLookupRequest: id_number (str), lookup_type (national_id | passport).
+PersonLookupResponse: full_name, dob (YYYY-MM-DD), gender (M | F | X), phone_number, postal_address, registration_status.
+
+## Sample curl
+
+```bash
+curl -E client.pem --key client.key \
+  -H "Authorization: Bearer $SAML_TOKEN" \
+  https://api.iprs.go.ke/v2/persons/12345678
+```
+
+## PII enforcement
+
+Maximum tier. All responses encrypted at rest. No logging of raw payloads. Field-level encryption via eel-pii-rs.
+
+## Rate limits
+
+60 req/min per client cert; burst 10.
 
 ## Circuit breaker
 
-| Param | Value |
-|---|---|
-| failure threshold | 5 consecutive errors |
-| open duration | 30 s |
-| retry budget | 3 retries, exponential backoff, max 10 s |
+Open after 5 consecutive failures; half-open after 5s; probe 2 req per half-open phase.
 
-Configured via `eel-resilience-py` `CircuitBreaker`.
+## Health probe
 
-## Latency injection (double)
+GET /health -> 200 {"status":"ok"}.
 
-| Env var | Default | Effect |
-|---|---|---|
-| IPRS_LATENCY_MS | 0 | ms delay added to every response |
-| IPRS_ERROR_RATE | 0 | fraction of requests returning 503 |
-| IPRS_DUPLICATE_MODE | false | sets duplicate=true (EC-DAT-15 test) |
+## Chaos toggle
 
-## SLA / back-pressure
+IPRS_CHAOS_ENABLED=true (double only). Injects timeout, schema error, duplicate responses.
 
-Upstream IPRS SLA: 95th-percentile < 2 s. Adapter timeout: 10 s hard.
-Back-pressure: circuit opens after 5 failures; callers receive 503 with
-`Retry-After: 30`.
+## Fallback
+
+Degrade to cached last-known IPRS data (TTL 4h). Surface M02 degraded mode to UI.
+
+## MoU status
+
+Signed Phase 1 (voter reg). Phase 2 (real-time BVI) pending.
+
+## Related
+
+See adapter/, double/, contract-tests/ subdirectories.

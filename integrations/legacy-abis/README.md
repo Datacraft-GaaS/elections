@@ -1,35 +1,48 @@
 # integrations/legacy-abis
 
-I05 legacy ABIS adapter: wraps the IEBC vendor SOAP or gRPC ABIS into the
-eel-abis canonical schema.
+I05 Legacy ABIS (incumbent AFIS vendor SOAP API) biometric adapter.
 
-## Endpoints
+## Purpose
 
-- `POST /abis/match/1n` - 1:N biometric search
-- `POST /abis/match/11` - 1:1 biometric verification
+Migration bridge only: wraps legacy ABIS vendor SOAP/gRPC endpoints for 1:1 and 1:N biometric matching. Used during Wave 2-3 transition; sun-setting post-Wave 3. All new biometric processing uses eel-biometric-svc (Rust).
 
-## PII classes
+## Modules using this adapter
 
-| Field | Tier |
-|---|---|
-| probe_template | A (Restricted biometric) |
-| reference_id | A (Restricted) |
+M03 (abis-svc migration bridge only).
+
+## Protocol
+
+SOAP 1.1 over HTTPS (legacy) or gRPC (optional).
+
+## Authentication
+
+WS-Security UsernameToken + mTLS client certificate.
+
+## PII enforcement
+
+Maximum tier. Fingerprint templates, biographic data, match confidence scores. Field-level encryption for storage. No raw payload logging.
+
+## Rate limits
+
+10 req/min (legacy system limit). Conservative to avoid blocking vendor AFIS.
 
 ## Circuit breaker
 
-| Param | Value |
-|---|---|
-| failure threshold | 3 |
-| open duration | 60 s |
-| retry budget | 2, max 30 s |
+Open 60s after 1 failure (fragile legacy system). Very conservative: single error triggers open.
 
-## Double knobs
+## Fallback
 
-| Env var | Default |
-|---|---|
-| ABIS_LATENCY_MS | 0 |
-| ABIS_MATCH_SCORE | 0.95 |
+Queue adjudication case for manual review. Route to eel-biometric-svc for new-format templates if available.
 
-## SLA
+## Endpoints
 
-ABIS 1:N p99 < 5 s. Adapter hard timeout 30 s.
+- POST /abis/match/1n - 1:N biometric search
+- POST /abis/match/11 - 1:1 biometric verification
+
+## Sunset
+
+Planned removal end of Wave 3 (Q3 2027). See ADR-0022 (legacy system migration).
+
+## Related
+
+See adapter/, double/, contract-tests/ subdirectories.

@@ -1,21 +1,43 @@
 # integrations/nist-beacon
 
-NIST Randomness Beacon 2.0 client library.
+I14 NIST Randomness Beacon v2 public entropy source for risk-limiting audit (RLA).
 
-Fetches pulses from `https://beacon.nist.gov/beacon/2.0/pulse/last` and
-by-timestamp queries. Verifies outputValue chaining hash. Caches recent
-pulses in memory. Used by rla-audit-tool.
+## Purpose
+
+Provides public, verifiable randomness for RLA draws in vote tabulation module (M21). Fetches pulses from NIST beacon; verifies chaining hash; caches locally.
+
+## Modules using this adapter
+
+M21 (rla-audit-tool entropy source only). Deterministic for test audit draws; RLA randomness comes from NIST beacon in production.
+
+## Protocol
+
+REST (public HTTPS, no auth). Endpoint: https://beacon.nist.gov/beacon/2.0/pulse/last
+
+PII enforcement
+
+None (public randomness).
+
+## Rate limits
+
+Beacon outputs every 60 seconds. No rate limit (public API). Adapter caches aggressively; no polling spike.
 
 ## Circuit breaker
 
-Network failures fall back to the most recent cached pulse (cache TTL: 5 min).
-After 3 consecutive failures the rla-audit-tool logs a warning; randomness
-source degraded.
+n/a (fallback to local CSPRNG if unreachable). Network failure: use cached pulse (TTL 5 min). After 3 consecutive failures, log degradation warning.
 
-## Double knobs
+## Chaos toggle
 
-Deterministic canned pulses. No env knobs (always returns the same pulse set).
+BEACON_CHAOS_ENABLED=true (double only). Returns stale pulse, invalid hash, malformed JSON.
 
-## SLA
+## MoU status
 
-Beacon period: 60 s. Cache miss: up to 2 s HTTP. Cache hit: sub-ms.
+None (public API, NIST service). No SLA negotiation needed.
+
+## Health probe
+
+GET https://beacon.nist.gov/beacon/2.0/pulse/last -> 200 {outputValue, timeStamp, ...}.
+
+## Related
+
+See adapter/, double/, contract-tests/ subdirectories.

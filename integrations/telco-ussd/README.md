@@ -1,22 +1,53 @@
 # integrations/telco-ussd
 
-USSD adapter for Africa's Talking with a menu-engine state machine.
+I08 (USSD leg) Telco USSD Gateway: Safaricom, Airtel Kenya USSD endpoints.
 
-Handles: M13 verifier, M23 grievance, M35 CVR family notifications.
+## Purpose
 
-## Wire protocol
+Handles unstructured supplementary service data (USSD) for citizen verification and dereg appeal flows on feature phones. USSD tree navigation: dial *400#, respond to prompts, receive verification status.
 
-AT USSD callback: `POST /ussd/callback` (form-encoded: sessionId, serviceCode,
-phoneNumber, text, networkCode). Response: plain text starting with `CON`
-(continues) or `END` (terminates).
+## Modules using this adapter
+
+M13 (citizen-verify, *400# flow), M36 (dereg-appeal USSD), M23 (grievance).
+
+## Protocol
+
+TCP/USSD-GW proprietary binary protocol (vendor-specific) plus REST management plane for session setup.
+
+Endpoint: USSD GW host/port under NDA.
+
+## Authentication
+
+Per-USSD-session key (ephemeral) + operator credentials (OAuth2 on management plane).
+
+## PII enforcement
+
+Low tier. MSISDN only (caller phone number). Masked in logs.
+
+## Rate limits
+
+Session concurrency limit: 10,000 concurrent sessions per operator.
 
 ## Circuit breaker
 
-Stateless - no upstream calls in base flow. Back-end service calls use
-eel-resilience-py circuit breaker with 5-failure threshold, 30 s open.
+Open 10s after 3 failures. Fallback to SMS for timeout sessions.
 
-## Double knobs
+## Sample flow
 
-| Env var | Default |
-|---|---|
-| USSD_LATENCY_MS | 0 |
+1. Mobile user dials *400#
+2. USSD GW routes to adapter's USSD handler
+3. Adapter returns prompt menu
+4. User responds; adapter processes, returns next prompt
+5. Final response: "Verification complete, status: APPROVED"
+
+## Fallback
+
+If USSD session times out (>30s), send SMS with verification link instead.
+
+## Chaos toggle
+
+USSD_CHAOS_ENABLED=true (double only). Injects USSD timeout, session drop, protocol error.
+
+## MoU status
+
+Same operator agreements as telco-sms.
