@@ -220,7 +220,7 @@ mod tests {
     #[test]
     fn control_char_escape() {
         let v = Value::String("\x01\x1f".to_owned());
-        assert_eq!(canon(v), r#""""#);
+        assert_eq!(canon(v), "\"\\u0001\\u001f\"");
     }
 
     // --- object key sort -----------------------------------------------------

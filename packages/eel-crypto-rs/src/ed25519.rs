@@ -7,7 +7,7 @@
 //! let kp = generate_keypair();
 //! let msg = b"election data";
 //! let sig = sign(&kp, msg);
-//! assert!(verify(kp.verifying_key(), msg, &sig).is_ok());
+//! assert!(verify(&kp.verifying_key(), msg, &sig).is_ok());
 //! ```
 
 use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
@@ -59,8 +59,8 @@ pub fn sign(signing_key: &SigningKey, message: &[u8]) -> Signature {
 /// use eel_crypto_rs::ed25519::{generate_keypair, sign, verify};
 /// let kp = generate_keypair();
 /// let sig = sign(&kp, b"data");
-/// assert!(verify(kp.verifying_key(), b"data", &sig).is_ok());
-/// assert!(verify(kp.verifying_key(), b"wrong", &sig).is_err());
+/// assert!(verify(&kp.verifying_key(), b"data", &sig).is_ok());
+/// assert!(verify(&kp.verifying_key(), b"wrong", &sig).is_err());
 /// ```
 pub fn verify(
     verifying_key: &VerifyingKey,
@@ -113,14 +113,14 @@ mod tests {
         let kp = generate_keypair();
         let msg = b"hello eel";
         let sig = sign(&kp, msg);
-        verify(kp.verifying_key(), msg, &sig).unwrap();
+        verify(&kp.verifying_key(), msg, &sig).unwrap();
     }
 
     #[test]
     fn verify_rejects_tampered_message() {
         let kp = generate_keypair();
         let sig = sign(&kp, b"original");
-        assert!(verify(kp.verifying_key(), b"tampered", &sig).is_err());
+        assert!(verify(&kp.verifying_key(), b"tampered", &sig).is_err());
     }
 
     #[test]
@@ -128,7 +128,7 @@ mod tests {
         let kp1 = generate_keypair();
         let kp2 = generate_keypair();
         let sig = sign(&kp1, b"data");
-        assert!(verify(kp2.verifying_key(), b"data", &sig).is_err());
+        assert!(verify(&kp2.verifying_key(), b"data", &sig).is_err());
     }
 
     proptest! {
@@ -137,7 +137,7 @@ mod tests {
         fn prop_sign_verify_any_message(msg in proptest::collection::vec(0u8..=255u8, 0..1024)) {
             let kp = generate_keypair();
             let sig = sign(&kp, &msg);
-            prop_assert!(verify(kp.verifying_key(), &msg, &sig).is_ok());
+            prop_assert!(verify(&kp.verifying_key(), &msg, &sig).is_ok());
         }
 
         /// A signature over one message does not verify over a different message.
@@ -149,7 +149,7 @@ mod tests {
             if msg1 != msg2 {
                 let kp = generate_keypair();
                 let sig = sign(&kp, &msg1);
-                prop_assert!(verify(kp.verifying_key(), &msg2, &sig).is_err());
+                prop_assert!(verify(&kp.verifying_key(), &msg2, &sig).is_err());
             }
         }
     }

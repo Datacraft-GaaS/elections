@@ -75,7 +75,7 @@ mod tests {
     #[test]
     fn known_empty_hash() {
         // BLAKE3("") is a well-known constant.
-        let expected = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc5a68e7ca25e009";
+        let expected = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262";
         assert_eq!(hash_hex(b""), expected);
     }
 }
