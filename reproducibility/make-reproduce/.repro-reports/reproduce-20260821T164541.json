@@ -1,0 +1,7 @@
+{
+  "schema_version": "1",
+  "bundle": "mini-bundle",
+  "timestamp": "2026-08-21T13:45:41Z",
+  "overall": "ok",
+  "artefacts": [{"name":"eel-fixture-image","kind":"image","expected_sha":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","actual_sha":"","status":"no-build"}]
+}

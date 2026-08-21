@@ -1,0 +1,25 @@
+name: eel-repro
+
+services:
+  repro-env:
+    build:
+      context: .
+      dockerfile: docker/repro-env.Dockerfile
+      args:
+        SOURCE_DATE_EPOCH: "${SOURCE_DATE_EPOCH:-0}"
+    image: eel-repro-env:latest
+    volumes:
+      # Bundle mounted read-only; reports written to host
+      - type: bind
+        source: "${BUNDLE_PATH:-.}"
+        target: /bundle
+        read_only: true
+      - type: bind
+        source: "${REPORT_DIR:-./.repro-reports}"
+        target: /repro/reports
+    environment:
+      SOURCE_DATE_EPOCH: "${SOURCE_DATE_EPOCH:-0}"
+    working_dir: /repro
+    command: >
+      bash /repro/scripts/reproduce.sh /bundle /repro/reports
+    network_mode: none

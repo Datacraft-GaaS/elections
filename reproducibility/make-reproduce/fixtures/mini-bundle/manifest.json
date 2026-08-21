@@ -1,0 +1,17 @@
+{
+  "schema_version": "1",
+  "bundle_id": "mini-bundle-fixture-v1",
+  "created_at": "2026-01-01T00:00:00Z",
+  "tally_root": "0c441db480d993f222bc10bfc54a0b03e5e0a361f7f52a96cd5ded8fe42a762f",
+  "artefacts": [
+    {
+      "name": "eel-fixture-image",
+      "kind": "image",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_ref": "0000000000000000000000000000000000000000",
+      "build_recipe": "packages.x86_64-linux.eel-fixture-image",
+      "sbom_ref": "sboms/eel-fixture-image.sbom.json",
+      "cosign_sig_ref": "sboms/eel-fixture-image.sig"
+    }
+  ]
+}

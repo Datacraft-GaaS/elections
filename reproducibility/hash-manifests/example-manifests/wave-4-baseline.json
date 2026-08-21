@@ -1,0 +1,51 @@
+{
+  "schema_version": "1",
+  "bundle_id": "eel-wave-4-baseline-example",
+  "created_at": "2026-04-01T00:00:00Z",
+  "tally_root": "0000000000000000000000000000000000000000000000000000000000000002",
+  "artefacts": [
+    {
+      "name": "eel-transparency-svc",
+      "kind": "image",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000010",
+      "source_ref": "0000000000000000000000000000000000000010",
+      "build_recipe": "packages.x86_64-linux.eel-transparency-svc",
+      "sbom_ref": "sboms/eel-transparency-svc.sbom.json",
+      "cosign_sig_ref": "sboms/eel-transparency-svc.sig"
+    },
+    {
+      "name": "eel-vprs-svc",
+      "kind": "image",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000011",
+      "source_ref": "0000000000000000000000000000000000000011",
+      "build_recipe": "packages.x86_64-linux.eel-vprs-svc",
+      "sbom_ref": "sboms/eel-vprs-svc.sbom.json",
+      "cosign_sig_ref": "sboms/eel-vprs-svc.sig"
+    },
+    {
+      "name": "eel-portal-svc",
+      "kind": "image",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000012",
+      "source_ref": "0000000000000000000000000000000000000012",
+      "build_recipe": "packages.x86_64-linux.eel-portal-svc",
+      "sbom_ref": "sboms/eel-portal-svc.sbom.json",
+      "cosign_sig_ref": "sboms/eel-portal-svc.sig"
+    },
+    {
+      "name": "eel-kit-agent",
+      "kind": "binary",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000013",
+      "source_ref": "0000000000000000000000000000000000000013",
+      "build_recipe": "packages.x86_64-linux.eel-kit-agent",
+      "sbom_ref": "sboms/eel-kit-agent.sbom.json",
+      "cosign_sig_ref": "sboms/eel-kit-agent.sig"
+    },
+    {
+      "name": "eel-repro-bundle-schema",
+      "kind": "schema",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000014",
+      "source_ref": "0000000000000000000000000000000000000014",
+      "build_recipe": "packages.x86_64-linux.eel-repro-bundle-schema"
+    }
+  ]
+}

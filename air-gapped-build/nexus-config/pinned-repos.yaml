@@ -1,0 +1,58 @@
+# air-gapped-build/nexus-config/pinned-repos.yaml
+# Pinned upstream mirror configuration for Sonatype Nexus OSS.
+# Applied alongside nexus.groovy via the Nexus scripting API.
+# Checksum verification policy: STRICT on all proxies.
+
+schema_version: "1"
+
+defaults:
+  content_max_age_minutes: 1440
+  metadata_max_age_minutes: 60
+  checksum_policy: STRICT
+  negative_cache_enabled: true
+  negative_cache_ttl_minutes: 60
+
+repositories:
+  - name: eel-crates-io-proxy
+    format: raw
+    upstream: https://static.crates.io
+    description: "crates.io source tarballs (pinned, checksum-strict)"
+    checksum_policy: STRICT
+
+  - name: eel-pypi-proxy
+    format: pypi
+    upstream: https://pypi.org
+    description: "PyPI packages (pinned, checksum-strict)"
+    checksum_policy: STRICT
+
+  - name: eel-npm-proxy
+    format: npm
+    upstream: https://registry.npmjs.org
+    description: "npm packages (pinned, checksum-strict)"
+    checksum_policy: STRICT
+
+  - name: eel-hex-proxy
+    format: raw
+    upstream: https://repo.hex.pm
+    description: "Hex.pm Elixir/Erlang packages (pinned)"
+    checksum_policy: STRICT
+
+  - name: eel-pub-proxy
+    format: raw
+    upstream: https://pub.dartlang.org
+    description: "pub.dev Dart packages (pinned)"
+    checksum_policy: STRICT
+
+  - name: eel-docker-hub-proxy
+    format: docker
+    upstream: https://registry-1.docker.io
+    description: "Docker Hub OCI images (pinned by digest)"
+    checksum_policy: STRICT
+    docker_v1_enabled: false
+    http_port: 5000
+
+  - name: eel-nix-cache-proxy
+    format: raw
+    upstream: https://cache.nixos.org
+    description: "Nix binary cache (pinned store paths)"
+    checksum_policy: STRICT
