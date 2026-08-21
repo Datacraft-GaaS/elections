@@ -1,0 +1,110 @@
+# data_dictionary.yaml - abis-svc
+# Every column classified per ADR-0016 tiers: A (max PII), B (operational voter), C (public), D (ops metadata), E (ephemeral).
+# CI fails if any column lacks a classification.
+
+service: abis-svc
+module: M03
+tables:
+  eel_template_index:
+    description: "Biometric template metadata index. Encrypted templates stored by reference."
+    columns:
+      index_id:         { class: C, notes: "UUIDv7 primary key" }
+      voter_id:         { class: A, notes: "Voter identity reference - tier A PII" }
+      modality:         { class: A, notes: "Biometric modality - tier A" }
+      template_hash:    { class: A, notes: "SHA-256 of encrypted template - tier A" }
+      probe_ref:        { class: A, notes: "URI to encrypted blob in secure store - tier A" }
+      enclave_attest_id: { class: C, notes: "FK to attestation record" }
+      quality_score:    { class: C, notes: "NFIQ2 quality score" }
+      enrolled_at:      { class: C, notes: "Enrolment timestamp" }
+      election_id:      { class: C, notes: "Election context" }
+      deleted_at:       { class: C, notes: "Soft delete timestamp per ADR-0016" }
+
+  eel_match_requests:
+    description: "1:N and 1:1 match request tracking."
+    columns:
+      request_id:       { class: C, notes: "UUIDv7 primary key" }
+      probe_ref:        { class: A, notes: "Reference to biometric probe - tier A" }
+      modality:         { class: C, notes: "Biometric modality" }
+      election_id:      { class: C, notes: "Election context" }
+      status:           { class: C, notes: "Processing status" }
+      submitted_at:     { class: D, notes: "Request timestamp" }
+      completed_at:     { class: D, notes: "Completion timestamp" }
+      failure_reason:   { class: D, notes: "Error reason if failed" }
+      idempotency_key:  { class: D, notes: "Idempotency key per ADR-0015" }
+      caller_id:        { class: C, notes: "SPIFFE SVID of caller" }
+
+  eel_match_results:
+    description: "Match outcomes and similarity scores."
+    columns:
+      result_id:        { class: C }
+      request_id:       { class: C }
+      outcome:          { class: C }
+      confidence_score: { class: C }
+      modality_scores:  { class: C }
+      attestation_hash: { class: C }
+      created_at:       { class: D }
+
+  eel_adjudication_cases:
+    description: "Ambiguous match cases requiring human review. Data class B."
+    columns:
+      case_id:           { class: B }
+      match_result_id:   { class: B }
+      probe_ref:         { class: A, notes: "Tier A - biometric reference" }
+      candidate_ref:     { class: A, notes: "Tier A - biometric reference" }
+      match_score:       { class: B }
+      status:            { class: B }
+      investigator_id:   { class: B }
+      decision:          { class: B }
+      reason_code:       { class: B }
+      resolution_notes:  { class: B }
+      created_at:        { class: C }
+      resolved_at:       { class: C }
+      sla_deadline_at:   { class: D }
+
+  eel_enclave_attestations:
+    description: "Enclave attestation records (TDX/SEV-SNP/software)."
+    columns:
+      enclave_id:       { class: C }
+      worker_id:        { class: C }
+      profile:          { class: C }
+      attestation_hash: { class: C }
+      batch_id:         { class: C }
+      verified_at:      { class: D }
+
+  eel_drift_alerts:
+    description: "Model drift alerts. Aggregate only, no PII."
+    columns:
+      alert_id:          { class: D }
+      drift_type:        { class: D }
+      value:             { class: D }
+      threshold:         { class: D }
+      modality:          { class: D }
+      demographic_group: { class: D }
+      detected_at:       { class: D }
+      acknowledged_at:   { class: D }
+      model_card_version: { class: D }
+
+  eel_abis_outbox:
+    description: "Transactional outbox for event publishing."
+    columns:
+      id:           { class: D }
+      event_type:   { class: D }
+      event_id:     { class: D }
+      topic:        { class: D }
+      payload:      { class: D, notes: "Contains event payload; PII stripped before this table per FR-M03-040" }
+      created_at:   { class: D }
+      published_at: { class: D }
+      retry_count:  { class: D }
+      last_error:   { class: D }
+
+  eel_abis_audit_shadow:
+    description: "Audit shadow: operation metadata only, no voter PII."
+    columns:
+      audit_id:    { class: D }
+      operation:   { class: D }
+      actor_id:    { class: D }
+      resource_id: { class: D }
+      result_code: { class: D }
+      client_id:   { class: D }
+      request_id:  { class: D }
+      created_at:  { class: D }

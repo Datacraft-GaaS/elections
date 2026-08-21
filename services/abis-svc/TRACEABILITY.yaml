@@ -1,0 +1,63 @@
+# TRACEABILITY.yaml - abis-svc (WP-3.6, M03)
+# Maps features, acceptance criteria, and edge cases to implementation locations.
+
+service: abis-svc
+work_package: WP-3.6
+module: M03
+gate: G3
+
+features:
+  FR-M03-001: { impl: "crates/abis-matcher/src/pipeline.rs:Pipeline1N", test: "crates/abis-matcher/tests/matcher_test.rs" }
+  FR-M03-002: { impl: "crates/abis-matcher/src/pipeline.rs:Pipeline1N", test: "crates/abis-matcher/tests/matcher_test.rs" }
+  FR-M03-003: { impl: "crates/abis-matcher/src/pipeline.rs:Pipeline1N", test: "crates/abis-matcher/tests/matcher_test.rs" }
+  FR-M03-004: { impl: "crates/abis-matcher/src/pipeline.rs:Pipeline11", test: "crates/abis-matcher/tests/matcher_test.rs" }
+  FR-M03-005: { impl: "crates/abis-matcher/src/mock_matcher.rs", test: "crates/abis-matcher/tests/matcher_test.rs:fmr_fnmr_mock" }
+  FR-M03-006: { impl: "crates/abis-matcher/src/domain.rs:MatchOutcome", test: "crates/abis-matcher/tests/matcher_test.rs" }
+  FR-M03-007: { impl: "crates/abis-matcher/src/fmr_fnmr.rs", test: "crates/abis-matcher/tests/matcher_test.rs:fmr_fnmr_mock" }
+  FR-M03-008: { impl: "crates/abis-matcher/src/mock_matcher.rs:quality_gate", notes: "NFIQ2 quality gate stub; full impl in production matcher" }
+  FR-M03-009: { impl: "crates/abis-matcher/src/domain.rs", notes: "ISO 19794-2/5/6 compliance via production vendor SDK" }
+  FR-M03-010: { impl: "crates/abis-attest/src/attestation.rs", notes: "Enclave isolation enforced at deploy via nodeSelector" }
+  FR-M03-011: { impl: "crates/abis-attest/src/attestation.rs:verify_attestation", test: "crates/abis-attest/tests/attest_test.rs" }
+  FR-M03-012: { impl: "deploy/service.yaml:abis-matcher nodeSelector", notes: "Quarantine via Kubernetes pod eviction" }
+  FR-M03-013: { impl: "migrations/V001__template_index.sql:probe_ref", notes: "Templates stored by reference; encryption via eel-crypto-rs" }
+  FR-M03-014: { impl: "crates/abis-attest/src/attestation.rs", notes: "cosign verify integrated at enclave load; CI check pending" }
+  FR-M03-015: { impl: "migrations/V007__outbox.sql", notes: "Ed25519 signing via eel-crypto-rs; audit to T1 pending tlog integration" }
+  FR-M03-016: { impl: "crates/abis-api/src/routes/adjudication.rs", test: "crates/abis-api/tests/api_test.rs" }
+  FR-M03-017: { impl: "crates/abis-api/src/routes/adjudication.rs", notes: "SLA timer in DB: sla_deadline_at column" }
+  FR-M03-018: { impl: "crates/abis-api/src/routes/adjudication.rs", notes: "Biometric auth via SpiceDB - pending IAM integration" }
+  FR-M03-019: { impl: "crates/abis-api/src/routes/adjudication.rs:resolve_adjudication", notes: "Dual-control via SpiceDB at commit" }
+  FR-M03-020: { impl: "migrations/V004__adjudication_cases.sql", notes: "Immutable after resolved - enforced at API layer" }
+  FR-M03-021: { impl: "crates/abis-matcher/src/domain.rs:MatchOutcome::InsufficientQuality" }
+  FR-M03-022: { impl: "crates/abis-matcher/src/adjudication.rs:is_ambiguous" }
+  FR-M03-023: { impl: "crates/abis-api/src/routes/batch.rs", test: "crates/abis-matcher/tests/matcher_test.rs:batch_dedup_empty" }
+  FR-M03-024: { impl: "crates/abis-matcher/src/batch.rs", notes: "Checkpoint via last_offset in batch run state" }
+  FR-M03-025: { impl: "crates/abis-matcher/src/batch.rs:run_dedup_batch" }
+  FR-M03-026: { impl: "migrations/V007__outbox.sql", notes: "dedup_batch_completed.v1 emitted via outbox" }
+  FR-M03-027: { impl: "py/abis-vendor/src/abis_vendor/adapter.py:LegacyAbisAdapter", test: "py/abis-vendor/tests/ci/test_worker.py" }
+  FR-M03-028: { impl: "crates/abis-api/src/routes/reports.rs" }
+  FR-M03-029: { impl: "crates/abis-api/src/routes/reports.rs:get_reports", test: "crates/abis-api/tests/api_test.rs" }
+  FR-M03-030: { impl: "migrations/V006__drift_alerts.sql", notes: "Per-group FAR/FRR tracked; fairness harness in fmr_fnmr.rs" }
+  FR-M03-031: { impl: "loadtest/abis.js", notes: "k6 scenario; validated at 1x scale" }
+  FR-M03-032: { impl: "docs/SLA.md" }
+  FR-M03-033: { impl: "docs/SLA.md" }
+  FR-M03-034: { impl: "docs/SLA.md" }
+  FR-M03-035: { impl: "crates/abis-api", notes: "sqlx compile-time checks; parameterised queries" }
+  FR-M03-036: { impl: "crates/abis-api/src/routes", notes: "SpiceDB fail-closed pending integration" }
+  FR-M03-037: { impl: "crates/abis-api", notes: "JWT expiry handling via middleware" }
+  FR-M03-065: { impl: "migrations/V001__template_index.sql", notes: "5y retention enforced by purge job (scheduled daily)" }
+
+acceptance_criteria:
+  AC-M03-01: { test: "loadtest/abis.js", status: "scaffold" }
+  AC-M03-02: { test: "crates/abis-matcher/tests/matcher_test.rs:fmr_fnmr_mock", status: "mock target met" }
+  AC-M03-03: { test: "crates/abis-attest/tests/attest_test.rs", status: "software profile tested" }
+  AC-M03-04: { test: "crates/abis-api/tests/api_test.rs", status: "scaffold" }
+  AC-M03-07: { impl: "crates/abis-attest/src/attestation.rs", status: "enclave isolation via nodeSelector" }
+  AC-M03-08: { test: "crates/abis-matcher/tests/matcher_test.rs:batch_dedup_empty", status: "unit tested" }
+
+edge_cases:
+  EC-DAT-01: { impl: "crates/abis-api/src/routes/match_routes.rs", notes: "Idempotency-Key header enforced" }
+  EC-DAT-07: { impl: "crates/abis-matcher/src/batch.rs" }
+  EC-DAT-08: { impl: "crates/abis-matcher/src/batch.rs" }
+  EC-ML-01: { impl: "migrations/V006__drift_alerts.sql" }
+  EC-ML-02: { impl: "crates/abis-matcher/src/mock_matcher.rs", notes: "Confidence gate applied; no panic" }
+  EC-SEC-01: { impl: "crates/abis-api", notes: "Signature mismatch rejects via eel-crypto-rs middleware" }
