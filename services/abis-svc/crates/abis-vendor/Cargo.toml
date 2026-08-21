@@ -1,0 +1,32 @@
+[package]
+name = "eel-abis-vendor"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Vendor SDK abstraction for the ABIS service (Neurotechnology, Innovatrics, NEC, Idemia, etc.)"
+
+[lib]
+name = "eel_abis_vendor"
+path = "src/lib.rs"
+
+[dependencies]
+serde         = { workspace = true }
+serde_json    = { workspace = true }
+uuid          = { workspace = true }
+chrono        = { workspace = true }
+thiserror     = { workspace = true }
+tracing       = { workspace = true }
+tokio         = { workspace = true }
+async-trait   = "0.1"
+reqwest       = { workspace = true }
+bytes         = { workspace = true }
+eel-resilience-rs = { workspace = true }
+sha2              = { workspace = true }
+hex               = { workspace = true }
+base64            = { workspace = true }
+
+[dev-dependencies]
+rstest        = { workspace = true }
+tokio         = { workspace = true }
+wiremock      = "0.6"

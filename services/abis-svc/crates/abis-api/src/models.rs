@@ -1,6 +1,8 @@
 //! API request/response models for the ABIS service.
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+use utoipa::ToSchema;
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Modality {
     Fingerprint,
@@ -9,7 +11,7 @@ pub enum Modality {
     Multimodal,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum MatchOutcome {
     Match,
@@ -19,7 +21,7 @@ pub enum MatchOutcome {
     InsufficientQuality,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct Match1NRequest {
     pub probe_ref: String,
     pub modality: Modality,
@@ -27,7 +29,7 @@ pub struct Match1NRequest {
     pub election_id: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct Match11Request {
     pub probe_ref: String,
     pub gallery_ref: String,
@@ -35,28 +37,28 @@ pub struct Match11Request {
     pub caller_id: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct MatchAccepted {
     pub request_id: String,
     pub status: String,
     pub estimated_completion_ms: u64,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct Match1NResult {
     pub request_id: String,
     pub status: String,
     pub candidates: Vec<MatchCandidate>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct MatchCandidate {
     pub gallery_ref: String,
     pub score: f32,
     pub decision: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct Match11Result {
     pub request_id: String,
     pub decision: String,
@@ -65,7 +67,7 @@ pub struct Match11Result {
     pub processed_at: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum AdjudicationStatus {
     Open,
@@ -74,7 +76,7 @@ pub enum AdjudicationStatus {
     Escalated,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct AdjudicationCase {
     pub case_id: String,
     pub status: AdjudicationStatus,
@@ -84,34 +86,34 @@ pub struct AdjudicationCase {
     pub created_at: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct AdjudicationCasePage {
     pub cases: Vec<AdjudicationCase>,
     pub total: u64,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct AdjudicationResolutionRequest {
     pub outcome: String,
     pub adjudicator_id: String,
     pub resolution_notes: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct BatchDedupRequest {
     pub election_id: String,
     pub mode: String,
     pub requester_id: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct BatchJobAccepted {
     pub job_id: String,
     pub status: String,
     pub estimated_duration_s: u64,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct AbisReport {
     pub generated_at: String,
     pub gallery_size: u64,
@@ -122,14 +124,16 @@ pub struct AbisReport {
     pub p99_match_ms: u32,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct HealthResponse {
     pub ok: bool,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct ListAdjudicationQuery {
     pub status: Option<String>,
+    pub priority: Option<String>,
+    pub assigned_to: Option<String>,
     pub page: Option<u32>,
     pub page_size: Option<u32>,
 }

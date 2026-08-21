@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+package eel.abis.v1;
+
+option java_package = "io.eel.abis.v1";
+
+// ---------------------------------------------------------------------------
+// Common types
+// ---------------------------------------------------------------------------
+
+message Template {
+  string modality = 1;
+  bytes data = 2;
+  float quality = 3;
+  string vendor = 4;
+}
+
+message MatchScore {
+  string subject_id = 1;
+  float score = 2;
+  string decision = 3;
+}
+
+// ---------------------------------------------------------------------------
+// Match RPCs
+// ---------------------------------------------------------------------------
+
+message MatchOneToOneRequest {
+  string probe_ref = 1;
+  string gallery_subject_id = 2;
+  string modality = 3;
+  string caller_id = 4;
+  float threshold = 5;
+}
+
+message MatchOneToOneResponse {
+  string request_id = 1;
+  string decision = 2;
+  float score = 3;
+  float threshold_used = 4;
+  string processed_at = 5;
+}
+
+message MatchOneToNRequest {
+  string probe_ref = 1;
+  string modality = 2;
+  string caller_id = 3;
+  uint32 max_candidates = 4;
+}
+
+message MatchOneToNResponse {
+  string request_id = 1;
+  string status = 2;
+  repeated MatchScore candidates = 3;
+}
+
+// ---------------------------------------------------------------------------
+// Kit RPCs
+// ---------------------------------------------------------------------------
+
+message KitEnrolRequest {
+  string subject_id = 1;
+  string operator_id = 2;
+  string kit_id = 3;
+  repeated Template templates = 4;
+}
+
+message KitEnrolResponse {
+  string job_id = 1;
+  string status = 2;
+  string subject_id = 3;
+}
+
+message KitVerifyRequest {
+  string subject_id = 1;
+  string kit_id = 2;
+  Template probe_template = 3;
+}
+
+message KitVerifyResponse {
+  string subject_id = 1;
+  bool verified = 2;
+  float score = 3;
+  string decision = 4;
+}
+
+// ---------------------------------------------------------------------------
+// Service
+// ---------------------------------------------------------------------------
+
+// ABIS gRPC service - mirrors the REST API surface for match and kit operations.
+service AbisService {
+  // Match RPCs
+  rpc MatchOneToOne(MatchOneToOneRequest) returns (MatchOneToOneResponse);
+  rpc MatchOneToN(MatchOneToNRequest) returns (MatchOneToNResponse);
+
+  // Kit RPCs (BVR/BVI devices)
+  rpc KitEnrol(KitEnrolRequest) returns (KitEnrolResponse);
+  rpc KitVerify(KitVerifyRequest) returns (KitVerifyResponse);
+}

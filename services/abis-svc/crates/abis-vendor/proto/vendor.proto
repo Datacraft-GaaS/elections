@@ -1,0 +1,133 @@
+syntax = "proto3";
+
+package eel.abis.vendor.v1;
+
+option java_package = "io.eel.abis.vendor.v1";
+
+// ---------------------------------------------------------------------------
+// Common types
+// ---------------------------------------------------------------------------
+
+message FingerprintImage {
+  bytes data = 1;
+  uint32 width = 2;
+  uint32 height = 3;
+  uint32 dpi = 4;
+}
+
+message FaceImage {
+  bytes data = 1;
+  string mime_type = 2;
+}
+
+message IrisImage {
+  bytes data = 1;
+  uint32 width = 2;
+  uint32 height = 3;
+}
+
+message FingerprintTemplate {
+  string vendor = 1;
+  uint32 version = 2;
+  bytes data = 3;
+  float quality = 4;
+}
+
+message FaceTemplate {
+  string vendor = 1;
+  uint32 version = 2;
+  bytes data = 3;
+  repeated float embedding = 4;
+  float quality = 5;
+}
+
+message IrisTemplate {
+  string vendor = 1;
+  uint32 version = 2;
+  bytes data = 3;
+  float quality = 4;
+}
+
+message Template {
+  oneof kind {
+    FingerprintTemplate fingerprint = 1;
+    FaceTemplate face = 2;
+    IrisTemplate iris = 3;
+  }
+}
+
+message Score {
+  float value = 1;
+}
+
+message HealthStatus {
+  bool healthy = 1;
+  string message = 2;
+}
+
+// ---------------------------------------------------------------------------
+// Request / response wrappers
+// ---------------------------------------------------------------------------
+
+message ExtractFingerprintRequest {
+  FingerprintImage image = 1;
+}
+
+message ExtractFingerprintResponse {
+  FingerprintTemplate template = 1;
+}
+
+message ExtractFaceRequest {
+  FaceImage image = 1;
+}
+
+message ExtractFaceResponse {
+  FaceTemplate template = 1;
+}
+
+message ExtractIrisRequest {
+  IrisImage image = 1;
+}
+
+message ExtractIrisResponse {
+  IrisTemplate template = 1;
+}
+
+message Match1x1Request {
+  Template probe = 1;
+  Template gallery = 2;
+}
+
+message Match1x1Response {
+  Score score = 1;
+}
+
+message Match1xNRequest {
+  Template probe = 1;
+  repeated Template gallery_batch = 2;
+}
+
+message Match1xNResponse {
+  repeated Score scores = 1;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  HealthStatus status = 1;
+}
+
+// ---------------------------------------------------------------------------
+// Service
+// ---------------------------------------------------------------------------
+
+// Biometrics vendor sidecar service.
+// Implemented by vendor-specific sidecars; proxied by GrpcVendor.
+service BiometricsVendor {
+  rpc ExtractFingerprint(ExtractFingerprintRequest) returns (ExtractFingerprintResponse);
+  rpc ExtractFace(ExtractFaceRequest) returns (ExtractFaceResponse);
+  rpc ExtractIris(ExtractIrisRequest) returns (ExtractIrisResponse);
+  rpc Match1x1(Match1x1Request) returns (Match1x1Response);
+  rpc Match1xN(Match1xNRequest) returns (Match1xNResponse);
+  rpc Health(HealthRequest) returns (HealthResponse);
+}

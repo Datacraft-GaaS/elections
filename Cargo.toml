@@ -181,7 +181,7 @@ httpmock          = { version = "0.7" }
 # Ad-hoc reports (RPT-D) — DOCX + Markdown renderers + SQL AST
 docx-rs           = { version = "0.4" }
 pulldown-cmark    = { version = "0.12" }
-sqlparser         = { version = "0.51" }
+sqlparser         = { version = "0.53", features = ["visitor"] }
 
 # Reports publication + delivery (RPT-B)
 lettre            = { version = "0.11", default-features = false, features = ["smtp-transport", "tokio1-native-tls", "builder"] }

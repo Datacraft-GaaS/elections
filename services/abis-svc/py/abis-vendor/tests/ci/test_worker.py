@@ -77,5 +77,5 @@ def test_match_request_extra_fields_forbidden():
             probe_ref="p",
             modality="f",
             election_id="e",
-            extra_field="bad",
+            extra_field="bad",  # type: ignore[call-arg]
         )

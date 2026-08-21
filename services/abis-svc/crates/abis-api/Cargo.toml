@@ -14,20 +14,26 @@ name = "abis_api"
 path = "src/lib.rs"
 
 [dependencies]
-abis-matcher = { path = "../abis-matcher" }
-abis-attest  = { path = "../abis-attest" }
-axum          = { workspace = true }
-tokio         = { workspace = true }
-serde         = { workspace = true }
-serde_json    = { workspace = true }
-tracing       = { workspace = true }
+abis-matcher      = { path = "../abis-matcher", features = ["mock"] }
+abis-attest       = { path = "../abis-attest" }
+eel-abis-vendor   = { path = "../abis-vendor" }
+axum              = { workspace = true, features = ["macros", "tokio", "multipart"] }
+tokio             = { workspace = true }
+serde             = { workspace = true }
+serde_json        = { workspace = true }
+tracing           = { workspace = true }
 tracing-subscriber = { workspace = true }
-utoipa        = { workspace = true }
-tower-http    = { workspace = true }
-uuid          = { workspace = true }
-chrono        = { workspace = true }
-thiserror     = { workspace = true }
+utoipa            = { workspace = true }
+utoipa-swagger-ui = { workspace = true }
+tower-http        = { workspace = true }
+uuid              = { workspace = true }
+chrono            = { workspace = true }
+thiserror         = { workspace = true }
+bytes             = { workspace = true }
+sha2              = { workspace = true }
+hex               = { workspace = true }
+base64            = { workspace = true }
 
 [dev-dependencies]
-rstest        = { workspace = true }
-tower         = { workspace = true, features = ["util"] }
+rstest            = { workspace = true }
+tower             = { workspace = true, features = ["util"] }
