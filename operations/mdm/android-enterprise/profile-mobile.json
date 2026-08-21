@@ -1,0 +1,43 @@
+{
+  "kind": "androidenterprise#managedConfiguration",
+  "profileName": "eel-mobile-profile",
+  "version": "1.0.0",
+  "description": "Android Enterprise declarative profile for party agent, observer, and field support mobile devices.",
+  "policies": {
+    "systemUpdatePolicy": {
+      "type": "POSTPONE",
+      "minimumSecurityPatchLevel": "automatic_latest_quarterly"
+    },
+    "installUnknownSourcesAllowed": false,
+    "googlePlayProtectVerifyApps": "VERIFY_APPS_ENFORCED",
+    "hardwareKeyedAttestationRequired": true,
+    "screenCaptureDisabled": true,
+    "factoryResetDisabled": false,
+    "encryptionPolicy": "ENABLED_WITH_PIN",
+    "maximumTimeToLock": 600000,
+    "locationMode": "HIGH_ACCURACY",
+    "applicationPolicy": {
+      "installType": "ALLOWLIST_ONLY",
+      "allowedApps": [
+        "io.eel.field.agent",
+        "io.eel.field.observer",
+        "io.eel.support.mobile"
+      ]
+    },
+    "permissionGrants": [
+      {
+        "permission": "android.permission.ACCESS_FINE_LOCATION",
+        "policy": "GRANT"
+      },
+      {
+        "permission": "android.permission.CAMERA",
+        "policy": "GRANT"
+      }
+    ],
+    "statusReportingSettings": {
+      "applicationReportsEnabled": true,
+      "deviceSettingsEnabled": true,
+      "softwareInfoEnabled": true
+    }
+  }
+}

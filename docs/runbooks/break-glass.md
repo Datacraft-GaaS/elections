@@ -268,3 +268,9 @@ grpcurl -plaintext \
 ```
 
 Do not proceed to the next step if the `grpcurl` call fails. Investigate connectivity to `transparency-svc` before continuing.
+
+## Chaos-drill reference
+
+This runbook is exercised by: `chaos/scenarios/eel-hsm-unavailable.yaml` and `chaos/scenarios/eel-spicedb-down.yaml`
+
+Run under `docs/runbooks/chaos-monthly-drill.md` supervision. The HSM scenario covers the Shamir share assembly steps; the SpiceDB down scenario covers the credential rotation steps.

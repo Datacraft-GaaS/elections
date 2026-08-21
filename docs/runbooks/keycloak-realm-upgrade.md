@@ -166,3 +166,9 @@ Confirm all of the following before closing the change ticket:
 - Integration tests pass: `uv run pytest -vxs tests/ci -k keycloak`.
 - No error spikes in the Keycloak `keycloak-events` topic for the realm in question.
 - Change ticket updated with git commit hash of the realm JSON applied.
+
+## Chaos-drill reference
+
+This runbook is exercised by: `chaos/scenarios/eel-pod-kill-boundary-svc.yaml`
+
+The boundary-svc kill scenario verifies that a realm upgrade does not lock out service clients when the API gateway restarts during a promotion window.

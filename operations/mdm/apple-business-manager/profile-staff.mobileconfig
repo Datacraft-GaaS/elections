@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>PayloadContent</key>
+	<array>
+		<dict>
+			<key>PayloadType</key>
+			<string>com.apple.applicationaccess</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+			<key>PayloadIdentifier</key>
+			<string>io.eel.mdm.restrictions.staff</string>
+			<key>PayloadUUID</key>
+			<string>A1B2C3D4-E5F6-7890-ABCD-EF1234567890</string>
+			<key>PayloadDisplayName</key>
+			<string>eel Staff Restrictions</string>
+			<key>allowScreenShot</key>
+			<false/>
+			<key>allowCamera</key>
+			<true/>
+			<key>allowAirDrop</key>
+			<false/>
+			<key>allowCloudBackup</key>
+			<false/>
+			<key>allowManagedAppsCloudSync</key>
+			<false/>
+			<key>allowFilesUSBDriveAccess</key>
+			<false/>
+			<key>allowFilesNetworkDriveAccess</key>
+			<false/>
+			<key>forceEncryptedBackup</key>
+			<true/>
+			<key>allowUntrustedTLSPrompt</key>
+			<false/>
+			<key>forceWifiWhitelisting</key>
+			<true/>
+		</dict>
+		<dict>
+			<key>PayloadType</key>
+			<string>com.apple.passcode</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+			<key>PayloadIdentifier</key>
+			<string>io.eel.mdm.passcode.staff</string>
+			<key>PayloadUUID</key>
+			<string>B2C3D4E5-F6A7-8901-BCDE-F12345678901</string>
+			<key>PayloadDisplayName</key>
+			<string>eel Staff Passcode Policy</string>
+			<key>requireAlphanumericValue</key>
+			<true/>
+			<key>minLength</key>
+			<integer>8</integer>
+			<key>maxPINAgeInDays</key>
+			<integer>90</integer>
+			<key>maxFailedAttempts</key>
+			<integer>10</integer>
+			<key>maxInactivity</key>
+			<integer>300</integer>
+		</dict>
+	</array>
+	<key>PayloadDisplayName</key>
+	<string>eel Staff Device Profile</string>
+	<key>PayloadIdentifier</key>
+	<string>io.eel.mdm.staff</string>
+	<key>PayloadOrganization</key>
+	<string>eel Electoral Management Platform</string>
+	<key>PayloadRemovalDisallowed</key>
+	<true/>
+	<key>PayloadType</key>
+	<string>Configuration</string>
+	<key>PayloadUUID</key>
+	<string>C3D4E5F6-A7B8-9012-CDEF-012345678902</string>
+	<key>PayloadVersion</key>
+	<integer>1</integer>
+</dict>
+</plist>

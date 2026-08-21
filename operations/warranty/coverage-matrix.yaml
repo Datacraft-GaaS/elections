@@ -1,0 +1,55 @@
+---
+# Warranty coverage matrix
+# vendor: OEM name
+# device_models: list of device model identifiers
+# coverage_months: warranty period in months from device delivery date
+# contact_email: OEM warranty claims contact
+# contact_phone: OEM warranty claims phone
+# rma_portal: URL for RMA submission (if available)
+# notes: additional coverage terms
+
+coverage:
+  - vendor: Elo Touch Solutions
+    device_models:
+      - EloKit-BVR-10
+      - EloKit-BVI-10
+    coverage_months: 36
+    contact_email: warranty@elotouch.com
+    contact_phone: "+1-800-356-8682"
+    rma_portal: https://www.elotouch.com/support/rma
+    notes: "On-site service for first 12 months; depot repair thereafter."
+
+  - vendor: Zebra Technologies
+    device_models:
+      - TC57-RTS
+      - TC72-BVR
+    coverage_months: 24
+    contact_email: zcod_warranty@zebra.com
+    contact_phone: "+1-800-654-2347"
+    rma_portal: https://supportcommunity.zebra.com/s/rma
+    notes: "Advance exchange for first 12 months; standard depot repair thereafter."
+
+  - vendor: Apple Inc.
+    device_models:
+      - iPhone 15
+      - iPad 10th Gen
+    coverage_months: 12
+    contact_email: ""
+    contact_phone: "+254-800-720-080"
+    rma_portal: https://getsupport.apple.com
+    notes: "Apple Business Manager coverage; optional AppleCare+ adds 24 months."
+
+  - vendor: Samsung Electronics
+    device_models:
+      - Galaxy Tab Active5
+      - Galaxy A55
+    coverage_months: 24
+    contact_email: b2b.service@samsung.com
+    contact_phone: "+254-800-724-000"
+    rma_portal: https://www.samsung.com/business/support/
+    notes: "Knox Warranty coverage; enterprise exchange program available."
+
+kebs_cert_renewal:
+  renewal_notice_days_before_expiry: 90
+  responsible_team: procurement@eel.io
+  certificate_registry: http://inventory-svc.eel-system.svc.cluster.local:8080/devices?filter=kebs_expiring

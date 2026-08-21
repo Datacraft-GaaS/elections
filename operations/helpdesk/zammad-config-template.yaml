@@ -1,0 +1,112 @@
+---
+# Zammad OSS configuration template for eel helpdesk
+# Apply via the Zammad admin UI or the Zammad API.
+# Values in <ANGLE_BRACKETS> must be replaced with environment-specific values.
+
+organization:
+  name: eel Electoral Management Platform
+  logo_url: https://portal.eel.io/static/eel-logo.png
+  locale: en
+
+groups:
+  - name: Field Support
+    email: field-support@eel.io
+    signature: "eel Field Support Team"
+    active: true
+  - name: SRE
+    email: sre@eel.io
+    signature: "eel Site Reliability Engineering"
+    active: true
+  - name: Data Integrity
+    email: data@eel.io
+    signature: "eel Data Integrity Team"
+    active: true
+  - name: Election Day Ops
+    email: electionday@eel.io
+    signature: "eel Election Day Operations"
+    active: true
+
+ticket_categories:
+  - name: Kit Hardware Failure
+    group: Field Support
+    priority: 2-high
+    sla: kit-hardware-sla
+  - name: Kit Software / Attestation
+    group: SRE
+    priority: 2-high
+    sla: kit-software-sla
+  - name: Network / Connectivity
+    group: Field Support
+    priority: 3-normal
+    sla: network-sla
+  - name: MDM Enrolment Failure
+    group: SRE
+    priority: 2-high
+    sla: mdm-sla
+  - name: BVR / BVI Data Issue
+    group: Data Integrity
+    priority: 2-high
+    sla: data-issue-sla
+  - name: RTS Results Issue
+    group: Election Day Ops
+    priority: 1-critical
+    sla: rts-sla
+  - name: General Inquiry
+    group: Field Support
+    priority: 3-normal
+    sla: general-sla
+
+slas:
+  - name: kit-hardware-sla
+    first_response_time_in_minutes: 15
+    update_time_in_minutes: 120
+    solution_in_minutes: 240
+    escalation_notify_minutes: 120
+  - name: kit-software-sla
+    first_response_time_in_minutes: 15
+    update_time_in_minutes: 60
+    solution_in_minutes: 120
+    escalation_notify_minutes: 60
+  - name: network-sla
+    first_response_time_in_minutes: 30
+    update_time_in_minutes: 120
+    solution_in_minutes: 240
+    escalation_notify_minutes: 120
+  - name: mdm-sla
+    first_response_time_in_minutes: 15
+    update_time_in_minutes: 30
+    solution_in_minutes: 60
+    escalation_notify_minutes: 30
+  - name: data-issue-sla
+    first_response_time_in_minutes: 15
+    update_time_in_minutes: 30
+    solution_in_minutes: 60
+    escalation_notify_minutes: 30
+  - name: rts-sla
+    first_response_time_in_minutes: 10
+    update_time_in_minutes: 15
+    solution_in_minutes: 30
+    escalation_notify_minutes: 15
+  - name: general-sla
+    first_response_time_in_minutes: 120
+    update_time_in_minutes: 240
+    solution_in_minutes: 480
+    escalation_notify_minutes: 360
+
+escalation_tree:
+  level_1: assigned_agent
+  level_2: group_lead
+  level_3: sre_oncall
+  level_4: incident_commander
+
+webhook_outbound:
+  # Zammad posts ticket events to support-admin-svc
+  url: http://support-admin-svc.eel-system.svc.cluster.local:8080/helpdesk/webhook
+  http_method: POST
+  content_type: application/json
+  secret_token: <ZAMMAD_WEBHOOK_SECRET>
+  events:
+    - ticket.created
+    - ticket.updated
+    - ticket.escalated
+    - ticket.closed

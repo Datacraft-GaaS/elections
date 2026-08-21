@@ -1,0 +1,69 @@
+{
+  "kind": "androidenterprise#managedConfiguration",
+  "profileName": "eel-kit-profile",
+  "version": "1.0.0",
+  "description": "Android Enterprise declarative profile for BVI, BVR, and RTS election kits.",
+  "policies": {
+    "systemUpdatePolicy": {
+      "type": "POSTPONE",
+      "freezePeriods": [],
+      "minimumSecurityPatchLevel": "automatic_latest_quarterly"
+    },
+    "installUnknownSourcesAllowed": false,
+    "googlePlayProtectVerifyApps": "VERIFY_APPS_ENFORCED",
+    "statusReportingSettings": {
+      "applicationReportsEnabled": true,
+      "deviceSettingsEnabled": true,
+      "softwareInfoEnabled": true,
+      "hardwareStatusEnabled": true
+    },
+    "hardwareKeyedAttestationRequired": true,
+    "keyguardDisabled": false,
+    "screenCaptureDisabled": true,
+    "cameraDisabled": false,
+    "bluetoothDisabled": false,
+    "wifiConfigDisabled": true,
+    "factoryResetDisabled": true,
+    "usbDataAccessDisabled": false,
+    "networkEscapeHatchEnabled": false,
+    "encryptionPolicy": "ENABLED_WITH_PIN",
+    "locationMode": "HIGH_ACCURACY",
+    "stayOnPluggedModes": ["AC", "USB"],
+    "maximumTimeToLock": 300000,
+    "applicationPolicy": {
+      "installType": "ALLOWLIST_ONLY",
+      "allowedApps": [
+        "io.eel.bvr",
+        "io.eel.bvi",
+        "io.eel.rts",
+        "io.eel.kit.agent"
+      ]
+    },
+    "permissionGrants": [
+      {
+        "permission": "android.permission.CAMERA",
+        "policy": "GRANT"
+      },
+      {
+        "permission": "android.permission.ACCESS_FINE_LOCATION",
+        "policy": "GRANT"
+      },
+      {
+        "permission": "android.permission.READ_EXTERNAL_STORAGE",
+        "policy": "DENY"
+      },
+      {
+        "permission": "android.permission.WRITE_EXTERNAL_STORAGE",
+        "policy": "DENY"
+      }
+    ],
+    "kioskCustomLauncherEnabled": true,
+    "kioskCustomization": {
+      "powerButtonActions": "POWER_BUTTON_AVAILABLE",
+      "systemErrorWarnings": "ERROR_AND_WARNINGS_MUTED",
+      "systemNavigation": "NAVIGATION_DISABLED",
+      "statusBar": "STATUS_BAR_DISABLED",
+      "deviceSettings": "SETTINGS_ACCESS_ALLOWED"
+    }
+  }
+}

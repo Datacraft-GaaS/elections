@@ -210,3 +210,9 @@ e. Remove the relation definition from the `.zed` file. Commit. Apply to dev, ru
 | production | `spicedb.eel.prod:50051` | `kv/eel/prod/spicedb/token` |
 
 The trust domain for dev is `eel.local`. For production it is `eel.prod`. Schema files in `packages/authz-schema/` are trust-domain-agnostic: the endpoint and token determine which domain receives the write.
+
+## Chaos-drill reference
+
+This runbook is exercised by: `chaos/scenarios/eel-spicedb-down.yaml`
+
+The SpiceDB down scenario verifies that a schema migration can be safely rolled back when the SpiceDB instance becomes temporarily unavailable during the promotion window.
