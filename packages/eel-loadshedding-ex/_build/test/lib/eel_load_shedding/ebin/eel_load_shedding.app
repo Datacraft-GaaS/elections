@@ -1,1 +1,0 @@
-{application,eel_load_shedding,[{modules,['Elixir.Eel.LoadShedding','Elixir.Eel.LoadShedding.Controller','Elixir.Eel.LoadShedding.Plug']},{optional_applications,[]},{applications,[kernel,stdlib,elixir,logger,plug,jason]},{description,"eel_load_shedding"},{registered,[]},{vsn,"0.1.0"}]}.

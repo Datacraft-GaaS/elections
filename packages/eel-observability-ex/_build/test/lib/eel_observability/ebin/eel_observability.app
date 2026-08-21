@@ -1,1 +1,0 @@
-{application,eel_observability,[{modules,['Elixir.Eel.Observability','Elixir.Eel.Observability.AuditShadow','Elixir.Eel.Observability.LogScrubber','Elixir.Eel.Observability.Slo']},{optional_applications,[]},{applications,[kernel,stdlib,elixir,logger,opentelemetry_api,opentelemetry,opentelemetry_exporter,jason]},{description,"eel_observability"},{registered,[]},{vsn,"0.1.0"}]}.
