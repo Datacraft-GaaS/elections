@@ -1,0 +1,484 @@
+# T2 problem type catalogue — extends WP-0.4a problem-types.yaml.
+# Do not modify the base file; add only problem types NOT in the T1 catalogue.
+# Languages follow BCP-47 tags. Message values are display strings (not keys).
+# All URIs resolve to https://errors.eel.local/t2/<id> per trust domain eel.local.
+
+base_namespace: "https://errors.eel.local/t2"
+languages:
+  - en       # English
+  - sw       # Swahili (official)
+  - so       # Somali
+  - luo      # Dholuo
+  - luhya    # Luhya (composite)
+  - kamba    # Kamba
+  - kikuyu   # Kikuyu
+  - kalenjin # Kalenjin (composite)
+  - meru     # Kimeru
+  - giriama  # Kigiriama
+  - taita    # Kitaita
+
+problem_types:
+
+  - id: application-not-found
+    uri: "https://errors.eel.local/t2/application-not-found"
+    http_status: 404
+    messages:
+      en: "Application not found"
+      sw: "Ombi halipatikani"
+      so: "Codsiga lama helin"
+      luo: "Pok oyud"
+      luhya: "Ombi sisiweza kupatikana"
+      kamba: "Kuombea kukuonekana"
+      kikuyu: "Ombi ndigetagirwo"
+      kalenjin: "Komoswek mibarak"
+      meru: "Ombi haikuonekana"
+      giriama: "Ombi halikuonekana"
+      taita: "Ombi halipatikani"
+
+  - id: duplicate-application
+    uri: "https://errors.eel.local/t2/duplicate-application"
+    http_status: 409
+    messages:
+      en: "A pre-registration application already exists for this identity"
+      sw: "Ombi la usajili wa mapema tayari lipo kwa utambulisho huu"
+      so: "Codsi dib-u-diiwaan-gelinta ah oo hore u jira ayaa jira aqoonsigan"
+      luo: "Pok nyal koro, okwongo nomore"
+      luhya: "Ombi la awali tayari lipo kwa utambulisho huu"
+      kamba: "Kuombea kwanza kumekwisha kuwepo kwa kitambulisho hiki"
+      kikuyu: "Ombi ra mbere nirathii kwa utambulisho uyu"
+      kalenjin: "Komoswek mibarak ko iyete"
+      meru: "Ombi la awali tayari lipo kwa utambulisho huu"
+      giriama: "Ombi la awali tayari lipo"
+      taita: "Ombi tayari lipo kwa utambulisho huu"
+
+  - id: otp-rate-limited
+    uri: "https://errors.eel.local/t2/otp-rate-limited"
+    http_status: 429
+    messages:
+      en: "Too many OTP requests. Please wait before trying again"
+      sw: "Maombi mengi ya OTP. Tafadhali subiri kabla ya kujaribu tena"
+      so: "Codsiyada OTP aad u badan. Fadlan sug ka hor inaad mar kale tijaabiso"
+      luo: "Joluo mang'eny. Kum ka ilosore"
+      luhya: "Maombi mengi ya OTP. Subiri kabla ya kujaribu tena"
+      kamba: "Maombi mengi ya OTP. Subiri kabla ya kujaribu tena"
+      kikuyu: "Maombi maingi ya OTP. Ngoja kabla ya kujaribu tena"
+      kalenjin: "OTP nyoru ko. Lomos"
+      meru: "Maombi mengi ya OTP. Subiri kabla ya kujaribu tena"
+      giriama: "Maombi mengi ya OTP. Subiri kwanza"
+      taita: "Maombi mengi ya OTP. Ngoja kidogo"
+
+  - id: handoff-expired
+    uri: "https://errors.eel.local/t2/handoff-expired"
+    http_status: 410
+    messages:
+      en: "Handoff token has expired. Please restart the pre-registration process"
+      sw: "Tokeni ya uhamishaji imeisha muda wake. Tafadhali anza upya mchakato wa usajili wa mapema"
+      so: "Calaamadda wareejinta waxay dhacday. Fadlan dib u bilow habka dib-u-diiwaan-gelinta"
+      luo: "Token orumo. Chak kendo"
+      luhya: "Tokeni imeisha muda. Anza upya mchakato"
+      kamba: "Tokeni imeisha muda. Anza upya mchakato"
+      kikuyu: "Tokeni niyaringire. Anza upya"
+      kalenjin: "Token ko rupta. Kalechin"
+      meru: "Tokeni imeisha muda. Anza upya mchakato"
+      giriama: "Tokeni imeisha muda wake"
+      taita: "Tokeni imeisha muda wake. Anza upya"
+
+  - id: handoff-consumed
+    uri: "https://errors.eel.local/t2/handoff-consumed"
+    http_status: 410
+    messages:
+      en: "Handoff token has already been used"
+      sw: "Tokeni ya uhamishaji imetumika tayari"
+      so: "Calaamadda wareejinta waxa la isticmaalay horeba"
+      luo: "Token osebetie kende"
+      luhya: "Tokeni imetumika tayari"
+      kamba: "Tokeni imetumika tayari"
+      kikuyu: "Tokeni niyatumikiirwo"
+      kalenjin: "Token ko tumika"
+      meru: "Tokeni imetumika tayari"
+      giriama: "Tokeni imetumika tayari"
+      taita: "Tokeni imetumika"
+
+  - id: quota-violation
+    uri: "https://errors.eel.local/t2/quota-violation"
+    http_status: 429
+    messages:
+      en: "Submission quota exceeded for this period"
+      sw: "Kikomo cha uwasilishaji kimezidiwa kwa kipindi hiki"
+      so: "Xadka gudbinta ayaa lagu dhaafay muddadan"
+      luo: "Ngero orumo"
+      luhya: "Kikomo cha uwasilishaji kimezidiwa"
+      kamba: "Kikomo cha uwasilishaji kimezidiwa"
+      kikuyu: "Kikomo ni giceke"
+      kalenjin: "Quota ko ya"
+      meru: "Kikomo cha uwasilishaji kimezidiwa"
+      giriama: "Kikomo kimezidiwa kwa kipindi hiki"
+      taita: "Kikomo kimezidiwa"
+
+  - id: clearance-pending
+    uri: "https://errors.eel.local/t2/clearance-pending"
+    http_status: 202
+    messages:
+      en: "Clearance check is still in progress"
+      sw: "Ukaguzi wa kibali bado unaendelea"
+      so: "Hubinta ogolaanshaha wali socotaa"
+      luo: "Nono pod winjo"
+      luhya: "Ukaguzi wa kibali bado unaendelea"
+      kamba: "Ukaguzi wa kibali bado unaendelea"
+      kikuyu: "Ukaguzi ni witiriri"
+      kalenjin: "Clearance ko itiriri"
+      meru: "Ukaguzi wa kibali bado unaendelea"
+      giriama: "Ukaguzi bado unaendelea"
+      taita: "Ukaguzi bado unaendelea"
+
+  - id: ballot-proof-published
+    uri: "https://errors.eel.local/t2/ballot-proof-published"
+    http_status: 409
+    messages:
+      en: "Ballot proof has already been published and cannot be modified"
+      sw: "Uthibitisho wa kura umechapishwa tayari na hauwezi kubadilishwa"
+      so: "Caddeynta codbixinta horeba waa la daabacay mana beddeli karo"
+      luo: "Proof osechiwo, ok nyal loko"
+      luhya: "Uthibitisho umechapishwa tayari"
+      kamba: "Uthibitisho umechapishwa tayari"
+      kikuyu: "Uthibitisho niwacapishwa"
+      kalenjin: "Proof ko chapwa"
+      meru: "Uthibitisho umechapishwa tayari"
+      giriama: "Uthibitisho umechapishwa tayari"
+      taita: "Uthibitisho umechapishwa tayari"
+
+  - id: candidate-rejected
+    uri: "https://errors.eel.local/t2/candidate-rejected"
+    http_status: 422
+    messages:
+      en: "Candidate nomination has been rejected"
+      sw: "Uteuzi wa mgombea umekataliwa"
+      so: "Xulashada musharaxu waa la diiday"
+      luo: "Kandidet okwer"
+      luhya: "Uteuzi wa mgombea umekataliwa"
+      kamba: "Uteuzi wa mgombea umekataliwa"
+      kikuyu: "Uteuzi ni ukwarirwo"
+      kalenjin: "Kandidet ko kwar"
+      meru: "Uteuzi wa mgombea umekataliwa"
+      giriama: "Uteuzi umekataliwa"
+      taita: "Uteuzi umekataliwa"
+
+  - id: party-not-registered
+    uri: "https://errors.eel.local/t2/party-not-registered"
+    http_status: 422
+    messages:
+      en: "Political party is not registered for this election"
+      sw: "Chama cha siasa hakijasajiliwa kwa uchaguzi huu"
+      so: "Xisbiga siyaasadda uma diiwaangelin doorashadan"
+      luo: "Party ok ochiwo ne uchaguzi"
+      luhya: "Chama hakijasajiliwa kwa uchaguzi huu"
+      kamba: "Chama hakijasajiliwa kwa uchaguzi huu"
+      kikuyu: "Chama gitisajiriirwo"
+      kalenjin: "Party ko sajili"
+      meru: "Chama hakijasajiliwa kwa uchaguzi huu"
+      giriama: "Chama hakijasajiliwa"
+      taita: "Chama hakijasajiliwa kwa uchaguzi huu"
+
+  - id: nomination-deadline-passed
+    uri: "https://errors.eel.local/t2/nomination-deadline-passed"
+    http_status: 422
+    messages:
+      en: "The nomination deadline has passed"
+      sw: "Tarehe ya mwisho ya uteuzi imepita"
+      so: "Xadka wakhtiga xulashada wuu dhaafay"
+      luo: "Saa mar nomination orumo"
+      luhya: "Tarehe ya mwisho ya uteuzi imepita"
+      kamba: "Tarehe ya mwisho ya uteuzi imepita"
+      kikuyu: "Tarehe ya mwisho niyapita"
+      kalenjin: "Deadline ko pita"
+      meru: "Tarehe ya mwisho ya uteuzi imepita"
+      giriama: "Tarehe ya mwisho imepita"
+      taita: "Tarehe ya mwisho imepita"
+
+  - id: attestation-invalid
+    uri: "https://errors.eel.local/t2/attestation-invalid"
+    http_status: 401
+    messages:
+      en: "Device attestation token is invalid or untrusted"
+      sw: "Tokeni ya uthibitisho wa kifaa si halali au haina imani"
+      so: "Calaamadda xaqiijinta qalabku waa been abuur ama lagula kalsoon"
+      luo: "Attest ok ber"
+      luhya: "Tokeni ya uthibitisho si halali"
+      kamba: "Tokeni ya uthibitisho si halali"
+      kikuyu: "Tokeni ya uthibitisho ni mbaya"
+      kalenjin: "Attestation ko ber"
+      meru: "Tokeni ya uthibitisho si halali"
+      giriama: "Tokeni ya uthibitisho si halali"
+      taita: "Tokeni ya uthibitisho si halali"
+
+  - id: attestation-expired
+    uri: "https://errors.eel.local/t2/attestation-expired"
+    http_status: 401
+    messages:
+      en: "Device attestation token has expired. Please refresh and retry"
+      sw: "Tokeni ya uthibitisho wa kifaa imeisha muda wake. Tafadhali ongeza upya na ujaribu tena"
+      so: "Calaamadda xaqiijinta qalabku waxay dhacday. Fadlan cusboonaysii oo mar kale tijaabi"
+      luo: "Attest orumo. Kwer kendo"
+      luhya: "Tokeni ya uthibitisho imeisha muda. Ongeza upya"
+      kamba: "Tokeni ya uthibitisho imeisha muda. Jaribu tena"
+      kikuyu: "Tokeni ya uthibitisho niyaringire. Anza upya"
+      kalenjin: "Attestation ko rupta. Jaribu"
+      meru: "Tokeni imeisha muda. Jaribu tena"
+      giriama: "Tokeni imeisha muda wake"
+      taita: "Tokeni imeisha muda wake. Jaribu tena"
+
+  - id: grievance-not-found
+    uri: "https://errors.eel.local/t2/grievance-not-found"
+    http_status: 404
+    messages:
+      en: "Grievance record not found"
+      sw: "Rekodi ya malalamiko haipatikani"
+      so: "Diiwaanka cabashooyinka lama helin"
+      luo: "Malalamiko ok nyal yudo"
+      luhya: "Rekodi ya malalamiko haipatikani"
+      kamba: "Rekodi ya malalamiko haipatikani"
+      kikuyu: "Rekodi ya malalamiko ndigetagirwo"
+      kalenjin: "Grievance ko yud"
+      meru: "Rekodi ya malalamiko haipatikani"
+      giriama: "Rekodi ya malalamiko haipatikani"
+      taita: "Rekodi ya malalamiko haipatikani"
+
+  - id: grievance-closed
+    uri: "https://errors.eel.local/t2/grievance-closed"
+    http_status: 409
+    messages:
+      en: "Grievance is closed and cannot accept further actions"
+      sw: "Malalamiko yamefungwa na haywezi kukubali vitendo zaidi"
+      so: "Cabashooyinku waa la xiray mana aqbali karo wax tallaabo ah"
+      luo: "Malalamiko osechor, ok nyal thero"
+      luhya: "Malalamiko yamefungwa"
+      kamba: "Malalamiko yamefungwa"
+      kikuyu: "Malalamiko ni yafungwa"
+      kalenjin: "Grievance ko chor"
+      meru: "Malalamiko yamefungwa"
+      giriama: "Malalamiko yamefungwa"
+      taita: "Malalamiko yamefungwa"
+
+  - id: queue-position-unknown
+    uri: "https://errors.eel.local/t2/queue-position-unknown"
+    http_status: 404
+    messages:
+      en: "Queue position could not be determined"
+      sw: "Nafasi ya foleni haiwezi kubainishwa"
+      so: "Booska safka lama go'aamin karo"
+      luo: "Lugar e foleni ok nyal yudo"
+      luhya: "Nafasi ya foleni haiwezi kubainishwa"
+      kamba: "Nafasi ya foleni haiwezi kubainishwa"
+      kikuyu: "Nafasi ya foleni ndiratheka"
+      kalenjin: "Queue ko yud"
+      meru: "Nafasi ya foleni haiwezi kubainishwa"
+      giriama: "Nafasi ya foleni haiwezi kubainishwa"
+      taita: "Nafasi ya foleni haiwezi kubainishwa"
+
+  - id: inventory-insufficient
+    uri: "https://errors.eel.local/t2/inventory-insufficient"
+    http_status: 409
+    messages:
+      en: "Insufficient inventory for the requested allocation"
+      sw: "Hifadhi haitoshi kwa ugawaji ulioombwa"
+      so: "Kaydka kama filan qaybinta la codsaday"
+      luo: "Gige ok rom"
+      luhya: "Hifadhi haitoshi kwa ugawaji"
+      kamba: "Hifadhi haitoshi kwa ugawaji"
+      kikuyu: "Hifadhi ni nini kwa ugawaji"
+      kalenjin: "Inventory ko rom"
+      meru: "Hifadhi haitoshi kwa ugawaji"
+      giriama: "Hifadhi haitoshi"
+      taita: "Hifadhi haitoshi kwa ugawaji"
+
+  - id: boundary-not-found
+    uri: "https://errors.eel.local/t2/boundary-not-found"
+    http_status: 404
+    messages:
+      en: "Electoral boundary not found"
+      sw: "Mpaka wa uchaguzi haukupatikana"
+      so: "Xadka doorashada lama helin"
+      luo: "Boundary ok nyal yudo"
+      luhya: "Mpaka wa uchaguzi haukupatikana"
+      kamba: "Mpaka wa uchaguzi haukupatikana"
+      kikuyu: "Mpaka wa uchaguzi ndigetagirwo"
+      kalenjin: "Boundary ko yud"
+      meru: "Mpaka wa uchaguzi haukupatikana"
+      giriama: "Mpaka wa uchaguzi haukupatikana"
+      taita: "Mpaka wa uchaguzi haukupatikana"
+
+  - id: rla-audit-not-found
+    uri: "https://errors.eel.local/t2/rla-audit-not-found"
+    http_status: 404
+    messages:
+      en: "Risk-limiting audit record not found"
+      sw: "Rekodi ya ukaguzi wa kupunguza hatari haipatikani"
+      so: "Diiwaanka baaritaanka xaddidaadda khatarta lama helin"
+      luo: "RLA audit ok nyal yudo"
+      luhya: "Rekodi ya ukaguzi haipatikani"
+      kamba: "Rekodi ya ukaguzi haipatikani"
+      kikuyu: "Rekodi ya ukaguzi ndigetagirwo"
+      kalenjin: "RLA ko yud"
+      meru: "Rekodi ya ukaguzi haipatikani"
+      giriama: "Rekodi ya ukaguzi haipatikani"
+      taita: "Rekodi ya ukaguzi haipatikani"
+
+  - id: observer-not-accredited
+    uri: "https://errors.eel.local/t2/observer-not-accredited"
+    http_status: 403
+    messages:
+      en: "Observer is not accredited for this election"
+      sw: "Mwangalizi hakupewa ithibati kwa uchaguzi huu"
+      so: "Kormeeraha looma ansixin doorashadan"
+      luo: "Observer ok nyal keti"
+      luhya: "Mwangalizi hakupewa ithibati"
+      kamba: "Mwangalizi hakupewa ithibati"
+      kikuyu: "Mwangalizi ndaritihibatishwa"
+      kalenjin: "Observer ko accredit"
+      meru: "Mwangalizi hakupewa ithibati"
+      giriama: "Mwangalizi hakupewa ithibati"
+      taita: "Mwangalizi hakupewa ithibati"
+
+  - id: training-not-complete
+    uri: "https://errors.eel.local/t2/training-not-complete"
+    http_status: 403
+    messages:
+      en: "Required training modules have not been completed"
+      sw: "Moduli zinazohitajika za mafunzo hazijamalizika"
+      so: "Cutubadii tababarku loo baahday lama dhammayn"
+      luo: "Training pod ok rumo"
+      luhya: "Moduli za mafunzo hazijamalizika"
+      kamba: "Moduli za mafunzo hazijamalizika"
+      kikuyu: "Moduli za mafunzo ndizaherirwo"
+      kalenjin: "Training ko romo"
+      meru: "Moduli za mafunzo hazijamalizika"
+      giriama: "Mafunzo hayajamalizika"
+      taita: "Mafunzo hayajamalizika"
+
+  - id: budget-exceeded
+    uri: "https://errors.eel.local/t2/budget-exceeded"
+    http_status: 422
+    messages:
+      en: "Requested amount exceeds the approved budget ceiling"
+      sw: "Kiasi kilichoombwa kinazidi dari la bajeti iliyoidhinishwa"
+      so: "Xaddiga la codsaday wuxuu ka badayaa xadka miisaaniyada la ansixiyay"
+      luo: "Pesa okawo malol"
+      luhya: "Kiasi kinazidi bajeti iliyoidhinishwa"
+      kamba: "Kiasi kinazidi bajeti iliyoidhinishwa"
+      kikuyu: "Kiasi nikigita bajeti"
+      kalenjin: "Budget ko ya"
+      meru: "Kiasi kinazidi bajeti iliyoidhinishwa"
+      giriama: "Kiasi kinazidi bajeti"
+      taita: "Kiasi kinazidi bajeti iliyoidhinishwa"
+
+  - id: archive-sealed
+    uri: "https://errors.eel.local/t2/archive-sealed"
+    http_status: 409
+    messages:
+      en: "Archive has been sealed and cannot accept modifications"
+      sw: "Kumbukumbu imefungwa na haiwezi kukubali mabadiliko"
+      so: "Kaydku waa la sifay mana aqbali karo wax beddelid ah"
+      luo: "Archive osekor, ok nyal loko"
+      luhya: "Kumbukumbu imefungwa"
+      kamba: "Kumbukumbu imefungwa"
+      kikuyu: "Kumbukumbu ni yafungwa"
+      kalenjin: "Archive ko cor"
+      meru: "Kumbukumbu imefungwa"
+      giriama: "Kumbukumbu imefungwa"
+      taita: "Kumbukumbu imefungwa"
+
+  - id: voter-card-not-ready
+    uri: "https://errors.eel.local/t2/voter-card-not-ready"
+    http_status: 202
+    messages:
+      en: "Voter card is not yet ready for collection"
+      sw: "Kadi ya mpiga kura bado haiko tayari kukusanywa"
+      so: "Kaarka codeeyuhu weli diyaar uma aha in la uruuriyo"
+      luo: "Kadi ok nyal kaw"
+      luhya: "Kadi ya mpiga kura bado haiko tayari"
+      kamba: "Kadi ya mpiga kura bado haiko tayari"
+      kikuyu: "Kadi ya mpiga kura ndiri tayari"
+      kalenjin: "Voter card ko tayari"
+      meru: "Kadi ya mpiga kura bado haiko tayari"
+      giriama: "Kadi bado haiko tayari"
+      taita: "Kadi bado haiko tayari kukusanywa"
+
+  - id: gazette-not-published
+    uri: "https://errors.eel.local/t2/gazette-not-published"
+    http_status: 404
+    messages:
+      en: "Official gazette notice has not been published yet"
+      sw: "Tangazo rasmi la gazeti halijachapishwa bado"
+      so: "Ogeysiiska jariinadda rasmiga ahi weli lama daabacin"
+      luo: "Gazette pod ok chwad"
+      luhya: "Tangazo la gazeti halijachapishwa"
+      kamba: "Tangazo la gazeti halijachapishwa"
+      kikuyu: "Tangazo la gazeti ndiriacapishwa"
+      kalenjin: "Gazette ko chapwa"
+      meru: "Tangazo la gazeti halijachapishwa"
+      giriama: "Tangazo halijachapishwa"
+      taita: "Tangazo la gazeti halijachapishwa"
+
+  - id: inspection-window-closed
+    uri: "https://errors.eel.local/t2/inspection-window-closed"
+    http_status: 422
+    messages:
+      en: "The public inspection window is closed"
+      sw: "Dirisha la ukaguzi wa umma limefungwa"
+      so: "Daaqadda hubinta dadweynahu waa la xiray"
+      luo: "Saa mar inspection ochor"
+      luhya: "Dirisha la ukaguzi limefungwa"
+      kamba: "Dirisha la ukaguzi limefungwa"
+      kikuyu: "Dirisha la ukaguzi ni rifungwa"
+      kalenjin: "Window ko chor"
+      meru: "Dirisha la ukaguzi limefungwa"
+      giriama: "Dirisha la ukaguzi limefungwa"
+      taita: "Dirisha la ukaguzi limefungwa"
+
+  - id: explainer-not-found
+    uri: "https://errors.eel.local/t2/explainer-not-found"
+    http_status: 404
+    messages:
+      en: "Civic explainer content not found"
+      sw: "Maudhui ya kielelezo cha kiraia hayapatikani"
+      so: "Waxa sharxaaya bulshada lama helin"
+      luo: "Explainer ok nyal yudo"
+      luhya: "Maudhui ya kielelezo hayapatikani"
+      kamba: "Maudhui ya kielelezo hayapatikani"
+      kikuyu: "Maudhui ya kielelezo ndigetagirwo"
+      kalenjin: "Explainer ko yud"
+      meru: "Maudhui ya kielelezo hayapatikani"
+      giriama: "Maudhui hayapatikani"
+      taita: "Maudhui ya kielelezo hayapatikani"
+
+  - id: ussd-session-expired
+    uri: "https://errors.eel.local/t2/ussd-session-expired"
+    http_status: 410
+    messages:
+      en: "USSD session has expired"
+      sw: "Kipindi cha USSD kimeisha muda wake"
+      so: "Xilligii USSD wuu dhacay"
+      luo: "USSD session orumo"
+      luhya: "Kipindi cha USSD kimeisha muda"
+      kamba: "Kipindi cha USSD kimeisha muda"
+      kikuyu: "Kipindi cha USSD niyaringire"
+      kalenjin: "USSD session ko rupta"
+      meru: "Kipindi cha USSD kimeisha muda"
+      giriama: "Kipindi cha USSD kimeisha muda"
+      taita: "Kipindi cha USSD kimeisha muda"
+
+  - id: intent-sealed
+    uri: "https://errors.eel.local/t2/intent-sealed"
+    http_status: 409
+    messages:
+      en: "Voter intent record has been sealed and cannot be modified"
+      sw: "Rekodi ya nia ya mpiga kura imefungwa na haiwezi kubadilishwa"
+      so: "Diiwaanka niyadda codeeyuhu waa la sifay mana beddeli karo"
+      luo: "Intent osekor, ok nyal loko"
+      luhya: "Rekodi ya nia imefungwa"
+      kamba: "Rekodi ya nia imefungwa"
+      kikuyu: "Rekodi ya nia ni yafungwa"
+      kalenjin: "Intent ko cor"
+      meru: "Rekodi ya nia imefungwa"
+      giriama: "Rekodi ya nia imefungwa"
+      taita: "Rekodi ya nia imefungwa"

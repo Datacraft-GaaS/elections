@@ -1,0 +1,47 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: eel-dev
+featureGates:
+  # K8s 1.31 stable gates used by our workloads
+  InPlacePodVerticalScaling: true
+  NodeSwap: false
+nodes:
+  - role: control-plane
+    image: kindest/node:v1.31.4
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+    extraPortMappings:
+      - containerPort: 80
+        hostPort: 8080
+        protocol: TCP
+      - containerPort: 443
+        hostPort: 8443
+        protocol: TCP
+    extraMounts:
+      - hostPath: /tmp/eel-dev/pgbackrest
+        containerPath: /mnt/pgbackrest
+      - hostPath: /tmp/eel-dev/minio
+        containerPath: /mnt/minio
+  - role: worker
+    image: kindest/node:v1.31.4
+    extraMounts:
+      - hostPath: /tmp/eel-dev/worker-0
+        containerPath: /mnt/local
+  - role: worker
+    image: kindest/node:v1.31.4
+    extraMounts:
+      - hostPath: /tmp/eel-dev/worker-1
+        containerPath: /mnt/local
+containerdConfigPatches:
+  - |-
+    [plugins."io.containerd.grpc.v1.cri".registry]
+      [plugins."io.containerd.grpc.v1.cri".registry.mirrors]
+        [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:5000"]
+          endpoint = ["http://localhost:5000"]
+networking:
+  disableDefaultCNI: true
+  kubeProxyMode: none

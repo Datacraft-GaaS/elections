@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openbao-seed-scripts
+  namespace: openbao
+data:
+  seed.sh: |
+    #!/bin/sh
+    # Seed OpenBao mounts for eel dev environment.
+    set -e
+    export BAO_ADDR=http://localhost:8200
+    export BAO_TOKEN=eel-dev-root-token
+
+    # KV v2 mount for dev secrets
+    bao secrets enable -path=kv/eel/dev -version=2 kv || true
+    bao kv put kv/eel/dev/example key=eel-dev-value
+
+    # Transit mount for envelope encryption
+    bao secrets enable -path=transit/eel transit || true
+    bao write transit/eel/keys/cycle-kek type=aes256-gcm96 || true
+    bao write transit/eel/keys/declaration type=ed25519 || true
+
+    # PKI intermediate mount placeholder
+    bao secrets enable -path=pki/eel/intermediate pki || true
+    bao secrets tune -max-lease-ttl=8760h pki/eel/intermediate || true
+
+    # Policy: eel-service can read its own KV path
+    bao policy write eel-service - <<'POLICY'
+    path "kv/eel/dev/*" {
+      capabilities = ["read", "list"]
+    }
+    path "transit/eel/encrypt/*" {
+      capabilities = ["update"]
+    }
+    path "transit/eel/decrypt/*" {
+      capabilities = ["update"]
+    }
+    POLICY
+
+    echo "OpenBao seed complete."

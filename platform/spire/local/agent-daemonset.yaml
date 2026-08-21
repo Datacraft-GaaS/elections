@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: spire-agent
+  namespace: spire
+spec:
+  selector:
+    matchLabels:
+      app: spire-agent
+  template:
+    metadata:
+      labels:
+        app: spire-agent
+    spec:
+      serviceAccountName: spire-agent
+      hostPID: true
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: spire-agent
+          image: ghcr.io/spiffe/spire-agent:1.10.4
+          args: [-config, /etc/spire/agent/agent.conf]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/spire/agent
+            - name: spire-agent-socket
+              mountPath: /run/spire/sockets
+            - name: spire-token
+              mountPath: /var/run/secrets/tokens
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: config
+          configMap:
+            name: spire-agent
+        - name: spire-agent-socket
+          hostPath:
+            path: /run/spire/sockets
+            type: DirectoryOrCreate
+        - name: spire-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  audience: spire-server
+                  expirationSeconds: 7200
+                  path: spire-agent

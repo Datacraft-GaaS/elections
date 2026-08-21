@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: spicedb-schema-seed
+  namespace: eel-authz
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: zed
+          image: authzed/zed:v0.21.3
+          command:
+            - /bin/sh
+            - -c
+            - |
+              until zed validate --endpoint spicedb:50051 --insecure --token eel-dev-spicedb-key; do sleep 5; done
+              zed schema write --endpoint spicedb:50051 --insecure --token eel-dev-spicedb-key - <<'SCHEMA'
+              definition eel/user {}
+              definition eel/role {
+                relation member: eel/user
+              }
+              definition eel/resource {
+                relation owner: eel/user
+                relation reader: eel/user | eel/role#member
+                relation writer: eel/user | eel/role#member
+                permission read = reader + owner + writer
+                permission write = writer + owner
+                permission delete = owner
+              }
+              SCHEMA
+              echo "SpiceDB schema seeded."

@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: karapace
+  namespace: eel-kafka
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: karapace
+  template:
+    metadata:
+      labels:
+        app: karapace
+    spec:
+      containers:
+        - name: karapace
+          image: ghcr.io/aiven/karapace:3.14.2
+          ports:
+            - containerPort: 8081
+          env:
+            - name: KARAPACE_BOOTSTRAP_URI
+              value: kafka-bootstrap.eel-kafka.svc.cluster.local:9092
+            - name: KARAPACE_PORT
+              value: "8081"
+            - name: KARAPACE_HOST
+              value: "0.0.0.0"
+            - name: KARAPACE_REGISTRY_TOPIC
+              value: _schemas
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /subjects
+              port: 8081
+            initialDelaySeconds: 10
+            periodSeconds: 5

@@ -1,0 +1,17 @@
+# Tempo Helm values for eel local cluster
+tempo:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+  storage:
+    trace:
+      backend: local
+      local:
+        path: /var/tempo/traces
+  persistence:
+    enabled: true
+    size: 2Gi

@@ -1,0 +1,26 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: eel-gateway
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: eel-dev-gw
+  namespace: envoy-gateway-system
+spec:
+  gatewayClassName: eel-gateway
+  listeners:
+    - name: http
+      port: 80
+      protocol: HTTP
+    - name: https
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: eel-dev-tls
+            namespace: envoy-gateway-system

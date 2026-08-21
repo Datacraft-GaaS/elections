@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hsm-signer-config
+  namespace: eel-hsm
+data:
+  config.toml: |
+    # hsm-signer gRPC service configuration for local dev.
+    # Trust domain: eel.local
+    # Image built in Wave 2: services/transparency-svc/crates/hsm-signer
+
+    [server]
+    bind = "0.0.0.0:9090"
+    trust_domain = "eel.local"
+
+    [pkcs11]
+    # SoftHSMv2 library path (mounted from tools/softhsm)
+    library = "/usr/lib/softhsm/libsofthsm2.so"
+    token_label = "eel-sth"
+    user_pin_env = "HSM_USER_PIN"
+
+    [keys]
+    sth_label = "eel-sth-signing"
+    declaration_label = "eel-declaration-signing"
+
+    [observability]
+    otel_endpoint = "http://otel-collector.eel-obs.svc.cluster.local:4317"
+    log_level = "info"

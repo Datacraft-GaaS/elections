@@ -1,0 +1,122 @@
+schema_version: "1.0"
+context: custody
+tests:
+  - name: "staff custodian can register asset"
+    subject: "user_staff:alice"
+    permission: "register_asset"
+    resource: "resource_kit:kit-ke-001"
+    expected: true
+
+  - name: "service workload custodian can register asset"
+    subject: "service_workload:custody-svc"
+    permission: "register_asset"
+    resource: "resource_kit:kit-ke-001"
+    expected: true
+
+  - name: "observer cannot register asset"
+    subject: "user_observer:david"
+    permission: "register_asset"
+    resource: "resource_kit:kit-ke-001"
+    expected: false
+
+  - name: "party agent cannot register asset"
+    subject: "user_agent:bob"
+    permission: "register_asset"
+    resource: "resource_kit:kit-ke-001"
+    expected: false
+
+  - name: "staff custodian can transfer custody"
+    subject: "user_staff:alice"
+    permission: "transfer_custody"
+    resource: "resource_kit:kit-ke-001"
+    expected: true
+
+  - name: "service workload can transfer custody"
+    subject: "service_workload:custody-svc"
+    permission: "transfer_custody"
+    resource: "resource_kit:kit-ke-001"
+    expected: true
+
+  - name: "warehouse officer cannot transfer custody"
+    subject: "user_staff:warehouse-joe"
+    permission: "transfer_custody"
+    resource: "resource_kit:kit-ke-001"
+    expected: true
+
+  - name: "chair cannot transfer custody unless custodian"
+    subject: "user_chair:frank"
+    permission: "transfer_custody"
+    resource: "resource_kit:kit-ke-001"
+    expected: false
+
+  - name: "staff can affix seal"
+    subject: "user_staff:alice"
+    permission: "affix_seal"
+    resource: "resource_kit:kit-ke-001"
+    expected: true
+
+  - name: "observer cannot affix seal"
+    subject: "user_observer:david"
+    permission: "affix_seal"
+    resource: "resource_kit:kit-ke-001"
+    expected: false
+
+  - name: "chair can break seal"
+    subject: "user_chair:frank"
+    permission: "break_seal"
+    resource: "resource_kit:kit-ke-001"
+    expected: true
+
+  - name: "staff cannot break seal"
+    subject: "user_staff:alice"
+    permission: "break_seal"
+    resource: "resource_kit:kit-ke-001"
+    expected: false
+
+  - name: "party agent cannot break seal"
+    subject: "user_agent:bob"
+    permission: "break_seal"
+    resource: "resource_kit:kit-ke-001"
+    expected: false
+
+  - name: "staff custodian can read asset history"
+    subject: "user_staff:alice"
+    permission: "read_asset_history"
+    resource: "resource_kit:kit-ke-001"
+    expected: true
+
+  - name: "IAB can read asset history"
+    subject: "user_iab:grace"
+    permission: "read_asset_history"
+    resource: "resource_kit:kit-ke-001"
+    expected: true
+
+  - name: "observer can read asset history"
+    subject: "user_observer:david"
+    permission: "read_asset_history"
+    resource: "resource_kit:kit-ke-001"
+    expected: true
+
+  - name: "chair can read asset history"
+    subject: "user_chair:frank"
+    permission: "read_asset_history"
+    resource: "resource_kit:kit-ke-001"
+    expected: true
+
+  - name: "party agent cannot read asset history"
+    subject: "user_agent:bob"
+    permission: "read_asset_history"
+    resource: "resource_kit:kit-ke-001"
+    expected: false
+
+  - name: "staff can reconcile"
+    subject: "user_staff:alice"
+    permission: "reconcile"
+    resource: "resource_kit:kit-ke-001"
+    expected: true
+
+  - name: "observer cannot reconcile"
+    subject: "user_observer:david"
+    permission: "reconcile"
+    resource: "resource_kit:kit-ke-001"
+    expected: false

@@ -1,0 +1,411 @@
+# Eel Election System - Problem Type Catalogue
+# RFC 9457 problem type definitions with multilingual support
+# Trust domain: eel.local
+
+problemTypes:
+  validation_error:
+    type: "https://eel.local/problems/validation-error"
+    i18n:
+      en:
+        title: "Validation Error"
+        detail: "One or more request fields failed validation."
+      sw:
+        title: "Hitilafu ya Uthibitishaji"
+        detail: "Mojawapo ya sehemu za ombi halikupita uthibitishaji."
+      so:
+        title: "Khalad Xaqiijinta"
+        detail: "Mid ka mid ah goobaha codsiga waxay ku guuldareysteen xaqiijinta."
+      om:
+        title: "Dogoggora Mirkaneessaa"
+        detail: "Gaaffichi tokko tokko mirkaneessaa irra hin geenye."
+      luo:
+        title: "Pit Validation"
+        detail: "Alilwa moko e kido mag jopuonjre ok okawo."
+      luhya:
+        title: "Kosa cha Uthibitishaji"
+        detail: "Sehemu moja au zaidi ya ombi zilishindwa uthibitishaji."
+      kik:
+        title: "Kosa ria Validation"
+        detail: "Thimu imwe o imwe ya ombi haikupita validation."
+      kal:
+        title: "Kapkeres Che Silanik"
+        detail: "Tugul ne tuiyot ne kamu imuche ak kap-silanik."
+      mer:
+        title: "Kioone kia Validation"
+        detail: "Kiraka kimwe o kimwe kiria kigita kia ombi gikiaga validation."
+      bor:
+        title: "Dogoggora Mirkaneessaa"
+        detail: "Gabatee tokko tokko gaafii validation dabruu hin dandeenye."
+      tuf:
+        title: "Hitilafu ya Uthibitishaji"
+        detail: "Sehemu moja ya ombi haikupita uthibitishaji."
+
+  idempotency_key_reuse:
+    type: "https://eel.local/problems/idempotency-key-reuse"
+    i18n:
+      en:
+        title: "Idempotency Key Reused"
+        detail: "The provided Idempotency-Key has already been used for a different request payload."
+      sw:
+        title: "Ufunguo wa Idempotency Umetumika Tena"
+        detail: "Ufunguo wa Idempotency uliotolewa tayari umetumika kwa ombi tofauti."
+      so:
+        title: "Fure Idempotency ah ayaa Dib loo Isticmaalay"
+        detail: "Fure Idempotency-Key la bixiyey horaan loogu isticmaalay codsiga kale."
+      om:
+        title: "Furtuu Idempotency Irra Deebi'e Fayyadamame"
+        detail: "Furtuu Idempotency-Key kenne'an duraan itti fayyadamame."
+      luo:
+        title: "Yingni mar Idempotency Osebedi"
+        detail: "Yingni mar Idempotency-Key ma ichiwo osebetie gi kido machielo."
+      luhya:
+        title: "Ufunguo wa Idempotency Uliotumiwa Tena"
+        detail: "Ufunguo wa Idempotency uliotolewa umeshatumika kwa ombi tofauti."
+      kik:
+        title: "Ufunguo wa Idempotency Wametumika Tena"
+        detail: "Ufunguo wa Idempotency uliopo umekwisha tumika kwa ombi nyingine."
+      kal:
+        title: "Korok che Idempotency Omite Itil"
+        detail: "Korok che Idempotency-Key imuche ak silanik bo."
+      mer:
+        title: "Ufunguo wa Idempotency Wametumiwa Tena"
+        detail: "Ufunguo wa Idempotency uliotolewa tayari wametumiwa kwa ombi nyingine."
+      bor:
+        title: "Furtuu Idempotency Irra Deebi'e Fayyadamame"
+        detail: "Furtuu kenname dursaan itti fayyadamame."
+      tuf:
+        title: "Ufunguo wa Idempotency Umetumika Mara Mbili"
+        detail: "Ufunguo huu umeshatumika."
+
+  not_found:
+    type: "https://eel.local/problems/not-found"
+    i18n:
+      en:
+        title: "Resource Not Found"
+        detail: "The requested resource does not exist or you do not have permission to access it."
+      sw:
+        title: "Rasilimali Haijapatikana"
+        detail: "Rasilimali inayohitajika haipo au huna ruhusa ya kuifikia."
+      so:
+        title: "Kheyraadka Lama Helin"
+        detail: "Kheyraadka la codsaday ma jiro ama aadan haynin ogolaanshaha lagaaga gaarayo."
+      om:
+        title: "Gabatee Hin Argamne"
+        detail: "Gabatee barbaadame hin jiru ykn beenyaa argachuuf hayyama hin qabdu."
+      luo:
+        title: "Gima Oyudi Ok Onyuolre"
+        detail: "Gima ibiro oyudo ok nitiere kata ok iwe sigu mar donjo e iye."
+      luhya:
+        title: "Rasilimali Haikupatikana"
+        detail: "Rasilimali inayohitajika haipo."
+      kik:
+        title: "Haikupatikana"
+        detail: "Rasilimali inayohitajika haipo ama huna ruhusa."
+      kal:
+        title: "Ng'aleet Miin Biit"
+        detail: "Ng'aleet ne iyob miin biit ak miin korotindet."
+      mer:
+        title: "Kitirikia Kigita"
+        detail: "Kiraka kiria kilombwa kiguaga eka wirimu wa kwona."
+      bor:
+        title: "Qabeenya Hin Argamne"
+        detail: "Qabeenya barbaadame hin jiru."
+      tuf:
+        title: "Haikupatikana"
+        detail: "Kitu kilichotakiwa hakipo."
+
+  unauthorized:
+    type: "https://eel.local/problems/unauthorized"
+    i18n:
+      en:
+        title: "Unauthorized"
+        detail: "Valid authentication credentials are required to access this resource."
+      sw:
+        title: "Hujaidhinishwa"
+        detail: "Vitambulisho halali vya uthibitishaji vinahitajika."
+      so:
+        title: "Oggolaansho la'aanta"
+        detail: "Xogta aqoonsiga saxda ah ayaa loo baahan yahay."
+      om:
+        title: "Hin Hayyamamne"
+        detail: "Ragaa eeggacha sirrii ta'an barbaachisa."
+      luo:
+        title: "Ok Ichiwo Sigu"
+        detail: "Hera mar adenyo maber onego obed nikech donjo."
+      luhya:
+        title: "Hujaidhinishwa"
+        detail: "Vitambulisho halali vya uthibitishaji vinahitajika."
+      kik:
+        title: "Huidhinishwa"
+        detail: "Vitambulisho vya uthibitishaji vinahitajika."
+      kal:
+        title: "Miin Silanik"
+        detail: "Korotindet ne iyob miin silanik."
+      mer:
+        title: "Hatwidhinishwa"
+        detail: "Vitambulisho vya uthibitishaji vitakiwa."
+      bor:
+        title: "Hayyama Hin Qabne"
+        detail: "Ragaa eeggacha sirrii barbaachisa."
+      tuf:
+        title: "Hujaidhinishwa"
+        detail: "Uthibitishaji unahitajika."
+
+  forbidden:
+    type: "https://eel.local/problems/forbidden"
+    i18n:
+      en:
+        title: "Forbidden"
+        detail: "You do not have permission to perform this action."
+      sw:
+        title: "Imekatazwa"
+        detail: "Huna ruhusa ya kufanya kitendo hiki."
+      so:
+        title: "Mamnuuc"
+        detail: "Aadan haynin ogolaanshaha ficilkan qabasho."
+      om:
+        title: "Dhorkame"
+        detail: "Hayyama hojii kana raawwachuuf hin qabdu."
+      luo:
+        title: "Ok Iwe Sigu"
+        detail: "Welo ma omori ok ler ok iwe sigu mar tim."
+      luhya:
+        title: "Imekatazwa"
+        detail: "Huna ruhusa ya kufanya kitendo hiki."
+      kik:
+        title: "Imekatazwa"
+        detail: "Huna ruhusa ya kitendo hiki."
+      kal:
+        title: "Miin Korotindet"
+        detail: "Miin korotindet ne itil iyob."
+      mer:
+        title: "Yakataziwa"
+        detail: "Huna ruhusa ya tukio hili."
+      bor:
+        title: "Dhorkame"
+        detail: "Hayyama hojii kanaaf hin qabdu."
+      tuf:
+        title: "Imekatazwa"
+        detail: "Huna ruhusa."
+
+  rate_limited:
+    type: "https://eel.local/problems/rate-limited"
+    i18n:
+      en:
+        title: "Rate Limit Exceeded"
+        detail: "You have exceeded the allowed request rate. Please retry after the indicated time."
+      sw:
+        title: "Kiwango cha Maombi Kimezidishwa"
+        detail: "Umezidi kiwango cha maombi kinachokubalika. Tafadhali jaribu tena baada ya muda ulioonyeshwa."
+      so:
+        title: "Xadka Codsiga ayaa La Dhaafay"
+        detail: "Waxaad dhaaftay xadka codsiga la oggol yahay."
+      om:
+        title: "Daangaa Gaafii Darbame"
+        detail: "Daangaa gaafii eeggama darbite. Yeroo mul'ate booda irra deebi'i."
+      luo:
+        title: "Kido mar Penjo Osekadho"
+        detail: "Osekadho weche mag penjone maricho. Tem kendo ka saa mowuoyo."
+      luhya:
+        title: "Kiwango cha Maombi Kimezidishwa"
+        detail: "Umezidi kiwango cha maombi."
+      kik:
+        title: "Kiwango cha Maombi Kimezidishwa"
+        detail: "Kiwango cha maombi kimezidishwa."
+      kal:
+        title: "Kaplel che Rotinwek Kiyamet"
+        detail: "Kaplel che rotinwek kiyamet. Boisyo ne iyob itoret."
+      mer:
+        title: "Kiwango cha Maombi Kimezidishwa"
+        detail: "Umezidi kiwango cha maombi."
+      bor:
+        title: "Daangaa Gaafii Darbame"
+        detail: "Daangaa gaafii darbite. Irra deebi'i."
+      tuf:
+        title: "Maombi Mengi Sana"
+        detail: "Umezidi kikomo cha maombi."
+
+  internal_error:
+    type: "https://eel.local/problems/internal-error"
+    i18n:
+      en:
+        title: "Internal Server Error"
+        detail: "An unexpected error occurred. The incident has been logged. Please retry or contact support."
+      sw:
+        title: "Hitilafu ya Seva ya Ndani"
+        detail: "Hitilafu isiyotarajiwa imetokea. Tukio limerekodi. Tafadhali jaribu tena au wasiliana na msaada."
+      so:
+        title: "Khalad Kujeedda Serverka"
+        detail: "Khalad aan la filayni ayaa dhacay. Dhacdada ayaa lagu diiwangeliyay."
+      om:
+        title: "Dogoggora Server Keessoo"
+        detail: "Dogoggora hinfeene qaqabe. Wanti hojjate galmaa'e."
+      luo:
+        title: "Siso Malit mar Server"
+        detail: "Siso mabor ma onego ok otimre otumore. Gima otumore ondike."
+      luhya:
+        title: "Hitilafu ya Seva ya Ndani"
+        detail: "Hitilafu isiyotarajiwa ilitokea."
+      kik:
+        title: "Hitilafu ya Server ya Ndani"
+        detail: "Hitilafu isiyotarajiwa imetokea."
+      kal:
+        title: "Kapkeres che Server"
+        detail: "Kapkeres ne miin yamet otit. Imuche ak record."
+      mer:
+        title: "Hitilafu ya Server"
+        detail: "Hitilafu isiyo ya kawaida ilitokea."
+      bor:
+        title: "Dogoggora Server Keessoo"
+        detail: "Dogoggora hinfeene qaqabe."
+      tuf:
+        title: "Hitilafu ya Ndani"
+        detail: "Hitilafu isiyo ya kawaida."
+
+  service_unavailable:
+    type: "https://eel.local/problems/service-unavailable"
+    i18n:
+      en:
+        title: "Service Unavailable"
+        detail: "The service is temporarily unavailable. Please retry after the indicated backoff period."
+      sw:
+        title: "Huduma Haipatikani"
+        detail: "Huduma haipatikani kwa muda. Tafadhali jaribu tena baada ya muda ulioonyeshwa."
+      so:
+        title: "Adeeggu Ma Heli Karo"
+        detail: "Adeeggu waa kuwo ku meel joog ah oo aan heli karin."
+      om:
+        title: "Tajaajila Argachuu Hin Danda'amne"
+        detail: "Tajaajilni yeroo gabaabaaf hin jiru. Irra deebi'i."
+      luo:
+        title: "Tich Ok Nitie"
+        detail: "Tich ok nitie sani. Tem kendo bang' saa mowuoyo."
+      luhya:
+        title: "Huduma Haipatikani"
+        detail: "Huduma haipatikani kwa sasa."
+      kik:
+        title: "Huduma Haipatikani"
+        detail: "Huduma haipatikani kwa muda."
+      kal:
+        title: "Tich Miin Yom"
+        detail: "Tich miin yom sani. Boisyo itoret."
+      mer:
+        title: "Huduma Haipatikani"
+        detail: "Huduma haipatikani kwa sasa hivi."
+      bor:
+        title: "Tajaajila Argachuu Hin Danda'amne"
+        detail: "Tajaajilni yeroo gabaabaaf hin jiru."
+      tuf:
+        title: "Huduma Haipo"
+        detail: "Huduma haipatikani kwa sasa."
+
+  signature_mismatch:
+    type: "https://eel.local/problems/signature-mismatch"
+    i18n:
+      en:
+        title: "Signature Mismatch"
+        detail: "The cryptographic signature on the request does not match the expected value. Tampering may have occurred."
+      sw:
+        title: "Sahihi Hailingani"
+        detail: "Sahihi ya kriptografia kwenye ombi hailingani na thamani inayotarajiwa."
+      so:
+        title: "Saxiixa Isku Midah"
+        detail: "Saxiixa cryptographic ee codsiga kuma dhafna qiimaha la filayay."
+      om:
+        title: "Mallattoo Wal Hin Fakkaanne"
+        detail: "Mallattoon kriptoograafii gaafii irra jiru gatii eegamu wal hin fakkaanne."
+      luo:
+        title: "署名 Ok Owinjore"
+        detail: "Kido mar署名 e penjo ok owinjore gi gima onego obed."
+      luhya:
+        title: "Saini Hailingani"
+        detail: "Saini ya kriptografia hailingani."
+      kik:
+        title: "Saini Hailingana"
+        detail: "Saini ya kisanduku cha hesabu hailingana."
+      kal:
+        title: "Silanik Miin Kora"
+        detail: "Silanik che kriptografia miin kora ak che iyob."
+      mer:
+        title: "Saini Hailingana"
+        detail: "Saini ya kisiri hailingana."
+      bor:
+        title: "Mallattoo Wal Hin Fakkaanne"
+        detail: "Mallattoon gaafii irra jiru wal hin fakkaanne."
+      tuf:
+        title: "Saini Hailingani"
+        detail: "Saini hailingani."
+
+  tamper_detected:
+    type: "https://eel.local/problems/tamper-detected"
+    i18n:
+      en:
+        title: "Tamper Detected"
+        detail: "Evidence of data tampering has been detected. The request has been rejected and the incident logged."
+      sw:
+        title: "Uchokozi wa Data Umegunduliwa"
+        detail: "Ushahidi wa uchokozi wa data umegunduliwa. Ombi limekataliwa na tukio limerekodi."
+      so:
+        title: "Sixitaanka Xogta ayaa La Ogaaday"
+        detail: "Caddaynta sixitaanka xogta ayaa la ogaaday. Codsigii waa la diiday."
+      om:
+        title: "Dabarsa Argame"
+        detail: "Ragaan dabarsaa ni argame. Gaafii daddarbame laga dide."
+      luo:
+        title: "Gimo Thuolo Oonge Otimre"
+        detail: "Sigara mar thuolo dala oonge otimre. Penjo okwayore."
+      luhya:
+        title: "Udanganyifu wa Data Umegunduliwa"
+        detail: "Udanganyifu wa data umegunduliwa."
+      kik:
+        title: "Udanganyifu wa Data Umegunduliwa"
+        detail: "Udanganyifu wa data umegunduliwa na ombi limekataliwa."
+      kal:
+        title: "Silanik che Yetut Biit"
+        detail: "Silanik che yetut biit ne data. Rotinwek kokwany."
+      mer:
+        title: "Udanganyifu wa Data Uliogundulika"
+        detail: "Udanganyifu wa data uligundulika na ombi lilikataliwa."
+      bor:
+        title: "Dabarsaa Argame"
+        detail: "Ragaan dabarsaa argame. Gaafii daddarbame dide."
+      tuf:
+        title: "Uchezaji wa Data Umegunduliwa"
+        detail: "Uchezaji wa data umegunduliwa."
+
+  dual_control_required:
+    type: "https://eel.local/problems/dual-control-required"
+    i18n:
+      en:
+        title: "Dual Control Required"
+        detail: "This operation requires authorization from two independent officers. A second officer must countersign."
+      sw:
+        title: "Udhibiti wa Maafisa Wawili Unahitajika"
+        detail: "Operesheni hii inahitaji idhini kutoka kwa maafisa wawili huru. Afisa wa pili lazima athibitishe."
+      so:
+        title: "Xukumaadda Laba Mas'uul Ah Ayaa Loo Baahan Yahay"
+        detail: "Howshaani waxay u baahan tahay ogolaanshaha laba sarkaal oo madax-bannaan."
+      om:
+        title: "To'annoo Gareessota Lama Ni Barbaachisa"
+        detail: "Hojiin kun hayyama gareessota lama walaba ta'an barbaachisa."
+      luo:
+        title: "Twak mar Jo Aryo Ongera"
+        detail: "Tim mani odwaro twak mag jopuonj aryo ma onge kinyuol. Jopuonj mar ariyo odwaro twak bende."
+      luhya:
+        title: "Udhibiti wa Maafisa Wawili Unahitajika"
+        detail: "Operesheni hii inahitaji idhini kutoka kwa maafisa wawili."
+      kik:
+        title: "Udhibiti wa Maafisa Wawili Unahitajika"
+        detail: "Operesheni hii inahitaji uthibitisho wa maafisa wawili."
+      kal:
+        title: "Silanik Che Arwek Iyob"
+        detail: "Timdo ne iyob imuche ak silanik che arwek che miin kora."
+      mer:
+        title: "Udhibiti wa Maafisa Wawili Unahitajika"
+        detail: "Operesheni hii inahitaji idhini kutoka kwa maafisa wawili."
+      bor:
+        title: "To'annoo Gareessota Lama Barbaachisa"
+        detail: "Hojiin kun gareessota lama walaba ta'an barbaachisa."
+      tuf:
+        title: "Maafisa Wawili Wanahitajika"
+        detail: "Kitendo hiki kinahitaji idhini kutoka kwa maafisa wawili."

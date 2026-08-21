@@ -1,0 +1,12 @@
+// Minimal SpiceDB schema for hello-svc smoke tests.
+// Trust domain: eel.local
+// See packages/authz-schema/ for context-specific schemas.
+
+definition eel/user {}
+
+definition eel/resource {
+  relation owner: eel/user
+  relation reader: eel/user
+  permission read  = reader + owner
+  permission write = owner
+}

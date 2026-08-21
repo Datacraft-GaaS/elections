@@ -1,0 +1,22 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-bucket-init
+  namespace: eel-data
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: mc
+          image: quay.io/minio/mc:RELEASE.2024-11-17T19-35-25Z
+          command:
+            - /bin/sh
+            - -c
+            - |
+              until mc alias set local http://minio:9000 eel eel-dev-secret; do sleep 3; done
+              mc mb --ignore-existing local/eel-snapshots
+              mc mb --ignore-existing local/eel-bundles
+              mc mb --ignore-existing local/eel-backups
+              mc mb --ignore-existing local/eel-tiered-kafka
+              echo "MinIO buckets initialized."

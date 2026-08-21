@@ -1,0 +1,637 @@
+openapi: 3.1.0
+info:
+  title: eel-ai-anomaly-detection
+  version: 1.0.0
+  description: >
+    Module M26 - Anomaly and Fraud Detection. Provides alert management,
+    analyst adjudication workflows, aggregate reporting, and an internal
+    event ingestion endpoint for the eel election management platform.
+  contact:
+    name: eel platform team
+    url: https://eel.local/support
+servers:
+  - url: https://api.eel.local
+    description: production
+  - url: https://staging.api.eel.local
+    description: staging
+
+tags:
+  - name: alerts
+    description: Anomaly alert lifecycle management
+  - name: adjudications
+    description: Analyst adjudication decisions
+  - name: reports
+    description: Aggregate anomaly reporting
+  - name: ingest
+    description: Internal event ingestion (service-to-service)
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/ai/anomaly/alerts:
+    get:
+      tags: [alerts]
+      operationId: listAnomalyAlerts
+      summary: List anomaly alerts
+      description: >
+        Returns a paginated list of anomaly alerts. Supports filtering by
+        severity, status, and alert type.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageCursor'
+        - $ref: '#/components/parameters/PageLimit'
+        - name: severity
+          in: query
+          description: Filter by severity level
+          schema:
+            type: string
+            enum: [low, medium, high, critical]
+            x-eel-data-class: C
+        - name: status
+          in: query
+          description: Filter by alert status
+          schema:
+            type: string
+            enum: [open, investigating, dismissed, escalated]
+            x-eel-data-class: C
+        - name: alert_type
+          in: query
+          description: Filter by alert type string
+          schema:
+            type: string
+            maxLength: 64
+            x-eel-data-class: D
+        - name: from
+          in: query
+          description: ISO 8601 start of detection window
+          schema:
+            type: string
+            format: date-time
+            x-eel-data-class: D
+        - name: to
+          in: query
+          description: ISO 8601 end of detection window
+          schema:
+            type: string
+            format: date-time
+            x-eel-data-class: D
+      responses:
+        '200':
+          description: Paginated anomaly alert list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnomalyAlertPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/ai/anomaly/alerts/{alert_id}:
+    get:
+      tags: [alerts]
+      operationId: getAnomalyAlert
+      summary: Get an anomaly alert by ID
+      description: Retrieve full detail for a specific anomaly alert including explanation.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AlertId'
+      responses:
+        '200':
+          description: Anomaly alert detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnomalyAlert'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/ai/anomaly/alerts/{alert_id}/adjudications:
+    post:
+      tags: [adjudications]
+      operationId: adjudicateAlert
+      summary: Submit an analyst adjudication for an alert
+      description: >
+        Records an analyst verdict on an anomaly alert. Optionally escalates
+        to IAB or ECC. Idempotent on Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AlertId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnomalyAdjudicationRequest'
+      responses:
+        '201':
+          description: Adjudication recorded
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnomalyAdjudication'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/ai/anomaly/reports/summary:
+    get:
+      tags: [reports]
+      operationId: getAnomalySummaryReport
+      summary: Aggregate anomaly counts by type and severity
+      description: >
+        Returns aggregate counts of anomaly alerts grouped by alert_type and
+        severity. All data is class C (public/audit). No PII returned.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: from
+          in: query
+          description: ISO 8601 start of the reporting window
+          schema:
+            type: string
+            format: date-time
+            x-eel-data-class: D
+        - name: to
+          in: query
+          description: ISO 8601 end of the reporting window
+          schema:
+            type: string
+            format: date-time
+            x-eel-data-class: D
+      responses:
+        '200':
+          description: Aggregate anomaly summary report
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnomalySummaryReport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/ai/anomaly/ingest/events:
+    post:
+      tags: [ingest]
+      operationId: ingestEventBatch
+      summary: Ingest event batch from Kafka for anomaly analysis
+      description: >
+        Internal service-to-service endpoint secured by mTLS. Receives
+        batched events forwarded from the Kafka consumer for batch anomaly
+        analysis. Not exposed to external clients.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - mtls: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventBatch'
+      responses:
+        '202':
+          description: Batch accepted for analysis
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestAck'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by eel.local identity provider (SpiceDB-checked on every request)
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS for service-to-service calls within eel.local trust domain
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Client-generated UUIDv7 for idempotent request deduplication (TTL 24 h)
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: E
+
+    AlertId:
+      name: alert_id
+      in: path
+      required: true
+      description: UUIDv7 identifier of the anomaly alert
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+
+    PageCursor:
+      name: cursor
+      in: query
+      description: Opaque pagination cursor from a previous response
+      schema:
+        type: string
+        x-eel-data-class: E
+
+    PageLimit:
+      name: limit
+      in: query
+      description: Maximum items to return (1-100)
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+        x-eel-data-class: E
+
+  headers:
+    CosignSig:
+      description: Sigstore cosign signature over the response body
+      schema:
+        type: string
+        x-eel-data-class: C
+    MerkleProof:
+      description: Merkle proof anchoring this response to the audit ledger
+      schema:
+        type: string
+        x-eel-data-class: C
+    SnapshotId:
+      description: Snapshot identifier for response reproducibility
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+
+  schemas:
+    AnomalyAlert:
+      type: object
+      required:
+        - alert_id
+        - alert_type
+        - severity
+        - entity_ref
+        - detected_at
+        - status
+      properties:
+        alert_id:
+          type: string
+          format: uuid
+          description: UUIDv7 alert identifier
+          x-eel-data-class: C
+        alert_type:
+          type: string
+          maxLength: 128
+          description: Machine-readable alert type code
+          x-eel-data-class: D
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+          x-eel-data-class: C
+        entity_ref:
+          type: string
+          maxLength: 512
+          description: Opaque reference to the entity that triggered the alert (no raw PII)
+          x-eel-data-class: C
+        detected_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        status:
+          type: string
+          enum: [open, investigating, dismissed, escalated]
+          x-eel-data-class: C
+        explanation:
+          type: string
+          maxLength: 4096
+          description: Model-generated natural language explanation of the anomaly
+          x-eel-data-class: D
+        model_id:
+          type: string
+          format: uuid
+          description: ID of the AI model that generated this alert
+          x-eel-data-class: D
+        confidence_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          x-eel-data-class: D
+
+    AnomalyAlertPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnomalyAlert'
+          x-eel-data-class: C
+        next_cursor:
+          type: string
+          nullable: true
+          x-eel-data-class: E
+        total_count:
+          type: integer
+          x-eel-data-class: C
+
+    AnomalyAdjudicationRequest:
+      type: object
+      required:
+        - verdict
+        - escalate_to
+      properties:
+        verdict:
+          type: string
+          enum: [true_positive, false_positive, investigating]
+          x-eel-data-class: C
+        notes:
+          type: string
+          maxLength: 4096
+          x-eel-data-class: D
+        escalate_to:
+          type: string
+          enum: [IAB, ECC, none]
+          description: Escalation target body; use 'none' for no escalation
+          x-eel-data-class: C
+
+    AnomalyAdjudication:
+      type: object
+      required:
+        - adjudication_id
+        - alert_id
+        - verdict
+        - decided_by_hash
+        - decided_at
+        - escalate_to
+      properties:
+        adjudication_id:
+          type: string
+          format: uuid
+          description: UUIDv7 adjudication record identifier
+          x-eel-data-class: C
+        alert_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        verdict:
+          type: string
+          enum: [true_positive, false_positive, investigating]
+          x-eel-data-class: C
+        notes:
+          type: string
+          x-eel-data-class: D
+        escalate_to:
+          type: string
+          enum: [IAB, ECC, none]
+          x-eel-data-class: C
+        decided_by_hash:
+          type: string
+          description: SHA-256 hash of the deciding analyst identifier (no raw PII stored)
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: B
+        decided_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    AnomalySummaryBucket:
+      type: object
+      required: [alert_type, severity, count]
+      properties:
+        alert_type:
+          type: string
+          x-eel-data-class: C
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+          x-eel-data-class: C
+        count:
+          type: integer
+          minimum: 0
+          x-eel-data-class: C
+        open_count:
+          type: integer
+          minimum: 0
+          x-eel-data-class: C
+        escalated_count:
+          type: integer
+          minimum: 0
+          x-eel-data-class: C
+
+    AnomalySummaryReport:
+      type: object
+      required: [generated_at, window_from, window_to, buckets]
+      properties:
+        generated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        window_from:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        window_to:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        total_alerts:
+          type: integer
+          x-eel-data-class: C
+        buckets:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnomalySummaryBucket'
+          x-eel-data-class: C
+
+    EventItem:
+      type: object
+      required: [event_id, event_type, payload]
+      properties:
+        event_id:
+          type: string
+          description: Unique event identifier from the originating system
+          x-eel-data-class: C
+        event_type:
+          type: string
+          maxLength: 128
+          x-eel-data-class: D
+        payload:
+          type: object
+          description: Event payload; structure varies by event_type
+          additionalProperties: true
+          x-eel-data-class: D
+
+    EventBatch:
+      type: object
+      required: [batch_id, events]
+      properties:
+        batch_id:
+          type: string
+          description: Ephemeral batch correlation ID (Kafka offset group)
+          x-eel-data-class: E
+        events:
+          type: array
+          minItems: 1
+          maxItems: 1000
+          items:
+            $ref: '#/components/schemas/EventItem'
+          x-eel-data-class: D
+
+    IngestAck:
+      type: object
+      required: [batch_id, accepted_count]
+      properties:
+        batch_id:
+          type: string
+          x-eel-data-class: E
+        accepted_count:
+          type: integer
+          x-eel-data-class: D
+        rejected_event_ids:
+          type: array
+          items:
+            type: string
+          x-eel-data-class: D
+
+    ProblemDetail:
+      type: object
+      description: RFC 9457 problem detail
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: E
+        title:
+          type: string
+          x-eel-data-class: E
+        status:
+          type: integer
+          x-eel-data-class: E
+        detail:
+          type: string
+          x-eel-data-class: E
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: E
+        trace_id:
+          type: string
+          x-eel-data-class: E
+
+  responses:
+    BadRequest:
+      description: Request body or parameters failed validation
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Missing or invalid JWT or mTLS certificate
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: SpiceDB authorization denied
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Idempotency-Key collision or state conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Semantic validation error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'

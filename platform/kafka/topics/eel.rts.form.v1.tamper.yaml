@@ -1,0 +1,23 @@
+# RTS Form tamper alerts - signature verification failures and integrity violations detected by rts-backend
+# Source: RTS context, security alerting channel
+name: eel.rts.form.v1.tamper
+partitions: 12
+retention_class: dlq
+replication_factor: 3
+min_isr: 2
+unclean_leader_election: false
+acks: all
+signed: false
+delivery: at-least-once-idempotent
+acl:
+  produce:
+    - "spiffe://eel.local/service/rts-backend"
+  consume:
+    - "spiffe://eel.local/service/security-soc"
+    - "spiffe://eel.local/service/ecc-svc"
+    - "spiffe://eel.local/service/transparency-log"
+configs:
+  compression.type: zstd
+  min.insync.replicas: 2
+  max.message.bytes: 1048576
+retention_notes: "90-day hot retention; tamper events feed SOC SIEM and transparency log for auditability; Kenya Computer Misuse and Cybercrimes Act 2018 preservation obligations"

@@ -1,0 +1,95 @@
+# PostgreSQL 17 voter database (single-primary local; swap for Patroni in staging)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-voter
+  namespace: eel-data
+spec:
+  serviceName: postgres-voter
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-voter
+  template:
+    metadata:
+      labels:
+        app: postgres-voter
+    spec:
+      containers:
+        - name: postgres
+          image: pgvector/pgvector:pg17
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: eel
+            - name: POSTGRES_PASSWORD
+              value: eel-dev
+            - name: POSTGRES_DB
+              value: voter
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 1
+              memory: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+          readinessProbe:
+            exec:
+              command: [pg_isready, -U, eel, -d, voter]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: init
+          configMap:
+            name: postgres-voter-init
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: 2Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-voter-init
+  namespace: eel-data
+data:
+  01-extensions.sql: |
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+    CREATE EXTENSION IF NOT EXISTS pgcrypto;
+    CREATE EXTENSION IF NOT EXISTS pgaudit;
+    CREATE EXTENSION IF NOT EXISTS vector;
+  02-outbox.sql: |
+    CREATE SCHEMA IF NOT EXISTS outbox;
+    CREATE TABLE IF NOT EXISTS outbox.outbox_events (
+      id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      aggregate_type  TEXT NOT NULL,
+      aggregate_id    UUID NOT NULL,
+      event_type      TEXT NOT NULL,
+      payload         JSONB NOT NULL,
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    -- Logical replication slot for Debezium
+    SELECT pg_create_logical_replication_slot('debezium', 'pgoutput')
+      WHERE NOT EXISTS (
+        SELECT 1 FROM pg_replication_slots WHERE slot_name = 'debezium'
+      );
+    -- Publication for outbox schema
+    CREATE PUBLICATION IF NOT EXISTS eel_outbox FOR TABLES IN SCHEMA outbox;
+  03-keycloak.sql: |
+    CREATE DATABASE keycloak;
+    GRANT ALL PRIVILEGES ON DATABASE keycloak TO eel;
+  04-spicedb.sql: |
+    CREATE DATABASE spicedb;
+    GRANT ALL PRIVILEGES ON DATABASE spicedb TO eel;

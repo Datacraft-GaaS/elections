@@ -1,0 +1,178 @@
+# Harbor Helm values — staging and production.
+# Local dev variant is under platform/harbor/local/ (WP-0.2 scope — do not modify here).
+# Chart: harbor/harbor >= 1.14
+# Image name convention: eel/harbor-* (no iebc_ prefix)
+
+expose:
+  type: ingress
+  tls:
+    enabled: true
+    certSource: secret
+    secret:
+      secretName: harbor-tls
+      notarySecretName: harbor-notary-tls
+  ingress:
+    hosts:
+      core: harbor.internal
+      notary: notary.internal
+    className: envoy
+    annotations:
+      cert-manager.io/cluster-issuer: internal-ca
+      envoy.gateway.io/policy: harbor-gw-policy
+
+externalURL: https://harbor.internal
+
+# Persistence
+persistence:
+  enabled: true
+  resourcePolicy: keep
+  persistentVolumeClaim:
+    registry:
+      storageClass: rook-ceph-block
+      size: 500Gi
+    jobservice:
+      storageClass: rook-ceph-block
+      size: 10Gi
+    database:
+      storageClass: rook-ceph-block
+      size: 20Gi
+    redis:
+      storageClass: rook-ceph-block
+      size: 5Gi
+    trivy:
+      storageClass: rook-ceph-block
+      size: 10Gi
+
+# Cosign verification requirement (enforced via Kyverno policy — see ADR-0004)
+# Harbor itself is configured to require signed images on push.
+core:
+  replicas: 2
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 2
+      memory: 2Gi
+  extraEnvVars:
+    # Enable cosign content trust validation
+    - name: HARBOR_REGISTRY_ENABLE_CONTENT_TRUST
+      value: "true"
+    - name: HARBOR_REGISTRY_ENABLE_CONTENT_TRUST_COSIGN
+      value: "true"
+
+registry:
+  replicas: 2
+  resources:
+    requests:
+      cpu: 500m
+      memory: 256Mi
+    limits:
+      cpu: 2
+      memory: 1Gi
+  upload_purging:
+    enabled: true
+    age: 168h
+    interval: 24h
+    dryrun: false
+
+jobservice:
+  replicas: 2
+  maxJobWorkers: 10
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1
+      memory: 512Mi
+
+trivy:
+  enabled: true
+  replicas: 2
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
+  # Vulnerability DB mirror for air-gapped use
+  offlineScan: true
+  gitHubToken: ""
+  skipUpdate: false
+  # Use internal mirror for Trivy DB updates
+  additionalVolumeMounts:
+    - name: trivy-db-cache
+      mountPath: /home/scanner/.cache/trivy
+  additionalVolumes:
+    - name: trivy-db-cache
+      persistentVolumeClaim:
+        claimName: trivy-db-cache
+
+notary:
+  enabled: false  # Using cosign keyless; notary v1 not needed
+
+# Project quotas (applied post-install via Harbor API; defaults here for reference)
+# See scripts/harbor-post-install.sh
+# Each project: storage quota 100 GiB, image count 10,000
+# Enforced via Harbor project API, not Helm values.
+
+# Retention policies applied per project via Harbor API.
+# Default: keep last 10 tags per repository; delete untagged artifacts after 7 days.
+# Pre-election freeze: retention policies are tightened to keep-last-20 during freeze window.
+
+# Image scanning on push — required for all projects
+scanner:
+  enabled: true
+  primary: trivy
+
+# Robot accounts are created post-install via Harbor API.
+# eel-ci-robot: push access to eel/* projects.
+# eel-deploy-robot: pull access for ArgoCD.
+
+# Internal CA trust
+ca_bundle: |
+  # Internal CA certificate is injected at deploy time via ExternalSecret.
+  # See platform/cert-manager/ for the CA setup.
+
+# Metrics
+metrics:
+  enabled: true
+  core:
+    path: /metrics
+    port: 8001
+  registry:
+    path: /metrics
+    port: 8001
+  jobservice:
+    path: /metrics
+    port: 8001
+  serviceMonitor:
+    enabled: true
+    additionalLabels:
+      prometheus.io/scrape: "true"
+
+# Database — use external PG17 (platform/postgres/) for staging/prod
+database:
+  type: external
+  external:
+    host: postgres.internal
+    port: 5432
+    username: harbor
+    # Password via ExternalSecret from OpenBao
+    existingSecret: harbor-db-secret
+    sslmode: require
+
+# Redis — use external Valkey (platform/valkey/)
+redis:
+  type: external
+  external:
+    addr: valkey.internal:6379
+    # Password via ExternalSecret
+    existingSecret: harbor-redis-secret
+    existingSecretKey: redis-password
+
+# High-availability
+portal:
+  replicas: 2

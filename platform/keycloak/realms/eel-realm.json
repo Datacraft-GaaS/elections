@@ -1,0 +1,69 @@
+{
+  "realm": "eel",
+  "enabled": true,
+  "displayName": "EEL Platform",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "roles": {
+    "realm": [
+      {"name": "STAFF", "description": "Internal staff"},
+      {"name": "PARTY", "description": "Political party agent"},
+      {"name": "OBSERVER", "description": "Accredited observer"},
+      {"name": "MEDIA", "description": "Accredited media"},
+      {"name": "PUBLIC", "description": "General public / citizen"},
+      {"name": "COUNTY", "description": "County coordinator"},
+      {"name": "IAB", "description": "Independent Audit Board member"},
+      {"name": "CHAIR", "description": "Commission Chair or designee"},
+      {"name": "RO", "description": "Returning Officer"}
+    ]
+  },
+  "users": [
+    {
+      "username": "staff-test",
+      "email": "staff@eel.local",
+      "enabled": true,
+      "credentials": [{"type": "password", "value": "eel-dev", "temporary": false}],
+      "realmRoles": ["STAFF"]
+    },
+    {
+      "username": "observer-test",
+      "email": "observer@eel.local",
+      "enabled": true,
+      "credentials": [{"type": "password", "value": "eel-dev", "temporary": false}],
+      "realmRoles": ["OBSERVER"]
+    },
+    {
+      "username": "ro-test",
+      "email": "ro@eel.local",
+      "enabled": true,
+      "credentials": [{"type": "password", "value": "eel-dev", "temporary": false}],
+      "realmRoles": ["RO"]
+    },
+    {
+      "username": "chair-test",
+      "email": "chair@eel.local",
+      "enabled": true,
+      "credentials": [{"type": "password", "value": "eel-dev", "temporary": false}],
+      "realmRoles": ["CHAIR"]
+    },
+    {
+      "username": "public-test",
+      "email": "public@eel.local",
+      "enabled": true,
+      "credentials": [{"type": "password", "value": "eel-dev", "temporary": false}],
+      "realmRoles": ["PUBLIC"]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "eel-portal",
+      "enabled": true,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "redirectUris": ["http://localhost:*/*", "http://eel.local/*"],
+      "webOrigins": ["+"],
+      "secret": "eel-dev-client-secret"
+    }
+  ]
+}

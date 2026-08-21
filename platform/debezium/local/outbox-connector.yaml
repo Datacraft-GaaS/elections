@@ -1,0 +1,49 @@
+# Job to register the outbox connector with Debezium Connect.
+# Runs once after debezium-connect is healthy.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: debezium-connector-init
+  namespace: eel-kafka
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: connector-init
+          image: curlimages/curl:8.10.1
+          command:
+            - /bin/sh
+            - -c
+            - |
+              until curl -sf http://debezium-connect:8083/connectors; do sleep 5; done
+              curl -sf -X POST http://debezium-connect:8083/connectors \
+                -H 'Content-Type: application/json' \
+                -d '{
+                  "name": "eel-voter-outbox",
+                  "config": {
+                    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+                    "tasks.max": "1",
+                    "database.hostname": "postgres-voter.eel-data.svc.cluster.local",
+                    "database.port": "5432",
+                    "database.user": "eel",
+                    "database.password": "eel-dev",
+                    "database.dbname": "voter",
+                    "database.server.name": "eel",
+                    "schema.include.list": "outbox",
+                    "table.include.list": "outbox.outbox_events",
+                    "plugin.name": "pgoutput",
+                    "publication.autocreate.mode": "filtered",
+                    "transforms": "outbox",
+                    "transforms.outbox.type": "io.debezium.transforms.outbox.EventRouter",
+                    "transforms.outbox.table.field.event.id": "id",
+                    "transforms.outbox.table.field.event.key": "aggregate_id",
+                    "transforms.outbox.table.field.event.payload": "payload",
+                    "transforms.outbox.table.field.event.type": "event_type",
+                    "transforms.outbox.route.topic.replacement": "eel.${routedByValue}",
+                    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+                    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+                    "value.converter.schemas.enable": "false"
+                  }
+                }'
+              echo "Connector registered."

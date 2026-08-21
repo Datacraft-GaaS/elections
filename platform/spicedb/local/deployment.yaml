@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spicedb
+  namespace: eel-authz
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spicedb
+  template:
+    metadata:
+      labels:
+        app: spicedb
+    spec:
+      containers:
+        - name: spicedb
+          image: authzed/spicedb:v1.38.0
+          args:
+            - serve
+            - --grpc-preshared-key=eel-dev-spicedb-key
+            - --datastore-engine=postgres
+            - --datastore-conn-uri=postgres://eel:eel-dev@postgres-voter.eel-data.svc.cluster.local:5432/spicedb?sslmode=disable
+            - --http-enabled
+          ports:
+            - containerPort: 50051
+              name: grpc
+            - containerPort: 8443
+              name: http
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            exec:
+              command: [grpc_health_probe, -addr=:50051]
+            initialDelaySeconds: 15
+            periodSeconds: 5

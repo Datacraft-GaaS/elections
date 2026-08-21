@@ -1,0 +1,814 @@
+openapi: 3.1.0
+info:
+  title: eel-ecc-command
+  version: 1.0.0
+  description: >
+    Module M16: Election Command Centre providing operational real-time
+    visibility and incident escalation for senior election staff. All
+    endpoints require JWT authentication with SpiceDB authorization.
+
+servers:
+  - url: https://eel.local/api/v1
+    description: Production trust domain
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: situational-awareness
+    description: Election day real-time status
+  - name: stations
+    description: Polling station operational status
+  - name: escalations
+    description: Incident escalation management
+  - name: heatmap
+    description: County-level turnout heatmap
+  - name: audit-log
+    description: ECC command audit log
+
+paths:
+  /ecc/situational-awareness:
+    get:
+      tags: [situational-awareness]
+      operationId: getSituationalAwareness
+      summary: Real-time election day status
+      description: >
+        Returns a live snapshot of election day operations: stations reporting,
+        kit connectivity, aggregate turnout, and DLQ depth. Refreshed every
+        30 seconds by the ECC aggregation worker.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Situational awareness snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SituationalAwareness'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /ecc/stations:
+    get:
+      tags: [stations]
+      operationId: listStations
+      summary: Station status list
+      description: >
+        Returns a paginated list of all polling station operational statuses
+        for the current election day. Includes connectivity state, kit
+        assignment, heartbeat recency, and form capture counts.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: online
+          in: query
+          required: false
+          schema:
+            type: boolean
+            x-eel-data-class: D
+          description: Filter by online/offline state
+        - name: county_code
+          in: query
+          required: false
+          schema:
+            type: string
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Paginated station status list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StationStatusPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /ecc/stations/{station_code}:
+    get:
+      tags: [stations]
+      operationId: getStation
+      summary: Station detail
+      description: >
+        Returns full operational detail for a single polling station including
+        kit state, heartbeat history summary, and captured form counts by type.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/StationCodeParam'
+      responses:
+        '200':
+          description: Station operational detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StationDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /ecc/escalations:
+    post:
+      tags: [escalations]
+      operationId: createEscalation
+      summary: Escalate incident to command chain
+      description: >
+        Creates a new escalation record and routes it to the appropriate
+        command chain role based on severity. Idempotent on Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EscalationRequest'
+      responses:
+        '201':
+          description: Escalation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Escalation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags: [escalations]
+      operationId: listEscalations
+      summary: List escalations
+      description: >
+        Returns a paginated list of escalations. SpiceDB policy restricts
+        results to escalations the principal has read access to.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [open, acknowledged, resolved, closed]
+            x-eel-data-class: C
+        - name: severity
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [low, medium, high, critical]
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Paginated escalation list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EscalationPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /ecc/escalations/{escalation_id}:
+    patch:
+      tags: [escalations]
+      operationId: updateEscalation
+      summary: Update escalation status
+      description: >
+        Partially updates an escalation record. Used by command chain roles to
+        acknowledge, reassign, or close escalations. Idempotent on
+        Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EscalationIdParam'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EscalationPatch'
+      responses:
+        '200':
+          description: Updated escalation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Escalation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /ecc/turnout-heatmap:
+    get:
+      tags: [heatmap]
+      operationId: getTurnoutHeatmap
+      summary: County-level turnout heatmap data
+      description: >
+        Returns a GeoJSON FeatureCollection where each feature is a county
+        polygon with a turnout_pct property. Data is aggregated from confirmed
+        station reports and refreshed every 5 minutes. All fields are class C.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: GeoJSON county-level turnout heatmap
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TurnoutHeatmap'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /ecc/audit-log:
+    get:
+      tags: [audit-log]
+      operationId: getEccAuditLog
+      summary: ECC command audit log
+      description: >
+        Returns a paginated audit log of all actions performed within the ECC
+        module. Entries are class C (audit-grade) and D (operational metadata).
+        Immutable once written.
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: from_ts
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+            x-eel-data-class: C
+        - name: to_ts
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+            x-eel-data-class: C
+        - name: actor_role
+          in: query
+          required: false
+          schema:
+            type: string
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Paginated audit log
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Keycloak-issued JWT. Validated against eel.local JWKS endpoint.
+    mtls:
+      type: mutualTLS
+      description: X.509 mTLS client certificate. CN must match registered service principal in eel.local PKI.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: E
+      description: Client-generated UUIDv7. Server stores response for 24 hours.
+
+    PageParam:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+        x-eel-data-class: D
+
+    PageSizeParam:
+      name: page_size
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+        x-eel-data-class: D
+
+    StationCodeParam:
+      name: station_code
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 4
+        maxLength: 16
+        x-eel-data-class: C
+      description: Polling station code
+
+    EscalationIdParam:
+      name: escalation_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+      description: UUIDv7 identifier of the escalation
+
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status, detail, instance, eel_trace_id]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        title:
+          type: string
+          x-eel-data-class: D
+        status:
+          type: integer
+          x-eel-data-class: D
+        detail:
+          type: string
+          x-eel-data-class: D
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        eel_trace_id:
+          type: string
+          x-eel-data-class: D
+
+    SituationalAwareness:
+      type: object
+      required: [snapshot_at, stations_total, stations_reporting, stations_online, kit_online_count, aggregate_turnout_pct, dlq_depth]
+      properties:
+        snapshot_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        stations_total:
+          type: integer
+          x-eel-data-class: C
+        stations_reporting:
+          type: integer
+          x-eel-data-class: C
+          description: Stations that have submitted at least one form
+        stations_online:
+          type: integer
+          x-eel-data-class: C
+          description: Stations with active heartbeat in last 5 minutes
+        kit_online_count:
+          type: integer
+          x-eel-data-class: C
+          description: Total biometric kit units currently connected
+        aggregate_turnout_pct:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          x-eel-data-class: C
+        dlq_depth:
+          type: integer
+          x-eel-data-class: D
+          description: Current depth of the dead-letter queue for unprocessed events
+        active_escalations:
+          type: integer
+          x-eel-data-class: C
+        critical_escalations:
+          type: integer
+          x-eel-data-class: C
+
+    StationStatus:
+      type: object
+      required: [station_code, online, kit_id, last_heartbeat_at, forms_captured]
+      properties:
+        station_code:
+          type: string
+          x-eel-data-class: C
+        online:
+          type: boolean
+          x-eel-data-class: D
+        kit_id:
+          type: string
+          x-eel-data-class: C
+          description: Asset tag of the biometric kit assigned to this station
+        last_heartbeat_at:
+          type: string
+          format: date-time
+          nullable: true
+          x-eel-data-class: D
+        forms_captured:
+          type: integer
+          x-eel-data-class: C
+          description: Count of result forms captured and transmitted
+
+    StationStatusPage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items:
+          type: array
+          x-eel-data-class: C
+          items:
+            $ref: '#/components/schemas/StationStatus'
+        total:
+          type: integer
+          x-eel-data-class: C
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+
+    StationDetail:
+      allOf:
+        - $ref: '#/components/schemas/StationStatus'
+        - type: object
+          properties:
+            county_code:
+              type: string
+              x-eel-data-class: C
+            constituency_code:
+              type: string
+              x-eel-data-class: C
+            ward_code:
+              type: string
+              x-eel-data-class: C
+            registered_voters:
+              type: integer
+              x-eel-data-class: C
+            opened_at:
+              type: string
+              format: date-time
+              nullable: true
+              x-eel-data-class: C
+            closed_at:
+              type: string
+              format: date-time
+              nullable: true
+              x-eel-data-class: C
+            heartbeat_gap_minutes:
+              type: integer
+              nullable: true
+              x-eel-data-class: D
+              description: Minutes since last heartbeat; null if never received
+            forms_by_type:
+              type: object
+              x-eel-data-class: C
+              additionalProperties:
+                type: integer
+                x-eel-data-class: C
+
+    EscalationRequest:
+      type: object
+      required: [incident_type, station_code, severity, description]
+      properties:
+        incident_type:
+          type: string
+          maxLength: 64
+          x-eel-data-class: C
+          description: Machine-readable incident class (e.g. kit_failure, turnout_anomaly, violence)
+        station_code:
+          type: string
+          x-eel-data-class: C
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+          x-eel-data-class: C
+        description:
+          type: string
+          minLength: 10
+          maxLength: 4000
+          x-eel-data-class: C
+
+    Escalation:
+      type: object
+      required: [escalation_id, incident_type, station_code, severity, status, assigned_to_role, created_at]
+      properties:
+        escalation_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        incident_type:
+          type: string
+          x-eel-data-class: C
+        station_code:
+          type: string
+          x-eel-data-class: C
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [open, acknowledged, resolved, closed]
+          x-eel-data-class: C
+        assigned_to_role:
+          type: string
+          x-eel-data-class: C
+          description: Role in the command chain currently holding this escalation
+        description:
+          type: string
+          x-eel-data-class: C
+        created_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        updated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+          x-eel-data-class: C
+        resolution_notes:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+
+    EscalationPatch:
+      type: object
+      minProperties: 1
+      properties:
+        status:
+          type: string
+          enum: [acknowledged, resolved, closed]
+          x-eel-data-class: C
+        assigned_to_role:
+          type: string
+          x-eel-data-class: C
+        resolution_notes:
+          type: string
+          maxLength: 4000
+          x-eel-data-class: C
+
+    EscalationPage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items:
+          type: array
+          x-eel-data-class: C
+          items:
+            $ref: '#/components/schemas/Escalation'
+        total:
+          type: integer
+          x-eel-data-class: C
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+
+    TurnoutHeatmap:
+      type: object
+      required: [type, features, generated_at]
+      properties:
+        type:
+          type: string
+          enum: [FeatureCollection]
+          x-eel-data-class: C
+        generated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        features:
+          type: array
+          x-eel-data-class: C
+          items:
+            type: object
+            required: [type, geometry, properties]
+            properties:
+              type:
+                type: string
+                enum: [Feature]
+                x-eel-data-class: C
+              geometry:
+                type: object
+                x-eel-data-class: C
+                description: GeoJSON geometry (Polygon or MultiPolygon)
+              properties:
+                type: object
+                x-eel-data-class: C
+                required: [county_code, county_name, turnout_pct, stations_reporting, stations_total]
+                properties:
+                  county_code:
+                    type: string
+                    x-eel-data-class: C
+                  county_name:
+                    type: string
+                    x-eel-data-class: C
+                  turnout_pct:
+                    type: number
+                    format: float
+                    x-eel-data-class: C
+                  stations_reporting:
+                    type: integer
+                    x-eel-data-class: C
+                  stations_total:
+                    type: integer
+                    x-eel-data-class: C
+
+    AuditLogEntry:
+      type: object
+      required: [entry_id, actor_role, action, entity_type, entity_id, occurred_at]
+      properties:
+        entry_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        actor_role:
+          type: string
+          x-eel-data-class: C
+        action:
+          type: string
+          x-eel-data-class: C
+        entity_type:
+          type: string
+          x-eel-data-class: C
+        entity_id:
+          type: string
+          x-eel-data-class: C
+        change_summary:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+        occurred_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        request_id:
+          type: string
+          x-eel-data-class: D
+          description: Idempotency-Key or internal request identifier
+
+    AuditLogPage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items:
+          type: array
+          x-eel-data-class: C
+          items:
+            $ref: '#/components/schemas/AuditLogEntry'
+        total:
+          type: integer
+          x-eel-data-class: C
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+
+  responses:
+    BadRequest:
+      description: Malformed request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: Missing or invalid authentication credential
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: Authenticated principal lacks SpiceDB permission
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: Idempotency key conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnprocessableEntity:
+      description: Semantically invalid request body
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'

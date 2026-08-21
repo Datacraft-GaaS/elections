@@ -1,0 +1,46 @@
+# Local kind-profile load test budgets.
+# Every value is the Appendix-A SLA number scaled by scaling_factor (0.01 = 1/100).
+# Wave usage: multiply the raw SLA by scaling_factor to get the local target.
+# Example: bvi_auth_p95_ms raw=200ms, local target = 200 * 0.01 = 2ms (floor at 50ms for realism).
+#
+# Interpreting the table:
+#   - *_ms values are latency ceilings in milliseconds
+#   - *_per_sec / *_per_hour / *_per_run are throughput floors
+#   - *_concurrent / *_per_90min are concurrency/volume floors
+#
+# Pre-prod overlay (loadtest/profiles/pre-prod.yaml) uses scaling_factor: 1.0.
+# 5x stress overlay uses scaling_factor: 5.0.
+
+scaling_factor: 0.01
+
+# BVI biometric identification
+bvi_auth_p95_ms: 200        # raw 20000ms, 1% = 200ms floor
+bvi_auth_p99_ms: 500
+bvi_req_per_sec: 1          # raw 100 rps
+
+# RTS results transmission
+rts_submit_p95_ms: 100
+rts_submit_p99_ms: 250
+rts_concurrent: 5           # raw 500
+
+# ABIS biometric enrolment (1:N identification)
+abis_1n_p95_s: 3            # raw 300s
+abis_1n_p99_s: 6
+abis_enrolments_per_hour: 10  # raw 1000
+
+# Public portal
+portal_p95_ms: 50
+portal_p99_ms: 150
+portal_visitors_per_hour: 1000  # raw 100000
+
+# Kit verifier
+verifier_concurrent: 2      # raw 200
+
+# Polling station check-ins per 90-minute window
+checkins_per_90min: 50      # raw 5000
+
+# Payroll records per nightly run
+payroll_records_per_run: 100  # raw 10000
+
+# Kafka ingest
+kafka_events_per_sec: 10    # raw 1000

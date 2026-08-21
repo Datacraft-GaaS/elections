@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: eel-data
+spec:
+  selector:
+    app: minio
+  ports:
+    - name: s3
+      port: 9000
+    - name: console
+      port: 9001

@@ -1,0 +1,895 @@
+openapi: 3.1.0
+info:
+  title: eel-crms-nomination
+  version: 1.0.0
+  description: >
+    Module M12 - Candidate and Party Registration Management System.
+    Handles candidacy submissions, statutory document uploads, clearance decisions,
+    public candidate lists, quota compliance checks, and ballot proof publication.
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: candidates
+    description: Candidacy submission and status tracking
+  - name: documents
+    description: Statutory document uploads via presigned MinIO URL
+  - name: clearances
+    description: Clearance decisions from KRA, EACC, and courts
+  - name: quotas
+    description: Quota and gender compliance checks
+  - name: ballot-proofs
+    description: Signed ballot design publication and verification
+
+paths:
+  /api/v1/crms/candidates:
+    post:
+      tags: [candidates]
+      operationId: submitCandidacy
+      summary: Submit candidacy application
+      description: >
+        Tier 2. Submits a new candidacy. Triggers an asynchronous IPRS identity
+        verification. The returned Candidate resource begins in status pending.
+      security:
+        - bearerAuth: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CandidateSubmission'
+          application/cbor:
+            schema:
+              $ref: '#/components/schemas/CandidateSubmission'
+      responses:
+        '201':
+          description: Candidacy accepted and queued for IPRS verification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Candidate'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags: [candidates]
+      operationId: listPublicCandidates
+      summary: List approved public candidates
+      description: >
+        Tier 1. Public endpoint. Returns approved candidates after nomination close.
+        Response is cryptographically signed and anchored in the Merkle ledger.
+      security: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      parameters:
+        - name: position_code
+          in: query
+          schema:
+            type: string
+            x-eel-data-class: C
+          description: Filter by position code
+        - name: constituency_code
+          in: query
+          schema:
+            type: string
+            x-eel-data-class: C
+          description: Filter by constituency code
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            x-eel-data-class: D
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+            x-eel-data-class: D
+      responses:
+        '200':
+          description: Approved public candidate list
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/XEelCosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/XEelMerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/XEelSnapshotId'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PublicCandidate'
+                  total:
+                    type: integer
+                    x-eel-data-class: D
+                  page:
+                    type: integer
+                    x-eel-data-class: D
+                  page_size:
+                    type: integer
+                    x-eel-data-class: D
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/crms/candidates/{candidate_id}:
+    get:
+      tags: [candidates]
+      operationId: getCandidateStatus
+      summary: Get candidate status
+      description: >
+        Tier 2. Returns the full Candidate resource including current status,
+        IPRS verification state, and outstanding requirements.
+      security:
+        - bearerAuth: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      parameters:
+        - $ref: '#/components/parameters/CandidateId'
+      responses:
+        '200':
+          description: Candidate resource
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Candidate'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/crms/nominations/{candidate_id}/documents:
+    post:
+      tags: [documents]
+      operationId: initiateDocumentUpload
+      summary: Request presigned URL for statutory document upload
+      description: >
+        Tier 2. Returns a short-lived MinIO presigned PUT URL. The client uploads
+        the document directly to object storage; the gateway never proxies the
+        binary payload. After upload the document is linked to the candidacy.
+      security:
+        - bearerAuth: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      parameters:
+        - $ref: '#/components/parameters/CandidateId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentUploadRequest'
+      responses:
+        '201':
+          description: Presigned upload token issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentUploadToken'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/crms/clearances:
+    post:
+      tags: [clearances]
+      operationId: recordClearanceDecision
+      summary: Record a clearance decision from KRA, EACC, or court
+      description: >
+        Tier 3. Requires JWT plus SpiceDB authorization. Records a statutory
+        clearance verdict. A candidate needs all required clearances to advance
+        to approved status.
+      security:
+        - bearerAuth: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClearanceDecision'
+          application/cbor:
+            schema:
+              $ref: '#/components/schemas/ClearanceDecision'
+      responses:
+        '201':
+          description: Clearance decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClearanceDecision'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/crms/quotas/{scope}/{code}:
+    get:
+      tags: [quotas]
+      operationId: getQuotaCompliance
+      summary: Get quota compliance status for a scope and code
+      description: >
+        Tier 3. Requires JWT plus SpiceDB authorization. Returns gender, youth,
+        and PWD compliance for the given scope (e.g. constituency, county) and code.
+      security:
+        - bearerAuth: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      parameters:
+        - name: scope
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [constituency, county, national]
+            x-eel-data-class: C
+          description: Geographic or administrative scope
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            x-eel-data-class: C
+          description: Scope-specific identifier code
+      responses:
+        '200':
+          description: Quota compliance status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuotaStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/crms/ballot-proofs:
+    post:
+      tags: [ballot-proofs]
+      operationId: publishBallotProof
+      summary: Publish signed ballot design proof
+      description: >
+        Tier 3. Requires JWT plus SpiceDB authorization. Records the hash of the
+        approved ballot design along with the printer signature, anchoring it in
+        the ledger for public verification.
+      security:
+        - bearerAuth: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BallotProofRequest'
+          application/cbor:
+            schema:
+              $ref: '#/components/schemas/BallotProofRequest'
+      responses:
+        '201':
+          description: Ballot proof published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProof'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/crms/ballot-proofs/{proof_id}:
+    get:
+      tags: [ballot-proofs]
+      operationId: getBallotProof
+      summary: Retrieve a ballot design proof
+      description: >
+        Tier 1. Public endpoint. Returns the ballot proof resource with
+        cryptographic proof headers for independent verification.
+      security: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      parameters:
+        - name: proof_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/UUIDv7'
+          description: Ballot proof UUIDv7 identifier
+      responses:
+        '200':
+          description: Ballot proof resource
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/XEelCosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/XEelMerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/XEelSnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallotProof'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by eel.local identity provider
+    mtls:
+      type: mutualTLS
+      description: X.509 client certificate mutual TLS for internal service-to-service calls
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 128
+        x-eel-data-class: D
+      description: >
+        Client-generated unique key (UUID or similar) to make this request
+        idempotent. Duplicate requests with the same key return the cached
+        response without re-processing.
+
+    CandidateId:
+      name: candidate_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUIDv7'
+      description: Candidate UUIDv7 identifier
+
+  schemas:
+    UUIDv7:
+      type: string
+      pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+      example: '01909d1a-2b3c-7d4e-8f5a-6b7c8d9e0f1a'
+      x-eel-data-class: D
+
+    Problem:
+      type: object
+      description: RFC 9457 problem detail
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: D
+          description: URI identifying the problem type
+        title:
+          type: string
+          x-eel-data-class: D
+          description: Short human-readable summary of the problem type
+        status:
+          type: integer
+          x-eel-data-class: D
+          description: HTTP status code
+        detail:
+          type: string
+          x-eel-data-class: D
+          description: Human-readable explanation specific to this occurrence
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: D
+          description: URI reference identifying this specific occurrence
+        eel_trace_id:
+          type: string
+          x-eel-data-class: D
+          description: Distributed trace identifier for log correlation
+
+    CandidateSubmission:
+      type: object
+      description: Payload to submit a candidacy application
+      required:
+        - id_number_hash
+        - name
+        - party_id
+        - position_code
+        - constituency_code
+        - gender
+        - dob_hash
+      properties:
+        id_number_hash:
+          type: string
+          minLength: 64
+          maxLength: 128
+          x-eel-data-class: A
+          description: SHA-256 hash of the national ID number
+        name:
+          type: string
+          minLength: 2
+          maxLength: 200
+          x-eel-data-class: B
+          description: Full legal name as on ID document
+        party_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+          description: Registered party UUIDv7
+        position_code:
+          type: string
+          pattern: '^[A-Z0-9_]{2,32}$'
+          x-eel-data-class: C
+          description: Electoral position code (e.g. PRES, GOV, MP, MCA)
+        constituency_code:
+          type: string
+          pattern: '^[A-Z0-9_]{2,16}$'
+          x-eel-data-class: C
+          description: Constituency or ward code
+        gender:
+          type: string
+          enum: [M, F, X]
+          x-eel-data-class: B
+          description: Gender as declared on statutory documents
+        dob_hash:
+          type: string
+          minLength: 64
+          maxLength: 128
+          x-eel-data-class: A
+          description: SHA-256 hash of date of birth (YYYY-MM-DD)
+
+    Candidate:
+      type: object
+      description: Full candidate resource including verification status
+      required:
+        - candidate_id
+        - id_number_hash
+        - name
+        - party_id
+        - position_code
+        - constituency_code
+        - gender
+        - status
+        - submitted_at
+        - updated_at
+      properties:
+        candidate_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+          description: Candidate UUIDv7 identifier
+        id_number_hash:
+          type: string
+          minLength: 64
+          maxLength: 128
+          x-eel-data-class: A
+          description: SHA-256 hash of the national ID number
+        name:
+          type: string
+          x-eel-data-class: B
+          description: Full legal name
+        party_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+          description: Registered party UUIDv7
+        position_code:
+          type: string
+          x-eel-data-class: C
+          description: Electoral position code
+        constituency_code:
+          type: string
+          x-eel-data-class: C
+          description: Constituency or ward code
+        gender:
+          type: string
+          enum: [M, F, X]
+          x-eel-data-class: B
+          description: Gender as declared on statutory documents
+        status:
+          type: string
+          enum:
+            - pending
+            - iprs_pending
+            - documents_pending
+            - clearance_pending
+            - approved
+            - rejected
+          x-eel-data-class: C
+          description: Current lifecycle status of the candidacy
+        submitted_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+          description: ISO 8601 UTC timestamp of submission
+        updated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+          description: ISO 8601 UTC timestamp of last status change
+
+    PublicCandidate:
+      type: object
+      description: Publicly visible candidate record after nomination close
+      required:
+        - candidate_id
+        - name
+        - party_name
+        - position_code
+        - constituency_code
+        - status
+      properties:
+        candidate_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+          description: Candidate UUIDv7 identifier
+        name:
+          type: string
+          x-eel-data-class: C
+          description: Full legal name (publicly released after nomination close)
+        party_name:
+          type: string
+          x-eel-data-class: C
+          description: Registered party name
+        position_code:
+          type: string
+          x-eel-data-class: C
+          description: Electoral position code
+        constituency_code:
+          type: string
+          x-eel-data-class: C
+          description: Constituency or ward code
+        status:
+          type: string
+          enum: [approved, rejected]
+          x-eel-data-class: C
+          description: Final nomination decision
+
+    DocumentUploadRequest:
+      type: object
+      description: Metadata for a statutory document to be uploaded
+      required:
+        - filename
+        - content_type
+        - size_bytes
+      properties:
+        filename:
+          type: string
+          maxLength: 256
+          x-eel-data-class: D
+          description: Original filename including extension
+        content_type:
+          type: string
+          x-eel-data-class: D
+          description: MIME type (e.g. application/pdf, image/jpeg)
+        size_bytes:
+          type: integer
+          minimum: 1
+          maximum: 26214400
+          x-eel-data-class: D
+          description: File size in bytes; max 25 MiB per document
+        document_type:
+          type: string
+          enum:
+            - academic_certificate
+            - tax_compliance
+            - good_conduct
+            - nomination_form
+            - other
+          x-eel-data-class: D
+          description: Statutory document category
+
+    DocumentUploadToken:
+      type: object
+      description: Short-lived presigned MinIO URL for direct document upload
+      required:
+        - document_id
+        - upload_url
+        - upload_expires_at
+      properties:
+        document_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: D
+          description: Document UUIDv7; reference this when confirming upload
+        upload_url:
+          type: string
+          format: uri
+          x-eel-data-class: E
+          description: MinIO presigned PUT URL; expires at upload_expires_at
+        upload_expires_at:
+          type: string
+          format: date-time
+          x-eel-data-class: E
+          description: ISO 8601 UTC timestamp after which the presigned URL is invalid
+
+    ClearanceDecision:
+      type: object
+      description: Clearance verdict from a statutory authority
+      required:
+        - nom_id
+        - source
+        - verdict
+        - evidence_ref
+      properties:
+        clearance_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+          description: Clearance record UUIDv7 (populated in responses)
+          readOnly: true
+        nom_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+          description: Nomination (candidate) UUIDv7 this clearance relates to
+        source:
+          type: string
+          enum: [KRA, EACC, court]
+          x-eel-data-class: C
+          description: Issuing statutory authority
+        verdict:
+          type: string
+          enum: [cleared, rejected]
+          x-eel-data-class: C
+          description: Clearance outcome
+        evidence_ref:
+          type: string
+          maxLength: 512
+          x-eel-data-class: C
+          description: Opaque reference to the supporting evidence document
+        recorded_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+          description: ISO 8601 UTC timestamp of recording (populated in responses)
+          readOnly: true
+
+    QuotaStatus:
+      type: object
+      description: Quota and constitutional compliance status
+      required:
+        - scope
+        - code
+        - gender_compliance
+        - youth_compliance
+        - pwd_compliance
+      properties:
+        scope:
+          type: string
+          enum: [constituency, county, national]
+          x-eel-data-class: C
+        code:
+          type: string
+          x-eel-data-class: C
+        gender_compliance:
+          type: boolean
+          x-eel-data-class: C
+          description: Two-thirds gender rule compliance
+        youth_compliance:
+          type: boolean
+          x-eel-data-class: C
+          description: Youth (under 35) representation compliance
+        pwd_compliance:
+          type: boolean
+          x-eel-data-class: C
+          description: Persons with disabilities representation compliance
+        details:
+          type: object
+          x-eel-data-class: C
+          description: Breakdown counts and ratios used to compute compliance
+          additionalProperties: true
+
+    BallotProofRequest:
+      type: object
+      description: Signed ballot design submission for ledger anchoring
+      required:
+        - election_id
+        - position_code
+        - ballot_hash
+        - printer_sig
+      properties:
+        election_id:
+          type: string
+          x-eel-data-class: C
+          description: Election cycle identifier
+        position_code:
+          type: string
+          x-eel-data-class: C
+          description: Electoral position code this ballot covers
+        ballot_hash:
+          type: string
+          minLength: 64
+          x-eel-data-class: C
+          description: SHA-256 hash of the approved ballot design PDF
+        printer_sig:
+          type: string
+          x-eel-data-class: C
+          description: Ed25519 signature from the licensed printer
+
+    BallotProof:
+      type: object
+      description: Published ballot proof anchored in the Merkle ledger
+      required:
+        - proof_id
+        - election_id
+        - position_code
+        - ballot_hash
+        - printer_sig
+        - published_at
+      properties:
+        proof_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+        election_id:
+          type: string
+          x-eel-data-class: C
+        position_code:
+          type: string
+          x-eel-data-class: C
+        ballot_hash:
+          type: string
+          x-eel-data-class: C
+        printer_sig:
+          type: string
+          x-eel-data-class: C
+        merkle_root:
+          type: string
+          x-eel-data-class: C
+          description: Merkle root at the time of anchoring
+        published_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+  headers:
+    XEelCosignSig:
+      description: Ed25519 cosignature over the response body from the eel.local signing key
+      schema:
+        type: string
+        x-eel-data-class: D
+    XEelMerkleProof:
+      description: Base64-encoded Merkle inclusion proof for this response snapshot
+      schema:
+        type: string
+        x-eel-data-class: D
+    XEelSnapshotId:
+      description: Ledger snapshot UUIDv7 that anchors this response
+      schema:
+        $ref: '#/components/schemas/UUIDv7'
+
+  responses:
+    BadRequest:
+      description: Request payload failed schema validation
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://eel.local/problems/bad-request
+            title: Bad Request
+            status: 400
+            detail: Field 'id_number_hash' must be a 64-character hex string
+            instance: /api/v1/crms/candidates
+            eel_trace_id: 01909d1a-0000-7000-8000-000000000001
+
+    Unauthorized:
+      description: Missing or invalid bearer token
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://eel.local/problems/unauthorized
+            title: Unauthorized
+            status: 401
+            detail: JWT has expired or signature is invalid
+            instance: /api/v1/crms/candidates
+            eel_trace_id: 01909d1a-0000-7000-8000-000000000002
+
+    Forbidden:
+      description: Token is valid but caller lacks required SpiceDB permission
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    Conflict:
+      description: Duplicate idempotency key with a different payload, or state conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    UnprocessableEntity:
+      description: Payload is syntactically valid but semantically rejected
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'

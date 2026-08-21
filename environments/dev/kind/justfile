@@ -1,0 +1,124 @@
+# eel local kind cluster recipes
+# Include from repo root justfile: `import 'environments/dev/kind/justfile'`
+
+CLUSTER_NAME := "eel-dev"
+KUBECONFIG_PATH := env_var_or_default("KUBECONFIG", "~/.kube/config")
+
+# Create the kind cluster and install base platform
+create:
+    mkdir -p /tmp/eel-dev/{pgbackrest,minio,worker-0,worker-1}
+    kind create cluster --config environments/dev/kind/eel-dev.yaml
+    just -f environments/dev/kind/justfile install-cilium
+    kubectl wait --for=condition=Ready nodes --all --timeout=120s
+
+# Install Cilium CNI (required before other workloads)
+install-cilium:
+    helm repo add cilium https://helm.cilium.io/ --force-update
+    helm upgrade --install cilium cilium/cilium \
+        --version 1.16.4 \
+        --namespace kube-system \
+        -f platform/cilium/local/values.yaml \
+        --wait
+
+# Destroy the kind cluster
+destroy:
+    kind delete cluster --name {{CLUSTER_NAME}}
+    rm -rf /tmp/eel-dev
+
+# Load locally-built images into kind nodes
+load-images:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for img in $(docker images --format '{{.Repository}}:{{.Tag}}' | grep '^eel/'); do
+        echo "Loading $img"
+        kind load docker-image "$img" --name {{CLUSTER_NAME}}
+    done
+
+# Apply all platform manifests in dependency order
+apply-all:
+    just -f environments/dev/kind/justfile apply-cert-manager
+    just -f environments/dev/kind/justfile apply-spire
+    just -f environments/dev/kind/justfile apply-openbao
+    just -f environments/dev/kind/justfile apply-datastores
+    just -f environments/dev/kind/justfile apply-kafka
+    just -f environments/dev/kind/justfile apply-keycloak
+    just -f environments/dev/kind/justfile apply-spicedb
+    just -f environments/dev/kind/justfile apply-envoy-gateway
+    just -f environments/dev/kind/justfile apply-harbor
+    just -f environments/dev/kind/justfile apply-observability
+    just -f environments/dev/kind/justfile apply-hsm-signer
+
+apply-cert-manager:
+    helm repo add jetstack https://charts.jetstack.io --force-update
+    helm upgrade --install cert-manager jetstack/cert-manager \
+        --namespace cert-manager --create-namespace \
+        --version v1.16.2 \
+        --set crds.enabled=true \
+        -f platform/cert-manager/local/values.yaml \
+        --wait
+    kubectl apply -f platform/cert-manager/local/cluster-issuer.yaml
+
+apply-spire:
+    kubectl apply -k platform/spire/local/
+
+apply-openbao:
+    kubectl apply -k platform/openbao/local/
+    kubectl wait --for=condition=Ready pod -l app=openbao -n openbao --timeout=120s
+    kubectl exec -n openbao deploy/openbao -- sh /scripts/seed.sh
+
+apply-datastores:
+    kubectl apply -k platform/postgres/local/
+    kubectl apply -k platform/valkey/local/
+    kubectl apply -k platform/minio/local/
+    kubectl apply -k platform/opensearch/local/
+    kubectl wait --for=condition=Ready pod -l app=postgres-voter -n eel-data --timeout=180s
+    kubectl wait --for=condition=Ready pod -l app=minio -n eel-data --timeout=120s
+
+apply-kafka:
+    kubectl apply -k platform/kafka/local/
+    kubectl apply -k platform/karapace/local/
+    kubectl wait --for=condition=Ready pod -l app=kafka -n eel-kafka --timeout=180s
+    kubectl apply -k platform/debezium/local/
+
+apply-keycloak:
+    kubectl apply -k platform/keycloak/local/
+    kubectl wait --for=condition=Ready pod -l app=keycloak -n eel-iam --timeout=180s
+
+apply-spicedb:
+    kubectl apply -k platform/spicedb/local/
+    kubectl wait --for=condition=Ready pod -l app=spicedb -n eel-authz --timeout=120s
+
+apply-envoy-gateway:
+    helm repo add eg https://charts.gateway.envoyproxy.io --force-update
+    helm upgrade --install envoy-gateway eg/gateway-helm \
+        --namespace envoy-gateway-system --create-namespace \
+        --version v1.2.4 \
+        --wait
+    kubectl apply -f platform/envoy-gateway/local/gateway.yaml
+
+apply-harbor:
+    kubectl apply -f platform/harbor/local/registry-lite.yaml
+    kubectl wait --for=condition=Ready pod -l app=registry -n eel-registry --timeout=120s
+
+apply-observability:
+    helm repo add grafana https://grafana.github.io/helm-charts --force-update
+    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts --force-update
+    helm upgrade --install otel-collector open-telemetry/opentelemetry-collector \
+        --namespace eel-obs --create-namespace \
+        -f platform/observability/local/otel-values.yaml --wait
+    helm upgrade --install kube-prom-stack prometheus-community/kube-prometheus-stack \
+        --namespace eel-obs \
+        -f platform/observability/local/prometheus-values.yaml --wait
+    helm upgrade --install loki grafana/loki-stack \
+        --namespace eel-obs \
+        -f platform/observability/local/loki-values.yaml --wait
+    helm upgrade --install tempo grafana/tempo \
+        --namespace eel-obs \
+        -f platform/observability/local/tempo-values.yaml --wait
+
+apply-hsm-signer:
+    kubectl apply -k platform/hsm-signer/local/
+
+# Run smoke test suite
+smoke:
+    bash environments/dev/kind/smoke/run.sh

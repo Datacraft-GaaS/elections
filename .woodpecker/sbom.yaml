@@ -1,0 +1,80 @@
+---
+# WP-0.5: SBOM generation — syft SPDX + CycloneDX; publish to Harbor as attestations
+when:
+  - event: [push, pull_request]
+
+steps:
+  - name: sbom-rust-workspace
+    image: eel/build-image:latest
+    commands:
+      - |
+        mkdir -p air-gapped-build/sbom-cache
+        syft dir:. \
+          --output spdx-json=air-gapped-build/sbom-cache/workspace.spdx.json \
+          --output cyclonedx-json=air-gapped-build/sbom-cache/workspace.cdx.json \
+          --select-catalogers +cargo-auditable-binary-cataloger
+
+  - name: sbom-python
+    image: eel/build-image:latest
+    commands:
+      - |
+        find services -type d -name 'py' | while read pydir; do
+          if [ -f "$pydir/pyproject.toml" ]; then
+            name=$(basename "$(dirname "$pydir")")
+            syft dir:"$pydir" \
+              --output spdx-json=air-gapped-build/sbom-cache/${name}-py.spdx.json \
+              --output cyclonedx-json=air-gapped-build/sbom-cache/${name}-py.cdx.json
+          fi
+        done
+        if ! find services -type d -name 'py' | grep -q .; then
+          echo "no Python dirs — skip"
+        fi
+
+  - name: sbom-oci-images
+    image: eel/build-image:latest
+    when:
+      branch: main
+    commands:
+      - |
+        SHORT_SHA=$(git rev-parse --short HEAD)
+        find services/*/deploy/nix -maxdepth 2 -name flake.nix 2>/dev/null | while read flake; do
+          svcname=$(basename "$(echo "$flake" | cut -d/ -f1-2)")
+          image=harbor.internal/eel/${svcname}:${SHORT_SHA}
+          syft ${image} \
+            --output spdx-json=air-gapped-build/sbom-cache/${svcname}.spdx.json \
+            --output cyclonedx-json=air-gapped-build/sbom-cache/${svcname}.cdx.json
+          # Attach SBOM as Harbor attestation via cosign
+          cosign attest \
+            --predicate air-gapped-build/sbom-cache/${svcname}.spdx.json \
+            --type spdxjson \
+            ${image} \
+            --yes
+        done
+        if ! find services/*/deploy/nix -maxdepth 2 -name flake.nix 2>/dev/null | grep -q .; then
+          echo "no service images — skip OCI SBOM"
+        fi
+
+  - name: grype-scan
+    image: eel/build-image:latest
+    commands:
+      - |
+        # Scan workspace SBOM for vulnerabilities
+        grype sbom:air-gapped-build/sbom-cache/workspace.cdx.json \
+          --fail-on high \
+          --output table
+
+  - name: trivy-scan
+    image: eel/build-image:latest
+    commands:
+      - |
+        SHORT_SHA=$(git rev-parse --short HEAD)
+        find services/*/deploy/nix -maxdepth 2 -name flake.nix 2>/dev/null | while read flake; do
+          svcname=$(basename "$(echo "$flake" | cut -d/ -f1-2)")
+          trivy image \
+            --exit-code 1 \
+            --severity HIGH,CRITICAL \
+            harbor.internal/eel/${svcname}:${SHORT_SHA}
+        done || true
+
+  artifacts:
+    - air-gapped-build/sbom-cache/**

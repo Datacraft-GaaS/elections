@@ -1,0 +1,393 @@
+# Eel Election System - Shared Common Schemas
+# OpenAPI 3.1.0 component library
+# Trust domain: eel.local
+
+openapi: "3.1.0"
+info:
+  title: "Eel Common Schemas"
+  version: "1.0.0"
+  description: "Shared schema components for all eel election system OpenAPI contracts."
+
+components:
+  schemas:
+    # RFC 9457 Problem Detail
+    ProblemDetail:
+      type: object
+      description: |
+        RFC 9457 Problem Detail Object for structured error responses.
+        All error responses must use this schema with application/problem+json.
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+          description: "URI reference identifying the problem type. Must resolve to a human-readable explanation at eel.local."
+          x-eel-data-class: D
+          example: "https://eel.local/problems/validation-error"
+        title:
+          type: string
+          description: "Short human-readable summary of the problem type. Must not change between occurrences."
+          x-eel-data-class: D
+          example: "Validation Error"
+        status:
+          type: integer
+          minimum: 100
+          maximum: 599
+          description: "HTTP status code (mirrors the response status)."
+          x-eel-data-class: D
+          example: 422
+        detail:
+          type: string
+          description: "Human-readable explanation specific to this occurrence."
+          x-eel-data-class: D
+          example: "Field 'voter_id' must be a non-empty UUID string."
+        instance:
+          type: string
+          format: uri
+          description: "URI reference identifying the specific occurrence. Typically the request path."
+          x-eel-data-class: D
+          example: "/api/v1/bvr/voters/invalid-id"
+        trace_id:
+          type: string
+          description: "W3C Trace Context traceparent value for incident correlation."
+          x-eel-data-class: D
+          example: "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+        violations:
+          type: array
+          description: "Detailed field-level violations (for validation_error type)."
+          x-eel-data-class: D
+          items:
+            $ref: "#/components/schemas/ConstraintViolation"
+        extensions:
+          type: object
+          description: "Problem-type-specific extension fields."
+          x-eel-data-class: D
+          additionalProperties: true
+      additionalProperties: true
+
+    ConstraintViolation:
+      type: object
+      description: "A single field constraint violation within a validation error."
+      required:
+        - field
+        - message
+      properties:
+        field:
+          type: string
+          description: "JSON pointer to the offending field."
+          x-eel-data-class: D
+          example: "/voter_id"
+        message:
+          type: string
+          description: "Human-readable description of the constraint violation."
+          x-eel-data-class: D
+          example: "Must be a valid UUID."
+        value:
+          description: "The rejected value (omitted for sensitive fields)."
+          x-eel-data-class: D
+          example: "not-a-uuid"
+
+    # UUIDv7 string scalar
+    UUIDv7:
+      type: string
+      format: uuid
+      description: |
+        UUID version 7 (time-ordered, monotonic). Format:
+        XXXXXXXX-XXXX-7XXX-YXXX-XXXXXXXXXXXX where Y is 8, 9, a, or b.
+        Guarantees global uniqueness and k-sortability by creation time.
+      pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+      x-eel-data-class: D
+      example: "01909c3a-b4d8-7f32-89ab-0123456789ab"
+
+    # Hybrid Logical Clock timestamp
+    HLC:
+      type: string
+      description: |
+        Hybrid Logical Clock timestamp in the format "ts.monotone.counter" where:
+        - ts: Unix epoch milliseconds (wall clock component)
+        - monotone: monotonic counter within the same millisecond
+        - counter: per-node increment for concurrent events
+        Provides causal ordering across distributed nodes without global sync.
+      pattern: "^\\d+\\.\\d+\\.\\d+$"
+      x-eel-data-class: D
+      example: "1721000000000.42.3"
+
+    # CloudEvents-based envelope for eel domain events
+    EelEnvelope:
+      type: object
+      description: |
+        CloudEvents v1.0 compliant event envelope extended with eel-specific
+        metadata for auditability, idempotency, and tamper evidence.
+      required:
+        - specversion
+        - id
+        - source
+        - type
+        - time
+        - eel_hlc
+        - eel_election_id
+        - eel_correlation_id
+      properties:
+        specversion:
+          type: string
+          enum: ["1.0"]
+          description: "CloudEvents specification version."
+          x-eel-data-class: D
+          example: "1.0"
+        id:
+          $ref: "#/components/schemas/UUIDv7"
+          description: "Globally unique event identifier (UUIDv7)."
+          x-eel-data-class: C
+        source:
+          type: string
+          format: uri
+          description: "SPIFFE SVID URI of the service that produced the event."
+          x-eel-data-class: D
+          example: "spiffe://eel.local/ns/bvr/sa/bvr-backend"
+        type:
+          type: string
+          description: "Reverse-domain event type identifier."
+          pattern: "^local\\.eel\\.[a-z_]+\\.[a-z_]+$"
+          x-eel-data-class: D
+          example: "local.eel.bvr.voter_enrolled"
+        datacontenttype:
+          type: string
+          x-eel-data-class: D
+          example: "application/json"
+        time:
+          type: string
+          format: date-time
+          description: "ISO 8601 timestamp of event creation (UTC)."
+          x-eel-data-class: D
+          example: "2026-08-21T14:30:00.000Z"
+        data:
+          description: "Event payload (schema defined per event type)."
+          x-eel-data-class: C
+        eel_hlc:
+          $ref: "#/components/schemas/HLC"
+          description: "Hybrid logical clock value at event creation."
+          x-eel-data-class: D
+        eel_election_id:
+          $ref: "#/components/schemas/UUIDv7"
+          description: "Election instance this event belongs to."
+          x-eel-data-class: C
+        eel_correlation_id:
+          $ref: "#/components/schemas/UUIDv7"
+          description: "Idempotency key or saga correlation ID."
+          x-eel-data-class: D
+        eel_sequence:
+          type: integer
+          format: int64
+          description: "Monotonic per-aggregate sequence number for ordering."
+          x-eel-data-class: D
+          example: 42
+        eel_aggregate_id:
+          $ref: "#/components/schemas/UUIDv7"
+          description: "Aggregate root identifier this event belongs to."
+          x-eel-data-class: C
+        eel_body_hash:
+          type: string
+          description: "SHA-256 hex digest of the event data field (for tamper detection)."
+          pattern: "^[0-9a-f]{64}$"
+          x-eel-data-class: C
+          example: "a3f9b2c1d4e8f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5"
+        eel_prev_hash:
+          type: string
+          description: "SHA-256 hash of the previous event in the aggregate chain."
+          pattern: "^[0-9a-f]{64}$"
+          x-eel-data-class: C
+          example: "0000000000000000000000000000000000000000000000000000000000000000"
+
+    # Generic paginated response wrapper
+    PaginatedResponse:
+      type: object
+      description: "Standard pagination envelope for list endpoints."
+      required:
+        - items
+        - pagination
+      properties:
+        items:
+          type: array
+          description: "Current page of results."
+          x-eel-data-class: C
+          items: {}
+        pagination:
+          $ref: "#/components/schemas/PaginationMeta"
+          x-eel-data-class: D
+
+    PaginationMeta:
+      type: object
+      description: "Pagination metadata embedded in list responses."
+      required:
+        - total
+        - page
+        - page_size
+        - has_next
+      properties:
+        total:
+          type: integer
+          format: int64
+          description: "Total number of matching records."
+          x-eel-data-class: D
+          example: 1500000
+        page:
+          type: integer
+          minimum: 1
+          description: "Current page number (1-based)."
+          x-eel-data-class: D
+          example: 1
+        page_size:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          description: "Number of records per page."
+          x-eel-data-class: D
+          example: 100
+        has_next:
+          type: boolean
+          description: "Whether a next page exists."
+          x-eel-data-class: D
+          example: true
+        next_cursor:
+          type: string
+          description: "Opaque cursor for keyset pagination (preferred over page offsets for large datasets)."
+          x-eel-data-class: D
+          example: "eyJpZCI6IjAxOTA5YzNhIn0"
+
+    # Merkle inclusion proof
+    MerkleInclusionProof:
+      type: object
+      description: |
+        Merkle tree inclusion proof for verifying that a record is present in
+        the transparency log. Proof path is ordered from leaf to root.
+      required:
+        - leaf_hash
+        - root_hash
+        - proof_path
+        - tree_size
+        - timestamp
+      properties:
+        leaf_hash:
+          type: string
+          description: "SHA-256 hex digest of the leaf record."
+          pattern: "^[0-9a-f]{64}$"
+          x-eel-data-class: C
+          example: "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+        root_hash:
+          type: string
+          description: "SHA-256 hex digest of the Merkle tree root at the given tree_size."
+          pattern: "^[0-9a-f]{64}$"
+          x-eel-data-class: C
+          example: "fedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321"
+        proof_path:
+          type: array
+          description: "Ordered list of sibling hashes from leaf to root."
+          x-eel-data-class: C
+          items:
+            type: object
+            required:
+              - hash
+              - side
+            properties:
+              hash:
+                type: string
+                pattern: "^[0-9a-f]{64}$"
+                x-eel-data-class: C
+                example: "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
+              side:
+                type: string
+                enum: [left, right]
+                description: "Which side this sibling is on relative to the current node."
+                x-eel-data-class: D
+                example: "left"
+        tree_size:
+          type: integer
+          format: int64
+          minimum: 1
+          description: "Total number of leaves in the tree at proof generation time."
+          x-eel-data-class: D
+          example: 2500000
+        timestamp:
+          type: string
+          format: date-time
+          description: "UTC timestamp when this inclusion proof was generated."
+          x-eel-data-class: D
+          example: "2026-08-21T14:30:00.000Z"
+        log_id:
+          type: string
+          description: "Identifier of the transparency log this proof belongs to."
+          x-eel-data-class: D
+          example: "eel-primary-log-2026"
+
+    # Signed Tree Head (for transparency log)
+    SignedTreeHead:
+      type: object
+      description: "Signed Tree Head from the transparency log, cosigned by witnesses."
+      required:
+        - tree_size
+        - root_hash
+        - timestamp
+        - hsm_sig
+      properties:
+        tree_size:
+          type: integer
+          format: int64
+          description: "Number of leaves in the tree at this STH."
+          x-eel-data-class: D
+          example: 2500000
+        root_hash:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+          description: "SHA-256 Merkle root hash."
+          x-eel-data-class: C
+          example: "fedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321"
+        timestamp:
+          type: string
+          format: date-time
+          description: "UTC timestamp when this STH was generated."
+          x-eel-data-class: D
+          example: "2026-08-21T14:30:00.000Z"
+        hsm_sig:
+          type: string
+          description: "HSM-generated signature over (tree_size || root_hash || timestamp). Base64url encoded."
+          x-eel-data-class: C
+          example: "MEYCIQDexample..."
+        witness_cosigs:
+          type: array
+          description: "Array of witness co-signatures from independent observer nodes."
+          x-eel-data-class: C
+          items:
+            $ref: "#/components/schemas/WitnessCosignature"
+
+    WitnessCosignature:
+      type: object
+      description: "Co-signature from an independent witness over a Signed Tree Head."
+      required:
+        - witness_id
+        - signature
+        - timestamp
+      properties:
+        witness_id:
+          type: string
+          description: "Identifier of the witness node."
+          x-eel-data-class: D
+          example: "witness-ke-01"
+        signature:
+          type: string
+          description: "Witness signature over the STH. Base64url encoded."
+          x-eel-data-class: C
+          example: "MEUCIQDexample..."
+        timestamp:
+          type: string
+          format: date-time
+          description: "UTC timestamp when the witness signed."
+          x-eel-data-class: D
+          example: "2026-08-21T14:30:05.000Z"
+        key_id:
+          type: string
+          description: "Identifier of the witness signing key."
+          x-eel-data-class: D
+          example: "witness-ke-01-2026"

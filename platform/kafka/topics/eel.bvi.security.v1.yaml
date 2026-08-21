@@ -1,0 +1,23 @@
+# BVI security events - anomalous identification attempts, revoked kit alerts, geo-fence violations
+# Source: BVI context, operational security channel
+name: eel.bvi.security.v1
+partitions: 12
+retention_class: operational
+replication_factor: 3
+min_isr: 2
+unclean_leader_election: false
+acks: all
+signed: true
+delivery: exactly-once
+acl:
+  produce:
+    - "spiffe://eel.local/service/bvi-svc"
+  consume:
+    - "spiffe://eel.local/service/security-soc"
+    - "spiffe://eel.local/service/ecc-svc"
+    - "spiffe://eel.local/service/transparency-log"
+configs:
+  compression.type: zstd
+  min.insync.replicas: 2
+  max.message.bytes: 1048576
+retention_notes: "90-day hot retention; security events feed SOC SIEM; Kenya Computer Misuse and Cybercrimes Act 2018 preservation obligations"

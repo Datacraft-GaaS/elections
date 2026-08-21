@@ -1,0 +1,22 @@
+# RTS Merkle root publications - signed tree heads anchoring the result event-store
+# Source: RTS context, event-source
+name: eel.rts.merkle.v1
+partitions: 12
+retention_class: event-source
+replication_factor: 3
+min_isr: 2
+unclean_leader_election: false
+acks: all
+signed: true
+delivery: exactly-once
+acl:
+  produce:
+    - "spiffe://eel.local/service/rts-backend"
+  consume:
+    - "spiffe://eel.local/service/transparency-log"
+    - "spiffe://eel.local/service/audit-sink"
+configs:
+  compression.type: zstd
+  min.insync.replicas: 2
+  max.message.bytes: 1048576
+retention_notes: "Infinite hot; MinIO Tiered Storage after 30d per ADR-0015; Elections Act s.32 15-year retention"

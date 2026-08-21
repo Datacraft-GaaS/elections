@@ -1,0 +1,73 @@
+---
+# WP-0.5: lint pipeline
+# Runs on every push and PR.
+when:
+  - event: [push, pull_request]
+
+steps:
+  - name: rust-fmt
+    image: eel/build-image:latest
+    commands:
+      - cargo fmt --check --all
+
+  - name: rust-clippy
+    image: eel/build-image:latest
+    commands:
+      - cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+  - name: python-ruff
+    image: eel/build-image:latest
+    commands:
+      - |
+        if find services -name '*.py' -print -quit | grep -q .; then
+          ruff check services packages tools
+          ruff format --check services packages tools
+        else
+          echo "no Python sources — skip"
+        fi
+
+  - name: elixir-fmt
+    image: eel/build-image:latest
+    commands:
+      - |
+        if find services -name '*.ex' -o -name '*.exs' | grep -q .; then
+          find services -type d -name '_build' -prune -o -name 'mix.exs' -print \
+            | xargs -I{} sh -c 'cd "$(dirname {})" && mix format --check-formatted'
+        else
+          echo "no Elixir sources — skip"
+        fi
+
+  - name: spectral-openapi
+    image: eel/build-image:latest
+    commands:
+      - |
+        if ls packages/openapi-contracts/**/*.yaml 2>/dev/null | grep -q .; then
+          spectral lint packages/openapi-contracts/**/*.yaml --ruleset .spectral.yaml
+        else
+          echo "no OpenAPI specs — skip"
+        fi
+
+  - name: buf-lint
+    image: eel/build-image:latest
+    commands:
+      - |
+        if find . -name 'buf.yaml' -not -path '*/node_modules/*' | grep -q .; then
+          buf lint
+        else
+          echo "no buf configs — skip"
+        fi
+
+  - name: pnpm-lint
+    image: eel/build-image:latest
+    commands:
+      - |
+        if find services packages -name 'package.json' -not -path '*/node_modules/*' | grep -q .; then
+          pnpm --recursive lint
+        else
+          echo "no TypeScript sources — skip"
+        fi
+
+  - name: pre-commit
+    image: eel/build-image:latest
+    commands:
+      - pre-commit run --all-files

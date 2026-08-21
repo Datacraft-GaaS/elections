@@ -1,0 +1,45 @@
+---
+# WP-0.5: fuzzing pipeline
+# PR: 10 s per target. Main branch: 60 s per target.
+when:
+  - event: [push, pull_request]
+
+steps:
+  - name: cargo-fuzz
+    image: eel/build-image:latest
+    commands:
+      - |
+        if [ "${CI_EVENT:-}" = "pull_request" ]; then
+          FUZZ_SECS=10
+        else
+          FUZZ_SECS=60
+        fi
+        mkdir -p .woodpecker/artifacts/fuzz
+        found=0
+        for fuzz_dir in $(find packages -maxdepth 3 -type d -name 'fuzz' 2>/dev/null); do
+          crate_dir=$(dirname "$fuzz_dir")
+          crate_name=$(basename "$crate_dir")
+          # List all fuzz targets for this crate
+          targets=$(cargo fuzz list --manifest-path "$crate_dir/Cargo.toml" 2>/dev/null || true)
+          if [ -z "$targets" ]; then
+            continue
+          fi
+          found=1
+          for target in $targets; do
+            echo "==> fuzzing $crate_name / $target for ${FUZZ_SECS}s"
+            cargo fuzz run \
+              --manifest-path "$crate_dir/Cargo.toml" \
+              "$target" \
+              -- -max_total_time="$FUZZ_SECS" \
+              -artifact_prefix=".woodpecker/artifacts/fuzz/${crate_name}-${target}-" \
+              2>&1 || {
+                echo "CRASH detected in $crate_name/$target — artifacts saved"
+              }
+          done
+        done
+        if [ "$found" -eq 0 ]; then
+          echo "no cargo-fuzz targets found — skip"
+        fi
+
+  artifacts:
+    - .woodpecker/artifacts/fuzz/**

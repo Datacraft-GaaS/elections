@@ -1,0 +1,23 @@
+# Kit heartbeat events - periodic liveness pings from BVR and BVI kits for fleet monitoring
+# Source: Kit analytics context; unsigned low-sensitivity telemetry
+name: eel.kit.heartbeat.v1
+partitions: 12
+retention_class: analytics
+replication_factor: 3
+min_isr: 2
+unclean_leader_election: false
+acks: all
+signed: false
+delivery: at-least-once-idempotent
+acl:
+  produce:
+    - "spiffe://eel.local/service/bvr-svc"
+    - "spiffe://eel.local/service/bvi-svc"
+  consume:
+    - "spiffe://eel.local/service/ecc-svc"
+    - "spiffe://eel.local/service/mdm-svc"
+configs:
+  compression.type: zstd
+  min.insync.replicas: 2
+  max.message.bytes: 65536
+retention_notes: "7-day hot retention; low-sensitivity telemetry; kit connectivity state tracked in MDM"

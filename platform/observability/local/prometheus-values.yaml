@@ -1,0 +1,33 @@
+# kube-prometheus-stack Helm values for eel local cluster
+grafana:
+  enabled: true
+  adminPassword: eel-dev-grafana
+
+prometheus:
+  prometheusSpec:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    retention: 48h
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 2Gi
+    additionalScrapeConfigs:
+      - job_name: hello-svc
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: hello-svc
+
+alertmanager:
+  enabled: false

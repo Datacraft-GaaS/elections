@@ -7,6 +7,10 @@ members = [
   "services/*/crates/*",
   "tools/*",
 ]
+exclude = [
+  "tools/softhsm",
+  "tools/spectral",
+]
 # Cargo tolerates glob members that match no paths yet.
 # New crates under these globs are picked up automatically.
 

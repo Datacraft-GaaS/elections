@@ -1,0 +1,110 @@
+schema_version: "1.0"
+context: bvi
+tests:
+  - name: "service workload can open polling session"
+    subject: "service_workload:bvi-edge"
+    permission: "open_session"
+    resource: "resource_station:station-001"
+    expected: true
+
+  - name: "staff station officer can open session"
+    subject: "user_staff:alice"
+    permission: "open_session"
+    resource: "resource_station:station-001"
+    expected: true
+
+  - name: "RO can open session"
+    subject: "user_ro:carol"
+    permission: "open_session"
+    resource: "resource_station:station-001"
+    expected: true
+
+  - name: "party agent cannot open session"
+    subject: "user_agent:bob"
+    permission: "open_session"
+    resource: "resource_station:station-001"
+    expected: false
+
+  - name: "observer cannot open session"
+    subject: "user_observer:david"
+    permission: "open_session"
+    resource: "resource_station:station-001"
+    expected: false
+
+  - name: "service workload can close session"
+    subject: "service_workload:bvi-edge"
+    permission: "close_session"
+    resource: "resource_station:station-001"
+    expected: true
+
+  - name: "party agent cannot close session"
+    subject: "user_agent:bob"
+    permission: "close_session"
+    resource: "resource_station:station-001"
+    expected: false
+
+  - name: "service workload can ingest identification"
+    subject: "service_workload:bvi-edge"
+    permission: "ingest_identification"
+    resource: "resource_station:station-001"
+    expected: true
+
+  - name: "staff cannot ingest identification directly"
+    subject: "user_staff:alice"
+    permission: "ingest_identification"
+    resource: "resource_station:station-001"
+    expected: false
+
+  - name: "observer cannot ingest identification"
+    subject: "user_observer:david"
+    permission: "ingest_identification"
+    resource: "resource_station:station-001"
+    expected: false
+
+  - name: "RO can read turnout"
+    subject: "user_ro:carol"
+    permission: "read_turnout"
+    resource: "resource_station:station-001"
+    expected: true
+
+  - name: "party agent can read turnout"
+    subject: "user_agent:bob"
+    permission: "read_turnout"
+    resource: "resource_station:station-001"
+    expected: true
+
+  - name: "observer can read turnout"
+    subject: "user_observer:david"
+    permission: "read_turnout"
+    resource: "resource_station:station-001"
+    expected: true
+
+  - name: "IAB can read turnout"
+    subject: "user_iab:grace"
+    permission: "read_turnout"
+    resource: "resource_station:station-001"
+    expected: true
+
+  - name: "chair can revoke kit"
+    subject: "user_chair:frank"
+    permission: "revoke_kit"
+    resource: "resource_station:station-001"
+    expected: true
+
+  - name: "CRO can revoke kit"
+    subject: "user_cro:henry"
+    permission: "revoke_kit"
+    resource: "resource_station:station-001"
+    expected: true
+
+  - name: "party agent cannot revoke kit"
+    subject: "user_agent:bob"
+    permission: "revoke_kit"
+    resource: "resource_station:station-001"
+    expected: false
+
+  - name: "observer cannot revoke kit"
+    subject: "user_observer:david"
+    permission: "revoke_kit"
+    resource: "resource_station:station-001"
+    expected: false

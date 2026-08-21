@@ -1,0 +1,665 @@
+openapi: 3.1.0
+info:
+  title: eel-speech-integrity
+  version: 1.0.0
+  description: >
+    Module M17: Speech Integrity analyst API for media monitoring. Supports
+    intake, analysis queuing, and adjudication of media items flagged for
+    hate speech or electoral violence incitement. All content fields are class D
+    (operational metadata) to prevent re-surfacing harmful content in audit logs.
+
+servers:
+  - url: https://eel.local/api/v1
+    description: Production trust domain
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: media-items
+    description: Media item submission and review
+  - name: adjudications
+    description: Analyst decisions on media items
+  - name: reports
+    description: Aggregate speech integrity reports
+
+paths:
+  /speech/media-items:
+    post:
+      tags: [media-items]
+      operationId: submitMediaItem
+      summary: Submit media item for analysis
+      description: >
+        Queues a media item URL for automated analysis followed by analyst
+        review. The system fetches the content from the provided URL at analysis
+        time; the URL itself is treated as class D operational metadata.
+        Idempotent on Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MediaItemSubmission'
+      responses:
+        '201':
+          description: Media item accepted and queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags: [media-items]
+      operationId: listMediaItems
+      summary: List media items
+      description: >
+        Returns a paginated list of media items the authenticated analyst can
+        access. Filterable by status and category.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [queued, processing, flagged, cleared]
+            x-eel-data-class: D
+        - name: media_type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [audio, video, text]
+            x-eel-data-class: D
+        - name: from_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+            x-eel-data-class: D
+      responses:
+        '200':
+          description: Paginated media item list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaItemPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /speech/media-items/{item_id}:
+    get:
+      tags: [media-items]
+      operationId: getMediaItem
+      summary: Get media item detail
+      description: >
+        Returns the full detail of a media item including automated analysis
+        findings, analyst notes, and adjudication outcome if decided.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ItemIdParam'
+      responses:
+        '200':
+          description: Media item detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaItemDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /speech/media-items/{item_id}/adjudications:
+    post:
+      tags: [adjudications]
+      operationId: adjudicateMediaItem
+      summary: Submit analyst decision on media item
+      description: >
+        Records the analyst verdict for a media item and optionally triggers
+        a referral to an external agency. Idempotent on Idempotency-Key;
+        only one adjudication per item is accepted (subsequent attempts with
+        a new key return 409 Conflict).
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ItemIdParam'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpeechAdjudication'
+      responses:
+        '201':
+          description: Adjudication recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdjudicationResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /speech/reports/summary:
+    get:
+      tags: [reports]
+      operationId: getSpeechSummaryReport
+      summary: Aggregate speech integrity summary
+      description: >
+        Returns count-level aggregate statistics by category and verdict.
+        No content excerpts are included in this response. All fields class C.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: from_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+            x-eel-data-class: C
+        - name: to_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Aggregate speech integrity summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeechSummaryReport'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Keycloak-issued JWT. Validated against eel.local JWKS endpoint.
+    mtls:
+      type: mutualTLS
+      description: X.509 mTLS client certificate. CN must match registered service principal in eel.local PKI.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: E
+      description: Client-generated UUIDv7. Server stores response for 24 hours.
+
+    PageParam:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+        x-eel-data-class: D
+
+    PageSizeParam:
+      name: page_size
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+        x-eel-data-class: D
+
+    ItemIdParam:
+      name: item_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+      description: UUIDv7 identifier of the media item
+
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status, detail, instance, eel_trace_id]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        title:
+          type: string
+          x-eel-data-class: D
+        status:
+          type: integer
+          x-eel-data-class: D
+        detail:
+          type: string
+          x-eel-data-class: D
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        eel_trace_id:
+          type: string
+          x-eel-data-class: D
+
+    MediaItemSubmission:
+      type: object
+      required: [url, media_type, language_code, source_platform, captured_at]
+      properties:
+        url:
+          type: string
+          format: uri
+          maxLength: 2048
+          x-eel-data-class: D
+          description: Accessible URL of the media item to be fetched and analyzed
+        media_type:
+          type: string
+          enum: [audio, video, text]
+          x-eel-data-class: D
+        language_code:
+          type: string
+          pattern: '^[a-z]{2,3}(-[A-Z]{2})?$'
+          x-eel-data-class: D
+          description: BCP-47 language code (e.g. sw-KE, en-KE)
+        source_platform:
+          type: string
+          maxLength: 64
+          x-eel-data-class: D
+          description: Platform identifier (e.g. twitter, facebook, tiktok, broadcast)
+        captured_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+          description: When the item was captured or published
+
+    MediaItem:
+      type: object
+      required: [item_id, status, submitted_at]
+      properties:
+        item_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        status:
+          type: string
+          enum: [queued, processing, flagged, cleared]
+          x-eel-data-class: D
+        submitted_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    MediaItemPage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items:
+          type: array
+          x-eel-data-class: D
+          items:
+            $ref: '#/components/schemas/MediaItemSummary'
+        total:
+          type: integer
+          x-eel-data-class: D
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+
+    MediaItemSummary:
+      type: object
+      required: [item_id, media_type, source_platform, status, captured_at, submitted_at]
+      properties:
+        item_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        media_type:
+          type: string
+          enum: [audio, video, text]
+          x-eel-data-class: D
+        language_code:
+          type: string
+          x-eel-data-class: D
+        source_platform:
+          type: string
+          x-eel-data-class: D
+        status:
+          type: string
+          enum: [queued, processing, flagged, cleared]
+          x-eel-data-class: D
+        top_category:
+          type: string
+          nullable: true
+          enum: [hate_speech, incitement, misinformation]
+          x-eel-data-class: D
+        captured_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        submitted_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    AnalysisFinding:
+      type: object
+      required: [category, confidence]
+      properties:
+        category:
+          type: string
+          enum: [hate_speech, incitement, misinformation]
+          x-eel-data-class: D
+        confidence:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          x-eel-data-class: D
+          description: Model confidence score (0.0 = no signal, 1.0 = certain)
+        excerpt:
+          type: string
+          maxLength: 1000
+          nullable: true
+          x-eel-data-class: D
+          description: Short excerpt supporting the finding; may be null for audio/video
+
+    MediaItemDetail:
+      type: object
+      required: [item_id, media_type, source_platform, status, submitted_at]
+      properties:
+        item_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        media_type:
+          type: string
+          enum: [audio, video, text]
+          x-eel-data-class: D
+        language_code:
+          type: string
+          x-eel-data-class: D
+        source_platform:
+          type: string
+          x-eel-data-class: D
+        status:
+          type: string
+          enum: [queued, processing, flagged, cleared]
+          x-eel-data-class: D
+        findings:
+          type: array
+          x-eel-data-class: D
+          items:
+            $ref: '#/components/schemas/AnalysisFinding'
+        analyst_notes:
+          type: string
+          nullable: true
+          maxLength: 4000
+          x-eel-data-class: D
+        decided_at:
+          type: string
+          format: date-time
+          nullable: true
+          x-eel-data-class: D
+        verdict:
+          type: string
+          nullable: true
+          enum: [harmful, borderline, cleared]
+          x-eel-data-class: D
+        submitted_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        captured_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    SpeechAdjudication:
+      type: object
+      required: [verdict, grounds, referral_agency]
+      properties:
+        verdict:
+          type: string
+          enum: [harmful, borderline, cleared]
+          x-eel-data-class: D
+        grounds:
+          type: string
+          minLength: 10
+          maxLength: 4000
+          x-eel-data-class: D
+          description: Legal or policy grounds for the verdict
+        referral_agency:
+          type: string
+          enum: [NPS, DPP, KNCHR, none]
+          x-eel-data-class: D
+          description: Agency to refer the item to; "none" if no referral is needed
+        analyst_notes:
+          type: string
+          maxLength: 4000
+          nullable: true
+          x-eel-data-class: D
+
+    AdjudicationResult:
+      type: object
+      required: [adjudication_id, item_id, verdict, referral_agency, decided_at]
+      properties:
+        adjudication_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        item_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        verdict:
+          type: string
+          enum: [harmful, borderline, cleared]
+          x-eel-data-class: D
+        referral_agency:
+          type: string
+          enum: [NPS, DPP, KNCHR, none]
+          x-eel-data-class: D
+        decided_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    SpeechSummaryReport:
+      type: object
+      required: [period_from, period_to, total_items, by_status, by_category, by_verdict]
+      properties:
+        period_from:
+          type: string
+          format: date
+          x-eel-data-class: C
+        period_to:
+          type: string
+          format: date
+          x-eel-data-class: C
+        total_items:
+          type: integer
+          x-eel-data-class: C
+        by_status:
+          type: object
+          x-eel-data-class: C
+          properties:
+            queued:
+              type: integer
+              x-eel-data-class: C
+            processing:
+              type: integer
+              x-eel-data-class: C
+            flagged:
+              type: integer
+              x-eel-data-class: C
+            cleared:
+              type: integer
+              x-eel-data-class: C
+        by_category:
+          type: object
+          x-eel-data-class: C
+          properties:
+            hate_speech:
+              type: integer
+              x-eel-data-class: C
+            incitement:
+              type: integer
+              x-eel-data-class: C
+            misinformation:
+              type: integer
+              x-eel-data-class: C
+        by_verdict:
+          type: object
+          x-eel-data-class: C
+          properties:
+            harmful:
+              type: integer
+              x-eel-data-class: C
+            borderline:
+              type: integer
+              x-eel-data-class: C
+            cleared:
+              type: integer
+              x-eel-data-class: C
+        referrals_by_agency:
+          type: object
+          x-eel-data-class: C
+          properties:
+            NPS:
+              type: integer
+              x-eel-data-class: C
+            DPP:
+              type: integer
+              x-eel-data-class: C
+            KNCHR:
+              type: integer
+              x-eel-data-class: C
+
+  responses:
+    BadRequest:
+      description: Malformed request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: Missing or invalid authentication credential
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: Authenticated principal lacks SpiceDB permission
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: Idempotency key conflict or duplicate adjudication
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnprocessableEntity:
+      description: Semantically invalid request body
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'

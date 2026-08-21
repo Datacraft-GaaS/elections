@@ -1,0 +1,1250 @@
+openapi: "3.1.0"
+
+info:
+  title: "Eel BVR - Biometric Voter Registration"
+  version: "1.0.0"
+  description: |
+    Biometric Voter Registration backend API. Covers voter enrolment,
+    register management, transfers, subject access requests, and Merkle
+    transparency proofs.
+
+    Modules: M02 bvr-backend, M35 cvr (central voter register),
+    M36 voter-deregistration-appeal, M53 voter-id-card.
+
+    Trust domain: eel.local. Auth via SPIFFE/SPIRE SVID mTLS for
+    internal ingest, JWT + SpiceDB RBAC for officer operations.
+
+servers:
+  - url: "https://bvr.eel.local"
+    description: "BVR internal service (mTLS required for Tier 5)"
+  - url: "https://api.eel.local"
+    description: "External API gateway"
+
+security:
+  - BearerJWT: []
+
+tags:
+  - name: enrolment
+    description: "Voter enrolment from biometric device ingest"
+  - name: voter
+    description: "Voter record management and lookups"
+  - name: register
+    description: "Voter register exports and downloads"
+  - name: transfer
+    description: "Voter transfer between polling stations"
+  - name: sar
+    description: "Subject access requests (GDPR/Kenya Data Protection Act)"
+  - name: merkle
+    description: "Transparency and Merkle proof endpoints"
+  - name: adjudication
+    description: "Adjudication case resolution"
+
+paths:
+  /api/v1/bvr/enrolments:
+    post:
+      operationId: createEnrolment
+      summary: "Ingest voter enrolment record from biometric device"
+      description: |
+        Internal SVID mTLS endpoint. Accepts biometric enrolment data from
+        edge devices (bvr-device) after local capture and ABIS pre-screening.
+        Triggers deduplication workflow and transparency log append.
+        Idempotent via Idempotency-Key.
+      tags: [enrolment]
+      x-eel-auth: SVID-mTLS
+      x-eel-tier: 5
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      security:
+        - SVIDmTLS: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnrolmentRequest"
+          application/cbor:
+            schema:
+              $ref: "#/components/schemas/EnrolmentRequest"
+      responses:
+        "202":
+          description: "Enrolment accepted for processing"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnrolmentAccepted"
+            application/cbor:
+              schema:
+                $ref: "#/components/schemas/EnrolmentAccepted"
+        "409":
+          description: "Idempotency key already used with different payload"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "422":
+          description: "Validation error"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "503":
+          description: "Service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/bvr/voters/{voter_id}/status:
+    patch:
+      operationId: updateVoterStatus
+      summary: "Update voter registration status"
+      description: |
+        Updates a voter's registration status (e.g., active, suspended,
+        deregistered). Requires JWT with SpiceDB role check for the
+        relevant county/ward scope. All state transitions are event-sourced.
+      tags: [voter]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      parameters:
+        - $ref: "#/components/parameters/VoterIdPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VoterStatusUpdate"
+      responses:
+        "200":
+          description: "Status updated"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoterSummary"
+        "400":
+          description: "Invalid status transition"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Voter not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/bvr/transfers:
+    post:
+      operationId: createTransfer
+      summary: "Request voter transfer between polling stations"
+      description: |
+        Initiates a voter transfer request. The voter is moved from their
+        current polling station to a new one after dual-officer verification.
+        Transfer is reversible within the appeal window.
+      tags: [transfer]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferRequest"
+      responses:
+        "202":
+          description: "Transfer request accepted"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransferAccepted"
+        "400":
+          description: "Invalid transfer request"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Voter not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse or conflicting transfer"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/bvr/registers/{scope}:
+    get:
+      operationId: getRegisterByScope
+      summary: "Download voter register for a given administrative scope"
+      description: |
+        Returns the voter register (full or incremental) for the given
+        scope (county/constituency/ward/polling-station code). Only officers
+        with SpiceDB permission on the scope may download. Large registers
+        are streamed as NDJSON.
+      tags: [register]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 4
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      parameters:
+        - name: scope
+          in: path
+          required: true
+          description: "Administrative scope code (e.g., 'KE-047-001' for ward)"
+          schema:
+            type: string
+            pattern: "^KE-[0-9]{3}(-[0-9]{3}){0,2}$"
+            x-eel-data-class: B
+        - name: as_of
+          in: query
+          required: false
+          description: "Return register state at this UTC timestamp (ISO 8601). Defaults to latest."
+          schema:
+            type: string
+            format: date-time
+            x-eel-data-class: D
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [json, csv, ndjson]
+            default: json
+            x-eel-data-class: D
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: "Voter register for scope"
+          headers:
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+            RateLimit-Limit:
+              $ref: "../_shared/headers.yaml#/components/headers/RateLimit-Limit"
+            RateLimit-Remaining:
+              $ref: "../_shared/headers.yaml#/components/headers/RateLimit-Remaining"
+            RateLimit-Reset:
+              $ref: "../_shared/headers.yaml#/components/headers/RateLimit-Reset"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoterRegisterPage"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Scope not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "429":
+          description: "Rate limited"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/bvr/voters/{voter_id}:
+    get:
+      operationId: getVoter
+      summary: "Retrieve voter record by ID"
+      description: |
+        Returns the complete voter record for the given voter_id.
+        SpiceDB is checked for read permission on the voter's registration
+        scope before returning data.
+      tags: [voter]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      parameters:
+        - $ref: "#/components/parameters/VoterIdPath"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: "Voter record"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Voter"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Voter not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/bvr/sar:
+    post:
+      operationId: createSar
+      summary: "Submit subject access request"
+      description: |
+        Accepts a data subject access request (Kenya Data Protection Act 2019,
+        Article 26). Returns a SAR ticket ID. Processing occurs asynchronously;
+        the data package is delivered within 21 days to the registered channel.
+      tags: [sar]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SarRequest"
+      responses:
+        "202":
+          description: "SAR accepted"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SarAccepted"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "422":
+          description: "Validation error"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/bvr/handoff/{token}:
+    post:
+      operationId: processHandoff
+      summary: "Process voter self-service portal handoff token"
+      description: |
+        Validates and exchanges a short-lived handoff token (issued by the
+        citizen portal) for a voter record view. Token is single-use.
+        Returns voter summary for rendering in the portal callback.
+      tags: [voter]
+      x-eel-auth: JWT
+      x-eel-tier: 2
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      parameters:
+        - name: token
+          in: path
+          required: true
+          description: "Single-use handoff token (JWT, signed by citizen portal)"
+          schema:
+            type: string
+            minLength: 32
+            maxLength: 1024
+            x-eel-data-class: B
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: "Handoff processed, voter record returned"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoterSummary"
+            application/cbor:
+              schema:
+                $ref: "#/components/schemas/VoterSummary"
+        "401":
+          description: "Invalid or expired token"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Token already consumed"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "422":
+          description: "Validation error"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/bvr/merkle-root/latest:
+    get:
+      operationId: getLatestMerkleRoot
+      summary: "Get the latest BVR Merkle tree root (public)"
+      description: |
+        Returns the latest signed Merkle root of the BVR transparency log.
+        Response includes cosign signature, Merkle proof, and snapshot ID
+        headers. No authentication required (Tier 1 public endpoint).
+        Responses are served from a signed-static CDN edge cache.
+      tags: [merkle]
+      x-eel-auth: public
+      x-eel-tier: 1
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: "Latest Merkle root"
+          headers:
+            X-Eel-Signature:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Eel-Signature"
+            X-Eel-Merkle-Proof:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Eel-Merkle-Proof"
+            X-Eel-Snapshot-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Eel-Snapshot-Id"
+            X-Request-Id:
+              $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MerkleRootResponse"
+        "503":
+          description: "Service unavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/bvr/voters/{voter_id}/qr:
+    get:
+      operationId: getVoterQr
+      summary: "Generate voter ID QR code payload"
+      description: |
+        Returns a signed QR code payload for the voter card (M53 voter-id-card).
+        The payload is a compact CBOR structure signed by the HSM, suitable
+        for printing or embedding in a PDF voter card.
+      tags: [voter]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      parameters:
+        - $ref: "#/components/parameters/VoterIdPath"
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: "QR code payload"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoterQrPayload"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Voter not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+  /api/v1/bvr/adjudication/{case_id}/resolve:
+    post:
+      operationId: resolveAdjudicationCase
+      summary: "Resolve a BVR adjudication case"
+      description: |
+        Resolves a pending adjudication case (e.g., duplicate identity,
+        deregistration appeal, disputed transfer). Requires dual-officer
+        sign-off for cases involving data-class A records.
+        All resolutions are appended to the transparency log.
+      tags: [adjudication]
+      x-eel-auth: JWT+SpiceDB
+      x-eel-tier: 3
+      x-eel-sla:
+        p50: 200
+        p95: 500
+        p99: 1000
+      parameters:
+        - name: case_id
+          in: path
+          required: true
+          description: "Adjudication case UUIDv7"
+          schema:
+            $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/XRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdjudicationResolution"
+      responses:
+        "200":
+          description: "Case resolved"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdjudicationCase"
+        "400":
+          description: "Invalid resolution (e.g., missing countersign)"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "401":
+          description: "Unauthorized"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "403":
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "404":
+          description: "Case not found"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+        "409":
+          description: "Idempotency key reuse or case already resolved"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
+
+components:
+  parameters:
+    VoterIdPath:
+      name: voter_id
+      in: path
+      required: true
+      description: "Voter UUIDv7 identifier"
+      schema:
+        $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: "Client-generated UUID for exactly-once semantics"
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+
+    XRequestId:
+      name: X-Request-Id
+      in: header
+      required: false
+      description: "Client-provided request tracing UUID"
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+
+  securitySchemes:
+    BearerJWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "JWT issued by eel.local Keycloak realm, verified via JWKS at https://auth.eel.local/realms/eel/protocol/openid-connect/certs"
+
+    SVIDmTLS:
+      type: mutualTLS
+      description: "SPIFFE SVID mutual TLS. Certificate must have SPIFFE URI SAN matching spiffe://eel.local/ns/*/sa/*"
+
+  schemas:
+    # Voter (full record)
+    Voter:
+      type: object
+      description: "Complete voter registration record."
+      required:
+        - voter_id
+        - national_id
+        - full_name
+        - dob
+        - gender
+        - polling_station_code
+        - status
+        - version
+        - election_scope
+      properties:
+        voter_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Permanent voter identifier (UUIDv7)."
+          x-eel-data-class: C
+        national_id:
+          type: string
+          description: "National ID card number (encrypted at rest, returned only to authorized roles)."
+          pattern: "^[0-9]{8}$"
+          x-eel-data-class: A
+          example: "12345678"
+        full_name:
+          type: string
+          description: "Full legal name as registered."
+          minLength: 1
+          maxLength: 200
+          x-eel-data-class: A
+          example: "Wanjiku Mwangi"
+        dob:
+          type: string
+          format: date
+          description: "Date of birth (ISO 8601 date)."
+          x-eel-data-class: A
+          example: "1990-06-15"
+        gender:
+          type: string
+          enum: [male, female, other, prefer_not_to_say]
+          description: "Registered gender."
+          x-eel-data-class: A
+          example: "female"
+        phone:
+          type: string
+          description: "Registered phone number in E.164 format (optional)."
+          pattern: "^\\+254[0-9]{9}$"
+          x-eel-data-class: A
+          example: "+254712345678"
+        address:
+          $ref: "#/components/schemas/VoterAddress"
+          x-eel-data-class: A
+        polling_station_code:
+          type: string
+          description: "Assigned polling station code."
+          pattern: "^[A-Z0-9]{6,12}$"
+          x-eel-data-class: B
+          example: "NRB-001-PS-042"
+        status:
+          type: string
+          enum: [active, suspended, deregistered, pending, deceased]
+          description: "Current registration status."
+          x-eel-data-class: B
+          example: "active"
+        version:
+          type: integer
+          format: int64
+          description: "Optimistic concurrency version (monotonically increasing)."
+          x-eel-data-class: C
+          example: 3
+        election_scope:
+          type: string
+          description: "Election scope code this registration belongs to."
+          x-eel-data-class: C
+          example: "2027-GENERAL"
+        enrolled_at:
+          type: string
+          format: date-time
+          description: "UTC timestamp of initial enrolment."
+          x-eel-data-class: C
+          example: "2026-01-15T09:30:00.000Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: "UTC timestamp of last record modification."
+          x-eel-data-class: C
+          example: "2026-08-01T14:22:00.000Z"
+
+    VoterAddress:
+      type: object
+      description: "Voter residential address."
+      properties:
+        county:
+          type: string
+          x-eel-data-class: A
+          example: "Nairobi"
+        constituency:
+          type: string
+          x-eel-data-class: A
+          example: "Westlands"
+        ward:
+          type: string
+          x-eel-data-class: A
+          example: "Kangemi"
+        street:
+          type: string
+          x-eel-data-class: A
+          example: "Waiyaki Way"
+        building:
+          type: string
+          x-eel-data-class: A
+          example: "Apartment 4B"
+        postal_code:
+          type: string
+          x-eel-data-class: A
+          example: "00100"
+
+    VoterSummary:
+      type: object
+      description: "Reduced voter record for low-privilege contexts."
+      required:
+        - voter_id
+        - polling_station_code
+        - status
+        - version
+      properties:
+        voter_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        polling_station_code:
+          type: string
+          x-eel-data-class: B
+          example: "NRB-001-PS-042"
+        status:
+          type: string
+          enum: [active, suspended, deregistered, pending, deceased]
+          x-eel-data-class: B
+          example: "active"
+        version:
+          type: integer
+          format: int64
+          x-eel-data-class: C
+          example: 3
+        election_scope:
+          type: string
+          x-eel-data-class: C
+          example: "2027-GENERAL"
+
+    VoterStatusUpdate:
+      type: object
+      description: "Payload for updating voter registration status."
+      required:
+        - status
+        - reason_code
+        - officer_id
+      properties:
+        status:
+          type: string
+          enum: [active, suspended, deregistered, deceased]
+          description: "Target status."
+          x-eel-data-class: B
+          example: "suspended"
+        reason_code:
+          type: string
+          description: "Coded reason for the status change."
+          enum:
+            - duplicate_identity
+            - death_certificate
+            - court_order
+            - administrative_correction
+            - appeal_upheld
+            - appeal_dismissed
+          x-eel-data-class: B
+          example: "duplicate_identity"
+        reason_detail:
+          type: string
+          maxLength: 500
+          description: "Free-text supplementary reason."
+          x-eel-data-class: B
+        officer_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Officer executing the status change."
+          x-eel-data-class: B
+        supporting_document_ref:
+          type: string
+          description: "Reference to supporting document in object storage."
+          x-eel-data-class: B
+        expected_version:
+          type: integer
+          format: int64
+          description: "Optimistic concurrency expected version (optional; omit to skip check)."
+          x-eel-data-class: C
+
+    EnrolmentRequest:
+      type: object
+      description: "Voter enrolment payload from biometric device."
+      required:
+        - device_serial
+        - capture_timestamp
+        - station_code
+        - national_id_hash
+        - biometric_ref
+        - full_name
+        - dob
+        - gender
+        - device_sig
+      properties:
+        device_serial:
+          type: string
+          description: "Device serial number (validated against kit registry)."
+          x-eel-data-class: C
+          example: "BVR-KIT-00421"
+        capture_timestamp:
+          type: string
+          format: date-time
+          description: "UTC timestamp of biometric capture."
+          x-eel-data-class: C
+          example: "2026-08-21T09:15:00.000Z"
+        station_code:
+          type: string
+          description: "Polling station code where enrolment occurred."
+          x-eel-data-class: C
+          example: "NRB-001-PS-042"
+        national_id_hash:
+          type: string
+          description: "SHA-256 hash of the national ID number (not the raw value)."
+          pattern: "^[0-9a-f]{64}$"
+          x-eel-data-class: A
+          example: "a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4"
+        biometric_ref:
+          type: string
+          description: "Reference to encrypted biometric template in ABIS secure store."
+          x-eel-data-class: A
+          example: "bio-store://eel.local/templates/550e8400-e29b-41d4-a716-446655440000"
+        full_name:
+          type: string
+          maxLength: 200
+          description: "Full name as read from national ID."
+          x-eel-data-class: A
+          example: "Wanjiku Mwangi"
+        dob:
+          type: string
+          format: date
+          description: "Date of birth from national ID."
+          x-eel-data-class: A
+          example: "1990-06-15"
+        gender:
+          type: string
+          enum: [male, female, other]
+          x-eel-data-class: A
+          example: "female"
+        phone:
+          type: string
+          pattern: "^\\+254[0-9]{9}$"
+          description: "Voter-provided phone number (optional)."
+          x-eel-data-class: A
+        address:
+          $ref: "#/components/schemas/VoterAddress"
+          x-eel-data-class: A
+        device_sig:
+          type: string
+          description: "ECDSA-P256 signature by device HSM over canonical request body."
+          x-eel-data-class: C
+          example: "MEQCIB..."
+
+    EnrolmentAccepted:
+      type: object
+      description: "Response to an accepted enrolment."
+      required:
+        - enrolment_id
+        - voter_id
+        - status
+        - hlc
+      properties:
+        enrolment_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Enrolment workflow ID."
+          x-eel-data-class: C
+        voter_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Provisional voter ID (finalised after ABIS dedup)."
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [accepted, pending_dedup]
+          x-eel-data-class: C
+          example: "pending_dedup"
+        hlc:
+          $ref: "../_shared/common.yaml#/components/schemas/HLC"
+          description: "Server HLC at time of acceptance."
+          x-eel-data-class: D
+
+    TransferRequest:
+      type: object
+      description: "Voter transfer request payload."
+      required:
+        - voter_id
+        - target_station_code
+        - reason_code
+        - officer_id
+      properties:
+        voter_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: A
+        target_station_code:
+          type: string
+          description: "Destination polling station code."
+          x-eel-data-class: A
+          example: "MSA-002-PS-017"
+        reason_code:
+          type: string
+          enum: [relocation, marriage, administrative, court_order]
+          x-eel-data-class: A
+          example: "relocation"
+        reason_detail:
+          type: string
+          maxLength: 500
+          x-eel-data-class: A
+        officer_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Initiating officer ID."
+          x-eel-data-class: B
+        supporting_document_ref:
+          type: string
+          x-eel-data-class: B
+
+    TransferAccepted:
+      type: object
+      description: "Response to accepted transfer request."
+      required:
+        - transfer_id
+        - voter_id
+        - status
+      properties:
+        transfer_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: A
+        voter_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: A
+        status:
+          type: string
+          enum: [pending_countersign, approved, rejected]
+          x-eel-data-class: A
+          example: "pending_countersign"
+        effective_date:
+          type: string
+          format: date
+          description: "Date when transfer becomes effective."
+          x-eel-data-class: A
+
+    VoterRegisterPage:
+      type: object
+      description: "Paginated voter register for a scope."
+      required:
+        - voters
+        - pagination
+        - scope
+        - as_of
+      properties:
+        voters:
+          type: array
+          description: "Voter records for this page."
+          x-eel-data-class: B
+          items:
+            $ref: "#/components/schemas/Voter"
+        pagination:
+          $ref: "../_shared/common.yaml#/components/schemas/PaginationMeta"
+          x-eel-data-class: D
+        scope:
+          type: string
+          description: "Administrative scope code."
+          x-eel-data-class: B
+          example: "KE-047-001"
+        as_of:
+          type: string
+          format: date-time
+          description: "Effective timestamp of this register snapshot."
+          x-eel-data-class: C
+          example: "2026-08-21T00:00:00.000Z"
+
+    SarRequest:
+      type: object
+      description: "Subject access request under Kenya Data Protection Act."
+      required:
+        - voter_id
+        - requestor_national_id_hash
+        - delivery_channel
+      properties:
+        voter_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: A
+        requestor_national_id_hash:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+          description: "SHA-256 hash of requestor's national ID."
+          x-eel-data-class: A
+        delivery_channel:
+          type: string
+          enum: [email, postal, in_person]
+          x-eel-data-class: A
+          example: "email"
+        requestor_email:
+          type: string
+          format: email
+          x-eel-data-class: A
+        notes:
+          type: string
+          maxLength: 1000
+          x-eel-data-class: A
+
+    SarAccepted:
+      type: object
+      description: "Acknowledgement of a subject access request."
+      required:
+        - sar_id
+        - due_date
+        - status
+      properties:
+        sar_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: A
+        due_date:
+          type: string
+          format: date
+          description: "Statutory deadline (21 days from submission)."
+          x-eel-data-class: A
+          example: "2026-09-11"
+        status:
+          type: string
+          enum: [received, processing, fulfilled, rejected]
+          x-eel-data-class: A
+          example: "received"
+
+    MerkleRootResponse:
+      type: object
+      description: "Latest BVR Merkle tree root with signing metadata."
+      required:
+        - root_hash
+        - tree_size
+        - timestamp
+        - signature
+        - snapshot_id
+      properties:
+        root_hash:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+          description: "SHA-256 Merkle root hash of the voter register."
+          x-eel-data-class: C
+          example: "fedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321"
+        tree_size:
+          type: integer
+          format: int64
+          description: "Number of leaves (registered voters) in this tree."
+          x-eel-data-class: C
+          example: 22500000
+        timestamp:
+          type: string
+          format: date-time
+          description: "UTC timestamp of this root computation."
+          x-eel-data-class: C
+          example: "2026-08-21T00:00:00.000Z"
+        signature:
+          type: string
+          description: "HSM signature over (root_hash || tree_size || timestamp). Base64url."
+          x-eel-data-class: C
+          example: "MEYCIQDexample..."
+        snapshot_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Snapshot UUIDv7 for this tree state."
+          x-eel-data-class: C
+        witness_cosigs:
+          type: array
+          x-eel-data-class: C
+          items:
+            $ref: "../_shared/common.yaml#/components/schemas/WitnessCosignature"
+
+    VoterQrPayload:
+      type: object
+      description: "Signed QR code payload for voter ID card."
+      required:
+        - voter_id
+        - polling_station_code
+        - election_scope
+        - issued_at
+        - sig
+      properties:
+        voter_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        polling_station_code:
+          type: string
+          x-eel-data-class: B
+          example: "NRB-001-PS-042"
+        election_scope:
+          type: string
+          x-eel-data-class: C
+          example: "2027-GENERAL"
+        issued_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+          example: "2026-08-21T10:00:00.000Z"
+        sig:
+          type: string
+          description: "HSM ECDSA-P256 signature over payload (Base64url)."
+          x-eel-data-class: C
+        cbor_hex:
+          type: string
+          description: "CBOR-encoded QR payload as hex, for embedding in PDF."
+          x-eel-data-class: C
+
+    AdjudicationResolution:
+      type: object
+      description: "Resolution payload for an adjudication case."
+      required:
+        - outcome
+        - reason_code
+        - officer_id
+      properties:
+        outcome:
+          type: string
+          enum: [upheld, dismissed, escalated]
+          description: "Case outcome."
+          x-eel-data-class: B
+          example: "upheld"
+        reason_code:
+          type: string
+          enum:
+            - identity_confirmed
+            - duplicate_dismissed
+            - insufficient_evidence
+            - escalated_to_tribunal
+          x-eel-data-class: B
+          example: "identity_confirmed"
+        reason_detail:
+          type: string
+          maxLength: 2000
+          x-eel-data-class: B
+        officer_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: B
+        countersign_officer_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          description: "Second officer required for data-class A resolutions."
+          x-eel-data-class: B
+        supporting_refs:
+          type: array
+          description: "Document references supporting the resolution."
+          x-eel-data-class: B
+          items:
+            type: string
+            x-eel-data-class: B
+
+    AdjudicationCase:
+      type: object
+      description: "Adjudication case record."
+      required:
+        - case_id
+        - case_type
+        - status
+        - created_at
+      properties:
+        case_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: B
+        case_type:
+          type: string
+          enum: [duplicate, appeal, transfer_dispute, deregistration_dispute]
+          x-eel-data-class: B
+          example: "duplicate"
+        status:
+          type: string
+          enum: [open, pending_countersign, resolved, escalated]
+          x-eel-data-class: B
+          example: "resolved"
+        outcome:
+          type: string
+          enum: [upheld, dismissed, escalated]
+          x-eel-data-class: B
+        resolution_at:
+          type: string
+          format: date-time
+          x-eel-data-class: B
+        created_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        voter_id:
+          $ref: "../_shared/common.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: B

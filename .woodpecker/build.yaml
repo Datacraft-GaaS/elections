@@ -1,0 +1,34 @@
+---
+# WP-0.5: build pipeline — Nix OCI images per service
+when:
+  - event: [push, pull_request]
+
+steps:
+  - name: nix-build-services
+    image: eel/build-image:latest
+    commands:
+      - |
+        SHORT_SHA=$(git rev-parse --short HEAD)
+        flakes=$(find services/*/deploy/nix -maxdepth 2 -name flake.nix 2>/dev/null)
+        if [ -z "$flakes" ]; then
+          echo "no service flakes found — skip OCI build"
+          exit 0
+        fi
+        for flake in $flakes; do
+          svcdir=$(echo "$flake" | cut -d/ -f1-2)
+          svcname=$(basename "$svcdir")
+          echo "==> building $svcname ($flake)"
+          nix build "$svcdir/deploy/nix#oci-image" --no-link --print-out-paths \
+            | xargs -I{} skopeo copy \
+                oci-archive:{} \
+                docker://harbor.internal/eel/${svcname}:${SHORT_SHA}
+        done
+
+  - name: nix-build-tools
+    image: eel/build-image:latest
+    commands:
+      - |
+        SHORT_SHA=$(git rev-parse --short HEAD)
+        # Build completeness scanner as a standalone image for CI
+        cargo build --release -p eel-completeness
+        echo "eel-completeness built at target/release/eel-completeness"

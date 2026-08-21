@@ -1,0 +1,26 @@
+# BVE kit events - biometric edge kit status, config push, and MDM lifecycle events
+# Source: BVE context, operational; spans bvr and bvi kit fleets
+name: eel.bve.kit.v1
+partitions: 32
+retention_class: operational
+replication_factor: 3
+min_isr: 2
+unclean_leader_election: false
+acks: all
+signed: true
+delivery: at-least-once-idempotent
+acl:
+  produce:
+    - "spiffe://eel.local/service/bvi-svc"
+    - "spiffe://eel.local/service/bvr-svc"
+  consume:
+    - "spiffe://eel.local/service/rts-svc"
+    - "spiffe://eel.local/service/bvi-svc"
+    - "spiffe://eel.local/service/bvr-svc"
+    - "spiffe://eel.local/service/mdm-svc"
+    - "spiffe://eel.local/service/ecc-svc"
+configs:
+  compression.type: zstd
+  min.insync.replicas: 2
+  max.message.bytes: 1048576
+retention_notes: "14-day hot retention; kit state tracked in MDM; events used for real-time fleet health dashboard"

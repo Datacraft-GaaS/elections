@@ -1,0 +1,36 @@
+# Cilium Helm values for eel kind cluster.
+# kube-proxy replacement OFF: kind uses its own proxy; we disable replacement
+# to avoid conflicts. In staging/prod, enable fully.
+kubeProxyReplacement: false
+
+# Hubble UI enabled for local observability
+hubble:
+  enabled: true
+  relay:
+    enabled: true
+  ui:
+    enabled: true
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+
+# Minimal resource footprint for local dev
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# IPAM mode suitable for kind
+ipam:
+  mode: kubernetes
+
+# Node init mounts for kind
+nodeinit:
+  enabled: true
+
+# Tunnel mode for kind compatibility
+tunnel: vxlan

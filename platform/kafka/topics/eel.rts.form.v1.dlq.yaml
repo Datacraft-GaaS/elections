@@ -1,0 +1,22 @@
+# RTS Form dead-letter queue - poison messages and processing failures from rts.form.v1
+# Source: RTS context, DLQ
+name: eel.rts.form.v1.dlq
+partitions: 12
+retention_class: dlq
+replication_factor: 3
+min_isr: 2
+unclean_leader_election: false
+acks: all
+signed: false
+delivery: at-least-once-idempotent
+acl:
+  produce:
+    - "spiffe://eel.local/service/rts-backend"
+  consume:
+    - "spiffe://eel.local/service/rts-dlq-processor"
+    - "spiffe://eel.local/service/ecc-svc"
+configs:
+  compression.type: zstd
+  min.insync.replicas: 2
+  max.message.bytes: 1048576
+retention_notes: "7-day hot retention; DLQ events are investigated and replayed or discarded by rts-dlq-processor"

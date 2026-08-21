@@ -1,0 +1,33 @@
+# Loki-stack Helm values for eel local cluster
+loki:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 2Gi
+  config:
+    auth_enabled: false
+    ingester:
+      chunk_idle_period: 5m
+      max_chunk_age: 1h
+    schema_config:
+      configs:
+        - from: "2024-01-01"
+          store: tsdb
+          object_store: filesystem
+          schema: v13
+          index:
+            prefix: loki_index_
+            period: 24h
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+promtail:
+  enabled: true
+
+grafana:
+  enabled: false

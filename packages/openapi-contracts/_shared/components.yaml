@@ -1,0 +1,367 @@
+# WP-0.4b shared components — reusable across all eel OpenAPI contracts.
+# This file is NOT a standalone OAS document; reference it via $ref from module specs.
+# Trust domain: eel.local
+
+openapi: "3.1.0"
+info:
+  title: eel-shared-components
+  version: "1.0.0"
+  description: "Shared schemas, headers, parameters, and security schemes for all eel OpenAPI contracts."
+
+components:
+
+  # ---------------------------------------------------------------------------
+  # Security schemes
+  # ---------------------------------------------------------------------------
+  securitySchemes:
+
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "JWT issued by eel auth service (eel.local/auth). Sub claim is operator or citizen UUID. Scopes declared per endpoint."
+
+    mtls:
+      type: mutualTLS
+      description: "X.509 mutual TLS. Client certificate must chain to the eel.local intermediate CA. Used for kit-to-server and inter-service calls."
+
+  # ---------------------------------------------------------------------------
+  # Headers
+  # ---------------------------------------------------------------------------
+  headers:
+
+    X-Eel-Attest:
+      description: >
+        Google Play Integrity token (Android) or Apple App Attest assertion (iOS).
+        Backend rejects sessions without a fresh valid attestation per ADR-0021.
+        Value is base64url-encoded; max age 60 s from issuance.
+      required: true
+      schema:
+        type: string
+        format: byte
+        x-eel-data-class: E
+        minLength: 32
+        maxLength: 8192
+        example: "eyJhbGciOiJFUzI1NiJ9.eyJub25jZSI6ImFiYzEyMyJ9.sig"
+
+    Idempotency-Key:
+      description: >
+        Client-generated idempotency key (UUIDv4 or UUIDv7). The server stores
+        request fingerprints for 24 h. Replayed keys with identical body return
+        the cached response; mismatched body returns 422.
+      required: true
+      schema:
+        type: string
+        minLength: 36
+        maxLength: 36
+        pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+        x-eel-data-class: E
+        example: "01913f7e-1234-7abc-8def-000000000001"
+
+    X-Eel-Cosign-Sig:
+      description: >
+        Sigstore Cosign detached signature over the response body SHA-256 digest,
+        base64url-encoded. Clients MUST verify against the eel.local Rekor transparency log.
+      required: false
+      schema:
+        type: string
+        format: byte
+        x-eel-data-class: C
+        example: "MEQCIBx..."
+
+    X-Eel-Merkle-Proof:
+      description: >
+        Compact Merkle inclusion proof (binary Merkle tree, SHA-256, RFC 9162 format),
+        base64url-encoded. Proves the snapshot is included in the current election tree root.
+      required: false
+      schema:
+        type: string
+        format: byte
+        x-eel-data-class: C
+        example: "AQID..."
+
+    X-Eel-Snapshot-Id:
+      description: >
+        Opaque snapshot identifier (UUIDv7) pinning the data version returned.
+        Use with GET /api/v1/portal/merkle/{root_id} to fetch the corresponding Merkle root.
+      required: false
+      schema:
+        $ref: "#/components/schemas/UUIDv7"
+        x-eel-data-class: C
+
+    X-Eel-Request-Id:
+      description: "Server-assigned UUIDv7 for distributed tracing. Reflected in all error responses as eel_trace_id."
+      required: false
+      schema:
+        $ref: "#/components/schemas/UUIDv7"
+        x-eel-data-class: D
+
+  # ---------------------------------------------------------------------------
+  # Parameters
+  # ---------------------------------------------------------------------------
+  parameters:
+
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: "Client idempotency key; see header schema above."
+      schema:
+        type: string
+        minLength: 36
+        maxLength: 36
+        pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+        x-eel-data-class: E
+
+    AttestHeader:
+      name: X-Eel-Attest
+      in: header
+      required: true
+      description: "Device attestation token. Required on all mobile-facing endpoints per ADR-0021."
+      schema:
+        type: string
+        format: byte
+        x-eel-data-class: E
+
+    PageParam:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+        x-eel-data-class: E
+
+    PerPageParam:
+      name: per_page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+        x-eel-data-class: E
+
+    CursorParam:
+      name: cursor
+      in: query
+      required: false
+      description: "Opaque pagination cursor from a previous response."
+      schema:
+        type: string
+        x-eel-data-class: E
+
+  # ---------------------------------------------------------------------------
+  # Schemas
+  # ---------------------------------------------------------------------------
+  schemas:
+
+    UUIDv7:
+      type: string
+      format: uuid
+      description: "UUID version 7 (time-ordered, monotonic). All eel identifiers use this format."
+      pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+      example: "01913f7e-1234-7abc-8def-000000000001"
+      x-eel-data-class: D
+
+    DataClass:
+      type: string
+      description: >
+        ADR-0016 data classification:
+        A = Voter PII max (ID number, biometrics, biographical data, phone, DOB).
+        B = Voter operational (polling station assignment, turnout status).
+        C = Public non-PII (aggregate results, candidate info, audit events).
+        D = Operational metadata (logs, metrics).
+        E = Ephemeral (session state, cache).
+      enum: [A, B, C, D, E]
+      x-eel-data-class: D
+
+    Problem:
+      type: object
+      description: "RFC 9457 Problem Details for HTTP APIs, extended with eel fields."
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+          description: "Problem type URI. Dereferences to human-readable documentation."
+          x-eel-data-class: D
+          example: "https://errors.eel.local/t2/application-not-found"
+        title:
+          type: string
+          description: "Short, human-readable summary. Does not change between occurrences."
+          x-eel-data-class: D
+          example: "Application not found"
+        status:
+          type: integer
+          description: "HTTP status code."
+          x-eel-data-class: D
+          example: 404
+        detail:
+          type: string
+          description: "Human-readable explanation specific to this occurrence."
+          x-eel-data-class: D
+          example: "No application found with id 01913f7e-1234-7abc-8def-000000000001."
+        instance:
+          type: string
+          format: uri
+          description: "URI reference identifying the specific occurrence of the problem."
+          x-eel-data-class: D
+          example: "/api/v1/vprs/applications/01913f7e-1234-7abc-8def-000000000001"
+        eel_trace_id:
+          type: string
+          description: "Server-assigned UUIDv7 for cross-service trace correlation."
+          x-eel-data-class: D
+          example: "01913f7e-dead-7abc-beef-000000000099"
+        eel_election_id:
+          type: string
+          description: "Active election cycle identifier at time of the error."
+          x-eel-data-class: D
+          example: "KE-GE-2027"
+      additionalProperties: false
+
+    Pagination:
+      type: object
+      description: "Standard pagination envelope appended to list responses."
+      required:
+        - page
+        - per_page
+        - total
+      properties:
+        page:
+          type: integer
+          description: "Current page number (1-indexed)."
+          minimum: 1
+          x-eel-data-class: D
+          example: 1
+        per_page:
+          type: integer
+          description: "Items per page requested."
+          minimum: 1
+          maximum: 200
+          x-eel-data-class: D
+          example: 50
+        total:
+          type: integer
+          description: "Total number of items matching the query."
+          minimum: 0
+          x-eel-data-class: D
+          example: 1250
+        next_cursor:
+          type: string
+          nullable: true
+          description: "Opaque cursor for the next page. Null when on the last page."
+          x-eel-data-class: E
+          example: "eyJhZnRlciI6IjAxOTEzZjdlIn0"
+      additionalProperties: false
+
+    EelSla:
+      type: object
+      description: "x-eel-sla extension shape — inline this object as an OAS extension on each operation."
+      required:
+        - p95_ms
+        - p99_ms
+        - availability
+      properties:
+        p95_ms:
+          type: integer
+          description: "P95 latency target in milliseconds."
+          minimum: 1
+          x-eel-data-class: D
+          example: 200
+        p99_ms:
+          type: integer
+          description: "P99 latency target in milliseconds."
+          minimum: 1
+          x-eel-data-class: D
+          example: 500
+        availability:
+          type: string
+          description: "Monthly availability target expressed as a percentage string."
+          x-eel-data-class: D
+          example: "99.9%"
+      additionalProperties: false
+
+  # ---------------------------------------------------------------------------
+  # Responses (reusable)
+  # ---------------------------------------------------------------------------
+  responses:
+
+    400BadRequest:
+      description: "Bad request. The request body or query parameters failed validation."
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+          example:
+            type: "https://errors.eel.local/t1/validation-error"
+            title: "Validation Error"
+            status: 400
+            detail: "Field 'id_number_hash' must be a hex string of length 64."
+            eel_trace_id: "01913f7e-0001-7abc-8000-000000000001"
+
+    401Unauthorized:
+      description: "Missing or invalid authentication credential."
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
+    403Forbidden:
+      description: "Authenticated but not authorized to perform this action."
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
+    404NotFound:
+      description: "Resource not found."
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
+    409Conflict:
+      description: "Conflict with current state of the resource (e.g. duplicate application)."
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
+    410Gone:
+      description: "Resource existed but has been permanently removed or consumed."
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
+    422UnprocessableEntity:
+      description: "Request was well-formed but semantically invalid."
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
+    429TooManyRequests:
+      description: "Rate limit exceeded. Retry-After header contains seconds to wait."
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: "Seconds until the rate limit window resets."
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
+    500InternalServerError:
+      description: "Unexpected server error. eel_trace_id in the response body enables support triage."
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"

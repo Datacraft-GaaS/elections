@@ -1,0 +1,621 @@
+openapi: 3.1.0
+info:
+  title: eel-diaspora-logistics
+  version: 1.0.0
+  description: >
+    Module M65: Diaspora Ballot Physical Logistics.
+    Manages embassy listings, ballot dispatches to embassies, delivery confirmations,
+    and return dispatch tracking for unused ballots.
+  contact:
+    name: EEL Platform Team
+    email: platform@eel.local
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+tags:
+  - name: embassies
+    description: Embassy voting locations
+  - name: dispatches
+    description: Ballot dispatch to embassies
+  - name: returns
+    description: Return of unused ballots
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/diaspora/embassies:
+    get:
+      operationId: listEmbassies
+      tags: [embassies]
+      summary: List embassies with diaspora voting
+      description: >
+        Returns all embassies where diaspora voting is conducted including
+        location coordinates and polling days. Tier 1 public endpoint with Merkle proof.
+      security: []
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      parameters:
+        - name: country
+          in: query
+          schema:
+            type: string
+            x-eel-data-class: C
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+      responses:
+        "200":
+          description: Embassy list
+          headers:
+            X-Eel-Cosign-Sig:
+              description: Ed25519 co-signature over response body
+              schema:
+                type: string
+            X-Eel-Merkle-Proof:
+              description: Merkle inclusion proof
+              schema:
+                type: string
+            X-Eel-Snapshot-Id:
+              description: Snapshot identifier (UUIDv7)
+              schema:
+                type: string
+                format: uuid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmbassyPage"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/diaspora/embassies/{embassy_code}:
+    get:
+      operationId: getEmbassy
+      tags: [embassies]
+      summary: Embassy detail
+      description: Returns detailed information for a specific embassy. Tier 1 public endpoint.
+      security: []
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      parameters:
+        - $ref: "#/components/parameters/EmbassyCodePath"
+      responses:
+        "200":
+          description: Embassy detail
+          headers:
+            X-Eel-Cosign-Sig:
+              schema:
+                type: string
+            X-Eel-Merkle-Proof:
+              schema:
+                type: string
+            X-Eel-Snapshot-Id:
+              schema:
+                type: string
+                format: uuid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Embassy"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/diaspora/ballot-dispatches:
+    post:
+      operationId: createBallotDispatch
+      tags: [dispatches]
+      summary: Record ballot dispatch to embassy
+      description: >
+        Records dispatch of a ballot batch to a diaspora embassy. Tier 3 endpoint.
+        Idempotent via Idempotency-Key.
+      security:
+        - bearerAuth: []
+        - mtls: []
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BallotDispatchRequest"
+      responses:
+        "201":
+          description: Dispatch recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BallotDispatch"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    get:
+      operationId: listBallotDispatches
+      tags: [dispatches]
+      summary: List ballot dispatches
+      description: Paginated list of ballot dispatches. Tier 3 endpoint.
+      security:
+        - bearerAuth: []
+        - mtls: []
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+        - name: embassy_code
+          in: query
+          schema:
+            type: string
+            x-eel-data-class: C
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [dispatched, in_transit, delivered, returned]
+            x-eel-data-class: C
+      responses:
+        "200":
+          description: Dispatch list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BallotDispatchPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/diaspora/ballot-dispatches/{dispatch_id}:
+    get:
+      operationId: getBallotDispatch
+      tags: [dispatches]
+      summary: Get ballot dispatch detail
+      description: Returns full detail for a specific dispatch. Tier 3 endpoint.
+      security:
+        - bearerAuth: []
+        - mtls: []
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      parameters:
+        - $ref: "#/components/parameters/DispatchIdPath"
+      responses:
+        "200":
+          description: Dispatch detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BallotDispatch"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/diaspora/ballot-dispatches/{dispatch_id}/delivery-confirmation:
+    post:
+      operationId: confirmBallotDelivery
+      tags: [dispatches]
+      summary: Confirm ballot delivery at embassy
+      description: >
+        Records confirmation of ballot receipt at the embassy. Tier 3 endpoint.
+        Idempotent via Idempotency-Key.
+      security:
+        - bearerAuth: []
+        - mtls: []
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      parameters:
+        - $ref: "#/components/parameters/DispatchIdPath"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeliveryConfirmation"
+      responses:
+        "201":
+          description: Delivery confirmation recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeliveryConfirmation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/diaspora/return-dispatches:
+    get:
+      operationId: listReturnDispatches
+      tags: [returns]
+      summary: List return dispatches of unused ballots
+      description: >
+        Tracks unused ballots returned from embassies after polling. Tier 3 endpoint.
+      security:
+        - bearerAuth: []
+        - mtls: []
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99%"
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+        - name: embassy_code
+          in: query
+          schema:
+            type: string
+            x-eel-data-class: C
+      responses:
+        "200":
+          description: Return dispatch list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReturnDispatchPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by eel.local identity provider
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS client certificate for tier 3 operations
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUIDv7 idempotency key
+    EmbassyCodePath:
+      name: embassy_code
+      in: path
+      required: true
+      schema:
+        type: string
+        x-eel-data-class: C
+    DispatchIdPath:
+      name: dispatch_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSizeParam:
+      name: page_size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+
+  schemas:
+    Problem:
+      type: object
+      description: RFC 9457 problem detail
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        title:
+          type: string
+          x-eel-data-class: D
+        status:
+          type: integer
+          x-eel-data-class: D
+        detail:
+          type: string
+          x-eel-data-class: D
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        trace_id:
+          type: string
+          x-eel-data-class: E
+
+    PageMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+        total:
+          type: integer
+          x-eel-data-class: D
+        total_pages:
+          type: integer
+          x-eel-data-class: D
+
+    Embassy:
+      type: object
+      required: [embassy_code, country, city, lat, lon, polling_days]
+      properties:
+        embassy_code:
+          type: string
+          x-eel-data-class: C
+        country:
+          type: string
+          x-eel-data-class: C
+        city:
+          type: string
+          x-eel-data-class: C
+        lat:
+          type: number
+          format: float
+          x-eel-data-class: C
+        lon:
+          type: number
+          format: float
+          x-eel-data-class: C
+        polling_days:
+          type: array
+          items:
+            type: string
+            format: date
+          x-eel-data-class: C
+        registered_voters:
+          type: integer
+          description: Number of registered diaspora voters at this embassy
+          x-eel-data-class: C
+        contact_email:
+          type: string
+          format: email
+          x-eel-data-class: C
+
+    EmbassyPage:
+      type: object
+      required: [items, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Embassy"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+
+    BallotDispatchRequest:
+      type: object
+      required: [embassy_code, ballot_quantity, courier_tracking_ref, dispatched_at, expected_arrival]
+      properties:
+        embassy_code:
+          type: string
+          x-eel-data-class: C
+        ballot_quantity:
+          type: integer
+          minimum: 1
+          x-eel-data-class: C
+        courier_tracking_ref:
+          type: string
+          x-eel-data-class: C
+        dispatched_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        expected_arrival:
+          type: string
+          format: date
+          x-eel-data-class: C
+
+    BallotDispatch:
+      type: object
+      required: [dispatch_id, embassy_code, ballot_quantity, courier_tracking_ref, dispatched_at, expected_arrival, status, created_at]
+      properties:
+        dispatch_id:
+          type: string
+          format: uuid
+          description: UUIDv7 dispatch identifier
+          x-eel-data-class: C
+        embassy_code:
+          type: string
+          x-eel-data-class: C
+        ballot_quantity:
+          type: integer
+          x-eel-data-class: C
+        courier_tracking_ref:
+          type: string
+          x-eel-data-class: C
+        dispatched_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        expected_arrival:
+          type: string
+          format: date
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [dispatched, in_transit, delivered, returned]
+          x-eel-data-class: C
+        created_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+
+    BallotDispatchPage:
+      type: object
+      required: [items, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BallotDispatch"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+
+    DeliveryConfirmation:
+      type: object
+      required: [received_quantity, received_at, received_by_hash, courier_pod_ref]
+      properties:
+        received_quantity:
+          type: integer
+          minimum: 0
+          x-eel-data-class: C
+        received_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        received_by_hash:
+          type: string
+          description: SHA-256 hash of receiver identity
+          x-eel-data-class: B
+        courier_pod_ref:
+          type: string
+          description: Courier proof-of-delivery reference
+          x-eel-data-class: C
+
+    ReturnDispatch:
+      type: object
+      required: [return_id, dispatch_id, embassy_code, returned_quantity, return_tracking_ref, dispatched_at, status]
+      properties:
+        return_id:
+          type: string
+          format: uuid
+          description: UUIDv7 return dispatch identifier
+          x-eel-data-class: C
+        dispatch_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        embassy_code:
+          type: string
+          x-eel-data-class: C
+        returned_quantity:
+          type: integer
+          x-eel-data-class: C
+        return_tracking_ref:
+          type: string
+          x-eel-data-class: C
+        dispatched_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [in_transit, received, verified]
+          x-eel-data-class: C
+
+    ReturnDispatchPage:
+      type: object
+      required: [items, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReturnDispatch"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Forbidden:
+      description: Forbidden
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotFound:
+      description: Not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Conflict:
+      description: Conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    UnprocessableEntity:
+      description: Unprocessable entity
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    InternalError:
+      description: Internal server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"

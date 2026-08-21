@@ -1,0 +1,116 @@
+schema_version: "1.0"
+context: transparency
+tests:
+  - name: "service workload log writer can append leaf"
+    subject: "service_workload:transparency-log"
+    permission: "append_leaf"
+    resource: "resource_transparency_leaf:leaf-00001"
+    expected: true
+
+  - name: "staff cannot append leaf"
+    subject: "user_staff:alice"
+    permission: "append_leaf"
+    resource: "resource_transparency_leaf:leaf-00001"
+    expected: false
+
+  - name: "party agent cannot append leaf"
+    subject: "user_agent:bob"
+    permission: "append_leaf"
+    resource: "resource_transparency_leaf:leaf-00001"
+    expected: false
+
+  - name: "RO cannot append leaf"
+    subject: "user_ro:carol"
+    permission: "append_leaf"
+    resource: "resource_transparency_leaf:leaf-00001"
+    expected: false
+
+  - name: "service workload can read STH"
+    subject: "service_workload:transparency-log"
+    permission: "read_sth"
+    resource: "resource_transparency_leaf:leaf-00001"
+    expected: true
+
+  - name: "staff can read STH"
+    subject: "user_staff:alice"
+    permission: "read_sth"
+    resource: "resource_transparency_leaf:leaf-00001"
+    expected: true
+
+  - name: "RO can read STH"
+    subject: "user_ro:carol"
+    permission: "read_sth"
+    resource: "resource_transparency_leaf:leaf-00001"
+    expected: true
+
+  - name: "party agent can read STH"
+    subject: "user_agent:bob"
+    permission: "read_sth"
+    resource: "resource_transparency_leaf:leaf-00001"
+    expected: true
+
+  - name: "observer can read STH"
+    subject: "user_observer:david"
+    permission: "read_sth"
+    resource: "resource_transparency_leaf:leaf-00001"
+    expected: true
+
+  - name: "chair can read STH"
+    subject: "user_chair:frank"
+    permission: "read_sth"
+    resource: "resource_transparency_leaf:leaf-00001"
+    expected: true
+
+  - name: "IAB can verify inclusion"
+    subject: "user_iab:grace"
+    permission: "verify_inclusion"
+    resource: "resource_transparency_leaf:leaf-00001"
+    expected: true
+
+  - name: "party agent can verify inclusion"
+    subject: "user_agent:bob"
+    permission: "verify_inclusion"
+    resource: "resource_transparency_leaf:leaf-00001"
+    expected: true
+
+  - name: "RO can verify inclusion"
+    subject: "user_ro:carol"
+    permission: "verify_inclusion"
+    resource: "resource_transparency_leaf:leaf-00001"
+    expected: true
+
+  - name: "service workload cannot verify inclusion via public_reader"
+    subject: "service_workload:other-svc"
+    permission: "verify_inclusion"
+    resource: "resource_transparency_leaf:leaf-00001"
+    expected: false
+
+  - name: "observer can verify consistency"
+    subject: "user_observer:david"
+    permission: "verify_consistency"
+    resource: "resource_transparency_leaf:leaf-00001"
+    expected: true
+
+  - name: "chair can verify consistency"
+    subject: "user_chair:frank"
+    permission: "verify_consistency"
+    resource: "resource_transparency_leaf:leaf-00001"
+    expected: true
+
+  - name: "service workload witness can cosign STH"
+    subject: "service_workload:witness-node-1"
+    permission: "cosign_sth"
+    resource: "resource_transparency_leaf:leaf-00001"
+    expected: true
+
+  - name: "staff cannot cosign STH"
+    subject: "user_staff:alice"
+    permission: "cosign_sth"
+    resource: "resource_transparency_leaf:leaf-00001"
+    expected: false
+
+  - name: "chair cannot cosign STH"
+    subject: "user_chair:frank"
+    permission: "cosign_sth"
+    resource: "resource_transparency_leaf:leaf-00001"
+    expected: false

@@ -1,0 +1,27 @@
+// BVI context: Polling Station
+// Trust domain: eel.local
+
+definition user_staff {}
+definition user_ro {}
+definition user_cro {}
+definition user_agent {}
+definition user_observer {}
+definition user_iab {}
+definition user_chair {}
+definition service_workload {}
+
+definition resource_station {
+  relation owner: service_workload
+  relation station_officer: user_staff | user_ro
+  relation observer: user_observer | user_agent | user_iab
+  relation turnout_reader: user_ro | user_cro | user_observer | user_iab | user_agent
+  relation kit_revoker: user_chair | user_cro | user_ro
+
+  permission open_session = owner + station_officer
+  permission close_session = owner + station_officer
+  permission ingest_identification = owner
+  permission read_turnout = turnout_reader + station_officer + owner
+  permission revoke_kit = kit_revoker
+  permission read_config = owner
+  permission send_distress = owner + station_officer
+}

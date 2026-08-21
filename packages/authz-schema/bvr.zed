@@ -1,0 +1,30 @@
+// BVR context: Voter Register
+// Trust domain: eel.local
+
+definition user_staff {}
+definition user_ro {}
+definition user_cro {}
+definition user_agent {}
+definition user_observer {}
+definition user_iab {}
+definition user_chair {}
+definition service_workload {}
+
+definition resource_registry {
+  relation owner: user_staff | service_workload
+  relation reader_ro: user_ro | user_cro | service_workload
+  relation reader_accredited: user_agent | user_observer | user_iab
+  relation freezer: user_chair | user_ro
+  relation sar_processor: user_staff
+  relation exporter: user_ro | user_cro
+  relation dual_approver: user_staff
+
+  permission read_voter = owner + reader_ro + reader_accredited
+  permission write_voter = owner
+  permission freeze_register = freezer
+  permission export_register = exporter + owner
+  permission process_sar = sar_processor + owner
+  permission approve_bulk_export = dual_approver
+  permission view_adjudication = owner + reader_ro
+  permission resolve_adjudication = owner
+}

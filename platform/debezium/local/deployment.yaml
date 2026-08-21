@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: debezium-connect
+  namespace: eel-kafka
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: debezium-connect
+  template:
+    metadata:
+      labels:
+        app: debezium-connect
+    spec:
+      containers:
+        - name: connect
+          image: debezium/connect:2.7
+          ports:
+            - containerPort: 8083
+          env:
+            - name: BOOTSTRAP_SERVERS
+              value: kafka-bootstrap.eel-kafka.svc.cluster.local:9092
+            - name: GROUP_ID
+              value: eel-debezium
+            - name: CONFIG_STORAGE_TOPIC
+              value: eel-debezium-configs
+            - name: OFFSET_STORAGE_TOPIC
+              value: eel-debezium-offsets
+            - name: STATUS_STORAGE_TOPIC
+              value: eel-debezium-status
+            - name: CONFIG_STORAGE_REPLICATION_FACTOR
+              value: "1"
+            - name: OFFSET_STORAGE_REPLICATION_FACTOR
+              value: "1"
+            - name: STATUS_STORAGE_REPLICATION_FACTOR
+              value: "1"
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /connectors
+              port: 8083
+            initialDelaySeconds: 30
+            periodSeconds: 10

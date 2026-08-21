@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: karapace
+  namespace: eel-kafka
+spec:
+  selector:
+    app: karapace
+  ports:
+    - port: 8081

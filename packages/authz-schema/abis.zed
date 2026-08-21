@@ -1,0 +1,24 @@
+// ABIS context: Biometric Matching
+// Trust domain: eel.local
+
+definition user_staff {}
+definition user_ro {}
+definition user_cro {}
+definition user_agent {}
+definition user_observer {}
+definition user_iab {}
+definition user_chair {}
+definition service_workload {}
+
+definition resource_abis_match {
+  relation requester: service_workload
+  relation adjudicator: user_staff
+  relation certifier: user_iab | user_observer
+  relation report_reader: user_staff | user_iab
+
+  permission submit_match = requester
+  permission view_adjudication_queue = adjudicator
+  permission resolve_adjudication = adjudicator
+  permission read_reports = report_reader + certifier
+  permission trigger_batch_dedup = adjudicator
+}

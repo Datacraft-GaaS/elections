@@ -1,0 +1,116 @@
+schema_version: "1.0"
+context: rts
+tests:
+  - name: "service workload can submit form 34A"
+    subject: "service_workload:rts-backend"
+    permission: "submit_form"
+    resource: "resource_form34a:const-001-2027"
+    expected: true
+
+  - name: "staff cannot submit form 34A"
+    subject: "user_staff:alice"
+    permission: "submit_form"
+    resource: "resource_form34a:const-001-2027"
+    expected: false
+
+  - name: "party agent cannot submit form 34A"
+    subject: "user_agent:bob"
+    permission: "submit_form"
+    resource: "resource_form34a:const-001-2027"
+    expected: false
+
+  - name: "RO can adjudicate form"
+    subject: "user_ro:carol"
+    permission: "adjudicate_form"
+    resource: "resource_form34a:const-001-2027"
+    expected: true
+
+  - name: "CRO can adjudicate form"
+    subject: "user_cro:henry"
+    permission: "adjudicate_form"
+    resource: "resource_form34a:const-001-2027"
+    expected: true
+
+  - name: "party agent cannot adjudicate form"
+    subject: "user_agent:bob"
+    permission: "adjudicate_form"
+    resource: "resource_form34a:const-001-2027"
+    expected: false
+
+  - name: "observer cannot adjudicate form"
+    subject: "user_observer:david"
+    permission: "adjudicate_form"
+    resource: "resource_form34a:const-001-2027"
+    expected: false
+
+  - name: "RO can read form"
+    subject: "user_ro:carol"
+    permission: "read_form"
+    resource: "resource_form34a:const-001-2027"
+    expected: true
+
+  - name: "party agent can read form"
+    subject: "user_agent:bob"
+    permission: "read_form"
+    resource: "resource_form34a:const-001-2027"
+    expected: true
+
+  - name: "IAB can read form"
+    subject: "user_iab:grace"
+    permission: "read_form"
+    resource: "resource_form34a:const-001-2027"
+    expected: true
+
+  - name: "observer can read form"
+    subject: "user_observer:david"
+    permission: "read_form"
+    resource: "resource_form34a:const-001-2027"
+    expected: true
+
+  - name: "IAB can read audit trail"
+    subject: "user_iab:grace"
+    permission: "read_audit_trail"
+    resource: "resource_form34a:const-001-2027"
+    expected: true
+
+  - name: "chair can read audit trail"
+    subject: "user_chair:frank"
+    permission: "read_audit_trail"
+    resource: "resource_form34a:const-001-2027"
+    expected: true
+
+  - name: "party agent cannot read audit trail"
+    subject: "user_agent:bob"
+    permission: "read_audit_trail"
+    resource: "resource_form34a:const-001-2027"
+    expected: false
+
+  - name: "service workload can publish snapshot"
+    subject: "service_workload:rts-backend"
+    permission: "publish_snapshot"
+    resource: "resource_form34a:const-001-2027"
+    expected: true
+
+  - name: "staff cannot publish snapshot"
+    subject: "user_staff:alice"
+    permission: "publish_snapshot"
+    resource: "resource_form34a:const-001-2027"
+    expected: false
+
+  - name: "party agent can read proof"
+    subject: "user_agent:bob"
+    permission: "read_proof"
+    resource: "resource_form34a:const-001-2027"
+    expected: true
+
+  - name: "staff can read proof"
+    subject: "user_staff:alice"
+    permission: "read_proof"
+    resource: "resource_form34a:const-001-2027"
+    expected: true
+
+  - name: "chair can read proof"
+    subject: "user_chair:frank"
+    permission: "read_proof"
+    resource: "resource_form34a:const-001-2027"
+    expected: true

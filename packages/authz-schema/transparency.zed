@@ -1,0 +1,23 @@
+// Transparency context: Transparency Log
+// Trust domain: eel.local
+
+definition user_staff {}
+definition user_ro {}
+definition user_cro {}
+definition user_agent {}
+definition user_observer {}
+definition user_iab {}
+definition user_chair {}
+definition service_workload {}
+
+definition resource_transparency_leaf {
+  relation log_writer: service_workload
+  relation public_reader: user_staff | user_ro | user_cro | user_observer | user_agent | user_iab | user_chair
+  relation witness: service_workload
+
+  permission append_leaf = log_writer
+  permission read_sth = public_reader + log_writer
+  permission verify_inclusion = public_reader
+  permission verify_consistency = public_reader
+  permission cosign_sth = witness
+}

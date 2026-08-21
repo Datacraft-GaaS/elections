@@ -1,0 +1,389 @@
+# Biometric Voter Registration data dictionary
+# Data classes: A=PII-sensitive, B=PII-adjacent, C=system/non-PII, D=metadata/operational
+# Lawful basis: Kenya DPA 2019 s.25 public task; Elections Act Cap.7 s.4
+context: bvr
+service: bvr-svc
+updated: "2026-08-21"
+tables:
+  - table: voters
+    description: "Authoritative voter records in the Kenya voter register"
+    store: T1-voter
+    columns:
+      - column: voter_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Election cycle + 5 years, then archived"
+        notes: "UUIDv7; primary key; generated on enrolment"
+      - column: national_id
+        type: "TEXT"
+        data_class: A
+        pii_purpose: "IPRS identity verification; Elections Act s.4 eligibility check"
+        retention: "Election cycle + 5 years, then anonymised per DPA s.25"
+        notes: "Column-level encrypted; AES-256-GCM; key_id stored alongside; never published to Kafka"
+      - column: full_name
+        type: "TEXT"
+        data_class: A
+        pii_purpose: "Voter identification at polling station; Elections Act s.4"
+        retention: "Election cycle + 5 years, then anonymised"
+        notes: "Column-level encrypted; displayed only to authorised presiding officers"
+      - column: dob
+        type: "DATE"
+        data_class: A
+        pii_purpose: "Age eligibility verification; Elections Act s.4 (18+ requirement)"
+        retention: "Election cycle + 5 years, then anonymised"
+        notes: "Column-level encrypted; used for eligibility checks only"
+      - column: gender
+        type: "TEXT"
+        data_class: A
+        pii_purpose: "Statutory demographic reporting; Elections Act s.36 gender returns"
+        retention: "Election cycle + 5 years, then anonymised"
+        notes: "Values: M, F, X; aggregated for demographic analytics only"
+      - column: phone
+        type: "TEXT"
+        data_class: A
+        pii_purpose: "Voter notification during registration adjudication; DPA s.25 consent basis"
+        retention: "Election cycle + 2 years, then deleted"
+        notes: "Column-level encrypted; optional; used for SMS alerts only"
+      - column: address
+        type: "TEXT"
+        data_class: A
+        pii_purpose: "Residential verification for polling station assignment; Elections Act s.4"
+        retention: "Election cycle + 5 years, then anonymised"
+        notes: "Column-level encrypted; parsed to ward/constituency for station assignment"
+      - column: polling_station_code
+        type: "TEXT"
+        data_class: B
+        pii_purpose: "Determines where voter exercises franchise; publicly listed on register"
+        retention: "Election cycle + 5 years"
+        notes: "Publicly listed on the Kenya voter register; not sensitive in isolation"
+      - column: status
+        type: "TEXT"
+        data_class: B
+        pii_purpose: "Register eligibility status; may indicate disenfranchisement"
+        retention: "Election cycle + 5 years"
+        notes: "Values: active, suspended, deceased, transferred"
+      - column: version
+        type: "BIGINT"
+        data_class: C
+        pii_purpose: "Not PII - optimistic concurrency version"
+        retention: "Election cycle + 5 years"
+        notes: "Incremented on every update; used for event-store idempotency"
+      - column: election_scope
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - which election cycle this record belongs to"
+        retention: "Election cycle + 5 years"
+        notes: "e.g. KE-2027-GEN"
+      - column: created_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 5 years"
+        notes: "HLC timestamp of enrolment"
+      - column: updated_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 5 years"
+        notes: "HLC timestamp of last update"
+      - column: deleted_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Soft-delete marker; DPA right to erasure requests"
+        retention: "Election cycle + 5 years"
+        notes: "Null when active; set on logical deletion"
+
+  - table: biometric_templates
+    description: "Encrypted biometric feature vectors for voter deduplication and identification"
+    store: T2-biometric
+    columns:
+      - column: template_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Election cycle + 5 years"
+        notes: "UUIDv7; primary key"
+      - column: voter_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Foreign key to voters; not PII in isolation"
+        retention: "Election cycle + 5 years"
+        notes: "FK to voters.voter_id"
+      - column: modality
+        type: "TEXT"
+        data_class: D
+        pii_purpose: "Operational metadata - which biometric type"
+        retention: "Election cycle + 5 years"
+        notes: "Values: fingerprint, iris, face"
+      - column: encrypted_blob
+        type: "BYTEA"
+        data_class: A
+        pii_purpose: "Biometric data; Kenya DPA 2019 s.2 special category; Elections Act s.4 enrolment"
+        retention: "Election cycle + 5 years, then cryptographic shredding"
+        notes: "Field-encrypted; AES-256-GCM + TEE key; never exported outside enclave; ABIS accesses via enclave API only"
+      - column: key_id
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - encryption key reference"
+        retention: "Election cycle + 5 years"
+        notes: "References HSM key escrow; rotated annually"
+      - column: quality_score
+        type: "FLOAT4"
+        data_class: D
+        pii_purpose: "Operational metadata - capture quality"
+        retention: "Election cycle + 5 years"
+        notes: "0.0-1.0; used to flag re-capture candidates"
+      - column: captured_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 5 years"
+        notes: "HLC timestamp of capture"
+      - column: deleted_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Soft-delete marker; DPA erasure requests"
+        retention: "Election cycle + 5 years"
+        notes: "Null when active; triggers cryptographic shredding job when set"
+
+  - table: id_document_scans
+    description: "MRZ-parsed identity document scan references stored in MinIO"
+    store: T2-biometric
+    columns:
+      - column: scan_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Election cycle + 5 years"
+        notes: "UUIDv7; primary key"
+      - column: voter_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "FK to voters; not PII in isolation"
+        retention: "Election cycle + 5 years"
+        notes: "FK to voters.voter_id"
+      - column: mrz_parsed
+        type: "JSONB"
+        data_class: A
+        pii_purpose: "Identity document data; IPRS verification; Elections Act s.4"
+        retention: "Election cycle + 2 years, then deleted"
+        notes: "Column-level encrypted; contains national_id, name, dob from MRZ; deleted after eligibility confirmed"
+      - column: minio_ref
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - object storage reference"
+        retention: "Election cycle + 5 years"
+        notes: "MinIO object path; object itself is access-controlled and encrypted at rest"
+      - column: sha256_hash
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - integrity hash"
+        retention: "Election cycle + 5 years"
+        notes: "SHA-256 of the raw scan image; used for tamper detection"
+      - column: captured_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 5 years"
+        notes: "HLC timestamp of scan capture"
+      - column: deleted_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Soft-delete marker; DPA erasure"
+        retention: "Election cycle + 5 years"
+        notes: "Triggers deletion of MinIO object when set"
+
+  - table: adjudication_cases
+    description: "Voter register duplicate and eligibility dispute cases awaiting human review"
+    store: T3-adjudication
+    columns:
+      - column: case_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Election cycle + 5 years"
+        notes: "UUIDv7; primary key"
+      - column: voter_ids
+        type: "JSONB"
+        data_class: B
+        pii_purpose: "Array of voter_id UUIDs involved in dispute; PII-adjacent as links to voter records"
+        retention: "Election cycle + 5 years"
+        notes: "Array of UUIDv7 strings; no direct PII embedded"
+      - column: modality
+        type: "TEXT"
+        data_class: D
+        pii_purpose: "Operational metadata - biometric modality triggering case"
+        retention: "Election cycle + 5 years"
+        notes: "Values: fingerprint, iris, face, manual"
+      - column: status
+        type: "TEXT"
+        data_class: B
+        pii_purpose: "Adjudication outcome may affect franchise rights"
+        retention: "Election cycle + 5 years"
+        notes: "Values: open, under_review, resolved, escalated"
+      - column: investigator_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - staff member reference"
+        retention: "Election cycle + 5 years"
+        notes: "FK to staff identity; logged for accountability"
+      - column: decision
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - outcome code"
+        retention: "Election cycle + 5 years"
+        notes: "Values: retain_all, merge, remove_duplicate, refer_court"
+      - column: reason_code
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - structured reason for decision"
+        retention: "Election cycle + 5 years"
+        notes: "Controlled vocabulary; used for analytics and appeals"
+      - column: opened_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 5 years"
+        notes: "HLC timestamp"
+      - column: resolved_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Election cycle + 5 years"
+        notes: "Null while open; HLC timestamp when resolved"
+
+  - table: audit_events
+    description: "Tamper-evident audit log of all privileged actions on the voter register"
+    store: T4-audit
+    columns:
+      - column: event_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Elections Act s.32: 15 years"
+        notes: "UUIDv7; primary key; append-only table"
+      - column: actor
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - SPIFFE ID or staff ID of actor"
+        retention: "Elections Act s.32: 15 years"
+        notes: "SPIFFE URI or staff UUID; used for accountability"
+      - column: action
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - action type"
+        retention: "Elections Act s.32: 15 years"
+        notes: "e.g. voter.create, voter.suspend, template.delete"
+      - column: ts_hlc
+        type: "TEXT"
+        data_class: D
+        pii_purpose: "Operational metadata - hybrid logical clock timestamp"
+        retention: "Elections Act s.32: 15 years"
+        notes: "HLC string; monotonic across distributed nodes"
+      - column: signed_by
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - signing key reference"
+        retention: "Elections Act s.32: 15 years"
+        notes: "HSM key ID used to sign this event"
+      - column: payload_hash
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - SHA-256 of the event payload"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Payload stored separately in MinIO; hash enables tamper detection"
+      - column: created_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Wall-clock insert time; HLC is the authoritative ordering key"
+
+  - table: merkle_roots
+    description: "Published Merkle root snapshots anchoring the voter register event-store"
+    store: T4-audit
+    columns:
+      - column: root_id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "Elections Act s.32: 15 years"
+        notes: "UUIDv7; primary key"
+      - column: scope
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - scope of root (election, batch)"
+        retention: "Elections Act s.32: 15 years"
+        notes: "e.g. KE-2027-GEN or batch:42"
+      - column: root_hash
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - public commitment value"
+        retention: "Elections Act s.32: 15 years"
+        notes: "SHA-256 hex; published to transparency log"
+      - column: leaf_count
+        type: "BIGINT"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Number of events covered by this root"
+      - column: signed_by_hsm
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - HSM signing key ID"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Base64url signature by HSM; verifiable against public cert"
+      - column: published_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Elections Act s.32: 15 years"
+        notes: "When the root was published to transparency-log"
+      - column: escrow_confirmed
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "Elections Act s.32: 15 years"
+        notes: "Null until MinIO escrow write confirmed"
+
+  - table: outbox
+    description: "Transactional outbox for reliable Kafka event publishing from bvr-svc"
+    store: T5-outbox
+    columns:
+      - column: id
+        type: "UUID"
+        data_class: C
+        pii_purpose: "Not PII - system identifier"
+        retention: "7 days after published_at"
+        notes: "UUIDv7; primary key; deleted after confirmed publish"
+      - column: topic
+        type: "TEXT"
+        data_class: D
+        pii_purpose: "Operational metadata - Kafka topic name"
+        retention: "7 days after published_at"
+        notes: "e.g. eel.bvr.voter.v1"
+      - column: key
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - Kafka partition key (voter_id or case_id)"
+        retention: "7 days after published_at"
+        notes: "UUIDv7 string; no PII"
+      - column: payload_hash
+        type: "TEXT"
+        data_class: C
+        pii_purpose: "Not PII - SHA-256 of serialised event payload"
+        retention: "7 days after published_at"
+        notes: "Payload stored in MinIO; hash enables dedup"
+      - column: published_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "7 days after published_at"
+        notes: "Null until relay confirms Kafka ack"
+      - column: created_at
+        type: "TIMESTAMPTZ"
+        data_class: D
+        pii_purpose: "Operational metadata"
+        retention: "7 days after published_at"
+        notes: "Wall-clock insert time"

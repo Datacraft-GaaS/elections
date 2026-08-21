@@ -1,0 +1,22 @@
+# ABIS batch analytics events - batch deduplication run summaries for operational reporting
+# Source: ABIS context, analytics
+name: eel.abis.batch.v1
+partitions: 12
+retention_class: analytics
+replication_factor: 3
+min_isr: 2
+unclean_leader_election: false
+acks: all
+signed: true
+delivery: at-least-once-idempotent
+acl:
+  produce:
+    - "spiffe://eel.local/service/abis-svc"
+  consume:
+    - "spiffe://eel.local/service/audit-sink"
+    - "spiffe://eel.local/service/ecc-svc"
+configs:
+  compression.type: zstd
+  min.insync.replicas: 2
+  max.message.bytes: 1048576
+retention_notes: "90-day hot retention; aggregated batch statistics only; no individual match data"

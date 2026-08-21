@@ -1,0 +1,79 @@
+---
+# WP-0.5: contract validation pipeline
+when:
+  - event: [push, pull_request]
+
+steps:
+  - name: spectral
+    image: eel/build-image:latest
+    commands:
+      - |
+        if find packages/openapi-contracts -name '*.yaml' | grep -q .; then
+          spectral lint packages/openapi-contracts/**/*.yaml --ruleset .spectral.yaml
+        else
+          echo "no OpenAPI contracts — skip"
+        fi
+
+  - name: zed-validate
+    image: eel/build-image:latest
+    commands:
+      - |
+        if find packages/authz-schema -name '*.zed' | grep -q .; then
+          find packages/authz-schema -name '*.zed' -print0 \
+            | xargs -0 -I{} zed validate {}
+        else
+          echo "no ZED schemas — skip"
+        fi
+
+  - name: json-schema-validate
+    image: eel/build-image:latest
+    commands:
+      - |
+        if find packages/event-schemas -name '*.schema.json' | grep -q .; then
+          find packages/event-schemas -name '*.schema.json' -print0 \
+            | xargs -0 -I{} ajv validate --strict=true --spec=draft2020 -s {}
+        else
+          echo "no event schemas — skip"
+        fi
+
+  - name: buf-breaking
+    image: eel/build-image:latest
+    when:
+      event: pull_request
+    commands:
+      - |
+        if find . -name 'buf.yaml' -not -path '*/node_modules/*' | grep -q .; then
+          buf breaking --against '.git#branch=main'
+        else
+          echo "no buf configs — skip"
+        fi
+
+  - name: openapi-diff
+    image: eel/build-image:latest
+    when:
+      event: pull_request
+    commands:
+      - |
+        if find packages/openapi-contracts -name '*.yaml' | grep -q .; then
+          git fetch origin main --depth=1
+          find packages/openapi-contracts -name '*.yaml' | while read spec; do
+            prev=$(git show origin/main:"$spec" 2>/dev/null) || continue
+            echo "$prev" > /tmp/prev-spec.yaml
+            openapi-diff /tmp/prev-spec.yaml "$spec" --fail-on-incompatible
+          done
+        else
+          echo "no OpenAPI specs — skip"
+        fi
+
+  - name: topic-coverage
+    image: eel/build-image:latest
+    commands:
+      - |
+        # Every event `type` field in packages/event-schemas must map to a topic in platform/kafka/topics/.
+        if find packages/event-schemas -name '*.schema.json' | grep -q .; then
+          python3 scripts/check_topic_coverage.py \
+            --schemas packages/event-schemas \
+            --topics platform/kafka/topics
+        else
+          echo "no event schemas — skip topic coverage check"
+        fi

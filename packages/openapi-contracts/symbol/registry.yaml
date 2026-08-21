@@ -1,0 +1,566 @@
+openapi: 3.1.0
+info:
+  title: eel-symbol-registry
+  version: 1.0.0
+  description: >
+    Module M67 - Party Symbol and Colour Registry. Manages the registration of
+    party symbols and official colours, collision detection to prevent confusingly
+    similar identities, and the public registry of approved party symbols.
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: symbol-registrations
+    description: Party symbol and colour registration lifecycle
+  - name: collision-checks
+    description: Symbol and colour collision detection
+  - name: public-registry
+    description: Public party symbol registry
+
+paths:
+  /api/v1/symbol/registrations:
+    post:
+      tags: [symbol-registrations]
+      operationId: registerPartySymbol
+      summary: Register party symbol and official colours
+      description: >
+        Tier 3. Requires JWT plus SpiceDB authorization. Submits a party's
+        symbol image hash and official colour palette for registration. A
+        collision check must be completed before submission; provide the
+        collision_check_id from a completed collision check.
+      security:
+        - bearerAuth: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SymbolRegistrationRequest'
+          application/cbor:
+            schema:
+              $ref: '#/components/schemas/SymbolRegistrationRequest'
+      responses:
+        '201':
+          description: Symbol registration submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SymbolRegistration'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/symbol/registrations/{registration_id}:
+    get:
+      tags: [symbol-registrations]
+      operationId: getSymbolRegistration
+      summary: Get symbol registration status
+      description: >
+        Tier 2. Returns the symbol registration resource for the given
+        registration ID including review status.
+      security:
+        - bearerAuth: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      parameters:
+        - $ref: '#/components/parameters/SymbolRegistrationId'
+      responses:
+        '200':
+          description: Symbol registration resource
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SymbolRegistration'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/symbol/parties/{party_id}/symbol:
+    get:
+      tags: [public-registry]
+      operationId: getPartySymbol
+      summary: Get published symbol details for a party
+      description: >
+        Tier 1. Public endpoint. Returns the approved and published symbol
+        details for a registered party. Response is cryptographically signed
+        and anchored in the Merkle ledger.
+      security: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      parameters:
+        - name: party_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/UUIDv7'
+          description: Party UUIDv7 identifier
+      responses:
+        '200':
+          description: Published party symbol record
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/XEelCosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/XEelMerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/XEelSnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishedPartySymbol'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/symbol/collision-checks:
+    post:
+      tags: [collision-checks]
+      operationId: checkSymbolCollision
+      summary: Check for symbol and colour collision against the registry
+      description: >
+        Tier 3. Requires JWT plus SpiceDB authorization. Runs a perceptual hash
+        comparison of the submitted symbol image and an exact-match check on the
+        primary colour against all registered party symbols. A collision_check_id
+        from a clean result is required when submitting a symbol registration.
+      security:
+        - bearerAuth: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollisionCheckRequest'
+          application/cbor:
+            schema:
+              $ref: '#/components/schemas/CollisionCheckRequest'
+      responses:
+        '201':
+          description: Collision check completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollisionCheckResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/symbol/parties:
+    get:
+      tags: [public-registry]
+      operationId: listPublicSymbolRegistry
+      summary: List all parties with registered symbols
+      description: >
+        Tier 1. Public endpoint. Returns the full public party symbol registry.
+        Response is cryptographically signed and anchored in the Merkle ledger.
+      security: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99%"
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            x-eel-data-class: D
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+            x-eel-data-class: D
+      responses:
+        '200':
+          description: Full public symbol registry
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/XEelCosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/XEelMerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/XEelSnapshotId'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PublishedPartySymbol'
+                  total:
+                    type: integer
+                    x-eel-data-class: D
+                  page:
+                    type: integer
+                    x-eel-data-class: D
+                  page_size:
+                    type: integer
+                    x-eel-data-class: D
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by eel.local identity provider
+    mtls:
+      type: mutualTLS
+      description: X.509 client certificate mutual TLS for internal service-to-service calls
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 128
+        x-eel-data-class: D
+      description: >
+        Client-generated unique key to make this request idempotent. Duplicate
+        requests with the same key return the cached response without re-processing.
+
+    SymbolRegistrationId:
+      name: registration_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUIDv7'
+      description: Symbol registration UUIDv7 identifier
+
+  schemas:
+    UUIDv7:
+      type: string
+      pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+      example: '01909d1a-2b3c-7d4e-8f5a-6b7c8d9e0f1a'
+      x-eel-data-class: D
+
+    HexColour:
+      type: string
+      pattern: '^#[0-9A-Fa-f]{6}$'
+      example: '#1B5E20'
+      x-eel-data-class: C
+      description: CSS hex colour code in #RRGGBB format
+
+    Problem:
+      type: object
+      description: RFC 9457 problem detail
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        title:
+          type: string
+          x-eel-data-class: D
+        status:
+          type: integer
+          x-eel-data-class: D
+        detail:
+          type: string
+          x-eel-data-class: D
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        eel_trace_id:
+          type: string
+          x-eel-data-class: D
+
+    SymbolRegistrationRequest:
+      type: object
+      description: Request to register a party symbol and official colour palette
+      required:
+        - party_id
+        - symbol_image_hash
+        - primary_colour_hex
+        - secondary_colour_hex
+        - collision_check_id
+      properties:
+        party_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+          description: Registered party UUIDv7
+        symbol_image_hash:
+          type: string
+          minLength: 64
+          maxLength: 128
+          x-eel-data-class: C
+          description: SHA-256 hash of the canonical symbol image file
+        primary_colour_hex:
+          $ref: '#/components/schemas/HexColour'
+          x-eel-data-class: C
+          description: Primary official party colour
+        secondary_colour_hex:
+          $ref: '#/components/schemas/HexColour'
+          x-eel-data-class: C
+          description: Secondary official party colour
+        collision_check_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+          description: >
+            UUIDv7 of a completed collision check with collision_detected = false.
+            The registration is rejected if the referenced check detected a collision
+            or if it was completed more than 48 hours ago.
+
+    SymbolRegistration:
+      type: object
+      description: Party symbol registration resource
+      required:
+        - registration_id
+        - party_id
+        - symbol_image_hash
+        - primary_colour_hex
+        - secondary_colour_hex
+        - status
+        - submitted_at
+      properties:
+        registration_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+        party_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+        symbol_image_hash:
+          type: string
+          x-eel-data-class: C
+        primary_colour_hex:
+          $ref: '#/components/schemas/HexColour'
+          x-eel-data-class: C
+        secondary_colour_hex:
+          $ref: '#/components/schemas/HexColour'
+          x-eel-data-class: C
+        collision_check_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+        status:
+          type: string
+          enum:
+            - pending
+            - approved
+            - rejected
+          x-eel-data-class: C
+          description: Review status of the registration
+        submitted_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        updated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    PublishedPartySymbol:
+      type: object
+      description: Publicly viewable approved party symbol record
+      required:
+        - party_id
+        - party_name
+        - symbol_image_hash
+        - primary_colour_hex
+        - secondary_colour_hex
+        - approved_at
+      properties:
+        party_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+        party_name:
+          type: string
+          x-eel-data-class: C
+        abbreviation:
+          type: string
+          x-eel-data-class: C
+        symbol_image_hash:
+          type: string
+          x-eel-data-class: C
+          description: SHA-256 hash of the approved symbol image
+        symbol_asset_url:
+          type: string
+          format: uri
+          x-eel-data-class: C
+          description: Public CDN URL for the approved symbol image
+        primary_colour_hex:
+          $ref: '#/components/schemas/HexColour'
+          x-eel-data-class: C
+        secondary_colour_hex:
+          $ref: '#/components/schemas/HexColour'
+          x-eel-data-class: C
+        approved_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+
+    CollisionCheckRequest:
+      type: object
+      description: Request to check a proposed symbol and colour for conflicts
+      required:
+        - party_id
+        - symbol_image_hash
+        - primary_colour_hex
+      properties:
+        party_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+          description: Party UUIDv7 requesting the check; excluded from its own comparison
+        symbol_image_hash:
+          type: string
+          minLength: 64
+          maxLength: 128
+          x-eel-data-class: C
+          description: SHA-256 hash of the proposed symbol image
+        primary_colour_hex:
+          $ref: '#/components/schemas/HexColour'
+          x-eel-data-class: C
+          description: Proposed primary colour to check against registered palettes
+
+    CollisionCheckResult:
+      type: object
+      description: Result of a symbol and colour collision check
+      required:
+        - collision_check_id
+        - party_id
+        - collision_detected
+        - conflicting_party_ids
+        - checked_at
+      properties:
+        collision_check_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+          description: Reference ID to supply when submitting a symbol registration
+        party_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+        collision_detected:
+          type: boolean
+          x-eel-data-class: C
+          description: True if any existing registration conflicts with the submitted symbol or colour
+        conflicting_party_ids:
+          type: array
+          items:
+            $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+          description: UUIDv7 identifiers of parties whose symbols or colours conflict
+        checked_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+          description: ISO 8601 UTC timestamp of the check; result expires 48 hours after this
+
+  headers:
+    XEelCosignSig:
+      description: Ed25519 cosignature over the response body from the eel.local signing key
+      schema:
+        type: string
+        x-eel-data-class: D
+    XEelMerkleProof:
+      description: Base64-encoded Merkle inclusion proof for this response snapshot
+      schema:
+        type: string
+        x-eel-data-class: D
+    XEelSnapshotId:
+      description: Ledger snapshot UUIDv7 that anchors this response
+      schema:
+        $ref: '#/components/schemas/UUIDv7'
+
+  responses:
+    BadRequest:
+      description: Request payload failed schema validation
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    Unauthorized:
+      description: Missing or invalid bearer token
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    Forbidden:
+      description: Token valid but caller lacks required SpiceDB permission
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    Conflict:
+      description: Duplicate idempotency key with different payload or state conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    UnprocessableEntity:
+      description: Payload syntactically valid but semantically rejected
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'

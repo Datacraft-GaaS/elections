@@ -1,0 +1,122 @@
+schema_version: "1.0"
+context: bvr
+tests:
+  - name: "staff can write voter records"
+    subject: "user_staff:alice"
+    permission: "write_voter"
+    resource: "resource_registry:national-2027"
+    expected: true
+
+  - name: "party agent cannot write voter records"
+    subject: "user_agent:bob"
+    permission: "write_voter"
+    resource: "resource_registry:national-2027"
+    expected: false
+
+  - name: "RO can read voter register"
+    subject: "user_ro:carol"
+    permission: "read_voter"
+    resource: "resource_registry:national-2027"
+    expected: true
+
+  - name: "observer can read voter register"
+    subject: "user_observer:david"
+    permission: "read_voter"
+    resource: "resource_registry:national-2027"
+    expected: true
+
+  - name: "IAB can read voter register"
+    subject: "user_iab:grace"
+    permission: "read_voter"
+    resource: "resource_registry:national-2027"
+    expected: true
+
+  - name: "RO can export register"
+    subject: "user_ro:carol"
+    permission: "export_register"
+    resource: "resource_registry:nat-2027"
+    expected: true
+
+  - name: "CRO can export register"
+    subject: "user_cro:henry"
+    permission: "export_register"
+    resource: "resource_registry:nat-2027"
+    expected: true
+
+  - name: "party agent cannot export register"
+    subject: "user_agent:bob"
+    permission: "export_register"
+    resource: "resource_registry:nat-2027"
+    expected: false
+
+  - name: "chair can freeze register"
+    subject: "user_chair:frank"
+    permission: "freeze_register"
+    resource: "resource_registry:nat-2027"
+    expected: true
+
+  - name: "RO can freeze register"
+    subject: "user_ro:carol"
+    permission: "freeze_register"
+    resource: "resource_registry:nat-2027"
+    expected: true
+
+  - name: "observer cannot freeze register"
+    subject: "user_observer:david"
+    permission: "freeze_register"
+    resource: "resource_registry:nat-2027"
+    expected: false
+
+  - name: "staff can process SAR"
+    subject: "user_staff:alice"
+    permission: "process_sar"
+    resource: "resource_registry:nat-2027"
+    expected: true
+
+  - name: "party agent cannot process SAR"
+    subject: "user_agent:bob"
+    permission: "process_sar"
+    resource: "resource_registry:nat-2027"
+    expected: false
+
+  - name: "service workload can write voter"
+    subject: "service_workload:bvr-backend"
+    permission: "write_voter"
+    resource: "resource_registry:nat-2027"
+    expected: true
+
+  - name: "IAB can view adjudication"
+    subject: "user_iab:grace"
+    permission: "view_adjudication"
+    resource: "resource_registry:nat-2027"
+    expected: false
+
+  - name: "RO can view adjudication"
+    subject: "user_ro:carol"
+    permission: "view_adjudication"
+    resource: "resource_registry:nat-2027"
+    expected: true
+
+  - name: "party agent cannot view adjudication"
+    subject: "user_agent:bob"
+    permission: "view_adjudication"
+    resource: "resource_registry:nat-2027"
+    expected: false
+
+  - name: "staff can resolve adjudication"
+    subject: "user_staff:alice"
+    permission: "resolve_adjudication"
+    resource: "resource_registry:nat-2027"
+    expected: true
+
+  - name: "observer cannot resolve adjudication"
+    subject: "user_observer:david"
+    permission: "resolve_adjudication"
+    resource: "resource_registry:nat-2027"
+    expected: false
+
+  - name: "staff can approve bulk export"
+    subject: "user_staff:alice"
+    permission: "approve_bulk_export"
+    resource: "resource_registry:nat-2027"
+    expected: true

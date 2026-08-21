@@ -1,0 +1,89 @@
+---
+# WP-0.5: test pipeline
+# Matrix per language. Each step is conditional on files existing.
+when:
+  - event: [push, pull_request]
+
+matrix:
+  include:
+    - LANG: rust
+    - LANG: python
+    - LANG: elixir
+    - LANG: flutter
+    - LANG: node
+
+steps:
+  - name: test-rust
+    image: eel/build-image:latest
+    when:
+      matrix:
+        LANG: rust
+    commands:
+      - cargo nextest run --workspace --all-features --no-fail-fast
+
+  - name: test-python
+    image: eel/build-image:latest
+    when:
+      matrix:
+        LANG: python
+    commands:
+      - |
+        find services -type d -name 'py' | while read pydir; do
+          if [ -f "$pydir/pyproject.toml" ]; then
+            echo "==> testing $pydir"
+            (cd "$pydir" && uv run pytest tests/ci -x -q)
+          fi
+        done
+        if ! find services -type d -name 'py' | grep -q .; then
+          echo "no Python service dirs — skip"
+        fi
+
+  - name: test-elixir
+    image: eel/build-image:latest
+    when:
+      matrix:
+        LANG: elixir
+    commands:
+      - |
+        find services -name 'mix.exs' | while read mixfile; do
+          dir=$(dirname "$mixfile")
+          echo "==> testing $dir"
+          (cd "$dir" && mix deps.get && mix test --no-start)
+        done
+        if ! find services -name 'mix.exs' | grep -q .; then
+          echo "no Elixir sources — skip"
+        fi
+
+  - name: test-flutter
+    image: eel/build-image:latest
+    when:
+      matrix:
+        LANG: flutter
+    commands:
+      - |
+        find services -path '*/apps/*' -name 'pubspec.yaml' | while read f; do
+          dir=$(dirname "$f")
+          echo "==> testing $dir"
+          (cd "$dir" && flutter test)
+        done
+        if ! find services -path '*/apps/*' -name 'pubspec.yaml' | grep -q .; then
+          echo "no Flutter sources — skip"
+        fi
+
+  - name: test-node
+    image: eel/build-image:latest
+    when:
+      matrix:
+        LANG: node
+    commands:
+      - |
+        find services packages -path '*/astro/*' -name 'package.json' \
+          -not -path '*/node_modules/*' | while read f; do
+          dir=$(dirname "$f")
+          echo "==> testing $dir"
+          (cd "$dir" && pnpm install --frozen-lockfile && pnpm exec vitest run)
+        done
+        if ! find services packages -path '*/astro/*' -name 'package.json' \
+            -not -path '*/node_modules/*' | grep -q .; then
+          echo "no Astro/TS sources — skip"
+        fi

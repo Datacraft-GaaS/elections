@@ -1,0 +1,25 @@
+# Runs after postgres-voter is ready to enable logical replication
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postgres-wal-config
+  namespace: eel-data
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: pg-config
+          image: pgvector/pgvector:pg17
+          command:
+            - /bin/sh
+            - -c
+            - |
+              until pg_isready -h postgres-voter -U eel -d voter; do sleep 2; done
+              psql -h postgres-voter -U eel -d voter -c "ALTER SYSTEM SET wal_level = logical;"
+              psql -h postgres-voter -U eel -d voter -c "ALTER SYSTEM SET max_replication_slots = 10;"
+              psql -h postgres-voter -U eel -d voter -c "ALTER SYSTEM SET max_wal_senders = 10;"
+              echo "WAL config applied; restart postgres-voter pod to activate."
+          env:
+            - name: PGPASSWORD
+              value: eel-dev

@@ -1,0 +1,61 @@
+# Placeholder Deployment for hsm-signer gRPC service.
+# The actual image (eel/hsm-signer:dev) is built in Wave 2 under
+# services/transparency-svc/crates/hsm-signer.
+# The SoftHSM library is bind-mounted from the host node.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hsm-signer
+  namespace: eel-hsm
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: hsm-signer
+  template:
+    metadata:
+      labels:
+        app: hsm-signer
+    spec:
+      containers:
+        - name: hsm-signer
+          image: eel/hsm-signer:dev
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 9090
+              name: grpc
+          env:
+            - name: HSM_USER_PIN
+              valueFrom:
+                secretKeyRef:
+                  name: hsm-signer-secrets
+                  key: user-pin
+            - name: PKCS11_MODULE_PATH
+              value: /usr/lib/softhsm/libsofthsm2.so
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          volumeMounts:
+            - name: softhsm-lib
+              mountPath: /usr/lib/softhsm
+              readOnly: true
+            - name: softhsm-tokens
+              mountPath: /var/lib/softhsm/tokens
+            - name: config
+              mountPath: /etc/hsm-signer
+      volumes:
+        - name: softhsm-lib
+          hostPath:
+            path: /usr/lib/softhsm
+            type: DirectoryOrCreate
+        - name: softhsm-tokens
+          hostPath:
+            path: /var/lib/softhsm/tokens
+            type: DirectoryOrCreate
+        - name: config
+          configMap:
+            name: hsm-signer-config

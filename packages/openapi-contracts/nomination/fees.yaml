@@ -1,0 +1,456 @@
+openapi: 3.1.0
+info:
+  title: eel-nomination-fees
+  version: 1.0.0
+  description: >
+    Module M47 - Nomination Fee Payment. Manages STK push initiation via M-Pesa,
+    callback processing from the payment gateway, and PDF receipt generation for
+    nomination fee payments.
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: fees
+    description: Nomination fee payment lifecycle
+  - name: callbacks
+    description: M-Pesa gateway callbacks (internal, mTLS)
+  - name: receipts
+    description: PDF receipt retrieval
+
+paths:
+  /api/v1/nomination/fees/initiate:
+    post:
+      tags: [fees]
+      operationId: initiateNominationFee
+      summary: Initiate nomination fee payment via M-Pesa STK push
+      description: >
+        Tier 2. Initiates an M-Pesa STK push to the candidate's registered
+        mobile number. Returns a payment initiation record. The STK push expires
+        after 5 minutes. Poll the payment status endpoint to confirm settlement.
+      security:
+        - bearerAuth: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeePaymentRequest'
+          application/cbor:
+            schema:
+              $ref: '#/components/schemas/FeePaymentRequest'
+      responses:
+        '201':
+          description: STK push initiated; poll payment_id for status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeePaymentInitiation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/nomination/fees/{payment_id}:
+    get:
+      tags: [fees]
+      operationId: getNominationFeeStatus
+      summary: Get nomination fee payment status
+      description: >
+        Tier 2. Returns the current state of a fee payment. Poll this endpoint
+        after initiating an STK push to detect settlement or failure.
+      security:
+        - bearerAuth: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      parameters:
+        - $ref: '#/components/parameters/PaymentId'
+      responses:
+        '200':
+          description: Fee payment resource
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeePayment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/nomination/fees/callback:
+    post:
+      tags: [callbacks]
+      operationId: processMpesaCallback
+      summary: Process M-Pesa payment callback
+      description: >
+        Tier 3. Internal endpoint secured by mutual TLS. Receives the
+        asynchronous settlement notification from the M-Pesa gateway adapter.
+        This endpoint must not be exposed to the public internet; it is
+        accessible only from the gateway subnet.
+      security:
+        - mtls: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MPesaCallback'
+      responses:
+        '200':
+          description: Callback processed and payment record updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeePayment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/nomination/fees/receipts/{payment_id}:
+    get:
+      tags: [receipts]
+      operationId: getNominationFeeReceipt
+      summary: Download nomination fee payment receipt
+      description: >
+        Tier 2. Returns a presigned MinIO URL pointing to the generated PDF
+        receipt for a successfully paid nomination fee. The URL expires after
+        15 minutes.
+      security:
+        - bearerAuth: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      parameters:
+        - $ref: '#/components/parameters/PaymentId'
+      responses:
+        '200':
+          description: Presigned PDF receipt URL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiptDownloadToken'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Payment is not yet in paid status; no receipt available
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by eel.local identity provider
+    mtls:
+      type: mutualTLS
+      description: X.509 client certificate mutual TLS for internal service-to-service calls
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 128
+        x-eel-data-class: D
+      description: >
+        Client-generated unique key to make this request idempotent. Duplicate
+        requests with the same key return the cached response without re-processing.
+
+    PaymentId:
+      name: payment_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUIDv7'
+      description: Fee payment UUIDv7 identifier
+
+  schemas:
+    UUIDv7:
+      type: string
+      pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+      example: '01909d1a-2b3c-7d4e-8f5a-6b7c8d9e0f1a'
+      x-eel-data-class: D
+
+    Problem:
+      type: object
+      description: RFC 9457 problem detail
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        title:
+          type: string
+          x-eel-data-class: D
+        status:
+          type: integer
+          x-eel-data-class: D
+        detail:
+          type: string
+          x-eel-data-class: D
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        eel_trace_id:
+          type: string
+          x-eel-data-class: D
+
+    FeePaymentRequest:
+      type: object
+      description: Request to initiate an M-Pesa nomination fee payment
+      required:
+        - candidate_id
+        - position_code
+        - amount_kes
+        - phone_number_hash
+      properties:
+        candidate_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+          description: Candidate UUIDv7 for whom the fee is being paid
+        position_code:
+          type: string
+          pattern: '^[A-Z0-9_]{2,32}$'
+          x-eel-data-class: C
+          description: Electoral position code; used to validate the correct fee amount
+        amount_kes:
+          type: integer
+          minimum: 1
+          x-eel-data-class: C
+          description: Fee amount in Kenya Shillings (integer, no decimals)
+        phone_number_hash:
+          type: string
+          minLength: 64
+          maxLength: 128
+          x-eel-data-class: A
+          description: SHA-256 hash of the Safaricom phone number to receive the STK push
+
+    FeePaymentInitiation:
+      type: object
+      description: Response confirming that an STK push has been dispatched
+      required:
+        - payment_id
+        - stk_push_ref
+        - expires_at
+      properties:
+        payment_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+          description: Fee payment UUIDv7; use this to poll status and retrieve receipt
+        stk_push_ref:
+          type: string
+          x-eel-data-class: C
+          description: M-Pesa CheckoutRequestID returned by the STK push API
+        expires_at:
+          type: string
+          format: date-time
+          x-eel-data-class: E
+          description: ISO 8601 UTC timestamp after which the STK push expires (5 minutes)
+
+    FeePayment:
+      type: object
+      description: Full fee payment record
+      required:
+        - payment_id
+        - candidate_id
+        - amount_kes
+        - status
+      properties:
+        payment_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+        candidate_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+        amount_kes:
+          type: integer
+          x-eel-data-class: C
+          description: Fee amount in Kenya Shillings
+        status:
+          type: string
+          enum:
+            - pending
+            - paid
+            - failed
+            - refunded
+          x-eel-data-class: C
+          description: Payment lifecycle status
+        mpesa_ref:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+          description: M-Pesa transaction receipt number (populated on success)
+        transacted_at:
+          type: string
+          format: date-time
+          nullable: true
+          x-eel-data-class: C
+          description: ISO 8601 UTC timestamp of M-Pesa confirmation (populated on success)
+        created_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        updated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    MPesaCallback:
+      type: object
+      description: Asynchronous settlement notification from the M-Pesa gateway adapter
+      required:
+        - result_code
+        - result_desc
+        - payment_id
+        - transacted_at
+      properties:
+        result_code:
+          type: integer
+          x-eel-data-class: C
+          description: M-Pesa ResultCode (0 = success)
+        result_desc:
+          type: string
+          x-eel-data-class: C
+          description: Human-readable result description from M-Pesa
+        payment_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+          description: eel payment UUIDv7 echoed from the STK push metadata
+        mpesa_ref:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+          description: M-Pesa transaction receipt number (present only on success)
+        transacted_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+          description: ISO 8601 UTC timestamp reported by M-Pesa
+
+    ReceiptDownloadToken:
+      type: object
+      description: Short-lived presigned MinIO URL for downloading a PDF receipt
+      required:
+        - download_url
+        - expires_at
+      properties:
+        download_url:
+          type: string
+          format: uri
+          x-eel-data-class: E
+          description: MinIO presigned GET URL for the PDF receipt
+        expires_at:
+          type: string
+          format: date-time
+          x-eel-data-class: E
+          description: ISO 8601 UTC timestamp after which the presigned URL is invalid
+
+  responses:
+    BadRequest:
+      description: Request payload failed schema validation
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    Unauthorized:
+      description: Missing or invalid bearer token or mTLS certificate
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    Forbidden:
+      description: Token valid but caller lacks required permission
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    PaymentRequired:
+      description: Fee has already been paid for this candidacy or amount is invalid
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    Conflict:
+      description: Duplicate idempotency key with different payload or state conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    UnprocessableEntity:
+      description: Payload syntactically valid but semantically rejected
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'

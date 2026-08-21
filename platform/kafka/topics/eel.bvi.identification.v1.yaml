@@ -1,0 +1,23 @@
+# BVI identification events - per-voter biometric identification outcomes (high volume on polling day)
+# Source: BVI context, operational; Kenya DPA 2019 s.25 lawful basis: public task
+name: eel.bvi.identification.v1
+partitions: 64
+retention_class: operational
+replication_factor: 3
+min_isr: 2
+unclean_leader_election: false
+acks: all
+signed: true
+delivery: at-least-once-idempotent
+acl:
+  produce:
+    - "spiffe://eel.local/service/bvi-svc"
+  consume:
+    - "spiffe://eel.local/service/rts-svc"
+    - "spiffe://eel.local/service/ecc-svc"
+    - "spiffe://eel.local/service/audit-sink"
+configs:
+  compression.type: zstd
+  min.insync.replicas: 2
+  max.message.bytes: 1048576
+retention_notes: "30-day hot retention; no biometric payload in event - outcome and voter_id token only; Kenya DPA 2019 data minimisation; biometric templates remain enclave-only"

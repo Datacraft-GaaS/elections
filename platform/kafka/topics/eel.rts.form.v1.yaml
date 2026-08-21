@@ -1,0 +1,26 @@
+# RTS Form events - raw result transmissions from 60k polling stations x 6 positions
+# Source: RTS context, high-volume event-source backbone
+name: eel.rts.form.v1
+partitions: 64
+retention_class: event-source
+replication_factor: 3
+min_isr: 2
+unclean_leader_election: false
+acks: all
+signed: true
+delivery: exactly-once
+acl:
+  produce:
+    - "spiffe://eel.local/service/rts-backend"
+    - "spiffe://eel.local/service/rts-device"
+  consume:
+    - "spiffe://eel.local/service/rts-projections"
+    - "spiffe://eel.local/service/transparency-log"
+    - "spiffe://eel.local/service/rts-backend"
+    - "spiffe://eel.local/service/declaration-svc"
+    - "spiffe://eel.local/service/ballot-serial-svc"
+configs:
+  compression.type: zstd
+  min.insync.replicas: 2
+  max.message.bytes: 1048576
+retention_notes: "Infinite hot; MinIO Tiered Storage after 30d per ADR-0015; Elections Act s.32 mandates 15-year statutory retention on result forms"

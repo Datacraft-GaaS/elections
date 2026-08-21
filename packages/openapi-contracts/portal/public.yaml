@@ -1,0 +1,837 @@
+openapi: "3.1.0"
+
+info:
+  title: eel-portal-public
+  version: "1.0.0"
+  description: >
+    M11 public portal API — election results, Merkle proofs, civic content, and live turnout.
+    Tier 1 (signed-static) read endpoints return X-Eel-Cosign-Sig, X-Eel-Merkle-Proof, and
+    X-Eel-Snapshot-Id response headers for client-side cryptographic verification.
+    All data classes C and D. No PII returned from any endpoint.
+  contact:
+    name: eel platform team
+    email: platform@eel.local
+  license:
+    name: Proprietary
+    identifier: LicenseRef-eel-proprietary
+
+servers:
+  - url: "https://api.eel.local"
+    description: "Production"
+  - url: "https://api.staging.eel.local"
+    description: "Staging"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: "../_shared/components.yaml#/components/securitySchemes/bearerAuth"
+    mtls:
+      $ref: "../_shared/components.yaml#/components/securitySchemes/mtls"
+
+  schemas:
+
+    ResultScope:
+      type: string
+      description: "Electoral scope for a result snapshot."
+      enum:
+        - national
+        - presidential
+        - county
+        - constituency
+        - ward
+        - county_assembly
+      x-eel-data-class: C
+
+    CandidateResult:
+      type: object
+      description: "Votes tally for a single candidate."
+      required:
+        - candidate_id
+        - display_name
+        - party_acronym
+        - votes
+        - result_type
+      properties:
+        candidate_id:
+          $ref: "../_shared/components.yaml#/components/schemas/UUIDv7"
+          description: "Candidate registry identifier."
+          x-eel-data-class: C
+        display_name:
+          type: string
+          description: "Full candidate name as gazetted."
+          maxLength: 200
+          x-eel-data-class: C
+          example: "Jane Achieng Odero"
+        party_acronym:
+          type: string
+          description: "Registered party acronym."
+          maxLength: 20
+          x-eel-data-class: C
+          example: "ODM"
+        votes:
+          type: integer
+          description: "Total valid votes received."
+          minimum: 0
+          x-eel-data-class: C
+        vote_pct:
+          type: number
+          format: float
+          description: "Percentage share of total valid votes."
+          minimum: 0
+          maximum: 100
+          x-eel-data-class: C
+        position:
+          type: integer
+          description: "Rank by votes (1 = leading)."
+          minimum: 1
+          x-eel-data-class: C
+      additionalProperties: false
+
+    ResultSnapshot:
+      type: object
+      description: "Aggregated result snapshot for a scope and code combination."
+      required:
+        - snapshot_id
+        - scope
+        - scope_code
+        - scope_name
+        - election_id
+        - total_valid_votes
+        - total_rejected_votes
+        - total_registered_voters
+        - turnout_pct
+        - candidates
+        - forms_received
+        - forms_expected
+        - merkle_root
+        - snapshot_at
+        - status
+      properties:
+        snapshot_id:
+          $ref: "../_shared/components.yaml#/components/schemas/UUIDv7"
+          description: "Unique identifier for this snapshot version."
+          x-eel-data-class: C
+        scope:
+          $ref: "#/components/schemas/ResultScope"
+        scope_code:
+          type: string
+          description: "IEBC/KNBS code for the scope (e.g. constituency code, county code)."
+          maxLength: 20
+          x-eel-data-class: C
+          example: "290"
+        scope_name:
+          type: string
+          description: "Human-readable name for the scope."
+          maxLength: 200
+          x-eel-data-class: C
+          example: "Westlands Constituency"
+        election_id:
+          type: string
+          description: "Active election cycle identifier."
+          x-eel-data-class: C
+          example: "KE-GE-2027"
+        total_valid_votes:
+          type: integer
+          minimum: 0
+          x-eel-data-class: C
+        total_rejected_votes:
+          type: integer
+          minimum: 0
+          x-eel-data-class: C
+        total_registered_voters:
+          type: integer
+          minimum: 0
+          x-eel-data-class: C
+        turnout_pct:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          x-eel-data-class: C
+        candidates:
+          type: array
+          items:
+            $ref: "#/components/schemas/CandidateResult"
+          x-eel-data-class: C
+        forms_received:
+          type: integer
+          description: "Number of Form 34A/34B forms received and tallied."
+          minimum: 0
+          x-eel-data-class: C
+        forms_expected:
+          type: integer
+          description: "Total Form 34A/34B forms expected for this scope."
+          minimum: 0
+          x-eel-data-class: C
+        merkle_root:
+          type: string
+          description: "SHA-256 Merkle root over all form hashes included in this snapshot."
+          pattern: "^[0-9a-f]{64}$"
+          x-eel-data-class: C
+        snapshot_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [provisional, certified, gazetted]
+          description: "Certification status of this result."
+          x-eel-data-class: C
+      additionalProperties: false
+
+    PublishedForm:
+      type: object
+      description: "Reference record for a scanned and published result form (34A, 34B, 34C)."
+      required:
+        - pub_id
+        - form_id
+        - form_type
+        - scope
+        - scope_code
+        - snapshot_ref
+        - merkle_root
+        - sig
+        - published_at
+      properties:
+        pub_id:
+          $ref: "../_shared/components.yaml#/components/schemas/UUIDv7"
+          description: "Publication record identifier."
+          x-eel-data-class: C
+        form_id:
+          $ref: "../_shared/components.yaml#/components/schemas/UUIDv7"
+          description: "Form registry identifier."
+          x-eel-data-class: C
+        form_type:
+          type: string
+          enum: ["34A", "34B", "34C"]
+          description: "Statutory result form type."
+          x-eel-data-class: C
+        scope:
+          $ref: "#/components/schemas/ResultScope"
+        scope_code:
+          type: string
+          maxLength: 20
+          x-eel-data-class: C
+        snapshot_ref:
+          $ref: "../_shared/components.yaml#/components/schemas/UUIDv7"
+          description: "Snapshot this form contributed to."
+          x-eel-data-class: C
+        merkle_root:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+          description: "SHA-256 Merkle root at time of publication."
+          x-eel-data-class: C
+        sig:
+          type: string
+          description: "ECDSA P-256 detached signature over (form_id || merkle_root || published_at)."
+          x-eel-data-class: C
+        published_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        image_url:
+          type: string
+          format: uri
+          description: "Public URL to the scanned form image (JPEG or PDF)."
+          nullable: true
+          x-eel-data-class: C
+        transcription_confidence:
+          type: number
+          format: float
+          description: "OCR confidence score (0-1). Values below 0.9 flag for human review."
+          minimum: 0
+          maximum: 1
+          nullable: true
+          x-eel-data-class: D
+      additionalProperties: false
+
+    InclusionProof:
+      type: object
+      description: "Merkle inclusion proof showing a specific form is included in the published tree."
+      required:
+        - form_id
+        - merkle_root
+        - leaf_hash
+        - proof_path
+        - tree_size
+      properties:
+        form_id:
+          $ref: "../_shared/components.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        merkle_root:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+          x-eel-data-class: C
+        leaf_hash:
+          type: string
+          description: "SHA-256 hash of the canonical form payload that is the Merkle leaf."
+          pattern: "^[0-9a-f]{64}$"
+          x-eel-data-class: C
+        proof_path:
+          type: array
+          description: "Ordered sibling hashes from leaf to root (RFC 9162 format)."
+          items:
+            type: string
+            pattern: "^[0-9a-f]{64}$"
+            x-eel-data-class: C
+          x-eel-data-class: C
+        tree_size:
+          type: integer
+          description: "Number of leaves in the tree at time of proof generation."
+          minimum: 1
+          x-eel-data-class: C
+        proof_generated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+      additionalProperties: false
+
+    MerkleRoot:
+      type: object
+      description: "A published Merkle tree root with provenance metadata."
+      required:
+        - root_id
+        - root_hash
+        - tree_size
+        - election_id
+        - published_at
+        - cosign_sig
+      properties:
+        root_id:
+          $ref: "../_shared/components.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        root_hash:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+          x-eel-data-class: C
+        tree_size:
+          type: integer
+          minimum: 1
+          x-eel-data-class: C
+        election_id:
+          type: string
+          x-eel-data-class: C
+          example: "KE-GE-2027"
+        scope:
+          $ref: "#/components/schemas/ResultScope"
+        scope_code:
+          type: string
+          maxLength: 20
+          nullable: true
+          x-eel-data-class: C
+        published_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        cosign_sig:
+          type: string
+          description: "Sigstore Cosign signature over this root (base64url)."
+          x-eel-data-class: C
+        rekor_entry_url:
+          type: string
+          format: uri
+          description: "URL to the Rekor transparency log entry for this signature."
+          nullable: true
+          x-eel-data-class: C
+      additionalProperties: false
+
+    TurnoutSummary:
+      type: object
+      description: "Live turnout aggregate — updated every 5 minutes during polling day."
+      required:
+        - election_id
+        - total_registered
+        - total_voted
+        - turnout_pct
+        - stations_reporting
+        - stations_total
+        - as_of
+      properties:
+        election_id:
+          type: string
+          x-eel-data-class: C
+        total_registered:
+          type: integer
+          minimum: 0
+          x-eel-data-class: C
+        total_voted:
+          type: integer
+          minimum: 0
+          x-eel-data-class: C
+        turnout_pct:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          x-eel-data-class: C
+        stations_reporting:
+          type: integer
+          minimum: 0
+          x-eel-data-class: C
+        stations_total:
+          type: integer
+          minimum: 0
+          x-eel-data-class: C
+        by_county:
+          type: array
+          description: "Per-county breakdown (optional; may be omitted to reduce payload size)."
+          items:
+            type: object
+            required: [county_code, voted, registered]
+            properties:
+              county_code:
+                type: string
+                x-eel-data-class: C
+              county_name:
+                type: string
+                x-eel-data-class: C
+              voted:
+                type: integer
+                minimum: 0
+                x-eel-data-class: C
+              registered:
+                type: integer
+                minimum: 0
+                x-eel-data-class: C
+              turnout_pct:
+                type: number
+                format: float
+                x-eel-data-class: C
+          x-eel-data-class: C
+          nullable: true
+        as_of:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+      additionalProperties: false
+
+    CivicContent:
+      type: object
+      description: "A published civic education or explainer content item."
+      required:
+        - item_id
+        - slug
+        - title
+        - body_html
+        - language
+        - published_at
+        - author_id
+      properties:
+        item_id:
+          $ref: "../_shared/components.yaml#/components/schemas/UUIDv7"
+          x-eel-data-class: C
+        slug:
+          type: string
+          description: "URL-safe slug."
+          pattern: "^[a-z0-9-]{1,120}$"
+          x-eel-data-class: C
+        title:
+          type: string
+          maxLength: 300
+          x-eel-data-class: C
+        body_html:
+          type: string
+          description: "Sanitised HTML body (allows only a safe subset of tags)."
+          x-eel-data-class: C
+        language:
+          type: string
+          description: "BCP-47 language tag."
+          x-eel-data-class: C
+          example: "sw"
+        tags:
+          type: array
+          items:
+            type: string
+            maxLength: 60
+          x-eel-data-class: C
+          nullable: true
+        author_id:
+          $ref: "../_shared/components.yaml#/components/schemas/UUIDv7"
+          description: "Content author operator ID (not citizen PII)."
+          x-eel-data-class: D
+        published_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+          x-eel-data-class: C
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: "If set, the content is hidden from public view after this timestamp."
+          x-eel-data-class: C
+      additionalProperties: false
+
+    CivicContentCreate:
+      type: object
+      description: "Request body for publishing civic content."
+      required:
+        - slug
+        - title
+        - body_html
+        - language
+      properties:
+        slug:
+          type: string
+          pattern: "^[a-z0-9-]{1,120}$"
+          x-eel-data-class: C
+        title:
+          type: string
+          maxLength: 300
+          x-eel-data-class: C
+        body_html:
+          type: string
+          x-eel-data-class: C
+        language:
+          type: string
+          x-eel-data-class: C
+        tags:
+          type: array
+          items:
+            type: string
+            maxLength: 60
+          x-eel-data-class: C
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          x-eel-data-class: C
+      additionalProperties: false
+
+paths:
+
+  /api/v1/portal/results:
+    get:
+      operationId: getNationalResults
+      summary: "National election result snapshot (signed-static, Tier 1)"
+      description: >
+        Returns the latest certified national result snapshot. Response is served from
+        a CDN-cached signed static bundle; Cosign signature and Merkle proof headers
+        allow clients to verify authenticity without trusting the CDN.
+        No auth required.
+      tags: [portal-results]
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      security: []
+      parameters:
+        - name: snapshot_id
+          in: query
+          required: false
+          description: "Pin response to a specific snapshot version (UUIDv7). Omit for latest."
+          schema:
+            $ref: "../_shared/components.yaml#/components/schemas/UUIDv7"
+      responses:
+        "200":
+          description: "National result snapshot."
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Cosign-Sig"
+            X-Eel-Merkle-Proof:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Merkle-Proof"
+            X-Eel-Snapshot-Id:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Snapshot-Id"
+            X-Eel-Request-Id:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Request-Id"
+            Cache-Control:
+              schema:
+                type: string
+              description: "CDN cache directive, e.g. public, max-age=30."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResultSnapshot"
+        "404":
+          $ref: "../_shared/components.yaml#/components/responses/404NotFound"
+        "500":
+          $ref: "../_shared/components.yaml#/components/responses/500InternalServerError"
+
+  /api/v1/portal/results/{scope}/{code}:
+    get:
+      operationId: getScopedResults
+      summary: "Regional or constituency result snapshot (signed-static, Tier 1)"
+      description: >
+        Returns the latest result snapshot for a given scope and code combination.
+        Cosign signature and Merkle proof headers are included for cryptographic verification.
+      tags: [portal-results]
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      security: []
+      parameters:
+        - name: scope
+          in: path
+          required: true
+          description: "Electoral scope."
+          schema:
+            $ref: "#/components/schemas/ResultScope"
+        - name: code
+          in: path
+          required: true
+          description: "Scope-specific code (county code, constituency code, etc.)."
+          schema:
+            type: string
+            maxLength: 20
+            x-eel-data-class: C
+        - name: snapshot_id
+          in: query
+          required: false
+          schema:
+            $ref: "../_shared/components.yaml#/components/schemas/UUIDv7"
+      responses:
+        "200":
+          description: "Scoped result snapshot."
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Cosign-Sig"
+            X-Eel-Merkle-Proof:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Merkle-Proof"
+            X-Eel-Snapshot-Id:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Snapshot-Id"
+            X-Eel-Request-Id:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Request-Id"
+            Cache-Control:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResultSnapshot"
+        "404":
+          $ref: "../_shared/components.yaml#/components/responses/404NotFound"
+        "500":
+          $ref: "../_shared/components.yaml#/components/responses/500InternalServerError"
+
+  /api/v1/portal/forms/{form_id}/proof:
+    get:
+      operationId: getFormInclusionProof
+      summary: "Fetch Merkle inclusion proof for a published result form (Tier 2)"
+      description: >
+        Returns a Merkle inclusion proof proving a specific form is included in the
+        published tree at the stated root. Clients should verify the proof independently
+        using the Merkle root published at /api/v1/portal/merkle/{root_id}.
+      tags: [portal-proofs]
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      security: []
+      parameters:
+        - name: form_id
+          in: path
+          required: true
+          schema:
+            $ref: "../_shared/components.yaml#/components/schemas/UUIDv7"
+      responses:
+        "200":
+          description: "Merkle inclusion proof."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InclusionProof"
+            application/cbor:
+              schema:
+                $ref: "#/components/schemas/InclusionProof"
+        "404":
+          $ref: "../_shared/components.yaml#/components/responses/404NotFound"
+        "500":
+          $ref: "../_shared/components.yaml#/components/responses/500InternalServerError"
+
+  /api/v1/portal/merkle/{root_id}:
+    get:
+      operationId: getMerkleRoot
+      summary: "Retrieve a published Merkle tree root (signed-static, Tier 1)"
+      description: >
+        Returns a published Merkle root with Cosign signature and Rekor entry URL.
+        Clients use this to anchor Merkle inclusion proof verification.
+      tags: [portal-merkle]
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      security: []
+      parameters:
+        - name: root_id
+          in: path
+          required: true
+          schema:
+            $ref: "../_shared/components.yaml#/components/schemas/UUIDv7"
+      responses:
+        "200":
+          description: "Merkle root record."
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Cosign-Sig"
+            X-Eel-Snapshot-Id:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Snapshot-Id"
+            X-Eel-Request-Id:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MerkleRoot"
+        "404":
+          $ref: "../_shared/components.yaml#/components/responses/404NotFound"
+        "500":
+          $ref: "../_shared/components.yaml#/components/responses/500InternalServerError"
+
+  /api/v1/portal/turnout:
+    get:
+      operationId: getLiveTurnout
+      summary: "Live turnout aggregate (signed-static, Tier 1)"
+      description: >
+        Returns the most recent national turnout summary. Updated every 5 minutes on polling day.
+        Cosign-signed response; Merkle proof header anchors the aggregate to the forms tree.
+      tags: [portal-turnout]
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      security: []
+      parameters:
+        - name: include_county_breakdown
+          in: query
+          required: false
+          description: "Set to true to include per-county turnout array (larger payload)."
+          schema:
+            type: boolean
+            default: false
+            x-eel-data-class: E
+      responses:
+        "200":
+          description: "Live turnout summary."
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Cosign-Sig"
+            X-Eel-Merkle-Proof:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Merkle-Proof"
+            X-Eel-Snapshot-Id:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Snapshot-Id"
+            X-Eel-Request-Id:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Request-Id"
+            Cache-Control:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TurnoutSummary"
+        "500":
+          $ref: "../_shared/components.yaml#/components/responses/500InternalServerError"
+
+  /api/v1/portal/civic/{item_id}:
+    get:
+      operationId: getCivicContent
+      summary: "Retrieve a civic explainer content item (Tier 1)"
+      description: >
+        Returns a single civic education or explainer content item by its ID.
+        Content is public; no auth required. Responses are CDN-cached.
+      tags: [portal-civic]
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      security: []
+      parameters:
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            $ref: "../_shared/components.yaml#/components/schemas/UUIDv7"
+        - name: language
+          in: query
+          required: false
+          description: "BCP-47 language preference. Falls back to 'en' if not available."
+          schema:
+            type: string
+            x-eel-data-class: E
+            example: "sw"
+      responses:
+        "200":
+          description: "Civic content item."
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Cosign-Sig"
+            X-Eel-Snapshot-Id:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Snapshot-Id"
+            X-Eel-Request-Id:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Request-Id"
+            Cache-Control:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CivicContent"
+        "404":
+          description: "Content item not found."
+          content:
+            application/problem+json:
+              schema:
+                $ref: "../_shared/components.yaml#/components/schemas/Problem"
+              example:
+                type: "https://errors.eel.local/t2/explainer-not-found"
+                title: "Explainer not found"
+                status: 404
+        "500":
+          $ref: "../_shared/components.yaml#/components/responses/500InternalServerError"
+
+  /api/v1/portal/admin/content:
+    post:
+      operationId: publishCivicContent
+      summary: "Publish a civic content item (Tier 3, admin)"
+      description: >
+        Content editors publish or update civic explainer content. Idempotent on slug + language:
+        a repeated publish with the same slug and language updates the existing item.
+        Requires portal:content:write scope and SpiceDB PORTAL_EDITOR or higher role.
+      tags: [portal-admin]
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      security:
+        - bearerAuth: ["portal:content:write"]
+      parameters:
+        - $ref: "../_shared/components.yaml#/components/parameters/IdempotencyKeyHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CivicContentCreate"
+          application/cbor:
+            schema:
+              $ref: "#/components/schemas/CivicContentCreate"
+      responses:
+        "201":
+          description: "Content published."
+          headers:
+            X-Eel-Request-Id:
+              $ref: "../_shared/components.yaml#/components/headers/X-Eel-Request-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CivicContent"
+        "200":
+          description: "Existing content updated (idempotent slug+language match)."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CivicContent"
+        "400":
+          $ref: "../_shared/components.yaml#/components/responses/400BadRequest"
+        "401":
+          $ref: "../_shared/components.yaml#/components/responses/401Unauthorized"
+        "403":
+          $ref: "../_shared/components.yaml#/components/responses/403Forbidden"
+        "422":
+          $ref: "../_shared/components.yaml#/components/responses/422UnprocessableEntity"
+        "500":
+          $ref: "../_shared/components.yaml#/components/responses/500InternalServerError"

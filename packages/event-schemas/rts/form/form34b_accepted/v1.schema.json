@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Source module: M10-RTS. Kafka topic: eel.rts.form.v1 (event-source).",
+  "title": "rts.form.form34b_accepted.v1",
+  "description": "A Form 34B constituency summary has been verified and accepted by the Returning Officer.",
+  "x-eel-topic": "eel.rts.form.v1",
+  "x-eel-owner": "platform-eng",
+  "x-eel-slack-channel": "#eel-events",
+  "type": "object",
+  "required": [
+    "specversion",
+    "id",
+    "type",
+    "source",
+    "subject",
+    "time",
+    "datacontenttype",
+    "dataschema",
+    "data",
+    "eel_hlc",
+    "eel_correlation_id",
+    "eel_causation_id",
+    "eel_producer_key_id",
+    "eel_signature",
+    "eel_election_id",
+    "eel_data_class",
+    "eel_stream_id",
+    "eel_seq",
+    "eel_prev_hash"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "specversion": {
+      "type": "string",
+      "const": "1.0",
+      "description": "CloudEvents specification version."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "UUIDv7 event identifier."
+    },
+    "type": {
+      "type": "string",
+      "const": "eel.rts.form.form34b_accepted.v1",
+      "description": "Fully-qualified eel event type string."
+    },
+    "source": {
+      "type": "string",
+      "format": "uri",
+      "description": "SPIFFE SVID of the producing service."
+    },
+    "subject": {
+      "type": "string",
+      "description": "Aggregate root path for this event."
+    },
+    "time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC event timestamp."
+    },
+    "datacontenttype": {
+      "type": "string",
+      "const": "application/json"
+    },
+    "dataschema": {
+      "type": "string",
+      "format": "uri",
+      "description": "Canonical URI of this schema."
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "form_id",
+        "constituency_code",
+        "election_id",
+        "position_code",
+        "station_subtotals",
+        "totals",
+        "ro_sig",
+        "witness_sig",
+        "accepted_at"
+      ],
+      "properties": {
+        "form_id": {
+          "type": "string",
+          "description": "Form 34B UUIDv7 identifier.",
+          "x-eel-data-class": "C",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "constituency_code": {
+          "type": "string",
+          "description": "Constituency code.",
+          "x-eel-data-class": "C"
+        },
+        "election_id": {
+          "type": "string",
+          "description": "Election identifier.",
+          "x-eel-data-class": "C"
+        },
+        "position_code": {
+          "type": "string",
+          "description": "Electoral position code.",
+          "x-eel-data-class": "C"
+        },
+        "station_subtotals": {
+          "type": "array",
+          "x-eel-data-class": "C",
+          "description": "Array of per-station tally objects.",
+          "items": {
+            "type": "object"
+          }
+        },
+        "totals": {
+          "type": "object",
+          "x-eel-data-class": "C",
+          "description": "Aggregated vote totals map (candidate_id -> count).",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "ro_sig": {
+          "type": "string",
+          "description": "Returning Officer Ed25519 signature.",
+          "x-eel-data-class": "C",
+          "pattern": "^ed25519:[A-Za-z0-9+/]+=*$"
+        },
+        "witness_sig": {
+          "type": "string",
+          "description": "Witness Ed25519 signature.",
+          "x-eel-data-class": "C",
+          "pattern": "^ed25519:[A-Za-z0-9+/]+=*$"
+        },
+        "accepted_at": {
+          "type": "string",
+          "description": "ISO 8601 UTC acceptance timestamp.",
+          "x-eel-data-class": "D",
+          "format": "date-time"
+        }
+      }
+    },
+    "eel_hlc": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Hybrid Logical Clock timestamp (wallclock.counter.node)."
+    },
+    "eel_correlation_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "Trace-level correlation identifier."
+    },
+    "eel_causation_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "ID of the event that caused this one."
+    },
+    "eel_producer_key_id": {
+      "type": "string",
+      "description": "Key fingerprint used to sign this event (e.g. spiffe-svid:fp)."
+    },
+    "eel_signature": {
+      "type": "string",
+      "pattern": "^ed25519:[A-Za-z0-9+/]+=*$",
+      "description": "Ed25519 signature over canonical event bytes."
+    },
+    "eel_election_id": {
+      "type": "string",
+      "description": "Election identifier (e.g. 2027-general)."
+    },
+    "eel_data_class": {
+      "type": "string",
+      "enum": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "description": "Highest data classification present in this event."
+    },
+    "eel_stream_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "Aggregate stream identifier for ordered event log."
+    },
+    "eel_seq": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Monotone sequence number within the stream."
+    },
+    "eel_prev_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "SHA-256 hash of the previous event in this stream."
+    }
+  }
+}

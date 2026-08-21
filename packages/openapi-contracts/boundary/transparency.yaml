@@ -1,0 +1,774 @@
+openapi: 3.1.0
+info:
+  title: eel-boundary-transparency
+  version: 1.0.0
+  description: >
+    Module M18: Boundary Transparency providing public and accredited access
+    to constituency, ward, county, and polling station boundary data.
+    Tier 1 (public) endpoints carry cryptographic response headers for
+    independent verification. Boundary data is class C (public).
+
+servers:
+  - url: https://eel.local/api/v1
+    description: Production trust domain
+
+tags:
+  - name: constituencies
+    description: Constituency boundary data
+  - name: wards
+    description: Ward boundary data
+  - name: counties
+    description: County boundary data
+  - name: stations
+    description: Polling station location data
+  - name: changes
+    description: Boundary change history
+  - name: admin
+    description: Boundary publishing (restricted)
+
+paths:
+  /boundary/constituencies:
+    get:
+      tags: [constituencies]
+      operationId: listConstituencies
+      summary: List constituencies
+      description: >
+        Returns all constituencies with their GeoJSON boundary polygons. Data
+        reflects the current published boundary snapshot. Response carries
+        cryptographic proof headers for independent verification.
+      x-eel-sla:
+        p95_ms: 100
+        p99_ms: 300
+        availability: "99.9%"
+      security: []
+      responses:
+        '200':
+          description: Constituency list with GeoJSON boundaries
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/XEelCosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/XEelMerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/XEelSnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstituencyList'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /boundary/constituencies/{constituency_code}:
+    get:
+      tags: [constituencies]
+      operationId: getConstituency
+      summary: Constituency detail with GeoJSON
+      description: >
+        Returns the full detail of a single constituency including its
+        GeoJSON boundary, ward list, and registered station count.
+      x-eel-sla:
+        p95_ms: 100
+        p99_ms: 300
+        availability: "99.9%"
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ConstituencyCodeParam'
+      responses:
+        '200':
+          description: Constituency detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstituencyDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /boundary/wards:
+    get:
+      tags: [wards]
+      operationId: listWards
+      summary: List wards
+      description: >
+        Returns all wards with their GeoJSON boundary polygons and parent
+        constituency reference. Response carries cryptographic proof headers.
+      x-eel-sla:
+        p95_ms: 100
+        p99_ms: 300
+        availability: "99.9%"
+      security: []
+      parameters:
+        - name: constituency_code
+          in: query
+          required: false
+          schema:
+            type: string
+            x-eel-data-class: C
+          description: Filter wards by parent constituency
+      responses:
+        '200':
+          description: Ward list with GeoJSON boundaries
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/XEelCosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/XEelMerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/XEelSnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WardList'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /boundary/counties:
+    get:
+      tags: [counties]
+      operationId: listCounties
+      summary: List counties
+      description: >
+        Returns all 47 counties with their GeoJSON boundary polygons.
+        Response carries cryptographic proof headers.
+      x-eel-sla:
+        p95_ms: 100
+        p99_ms: 300
+        availability: "99.9%"
+      security: []
+      responses:
+        '200':
+          description: County list with GeoJSON boundaries
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/XEelCosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/XEelMerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/XEelSnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CountyList'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /boundary/stations:
+    get:
+      tags: [stations]
+      operationId: listStations
+      summary: Polling station list
+      description: >
+        Returns all registered polling stations with location (latitude,
+        longitude), ward assignment, and registered voter capacity. No voter
+        records are included. Response carries cryptographic proof headers.
+      x-eel-sla:
+        p95_ms: 100
+        p99_ms: 300
+        availability: "99.9%"
+      security: []
+      parameters:
+        - name: ward_code
+          in: query
+          required: false
+          schema:
+            type: string
+            x-eel-data-class: C
+        - name: constituency_code
+          in: query
+          required: false
+          schema:
+            type: string
+            x-eel-data-class: C
+        - name: county_code
+          in: query
+          required: false
+          schema:
+            type: string
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Polling station list
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/XEelCosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/XEelMerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/XEelSnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StationList'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /boundary/stations/{station_code}:
+    get:
+      tags: [stations]
+      operationId: getStation
+      summary: Polling station detail
+      description: >
+        Returns full detail of a single polling station including geographic
+        coordinates, ward/constituency/county hierarchy, and voter capacity.
+      x-eel-sla:
+        p95_ms: 100
+        p99_ms: 300
+        availability: "99.9%"
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/StationCodeParam'
+      responses:
+        '200':
+          description: Polling station detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StationDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /boundary/changes:
+    get:
+      tags: [changes]
+      operationId: listBoundaryChanges
+      summary: Boundary change history
+      description: >
+        Returns a paginated log of all boundary change events, including
+        constituency and ward boundary modifications and effective dates.
+        Requires JWT authentication (accredited parties only).
+      x-eel-sla:
+        p95_ms: 100
+        p99_ms: 300
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: entity_type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [constituency, ward, county, station]
+            x-eel-data-class: C
+        - name: from_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Paginated boundary change history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoundaryChangePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /boundary/admin/publish:
+    post:
+      tags: [admin]
+      operationId: publishBoundarySnapshot
+      summary: Publish new boundary snapshot
+      description: >
+        Publishes a new authoritative boundary snapshot. This operation
+        atomically replaces the current snapshot and triggers cache
+        invalidation for all public endpoints. Idempotent on Idempotency-Key.
+        Requires JWT and SpiceDB boundary.admin permission.
+      x-eel-sla:
+        p95_ms: 100
+        p99_ms: 300
+        availability: "99.9%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BoundaryPublishRequest'
+      responses:
+        '201':
+          description: Boundary snapshot published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoundarySnapshot'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Keycloak-issued JWT. Validated against eel.local JWKS endpoint.
+    mtls:
+      type: mutualTLS
+      description: X.509 mTLS client certificate. CN must match registered service principal in eel.local PKI.
+
+  headers:
+    XEelCosignSig:
+      description: >
+        Ed25519 signature (base64url) over the response body canonical hash,
+        signed by the EEL boundary signing key. Verifiable against the public
+        key published at https://eel.local/.well-known/boundary-signing-key.
+      schema:
+        type: string
+        x-eel-data-class: C
+    XEelMerkleProof:
+      description: >
+        Base64url-encoded Merkle inclusion proof demonstrating the response
+        data is part of the current boundary Merkle tree.
+      schema:
+        type: string
+        x-eel-data-class: C
+    XEelSnapshotId:
+      description: UUIDv7 of the boundary snapshot this response was derived from.
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: E
+      description: Client-generated UUIDv7. Server stores response for 24 hours.
+
+    PageParam:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+        x-eel-data-class: D
+
+    PageSizeParam:
+      name: page_size
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 500
+        default: 100
+        x-eel-data-class: D
+
+    ConstituencyCodeParam:
+      name: constituency_code
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 3
+        maxLength: 16
+        x-eel-data-class: C
+      description: Constituency code (e.g. KE001)
+
+    StationCodeParam:
+      name: station_code
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 4
+        maxLength: 16
+        x-eel-data-class: C
+      description: Polling station code
+
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status, detail, instance, eel_trace_id]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        title:
+          type: string
+          x-eel-data-class: D
+        status:
+          type: integer
+          x-eel-data-class: D
+        detail:
+          type: string
+          x-eel-data-class: D
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        eel_trace_id:
+          type: string
+          x-eel-data-class: D
+
+    GeoJSONGeometry:
+      type: object
+      description: GeoJSON geometry object (Polygon or MultiPolygon)
+      required: [type, coordinates]
+      properties:
+        type:
+          type: string
+          enum: [Polygon, MultiPolygon]
+          x-eel-data-class: C
+        coordinates:
+          type: array
+          x-eel-data-class: C
+          description: Coordinate arrays per GeoJSON RFC 7946
+
+    Constituency:
+      type: object
+      required: [constituency_code, name, county_code, geometry]
+      properties:
+        constituency_code:
+          type: string
+          x-eel-data-class: C
+        name:
+          type: string
+          x-eel-data-class: C
+        county_code:
+          type: string
+          x-eel-data-class: C
+        registered_stations:
+          type: integer
+          x-eel-data-class: C
+        geometry:
+          $ref: '#/components/schemas/GeoJSONGeometry'
+
+    ConstituencyList:
+      type: object
+      required: [snapshot_id, items]
+      properties:
+        snapshot_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        items:
+          type: array
+          x-eel-data-class: C
+          items:
+            $ref: '#/components/schemas/Constituency'
+
+    ConstituencyDetail:
+      allOf:
+        - $ref: '#/components/schemas/Constituency'
+        - type: object
+          properties:
+            ward_codes:
+              type: array
+              x-eel-data-class: C
+              items:
+                type: string
+                x-eel-data-class: C
+            area_km2:
+              type: number
+              format: float
+              x-eel-data-class: C
+            effective_from:
+              type: string
+              format: date
+              x-eel-data-class: C
+
+    Ward:
+      type: object
+      required: [ward_code, name, constituency_code, geometry]
+      properties:
+        ward_code:
+          type: string
+          x-eel-data-class: C
+        name:
+          type: string
+          x-eel-data-class: C
+        constituency_code:
+          type: string
+          x-eel-data-class: C
+        county_code:
+          type: string
+          x-eel-data-class: C
+        registered_stations:
+          type: integer
+          x-eel-data-class: C
+        geometry:
+          $ref: '#/components/schemas/GeoJSONGeometry'
+
+    WardList:
+      type: object
+      required: [snapshot_id, items]
+      properties:
+        snapshot_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        items:
+          type: array
+          x-eel-data-class: C
+          items:
+            $ref: '#/components/schemas/Ward'
+
+    County:
+      type: object
+      required: [county_code, name, geometry]
+      properties:
+        county_code:
+          type: string
+          x-eel-data-class: C
+        name:
+          type: string
+          x-eel-data-class: C
+        constituency_count:
+          type: integer
+          x-eel-data-class: C
+        geometry:
+          $ref: '#/components/schemas/GeoJSONGeometry'
+
+    CountyList:
+      type: object
+      required: [snapshot_id, items]
+      properties:
+        snapshot_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        items:
+          type: array
+          x-eel-data-class: C
+          items:
+            $ref: '#/components/schemas/County'
+
+    Station:
+      type: object
+      required: [station_code, name, lat, lon, ward_code, capacity]
+      properties:
+        station_code:
+          type: string
+          x-eel-data-class: C
+        name:
+          type: string
+          x-eel-data-class: C
+        lat:
+          type: number
+          format: double
+          x-eel-data-class: C
+        lon:
+          type: number
+          format: double
+          x-eel-data-class: C
+        ward_code:
+          type: string
+          x-eel-data-class: C
+        capacity:
+          type: integer
+          x-eel-data-class: C
+          description: Maximum registered voters for this station
+
+    StationList:
+      type: object
+      required: [snapshot_id, items]
+      properties:
+        snapshot_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        items:
+          type: array
+          x-eel-data-class: C
+          items:
+            $ref: '#/components/schemas/Station'
+
+    StationDetail:
+      allOf:
+        - $ref: '#/components/schemas/Station'
+        - type: object
+          properties:
+            constituency_code:
+              type: string
+              x-eel-data-class: C
+            county_code:
+              type: string
+              x-eel-data-class: C
+            physical_address:
+              type: string
+              x-eel-data-class: C
+            accessibility_notes:
+              type: string
+              nullable: true
+              x-eel-data-class: C
+            effective_from:
+              type: string
+              format: date
+              x-eel-data-class: C
+
+    BoundaryChange:
+      type: object
+      required: [change_id, entity_type, entity_code, change_type, effective_from, published_at]
+      properties:
+        change_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        entity_type:
+          type: string
+          enum: [constituency, ward, county, station]
+          x-eel-data-class: C
+        entity_code:
+          type: string
+          x-eel-data-class: C
+        change_type:
+          type: string
+          enum: [created, boundary_updated, name_changed, deactivated]
+          x-eel-data-class: C
+        description:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+        effective_from:
+          type: string
+          format: date
+          x-eel-data-class: C
+        published_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        snapshot_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+
+    BoundaryChangePage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items:
+          type: array
+          x-eel-data-class: C
+          items:
+            $ref: '#/components/schemas/BoundaryChange'
+        total:
+          type: integer
+          x-eel-data-class: C
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+
+    BoundaryPublishRequest:
+      type: object
+      required: [snapshot_hash, description, effective_from]
+      properties:
+        snapshot_hash:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: C
+          description: SHA-256 hex digest of the canonical snapshot bundle
+        description:
+          type: string
+          minLength: 10
+          maxLength: 2000
+          x-eel-data-class: C
+        effective_from:
+          type: string
+          format: date
+          x-eel-data-class: C
+
+    BoundarySnapshot:
+      type: object
+      required: [snapshot_id, snapshot_hash, description, effective_from, published_at]
+      properties:
+        snapshot_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        snapshot_hash:
+          type: string
+          x-eel-data-class: C
+        description:
+          type: string
+          x-eel-data-class: C
+        effective_from:
+          type: string
+          format: date
+          x-eel-data-class: C
+        published_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+
+  responses:
+    BadRequest:
+      description: Malformed request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: Missing or invalid authentication credential
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: Authenticated principal lacks SpiceDB permission
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: Idempotency key conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnprocessableEntity:
+      description: Semantically invalid request body
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'

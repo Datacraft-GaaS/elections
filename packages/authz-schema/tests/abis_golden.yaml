@@ -1,0 +1,104 @@
+schema_version: "1.0"
+context: abis
+tests:
+  - name: "service workload can submit biometric match"
+    subject: "service_workload:abis-matcher"
+    permission: "submit_match"
+    resource: "resource_abis_match:match-run-001"
+    expected: true
+
+  - name: "staff cannot submit match directly"
+    subject: "user_staff:alice"
+    permission: "submit_match"
+    resource: "resource_abis_match:match-run-001"
+    expected: false
+
+  - name: "observer cannot submit match"
+    subject: "user_observer:david"
+    permission: "submit_match"
+    resource: "resource_abis_match:match-run-001"
+    expected: false
+
+  - name: "staff can view adjudication queue"
+    subject: "user_staff:alice"
+    permission: "view_adjudication_queue"
+    resource: "resource_abis_match:match-run-001"
+    expected: true
+
+  - name: "party agent cannot view adjudication queue"
+    subject: "user_agent:bob"
+    permission: "view_adjudication_queue"
+    resource: "resource_abis_match:match-run-001"
+    expected: false
+
+  - name: "RO cannot view adjudication queue"
+    subject: "user_ro:carol"
+    permission: "view_adjudication_queue"
+    resource: "resource_abis_match:match-run-001"
+    expected: false
+
+  - name: "staff can resolve adjudication"
+    subject: "user_staff:alice"
+    permission: "resolve_adjudication"
+    resource: "resource_abis_match:match-run-001"
+    expected: true
+
+  - name: "observer cannot resolve adjudication"
+    subject: "user_observer:david"
+    permission: "resolve_adjudication"
+    resource: "resource_abis_match:match-run-001"
+    expected: false
+
+  - name: "chair cannot resolve adjudication"
+    subject: "user_chair:frank"
+    permission: "resolve_adjudication"
+    resource: "resource_abis_match:match-run-001"
+    expected: false
+
+  - name: "staff can read reports"
+    subject: "user_staff:alice"
+    permission: "read_reports"
+    resource: "resource_abis_match:match-run-001"
+    expected: true
+
+  - name: "IAB can read reports"
+    subject: "user_iab:grace"
+    permission: "read_reports"
+    resource: "resource_abis_match:match-run-001"
+    expected: true
+
+  - name: "observer can read reports"
+    subject: "user_observer:david"
+    permission: "read_reports"
+    resource: "resource_abis_match:match-run-001"
+    expected: true
+
+  - name: "party agent cannot read reports"
+    subject: "user_agent:bob"
+    permission: "read_reports"
+    resource: "resource_abis_match:match-run-001"
+    expected: false
+
+  - name: "RO cannot read reports"
+    subject: "user_ro:carol"
+    permission: "read_reports"
+    resource: "resource_abis_match:match-run-001"
+    expected: false
+
+  - name: "staff can trigger batch dedup"
+    subject: "user_staff:alice"
+    permission: "trigger_batch_dedup"
+    resource: "resource_abis_match:match-run-001"
+    expected: true
+
+  - name: "service workload cannot trigger batch dedup"
+    subject: "service_workload:abis-matcher"
+    permission: "trigger_batch_dedup"
+    resource: "resource_abis_match:match-run-001"
+    expected: false
+
+  - name: "chair cannot trigger batch dedup"
+    subject: "user_chair:frank"
+    permission: "trigger_batch_dedup"
+    resource: "resource_abis_match:match-run-001"
+    expected: false

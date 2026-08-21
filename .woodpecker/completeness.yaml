@@ -1,0 +1,32 @@
+---
+# WP-0.5: completeness scanner — blocking check on every PR; strict on main
+when:
+  - event: [push, pull_request]
+
+steps:
+  - name: build-scanner
+    image: eel/build-image:latest
+    commands:
+      - cargo build --release -p eel-completeness
+
+  - name: scan-pr
+    image: eel/build-image:latest
+    when:
+      event: pull_request
+    commands:
+      - ./target/release/eel-completeness scan --fail-on-new --format junit > completeness-report.xml
+
+  - name: scan-main
+    image: eel/build-image:latest
+    when:
+      branch: main
+      event: push
+    commands:
+      - ./target/release/eel-completeness scan --strict --format junit > completeness-report.xml
+      - ./target/release/eel-completeness trace
+      - ./target/release/eel-completeness report
+
+  artifacts:
+    - completeness-report.xml
+    - docs/audit/completeness-report.md
+    - docs/audit/traceability-report.md

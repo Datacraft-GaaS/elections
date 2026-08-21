@@ -1,0 +1,35 @@
+# Self-signed root CA for local dev.
+# In staging/prod: replace with step-ca issuer backed by HSM root.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: eel-selfsigned
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: eel-dev-ca
+  namespace: cert-manager
+spec:
+  isCA: true
+  commonName: eel-dev-ca
+  secretName: eel-dev-ca-secret
+  duration: 87600h
+  renewBefore: 720h
+  subject:
+    organizations: [eel]
+  privateKey:
+    algorithm: Ed25519
+  issuerRef:
+    name: eel-selfsigned
+    kind: ClusterIssuer
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: eel-dev-ca
+spec:
+  ca:
+    secretName: eel-dev-ca-secret

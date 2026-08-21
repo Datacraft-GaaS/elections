@@ -1,0 +1,56 @@
+# OTel Collector Helm values for eel local cluster
+mode: deployment
+
+config:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+    prometheus:
+      config:
+        scrape_configs:
+          - job_name: hello-svc
+            static_configs:
+              - targets: [hello-svc.default.svc.cluster.local:9090]
+
+  processors:
+    batch: {}
+    memory_limiter:
+      limit_mib: 128
+      check_interval: 5s
+
+  exporters:
+    prometheusremotewrite:
+      endpoint: http://kube-prom-stack-prometheus.eel-obs.svc.cluster.local:9090/api/v1/write
+    loki:
+      endpoint: http://loki.eel-obs.svc.cluster.local:3100/loki/api/v1/push
+    otlp/tempo:
+      endpoint: http://tempo.eel-obs.svc.cluster.local:4317
+      tls:
+        insecure: true
+
+  service:
+    pipelines:
+      traces:
+        receivers: [otlp]
+        processors: [memory_limiter, batch]
+        exporters: [otlp/tempo]
+      metrics:
+        receivers: [otlp, prometheus]
+        processors: [memory_limiter, batch]
+        exporters: [prometheusremotewrite]
+      logs:
+        receivers: [otlp]
+        processors: [memory_limiter, batch]
+        exporters: [loki]
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi

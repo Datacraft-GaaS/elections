@@ -1,0 +1,617 @@
+openapi: 3.1.0
+info:
+  title: eel-ai-registry
+  version: 1.0.0
+  description: >
+    Module M28 - AI Monitoring Stack model registry. Tracks model artifacts,
+    fairness reports, and deployment lifecycle for all AI components in the eel
+    election management platform.
+  contact:
+    name: eel platform team
+    url: https://eel.local/support
+servers:
+  - url: https://api.eel.local
+    description: production
+  - url: https://staging.api.eel.local
+    description: staging
+
+tags:
+  - name: models
+    description: AI model registration and retrieval
+  - name: deployments
+    description: Model deployment lifecycle
+  - name: audit
+    description: Audit log for model governance
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/ai/registry/models:
+    post:
+      tags: [models]
+      operationId: registerModel
+      summary: Register a new AI model
+      description: >
+        Register an AI model artifact with its fairness report and training
+        dataset reference. Idempotent on Idempotency-Key. Requires JWT and
+        SpiceDB authorization.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelRegistration'
+      responses:
+        '201':
+          description: Model registered successfully
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIModel'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags: [models]
+      operationId: listModels
+      summary: List registered AI models
+      description: Returns a paginated list of all registered AI models.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageCursor'
+        - $ref: '#/components/parameters/PageLimit'
+        - name: model_type
+          in: query
+          description: Filter by model type
+          schema:
+            type: string
+            enum: [anomaly, speech, forecast, redteam]
+            x-eel-data-class: D
+        - name: status
+          in: query
+          description: Filter by model status
+          schema:
+            type: string
+            enum: [staging, active, deprecated]
+            x-eel-data-class: D
+      responses:
+        '200':
+          description: Paginated list of AI models
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIModelPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/ai/registry/models/{model_id}:
+    get:
+      tags: [models]
+      operationId: getModel
+      summary: Get a registered AI model by ID
+      description: Retrieve full details for a specific model registration.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ModelId'
+      responses:
+        '200':
+          description: AI model detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIModel'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/ai/registry/models/{model_id}/deployments:
+    post:
+      tags: [deployments]
+      operationId: deployModel
+      summary: Deploy an AI model to an environment
+      description: >
+        Create a deployment record for a registered model. Requires explicit
+        governance approval reference. Idempotent on Idempotency-Key.
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ModelId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelDeploymentRequest'
+      responses:
+        '201':
+          description: Deployment created
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/CosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/MerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/SnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelDeployment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/ai/registry/audit-log:
+    get:
+      tags: [audit]
+      operationId: listAuditLog
+      summary: Retrieve AI registry audit log
+      description: >
+        Paginated audit trail of all model registration and deployment events.
+        All fields are operational metadata (class D).
+      x-eel-sla:
+        p95_ms: 500
+        p99_ms: 2000
+        availability: "99%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageCursor'
+        - $ref: '#/components/parameters/PageLimit'
+        - name: model_id
+          in: query
+          description: Filter audit log to a specific model
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: C
+        - name: action
+          in: query
+          description: Filter by audit action type
+          schema:
+            type: string
+            enum: [registered, deployed, deprecated, status_changed]
+            x-eel-data-class: D
+      responses:
+        '200':
+          description: Paginated audit log
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by eel.local identity provider (SpiceDB-checked on every request)
+    mtls:
+      type: mutualTLS
+      description: Mutual TLS for service-to-service calls within eel.local trust domain
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Client-generated UUIDv7 for idempotent request deduplication (TTL 24 h)
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: E
+
+    ModelId:
+      name: model_id
+      in: path
+      required: true
+      description: UUIDv7 identifier of the AI model
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+
+    PageCursor:
+      name: cursor
+      in: query
+      description: Opaque pagination cursor from a previous response
+      schema:
+        type: string
+        x-eel-data-class: E
+
+    PageLimit:
+      name: limit
+      in: query
+      description: Maximum items to return (1-100)
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+        x-eel-data-class: E
+
+  headers:
+    CosignSig:
+      description: Sigstore cosign signature over the response body
+      schema:
+        type: string
+        x-eel-data-class: C
+    MerkleProof:
+      description: Merkle proof anchoring this response to the audit ledger
+      schema:
+        type: string
+        x-eel-data-class: C
+    SnapshotId:
+      description: Snapshot identifier for response reproducibility
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+
+  schemas:
+    ModelRegistration:
+      type: object
+      required:
+        - model_name
+        - model_version
+        - model_type
+        - artifact_hash
+        - training_dataset_ref
+        - fairness_report_ref
+        - registered_by_hash
+      properties:
+        model_name:
+          type: string
+          maxLength: 128
+          description: Human-readable model name
+          x-eel-data-class: D
+        model_version:
+          type: string
+          maxLength: 64
+          description: Semantic version string (e.g. 1.2.3)
+          x-eel-data-class: D
+        model_type:
+          type: string
+          enum: [anomaly, speech, forecast, redteam]
+          description: Functional category of the AI model
+          x-eel-data-class: D
+        artifact_hash:
+          type: string
+          description: SHA-256 hex digest of the model artifact
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: D
+        training_dataset_ref:
+          type: string
+          maxLength: 512
+          description: Opaque reference (URI or MinIO object key) to the training dataset
+          x-eel-data-class: D
+        fairness_report_ref:
+          type: string
+          maxLength: 512
+          description: Opaque reference to the fairness audit report
+          x-eel-data-class: D
+        registered_by_hash:
+          type: string
+          description: SHA-256 hash of the registering officer identifier (no raw PII stored)
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: B
+        notes:
+          type: string
+          maxLength: 2048
+          description: Optional registration notes
+          x-eel-data-class: D
+
+    AIModel:
+      type: object
+      required:
+        - model_id
+        - model_name
+        - model_version
+        - model_type
+        - artifact_hash
+        - status
+        - registered_at
+      properties:
+        model_id:
+          type: string
+          format: uuid
+          description: UUIDv7 primary key
+          x-eel-data-class: C
+        model_name:
+          type: string
+          x-eel-data-class: D
+        model_version:
+          type: string
+          x-eel-data-class: D
+        model_type:
+          type: string
+          enum: [anomaly, speech, forecast, redteam]
+          x-eel-data-class: D
+        artifact_hash:
+          type: string
+          x-eel-data-class: D
+        training_dataset_ref:
+          type: string
+          x-eel-data-class: D
+        fairness_report_ref:
+          type: string
+          x-eel-data-class: D
+        registered_by_hash:
+          type: string
+          x-eel-data-class: B
+        status:
+          type: string
+          enum: [staging, active, deprecated]
+          x-eel-data-class: D
+        registered_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        notes:
+          type: string
+          x-eel-data-class: D
+
+    AIModelPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIModel'
+          x-eel-data-class: C
+        next_cursor:
+          type: string
+          nullable: true
+          description: Cursor for the next page; null when exhausted
+          x-eel-data-class: E
+        total_count:
+          type: integer
+          description: Total matching records (approximate)
+          x-eel-data-class: C
+
+    ModelDeploymentRequest:
+      type: object
+      required:
+        - target_env
+        - approved_by_hash
+        - governance_ref
+      properties:
+        target_env:
+          type: string
+          enum: [staging, production]
+          x-eel-data-class: D
+        approved_by_hash:
+          type: string
+          description: SHA-256 hash of the approving officer identifier
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: B
+        governance_ref:
+          type: string
+          maxLength: 512
+          description: Reference to governance approval record (ticket or document URI)
+          x-eel-data-class: D
+        notes:
+          type: string
+          maxLength: 2048
+          x-eel-data-class: D
+
+    ModelDeployment:
+      type: object
+      required:
+        - deployment_id
+        - model_id
+        - target_env
+        - status
+        - created_at
+      properties:
+        deployment_id:
+          type: string
+          format: uuid
+          description: UUIDv7 deployment record identifier
+          x-eel-data-class: C
+        model_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        target_env:
+          type: string
+          enum: [staging, production]
+          x-eel-data-class: D
+        status:
+          type: string
+          enum: [pending, active, rolled_back]
+          x-eel-data-class: D
+        approved_by_hash:
+          type: string
+          x-eel-data-class: B
+        governance_ref:
+          type: string
+          x-eel-data-class: D
+        created_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    AuditLogEntry:
+      type: object
+      required:
+        - entry_id
+        - model_id
+        - action
+        - actor_hash
+        - occurred_at
+      properties:
+        entry_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        model_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        action:
+          type: string
+          enum: [registered, deployed, deprecated, status_changed]
+          x-eel-data-class: D
+        actor_hash:
+          type: string
+          description: SHA-256 hash of the acting user identifier
+          x-eel-data-class: D
+        payload_summary:
+          type: string
+          description: Non-sensitive summary of what changed
+          x-eel-data-class: D
+        occurred_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    AuditLogPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditLogEntry'
+          x-eel-data-class: D
+        next_cursor:
+          type: string
+          nullable: true
+          x-eel-data-class: E
+
+    ProblemDetail:
+      type: object
+      description: RFC 9457 problem detail
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: E
+        title:
+          type: string
+          x-eel-data-class: E
+        status:
+          type: integer
+          x-eel-data-class: E
+        detail:
+          type: string
+          x-eel-data-class: E
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: E
+        trace_id:
+          type: string
+          x-eel-data-class: E
+
+  responses:
+    BadRequest:
+      description: Request body or parameters failed validation
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Missing or invalid JWT
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: SpiceDB authorization denied
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Idempotency-Key collision or state conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Semantic validation error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'

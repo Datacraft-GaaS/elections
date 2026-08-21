@@ -1,0 +1,683 @@
+openapi: 3.1.0
+info:
+  title: eel-iab-dashboard
+  version: 1.0.0
+  description: >
+    Module M15: IAB (Interim and Boundary) Dashboard providing oversight
+    capabilities for the Independent Boundaries and Audit Body. All endpoints
+    require JWT authentication with SpiceDB authorization. No PII is exposed
+    through this surface.
+
+servers:
+  - url: https://eel.local/api/v1
+    description: Production trust domain
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: audit-reports
+    description: Audit report management and submission
+  - name: dashboard
+    description: Dashboard summary and aggregate stats
+  - name: audit-trails
+    description: Per-module audit trail retrieval
+  - name: flags
+    description: Anomaly flagging for IAB review
+
+paths:
+  /iab/audit-reports:
+    get:
+      tags: [audit-reports]
+      operationId: listAuditReports
+      summary: List audit reports
+      description: >
+        Returns a paginated list of audit reports visible to the authenticated
+        IAB principal. Filtered by SpiceDB role bindings.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: report_type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [boundary, station, register, result]
+            x-eel-data-class: C
+        - name: severity
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [info, warning, critical]
+            x-eel-data-class: C
+        - name: from_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+            x-eel-data-class: C
+        - name: to_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Paginated list of audit reports
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditReportPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags: [audit-reports]
+      operationId: submitAuditReport
+      summary: Submit audit report
+      description: >
+        Submits a new audit report. Idempotent on Idempotency-Key; a duplicate
+        key within 24 hours returns the original 201 response without creating a
+        second report.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuditReportSubmission'
+      responses:
+        '201':
+          description: Audit report created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditReport'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /iab/audit-reports/{report_id}:
+    get:
+      tags: [audit-reports]
+      operationId: getAuditReport
+      summary: Get audit report detail
+      description: >
+        Retrieves the full detail of a single audit report by its UUIDv7
+        identifier. SpiceDB policy controls report-level read access.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ReportIdParam'
+      responses:
+        '200':
+          description: Audit report detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditReport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /iab/dashboards/summary:
+    get:
+      tags: [dashboard]
+      operationId: getDashboardSummary
+      summary: Dashboard summary stats
+      description: >
+        Returns aggregate dashboard statistics for the IAB oversight view.
+        Contains no PII; all fields are class C (public/aggregate/audit).
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /iab/audit-trails/{module_code}:
+    get:
+      tags: [audit-trails]
+      operationId: getAuditTrail
+      summary: Fetch audit trail for a module
+      description: >
+        Returns a paginated, time-ordered audit trail for the specified module
+        code. Entries are immutable and signed at write time.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: module_code
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 16
+            pattern: '^[A-Z][A-Z0-9_-]{1,15}$'
+            x-eel-data-class: C
+          description: Module code such as M01, M15, BOUNDARY
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: from_ts
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+            x-eel-data-class: C
+        - name: to_ts
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Paginated audit trail entries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditTrailPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /iab/flags:
+    post:
+      tags: [flags]
+      operationId: flagAnomaly
+      summary: Flag an anomaly for IAB review
+      description: >
+        Submits an anomaly flag to the IAB review queue. Idempotent on
+        Idempotency-Key. A duplicate key within 24 hours returns the original
+        201 without creating a second flag entry.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnomalyFlag'
+      responses:
+        '201':
+          description: Anomaly flag created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnomalyFlagResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Keycloak-issued JWT. Validated against eel.local JWKS endpoint.
+    mtls:
+      type: mutualTLS
+      description: X.509 mTLS client certificate. CN must match registered service principal in eel.local PKI.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: >
+        Client-generated UUIDv7 or UUID4. The server stores the response for
+        24 hours and returns it verbatim on duplicate requests with the same key.
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: E
+
+    PageParam:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+        x-eel-data-class: D
+
+    PageSizeParam:
+      name: page_size
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+        x-eel-data-class: D
+
+    ReportIdParam:
+      name: report_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: C
+      description: UUIDv7 identifier of the audit report
+
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status, detail, instance, eel_trace_id]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: D
+          description: URI reference identifying the problem type
+        title:
+          type: string
+          x-eel-data-class: D
+          description: Short human-readable summary
+        status:
+          type: integer
+          x-eel-data-class: D
+          description: HTTP status code
+        detail:
+          type: string
+          x-eel-data-class: D
+          description: Human-readable explanation specific to this occurrence
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: D
+          description: URI reference identifying the specific occurrence
+        eel_trace_id:
+          type: string
+          x-eel-data-class: D
+          description: EEL distributed trace identifier for cross-service correlation
+
+    AuditReportSubmission:
+      type: object
+      required: [report_type, scope_code, findings, severity]
+      properties:
+        report_type:
+          type: string
+          enum: [boundary, station, register, result]
+          x-eel-data-class: C
+          description: Category of audit report
+        scope_code:
+          type: string
+          minLength: 1
+          maxLength: 64
+          x-eel-data-class: C
+          description: Constituency, ward, county, or station code in scope
+        findings:
+          type: string
+          minLength: 10
+          maxLength: 8000
+          x-eel-data-class: C
+          description: Narrative findings from the audit
+        severity:
+          type: string
+          enum: [info, warning, critical]
+          x-eel-data-class: C
+          description: Severity level of the reported findings
+        evidence_refs:
+          type: array
+          x-eel-data-class: C
+          description: References to supporting evidence (document IDs or URLs)
+          items:
+            type: string
+            maxLength: 512
+            x-eel-data-class: C
+
+    AuditReport:
+      type: object
+      required: [report_id, report_type, scope_code, findings, severity, submitted_by_role, submitted_at, status]
+      properties:
+        report_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+          description: UUIDv7 identifier
+        report_type:
+          type: string
+          enum: [boundary, station, register, result]
+          x-eel-data-class: C
+        scope_code:
+          type: string
+          x-eel-data-class: C
+        findings:
+          type: string
+          x-eel-data-class: C
+        severity:
+          type: string
+          enum: [info, warning, critical]
+          x-eel-data-class: C
+        evidence_refs:
+          type: array
+          x-eel-data-class: C
+          items:
+            type: string
+            x-eel-data-class: C
+        submitted_by_role:
+          type: string
+          x-eel-data-class: C
+          description: IAB role that submitted this report (no personal identifier)
+        submitted_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [submitted, under_review, accepted, rejected]
+          x-eel-data-class: C
+        reviewed_at:
+          type: string
+          format: date-time
+          nullable: true
+          x-eel-data-class: C
+
+    AuditReportPage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items:
+          type: array
+          x-eel-data-class: C
+          items:
+            $ref: '#/components/schemas/AuditReport'
+        total:
+          type: integer
+          x-eel-data-class: C
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+
+    DashboardSummary:
+      type: object
+      required: [total_reports, by_severity, by_type, open_flags, last_updated_at]
+      properties:
+        total_reports:
+          type: integer
+          x-eel-data-class: C
+          description: Total audit reports in the system
+        by_severity:
+          type: object
+          x-eel-data-class: C
+          description: Count of reports by severity level
+          properties:
+            info:
+              type: integer
+              x-eel-data-class: C
+            warning:
+              type: integer
+              x-eel-data-class: C
+            critical:
+              type: integer
+              x-eel-data-class: C
+        by_type:
+          type: object
+          x-eel-data-class: C
+          description: Count of reports by report type
+          properties:
+            boundary:
+              type: integer
+              x-eel-data-class: C
+            station:
+              type: integer
+              x-eel-data-class: C
+            register:
+              type: integer
+              x-eel-data-class: C
+            result:
+              type: integer
+              x-eel-data-class: C
+        open_flags:
+          type: integer
+          x-eel-data-class: C
+          description: Count of anomaly flags awaiting review
+        last_updated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    AuditTrailEntry:
+      type: object
+      required: [entry_id, module_code, actor_role, action, entity_type, entity_id, occurred_at]
+      properties:
+        entry_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        module_code:
+          type: string
+          x-eel-data-class: C
+        actor_role:
+          type: string
+          x-eel-data-class: C
+          description: Role that performed the action (no personal identifier)
+        action:
+          type: string
+          x-eel-data-class: C
+          description: Machine-readable action label (e.g. boundary.publish, report.submit)
+        entity_type:
+          type: string
+          x-eel-data-class: C
+        entity_id:
+          type: string
+          x-eel-data-class: C
+        change_summary:
+          type: string
+          nullable: true
+          x-eel-data-class: C
+          description: Human-readable summary of what changed
+        occurred_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        signature:
+          type: string
+          x-eel-data-class: C
+          description: Ed25519 signature over canonical entry bytes (base64url)
+
+    AuditTrailPage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items:
+          type: array
+          x-eel-data-class: C
+          items:
+            $ref: '#/components/schemas/AuditTrailEntry'
+        total:
+          type: integer
+          x-eel-data-class: C
+        page:
+          type: integer
+          x-eel-data-class: D
+        page_size:
+          type: integer
+          x-eel-data-class: D
+
+    AnomalyFlag:
+      type: object
+      required: [module_code, entity_id, anomaly_type, description]
+      properties:
+        module_code:
+          type: string
+          minLength: 2
+          maxLength: 16
+          x-eel-data-class: C
+          description: Module in which the anomaly was detected
+        entity_id:
+          type: string
+          maxLength: 128
+          x-eel-data-class: C
+          description: Identifier of the entity (station code, report ID, etc.)
+        anomaly_type:
+          type: string
+          maxLength: 64
+          x-eel-data-class: C
+          description: Short machine-readable anomaly class (e.g. turnout_spike, station_offline_extended)
+        description:
+          type: string
+          minLength: 10
+          maxLength: 4000
+          x-eel-data-class: C
+          description: Narrative description of the anomaly
+
+    AnomalyFlagResult:
+      type: object
+      required: [flag_id, status, created_at]
+      properties:
+        flag_id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        module_code:
+          type: string
+          x-eel-data-class: C
+        entity_id:
+          type: string
+          x-eel-data-class: C
+        anomaly_type:
+          type: string
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [open, under_review, resolved, dismissed]
+          x-eel-data-class: C
+        created_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+
+  responses:
+    BadRequest:
+      description: Malformed request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: Missing or invalid authentication credential
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: Authenticated principal lacks SpiceDB permission for this resource
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: Idempotency key already used for a conflicting request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnprocessableEntity:
+      description: Request body is well-formed but semantically invalid
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'

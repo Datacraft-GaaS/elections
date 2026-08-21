@@ -1,0 +1,38 @@
+# Registers SPIFFE entries for known local workloads after SPIRE server starts.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: spire-entry-seed
+  namespace: spire
+spec:
+  template:
+    spec:
+      serviceAccountName: spire-server
+      restartPolicy: OnFailure
+      containers:
+        - name: spire-cli
+          image: ghcr.io/spiffe/spire-server:1.10.4
+          command:
+            - /bin/sh
+            - -c
+            - |
+              until /opt/spire/bin/spire-server healthcheck -socketPath /tmp/spire-server/private/api.sock; do
+                sleep 5
+              done
+              # hello-svc workload entry
+              /opt/spire/bin/spire-server entry create \
+                -socketPath /tmp/spire-server/private/api.sock \
+                -spiffeID spiffe://eel.local/workload/hello-svc \
+                -parentID spiffe://eel.local/k8s-psat/eel-dev/node \
+                -selector k8s:ns:default \
+                -selector k8s:sa:hello-svc \
+                || true
+              echo "SPIRE entries seeded."
+          volumeMounts:
+            - name: server-socket
+              mountPath: /tmp/spire-server/private
+      volumes:
+        - name: server-socket
+          hostPath:
+            path: /run/spire/server-socket
+            type: DirectoryOrCreate

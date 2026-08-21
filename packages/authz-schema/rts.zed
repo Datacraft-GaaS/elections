@@ -1,0 +1,25 @@
+// RTS context: Result Forms and Snapshots
+// Trust domain: eel.local
+
+definition user_staff {}
+definition user_ro {}
+definition user_cro {}
+definition user_agent {}
+definition user_observer {}
+definition user_iab {}
+definition user_chair {}
+definition service_workload {}
+
+definition resource_form34a {
+  relation producer: service_workload
+  relation adjudicator: user_ro | user_cro
+  relation auditor: user_iab | user_observer | user_chair
+  relation public_reader: user_agent | user_observer | user_ro | user_cro | user_iab | user_staff
+
+  permission submit_form = producer
+  permission adjudicate_form = adjudicator
+  permission read_form = adjudicator + auditor + public_reader
+  permission read_audit_trail = auditor + adjudicator
+  permission publish_snapshot = producer
+  permission read_proof = public_reader + auditor
+}

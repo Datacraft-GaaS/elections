@@ -1,0 +1,24 @@
+# BVR voter registration events - new enrolment, update, and deletion lifecycle events
+# Source: BVR context, operational; Kenya DPA 2019 s.25 lawful basis: public task (voter registration)
+name: eel.bvr.voter.v1
+partitions: 32
+retention_class: operational
+replication_factor: 3
+min_isr: 2
+unclean_leader_election: false
+acks: all
+signed: true
+delivery: at-least-once-idempotent
+acl:
+  produce:
+    - "spiffe://eel.local/service/bvr-svc"
+  consume:
+    - "spiffe://eel.local/service/bvi-svc"
+    - "spiffe://eel.local/service/abis-svc"
+    - "spiffe://eel.local/service/vprs-svc"
+    - "spiffe://eel.local/service/audit-sink"
+configs:
+  compression.type: zstd
+  min.insync.replicas: 2
+  max.message.bytes: 1048576
+retention_notes: "30-day hot retention; PII fields are tokenised before publication; Kenya DPA 2019 data minimisation; durable register held in bvr-svc Postgres"

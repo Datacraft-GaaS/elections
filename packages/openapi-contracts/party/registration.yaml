@@ -1,0 +1,643 @@
+openapi: 3.1.0
+info:
+  title: eel-party-registration
+  version: 1.0.0
+  description: >
+    Module M45 - Party Registration Management. Handles new party registration
+    applications, statutory document uploads, administrative decisions, and the
+    public party registry.
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: registrations
+    description: Party registration applications and status tracking
+  - name: documents
+    description: Statutory document uploads via presigned MinIO URL
+  - name: parties
+    description: Public party registry
+  - name: admin
+    description: Administrative registration decisions (tier 3)
+
+paths:
+  /api/v1/party/registrations:
+    post:
+      tags: [registrations]
+      operationId: submitPartyRegistration
+      summary: Submit new party registration application
+      description: >
+        Tier 2. Submits a new party registration application. The application
+        enters pending status and proceeds to document collection before
+        administrative review.
+      security:
+        - bearerAuth: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartyRegistrationRequest'
+          application/cbor:
+            schema:
+              $ref: '#/components/schemas/PartyRegistrationRequest'
+      responses:
+        '201':
+          description: Registration application accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartyRegistration'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/party/registrations/{registration_id}:
+    get:
+      tags: [registrations]
+      operationId: getPartyRegistration
+      summary: Get party registration status
+      description: >
+        Tier 2. Returns the full PartyRegistration resource including current
+        status and outstanding document requirements.
+      security:
+        - bearerAuth: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      parameters:
+        - $ref: '#/components/parameters/RegistrationId'
+      responses:
+        '200':
+          description: Party registration resource
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartyRegistration'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/party/registrations/{registration_id}/documents:
+    post:
+      tags: [documents]
+      operationId: initiatePartyDocumentUpload
+      summary: Request presigned URL for party statutory document upload
+      description: >
+        Tier 2. Returns a short-lived MinIO presigned PUT URL. The client uploads
+        the statutory document directly to object storage. After upload the
+        document is linked to the registration application.
+      security:
+        - bearerAuth: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      parameters:
+        - $ref: '#/components/parameters/RegistrationId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentUploadRequest'
+      responses:
+        '201':
+          description: Presigned upload token issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentUploadToken'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/party/parties:
+    get:
+      tags: [parties]
+      operationId: listPublicParties
+      summary: List all registered active parties
+      description: >
+        Tier 1. Public endpoint. Returns all currently registered and active
+        parties. Response is cryptographically signed and anchored in the
+        Merkle ledger.
+      security: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      parameters:
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+            x-eel-data-class: C
+          description: Filter by active status; omit to return all
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            x-eel-data-class: D
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+            x-eel-data-class: D
+      responses:
+        '200':
+          description: Public party list
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/XEelCosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/XEelMerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/XEelSnapshotId'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Party'
+                  total:
+                    type: integer
+                    x-eel-data-class: D
+                  page:
+                    type: integer
+                    x-eel-data-class: D
+                  page_size:
+                    type: integer
+                    x-eel-data-class: D
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/party/parties/{party_id}:
+    get:
+      tags: [parties]
+      operationId: getParty
+      summary: Get public party detail
+      description: >
+        Tier 1. Public endpoint. Returns full public details for a single
+        registered party including registration date and active status.
+      security: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      parameters:
+        - name: party_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/UUIDv7'
+          description: Party UUIDv7 identifier
+      responses:
+        '200':
+          description: Party resource
+          headers:
+            X-Eel-Cosign-Sig:
+              $ref: '#/components/headers/XEelCosignSig'
+            X-Eel-Merkle-Proof:
+              $ref: '#/components/headers/XEelMerkleProof'
+            X-Eel-Snapshot-Id:
+              $ref: '#/components/headers/XEelSnapshotId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Party'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/party/admin/decisions:
+    post:
+      tags: [admin]
+      operationId: recordRegistrationDecision
+      summary: Record administrative registration decision
+      description: >
+        Tier 3. Requires JWT plus SpiceDB authorization. Records the registrar's
+        decision on a party registration application. A registered verdict
+        promotes the application to a full Party record in the public registry.
+      security:
+        - bearerAuth: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationDecision'
+          application/cbor:
+            schema:
+              $ref: '#/components/schemas/RegistrationDecision'
+      responses:
+        '201':
+          description: Decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationDecision'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by eel.local identity provider
+    mtls:
+      type: mutualTLS
+      description: X.509 client certificate mutual TLS for internal service-to-service calls
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 128
+        x-eel-data-class: D
+      description: >
+        Client-generated unique key to make this request idempotent. Duplicate
+        requests with the same key return the cached response without re-processing.
+
+    RegistrationId:
+      name: registration_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUIDv7'
+      description: Party registration application UUIDv7 identifier
+
+  schemas:
+    UUIDv7:
+      type: string
+      pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+      example: '01909d1a-2b3c-7d4e-8f5a-6b7c8d9e0f1a'
+      x-eel-data-class: D
+
+    Problem:
+      type: object
+      description: RFC 9457 problem detail
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        title:
+          type: string
+          x-eel-data-class: D
+        status:
+          type: integer
+          x-eel-data-class: D
+        detail:
+          type: string
+          x-eel-data-class: D
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        eel_trace_id:
+          type: string
+          x-eel-data-class: D
+
+    PartyRegistrationRequest:
+      type: object
+      description: Payload to submit a new party registration application
+      required:
+        - party_name
+        - abbreviation
+        - national_id_numbers_hash
+        - registered_office_address
+        - leader_id_hash
+        - ideology
+      properties:
+        party_name:
+          type: string
+          minLength: 2
+          maxLength: 200
+          x-eel-data-class: C
+          description: Full official party name
+        abbreviation:
+          type: string
+          minLength: 2
+          maxLength: 20
+          pattern: '^[A-Z0-9\-]+$'
+          x-eel-data-class: C
+          description: Official party abbreviation or acronym
+        national_id_numbers_hash:
+          type: array
+          minItems: 1000
+          items:
+            type: string
+            minLength: 64
+            maxLength: 128
+          x-eel-data-class: A
+          description: >
+            Array of SHA-256 hashes of national ID numbers of founding members.
+            The registrar requires a statutory minimum count.
+        registered_office_address:
+          type: string
+          maxLength: 512
+          x-eel-data-class: B
+          description: Physical address of the party's registered office
+        leader_id_hash:
+          type: string
+          minLength: 64
+          maxLength: 128
+          x-eel-data-class: A
+          description: SHA-256 hash of the party leader's national ID number
+        ideology:
+          type: string
+          maxLength: 1000
+          x-eel-data-class: C
+          description: Brief statement of party ideology and objectives
+
+    PartyRegistration:
+      type: object
+      description: Party registration application resource
+      required:
+        - registration_id
+        - party_name
+        - abbreviation
+        - status
+        - submitted_at
+      properties:
+        registration_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+          description: Registration application UUIDv7 identifier
+        party_name:
+          type: string
+          x-eel-data-class: C
+        abbreviation:
+          type: string
+          x-eel-data-class: C
+        status:
+          type: string
+          enum:
+            - pending
+            - documents_pending
+            - review
+            - registered
+            - rejected
+          x-eel-data-class: C
+          description: Current lifecycle status
+        submitted_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        updated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    Party:
+      type: object
+      description: Publicly registered party record
+      required:
+        - party_id
+        - party_name
+        - abbreviation
+        - registered_at
+        - is_active
+      properties:
+        party_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+          description: Party UUIDv7 identifier
+        party_name:
+          type: string
+          x-eel-data-class: C
+        abbreviation:
+          type: string
+          x-eel-data-class: C
+        registered_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+          description: Date and time the party was officially registered
+        is_active:
+          type: boolean
+          x-eel-data-class: C
+          description: Whether the party is currently active and eligible to field candidates
+        deregistered_at:
+          type: string
+          format: date-time
+          nullable: true
+          x-eel-data-class: C
+          description: Date and time of deregistration if applicable
+
+    RegistrationDecision:
+      type: object
+      description: Registrar administrative decision on a party registration application
+      required:
+        - registration_id
+        - verdict
+        - grounds
+      properties:
+        decision_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+          description: Decision UUIDv7 (populated in responses)
+          readOnly: true
+        registration_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+          description: Registration application this decision applies to
+        verdict:
+          type: string
+          enum: [registered, rejected]
+          x-eel-data-class: C
+          description: Administrative outcome
+        grounds:
+          type: string
+          maxLength: 2000
+          x-eel-data-class: C
+          description: Written grounds for the decision
+        decided_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+          readOnly: true
+
+    DocumentUploadRequest:
+      type: object
+      description: Metadata for a statutory document to be uploaded
+      required:
+        - filename
+        - content_type
+        - size_bytes
+      properties:
+        filename:
+          type: string
+          maxLength: 256
+          x-eel-data-class: D
+        content_type:
+          type: string
+          x-eel-data-class: D
+          description: MIME type (e.g. application/pdf)
+        size_bytes:
+          type: integer
+          minimum: 1
+          maximum: 26214400
+          x-eel-data-class: D
+          description: File size in bytes; max 25 MiB
+        document_type:
+          type: string
+          enum:
+            - constitution
+            - membership_register
+            - financial_statement
+            - office_certificate
+            - other
+          x-eel-data-class: D
+
+    DocumentUploadToken:
+      type: object
+      description: Short-lived presigned MinIO URL for direct document upload
+      required:
+        - document_id
+        - upload_url
+        - upload_expires_at
+      properties:
+        document_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: D
+        upload_url:
+          type: string
+          format: uri
+          x-eel-data-class: E
+          description: MinIO presigned PUT URL
+        upload_expires_at:
+          type: string
+          format: date-time
+          x-eel-data-class: E
+
+  headers:
+    XEelCosignSig:
+      description: Ed25519 cosignature over the response body from the eel.local signing key
+      schema:
+        type: string
+        x-eel-data-class: D
+    XEelMerkleProof:
+      description: Base64-encoded Merkle inclusion proof for this response snapshot
+      schema:
+        type: string
+        x-eel-data-class: D
+    XEelSnapshotId:
+      description: Ledger snapshot UUIDv7 that anchors this response
+      schema:
+        $ref: '#/components/schemas/UUIDv7'
+
+  responses:
+    BadRequest:
+      description: Request payload failed schema validation
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    Unauthorized:
+      description: Missing or invalid bearer token
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    Forbidden:
+      description: Token valid but caller lacks required SpiceDB permission
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    Conflict:
+      description: Duplicate idempotency key with different payload or state conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    UnprocessableEntity:
+      description: Payload syntactically valid but semantically rejected
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'

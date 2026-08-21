@@ -1,0 +1,25 @@
+# Declaration result events - final constituency/county/national results from the declaration crate
+# Source: Declaration context, event-source
+name: eel.declaration.result.v1
+partitions: 12
+retention_class: event-source
+replication_factor: 3
+min_isr: 2
+unclean_leader_election: false
+acks: all
+signed: true
+delivery: exactly-once
+acl:
+  produce:
+    - "spiffe://eel.local/service/rts-svc"
+  consume:
+    - "spiffe://eel.local/service/portal-svc"
+    - "spiffe://eel.local/service/transparency-log"
+    - "spiffe://eel.local/service/governance-svc"
+    - "spiffe://eel.local/service/gazette-svc"
+    - "spiffe://eel.local/service/court-interface-svc"
+configs:
+  compression.type: zstd
+  min.insync.replicas: 2
+  max.message.bytes: 1048576
+retention_notes: "Infinite hot; MinIO Tiered Storage after 30d per ADR-0015; Elections Act s.32 mandates 15-year statutory retention on declared results"

@@ -1,0 +1,341 @@
+# Optional docker-compose path for laptops that cannot run kind.
+# Component layout matches the kind profile. All health checks included.
+# Bring up: docker compose -f environments/dev/compose/docker-compose.yml up -d
+
+name: eel-dev
+
+x-common-env: &common-env
+  TZ: UTC
+
+services:
+
+  # -----------------------------------------------------------------------
+  # PostgreSQL 17 - voter
+  # -----------------------------------------------------------------------
+  postgres-voter:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: eel
+      POSTGRES_PASSWORD: eel-dev
+      POSTGRES_DB: voter
+    volumes:
+      - pg-voter-data:/var/lib/postgresql/data
+      - ./init/postgres-voter-init.sql:/docker-entrypoint-initdb.d/01-init.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eel -d voter"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  postgres-consensus:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: eel
+      POSTGRES_PASSWORD: eel-dev
+      POSTGRES_DB: consensus
+    volumes:
+      - pg-consensus-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eel -d consensus"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  postgres-audit:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: eel
+      POSTGRES_PASSWORD: eel-dev
+      POSTGRES_DB: audit
+    volumes:
+      - pg-audit-data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eel -d audit"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # -----------------------------------------------------------------------
+  # Kafka 3.7 KRaft mode (single broker for compose)
+  # -----------------------------------------------------------------------
+  kafka:
+    image: apache/kafka:3.7.1
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: eel-dev-kafka-cluster-v1
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    ports:
+      - "9092:9092"
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions.sh --bootstrap-server localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  # -----------------------------------------------------------------------
+  # Karapace (schema registry)
+  # -----------------------------------------------------------------------
+  karapace:
+    image: ghcr.io/aiven/karapace:3.14.2
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KARAPACE_BOOTSTRAP_URI: kafka:9092
+      KARAPACE_PORT: 8081
+      KARAPACE_HOST: 0.0.0.0
+      KARAPACE_REGISTRY_TOPIC: _schemas
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/subjects"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # -----------------------------------------------------------------------
+  # Debezium Connect
+  # -----------------------------------------------------------------------
+  debezium:
+    image: debezium/connect:2.7
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres-voter:
+        condition: service_healthy
+    environment:
+      BOOTSTRAP_SERVERS: kafka:9092
+      GROUP_ID: eel-debezium
+      CONFIG_STORAGE_TOPIC: eel-debezium-configs
+      OFFSET_STORAGE_TOPIC: eel-debezium-offsets
+      STATUS_STORAGE_TOPIC: eel-debezium-status
+      CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      STATUS_STORAGE_REPLICATION_FACTOR: 1
+    ports:
+      - "8083:8083"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8083/connectors"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  # -----------------------------------------------------------------------
+  # Valkey 8 cluster (3 nodes)
+  # -----------------------------------------------------------------------
+  valkey-0:
+    image: valkey/valkey:8.0-alpine
+    command: valkey-server --port 6379 --cluster-enabled yes --cluster-config-file /data/nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    volumes:
+      - valkey-0-data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      retries: 5
+
+  valkey-1:
+    image: valkey/valkey:8.0-alpine
+    command: valkey-server --port 6380 --cluster-enabled yes --cluster-config-file /data/nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    volumes:
+      - valkey-1-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "-p", "6380", "ping"]
+      interval: 5s
+      retries: 5
+
+  valkey-2:
+    image: valkey/valkey:8.0-alpine
+    command: valkey-server --port 6381 --cluster-enabled yes --cluster-config-file /data/nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    volumes:
+      - valkey-2-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "-p", "6381", "ping"]
+      interval: 5s
+      retries: 5
+
+  # -----------------------------------------------------------------------
+  # MinIO
+  # -----------------------------------------------------------------------
+  minio:
+    image: quay.io/minio/minio:RELEASE.2024-11-07T00-52-20Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: eel
+      MINIO_ROOT_PASSWORD: eel-dev-secret
+    volumes:
+      - minio-data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD-SHELL", "mc ready local 2>/dev/null || curl -sf http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  minio-init:
+    image: quay.io/minio/mc:RELEASE.2024-11-17T19-35-25Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+        mc alias set local http://minio:9000 eel eel-dev-secret &&
+        mc mb --ignore-existing local/eel-snapshots &&
+        mc mb --ignore-existing local/eel-bundles &&
+        mc mb --ignore-existing local/eel-backups &&
+        mc mb --ignore-existing local/eel-tiered-kafka &&
+        echo 'MinIO buckets ready'
+      "
+    restart: "no"
+
+  # -----------------------------------------------------------------------
+  # OpenSearch (single node)
+  # -----------------------------------------------------------------------
+  opensearch:
+    image: opensearchproject/opensearch:2.17.1
+    environment:
+      discovery.type: single-node
+      DISABLE_SECURITY_PLUGIN: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  # -----------------------------------------------------------------------
+  # Keycloak
+  # -----------------------------------------------------------------------
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.7
+    command: start-dev --import-realm
+    depends_on:
+      postgres-voter:
+        condition: service_healthy
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-voter:5432/keycloak
+      KC_DB_USERNAME: eel
+      KC_DB_PASSWORD: eel-dev
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: eel-dev-admin
+      KC_REALM_NAME: eel
+    volumes:
+      - ./init/eel-realm.json:/opt/keycloak/data/import/eel-realm.json
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/realms/eel"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  # -----------------------------------------------------------------------
+  # SpiceDB
+  # -----------------------------------------------------------------------
+  spicedb:
+    image: authzed/spicedb:v1.38.0
+    command: serve --grpc-preshared-key=eel-dev-spicedb-key --datastore-engine=postgres --datastore-conn-uri=postgres://eel:eel-dev@postgres-voter:5432/spicedb?sslmode=disable
+    depends_on:
+      postgres-voter:
+        condition: service_healthy
+    ports:
+      - "50051:50051"
+      - "8443:8443"
+    healthcheck:
+      test: ["CMD-SHELL", "grpc_health_probe -addr=localhost:50051 || true"]
+      interval: 10s
+      retries: 10
+
+  # -----------------------------------------------------------------------
+  # OpenBao (dev mode)
+  # -----------------------------------------------------------------------
+  openbao:
+    image: openbao/openbao:2.1.0
+    command: server -dev -dev-root-token-id=eel-dev-root-token
+    environment:
+      BAO_DEV_ROOT_TOKEN_ID: eel-dev-root-token
+      BAO_ADDR: http://0.0.0.0:8200
+    ports:
+      - "8200:8200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8200/v1/sys/health"]
+      interval: 5s
+      retries: 10
+
+  # -----------------------------------------------------------------------
+  # SPIRE (single-node dev mode via docker)
+  # -----------------------------------------------------------------------
+  spire-server:
+    image: ghcr.io/spiffe/spire-server:1.10.4
+    command: -config /etc/spire/server/server.conf
+    volumes:
+      - ./init/spire-server.conf:/etc/spire/server/server.conf
+      - spire-data:/opt/spire/data
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD-SHELL", "spire-server healthcheck -socketPath /tmp/spire-server/private/api.sock || true"]
+      interval: 10s
+      retries: 10
+
+  # -----------------------------------------------------------------------
+  # Grafana
+  # -----------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana-oss:11.4.0
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000/api/health"]
+      interval: 5s
+      retries: 10
+
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    volumes:
+      - ./init/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+
+volumes:
+  pg-voter-data:
+  pg-consensus-data:
+  pg-audit-data:
+  kafka-data:
+  valkey-0-data:
+  valkey-1-data:
+  valkey-2-data:
+  minio-data:
+  opensearch-data:
+  grafana-data:
+  prometheus-data:
+  spire-data:

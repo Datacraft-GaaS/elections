@@ -1,0 +1,23 @@
+# BVI turnout rollup events - aggregated authentication counts per station/ward/constituency
+# Source: BVI context, analytics
+name: eel.bvi.turnout.v1
+partitions: 12
+retention_class: analytics
+replication_factor: 3
+min_isr: 2
+unclean_leader_election: false
+acks: all
+signed: true
+delivery: at-least-once-idempotent
+acl:
+  produce:
+    - "spiffe://eel.local/service/bvi-svc"
+  consume:
+    - "spiffe://eel.local/service/portal-svc"
+    - "spiffe://eel.local/service/ecc-svc"
+    - "spiffe://eel.local/service/iab-svc"
+configs:
+  compression.type: zstd
+  min.insync.replicas: 2
+  max.message.bytes: 1048576
+retention_notes: "90-day hot retention; aggregated counts only, no individual voter data; feeds public portal turnout display"

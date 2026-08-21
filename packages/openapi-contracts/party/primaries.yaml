@@ -1,0 +1,617 @@
+openapi: 3.1.0
+info:
+  title: eel-party-primaries
+  version: 1.0.0
+  description: >
+    Module M46 - Party Primaries Oversight. Manages primary election schedules,
+    results submission, and dispute handling. Schedules and results feed into
+    candidate nomination eligibility checks.
+
+servers:
+  - url: https://api.eel.local
+    description: Production
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: primaries
+    description: Primary election schedule management
+  - name: results
+    description: Primary election results submission
+  - name: disputes
+    description: Primary outcome disputes
+
+paths:
+  /api/v1/party/primaries:
+    post:
+      tags: [primaries]
+      operationId: declarePrimarySchedule
+      summary: Declare a primary election schedule
+      description: >
+        Tier 3. Requires JWT plus SpiceDB authorization. A registered party
+        declares the schedule for a primary election for a specific position
+        and constituency. The schedule is published to the public list once
+        recorded.
+      security:
+        - bearerAuth: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrimaryElectionSchedule'
+          application/cbor:
+            schema:
+              $ref: '#/components/schemas/PrimaryElectionSchedule'
+      responses:
+        '201':
+          description: Primary schedule recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrimaryElection'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags: [primaries]
+      operationId: listPrimarySchedules
+      summary: List all declared primary schedules
+      description: >
+        Tier 1. Public endpoint. Returns all declared primary election schedules
+        across all parties and positions. Supports filtering by party, position,
+        and constituency.
+      security: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      parameters:
+        - name: party_id
+          in: query
+          schema:
+            $ref: '#/components/schemas/UUIDv7'
+            x-eel-data-class: C
+          description: Filter by party
+        - name: position_code
+          in: query
+          schema:
+            type: string
+            x-eel-data-class: C
+        - name: constituency_code
+          in: query
+          schema:
+            type: string
+            x-eel-data-class: C
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            x-eel-data-class: D
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+            x-eel-data-class: D
+      responses:
+        '200':
+          description: List of primary election schedules
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PrimaryElection'
+                  total:
+                    type: integer
+                    x-eel-data-class: D
+                  page:
+                    type: integer
+                    x-eel-data-class: D
+                  page_size:
+                    type: integer
+                    x-eel-data-class: D
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/party/primaries/{primary_id}:
+    get:
+      tags: [primaries]
+      operationId: getPrimaryDetails
+      summary: Get primary election details
+      description: >
+        Tier 2. Returns the full primary election resource including results
+        if submitted and any open disputes.
+      security:
+        - bearerAuth: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      parameters:
+        - $ref: '#/components/parameters/PrimaryId'
+      responses:
+        '200':
+          description: Primary election resource
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrimaryElection'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/party/primaries/{primary_id}/results:
+    post:
+      tags: [results]
+      operationId: submitPrimaryResults
+      summary: Submit primary election results
+      description: >
+        Tier 3. Requires JWT plus SpiceDB authorization. Records the final
+        results of a primary election. Once submitted, the winning candidate
+        becomes eligible to proceed to formal nomination.
+      security:
+        - bearerAuth: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      parameters:
+        - $ref: '#/components/parameters/PrimaryId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrimaryResults'
+          application/cbor:
+            schema:
+              $ref: '#/components/schemas/PrimaryResults'
+      responses:
+        '201':
+          description: Results recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrimaryResults'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/party/primaries/{primary_id}/disputes:
+    post:
+      tags: [disputes]
+      operationId: submitPrimaryDispute
+      summary: File a dispute against a primary outcome
+      description: >
+        Tier 2. Any authenticated party with standing may file a dispute against
+        a primary outcome. The dispute is queued for adjudication review.
+      security:
+        - bearerAuth: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      parameters:
+        - $ref: '#/components/parameters/PrimaryId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrimaryDispute'
+          application/cbor:
+            schema:
+              $ref: '#/components/schemas/PrimaryDispute'
+      responses:
+        '201':
+          description: Dispute filed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrimaryDispute'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags: [disputes]
+      operationId: listPrimaryDisputes
+      summary: List disputes for a primary election
+      description: >
+        Tier 3. Requires JWT plus SpiceDB authorization. Returns all disputes
+        filed against the specified primary election with their adjudication status.
+      security:
+        - bearerAuth: []
+      x-eel-sla:
+        p95_ms: 200
+        p99_ms: 500
+        availability: "99.9%"
+      parameters:
+        - $ref: '#/components/parameters/PrimaryId'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, adjudicated, withdrawn]
+            x-eel-data-class: C
+          description: Filter by dispute status
+      responses:
+        '200':
+          description: List of disputes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PrimaryDispute'
+                  total:
+                    type: integer
+                    x-eel-data-class: D
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by eel.local identity provider
+    mtls:
+      type: mutualTLS
+      description: X.509 client certificate mutual TLS for internal service-to-service calls
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 128
+        x-eel-data-class: D
+      description: >
+        Client-generated unique key to make this request idempotent. Duplicate
+        requests with the same key return the cached response without re-processing.
+
+    PrimaryId:
+      name: primary_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUIDv7'
+      description: Primary election UUIDv7 identifier
+
+  schemas:
+    UUIDv7:
+      type: string
+      pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+      example: '01909d1a-2b3c-7d4e-8f5a-6b7c8d9e0f1a'
+      x-eel-data-class: D
+
+    Problem:
+      type: object
+      description: RFC 9457 problem detail
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        title:
+          type: string
+          x-eel-data-class: D
+        status:
+          type: integer
+          x-eel-data-class: D
+        detail:
+          type: string
+          x-eel-data-class: D
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: D
+        eel_trace_id:
+          type: string
+          x-eel-data-class: D
+
+    PrimaryElectionSchedule:
+      type: object
+      description: Declaration of a party primary election schedule
+      required:
+        - party_id
+        - position_code
+        - constituency_code
+        - scheduled_at
+        - venue
+      properties:
+        party_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+          description: Registered party UUIDv7
+        position_code:
+          type: string
+          pattern: '^[A-Z0-9_]{2,32}$'
+          x-eel-data-class: C
+          description: Electoral position code
+        constituency_code:
+          type: string
+          pattern: '^[A-Z0-9_]{2,16}$'
+          x-eel-data-class: C
+          description: Constituency or ward code
+        scheduled_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+          description: ISO 8601 UTC scheduled start time of the primary
+        venue:
+          type: string
+          maxLength: 512
+          x-eel-data-class: C
+          description: Physical venue or location of the primary
+
+    PrimaryElection:
+      type: object
+      description: Primary election resource including schedule and current state
+      required:
+        - primary_id
+        - party_id
+        - position_code
+        - constituency_code
+        - scheduled_at
+        - venue
+        - status
+        - created_at
+      properties:
+        primary_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+        party_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+        position_code:
+          type: string
+          x-eel-data-class: C
+        constituency_code:
+          type: string
+          x-eel-data-class: C
+        scheduled_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        venue:
+          type: string
+          x-eel-data-class: C
+        status:
+          type: string
+          enum:
+            - scheduled
+            - results_pending
+            - results_submitted
+            - disputed
+            - concluded
+            - cancelled
+          x-eel-data-class: C
+        created_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+        updated_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+
+    CandidateResult:
+      type: object
+      description: Individual candidate vote tally within a primary
+      required:
+        - candidate_id_hash
+        - votes_cast
+      properties:
+        candidate_id_hash:
+          type: string
+          minLength: 64
+          maxLength: 128
+          x-eel-data-class: A
+          description: SHA-256 hash of the candidate's national ID number
+        votes_cast:
+          type: integer
+          minimum: 0
+          x-eel-data-class: C
+          description: Total valid votes cast for this candidate
+
+    PrimaryResults:
+      type: object
+      description: Final results submission for a completed primary election
+      required:
+        - primary_id
+        - candidates
+        - turnout_count
+        - declared_at
+      properties:
+        results_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+          readOnly: true
+        primary_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+        candidates:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/CandidateResult'
+          x-eel-data-class: C
+          description: Per-candidate vote tallies
+        turnout_count:
+          type: integer
+          minimum: 0
+          x-eel-data-class: C
+          description: Total number of voters who cast ballots
+        declared_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+          description: ISO 8601 UTC timestamp when results were declared at the venue
+        submitted_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+          readOnly: true
+
+    PrimaryDispute:
+      type: object
+      description: A dispute filed against a primary election outcome
+      required:
+        - primary_id
+        - grounds
+        - evidence_refs
+      properties:
+        dispute_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+          readOnly: true
+        primary_id:
+          $ref: '#/components/schemas/UUIDv7'
+          x-eel-data-class: C
+        grounds:
+          type: string
+          minLength: 50
+          maxLength: 5000
+          x-eel-data-class: C
+          description: Full written grounds for the dispute
+        evidence_refs:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            maxLength: 512
+          x-eel-data-class: C
+          description: Opaque references to supporting evidence documents
+        status:
+          type: string
+          enum: [open, adjudicated, withdrawn]
+          x-eel-data-class: C
+          readOnly: true
+        filed_at:
+          type: string
+          format: date-time
+          x-eel-data-class: D
+          readOnly: true
+        adjudicated_at:
+          type: string
+          format: date-time
+          nullable: true
+          x-eel-data-class: D
+          readOnly: true
+
+  responses:
+    BadRequest:
+      description: Request payload failed schema validation
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    Unauthorized:
+      description: Missing or invalid bearer token
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    Forbidden:
+      description: Token valid but caller lacks required SpiceDB permission
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    Conflict:
+      description: Duplicate idempotency key with different payload or state conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    UnprocessableEntity:
+      description: Payload syntactically valid but semantically rejected
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'

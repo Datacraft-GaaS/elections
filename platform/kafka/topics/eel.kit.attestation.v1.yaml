@@ -1,0 +1,24 @@
+# Kit attestation events - TEE remote attestation quotes from BVI and BVR kit enclaves
+# Source: Kit analytics context, operational; feeds transparency log and SOC
+name: eel.kit.attestation.v1
+partitions: 12
+retention_class: operational
+replication_factor: 3
+min_isr: 2
+unclean_leader_election: false
+acks: all
+signed: true
+delivery: at-least-once-idempotent
+acl:
+  produce:
+    - "spiffe://eel.local/service/bvi-svc"
+    - "spiffe://eel.local/service/bvr-svc"
+  consume:
+    - "spiffe://eel.local/service/ecc-svc"
+    - "spiffe://eel.local/service/transparency-log"
+    - "spiffe://eel.local/service/audit-sink"
+configs:
+  compression.type: zstd
+  min.insync.replicas: 2
+  max.message.bytes: 262144
+retention_notes: "30-day hot retention; TEE attestation quotes retained for post-election audit; durable record in abis-svc enclave_attestations table"

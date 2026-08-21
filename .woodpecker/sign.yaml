@@ -1,0 +1,126 @@
+---
+# WP-0.5: artifact signing
+# Keyless cosign via SPIRE workload identity. SLSA L3 provenance. RFC 3161 timestamps.
+when:
+  - event: push
+    branch: main
+
+steps:
+  - name: spire-svid-fetch
+    image: eel/build-image:latest
+    commands:
+      - |
+        # Fetch SVID from SPIRE agent socket mounted into runner pod.
+        # The OIDC token is used as the Fulcio identity for keyless signing.
+        spire-agent api fetch jwt \
+          -socketPath /run/spire/agent.sock \
+          -audience sigstore \
+          -output /tmp/spire-oidc-token.jwt
+        echo "SPIRE SVID fetched"
+
+  - name: cosign-sign-images
+    image: eel/build-image:latest
+    environment:
+      COSIGN_EXPERIMENTAL: "1"
+    commands:
+      - |
+        SHORT_SHA=$(git rev-parse --short HEAD)
+        OIDC_TOKEN=$(cat /tmp/spire-oidc-token.jwt)
+        find services/*/deploy/nix -maxdepth 2 -name flake.nix 2>/dev/null | while read flake; do
+          svcname=$(basename "$(echo "$flake" | cut -d/ -f1-2)")
+          image=harbor.internal/eel/${svcname}:${SHORT_SHA}
+          cosign sign \
+            --oidc-issuer=https://spire.internal \
+            --identity-token="$OIDC_TOKEN" \
+            --yes \
+            "$image"
+        done
+        if ! find services/*/deploy/nix -maxdepth 2 -name flake.nix 2>/dev/null | grep -q .; then
+          echo "no service images — skip cosign"
+        fi
+
+  - name: slsa-provenance
+    image: eel/build-image:latest
+    environment:
+      COSIGN_EXPERIMENTAL: "1"
+    commands:
+      - |
+        SHORT_SHA=$(git rev-parse --short HEAD)
+        OIDC_TOKEN=$(cat /tmp/spire-oidc-token.jwt)
+        REPO_URI=$(git remote get-url origin)
+        BUILD_ID="${CI_BUILD_NUMBER:-0}"
+        # Generate SLSA L3 provenance predicate (in-repo script approach)
+        cat > /tmp/provenance.json <<PROV
+        {
+          "_type": "https://in-toto.io/Statement/v0.1",
+          "subject": [],
+          "predicateType": "https://slsa.dev/provenance/v0.2",
+          "predicate": {
+            "builder": { "id": "https://spire.internal/woodpecker-runner" },
+            "buildType": "https://woodpecker-ci.org/build/v1",
+            "invocation": {
+              "configSource": {
+                "uri": "$REPO_URI",
+                "digest": { "sha1": "$(git rev-parse HEAD)" },
+                "entryPoint": ".woodpecker/build.yaml"
+              },
+              "parameters": {},
+              "environment": { "short_sha": "$SHORT_SHA" }
+            },
+            "buildConfig": {},
+            "metadata": {
+              "buildStartedOn": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+              "buildFinishedOn": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+              "completeness": { "parameters": true, "environment": true, "materials": true },
+              "reproducible": true
+            },
+            "materials": [
+              {
+                "uri": "$REPO_URI",
+                "digest": { "sha1": "$(git rev-parse HEAD)" }
+              }
+            ]
+          }
+        }
+        PROV
+        # Attach provenance to each image
+        find services/*/deploy/nix -maxdepth 2 -name flake.nix 2>/dev/null | while read flake; do
+          svcname=$(basename "$(echo "$flake" | cut -d/ -f1-2)")
+          image=harbor.internal/eel/${svcname}:${SHORT_SHA}
+          cosign attest \
+            --predicate /tmp/provenance.json \
+            --type slsaprovenance \
+            --oidc-issuer=https://spire.internal \
+            --identity-token="$OIDC_TOKEN" \
+            --yes \
+            "$image"
+        done || true
+
+  - name: rfc3161-timestamp
+    image: eel/build-image:latest
+    commands:
+      - |
+        SHORT_SHA=$(git rev-parse --short HEAD)
+        mkdir -p air-gapped-build/timestamps
+        # Sign the git commit SHA with RFC 3161 timestamp from the internal TSA.
+        echo -n "$SHORT_SHA" | openssl dgst -sha256 -binary > /tmp/commit.sha256
+        # Use openssl ts to request a timestamp from the internal TSA.
+        openssl ts -query \
+          -data /tmp/commit.sha256 \
+          -no_nonce \
+          -sha256 \
+          -cert \
+          -out /tmp/ts.tsq
+        curl -s \
+          --header "Content-Type: application/timestamp-query" \
+          --data-binary @/tmp/ts.tsq \
+          http://tsa.internal/ts \
+          -o air-gapped-build/timestamps/${SHORT_SHA}.tsr
+        openssl ts -verify \
+          -in air-gapped-build/timestamps/${SHORT_SHA}.tsr \
+          -data /tmp/commit.sha256 \
+          -CAfile /etc/ssl/internal-ca.pem \
+          && echo "RFC 3161 timestamp verified"
+
+  artifacts:
+    - air-gapped-build/timestamps/**

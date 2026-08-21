@@ -1,0 +1,25 @@
+// Custody context: Asset Custody
+// Trust domain: eel.local
+
+definition user_staff {}
+definition user_ro {}
+definition user_cro {}
+definition user_agent {}
+definition user_observer {}
+definition user_iab {}
+definition user_chair {}
+definition service_workload {}
+
+definition resource_kit {
+  relation custodian: user_staff | service_workload
+  relation warehouse_officer: user_staff
+  relation auditor: user_iab | user_observer
+  relation chair: user_chair
+
+  permission register_asset = custodian + warehouse_officer
+  permission transfer_custody = custodian
+  permission affix_seal = custodian
+  permission break_seal = chair
+  permission read_asset_history = custodian + auditor + chair
+  permission reconcile = warehouse_officer + custodian
+}

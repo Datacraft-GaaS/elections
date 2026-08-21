@@ -1,0 +1,105 @@
+# Eel Election System - Shared HTTP Header Definitions
+# Trust domain: eel.local
+
+components:
+  headers:
+    Idempotency-Key:
+      description: |
+        Client-generated unique key (UUID v4 or v7) for exactly-once semantics.
+        Servers store the response for at least 24 hours and replay it for
+        duplicate requests bearing the same key and identical request body hash.
+        Reusing a key with a different body returns 409 idempotency_key_reuse.
+      required: true
+      schema:
+        type: string
+        format: uuid
+        minLength: 36
+        maxLength: 36
+        pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        x-eel-data-class: D
+      example: "550e8400-e29b-41d4-a716-446655440000"
+
+    X-Eel-Signature:
+      description: |
+        Cosign detached signature over the response body (SHA-256 digest).
+        Format: "cosign:<base64url(signature)>;<key-id=<kid>>"
+        Clients must verify against the trust bundle at https://eel.local/.well-known/cosign-bundle.json.
+        Applicable to Tier 1 public read endpoints only.
+      required: false
+      schema:
+        type: string
+        pattern: "^cosign:[A-Za-z0-9_-]+(;key-id=[A-Za-z0-9_-]+)?$"
+        x-eel-data-class: C
+      example: "cosign:MEYCIQDabc123xyz...;key-id=eel-signing-2026"
+
+    X-Eel-Merkle-Proof:
+      description: |
+        Merkle inclusion proof for this response in the transparency log.
+        Value is a base64url-encoded protobuf MerkleProof (as defined in
+        packages/openapi-contracts/_shared/common.yaml#MerkleInclusionProof).
+        Applicable to Tier 1 public read endpoints only.
+      required: false
+      schema:
+        type: string
+        format: byte
+        contentEncoding: base64url
+        x-eel-data-class: C
+      example: "eyJsZWFmX2hhc2giOiJhYmMxMjMifQ"
+
+    X-Eel-Snapshot-Id:
+      description: |
+        UUIDv7 snapshot identifier for the data version returned.
+        Clients may use this to request the exact same snapshot version in
+        subsequent calls via the If-Match header. Applicable to Tier 1 endpoints.
+      required: false
+      schema:
+        type: string
+        format: uuid
+        pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        x-eel-data-class: C
+      example: "01909c3a-b4d8-7f32-89ab-0123456789ab"
+
+    X-Request-Id:
+      description: |
+        Unique identifier for distributed tracing across service boundaries.
+        Propagated via W3C Trace Context (traceparent/tracestate) internally.
+        Exposed as a friendly UUID for client-facing correlation.
+      required: false
+      schema:
+        type: string
+        format: uuid
+        x-eel-data-class: D
+      example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+
+    RateLimit-Limit:
+      description: |
+        Maximum number of requests allowed in the current rate limit window.
+        Follows the IETF RateLimit Fields draft (draft-ietf-httpapi-ratelimit-headers).
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        x-eel-data-class: D
+      example: 1000
+
+    RateLimit-Remaining:
+      description: |
+        Number of requests remaining in the current rate limit window.
+        Zero indicates the next request will be rate-limited.
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        x-eel-data-class: D
+      example: 987
+
+    RateLimit-Reset:
+      description: |
+        Unix epoch timestamp (seconds) when the rate limit window resets.
+        Clients should not retry before this time.
+      required: false
+      schema:
+        type: integer
+        format: int64
+        x-eel-data-class: D
+      example: 1721000000

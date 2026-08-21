@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openbao
+  namespace: openbao
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: openbao
+  template:
+    metadata:
+      labels:
+        app: openbao
+    spec:
+      containers:
+        - name: openbao
+          image: openbao/openbao:2.1.0
+          args:
+            - server
+            - -dev
+            - -dev-root-token-id=eel-dev-root-token
+          env:
+            - name: BAO_DEV_ROOT_TOKEN_ID
+              value: eel-dev-root-token
+            - name: BAO_ADDR
+              value: http://0.0.0.0:8200
+          ports:
+            - containerPort: 8200
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+          readinessProbe:
+            httpGet:
+              path: /v1/sys/health
+              port: 8200
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: scripts
+          configMap:
+            name: openbao-seed-scripts
+            defaultMode: 0755

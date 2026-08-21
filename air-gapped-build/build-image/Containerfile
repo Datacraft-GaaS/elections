@@ -1,0 +1,94 @@
+# EEL build-image — Podman / OCI build.
+# Nix-reproducible: pin every external fetch to a known hash.
+# Image name: eel/build-image
+#
+# Tools bundled:
+#   nix, git, cosign, syft, grype, trivy, spectral, buf, jq, yq,
+#   cargo + cargo-nextest + cargo-fuzz + cargo-mutants + cargo-deny + cargo-audit + cargo-vet,
+#   uv, ruff, bandit, pip-audit,
+#   pnpm, vitest,
+#   mix + elixir,
+#   flutter,
+#   pre-commit, openapi-diff, ajv, argocd-cli, skopeo, openssl,
+#   spire-agent (binary), slsa-verifier
+
+FROM nixos/nix:2.24.9 AS nix-base
+
+# Enable flakes + nix-command globally
+RUN mkdir -p /etc/nix && echo 'experimental-features = nix-command flakes' >> /etc/nix/nix.conf
+
+# Layer 1: core platform tools (changes rarely)
+RUN nix profile install \
+    nixpkgs#git \
+    nixpkgs#jq \
+    nixpkgs#yq-go \
+    nixpkgs#curl \
+    nixpkgs#openssl \
+    nixpkgs#skopeo \
+    nixpkgs#pre-commit \
+    --no-write-lock-file
+
+# Layer 2: security toolchain
+RUN nix profile install \
+    nixpkgs#cosign \
+    nixpkgs#syft \
+    nixpkgs#grype \
+    nixpkgs#trivy \
+    nixpkgs#slsa-verifier \
+    --no-write-lock-file
+
+# Layer 3: contract / lint toolchain
+RUN nix profile install \
+    nixpkgs#nodePackages.spectral \
+    nixpkgs#buf \
+    nixpkgs#nodePackages.ajv-cli \
+    --no-write-lock-file
+
+# Layer 4: Rust toolchain
+RUN nix profile install \
+    nixpkgs#rustup \
+    --no-write-lock-file && \
+    rustup toolchain install stable nightly && \
+    rustup component add rustfmt clippy --toolchain stable && \
+    cargo install cargo-nextest cargo-fuzz cargo-mutants cargo-deny cargo-audit cargo-vet \
+        --locked 2>/dev/null || true
+
+# Layer 5: Python toolchain
+RUN nix profile install \
+    nixpkgs#uv \
+    nixpkgs#python312 \
+    --no-write-lock-file && \
+    uv tool install ruff bandit pip-audit
+
+# Layer 6: Node / TS toolchain
+RUN nix profile install \
+    nixpkgs#nodejs_22 \
+    nixpkgs#pnpm \
+    --no-write-lock-file && \
+    pnpm add -g vitest openapi-diff
+
+# Layer 7: Elixir / OTP
+RUN nix profile install \
+    nixpkgs#elixir \
+    --no-write-lock-file
+
+# Layer 8: Flutter / Dart
+RUN nix profile install \
+    nixpkgs#flutter \
+    --no-write-lock-file
+
+# Layer 9: SPIRE client + ArgoCD CLI
+RUN nix profile install \
+    nixpkgs#spire \
+    nixpkgs#argocd \
+    --no-write-lock-file
+
+# Garbage-collect Nix store download caches to keep the layer lean
+RUN nix-collect-garbage --delete-old
+
+WORKDIR /workspace
+
+LABEL org.opencontainers.image.title="eel/build-image" \
+      org.opencontainers.image.description="EEL CI build environment — Nix-reproducible" \
+      org.opencontainers.image.source="https://gitea.internal/eel/eel" \
+      org.opencontainers.image.licenses="Apache-2.0"
