@@ -1,0 +1,28 @@
+name: eel_legacy_android
+description: eel Legacy Android parity shim (WP-3.8). BVI/BVR UI on Android 8+ using software attestation.
+version: 1.0.0+1
+publish_to: none
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  eel_kit_sdk:
+    path: ../../../../packages/kit-sdk-flutter
+
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  generate: true
+  uses-material-design: true

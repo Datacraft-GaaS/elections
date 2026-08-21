@@ -1,0 +1,27 @@
+[package]
+name = "kit-attest"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Kit attestation verification crate (WP-3.8)"
+
+[lib]
+name = "kit_attest"
+path = "src/lib.rs"
+
+[dependencies]
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+thiserror   = { workspace = true }
+anyhow      = { workspace = true }
+chrono      = { workspace = true }
+tracing     = { workspace = true }
+base64      = { workspace = true }
+sha2        = { workspace = true }
+hex         = { workspace = true }
+uuid        = { workspace = true }
+
+[dev-dependencies]
+rstest = { workspace = true }

@@ -1,0 +1,76 @@
+# TRACEABILITY.yaml — biometric-edge-svc (WP-3.8)
+service: biometric-edge-svc
+wave: 3
+work_package: WP-3.8
+
+modules:
+  - id: M01
+    name: bvr-device
+    spec: docs/plans/modules/bvr-device.md
+    artifacts:
+      - apps/bvr-kit
+      - crates/edge-api (enrolment, mrz endpoints)
+  - id: M05
+    name: bvi-device
+    spec: docs/plans/modules/bvi-device.md
+    artifacts:
+      - apps/bvi-kit
+      - crates/edge-api (identification, config, sync, ota endpoints)
+
+edge_cases:
+  EC-IDN-08:
+    description: Distress finger silent alert
+    artifact: crates/edge-api/src/routes/distress.rs
+    test: crates/edge-api/src/routes/distress.rs::tests::distress_returns_202
+  EC-KIT-01:
+    description: GNSS + IMU spoof detection
+    artifact: apps/bvi-kit/lib/src/gnss_guard.dart
+    test: apps/bvi-kit/test/identification_test.dart::GnssGuard
+  EC-TIM-01:
+    description: Time-fence FSM - clock skew refusal
+    artifact: apps/bvi-kit/lib/src/time_fence.dart
+    test: apps/bvi-kit/test/identification_test.dart::TimeFence
+  EC-OPS-04:
+    description: Dual-control emergency close
+    artifact: apps/bvi-kit/lib/src/identification_workflow.dart
+  EC-HUM-01:
+    description: s.44A dual-officer sign-off
+    artifact: apps/bvr-kit/lib/src/enrolment_workflow.dart
+  EC-HUM-02:
+    description: Amputee / no-finger workflow
+    artifact: apps/bvr-kit/lib/src/enrolment_workflow.dart
+  EC-HUM-05:
+    description: Assisted biometric capture path
+    artifact: apps/bvr-kit/lib/src/enrolment_workflow.dart
+  EC-LEG-03:
+    description: s.44A complementary mechanism BVI path
+    artifact: apps/bvi-kit/lib/src/identification_workflow.dart
+
+openapi_binding:
+  spec: packages/openapi-contracts/biometric-edge/openapi.yaml
+  paths:
+    - path: /api/v1/biometric-edge/enrolments
+      method: POST
+      handler: crates/edge-api/src/routes/enrolment.rs::submit_enrolment
+    - path: /api/v1/biometric-edge/identifications
+      method: POST
+      handler: crates/edge-api/src/routes/identification.rs::identify
+    - path: /api/v1/biometric-edge/config
+      method: GET
+      handler: crates/edge-api/src/routes/config.rs::get_config_default
+    - path: /api/v1/biometric-edge/attestation
+      method: POST
+      handler: crates/edge-api/src/routes/attestation.rs::attest
+    - path: /api/v1/biometric-edge/heartbeat
+      method: POST
+      handler: crates/edge-api/src/routes/telemetry.rs::telemetry
+
+outbox_events:
+  - event: kit_heartbeat.v1
+    emitter: crates/edge-api/src/routes/telemetry.rs
+  - event: kit_distress.v1
+    emitter: crates/edge-api/src/routes/distress.rs
+  - event: kit_ota_delivered.v1
+    emitter: crates/edge-api/src/routes/ota.rs
+  - event: kit_bvr_enrolled.v1
+    emitter: crates/edge-api/src/routes/enrolment.rs

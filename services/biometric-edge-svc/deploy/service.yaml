@@ -1,23 +1,63 @@
-# deploy/service.yaml — filled by the service owner (WP-1.9 template)
-# Fields: name, image, artifacts, sites, strategy, replicas
+# deploy/service.yaml — biometric-edge-svc appset-gen manifest (WP-3.8)
+# Deploys edge-api + kit-attest as separate deployments.
+# 5 regional edge sites (not DR sites), 3 replicas per edge.
 name: biometric-edge-svc
 image: harbor.eel.internal/eel/biometric-edge-svc
-artifacts: []
-# sites: leave empty to deploy to all 7 sites (primary, mirror, edge-*)
-sites: []
+
+artifacts:
+  - name: edge-api
+    binary: edge-api
+    port: 8090
+  - name: kit-attest
+    binary: kit-attest
+    port: 8091
+
+sites:
+  - edge-nairobi
+  - edge-mombasa
+  - edge-kisumu
+  - edge-eldoret
+  - edge-garissa
+
 strategy:
-  primary: blue-green
-  mirror:  blue-green
   edge-nairobi:  rolling
   edge-mombasa:  rolling
   edge-kisumu:   rolling
   edge-eldoret:  rolling
   edge-garissa:  rolling
+
 replicas:
-  primary:       3
-  mirror:        3
-  edge-nairobi:  2
-  edge-mombasa:  2
-  edge-kisumu:   2
-  edge-eldoret:  2
-  edge-garissa:  2
+  edge-nairobi:  3
+  edge-mombasa:  3
+  edge-kisumu:   3
+  edge-eldoret:  3
+  edge-garissa:  3
+
+health:
+  path: /healthz
+  port: 8090
+
+resources:
+  requests:
+    cpu: "500m"
+    memory: "256Mi"
+  limits:
+    cpu: "2000m"
+    memory: "512Mi"
+
+env:
+  - name: BVR_SVC_URL
+    valueFrom:
+      secretKeyRef:
+        name: biometric-edge-svc-config
+        key: bvr_svc_url
+  - name: BVI_SVC_URL
+    valueFrom:
+      secretKeyRef:
+        name: biometric-edge-svc-config
+        key: bvi_svc_url
+  - name: ECC_SVC_URL
+    valueFrom:
+      secretKeyRef:
+        name: biometric-edge-svc-config
+        key: ecc_svc_url

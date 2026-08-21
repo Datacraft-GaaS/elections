@@ -1,0 +1,46 @@
+# data_dictionary.yaml — biometric-edge-svc (WP-3.8)
+service: biometric-edge-svc
+version: "1.0.0"
+classification:
+  A: Biometric (strictest — encrypted in transit and at rest)
+  B: PII
+  C: Sensitive operational
+  D: Non-sensitive
+
+tables:
+  kit_attestations:
+    classification: C
+    retention: "2 years"
+    fields:
+      device_serial: { type: text, classification: C, notes: "Kit hardware serial" }
+      cert_thumbprint: { type: text, classification: C, notes: "SHA-256 thumbprint of kit signing cert" }
+      integrity_level: { type: text, classification: C }
+      revoked: { type: bool, classification: C }
+
+  kit_heartbeats:
+    classification: D
+    retention: "30 days (rolling partition)"
+    fields:
+      device_serial: { type: text, classification: C }
+      gps_lat: { type: float, classification: C, notes: "Station location; not voter location" }
+      gps_lon: { type: float, classification: C }
+      battery_pct: { type: smallint, classification: D }
+      enrolled_count: { type: int, classification: D }
+
+  kit_ota_manifests:
+    classification: D
+    retention: "indefinite"
+    fields:
+      manifest_sig: { type: text, classification: C, notes: "Ed25519 signature over manifest JSON" }
+
+  edge_outbox:
+    classification: C
+    retention: "7 days after publish"
+    fields:
+      payload: { type: jsonb, classification: C, notes: "Event payload — may contain device_serial" }
+
+  edge_audit:
+    classification: C
+    retention: "7 years (immutable)"
+    fields:
+      actor_svid: { type: text, classification: C, notes: "SPIFFE SVID of the requesting kit" }
