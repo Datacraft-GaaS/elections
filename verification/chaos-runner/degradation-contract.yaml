@@ -1,0 +1,242 @@
+# Per-service degradation tolerances during chaos scenarios.
+# Mirrors the platform/argocd degradation runbook (WP-5.10).
+#
+# Tiers:
+#   T1: safety-critical write path (rts-svc, bvi-svc, transparency-svc, postgresql)
+#   T2: important but non-critical (portal-svc, queue-svc, boundary-svc, abis-svc)
+#   T3: operational support (governance-svc, training-svc, support-admin-svc, etc.)
+#
+# States:
+#   normal:      steady-state SLA
+#   degraded:    tolerated during a chaos scenario (elevated latency, reduced throughput)
+#   read-only:   writes suspended but reads served; must recover within max_recovery
+#
+# All latency values in milliseconds. Throughput in req/s or events/s.
+
+services:
+
+  rts-svc:
+    tier: T1
+    normal:
+      p99_ms: 1000
+      concurrent: 60000
+      error_rate_pct: 0.1
+    degraded:
+      p99_ms: 3000
+      concurrent: 30000
+      error_rate_pct: 2.0
+      max_duration_s: 120
+    read-only:
+      allowed: false
+      rationale: RTS writes are the election record; read-only is a full SLO breach
+
+  bvi-svc:
+    tier: T1
+    normal:
+      p95_ms: 200
+      p99_ms: 500
+      rps: 18000
+      error_rate_pct: 0.1
+    degraded:
+      p95_ms: 800
+      p99_ms: 2000
+      rps: 9000
+      error_rate_pct: 2.0
+      max_duration_s: 60
+    read-only:
+      allowed: false
+      rationale: identification cannot be deferred
+
+  transparency-svc:
+    tier: T1
+    normal:
+      leaf_append_p99_ms: 500
+      proof_p99_ms: 30000
+      error_rate_pct: 0.1
+    degraded:
+      leaf_append_p99_ms: 5000
+      proof_p99_ms: 60000
+      error_rate_pct: 1.0
+      max_duration_s: 300
+    read-only:
+      allowed: true
+      max_recovery_s: 300
+      rationale: proofs still served from replica; append queue drains on recovery
+
+  postgresql-primary:
+    tier: T1
+    normal:
+      write_p99_ms: 25
+      connections: 400
+    degraded:
+      write_p99_ms: 100
+      connections: 400
+      max_duration_s: 30
+    read-only:
+      allowed: true
+      max_recovery_s: 30
+      rationale: Patroni failover; new primary elected within 30s
+
+  portal-svc:
+    tier: T2
+    normal:
+      p95_ms: 200
+      p99_ms: 500
+      rps: 1389
+    degraded:
+      p95_ms: 1000
+      p99_ms: 3000
+      rps: 500
+      max_duration_s: 60
+    read-only:
+      allowed: true
+      max_recovery_s: 60
+      rationale: portal serves cached results; degraded acceptable during pod restart
+
+  boundary-svc:
+    tier: T2
+    normal:
+      p99_ms: 100
+      error_rate_pct: 0.1
+    degraded:
+      p99_ms: 500
+      error_rate_pct: 5.0
+      max_duration_s: 60
+    read-only:
+      allowed: false
+      rationale: gateway must route all traffic
+
+  queue-svc:
+    tier: T2
+    normal:
+      kafka_events_per_sec: 100000
+      consumer_lag_s: 1
+    degraded:
+      kafka_events_per_sec: 50000
+      consumer_lag_s: 30
+      max_duration_s: 300
+    read-only:
+      allowed: true
+      max_recovery_s: 300
+      rationale: Kafka consumer lag allowed to build; events persisted in Kafka
+
+  abis-svc:
+    tier: T2
+    normal:
+      p95_s: 3
+      p99_s: 6
+      enrolments_per_hour: 1000
+    degraded:
+      p95_s: 10
+      p99_s: 20
+      enrolments_per_hour: 300
+      max_duration_s: 120
+    read-only:
+      allowed: true
+      max_recovery_s: 120
+      rationale: enrolments queue; not required during polling
+
+  valkey:
+    tier: T2
+    normal:
+      hit_rate_pct: 95
+      p99_ms: 5
+    degraded:
+      hit_rate_pct: 0
+      p99_ms: 5
+      max_duration_s: 120
+      rationale: cache-miss flood; all reads fall back to PostgreSQL
+    read-only:
+      allowed: true
+      max_recovery_s: 120
+
+  governance-svc:
+    tier: T3
+    normal:
+      error_rate_pct: 0.1
+    degraded:
+      error_rate_pct: 10.0
+      max_duration_s: 120
+    read-only:
+      allowed: true
+      max_recovery_s: 180
+
+  training-svc:
+    tier: T3
+    normal:
+      error_rate_pct: 0.1
+    degraded:
+      error_rate_pct: 100.0
+      max_duration_s: 300
+    read-only:
+      allowed: true
+      max_recovery_s: 300
+      rationale: training is non-critical on election day
+
+  support-admin-svc:
+    tier: T3
+    normal:
+      error_rate_pct: 0.1
+    degraded:
+      error_rate_pct: 20.0
+      max_duration_s: 120
+    read-only:
+      allowed: true
+      max_recovery_s: 180
+
+  kafka:
+    tier: T1
+    normal:
+      events_per_sec: 100000
+      isr: 3
+    degraded:
+      events_per_sec: 50000
+      isr: 2
+      max_duration_s: 600
+    read-only:
+      allowed: false
+      rationale: Kafka must keep accepting events; ISR shrink is the degraded state
+
+  minio:
+    tier: T2
+    normal:
+      error_rate_pct: 0.1
+    degraded:
+      error_rate_pct: 10.0
+      max_duration_s: 300
+    read-only:
+      allowed: true
+      max_recovery_s: 300
+      rationale: bundle serving falls back to mirror site; uploads queue
+
+  debezium:
+    tier: T2
+    normal:
+      lag_events: 0
+    degraded:
+      lag_events: 100000
+      max_duration_s: 300
+    read-only:
+      allowed: true
+      max_recovery_s: 600
+      rationale: CDC lag acceptable; outbox events accumulate, flush on resume
+
+  spire-agent:
+    tier: T1
+    normal:
+      svid_valid: true
+    degraded:
+      svid_valid: false
+      max_duration_s: 300
+      rationale: SVID rotation must complete within 5 min of revocation
+
+  spicedb:
+    tier: T2
+    normal:
+      error_rate_pct: 0.1
+    degraded:
+      error_rate_pct: 100.0
+      max_duration_s: 120
+      rationale: boundary-svc must fail-closed (deny all) when SpiceDB is down
+    read-only:
+      allowed: false

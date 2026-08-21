@@ -1,0 +1,194 @@
+# Canonical chaos scenario schedule for the T-0 election-day rehearsal.
+# Offsets are relative to rehearsal start (T+0).
+# Categories: pod-kill early, partition mid-load, time late-load, security anywhere.
+#
+# Format:
+#   scenario: file path relative to repo root
+#   start_offset: offset from rehearsal T+0 (minutes)
+#   phase_hint: which election-day phase this overlaps
+#   notes: why this ordering
+
+schedule:
+
+  # Phase: registration-open (T+0 to T+60)
+  # Light pod-kills while kits are booting -- low blast radius.
+
+  - scenario: chaos/scenarios/eel-pod-kill-training-svc.yaml
+    start_offset: 5
+    phase_hint: registration-open
+    notes: non-critical service; early to clear it quickly
+
+  - scenario: chaos/scenarios/eel-pod-kill-crms-svc.yaml
+    start_offset: 10
+    phase_hint: registration-open
+    notes: non-critical service
+
+  - scenario: chaos/scenarios/eel-pod-kill-governance-svc.yaml
+    start_offset: 15
+    phase_hint: registration-open
+    notes: governance read-path resilience during kit boot
+
+  - scenario: chaos/scenarios/eel-pod-kill-support-admin-svc.yaml
+    start_offset: 20
+    phase_hint: registration-open
+    notes: admin path not in hot read/write critical path
+
+  - scenario: chaos/scenarios/eel-pod-kill-inventory-svc.yaml
+    start_offset: 25
+    phase_hint: registration-open
+    notes: kit inventory; restart before polling opens
+
+  # Phase: polling-open (T+60 to T+180)
+  # Core service pod-kills during ramp-up.
+
+  - scenario: chaos/scenarios/eel-pod-kill-ecc-svc.yaml
+    start_offset: 65
+    phase_hint: polling-open
+    notes: election coordination
+
+  - scenario: chaos/scenarios/eel-pod-kill-queue-svc.yaml
+    start_offset: 75
+    phase_hint: polling-open
+    notes: queue resilience; Debezium lag alert expected
+
+  - scenario: chaos/scenarios/eel-pod-kill-field-mobile-svc.yaml
+    start_offset: 85
+    phase_hint: polling-open
+    notes: mobile BFF resilience
+
+  - scenario: chaos/scenarios/eel-pod-kill-boundary-svc.yaml
+    start_offset: 95
+    phase_hint: polling-open
+    notes: gateway resilience; retry storm expected
+
+  - scenario: chaos/scenarios/eel-pod-kill-ai-platform-svc.yaml
+    start_offset: 110
+    phase_hint: polling-open
+    notes: AI platform non-critical to write path
+
+  - scenario: chaos/scenarios/eel-pod-kill-biometric-edge-svc.yaml
+    start_offset: 120
+    phase_hint: polling-open
+    notes: edge biometric resilience before peak
+
+  - scenario: chaos/scenarios/eel-valkey-flush.yaml
+    start_offset: 130
+    phase_hint: polling-open
+    notes: cache-miss flood; portal and BVI must serve from DB
+
+  # Phase: morning-peak (T+180 to T+420)
+  # High-impact scenarios during sustained peak load.
+
+  - scenario: chaos/scenarios/eel-pod-kill-portal-svc.yaml
+    start_offset: 185
+    phase_hint: morning-peak
+    notes: portal restart under 5M/hr load
+
+  - scenario: chaos/scenarios/eel-pod-kill-bvr-svc.yaml
+    start_offset: 195
+    phase_hint: morning-peak
+    notes: BVR registration resilience
+
+  - scenario: chaos/scenarios/eel-pod-kill-bvi-svc.yaml
+    start_offset: 210
+    phase_hint: morning-peak
+    notes: core BVI pod-kill during 18k req/s; recovery < 30s required
+
+  - scenario: chaos/scenarios/eel-pod-kill-rts-svc.yaml
+    start_offset: 230
+    phase_hint: morning-peak
+    notes: RTS pod-kill during 60k concurrent; recovery < 60s required
+
+  - scenario: chaos/scenarios/eel-pod-kill-vprs-svc.yaml
+    start_offset: 250
+    phase_hint: morning-peak
+    notes: voter registration resilience
+
+  - scenario: chaos/scenarios/eel-pod-kill-abis-svc.yaml
+    start_offset: 265
+    phase_hint: morning-peak
+    notes: ABIS 1:N identification resilience
+
+  - scenario: chaos/scenarios/eel-pod-kill-transparency-svc.yaml
+    start_offset: 280
+    phase_hint: morning-peak
+    notes: transparency log resilience; sequencer stall expected
+
+  - scenario: chaos/scenarios/eel-network-loss-30pct-2s-latency.yaml
+    start_offset: 300
+    phase_hint: morning-peak
+    notes: simulates telco degradation at peak; 30% loss + 2s added latency
+
+  - scenario: chaos/scenarios/eel-site-partition-primary-mirror.yaml
+    start_offset: 320
+    phase_hint: morning-peak
+    notes: 5-min site partition; Patroni fence + MirrorMaker2 lag alert
+
+  - scenario: chaos/scenarios/eel-stress-chaos-cpu-mem.yaml
+    start_offset: 355
+    phase_hint: morning-peak
+    notes: CPU + memory pressure on rts-svc and bvi-svc
+
+  - scenario: chaos/scenarios/eel-io-chaos-disk-full.yaml
+    start_offset: 375
+    phase_hint: morning-peak
+    notes: disk-full on PostgreSQL data volume; circuit breaker must trip
+
+  - scenario: chaos/scenarios/eel-debezium-pause.yaml
+    start_offset: 390
+    phase_hint: morning-peak
+    notes: Debezium pause; outbox events must queue and flush on resume
+
+  - scenario: chaos/scenarios/eel-dns-chaos.yaml
+    start_offset: 405
+    phase_hint: morning-peak
+    notes: DNS resolution failures; retries and fallback must work
+
+  # Phase: mid-day (T+420 to T+600)
+  # Security scenarios and Kafka during the quiet valley.
+
+  - scenario: chaos/scenarios/eel-spicedb-down.yaml
+    start_offset: 430
+    phase_hint: mid-day
+    notes: authz outage; boundary-svc must fail closed
+
+  - scenario: chaos/scenarios/eel-hsm-unavailable.yaml
+    start_offset: 450
+    phase_hint: mid-day
+    notes: HSM unavailable; signature operations must queue or degrade
+
+  - scenario: chaos/scenarios/eel-kafka-isr-shrink.yaml
+    start_offset: 470
+    phase_hint: mid-day
+    notes: ISR shrink; producer acks must respect min.insync.replicas
+
+  - scenario: chaos/scenarios/eel-minio-site-loss.yaml
+    start_offset: 490
+    phase_hint: mid-day
+    notes: MinIO site loss; bundle serving must fall back to mirror
+
+  - scenario: chaos/scenarios/eel-sequencer-stall.yaml
+    start_offset: 510
+    phase_hint: mid-day
+    notes: transparency sequencer stall; leaf append queue builds up
+
+  # Phase: evening-peak (T+600 to T+720)
+  # Timing skew late-load.
+
+  - scenario: chaos/scenarios/eel-time-chaos-plusminus-10min.yaml
+    start_offset: 615
+    phase_hint: evening-peak
+    notes: clock skew +/-10 min; HLC monotonicity must hold; JWT validation stable
+
+  # Phase: close + results-flood (T+720 to T+1080)
+  # Security scenarios during results transmission.
+
+  - scenario: chaos/scenarios/eel-svid-revocation.yaml
+    start_offset: 730
+    phase_hint: close
+    notes: SPIRE SVID revocation; services must re-rotate without traffic loss
+
+  - scenario: chaos/scenarios/eel-cert-expiry-15min.yaml
+    start_offset: 750
+    phase_hint: close
+    notes: cert approaching expiry; cert-manager rotation must complete automatically

@@ -1,0 +1,228 @@
+# Chaos scenarios index (WP-6.3).
+# Lists every file under chaos/scenarios/*.yaml.
+# Fields:
+#   file:                 path relative to repo root
+#   category:             pod-kill | partition | io | time | stress | security | misc
+#   target_services:      list of service names affected
+#   expected_degradation_window: duration the degradation is expected to last
+#   allowed_slo_burn:     fraction of SLO budget this scenario may consume (0.0-1.0)
+
+scenarios:
+
+  # --- pod-kill (18) ---
+
+  - file: chaos/scenarios/eel-pod-kill-abis-svc.yaml
+    category: pod-kill
+    target_services: [abis-svc]
+    expected_degradation_window: 60s
+    allowed_slo_burn: 0.05
+
+  - file: chaos/scenarios/eel-pod-kill-ai-platform-svc.yaml
+    category: pod-kill
+    target_services: [ai-platform-svc]
+    expected_degradation_window: 60s
+    allowed_slo_burn: 0.05
+
+  - file: chaos/scenarios/eel-pod-kill-biometric-edge-svc.yaml
+    category: pod-kill
+    target_services: [biometric-edge-svc]
+    expected_degradation_window: 90s
+    allowed_slo_burn: 0.05
+
+  - file: chaos/scenarios/eel-pod-kill-boundary-svc.yaml
+    category: pod-kill
+    target_services: [boundary-svc]
+    expected_degradation_window: 60s
+    allowed_slo_burn: 0.05
+
+  - file: chaos/scenarios/eel-pod-kill-bvi-svc.yaml
+    category: pod-kill
+    target_services: [bvi-svc]
+    expected_degradation_window: 30s
+    allowed_slo_burn: 0.10
+
+  - file: chaos/scenarios/eel-pod-kill-bvr-svc.yaml
+    category: pod-kill
+    target_services: [bvr-svc]
+    expected_degradation_window: 60s
+    allowed_slo_burn: 0.05
+
+  - file: chaos/scenarios/eel-pod-kill-crms-svc.yaml
+    category: pod-kill
+    target_services: [crms-svc]
+    expected_degradation_window: 60s
+    allowed_slo_burn: 0.03
+
+  - file: chaos/scenarios/eel-pod-kill-ecc-svc.yaml
+    category: pod-kill
+    target_services: [ecc-svc]
+    expected_degradation_window: 60s
+    allowed_slo_burn: 0.03
+
+  - file: chaos/scenarios/eel-pod-kill-field-mobile-svc.yaml
+    category: pod-kill
+    target_services: [field-mobile-svc]
+    expected_degradation_window: 90s
+    allowed_slo_burn: 0.05
+
+  - file: chaos/scenarios/eel-pod-kill-governance-svc.yaml
+    category: pod-kill
+    target_services: [governance-svc]
+    expected_degradation_window: 60s
+    allowed_slo_burn: 0.03
+
+  - file: chaos/scenarios/eel-pod-kill-inventory-svc.yaml
+    category: pod-kill
+    target_services: [inventory-svc]
+    expected_degradation_window: 60s
+    allowed_slo_burn: 0.03
+
+  - file: chaos/scenarios/eel-pod-kill-portal-svc.yaml
+    category: pod-kill
+    target_services: [portal-svc]
+    expected_degradation_window: 30s
+    allowed_slo_burn: 0.10
+
+  - file: chaos/scenarios/eel-pod-kill-queue-svc.yaml
+    category: pod-kill
+    target_services: [queue-svc]
+    expected_degradation_window: 90s
+    allowed_slo_burn: 0.05
+
+  - file: chaos/scenarios/eel-pod-kill-rts-svc.yaml
+    category: pod-kill
+    target_services: [rts-svc]
+    expected_degradation_window: 60s
+    allowed_slo_burn: 0.10
+
+  - file: chaos/scenarios/eel-pod-kill-support-admin-svc.yaml
+    category: pod-kill
+    target_services: [support-admin-svc]
+    expected_degradation_window: 60s
+    allowed_slo_burn: 0.03
+
+  - file: chaos/scenarios/eel-pod-kill-training-svc.yaml
+    category: pod-kill
+    target_services: [training-svc]
+    expected_degradation_window: 120s
+    allowed_slo_burn: 0.02
+
+  - file: chaos/scenarios/eel-pod-kill-transparency-svc.yaml
+    category: pod-kill
+    target_services: [transparency-svc]
+    expected_degradation_window: 60s
+    allowed_slo_burn: 0.05
+
+  - file: chaos/scenarios/eel-pod-kill-vprs-svc.yaml
+    category: pod-kill
+    target_services: [vprs-svc]
+    expected_degradation_window: 60s
+    allowed_slo_burn: 0.05
+
+  # --- partition (1) ---
+
+  - file: chaos/scenarios/eel-site-partition-primary-mirror.yaml
+    category: partition
+    target_services: [rts-svc, bvi-svc, transparency-svc, postgresql-primary]
+    expected_degradation_window: 5m
+    allowed_slo_burn: 0.20
+
+  # --- io (1) ---
+
+  - file: chaos/scenarios/eel-io-chaos-disk-full.yaml
+    category: io
+    target_services: [postgresql-primary, rts-svc]
+    expected_degradation_window: 3m
+    allowed_slo_burn: 0.15
+
+  # --- time (1) ---
+
+  - file: chaos/scenarios/eel-time-chaos-plusminus-10min.yaml
+    category: time
+    target_services: [rts-svc, bvr-svc]
+    expected_degradation_window: 10m
+    allowed_slo_burn: 0.10
+
+  # --- stress (1) ---
+
+  - file: chaos/scenarios/eel-stress-chaos-cpu-mem.yaml
+    category: stress
+    target_services: [rts-svc, bvi-svc]
+    expected_degradation_window: 5m
+    allowed_slo_burn: 0.15
+
+  # --- security (4) ---
+
+  - file: chaos/scenarios/eel-cert-expiry-15min.yaml
+    category: security
+    target_services: [boundary-svc, spire-agent]
+    expected_degradation_window: 15m
+    allowed_slo_burn: 0.10
+
+  - file: chaos/scenarios/eel-hsm-unavailable.yaml
+    category: security
+    target_services: [bvi-svc, rts-svc, transparency-svc]
+    expected_degradation_window: 2m
+    allowed_slo_burn: 0.20
+
+  - file: chaos/scenarios/eel-spicedb-down.yaml
+    category: security
+    target_services: [boundary-svc, governance-svc]
+    expected_degradation_window: 2m
+    allowed_slo_burn: 0.15
+
+  - file: chaos/scenarios/eel-svid-revocation.yaml
+    category: security
+    target_services: [spire-agent, boundary-svc]
+    expected_degradation_window: 5m
+    allowed_slo_burn: 0.10
+
+  # --- misc (8) ---
+
+  - file: chaos/scenarios/eel-debezium-pause.yaml
+    category: misc
+    target_services: [debezium, queue-svc]
+    expected_degradation_window: 5m
+    allowed_slo_burn: 0.10
+
+  - file: chaos/scenarios/eel-dns-chaos.yaml
+    category: misc
+    target_services: [all]
+    expected_degradation_window: 3m
+    allowed_slo_burn: 0.15
+
+  - file: chaos/scenarios/eel-kafka-isr-shrink.yaml
+    category: misc
+    target_services: [kafka, queue-svc]
+    expected_degradation_window: 10m
+    allowed_slo_burn: 0.20
+
+  - file: chaos/scenarios/eel-minio-site-loss.yaml
+    category: misc
+    target_services: [minio]
+    expected_degradation_window: 5m
+    allowed_slo_burn: 0.10
+
+  - file: chaos/scenarios/eel-network-loss-30pct-2s-latency.yaml
+    category: misc
+    target_services: [all]
+    expected_degradation_window: 5m
+    allowed_slo_burn: 0.15
+
+  - file: chaos/scenarios/eel-pg-primary-kill-patroni-failover.yaml
+    category: misc
+    target_services: [postgresql-primary, patroni]
+    expected_degradation_window: 30s
+    allowed_slo_burn: 0.20
+
+  - file: chaos/scenarios/eel-sequencer-stall.yaml
+    category: misc
+    target_services: [transparency-svc]
+    expected_degradation_window: 5m
+    allowed_slo_burn: 0.10
+
+  - file: chaos/scenarios/eel-valkey-flush.yaml
+    category: misc
+    target_services: [valkey, portal-svc, bvi-svc]
+    expected_degradation_window: 2m
+    allowed_slo_burn: 0.10

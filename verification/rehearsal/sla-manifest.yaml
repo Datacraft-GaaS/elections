@@ -1,0 +1,166 @@
+# SLA manifest for the election-day rehearsal.
+# One row per Appendix-A numeric SLA.
+# Fields:
+#   metric:      human-readable identifier
+#   target:      threshold value and unit
+#   percentile:  p95 or p99 (or "rate" / "count" where relevant)
+#   threshold:   numeric ceiling (latency ms) or floor (throughput)
+#   direction:   lt (must be below) or gt (must be above)
+#   prom_query:  Prometheus instant-query expression (evaluated at end of rehearsal)
+#   pass_criterion: human description of the pass condition
+
+slas:
+
+  - metric: bvi_auth_p95_latency
+    target: "200 ms"
+    percentile: p95
+    threshold: 200
+    direction: lt
+    prom_query: >
+      histogram_quantile(0.95,
+        sum(rate(eel_bvi_request_duration_ms_bucket[5m])) by (le))
+    pass_criterion: p95 biometric identification latency < 200 ms during peak load
+
+  - metric: bvi_auth_p99_latency
+    target: "500 ms"
+    percentile: p99
+    threshold: 500
+    direction: lt
+    prom_query: >
+      histogram_quantile(0.99,
+        sum(rate(eel_bvi_request_duration_ms_bucket[5m])) by (le))
+    pass_criterion: p99 biometric identification latency < 500 ms during peak load
+
+  - metric: bvi_throughput
+    target: "18000 req/s"
+    percentile: rate
+    threshold: 18000
+    direction: gt
+    prom_query: >
+      sum(rate(eel_bvi_requests_total[1m]))
+    pass_criterion: BVI sustained throughput >= 18k req/s at morning and evening peaks
+
+  - metric: rts_submit_p95_latency
+    target: "500 ms"
+    percentile: p95
+    threshold: 500
+    direction: lt
+    prom_query: >
+      histogram_quantile(0.95,
+        sum(rate(eel_rts_submit_duration_ms_bucket[5m])) by (le))
+    pass_criterion: p95 RTS form submission < 500 ms
+
+  - metric: rts_submit_p99_latency
+    target: "1000 ms"
+    percentile: p99
+    threshold: 1000
+    direction: lt
+    prom_query: >
+      histogram_quantile(0.99,
+        sum(rate(eel_rts_submit_duration_ms_bucket[5m])) by (le))
+    pass_criterion: p99 RTS form submission < 1000 ms
+
+  - metric: rts_concurrent
+    target: "60000 concurrent"
+    percentile: count
+    threshold: 60000
+    direction: gt
+    prom_query: >
+      sum(eel_rts_active_connections)
+    pass_criterion: RTS sustains 60k concurrent connections at peak
+
+  - metric: write_path_p99_latency
+    target: "25 ms"
+    percentile: p99
+    threshold: 25
+    direction: lt
+    prom_query: >
+      histogram_quantile(0.99,
+        sum(rate(eel_write_path_duration_ms_bucket[5m])) by (le))
+    pass_criterion: ADR-0018 write-path P99 < 25 ms end-to-end (kit to ACK)
+
+  - metric: portal_p95_latency
+    target: "200 ms"
+    percentile: p95
+    threshold: 200
+    direction: lt
+    prom_query: >
+      histogram_quantile(0.95,
+        sum(rate(eel_portal_request_duration_ms_bucket[5m])) by (le))
+    pass_criterion: p95 portal page load < 200 ms
+
+  - metric: portal_p99_latency
+    target: "500 ms"
+    percentile: p99
+    threshold: 500
+    direction: lt
+    prom_query: >
+      histogram_quantile(0.99,
+        sum(rate(eel_portal_request_duration_ms_bucket[5m])) by (le))
+    pass_criterion: p99 portal page load < 500 ms
+
+  - metric: portal_viewers_per_hour
+    target: "5000000 per hour"
+    percentile: rate
+    threshold: 1389
+    direction: gt
+    prom_query: >
+      sum(rate(eel_portal_requests_total[1m]))
+    pass_criterion: Portal sustains >= 1389 req/s (5M/hr) at peak
+
+  - metric: verifier_concurrent
+    target: "10000000 concurrent"
+    percentile: count
+    threshold: 10000000
+    direction: gt
+    prom_query: >
+      sum(eel_verifier_active_sessions)
+    pass_criterion: Kit verifier handles 10M concurrent sessions
+
+  - metric: checkins_per_90min
+    target: "250000 per 90 min"
+    percentile: count
+    threshold: 250000
+    direction: gt
+    prom_query: >
+      sum(increase(eel_checkin_total[90m]))
+    pass_criterion: 250k polling-station check-ins processed within any 90-min window
+
+  - metric: kafka_events_per_sec
+    target: "100000 events/s"
+    percentile: rate
+    threshold: 100000
+    direction: gt
+    prom_query: >
+      sum(rate(eel_kafka_messages_produced_total[1m]))
+    pass_criterion: Kafka ingest >= 100k events/s at peak
+
+  - metric: error_rate
+    target: "< 0.1%"
+    percentile: rate
+    threshold: 0.001
+    direction: lt
+    prom_query: >
+      sum(rate(eel_http_requests_total{status=~"5.."}[5m]))
+      /
+      sum(rate(eel_http_requests_total[5m]))
+    pass_criterion: Overall HTTP 5xx error rate < 0.1%
+
+  - metric: proof_generation_p99
+    target: "30 s"
+    percentile: p99
+    threshold: 30000
+    direction: lt
+    prom_query: >
+      histogram_quantile(0.99,
+        sum(rate(eel_proof_generation_duration_ms_bucket[5m])) by (le))
+    pass_criterion: Merkle proof generation P99 < 30 s
+
+  - metric: witness_sth_agreement
+    target: "5/5 channels agree"
+    percentile: count
+    threshold: 5
+    direction: gt
+    prom_query: >
+      sum(eel_witness_sth_agreement_total{status="agree"})
+    pass_criterion: All 5 witness channels agree on the latest STH

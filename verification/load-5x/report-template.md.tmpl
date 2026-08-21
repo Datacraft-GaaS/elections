@@ -1,0 +1,53 @@
+# 5x Load Test Report
+
+Date: ${LOAD_5X_DATE}
+Cluster context: ${EEL_CLUSTER_CONTEXT}
+Scale factor: 5.0
+Baseline profile: loadtest/profiles/local.yaml (WP-3.10 baseline)
+
+## Summary
+
+| | Value |
+|---|---|
+| Overall result | ${LOAD_5X_RESULT} |
+| Regressions | ${LOAD_5X_REGRESSIONS} |
+| BVI throughput achieved | ${LOAD_5X_BVI_RPS} req/s (target 90k) |
+| RTS peak concurrent | ${LOAD_5X_RTS_CONCURRENT} (target 300k) |
+| Kafka throughput | ${LOAD_5X_KAFKA_EPS} events/s (target 500k) |
+| Write-path P99 | ${LOAD_5X_WRITE_P99} ms (ADR-0018 gate: 25 ms) |
+
+## Per-Metric Table
+
+| Metric | 1x Baseline | 5x Measured | Delta % | ADR-0018 Target | Pass/Fail |
+|---|---|---|---|---|---|
+| bvi_auth_p95_ms | 200 ms | ${LOAD_5X_BVI_P95} ms | ${LOAD_5X_BVI_P95_DELTA}% | 200 ms | ${LOAD_5X_BVI_P95_STATUS} |
+| bvi_auth_p99_ms | 500 ms | ${LOAD_5X_BVI_P99} ms | ${LOAD_5X_BVI_P99_DELTA}% | 500 ms | ${LOAD_5X_BVI_P99_STATUS} |
+| rts_submit_p95_ms | 500 ms | ${LOAD_5X_RTS_P95} ms | ${LOAD_5X_RTS_P95_DELTA}% | 500 ms | ${LOAD_5X_RTS_P95_STATUS} |
+| rts_submit_p99_ms | 1000 ms | ${LOAD_5X_RTS_P99} ms | ${LOAD_5X_RTS_P99_DELTA}% | 1000 ms | ${LOAD_5X_RTS_P99_STATUS} |
+| write_path_p99_ms | 25 ms | ${LOAD_5X_WRITE_P99} ms | ${LOAD_5X_WRITE_P99_DELTA}% | 25 ms | ${LOAD_5X_WRITE_P99_STATUS} |
+| portal_p95_ms | 200 ms | ${LOAD_5X_PORTAL_P95} ms | ${LOAD_5X_PORTAL_P95_DELTA}% | 200 ms | ${LOAD_5X_PORTAL_P95_STATUS} |
+| portal_p99_ms | 500 ms | ${LOAD_5X_PORTAL_P99} ms | ${LOAD_5X_PORTAL_P99_DELTA}% | 500 ms | ${LOAD_5X_PORTAL_P99_STATUS} |
+| kafka_events_per_sec | 100k | ${LOAD_5X_KAFKA_EPS} | ${LOAD_5X_KAFKA_DELTA}% | 500k | ${LOAD_5X_KAFKA_STATUS} |
+
+## Regression Gate
+
+Regression threshold: 10% (ADR-0018).
+
+Regressions detected: ${LOAD_5X_REGRESSIONS}
+Regression report: ${LOAD_5X_REGRESSION_JSON}
+
+## Kafka Headroom
+
+Target: 20% headroom above 500k events/s (= 600k events/s demonstrated).
+Measured headroom rate: ${LOAD_5X_KAFKA_HEADROOM} events/s
+Headroom status: ${LOAD_5X_KAFKA_HEADROOM_STATUS}
+
+## Incidents
+
+| Timestamp (UTC) | Severity | Description | Resolution |
+|---|---|---|---|
+${LOAD_5X_INCIDENTS}
+
+## Sign-Off
+
+5x load test outcome: ${LOAD_5X_RESULT}

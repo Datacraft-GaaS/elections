@@ -1,0 +1,36 @@
+# Chaos Suite Report
+
+Date: ${CHAOS_RUN_DATE}
+Cluster context: ${EEL_CLUSTER_CONTEXT}
+Rehearsal start: ${EEL_REHEARSAL_START}
+Mode: ${EEL_CHAOS_MODE}
+
+## Summary
+
+Scenarios applied: ${CHAOS_SCENARIOS_APPLIED}
+Scenarios completed without breach: ${CHAOS_SCENARIOS_PASSED}
+SLO breaches: ${CHAOS_SLO_BREACHES}
+Overall result: ${CHAOS_OVERALL_RESULT}
+
+## Per-Scenario Results
+
+| Scenario | Category | Applied at | Duration | SLO Burn | Status |
+|---|---|---|---|---|---|
+${CHAOS_SCENARIO_TABLE}
+
+## SLO Burn Budget
+
+The degradation contract (`degradation-contract.yaml`) defines per-service tolerances.
+No breach beyond the declared `allowed_slo_burn` per scenario is permitted.
+
+## Incidents
+
+| Timestamp (UTC) | Scenario | Severity | Description | Resolution |
+|---|---|---|---|---|
+${CHAOS_INCIDENTS}
+
+## Sign-Off
+
+Chaos run outcome: ${CHAOS_OVERALL_RESULT}
+
+Log file: ${CHAOS_LOG_PATH}

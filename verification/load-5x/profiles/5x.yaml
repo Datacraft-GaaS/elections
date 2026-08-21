@@ -1,0 +1,51 @@
+# 5x scale load profile.
+# Extends loadtest/profiles/local.yaml with scaling_factor: 5.0.
+# Every metric is the Appendix-A SLA value multiplied by 5.
+# These are FLOORS (throughput) or CEILINGS (latency) for the 5x run.
+#
+# ADR-0018: P99 write-path latency must remain <= 25 ms at 5x load.
+# Regression gate: no metric may regress > 10% vs 1x baseline (WP-3.10 DoD).
+
+scaling_factor: 5.0
+
+# BVI biometric identification at 5x
+bvi_auth_p95_ms: 200          # same ceiling as 1x; must hold under 5x load
+bvi_auth_p99_ms: 500
+bvi_req_per_sec: 90000        # 18k * 5
+
+# RTS results transmission at 5x
+rts_submit_p95_ms: 500
+rts_submit_p99_ms: 1000
+rts_concurrent: 300000        # 60k * 5
+
+# Write path end-to-end (ADR-0018 hard gate)
+write_path_p99_ms: 25         # unchanged; 5x must not regress this
+
+# ABIS biometric enrolment at 5x
+abis_1n_p95_s: 3
+abis_1n_p99_s: 6
+abis_enrolments_per_hour: 5000  # 1k * 5
+
+# Public portal at 5x
+portal_p95_ms: 200
+portal_p99_ms: 500
+portal_visitors_per_hour: 25000000  # 5M * 5
+
+# Kit verifier at 5x
+verifier_concurrent: 50000000  # 10M * 5
+
+# Polling station check-ins at 5x
+checkins_per_90min: 1250000    # 250k * 5
+
+# Kafka ingest at 5x (headroom target)
+kafka_events_per_sec: 500000   # 100k * 5
+kafka_headroom_target_pct: 20  # producer must demonstrate 20% headroom above 500k
+
+# Regression gate threshold
+regression_max_pct: 10         # any P99 metric may not worsen > 10% vs 1x baseline
+
+# Topics under load
+kafka_topics:
+  - eel.rts.form34a.captured.v1
+  - eel.bvi.identification.v1
+  - eel.transparency.leaf.appended.v1
