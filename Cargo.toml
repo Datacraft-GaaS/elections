@@ -15,6 +15,11 @@ exclude = [
   "services/bvr-svc/crates/bvr-batch",
   "services/bvr-svc/crates/target",
   "services/rts-svc/crates/rts-integration-tests",
+  # WP-3.2 in-flight: missing workspace deps (ciborium, zstd, eel-api-server-rs, eel-outbox-rs)
+  "services/rts-svc/crates/rts-device-api",
+  "services/rts-svc/crates/rts-ro-api",
+  # WP-3.8 in-flight: missing workspace deps (kit-attest, reqwest) -- kit-attest kept in workspace.dependencies for future use
+  "services/biometric-edge-svc/crates/edge-api",
 ]
 # Cargo tolerates glob members that match no paths yet.
 # New crates under these globs are picked up automatically.
@@ -37,6 +42,9 @@ tower           = { version = "0.5",  features = ["full"] }
 tower-http      = { version = "0.6",  features = ["full"] }
 tonic           = { version = "0.12", features = ["tls", "transport"] }
 tonic-build     = { version = "0.12" }
+
+# HTTP client (added by WP-3.10 to fix missing workspace dep from WP-3.8)
+reqwest         = { version = "0.12", features = ["json"] }
 
 # Async runtime
 tokio           = { version = "1",    features = ["full"] }
@@ -118,6 +126,9 @@ criterion       = { version = "0.5", features = ["html_reports"] }
 testcontainers          = { version = "0.23" }
 testcontainers-modules  = { version = "0.11", features = ["postgres", "kafka", "redis"] }
 rstest                  = { version = "0.23" }
+
+# Intra-workspace crates (added by WP-3.10 to fix missing workspace dep from WP-3.8)
+kit-attest      = { path = "services/biometric-edge-svc/crates/kit-attest" }
 
 # ---------------------------------------------------------------------------
 # Build profiles

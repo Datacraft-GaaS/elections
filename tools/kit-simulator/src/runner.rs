@@ -1,6 +1,6 @@
 use anyhow::Result;
 use chrono::Utc;
-use rand::{rngs::SmallRng, Rng, SeedableRng};
+use rand::{rngs::SmallRng, Rng, SeedableRng as _};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;

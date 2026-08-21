@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 /// Telco impairment profile applied per phase.
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
@@ -99,6 +99,7 @@ pub fn load_scenario(path: &Path) -> Result<Scenario> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::PathBuf;
 
     fn ws_root() -> PathBuf {
         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -121,7 +122,8 @@ mod tests {
 
     #[test]
     fn all_required_phases_present() {
-        let names: Vec<&str> = scenario().phases.iter().map(|p| p.name.as_str()).collect();
+        let s = scenario();
+        let names: Vec<&str> = s.phases.iter().map(|p| p.name.as_str()).collect();
         for required in &[
             "registration-open",
             "polling-open",

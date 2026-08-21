@@ -42,9 +42,11 @@ pub fn percentiles(mut values: Vec<u64>) -> (u64, u64, u64) {
     }
     values.sort_unstable();
     let n = values.len();
-    let p50 = values[n * 50 / 100];
-    let p95 = values[(n * 95 / 100).min(n - 1)];
-    let p99 = values[(n * 99 / 100).min(n - 1)];
+    // ceil(n*p/100) - 1 in integer arithmetic = (n*p - 1) / 100, clamped to valid range.
+    let idx = |p: usize| (n * p).saturating_sub(1) / 100;
+    let p50 = values[idx(50)];
+    let p95 = values[idx(95).min(n - 1)];
+    let p99 = values[idx(99).min(n - 1)];
     (p50, p95, p99)
 }
 

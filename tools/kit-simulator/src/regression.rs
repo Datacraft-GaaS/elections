@@ -6,7 +6,7 @@ use crate::report::{read_report, EndpointStats, RunReport};
 /// Maximum allowed p99 increase before the gate fires.
 const THRESHOLD: f64 = 0.10;
 
-struct Row {
+pub(crate) struct Row {
     endpoint: String,
     base_p99: u64,
     cand_p99: u64,

@@ -42,6 +42,7 @@ async fn mock_handler(req: Request) -> impl IntoResponse {
 /// In-process mock HTTP server for dry-run mode.
 pub struct MockServer {
 	pub addr: SocketAddr,
+	#[allow(dead_code)]
 	shutdown_tx: tokio::sync::oneshot::Sender<()>,
 }
 
