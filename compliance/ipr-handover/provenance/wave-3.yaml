@@ -1,0 +1,33 @@
+wave: 3
+name: "CRMS, field mobile, inventory, training, AI platform"
+wp_range: "WP-3.1 to WP-3.x"
+gate: G3
+gate_status: passed
+
+commits:
+  - ref: "[git-commit-hash-g3-final]"
+    message: "chore: Gate G3 sign-off - candidate registration and field operations"
+    date: "[YYYY-MM-DD]"
+    author: "[tech-lead]"
+
+gate_report_links:
+  - path: "docs/audit/gate-g3-report.md"
+    description: "Gate G3 architect sign-off"
+
+deliverables:
+  - "crms-svc: M12 candidates/nominations, M45-M47 party/primaries/fees, M67 symbols"
+  - "field-mobile-svc: M13 public verifier, M29-M34 mobile apps"
+  - "inventory-svc: M20 inventory management, M39 ballot printing, M65 diaspora logistics"
+  - "training-svc: M37 voter education CMS, M38 LMS, M42-M43 accreditation, M60 medical"
+  - "ai-platform-svc: M17 speech integrity, M26 anomaly detection, M28 AI registry, M44 forecasting, M61 red-team"
+  - "support-admin-svc: M25 special voter, M27 intent preservation, M54 budget, M55 payroll, M69 archive"
+  - "kit-sdk-flutter: field kit and mobile SDK"
+  - "eel-loadshedding-*, eel-resilience-* shared libraries"
+  - "Personnel dispatch: 250k concurrent attendance records validated"
+
+modules: [M12, M13, M17, M20, M25, M26, M27, M28, M29, M30, M31, M32, M33, M34, M37, M38, M39, M42, M43, M44, M45, M46, M47, M54, M55, M60, M61, M65, M67, M69]
+
+notes: >
+  Wave 3 delivered candidate management, field operations, AI monitoring, and administrative backend.
+  PII-stripping pipeline verified for all AI model calls.
+  No PHI stored in M60 (schema-enforced constraint).

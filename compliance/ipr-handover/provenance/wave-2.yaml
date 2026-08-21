@@ -1,0 +1,34 @@
+wave: 2
+name: "RTS, portal, transparency, boundary, ECC baseline"
+wp_range: "WP-2.1 to WP-2.x"
+gate: G2
+gate_status: passed
+
+commits:
+  - ref: "[git-commit-hash-g2-final]"
+    message: "chore: Gate G2 sign-off - result transmission and transparency"
+    date: "[YYYY-MM-DD]"
+    author: "[tech-lead]"
+
+gate_report_links:
+  - path: "docs/audit/gate-g2-report.md"
+    description: "Gate G2 architect + legal sign-off"
+
+deliverables:
+  - "rts-svc: M08, M09, M10 result transmission and ICR pipeline"
+  - "portal-svc: M11 public result portal, M52 gazette, M64 voter inspection"
+  - "transparency-svc: M14 reproducibility bundle, M22 campaign finance"
+  - "boundary-svc: M18 boundary transparency"
+  - "ecc-svc: M15 IAB dashboard, M16 ECC, M23 grievance channels"
+  - "queue-svc: M19 queue transparency"
+  - "eel-eventstore-*, eel-outbox-* shared libraries"
+  - "ADR-0018 write-path SLA validated: P99 < 25 ms at 60k concurrent"
+  - "TLA+ proof for RTS backend state machine"
+  - "Merkle root anchoring to transparency log"
+
+modules: [M08, M09, M10, M11, M14, M15, M16, M18, M19, M22, M23]
+
+notes: >
+  Wave 2 delivered the result transmission and public transparency surface.
+  60k concurrent RTS sessions validated in load test per ADR-0023.
+  Merkle root anchoring integrated with Sigstore transparency log.

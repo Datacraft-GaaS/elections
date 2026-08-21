@@ -1,0 +1,32 @@
+wave: 0
+name: "Foundation: monorepo, CI, supply chain, platform baseline"
+wp_range: "WP-0.1 to WP-0.9"
+gate: G0
+gate_status: passed
+
+commits:
+  - ref: "[git-commit-hash-g0-final]"
+    message: "chore: Gate G0 sign-off - foundation complete"
+    date: "[YYYY-MM-DD]"
+    author: "[tech-lead]"
+
+gate_report_links:
+  - path: "docs/audit/gate-g0-report.md"
+    description: "Gate G0 architect + IEBC OIT sign-off"
+
+deliverables:
+  - "Nix flake with pinned toolchains (flake.nix, flake.lock)"
+  - "Monorepo layout per ADR-0001"
+  - "CI pipeline: test, lint, type-check, SBOM, supply-chain gates"
+  - "Platform: k3s edge + full cluster Helm charts (platform/)"
+  - "SPIRE identity infrastructure"
+  - "OpenBao (Vault fork) secrets management"
+  - "Kafka (Redpanda) event bus"
+  - "PostgreSQL T1 cluster with pgBackRest"
+  - "ArgoCD GitOps baseline"
+  - "ADRs 0001-0009 accepted"
+
+notes: >
+  Wave 0 established the build and deployment substrate used by all subsequent waves.
+  No domain code was delivered in this wave.
+  Reproducibility baseline established; `just build-all` clean from this commit.
