@@ -1,0 +1,63 @@
+{
+  "consumer": {
+    "name": "eel-abis-report-publisher"
+  },
+  "provider": {
+    "name": "eel-report-deliverers-kbc-sftp"
+  },
+  "interactions": [
+    {
+      "description": "POST /deliver/kbc-sftp with valid artifact payload returns upload receipt",
+      "request": {
+        "method": "POST",
+        "path": "/deliver/kbc-sftp",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "artifact_ref": "http://minio.internal/reports/sample.pdf",
+          "artifact_id": "01900000-0000-7000-8000-000000000011",
+          "subscription_id": "01900000-0000-7000-8000-000000000022",
+          "format": "pdf",
+          "sha256": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "remote_path": "/uploads/eel/eel_01900000-0000-7000-8000-000000000022_01900000-0000-7000-8000-000000000011.tar.gz",
+          "sha256": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
+          "uploaded_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    },
+    {
+      "description": "POST /deliver/kbc-sftp with missing fields returns 422",
+      "request": {
+        "method": "POST",
+        "path": "/deliver/kbc-sftp",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {}
+      },
+      "response": {
+        "status": 422
+      }
+    }
+  ],
+  "metadata": {
+    "pact-specification": {
+      "version": "2.0.0"
+    },
+    "created": "2026-08-21T00:00:00Z",
+    "notes": {
+      "upload_window": "Friday 18:00 EAT (UTC+3)",
+      "file_naming": "eel_{subscription_id}_{artifact_id}.tar.gz",
+      "retention_years": 20
+    }
+  }
+}

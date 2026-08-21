@@ -1,0 +1,71 @@
+{
+  "consumer": {
+    "name": "eel-abis-report-publisher"
+  },
+  "provider": {
+    "name": "eel-report-deliverers-gov-printer"
+  },
+  "interactions": [
+    {
+      "description": "POST /deliver/gov-printer with valid artifact payload returns submission receipt",
+      "request": {
+        "method": "POST",
+        "path": "/deliver/gov-printer",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "artifact_ref": "http://minio.internal/reports/sample.pdf",
+          "artifact_id": "01900000-0000-7000-8000-000000000001",
+          "subscription_id": "01900000-0000-7000-8000-000000000002",
+          "format": "pdf",
+          "sha256": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "submission_id": "gazette-sub-abc123",
+          "submitted_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    },
+    {
+      "description": "POST /deliver/gov-printer with missing fields returns 422",
+      "request": {
+        "method": "POST",
+        "path": "/deliver/gov-printer",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {}
+      },
+      "response": {
+        "status": 422
+      }
+    },
+    {
+      "description": "GET /verify/{submission_id} returns accepted status",
+      "request": {
+        "method": "GET",
+        "path": "/verify/gazette-sub-abc123"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "submission_id": "gazette-sub-abc123",
+          "status": "accepted"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pact-specification": {
+      "version": "2.0.0"
+    },
+    "created": "2026-08-21T00:00:00Z"
+  }
+}
