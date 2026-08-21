@@ -1,0 +1,83 @@
+service: inventory-svc
+version: "0.1.0"
+tables:
+  - name: assets
+    module: M20
+    tier: T1-audit
+    pii: false
+    description: Append-only master asset register; immutable UID, SKU, status, factory serial, batch ID
+  - name: custody_events
+    module: M20
+    tier: T1-audit
+    pii: false
+    description: Immutable chain-of-custody events; HLC timestamped; HSM-signed transferor and transferee
+  - name: seals
+    module: M20
+    tier: T1-audit
+    pii: false
+    description: Seal lifecycle records; dual-HSM required for break events
+  - name: consumables
+    module: M20
+    tier: T2
+    pii: false
+    description: Consumable stock tracking by lot UID; expiry enforcement
+  - name: reserve_pools
+    module: M20
+    tier: T2
+    pii: false
+    description: Reserve pool tiers (L1/L2/L3); alert threshold; ECC dashboard feed
+  - name: merkle_checkpoints
+    module: M20
+    tier: T1-audit
+    pii: false
+    description: 10-min Merkle root windows published to 5 channels
+  - name: kit_heartbeats
+    module: M20
+    tier: T2
+    pii: false
+    description: Kit GPS heartbeats every 15 min; geofence deviation triggers P0
+  - name: print_orders
+    module: M39
+    tier: T1-audit
+    pii: false
+    description: Dual-signed ballot print authorisations; Merkle-anchored before printer receives
+  - name: lot_data
+    module: M39
+    tier: T1-audit
+    pii: false
+    description: Printer MES lot data; RFID chip manifest SHA-256 hash; variance alert on >0.01%
+  - name: print_custody_events
+    module: M39
+    tier: T1-audit
+    pii: false
+    description: Ballot custody at each stage (port/warehouse/constituency/station)
+  - name: station_reconciliations
+    module: M39
+    tier: T1-audit
+    pii: false
+    description: Station end-of-day ballot reconciliations; discrepancy flag alerts M16
+  - name: ballot_containers
+    module: M65
+    tier: T1-consensus
+    pii: false
+    description: Diaspora ballot container lifecycle; container UIDs classified restricted
+  - name: container_custody_events
+    module: M65
+    tier: T1-consensus
+    pii: false
+    description: Per-container custody events; seal-broken triggers P1 ECC alert
+  - name: preclearance_manifests
+    module: M65
+    tier: T1-audit
+    pii: false
+    description: MFA/KRA pre-clearance submissions; 6-hour lead time compliance
+  - name: hub_routes
+    module: M65
+    tier: T1-audit
+    pii: false
+    description: Embassy-to-hub routing policies; locked after Commissioner approval at T-30
+  - name: arrival_records
+    module: M65
+    tier: T1-audit
+    pii: false
+    description: Nairobi tally centre arrival reconciliation; count discrepancy triggers alert

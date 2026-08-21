@@ -1,0 +1,36 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: eel-edge
+
+commonLabels:
+  app.kubernetes.io/part-of: eel
+  topology.kubernetes.io/region: garissa
+
+resources:
+  - network-policy.yaml
+  - envoy-gateway-patch.yaml
+  - argocd-appset.yaml
+  - dns-vip-configmap.yaml
+
+patches:
+  - path: node-selector-patch.yaml
+    target:
+      kind: Deployment
+      name: envoy-gateway
+  - path: node-selector-patch.yaml
+    target:
+      kind: Deployment
+      name: varnish
+  - path: node-selector-patch.yaml
+    target:
+      kind: Deployment
+      name: nginx-shield
+  - path: node-selector-patch.yaml
+    target:
+      kind: Deployment
+      name: anubis
+  - path: node-selector-patch.yaml
+    target:
+      kind: Deployment
+      name: coraza-waf

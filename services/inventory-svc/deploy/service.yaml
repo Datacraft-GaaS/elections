@@ -1,13 +1,13 @@
-# deploy/service.yaml — filled by the service owner (WP-1.9 template)
-# Fields: name, image, artifacts, sites, strategy, replicas
+# deploy/service.yaml -- WP-4.3 inventory-svc (M20, M39, M65)
+# Both DR sites: primary (eu-west) and mirror (eu-central)
 name: inventory-svc
 image: harbor.eel.internal/eel/inventory-svc
 artifacts: []
 # sites: leave empty to deploy to all 7 sites (primary, mirror, edge-*)
 sites: []
 strategy:
-  primary: blue-green
-  mirror:  blue-green
+  primary:       blue-green
+  mirror:        blue-green
   edge-nairobi:  rolling
   edge-mombasa:  rolling
   edge-kisumu:   rolling
@@ -21,3 +21,23 @@ replicas:
   edge-kisumu:   2
   edge-eldoret:  2
   edge-garissa:  2
+dr_sites:
+  - name: primary
+    region: eu-west
+    role: active
+  - name: mirror
+    region: eu-central
+    role: standby
+    failover_rto: 15m
+healthcheck:
+  path: /health
+  interval: 30s
+  timeout: 5s
+  failure_threshold: 3
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi

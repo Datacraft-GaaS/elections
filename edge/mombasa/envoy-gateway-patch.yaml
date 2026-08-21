@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: envoy-gateway-region-config
+  namespace: eel-edge
+data:
+  cluster_name: eel-edge-mombasa
+  region: mombasa
+  anycast_vip: "10.200.2.1"
+  valkey_address: valkey.eel-edge.svc.cluster.local:6379
+  upstream_primary: "10.100.0.10:443"
+  upstream_mirror: "10.101.0.10:443"

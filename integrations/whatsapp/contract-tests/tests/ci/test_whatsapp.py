@@ -1,0 +1,44 @@
+"""Pact consumer contract: eel services consuming the whatsapp adapter.
+
+Provider verification runs against the whatsapp double (WHATSAPP_DOUBLE_URL env var).
+"""
+
+from __future__ import annotations
+
+import os
+
+import httpx
+import pytest
+
+DOUBLE_URL = os.environ.get("WHATSAPP_DOUBLE_URL", "http://localhost:8090")
+
+
+async def test_whatsapp_send() -> None:
+	"Send WhatsApp message."
+	async with httpx.AsyncClient(base_url=DOUBLE_URL) as client:
+		resp = await client.post(
+			"/whatsapp/send",
+			json={"to": "test-value", "request_id": "00000000-0000-0000-0000-000000000001"},
+		)
+	assert resp.status_code == 200
+	data = resp.json()
+	assert data["ok"] is True
+
+
+async def test_whatsapp_webhook() -> None:
+	"Receive incoming messages."
+	async with httpx.AsyncClient(base_url=DOUBLE_URL) as client:
+		resp = await client.post(
+			"/whatsapp/webhook",
+			json={"to": "test-value", "request_id": "00000000-0000-0000-0000-000000000001"},
+		)
+	assert resp.status_code == 200
+	data = resp.json()
+	assert data["ok"] is True
+
+
+async def test_health() -> None:
+	"Health endpoint."
+	async with httpx.AsyncClient(base_url=DOUBLE_URL) as client:
+		resp = await client.get("/health")
+	assert resp.status_code == 200

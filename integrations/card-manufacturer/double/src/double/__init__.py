@@ -1,0 +1,1 @@
+"""card-manufacturer double server."""

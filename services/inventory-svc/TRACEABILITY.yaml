@@ -1,0 +1,76 @@
+# WP-4.3 inventory-svc traceability
+service: inventory-svc
+work_package: WP-4.3
+wave: "4"
+
+modules:
+  - id: M20
+    name: inventory-management
+    crate: custody
+    event_sourced: true
+    adr: ADR-0013
+    availability_class: cycle-critical-99.9
+  - id: M39
+    name: ballot-printing-chain
+    crate: printing
+    event_sourced: false
+    availability_class: cycle-critical-99.9
+  - id: M65
+    name: diaspora-ballot-physical-logistics
+    crate: diaspora-logistics
+    event_sourced: false
+    availability_class: routine-99.5
+
+surfaces:
+  - path: crates/custody
+    tech: rust
+    purpose: event-sourced asset/custody/seal/consumable/reserve-pool domain; RFID/GPS ingest; Merkle root every 10 min; geographic RBAC
+  - path: crates/printing
+    tech: rust
+    purpose: M39 PrintOrder/LotData/CustodyEvent/StationReconciliation; MES double (Wave 2 pattern)
+  - path: crates/diaspora-logistics
+    tech: rust
+    purpose: M65 BallotContainer/PreClearanceManifest/HubRoute/ArrivalRecord; MFA/KRA/airline doubles
+  - path: django/inventory-admin
+    tech: django
+    purpose: kit fleet management, reserve pool management, ballot lot tracking, diaspora shipment tracking, court bundle export, custody chain visualisation
+  - path: apps/custody-mobile
+    tech: flutter
+    purpose: offline RFID/GPS custody chain scan; 7-day WAL queue survival; drains on reconnect
+
+migrations:
+  - V001__custody_core.sql
+  - V002__printing_chain.sql
+  - V003__diaspora_logistics.sql
+
+deploy:
+  - deploy/service.yaml
+
+events_emitted:
+  - eel.custody.kit_dispatched.v1
+  - eel.custody.kit_received.v1
+  - eel.custody.seal_broken.v1
+  - eel.custody.consumable_used.v1
+  - eel.custody.reserve_pool_updated.v1
+  - eel.inventory.lot_data_received.v1
+  - eel.inventory.custody_event_recorded.v1
+  - eel.inventory.quantity_variance_alert.v1
+  - eel.inventory.rfid_mismatch_alert.v1
+  - eel.inventory.station_reconciliation_discrepancy.v1
+  - eel.custody.diaspora_container_dispatched.v1
+  - eel.custody.diaspora_container_received.v1
+  - eel.custody.seal_broken.v1
+  - eel.custody.diaspora_reconciliation_complete.v1
+
+events_consumed:
+  - eel.bvi.kit_revoked.v1
+  - eel.diaspora.embassy_station_registered.v1
+
+acceptance_criteria:
+  - AC-M20-01: custody chain verifiable end-to-end from factory birth to station deployment
+  - AC-M20-03: Merkle root published within 10 min in all 5 channels
+  - AC-M20-06: offline mobile queue holds 100,000 events; drains without loss
+  - AC-M39-01: print order dual-signed, transmitted, Merkle-anchored
+  - AC-M39-04: discrepancy alert to M16 within 2 min
+  - AC-M65-01: seal-broken event pages ECC within 60 s
+  - AC-M65-02: offline packing sync idempotent

@@ -20,6 +20,11 @@ exclude = [
   "services/rts-svc/crates/rts-ro-api",
   # WP-3.8 in-flight: missing workspace deps (kit-attest, reqwest) -- kit-attest kept in workspace.dependencies for future use
   "services/biometric-edge-svc/crates/edge-api",
+  # WP-4.7 in-flight: mobile-bff references axum-extra which fails to resolve at workspace parse time
+  "services/field-mobile-svc/crates/mobile-bff",
+  # vprs-api, finance-transparency: directories exist but Cargo.toml is missing (in-flight)
+  "services/vprs-svc/crates/vprs-api",
+  "services/transparency-svc/crates/finance-transparency",
 ]
 # Cargo tolerates glob members that match no paths yet.
 # New crates under these globs are picked up automatically.
@@ -127,8 +132,17 @@ testcontainers          = { version = "0.23" }
 testcontainers-modules  = { version = "0.11", features = ["postgres", "kafka", "redis"] }
 rstest                  = { version = "0.23" }
 
+# Serialization extras (added by WP-4.3)
+ciborium        = { version = "0.2" }
+
+# Compression (added by WP-4.3)
+zstd            = { version = "0.13" }
+
 # Intra-workspace crates (added by WP-3.10 to fix missing workspace dep from WP-3.8)
 kit-attest      = { path = "services/biometric-edge-svc/crates/kit-attest" }
+
+# Intra-workspace packages (added by WP-4.3 to fix missing workspace deps)
+eel-resilience-rs = { path = "packages/eel-resilience-rs" }
 
 # ---------------------------------------------------------------------------
 # Build profiles

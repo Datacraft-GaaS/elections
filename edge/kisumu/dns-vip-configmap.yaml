@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: edge-dns-vip
+  namespace: eel-edge
+data:
+  region: kisumu
+  anycast_vip: "10.200.3.1"
+  primary_dr_vip: "10.100.0.10"
+  mirror_dr_vip: "10.101.0.10"
+  dns_zone: eel.local

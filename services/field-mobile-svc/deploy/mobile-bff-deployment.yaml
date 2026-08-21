@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mobile-bff
+  namespace: field-mobile-svc
+  labels:
+    app: mobile-bff
+    wp: "4.7"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mobile-bff
+  template:
+    metadata:
+      labels:
+        app: mobile-bff
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: mobile-bff
+          image: harbor.eel.internal/eel/mobile-bff:latest
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: field-mobile-svc-db
+                  key: url
+            - name: KAFKA_BROKERS
+              valueFrom:
+                configMapKeyRef:
+                  name: field-mobile-svc-config
+                  key: kafka_brokers
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20

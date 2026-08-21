@@ -1,0 +1,37 @@
+[package]
+name = "vprs-api"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "VPRS REST API service (WP-4.10, M04)"
+
+[[bin]]
+name = "vprs-api"
+path = "src/main.rs"
+
+[lib]
+name = "vprs_api"
+path = "src/lib.rs"
+
+[dependencies]
+vprs-domain       = { path = "../vprs-domain" }
+eel-outbox-rs     = { path = "../../../../packages/eel-outbox-rs" }
+eel-resilience-rs = { path = "../../../../packages/eel-resilience-rs" }
+eel-crypto-rs     = { path = "../../../../packages/eel-crypto-rs" }
+axum              = { workspace = true }
+tower-http        = { workspace = true }
+tokio             = { workspace = true }
+serde             = { workspace = true }
+serde_json        = { workspace = true }
+uuid              = { workspace = true }
+thiserror         = { workspace = true }
+anyhow            = { workspace = true }
+chrono            = { workspace = true }
+tracing           = { workspace = true }
+tracing-subscriber = { workspace = true }
+utoipa            = { workspace = true }
+utoipa-swagger-ui = { workspace = true }
+sqlx              = { workspace = true }
+rstest            = { workspace = true }

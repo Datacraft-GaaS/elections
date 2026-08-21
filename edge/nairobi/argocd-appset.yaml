@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: eel-edge-nairobi
+  namespace: argocd
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/eel-project/eel.git
+        revision: HEAD
+        directories:
+          - path: edge/nairobi
+  template:
+    metadata:
+      name: eel-edge-nairobi
+      namespace: argocd
+      labels:
+        app.kubernetes.io/part-of: eel
+        topology.kubernetes.io/region: nairobi
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/eel-project/eel.git
+        targetRevision: HEAD
+        path: edge/nairobi
+      destination:
+        server: https://k8s.eel-nairobi.internal:6443
+        namespace: eel-edge
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

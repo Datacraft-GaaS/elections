@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ussd-menu
+  namespace: field-mobile-svc
+  labels:
+    app: ussd-menu
+    wp: "4.7"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ussd-menu
+  template:
+    metadata:
+      labels:
+        app: ussd-menu
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: ussd-menu
+          image: harbor.eel.internal/eel/ussd-menu:latest
+          ports:
+            - containerPort: 8000
+              name: http
+          env:
+            - name: DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: field-mobile-svc-db
+                  key: url
+            - name: MOBILE_BFF_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: field-mobile-svc-config
+                  key: mobile_bff_url
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20

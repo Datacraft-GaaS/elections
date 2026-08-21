@@ -1,0 +1,41 @@
+[package]
+name = "mobile-bff"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "BFF gateway for M13 + M29 citizen verify apps (WP-4.7)"
+
+[lib]
+name = "mobile_bff"
+path = "src/lib.rs"
+
+[[bin]]
+name = "mobile-bff"
+path = "src/main.rs"
+
+[dependencies]
+axum              = { workspace = true }
+axum-extra        = { workspace = true }
+tower             = { workspace = true }
+tower-http        = { workspace = true }
+serde             = { workspace = true }
+serde_json        = { workspace = true }
+tokio             = { workspace = true }
+tokio-stream      = { workspace = true }
+futures           = { workspace = true }
+utoipa            = { workspace = true }
+utoipa-swagger-ui = { workspace = true }
+sqlx              = { workspace = true }
+tracing           = { workspace = true }
+tracing-subscriber = { workspace = true }
+uuid              = { workspace = true }
+chrono            = { workspace = true }
+thiserror         = { workspace = true }
+anyhow            = { workspace = true }
+
+[dev-dependencies]
+tokio  = { workspace = true }
+tower  = { workspace = true }
+rstest = { workspace = true }

@@ -1,0 +1,22 @@
+[package]
+name = "vprs-domain"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "VPRS domain model and aggregate types (M04)"
+
+[lib]
+name = "vprs_domain"
+path = "src/lib.rs"
+
+[dependencies]
+eel-pii-rs    = { path = "../../../../packages/eel-pii-rs" }
+eel-events-rs = { path = "../../../../packages/eel-events-rs" }
+eel-crypto-rs = { path = "../../../../packages/eel-crypto-rs" }
+uuid          = { workspace = true }
+serde         = { workspace = true }
+serde_json    = { workspace = true }
+chrono        = { workspace = true }
+thiserror     = { workspace = true }

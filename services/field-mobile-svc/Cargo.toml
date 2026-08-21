@@ -1,0 +1,71 @@
+[workspace]
+resolver = "2"
+members = [
+	"crates/mobile-bff",
+]
+
+[workspace.package]
+version      = "0.1.0"
+edition      = "2021"
+license      = "Apache-2.0"
+rust-version = "1.83"
+authors      = ["eel contributors"]
+repository   = "https://gitea.internal/eel/eel"
+
+[workspace.dependencies]
+# eel platform packages
+eel-api-server-rs  = { path = "../../packages/eel-api-server-rs" }
+eel-crypto-rs      = { path = "../../packages/eel-crypto-rs" }
+eel-auth-rs        = { path = "../../packages/eel-auth-rs" }
+eel-outbox-rs      = { path = "../../packages/eel-outbox-rs" }
+eel-events-rs      = { path = "../../packages/eel-events-rs" }
+eel-hlc-rs         = { path = "../../packages/eel-hlc-rs" }
+eel-eventstore-rs  = { path = "../../packages/eel-eventstore-rs" }
+eel-resilience-rs  = { path = "../../packages/eel-resilience-rs" }
+
+# HTTP
+axum              = { version = "0.8", features = ["macros", "tokio"] }
+tower             = { version = "0.5", features = ["full"] }
+tower-http        = { version = "0.6", features = ["cors", "trace"] }
+
+# Async
+tokio             = { version = "1", features = ["full"] }
+tokio-stream      = { version = "0.1", features = ["sync"] }
+futures           = { version = "0.3" }
+
+# Kafka
+rdkafka           = { version = "0.37", features = ["cmake-build", "ssl"] }
+
+# Database
+sqlx              = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "migrate"] }
+
+# OpenAPI
+utoipa            = { version = "4", features = ["axum_extras", "uuid"] }
+utoipa-swagger-ui = { version = "7", features = ["axum"] }
+
+# Serialization
+serde             = { version = "1", features = ["derive"] }
+serde_json        = { version = "1" }
+
+# IDs
+uuid              = { version = "1", features = ["v4", "v7", "serde"] }
+
+# Error handling
+thiserror         = { version = "2" }
+anyhow            = { version = "1" }
+
+# Time
+chrono            = { version = "0.4", features = ["serde"] }
+
+# Validation
+garde             = { version = "0.20", features = ["derive", "full"] }
+
+# Observability
+tracing              = { version = "0.1" }
+tracing-subscriber   = { version = "0.3", features = ["env-filter", "json"] }
+
+# SSE
+axum-extra        = { version = "0.10", features = ["typed-header"] }
+
+# Testing
+rstest = { version = "0.23" }

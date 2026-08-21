@@ -1,0 +1,42 @@
+[package]
+name = "repro-bundle"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Reproducibility bundle assembler and verifier CLI (WP-4.6, M14)"
+
+[[bin]]
+name = "eel-repro"
+path = "src/main.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+tlog-domain = { path = "../tlog-domain" }
+axum = { workspace = true }
+tokio = { workspace = true }
+sqlx = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+utoipa = { workspace = true }
+utoipa-swagger-ui = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+tar = { workspace = true }
+bytes = { workspace = true }
+clap = { version = "4", features = ["derive"] }
+zstd = "0.13"
+
+[dev-dependencies]
+rstest = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tempfile = "3"
