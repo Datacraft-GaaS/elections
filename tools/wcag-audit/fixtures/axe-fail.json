@@ -1,0 +1,56 @@
+{
+  "violations": [
+    {
+      "id": "color-contrast",
+      "impact": "serious",
+      "description": "Ensures the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+      "help": "Elements must meet minimum color contrast ratio thresholds",
+      "help_url": "https://dequeuniversity.com/rules/axe/4.9/color-contrast",
+      "tags": ["wcag2aa", "wcag2a"],
+      "nodes": [
+        {
+          "html": "<p class=\"muted\">Some text</p>",
+          "target": ["p.muted"],
+          "failureSummary": "Fix any of the following: Element has insufficient color contrast of 2.5 (foreground color: #aaaaaa, background color: #ffffff, font size: 12pt)"
+        }
+      ]
+    },
+    {
+      "id": "image-alt",
+      "impact": "critical",
+      "description": "Ensures img elements have alternate text or a role of none or presentation",
+      "help": "Images must have alternate text",
+      "help_url": "https://dequeuniversity.com/rules/axe/4.9/image-alt",
+      "tags": ["wcag2a"],
+      "nodes": [
+        {
+          "html": "<img src=\"banner.png\">",
+          "target": ["img"],
+          "failureSummary": "Fix any of the following: Element does not have an alt attribute"
+        }
+      ]
+    }
+  ],
+  "passes": [
+    {"id": "aria-allowed-attr", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "aria-required-children", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "aria-required-parent", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "aria-roles", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "aria-valid-attr-value", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "aria-valid-attr", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "bypass", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "document-title", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "duplicate-id", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "html-has-lang", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "html-lang-valid", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "input-image-alt", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "label", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "link-name", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "list", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "listitem", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "meta-refresh", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "valid-lang", "impact": null, "tags": ["wcag2a"], "nodes": [{}]}
+  ],
+  "incomplete": [],
+  "inapplicable": []
+}

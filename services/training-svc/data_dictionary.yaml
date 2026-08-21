@@ -1,0 +1,148 @@
+# training-svc data dictionary (WP-5.4)
+service: training-svc
+modules: [M37, M38, M42, M43, M60]
+entities:
+  - name: ContentItem
+    module: M37
+    data_class: B
+    store: T1-consensus
+    retention_years: 7
+    pii_fields: [author_id]
+    description: Voter education content item with versioning, fact-check, and approval workflow.
+
+  - name: ContentVersion
+    module: M37
+    data_class: C
+    store: T2
+    retention_years: 2
+    pii_fields: [created_by]
+    description: Immutable version of a content item body or asset reference.
+
+  - name: FactCheckReview
+    module: M37
+    data_class: B
+    store: T1-consensus
+    retention_years: 7
+    pii_fields: [reviewer_id]
+    description: Fact-check partner review decision and annotations.
+
+  - name: DistributionEvent
+    module: M37
+    data_class: C
+    store: T2
+    retention_years: 2
+    pii_fields: []
+    description: Record of content distribution to a channel or county.
+
+  - name: CourseModule
+    module: M38
+    data_class: B
+    store: T2
+    retention_years: 7
+    pii_fields: []
+    description: LMS training module with content, assessments, and pass mark.
+
+  - name: WorkerEnrollment
+    module: M38
+    data_class: B
+    store: T2
+    retention_years: 7
+    pii_fields: [worker_id]
+    description: Poll worker enrollment status and assessment attempt history.
+
+  - name: WorkerCertificate
+    module: M38
+    data_class: A
+    store: T1-audit
+    retention_years: 7
+    pii_fields: [worker_id]
+    description: HSM-signed certificate issued on completing all required modules.
+
+  - name: TrainingProgress
+    module: M38
+    data_class: C
+    store: T2
+    retention_years: 2
+    pii_fields: []
+    description: Aggregate certification progress snapshot per national/county/constituency scope.
+
+  - name: MediaOrganisation
+    module: M42
+    data_class: B
+    store: T1-consensus
+    retention_years: 7
+    pii_fields: []
+    description: Registered media organisation for election-period coverage.
+
+  - name: MediaAccreditation
+    module: M42
+    data_class: B
+    store: T1-consensus
+    retention_years: 7
+    pii_fields: [applicant_name, id_number]
+    description: Individual journalist accreditation record with badge and access zones.
+
+  - name: BadgeRevocationEntry
+    module: M42
+    data_class: A
+    store: T1-audit
+    retention_years: 7
+    pii_fields: [officer_id]
+    description: Immutable badge revocation entry anchored to audit log.
+
+  - name: AccreditationAuditEntry
+    module: M42
+    data_class: A
+    store: T1-audit
+    retention_years: 7
+    pii_fields: [actor_id]
+    description: Audit log entry for every accreditation action.
+
+  - name: ObserverOrganisation
+    module: M43
+    data_class: B
+    store: T1-consensus
+    retention_years: 7
+    pii_fields: []
+    description: Observer organisation approved under Elections Act s.21A.
+
+  - name: IndividualObserver
+    module: M43
+    data_class: B
+    store: T1-consensus
+    retention_years: 7
+    pii_fields: [full_name, id_number]
+    description: Individual observer with credential, deployment assignments, and status.
+
+  - name: MedicalIncident
+    module: M60
+    data_class: C
+    store: T1-consensus
+    retention_years: 5
+    pii_fields: []
+    phi_prohibited: true
+    description: Election-day medical incident report. No PHI per FR-M60-011.
+
+  - name: DispatchRequest
+    module: M60
+    data_class: C
+    store: T1-consensus
+    retention_years: 5
+    pii_fields: []
+    description: Dispatch request to KRCS/MoH/NDMU for a medical incident.
+
+  - name: ClusterAlert
+    module: M60
+    data_class: C
+    store: T1-consensus
+    retention_years: 5
+    pii_fields: []
+    description: Cluster alert raised when incident count in a county exceeds threshold.
+
+  - name: MedicalUnit
+    module: M60
+    data_class: C
+    store: T1-consensus
+    retention_years: 5
+    pii_fields: []
+    description: Pre-positioned KRCS/MoH medical unit registered before T-2.

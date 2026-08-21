@@ -1,0 +1,248 @@
+# DPA s.41 Automated Decision-Making Register
+# Kenya Data Protection Act 2019 s.41 requires data controllers to notify the ODPC
+# of processing activities involving automated decisions that produce legal or
+# significant effects on data subjects.
+# Review annually and before any material change to the automated logic.
+
+register:
+  - decision_id: DEC-001
+    module_ids:
+      - M01
+      - M02
+      - M03
+    name: "Biometric deduplication - voter registration"
+    description: >
+      When a voter registration application is received (via kit or VPRS), the biometric
+      template is submitted to the ABIS (M03) for a 1:N match against all enrolled templates.
+      If a match is found above the acceptance threshold, the application is automatically
+      flagged as a potential duplicate. A flagged application is placed on hold pending
+      human adjudication by an IEBC registration officer. The automated flag can affect
+      whether the applicant is registered as a voter.
+    personal_data_used:
+      - "Biometric template (fingerprint and/or facial image) - Tier A"
+      - "National ID number - Tier A"
+    automated_steps:
+      - "Template quality check (score below threshold rejects the capture, not the application)"
+      - "1:N match against ABIS template index"
+      - "Duplicate-flag determination using vendor-configured match threshold"
+    human_review_available: true
+    human_review_description: >
+      Every automated duplicate flag is reviewed by a trained IEBC registration officer
+      before a final determination is made. The officer has access to the full match
+      evidence package (scores, candidate templates, adjudication history). The data
+      subject may attend the adjudication hearing and present supporting documents.
+    legal_basis: "Public task - Elections Act s.5(1)(b) and Constitution Article 38"
+    right_to_object: true
+    right_to_object_procedure: >
+      Data subjects may object to the automated flag determination by lodging an appeal
+      with the IEBC Regional Registrar within 30 days of notification. The officer
+      conducts a fresh manual review.
+    safeguards:
+      - "Automated flag is advisory only; no registration is refused without human review"
+      - "All adjudication decisions are recorded with full audit trail"
+      - "Threshold is set conservatively to minimise false positives (target FMR <= 0.001%)"
+      - "Data subject is notified of a duplicate flag and given opportunity to present evidence"
+      - "Adjudication case is logged to the transparency Merkle log"
+    review_frequency: "Annual; and after any change to ABIS vendor software or matching thresholds"
+    odpc_notified: false
+    odpc_notification_date: null
+
+  - decision_id: DEC-002
+    module_ids:
+      - M26
+      - M28
+    name: "AI-based anomaly and fraud detection"
+    description: >
+      The AI platform services (M26 speech integrity, M28 AI monitoring stack) analyse
+      content submitted or transmitted on the eel platform for anomalies and potential
+      fraud signals. Automated flagging may result in access being temporarily restricted
+      while a human security analyst reviews the flag. This can affect a data subject's
+      ability to access IEBC digital services.
+    personal_data_used:
+      - "Content submitted by data subject (text, images) - Tier B/C depending on content"
+      - "Behavioural metadata (request frequency, session patterns) - Tier D"
+    automated_steps:
+      - "ML model inference on submitted content"
+      - "Anomaly scoring against baseline"
+      - "Threshold-based flag generation"
+      - "Temporary access restriction if flag score exceeds critical threshold"
+    human_review_available: true
+    human_review_description: >
+      A security analyst reviews all critical-threshold flags within 4 hours.
+      Access restrictions are lifted or confirmed by the analyst. Data subjects may
+      contact the IEBC helpdesk to report an erroneous restriction.
+    legal_basis: "Public task - IEBC mandate to ensure election integrity; Elections Act s.88"
+    right_to_object: true
+    right_to_object_procedure: >
+      Data subjects may contact the IEBC helpdesk ([HELPDESK_EMAIL]) to dispute an
+      automated access restriction. A human analyst will review within 4 hours on
+      business days, 8 hours on other days.
+    safeguards:
+      - "Automated restriction is temporary and time-limited (maximum 24 hours without human review)"
+      - "All flags and analyst decisions are logged"
+      - "Model performance is audited quarterly for bias and false-positive rates"
+      - "PII is stripped from model inputs before inference per M28 PIIStrippingEvent"
+    review_frequency: "Quarterly model performance review; annual DPA s.41 review"
+    odpc_notified: false
+    odpc_notification_date: null
+
+  - decision_id: DEC-003
+    module_ids:
+      - M27
+      - M28
+    name: "AI-assisted ballot intent determination"
+    description: >
+      At polling stations, the AI model in M27 (intent-preservation) and M28 analyses
+      images of scanned ballots to generate a pre-mark validation recommendation
+      (valid mark / spoilt / ambiguous). The recommendation is provided to the presiding
+      officer for the final determination. This affects whether a ballot is counted.
+    personal_data_used:
+      - "Ballot image - Tier B (voter cannot be identified from ballot image; secret ballot maintained)"
+      - "Ballot serial number (linked to polling station, not voter) - Tier B"
+    automated_steps:
+      - "Ballot image capture and quality check"
+      - "Mark detection model inference"
+      - "Classification into valid/spoilt/ambiguous with confidence score"
+    human_review_available: true
+    human_review_description: >
+      Every ballot classification is reviewed by the presiding officer and party agents
+      present at the counting table. The presiding officer's determination is final.
+      The automated classification is advisory only.
+    legal_basis: "Public task - Elections Act s.68 (spoilt ballot adjudication)"
+    right_to_object: false
+    right_to_object_description: >
+      Individual voters cannot be identified from ballot images (secret ballot). The right
+      to object does not apply to an anonymous processing activity. Political parties and
+      candidates may challenge counting decisions through the Elections Act s.75 petition
+      process.
+    safeguards:
+      - "Automated recommendation is advisory only; presiding officer makes final determination"
+      - "All recommendations and officer determinations are logged with ballot serial numbers"
+      - "The model does not link a ballot to a voter identity"
+      - "Model accuracy is validated against manual counting in every by-election before General Election deployment"
+    review_frequency: "Before each election cycle; after any model update"
+    odpc_notified: false
+    odpc_notification_date: null
+
+  - decision_id: DEC-004
+    module_ids:
+      - M05
+      - M06
+    name: "Biometric voter identification at polling station"
+    description: >
+      At the polling station, the kit (M05) performs a 1:1 biometric match between the
+      voter presenting themselves and the template on the register extract downloaded to
+      the kit. A failed match result is presented to the presiding officer, who then
+      applies the manual verification fallback. The automated match result can affect
+      the speed and ease with which a voter is permitted to vote.
+    personal_data_used:
+      - "Biometric template from register extract - Tier A"
+      - "Live biometric capture - Tier A"
+      - "National ID number - Tier A"
+    automated_steps:
+      - "Live biometric capture on kit"
+      - "1:1 match against register extract template"
+      - "Match/no-match determination with confidence score"
+      - "Turnout event recorded to M06 on successful match"
+    human_review_available: true
+    human_review_description: >
+      A failed biometric match triggers the manual verification fallback: the presiding
+      officer reviews the voter's physical ID document and the register. The officer
+      may permit the voter to vote on the manual fallback. A no-match event is logged
+      with the officer's determination.
+    legal_basis: "Public task - Elections Act s.44 and s.44A"
+    right_to_object: true
+    right_to_object_procedure: >
+      A voter who disputes a failed biometric match should immediately speak to the
+      presiding officer. The officer applies the manual fallback verification procedure.
+      A formal complaint may be submitted to the IEBC via M23 (grievance channels).
+    safeguards:
+      - "Manual fallback is always available as an alternative"
+      - "Failed match does not automatically deny the right to vote"
+      - "All match events and manual fallback events are logged"
+      - "Kit biometric thresholds are certified by an independent security certifier"
+    review_frequency: "Before each election cycle; after any kit firmware update"
+    odpc_notified: false
+    odpc_notification_date: null
+
+  - decision_id: DEC-005
+    module_ids:
+      - M23
+    name: "Automated grievance triage and routing"
+    description: >
+      Incoming grievances submitted via M23 (grievance channels) are automatically
+      categorised by type (electoral, administrative, security) and routed to the
+      appropriate team. The routing decision affects which team sees the grievance and
+      the initial response SLA applied. It does not determine the final outcome of
+      the grievance.
+    personal_data_used:
+      - "Grievance content (text, attachments) - Tier A for whistleblower cases"
+      - "Contact details of complainant - Tier A"
+      - "Geolocation of submission (if provided) - Tier B"
+    automated_steps:
+      - "NLP-based category classification"
+      - "Priority scoring (high/medium/low) based on keywords and category"
+      - "Routing to team queue"
+      - "SLA assignment"
+    human_review_available: true
+    human_review_description: >
+      All grievances are reviewed by a human case officer within the assigned SLA.
+      Case officers may re-categorise or re-route a grievance at any time. Data subjects
+      may request a re-categorisation by contacting the IEBC helpdesk.
+    legal_basis: "Public task - Elections Act s.74; IEBC operational necessity"
+    right_to_object: true
+    right_to_object_procedure: >
+      A complainant who believes their grievance has been miscategorised or misrouted
+      may contact the IEBC helpdesk quoting the grievance reference number. A case
+      supervisor will review within 2 working days.
+    safeguards:
+      - "Automated routing is not a final determination on the merits of the grievance"
+      - "All routing decisions and manual overrides are logged"
+      - "Whistleblower cases are always reviewed by a senior officer regardless of automated routing"
+      - "No grievance is closed purely on an automated basis"
+    review_frequency: "Annual; and after any change to the classification model"
+    odpc_notified: false
+    odpc_notification_date: null
+
+  - decision_id: DEC-006
+    module_ids:
+      - M55
+    name: "Automated statutory payroll deductions"
+    description: >
+      The payroll module (M55) automatically calculates and applies mandatory statutory
+      deductions for all IEBC employees: PAYE income tax (KRA iTax), NSSF contributions,
+      and NHIF/SHIF contributions. The automated calculation determines the net pay
+      amount and the statutory returns submitted to KRA, NSSF, and NHIF/SHIF on behalf
+      of the employee.
+    personal_data_used:
+      - "Employee salary and allowances - Tier A"
+      - "National ID and KRA PIN - Tier A"
+      - "NSSF and NHIF/SHIF membership numbers - Tier A"
+      - "Employment category and deduction elections - Tier A"
+    automated_steps:
+      - "Gross pay calculation from contract and attendance data"
+      - "PAYE tax band lookup and calculation"
+      - "NSSF contribution calculation (employee and employer portions)"
+      - "NHIF/SHIF contribution calculation"
+      - "Net pay determination"
+      - "Statutory return file generation for KRA iTax, NSSF, NHIF/SHIF"
+    human_review_available: true
+    human_review_description: >
+      Payroll runs are reviewed by the finance team before payment is released.
+      Employees receive payslips and may query any deduction with the HR/Payroll team.
+      Disputes are resolved within 5 working days per IEBC HR policy.
+    legal_basis: "Legal obligation - Employment Act; KRA iTax; NSSF Act; NHIF/SHIF Act"
+    right_to_object: false
+    right_to_object_description: >
+      Statutory deductions are legally mandated and cannot be objected to under DPA s.41.
+      Employees may query calculation errors through HR, but the statutory obligation to
+      deduct and remit exists independently of consent or objection.
+    safeguards:
+      - "Payroll runs are reviewed by a second finance officer before release (SoD control)"
+      - "All calculation inputs and outputs are logged with full audit trail"
+      - "Payslips are provided to employees for every pay period"
+      - "Discrepancy dispute process available via HR"
+      - "KRA/NSSF/NHIF/SHIF statutory returns are reconciled against payroll totals before submission"
+    review_frequency: "Annual; and after any change in statutory rates or payroll rules"
+    odpc_notified: false
+    odpc_notification_date: null

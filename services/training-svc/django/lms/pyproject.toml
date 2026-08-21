@@ -1,0 +1,35 @@
+[project]
+name = "eel-lms"
+version = "0.1.0"
+description = "M38 Poll Worker Training LMS for training-svc (WP-5.4)"
+requires-python = ">=3.12"
+dependencies = [
+	"django>=5.0",
+	"djangorestframework>=3.15",
+	"django-filter>=24.0",
+	"uuid6>=2024.1",
+	"python-dateutil>=2.9",
+]
+
+[project.optional-dependencies]
+dev = [
+	"pytest>=8.0",
+	"pytest-django>=4.8",
+	"pyright>=1.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["lms_project", "lms_app"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "lms_project.settings"
+pythonpath = ["."]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.pyright]
+pythonVersion = "3.12"

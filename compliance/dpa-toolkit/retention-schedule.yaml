@@ -1,0 +1,332 @@
+# Retention schedule
+# Per module, per entity/table, specifying retention rule, purge trigger, and statutory reference.
+# Soft-delete + nightly hard-purge job is the implementation pattern (ADR-0016).
+
+schedule:
+  - module_id: M01
+    table_or_entity: BiometricTemplate
+    tier: A
+    retention_rule: "Election cycle + 5 years, then anonymised aggregates"
+    purge_trigger: "5 years after end of election cycle in which last used"
+    purge_method: "Hard DELETE; backup keys rotated annually making old backups undecryptable"
+    statutory_ref: "Elections Act s.32; DPA s.40(2)(b) legal obligation exception"
+
+  - module_id: M01
+    table_or_entity: IDDocScan
+    tier: A
+    retention_rule: "Election cycle + 5 years, then deleted"
+    purge_trigger: "5 years after end of election cycle"
+    purge_method: "Hard DELETE after soft-delete + audit log"
+    statutory_ref: "Elections Act s.32; DPA s.40(2)(b)"
+
+  - module_id: M02
+    table_or_entity: Voter
+    tier: A
+    retention_rule: "Election cycle + 5 years, anonymised thereafter"
+    purge_trigger: "5 years after end of election cycle"
+    purge_method: "Anonymise PII fields; retain aggregate record with randomised ID"
+    statutory_ref: "Elections Act s.32; Constitution Article 38"
+
+  - module_id: M02
+    table_or_entity: AuditEvent
+    tier: D
+    retention_rule: "90 days hot; election-critical events 15 years cold"
+    purge_trigger: "90 days for routine ops; 15 years for election-critical events"
+    purge_method: "Archive to cold storage; delete hot copy"
+    statutory_ref: "Elections Act s.32"
+
+  - module_id: M03
+    table_or_entity: TemplateIndex
+    tier: A
+    retention_rule: "Election cycle + 5 years"
+    purge_trigger: "5 years after end of election cycle"
+    purge_method: "Hard DELETE after soft-delete"
+    statutory_ref: "Elections Act s.32; DPA s.40(2)(b)"
+
+  - module_id: M03
+    table_or_entity: MatchRequest
+    tier: A
+    retention_rule: "Election cycle + 5 years (appeal window)"
+    purge_trigger: "5 years after end of election cycle"
+    purge_method: "Hard DELETE"
+    statutory_ref: "Elections Act s.74 (appeal); DPA s.40(2)(b)"
+
+  - module_id: M03
+    table_or_entity: AdjudicationCase
+    tier: A
+    retention_rule: "Election cycle + 5 years"
+    purge_trigger: "5 years after end of election cycle"
+    purge_method: "Hard DELETE after soft-delete"
+    statutory_ref: "Elections Act s.74; DPA s.40(2)(b)"
+
+  - module_id: M04
+    table_or_entity: VPRSApplication (not resulting in registration)
+    tier: A
+    retention_rule: "3 years from application date or withdrawal date"
+    purge_trigger: "3 years after application_date if status IN (withdrawn, rejected, expired)"
+    purge_method: "Soft-delete on withdrawal/rejection; hard-purge via nightly job"
+    statutory_ref: "DPA s.40(1) right to erasure; no statutory override for unregistered applications"
+
+  - module_id: M04
+    table_or_entity: VPRSApplication (resulting in registration)
+    tier: A
+    retention_rule: "Merged into voter record M02; follow M02 retention"
+    purge_trigger: "Follows M02 purge schedule"
+    purge_method: "Anonymise PII fields alongside M02 voter record"
+    statutory_ref: "Elections Act s.32"
+
+  - module_id: M05
+    table_or_entity: PollingSession
+    tier: B
+    retention_rule: "Election + 15 years (statutory)"
+    purge_trigger: "15 years after election date"
+    purge_method: "Hard DELETE after statutory period"
+    statutory_ref: "Elections Act s.32"
+
+  - module_id: M05
+    table_or_entity: IdentificationEvent
+    tier: A/B
+    retention_rule: "Election + 15 years"
+    purge_trigger: "15 years after election date"
+    purge_method: "Hard DELETE"
+    statutory_ref: "Elections Act s.32"
+
+  - module_id: M05
+    table_or_entity: RegisterExtract
+    tier: B
+    retention_rule: "Election + 15 years"
+    purge_trigger: "15 years after election date"
+    purge_method: "Hard DELETE"
+    statutory_ref: "Elections Act s.32"
+
+  - module_id: M06
+    table_or_entity: IdentificationEvent
+    tier: B
+    retention_rule: "Election + 15 years"
+    purge_trigger: "15 years after election date"
+    purge_method: "Hard DELETE"
+    statutory_ref: "Elections Act s.32"
+
+  - module_id: M06
+    table_or_entity: TurnoutRollup
+    tier: B
+    retention_rule: "Election + 15 years"
+    purge_trigger: "15 years after election date"
+    purge_method: "Hard DELETE"
+    statutory_ref: "Elections Act s.32"
+
+  - module_id: M07
+    table_or_entity: VoterLookupAudit
+    tier: B
+    retention_rule: "Election + 15 years"
+    purge_trigger: "15 years after election date"
+    purge_method: "Hard DELETE"
+    statutory_ref: "Elections Act s.32"
+
+  - module_id: M07
+    table_or_entity: Objection
+    tier: B
+    retention_rule: "Election + 15 years (may be referenced in court proceedings)"
+    purge_trigger: "15 years after election date and no active proceedings"
+    purge_method: "Hard DELETE"
+    statutory_ref: "Elections Act s.26 and s.74"
+
+  - module_id: M23
+    table_or_entity: GrievanceCase (unescalated)
+    tier: A
+    retention_rule: "Soft-delete on closure; hard-purge 3 years after closure"
+    purge_trigger: "3 years after closure_date where escalation_status = 'none'"
+    purge_method: "Soft-delete at closure; nightly hard-purge job after 3-year window"
+    statutory_ref: "DPA s.40(1); no statutory override for closed unescalated cases"
+
+  - module_id: M23
+    table_or_entity: GrievanceCase (escalated to IEBC or court)
+    tier: A
+    retention_rule: "Election + 15 years (evidence for proceedings)"
+    purge_trigger: "15 years after election date"
+    purge_method: "Hard DELETE after statutory period"
+    statutory_ref: "Elections Act s.74; DPA s.40(2)(b)"
+
+  - module_id: M23
+    table_or_entity: WhistleblowerProfile
+    tier: A
+    retention_rule: "Soft-delete on closure; hard-purge 3 years after case closure"
+    purge_trigger: "3 years after case closure_date"
+    purge_method: "Hard DELETE; identity fields anonymised at closure"
+    statutory_ref: "DPA s.40(1); Whistleblower Protection Act 2010"
+
+  - module_id: M25
+    table_or_entity: SpecialVoterFacility
+    tier: A/B
+    retention_rule: "Election + 15 years"
+    purge_trigger: "15 years after election date"
+    purge_method: "Hard DELETE"
+    statutory_ref: "Elections Act s.32 and s.44A"
+
+  - module_id: M25
+    table_or_entity: IDPReassignment
+    tier: B
+    retention_rule: "Election + 15 years"
+    purge_trigger: "15 years after election date"
+    purge_method: "Hard DELETE"
+    statutory_ref: "Elections Act s.44A"
+
+  - module_id: M27
+    table_or_entity: PreMarkValidationEvent
+    tier: B
+    retention_rule: "Election + 15 years"
+    purge_trigger: "15 years after election date"
+    purge_method: "Hard DELETE"
+    statutory_ref: "Elections Act s.68"
+
+  - module_id: M27
+    table_or_entity: SpoiltBallotEvent
+    tier: B
+    retention_rule: "Election + 15 years"
+    purge_trigger: "15 years after election date"
+    purge_method: "Hard DELETE"
+    statutory_ref: "Elections Act s.68"
+
+  - module_id: M27
+    table_or_entity: AdjudicationEvent
+    tier: B
+    retention_rule: "Election + 15 years"
+    purge_trigger: "15 years after election date"
+    purge_method: "Hard DELETE"
+    statutory_ref: "Elections Act s.68 and s.74"
+
+  - module_id: M33
+    table_or_entity: PersonnelAttendanceRecord
+    tier: B
+    retention_rule: "7 years from date of record"
+    purge_trigger: "7 years after record_date"
+    purge_method: "Hard DELETE"
+    statutory_ref: "Employment Act s.74; IEBC operational requirement"
+
+  - module_id: M35
+    table_or_entity: VoterRegisterEvent
+    tier: A/B
+    retention_rule: "Election + 15 years"
+    purge_trigger: "15 years after election date"
+    purge_method: "Hard DELETE; Tier A fields anonymised after election cycle + 5 years"
+    statutory_ref: "Elections Act s.32"
+
+  - module_id: M35
+    table_or_entity: RegisterSnapshot
+    tier: A/B
+    retention_rule: "Election + 15 years"
+    purge_trigger: "15 years after election date"
+    purge_method: "Hard DELETE"
+    statutory_ref: "Elections Act s.32"
+
+  - module_id: M36
+    table_or_entity: DeregistrationCase (closed, no appeal)
+    tier: A
+    retention_rule: "Soft-delete on closure; hard-purge 3 years after closure"
+    purge_trigger: "3 years after closure_date where appeal_status = 'none'"
+    purge_method: "Soft-delete at closure; hard-purge via nightly job"
+    statutory_ref: "DPA s.40(1); Elections Act s.15"
+
+  - module_id: M36
+    table_or_entity: AppealRecord
+    tier: A
+    retention_rule: "Election + 15 years (appeals may be referenced in court)"
+    purge_trigger: "15 years after election date and no active court proceedings"
+    purge_method: "Hard DELETE"
+    statutory_ref: "Elections Act s.74 and s.15"
+
+  - module_id: M38
+    table_or_entity: WorkerEnrollment
+    tier: B
+    retention_rule: "7 years from enrolment date"
+    purge_trigger: "7 years after enrolment_date"
+    purge_method: "Hard DELETE"
+    statutory_ref: "Employment Act s.74; IEBC accreditation requirements"
+
+  - module_id: M38
+    table_or_entity: WorkerCertificate
+    tier: B
+    retention_rule: "7 years from certificate issue date"
+    purge_trigger: "7 years after issued_date"
+    purge_method: "Hard DELETE"
+    statutory_ref: "Employment Act s.74"
+
+  - module_id: M42
+    table_or_entity: MediaAccreditation (approved)
+    tier: B
+    retention_rule: "Election cycle + 1 year"
+    purge_trigger: "1 year after end of election cycle"
+    purge_method: "Hard DELETE"
+    statutory_ref: "Elections Act s.109; MCK requirements"
+
+  - module_id: M42
+    table_or_entity: MediaAccreditation (rejected or not resulting in accreditation)
+    tier: B
+    retention_rule: "Soft-delete on rejection; hard-purge 1 year after rejection"
+    purge_trigger: "1 year after rejection_date"
+    purge_method: "Hard DELETE"
+    statutory_ref: "DPA s.40(1)"
+
+  - module_id: M43
+    table_or_entity: IndividualObserver (accredited)
+    tier: B
+    retention_rule: "Election cycle + 1 year"
+    purge_trigger: "1 year after end of election cycle"
+    purge_method: "Hard DELETE"
+    statutory_ref: "Elections Act s.109"
+
+  - module_id: M43
+    table_or_entity: IndividualObserver (revoked or rejected)
+    tier: B
+    retention_rule: "Soft-delete on revocation; hard-purge 1 year after revocation"
+    purge_trigger: "1 year after revocation_date"
+    purge_method: "Hard DELETE"
+    statutory_ref: "DPA s.40(1)"
+
+  - module_id: M53
+    table_or_entity: VoterCard
+    tier: A
+    retention_rule: "Election + 15 years (statutory record of issuance)"
+    purge_trigger: "15 years after election date"
+    purge_method: "Hard DELETE"
+    statutory_ref: "Elections Act s.32"
+
+  - module_id: M53
+    table_or_entity: CollectionRecord
+    tier: B
+    retention_rule: "Election + 15 years"
+    purge_trigger: "15 years after election date"
+    purge_method: "Hard DELETE"
+    statutory_ref: "Elections Act s.32"
+
+  - module_id: M55
+    table_or_entity: JobApplication (unsuccessful)
+    tier: A
+    retention_rule: "Soft-delete on closure; hard-purge 3 years after closure"
+    purge_trigger: "3 years after closure_date where outcome = 'rejected'"
+    purge_method: "Hard DELETE"
+    statutory_ref: "DPA s.40(1); Employment Act s.74"
+
+  - module_id: M55
+    table_or_entity: StaffContract
+    tier: A
+    retention_rule: "7 years from end of employment"
+    purge_trigger: "7 years after employment_end_date"
+    purge_method: "Hard DELETE"
+    statutory_ref: "Employment Act s.74; KRA record-keeping requirement"
+
+  - module_id: M55
+    table_or_entity: PayrollRun
+    tier: A
+    retention_rule: "7 years from payroll_date"
+    purge_trigger: "7 years after payroll_date"
+    purge_method: "Hard DELETE"
+    statutory_ref: "KRA iTax record-keeping; NSSF Act; NHIF/SHIF Act"
+
+  - module_id: M55
+    table_or_entity: StatutoryDeduction
+    tier: A
+    retention_rule: "7 years from deduction date"
+    purge_trigger: "7 years after deduction_date"
+    purge_method: "Hard DELETE"
+    statutory_ref: "KRA iTax; NSSF Act; NHIF/SHIF Act; Employment Act s.74"

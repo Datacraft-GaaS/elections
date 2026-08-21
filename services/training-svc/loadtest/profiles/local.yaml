@@ -1,0 +1,15 @@
+# Local profile: 1/100 of production SLA targets
+# Per 00-principles.md loadtest convention
+profiles:
+  cms_content_feed:
+    target_rps: 10      # prod: 1000
+    p99_ms: 1000
+    duration: 30s
+  lms_assessment:
+    vus: 500            # prod: 50000
+    p99_ms: 1000
+    duration: 30s
+  badge_verification:
+    target_rps: 100     # prod: 10000 req/min = ~167 req/s
+    p99_ms: 300
+    duration: 30s

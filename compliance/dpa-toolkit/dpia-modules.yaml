@@ -1,0 +1,343 @@
+# DPIA module registry
+# One entry per Tier A or Tier B module (18 modules total)
+# Update dpia_status from "template" to "approved" after DPO sign-off
+
+modules:
+  - module_id: M01
+    name: bvr-device
+    service: biometric-edge-svc
+    tier: A
+    entities:
+      - BiometricTemplate
+      - IDDocScan
+      - KitAttestation
+    lawful_basis: "public task - Elections Act s.5(1)(b) and s.4"
+    retention_election_years: 5
+    post_retention: anonymised_aggregates_only
+    erasure_applicable: false
+    erasure_note: "Legal obligation exception DPA s.40(2)(b) - biometric templates required for audit period"
+    dpia_required: true
+    dpia_status: template
+    risk_rating: high
+    automated_processing: true
+    automated_processing_note: "Biometric capture triggers automated quality check and duplicate-flag signal to M03"
+    dpa_s41_decision_ids:
+      - DEC-001
+
+  - module_id: M02
+    name: bvr-backend
+    service: bvr-svc
+    tier: A
+    entities:
+      - Voter
+      - BiometricTemplate
+      - AuditEvent
+      - MerkleRoot
+    lawful_basis: "public task - Elections Act s.4 and s.5, Constitution Article 38"
+    retention_election_years: 5
+    post_retention: anonymised_aggregates_only
+    erasure_applicable: false
+    erasure_note: "Voter register is statutory record under Elections Act s.32; DPA s.40(2)(b) applies"
+    dpia_required: true
+    dpia_status: template
+    risk_rating: high
+    automated_processing: true
+    automated_processing_note: "Register mutation events trigger automated Merkle root update and deduplication request to M03"
+    dpa_s41_decision_ids:
+      - DEC-001
+
+  - module_id: M03
+    name: abis
+    service: abis-svc
+    tier: A
+    entities:
+      - TemplateIndex
+      - MatchRequest
+      - AdjudicationCase
+      - EnclaveAttestation
+    lawful_basis: "public task - Elections Act s.5(1)(b); biometric deduplication to prevent double registration"
+    retention_election_years: 5
+    post_retention: anonymised_aggregates_only
+    erasure_applicable: false
+    erasure_note: "Deduplication audit trail required for electoral appeals under Elections Act s.74; DPA s.40(2)(b) applies"
+    dpia_required: true
+    dpia_status: template
+    risk_rating: high
+    automated_processing: true
+    automated_processing_note: "ABIS performs automated 1:N biometric matching; results with significant effect on registration are subject to DPA s.41"
+    dpa_s41_decision_ids:
+      - DEC-001
+
+  - module_id: M04
+    name: vprs
+    service: vprs-svc
+    tier: A
+    entities:
+      - VPRSApplication
+    lawful_basis: "public task - Elections Act s.4 (voluntary online registration); consent for online channel"
+    retention_election_years: 3
+    post_retention: hard_purge
+    erasure_applicable: true
+    erasure_note: "Applications not resulting in registration are hard-purged 3 years after application or withdrawal"
+    dpia_required: true
+    dpia_status: template
+    risk_rating: high
+    automated_processing: false
+
+  - module_id: M05
+    name: bvi-device
+    service: biometric-edge-svc
+    tier: A/B
+    entities:
+      - PollingSession
+      - IdentificationEvent
+      - RegisterExtract
+    lawful_basis: "public task - Elections Act s.44, s.44A; biometric identification at polling station"
+    retention_election_years: 15
+    post_retention: statutory_hold
+    erasure_applicable: false
+    erasure_note: "Polling records are statutory; Elections Act s.32 requires 15-year retention"
+    dpia_required: true
+    dpia_status: template
+    risk_rating: high
+    automated_processing: true
+    automated_processing_note: "Kit performs automated biometric 1:1 match; failed match triggers human adjudication"
+    dpa_s41_decision_ids:
+      - DEC-004
+
+  - module_id: M06
+    name: bvi-backend
+    service: bvi-svc
+    tier: B
+    entities:
+      - IdentificationEvent
+      - TurnoutRollup
+      - KitCert
+    lawful_basis: "public task - Elections Act s.44"
+    retention_election_years: 15
+    post_retention: statutory_hold
+    erasure_applicable: false
+    erasure_note: "Turnout data is statutory record under Elections Act s.32"
+    dpia_required: true
+    dpia_status: template
+    risk_rating: medium
+    automated_processing: false
+
+  - module_id: M07
+    name: bvv
+    service: bvi-svc
+    tier: B
+    entities:
+      - VoterLookupAudit
+      - Objection
+    lawful_basis: "public task - Elections Act s.26 (inspection of register)"
+    retention_election_years: 15
+    post_retention: statutory_hold
+    erasure_applicable: false
+    erasure_note: "Objection records are statutory and may be needed for electoral court proceedings"
+    dpia_required: true
+    dpia_status: template
+    risk_rating: medium
+    automated_processing: false
+
+  - module_id: M23
+    name: grievance-channels
+    service: ecc-svc
+    tier: A
+    entities:
+      - GrievanceCase
+      - EvidencePackage
+      - WhistleblowerProfile
+    lawful_basis: "public task - Elections Act s.74; legitimate interest for whistleblower channel"
+    retention_election_years: 3
+    post_retention: hard_purge
+    erasure_applicable: true
+    erasure_note: "Grievance cases closed without escalation are soft-deleted immediately and hard-purged after 3 years; escalated cases follow Elections Act s.74 retention"
+    dpia_required: true
+    dpia_status: template
+    risk_rating: high
+    automated_processing: true
+    automated_processing_note: "Automated grievance triage and routing; does not produce a final legal determination"
+    dpa_s41_decision_ids:
+      - DEC-005
+
+  - module_id: M25
+    name: special-voter-workflows
+    service: support-admin-svc
+    tier: A/B
+    entities:
+      - SpecialVoterFacility
+      - SpecialVoterEvent
+      - IDPReassignment
+    lawful_basis: "public task - Elections Act s.44A; special accommodation for voters with disabilities or special needs"
+    retention_election_years: 15
+    post_retention: statutory_hold
+    erasure_applicable: false
+    erasure_note: "Polling records including special facility use are statutory"
+    dpia_required: true
+    dpia_status: template
+    risk_rating: high
+    automated_processing: false
+
+  - module_id: M27
+    name: intent-preservation
+    service: support-admin-svc
+    tier: B
+    entities:
+      - PreMarkValidationEvent
+      - SpoiltBallotEvent
+      - AdjudicationEvent
+    lawful_basis: "public task - Elections Act s.68 (spoilt ballot adjudication)"
+    retention_election_years: 15
+    post_retention: statutory_hold
+    erasure_applicable: false
+    erasure_note: "Ballot adjudication records are statutory and required for election petitions"
+    dpia_required: true
+    dpia_status: template
+    risk_rating: medium
+    automated_processing: true
+    automated_processing_note: "AI model pre-marks ballot validity; result is advisory, final decision is human adjudicator"
+    dpa_s41_decision_ids:
+      - DEC-003
+
+  - module_id: M33
+    name: mobile-personnel-dispatch
+    service: field-mobile-svc
+    tier: B
+    entities:
+      - PersonnelAttendanceRecord
+    lawful_basis: "public task - IEBC operational necessity; Employment Act s.74 (attendance records)"
+    retention_election_years: 7
+    post_retention: hard_purge
+    erasure_applicable: false
+    erasure_note: "Employment records retained 7 years per Employment Act; statutory obligation"
+    dpia_required: true
+    dpia_status: template
+    risk_rating: medium
+    automated_processing: false
+
+  - module_id: M35
+    name: cvr-continuous-register
+    service: bvr-svc
+    tier: A/B
+    entities:
+      - VoterRegisterEvent
+      - RegisterSnapshot
+      - BatchIngestionReport
+    lawful_basis: "public task - Elections Act s.4, s.32; continuous register updates"
+    retention_election_years: 15
+    post_retention: statutory_hold
+    erasure_applicable: false
+    erasure_note: "Continuous register mutations are electoral records under Elections Act s.32"
+    dpia_required: true
+    dpia_status: template
+    risk_rating: high
+    automated_processing: false
+
+  - module_id: M36
+    name: voter-deregistration-appeal
+    service: bvr-svc
+    tier: A
+    entities:
+      - DeregistrationCase
+      - AppealRecord
+    lawful_basis: "public task - Elections Act s.15 (deregistration); DPA s.40 (right to erasure adjudication)"
+    retention_election_years: 3
+    post_retention: hard_purge
+    erasure_applicable: true
+    erasure_note: "Deregistration cases closed without appeal are hard-purged after 3 years"
+    dpia_required: true
+    dpia_status: template
+    risk_rating: high
+    automated_processing: false
+
+  - module_id: M38
+    name: poll-worker-training-lms
+    service: training-svc
+    tier: B
+    entities:
+      - WorkerEnrollment
+      - WorkerCertificate
+    lawful_basis: "public task - IEBC operational necessity; training records required for accreditation"
+    retention_election_years: 7
+    post_retention: hard_purge
+    erasure_applicable: false
+    erasure_note: "Training and accreditation records retained for audit purposes"
+    dpia_required: true
+    dpia_status: template
+    risk_rating: medium
+    automated_processing: false
+
+  - module_id: M42
+    name: media-accreditation
+    service: training-svc
+    tier: B
+    entities:
+      - MediaAccreditation
+      - MediaOrganisation
+    lawful_basis: "public task - Elections Act s.109 (media access); MCK regulatory requirement"
+    retention_election_years: 5
+    post_retention: hard_purge
+    erasure_applicable: true
+    erasure_note: "Accreditation records of unsuccessful applications hard-purged after election cycle + 1 year"
+    dpia_required: true
+    dpia_status: template
+    risk_rating: medium
+    automated_processing: false
+
+  - module_id: M43
+    name: observer-accreditation
+    service: training-svc
+    tier: B
+    entities:
+      - ObserverOrganisation
+      - IndividualObserver
+    lawful_basis: "public task - Elections Act s.109 (observation); IEBC Observer Guidelines"
+    retention_election_years: 5
+    post_retention: hard_purge
+    erasure_applicable: true
+    erasure_note: "Observer records of revoked or unsuccessful accreditations hard-purged after election cycle + 1 year"
+    dpia_required: true
+    dpia_status: template
+    risk_rating: medium
+    automated_processing: false
+
+  - module_id: M53
+    name: voter-id-card
+    service: bvr-svc
+    tier: A
+    entities:
+      - VoterCard
+      - CardBatch
+      - CollectionRecord
+    lawful_basis: "public task - Elections Act s.4; voter card issuance"
+    retention_election_years: 15
+    post_retention: statutory_hold
+    erasure_applicable: false
+    erasure_note: "Voter card issuance records are statutory electoral records"
+    dpia_required: true
+    dpia_status: template
+    risk_rating: high
+    automated_processing: false
+
+  - module_id: M55
+    name: hr-payroll
+    service: support-admin-svc
+    tier: A
+    entities:
+      - JobApplication
+      - StaffContract
+      - PayrollRun
+      - StatutoryDeduction
+    lawful_basis: "contractual - Employment Act; legal obligation - KRA iTax, NSSF, NHIF/SHIF statutory deductions"
+    retention_election_years: 7
+    post_retention: hard_purge
+    erasure_applicable: false
+    erasure_note: "Employment and payroll records retained 7 years per Employment Act s.74 and KRA requirements"
+    dpia_required: true
+    dpia_status: template
+    risk_rating: high
+    automated_processing: true
+    automated_processing_note: "Automated statutory deduction calculation (KRA PAYE, NSSF, NHIF); produces financial effect on employees"
+    dpa_s41_decision_ids:
+      - DEC-006

@@ -1,0 +1,51 @@
+# WCAG audit URL manifest for eel
+# level: AA (default) or AAA (required for M68)
+urls:
+  - url: "http://localhost:3000"
+    name: "public-portal"
+    module: "M11"
+    level: AA
+  - url: "http://localhost:3001"
+    name: "referendum-explainer"
+    module: "M68"
+    level: AAA
+  - url: "http://localhost:3002"
+    name: "voter-list-inspection"
+    module: "M64"
+    level: AA
+  - url: "http://localhost:4000"
+    name: "bvv-voter-lookup"
+    module: "M07"
+    level: AA
+  - url: "http://localhost:5000"
+    name: "vprs-public"
+    module: "M04"
+    level: AA
+  - url: "http://localhost:5001"
+    name: "crms-public"
+    module: "M12"
+    level: AA
+  - url: "http://localhost:5002"
+    name: "grievance-public"
+    module: "M23"
+    level: AA
+  - url: "http://localhost:6000"
+    name: "observer-portal"
+    module: "M57"
+    level: AA
+  - url: "http://localhost:7000"
+    name: "election-calendar"
+    module: "M52"
+    level: AA
+  - url: "http://localhost:7001"
+    name: "candidate-public"
+    module: "M12"
+    level: AA
+  - url: "http://localhost:8000"
+    name: "boundary-public"
+    module: "M18"
+    level: AA
+  - url: "http://localhost:8001"
+    name: "reproducibility-bundle"
+    module: "M14"
+    level: AA

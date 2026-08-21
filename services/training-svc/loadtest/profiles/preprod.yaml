@@ -1,0 +1,15 @@
+# Pre-production profile: full production SLA targets
+# Per 00-principles.md loadtest convention
+profiles:
+  cms_content_feed:
+    target_rps: 1000    # M37-LOAD: public content feed at 1000 req/s sustained
+    p99_ms: 1000
+    duration: 300s
+  lms_assessment:
+    vus: 50000          # M38-LOAD: 250k workers; 50k concurrent assessment submissions
+    p99_ms: 1000
+    duration: 300s
+  badge_verification:
+    target_rps: 167     # M42-LOAD, M43-LOAD: 10000 req/min = ~167 req/s; p99 < 300ms
+    p99_ms: 300
+    duration: 300s

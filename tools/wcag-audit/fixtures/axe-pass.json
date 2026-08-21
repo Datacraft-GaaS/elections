@@ -1,0 +1,27 @@
+{
+  "violations": [],
+  "passes": [
+    {"id": "aria-allowed-attr", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "aria-required-children", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "aria-required-parent", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "aria-roles", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "aria-valid-attr-value", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "aria-valid-attr", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "bypass", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "color-contrast", "impact": null, "tags": ["wcag2aa"], "nodes": [{}]},
+    {"id": "document-title", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "duplicate-id", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "html-has-lang", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "html-lang-valid", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "image-alt", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "input-image-alt", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "label", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "link-name", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "list", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "listitem", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "meta-refresh", "impact": null, "tags": ["wcag2a"], "nodes": [{}]},
+    {"id": "valid-lang", "impact": null, "tags": ["wcag2a"], "nodes": [{}]}
+  ],
+  "incomplete": [],
+  "inapplicable": []
+}
