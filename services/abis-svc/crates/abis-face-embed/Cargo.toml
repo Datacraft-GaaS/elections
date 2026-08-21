@@ -1,0 +1,26 @@
+[package]
+name        = "eel-abis-face-embed"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "Face embedding: ArcFace/AdaFace/CosFace interface + hash-based deterministic baseline. L2-normalised 512-d embeddings."
+
+[lib]
+name = "eel_abis_face_embed"
+path = "src/lib.rs"
+
+[[test]]
+name = "embed_test"
+path = "tests/embed_test.rs"
+
+[features]
+onnx = []
+
+[dependencies]
+thiserror  = { workspace = true }
+tracing    = { workspace = true }
+serde      = { workspace = true }
+sha2       = { workspace = true }
+
+[dev-dependencies]

@@ -1,0 +1,22 @@
+[package]
+name        = "eel-abis-face-video"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "Multi-frame face track-and-fuse for video-source galleries. IoU + embedding identity persistence, quality-weighted fusion."
+
+[lib]
+name = "eel_abis_face_video"
+path = "src/lib.rs"
+
+[[test]]
+name = "video_test"
+path = "tests/video_test.rs"
+
+[dependencies]
+thiserror  = { workspace = true }
+tracing    = { workspace = true }
+serde      = { workspace = true }
+
+[dev-dependencies]

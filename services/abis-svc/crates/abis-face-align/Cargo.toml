@@ -1,0 +1,22 @@
+[package]
+name        = "eel-abis-face-align"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "Face alignment: 5-point similarity transform to 112x112 ArcFace canonical template. Bilinear warp + 68-point landmark interface."
+
+[lib]
+name = "eel_abis_face_align"
+path = "src/lib.rs"
+
+[[test]]
+name = "align_test"
+path = "tests/align_test.rs"
+
+[dependencies]
+thiserror  = { workspace = true }
+tracing    = { workspace = true }
+serde      = { workspace = true }
+
+[dev-dependencies]

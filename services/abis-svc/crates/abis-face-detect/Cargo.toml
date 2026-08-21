@@ -1,0 +1,27 @@
+[package]
+name        = "eel-abis-face-detect"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "Face detection: Haar/integral-image baseline + ONNX sidecar bridge. Returns bounding boxes with confidence and 5-point landmarks."
+
+[lib]
+name = "eel_abis_face_detect"
+path = "src/lib.rs"
+
+[[test]]
+name = "detect_test"
+path = "tests/detect_test.rs"
+
+[features]
+# Enable HTTP calls to the face-onnx-worker sidecar.
+onnx = []
+
+[dependencies]
+thiserror  = { workspace = true }
+tracing    = { workspace = true }
+serde      = { workspace = true }
+sha2       = { workspace = true }
+
+[dev-dependencies]

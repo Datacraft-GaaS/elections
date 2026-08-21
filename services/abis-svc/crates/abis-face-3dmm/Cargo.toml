@@ -1,0 +1,22 @@
+[package]
+name        = "eel-abis-face-3dmm"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "3D Morphable Model interface: BFM parameter space, pose-normalisation, and spoof-detection stub."
+
+[lib]
+name = "eel_abis_face_3dmm"
+path = "src/lib.rs"
+
+[[test]]
+name = "dmm_test"
+path = "tests/dmm_test.rs"
+
+[dependencies]
+thiserror  = { workspace = true }
+tracing    = { workspace = true }
+serde      = { workspace = true }
+
+[dev-dependencies]

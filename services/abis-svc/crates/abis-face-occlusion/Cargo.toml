@@ -1,0 +1,22 @@
+[package]
+name        = "eel-abis-face-occlusion"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "Occlusion-robust face matching: skin-tone detector, region classifier, attention-gated embeddings."
+
+[lib]
+name = "eel_abis_face_occlusion"
+path = "src/lib.rs"
+
+[[test]]
+name = "occlusion_test"
+path = "tests/occlusion_test.rs"
+
+[dependencies]
+thiserror  = { workspace = true }
+tracing    = { workspace = true }
+serde      = { workspace = true }
+
+[dev-dependencies]

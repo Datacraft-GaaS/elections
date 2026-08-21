@@ -1,0 +1,23 @@
+[package]
+name        = "eel-abis-face-deident"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "Privacy-preserving face de-identification: k-anonymity composite, differential-privacy noise, blur and pixelation."
+
+[lib]
+name = "eel_abis_face_deident"
+path = "src/lib.rs"
+
+[[test]]
+name = "deident_test"
+path = "tests/deident_test.rs"
+
+[dependencies]
+thiserror  = { workspace = true }
+tracing    = { workspace = true }
+serde      = { workspace = true }
+sha2       = { workspace = true }
+
+[dev-dependencies]

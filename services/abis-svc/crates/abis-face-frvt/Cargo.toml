@@ -1,0 +1,22 @@
+[package]
+name        = "eel-abis-face-frvt"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "NIST FRVT 1:1 / 1:N / Quality evaluation harness with per-demographic fairness slices."
+
+[lib]
+name = "eel_abis_face_frvt"
+path = "src/lib.rs"
+
+[[test]]
+name = "frvt_test"
+path = "tests/frvt_test.rs"
+
+[dependencies]
+thiserror  = { workspace = true }
+tracing    = { workspace = true }
+serde      = { workspace = true }
+
+[dev-dependencies]

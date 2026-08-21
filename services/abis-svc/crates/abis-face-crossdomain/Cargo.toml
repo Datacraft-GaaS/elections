@@ -1,0 +1,22 @@
+[package]
+name        = "eel-abis-face-crossdomain"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "Cross-domain face alignment: visible / NIR / thermal modality projection via linear transform."
+
+[lib]
+name = "eel_abis_face_crossdomain"
+path = "src/lib.rs"
+
+[[test]]
+name = "crossdomain_test"
+path = "tests/crossdomain_test.rs"
+
+[dependencies]
+thiserror  = { workspace = true }
+tracing    = { workspace = true }
+serde      = { workspace = true }
+
+[dev-dependencies]

@@ -1,0 +1,22 @@
+[package]
+name        = "eel-abis-face-quality"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "ISO/IEC 29794-5 face image quality: sharpness, resolution, pose, illumination, uniformity, occlusion, expression, gaze."
+
+[lib]
+name = "eel_abis_face_quality"
+path = "src/lib.rs"
+
+[[test]]
+name = "quality_test"
+path = "tests/quality_test.rs"
+
+[dependencies]
+thiserror  = { workspace = true }
+tracing    = { workspace = true }
+serde      = { workspace = true }
+
+[dev-dependencies]

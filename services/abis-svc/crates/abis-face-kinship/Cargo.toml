@@ -1,0 +1,22 @@
+[package]
+name        = "eel-abis-face-kinship"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "Kinship classifier and family cluster grouping for adjudicator hints."
+
+[lib]
+name = "eel_abis_face_kinship"
+path = "src/lib.rs"
+
+[[test]]
+name = "kinship_test"
+path = "tests/kinship_test.rs"
+
+[dependencies]
+thiserror  = { workspace = true }
+tracing    = { workspace = true }
+serde      = { workspace = true }
+
+[dev-dependencies]

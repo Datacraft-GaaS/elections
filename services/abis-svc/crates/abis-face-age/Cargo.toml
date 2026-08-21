@@ -1,0 +1,23 @@
+[package]
+name        = "eel-abis-face-age"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "Age-invariant face matching: age estimator, residual age-normalisation, and age-progression stub."
+
+[lib]
+name = "eel_abis_face_age"
+path = "src/lib.rs"
+
+[[test]]
+name = "age_test"
+path = "tests/age_test.rs"
+
+[dependencies]
+thiserror  = { workspace = true }
+tracing    = { workspace = true }
+serde      = { workspace = true }
+sha2       = { workspace = true }
+
+[dev-dependencies]
