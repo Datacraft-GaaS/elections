@@ -1,0 +1,40 @@
+# Pre-prod profile: 5x stress load against the pre-production cluster.
+# Values are 5x the raw Appendix-A SLAs (scaling_factor: 5.0).
+# Use: kit-simulator run --profile pre-prod --duration 12h --scenario loadtest/scenarios/election-day.yaml
+# Regression gate applies: any p99 increase >10% vs previous run fails the build.
+
+scaling_factor: 5.0
+
+# BVI biometric identification (5x: 90k req/s target)
+bvi_auth_p95_ms: 800             # SLA ceiling unchanged; throughput is 5x
+bvi_auth_p99_ms: 1500
+bvi_req_per_sec: 90000
+
+# RTS results transmission (5x: 300k concurrent)
+rts_submit_p95_ms: 500
+rts_submit_p99_ms: 1000
+rts_concurrent: 300000
+
+# ABIS biometric enrolment (5x: 50k enrolments/hr)
+abis_1n_p95_s: 5
+abis_1n_p99_s: 8
+abis_enrolments_per_hour: 50000
+
+# Public portal (5x: 25M/hr)
+portal_p95_ms: 200
+portal_p99_ms: 500
+portal_visitors_per_hour: 25000000
+
+# Kit verifier (5x: 50M concurrent)
+verifier_concurrent: 50000000
+
+# Personnel check-ins (5x: 1.25M per 90-min window)
+checkins_per_90min: 1250000
+
+# HR payroll (5x: 1.25M records)
+payroll_records_per_run: 1250000
+
+# Kafka ingest (5x: 500k ev/s)
+kafka_events_per_sec: 500000
+
+abort_on_anomaly: false

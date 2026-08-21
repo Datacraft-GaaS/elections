@@ -1,0 +1,48 @@
+# Production dry-run profile: 2x load against a live-but-drained production slice.
+# STRICT MODE: abort_on_anomaly: true means any anomaly signal halts the run immediately.
+# Values are 2x the raw Appendix-A SLAs (scaling_factor: 2.0).
+#
+# Pre-requisites before using this profile:
+#   1. Drain the slice (remove from LB rotation).
+#   2. Confirm no real voter data in the slice's DB partition.
+#   3. Have an on-call engineer monitoring Grafana dashboard eel-loadtest.
+#   4. Agree a hard stop time with IEBC ops (never run within 7 days of election day).
+#
+# Use: kit-simulator run --profile prod-dry-run --duration 2h --scenario loadtest/scenarios/election-day.yaml
+
+scaling_factor: 2.0
+
+# BVI biometric identification (2x: 36k req/s target)
+bvi_auth_p95_ms: 800             # SLA ceiling unchanged
+bvi_auth_p99_ms: 1500
+bvi_req_per_sec: 36000
+
+# RTS results transmission (2x: 120k concurrent)
+rts_submit_p95_ms: 500
+rts_submit_p99_ms: 1000
+rts_concurrent: 120000
+
+# ABIS biometric enrolment (2x: 20k/hr)
+abis_1n_p95_s: 5
+abis_1n_p99_s: 8
+abis_enrolments_per_hour: 20000
+
+# Public portal (2x: 10M/hr)
+portal_p95_ms: 200
+portal_p99_ms: 500
+portal_visitors_per_hour: 10000000
+
+# Kit verifier (2x: 20M concurrent)
+verifier_concurrent: 20000000
+
+# Personnel check-ins (2x: 500k per 90-min window)
+checkins_per_90min: 500000
+
+# HR payroll (2x: 500k records)
+payroll_records_per_run: 500000
+
+# Kafka ingest (2x: 200k ev/s)
+kafka_events_per_sec: 200000
+
+# STRICT: halt on any error spike, latency breach, or Kafka lag anomaly
+abort_on_anomaly: true

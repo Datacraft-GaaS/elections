@@ -1,0 +1,47 @@
+[package]
+name         = "kit-simulator"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+authors.workspace    = true
+description  = "KIEMS election-day load simulator: 65k virtual BVI+RTS kits"
+
+[[bin]]
+name = "kit-simulator"
+path = "src/main.rs"
+
+[dependencies]
+# CLI
+clap             = { version = "4", features = ["derive"] }
+
+# Async runtime
+tokio            = { workspace = true }
+futures          = { workspace = true }
+
+# HTTP server (mock) and client
+axum             = { workspace = true }
+reqwest          = { version = "0.12", features = ["json"] }
+
+# Serialization
+serde            = { workspace = true }
+serde_json       = { workspace = true }
+serde_yaml       = "0.9"
+
+# Time / IDs
+chrono           = { workspace = true }
+uuid             = { workspace = true }
+
+# Error handling
+anyhow           = { workspace = true }
+thiserror        = { workspace = true }
+
+# Observability
+tracing          = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+# Random (Send-safe SmallRng for worker tasks)
+rand             = "0.8"
+
+[dev-dependencies]
+tokio = { workspace = true }

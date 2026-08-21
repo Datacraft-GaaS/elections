@@ -1,0 +1,39 @@
+# Staging profile: 1x scale in the staging cluster.
+# All values are the raw Appendix-A SLA numbers (scaling_factor: 1.0).
+# Use: kit-simulator run --profile staging --duration 12h --scenario loadtest/scenarios/election-day.yaml
+
+scaling_factor: 1.0
+
+# BVI biometric identification (Appendix A: p95 800ms / p99 1500ms @ 18k req/s)
+bvi_auth_p95_ms: 800
+bvi_auth_p99_ms: 1500
+bvi_req_per_sec: 18000
+
+# RTS results transmission (Appendix A: p95 500ms / p99 1000ms @ 60k concurrent)
+rts_submit_p95_ms: 500
+rts_submit_p99_ms: 1000
+rts_concurrent: 60000
+
+# ABIS biometric enrolment (Appendix A: p95 5s / p99 8s, 10k/hr)
+abis_1n_p95_s: 5
+abis_1n_p99_s: 8
+abis_enrolments_per_hour: 10000
+
+# Public portal (Appendix A: p95 200ms / p99 500ms @ 5M/hr)
+portal_p95_ms: 200
+portal_p99_ms: 500
+portal_visitors_per_hour: 5000000
+
+# Kit verifier / M13 (Appendix A: 10M concurrent, p99 <500ms)
+verifier_concurrent: 10000000
+
+# Personnel check-ins / M33 (Appendix A: 250k per 90-min window)
+checkins_per_90min: 250000
+
+# HR payroll / M55 (Appendix A: 250k records in 4h)
+payroll_records_per_run: 250000
+
+# Kafka ingest (Appendix A: 100k ev/s)
+kafka_events_per_sec: 100000
+
+abort_on_anomaly: false

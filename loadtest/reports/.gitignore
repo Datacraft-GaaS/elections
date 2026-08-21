@@ -1,0 +1,5 @@
+# CI writes run reports here; never commit them.
+# Only .gitkeep is tracked to preserve the directory.
+*
+!.gitkeep
+!.gitignore

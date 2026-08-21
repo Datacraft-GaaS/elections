@@ -1,0 +1,118 @@
+# Election-day traffic scenario for kit-simulator, k6, and Gatling.
+# Defines the full 12-hour polling day plus results/petition window.
+# All rate values are at 1x (full) scale; profiles apply scaling_factor.
+
+name: election-day
+description: >
+  Full IEBC election day: 65k KIEMS kits performing BVI 1:1 identification and
+  RTS 34A form submission across morning + evening bimodal peaks, with telco
+  impairment profiles and a results-flood phase after 17:00 EAT.
+
+total_kits: 65000
+legacy_android_pct: 0.22          # 22% of kits on legacy Android shim path
+heartbeat_interval_secs: 30       # kits beacon every 30 s
+
+phases:
+  - name: registration-open
+    duration_min: 60              # 05:00-06:00 EAT: officials arrive, kits boot
+    bvi_rps: 200
+    rts_concurrent: 0
+    portal_rps: 500
+    verifier_concurrent: 5000
+    checkins_per_90min: 25000     # half of 250k check-ins in the opening hour
+    kafka_events_per_sec: 5000
+    telco_profile:
+      packet_loss_pct: 3.0
+      satellite_fallback_pct: 2.0
+      tech_mix: {3g: 0.35, 4g: 0.45, lte: 0.20}
+
+  - name: polling-open
+    duration_min: 120             # 06:00-08:00 EAT: steady ramp
+    bvi_rps: 5000
+    rts_concurrent: 10000
+    portal_rps: 5000
+    verifier_concurrent: 200000
+    checkins_per_90min: 100000
+    kafka_events_per_sec: 25000
+    telco_profile:
+      packet_loss_pct: 5.0
+      satellite_fallback_pct: 3.0
+      tech_mix: {3g: 0.30, 4g: 0.50, lte: 0.20}
+
+  - name: morning-peak
+    duration_min: 240             # 08:00-12:00 EAT: bimodal first peak (06-10)
+    bvi_rps: 18000                # Appendix-A SLA: 18k req/s
+    rts_concurrent: 60000         # Appendix-A SLA: 60k concurrent
+    portal_rps: 1389              # 5M/hr = 1389/s
+    verifier_concurrent: 10000000 # M13: 10M concurrent
+    checkins_per_90min: 250000    # M33 peak
+    kafka_events_per_sec: 100000  # Appendix-A SLA
+    telco_profile:
+      packet_loss_pct: 5.0
+      satellite_fallback_pct: 5.0
+      tech_mix: {3g: 0.30, 4g: 0.50, lte: 0.20}
+
+  - name: mid-day
+    duration_min: 180             # 12:00-15:00 EAT: quiet valley
+    bvi_rps: 4000
+    rts_concurrent: 8000
+    portal_rps: 800
+    verifier_concurrent: 500000
+    checkins_per_90min: 0
+    kafka_events_per_sec: 15000
+    telco_profile:
+      packet_loss_pct: 4.0
+      satellite_fallback_pct: 2.0
+      tech_mix: {3g: 0.30, 4g: 0.50, lte: 0.20}
+
+  - name: evening-peak
+    duration_min: 120             # 15:00-17:00 EAT: bimodal second peak (15-17)
+    bvi_rps: 18000
+    rts_concurrent: 60000
+    portal_rps: 1389
+    verifier_concurrent: 10000000
+    checkins_per_90min: 250000
+    kafka_events_per_sec: 100000
+    telco_profile:
+      packet_loss_pct: 6.0
+      satellite_fallback_pct: 6.0
+      tech_mix: {3g: 0.35, 4g: 0.45, lte: 0.20}
+
+  - name: close
+    duration_min: 60              # 17:00-18:00 EAT: polling closes, kits finalise
+    bvi_rps: 500
+    rts_concurrent: 5000
+    portal_rps: 2000
+    verifier_concurrent: 1000000
+    checkins_per_90min: 0
+    kafka_events_per_sec: 30000
+    telco_profile:
+      packet_loss_pct: 5.0
+      satellite_fallback_pct: 4.0
+      tech_mix: {3g: 0.30, 4g: 0.50, lte: 0.20}
+
+  - name: results-flood
+    duration_min: 360             # 18:00-00:00 EAT: Form 34A/B/C transmission storm
+    bvi_rps: 100
+    rts_concurrent: 60000
+    portal_rps: 5000              # public traffic peaks watching results
+    verifier_concurrent: 8000000
+    checkins_per_90min: 0
+    kafka_events_per_sec: 100000
+    telco_profile:
+      packet_loss_pct: 7.0
+      satellite_fallback_pct: 8.0
+      tech_mix: {3g: 0.40, 4g: 0.40, lte: 0.20}
+
+  - name: petition-window
+    duration_min: 120             # 00:00-02:00 EAT: low traffic, courts active
+    bvi_rps: 0
+    rts_concurrent: 500
+    portal_rps: 1000
+    verifier_concurrent: 200000
+    checkins_per_90min: 0
+    kafka_events_per_sec: 2000
+    telco_profile:
+      packet_loss_pct: 3.0
+      satellite_fallback_pct: 1.0
+      tech_mix: {3g: 0.25, 4g: 0.55, lte: 0.20}
