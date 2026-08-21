@@ -471,3 +471,13 @@ Captured because they shaped multiple decisions and should govern future ones:
 - **One canonical source per fact**: Rust services hold truth; LiveView renders it; Django admins it; snapshots publish it; mobile consumes it. No parallel implementations of business logic.
 - **Client operational familiarity is not a rounding error**: Keycloak + SpiceDB + OpenBao + MinIO chosen partly because they already run on the client's fleet; Ubuntu 24.04 over Talos because ops-team comfort matters over a 3-year contract.
 - **Requirements are living, not final**: the 12 → 28 → 34 → 53 → 69-and-growing module count is a feature of the tender-drafting process, not a defect; the design accommodates ~100 modules without structural change.
+
+---
+
+### Phase 15 (2026-08-21): third-party admin scaffold evaluated and rejected
+
+**Candidate**: `chelunfu/qiluo_admin` (Rust axum + Sea-ORM, Vue 3 + Element Plus, MySQL/SQLite, Redis, own JWT/RBAC/menus, CRUD codegen, cron UI, tenant-ID isolation; MIT; 231 stars, 22 commits, no releases, single maintainer).
+
+**Question**: could it replace Django for the admin-portal tier?
+
+**Decision**: no. Reasons: maturity and single-maintainer supply-chain risk against ASVS L3 admin surfaces; its core value is its own identity/RBAC model, which conflicts with Keycloak + SpiceDB + SPIFFE (ADR-0007) and would be removed; MySQL-flavoured migrations and generator versus PostgreSQL 17; adds a Vue + Element Plus framework family to a portal tier deliberately held to Astro, LiveView, Django+HTMX (ADR-0008); weak i18n/a11y story against 11 languages and WCAG 2.2 AA; Django's security record and Kenyan talent pool are the reason Python stays in the admin tier at all. Not adopted as a dependency; not worth mining beyond a glance.
