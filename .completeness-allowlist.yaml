@@ -30,3 +30,10 @@ allowlist:
     reason: "ClickHouse deferred to Phase 2"
     reference: "adr/0003-data-infrastructure.md"
     expires: "2099-12-31"
+
+  # Python virtualenvs created by uv sync in each package during dev.
+  # Never committed (gitignored) but present on developer checkouts.
+  - path: '**/.venv/'
+    reason: 'third-party dep source, gitignored'
+    reference: 'wave-1'
+    expires: '2099-12-31'

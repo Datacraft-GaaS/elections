@@ -66,3 +66,13 @@ deps/
 *.beam
 erl_crash.dump
 .elixir_ls/
+
+# Python virtualenvs
+.venv/
+venv/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.tox/
