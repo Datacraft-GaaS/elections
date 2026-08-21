@@ -40,6 +40,9 @@ defmodule Eel.Resilience.Retry do
           Process.sleep(sleep_ms)
           do_retry(fun, attempt + 1, max_attempts, base_delay_ms, max_delay_ms, jitter)
 
+        {:error, _} ->
+          {:error, :max_retries_exceeded}
+
         _ ->
           result
       end

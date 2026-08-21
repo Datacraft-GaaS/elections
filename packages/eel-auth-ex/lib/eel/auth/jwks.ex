@@ -8,8 +8,6 @@ defmodule Eel.Auth.JWKS do
 
   use GenServer
 
-  require Logger
-
   @table :eel_auth_jwks_cache
   @default_ttl_ms 300_000
 
@@ -39,9 +37,9 @@ defmodule Eel.Auth.JWKS do
 
   Returns `{:ok, public_key_pem}` or `{:error, :not_found}`.
   """
-  @spec get_public_key(String.t()) :: {:ok, String.t()} | {:error, :not_found}
-  def get_public_key(kid) do
-    GenServer.call(__MODULE__, {:get_public_key, kid})
+  @spec get_public_key(GenServer.server(), String.t()) :: {:ok, String.t()} | {:error, :not_found}
+  def get_public_key(server \\ __MODULE__, kid) do
+    GenServer.call(server, {:get_public_key, kid})
   end
 
   # Server callbacks

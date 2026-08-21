@@ -137,7 +137,7 @@ defmodule Eel.ResilienceTest do
       refute first.halted
 
       first = send_resp(first, 200, ~s({"result":"ok"}))
-      Enum.each(first.before_send, fn f -> f.(first) end)
+      Enum.each(first.private[:before_send] || [], fn f -> f.(first) end)
 
       second =
         :post

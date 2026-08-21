@@ -45,7 +45,6 @@ defmodule Eel.LoadSheddingTest do
 
   describe "Plug" do
     import Plug.Test
-    import Plug.Conn
 
     alias Eel.LoadShedding.Plug, as: LoadSheddingPlug
 

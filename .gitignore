@@ -59,3 +59,10 @@ pubspec.lock
 build/
 *.iml
 .metadata
+
+# Elixir / Erlang generated
+_build/
+deps/
+*.beam
+erl_crash.dump
+.elixir_ls/

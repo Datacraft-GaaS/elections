@@ -22,7 +22,7 @@ defmodule Eel.Auth.JWT do
          {:ok, header} <- decode_part(header_b64),
          {:ok, payload} <- decode_part(payload_b64),
          {:ok, sig} <- Base.url_decode64(sig_b64, padding: false),
-         {:ok, pem} <- JWKS.get_public_key(Map.fetch!(header, "kid")),
+         {:ok, pem} <- JWKS.get_public_key(jwks_pid_or_name, Map.fetch!(header, "kid")),
          :ok <- verify_signature(header_b64, payload_b64, sig, pem, header),
          :ok <- validate_claims(payload) do
       {:ok, build_subject(payload, token)}
