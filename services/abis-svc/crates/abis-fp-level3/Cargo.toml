@@ -1,0 +1,24 @@
+[package]
+name        = "eel-abis-fp-level3"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "Level-3 fingerprint features: pores, ridge edges, ridge contours, incipient ridges"
+
+[lib]
+name = "eel_abis_fp_level3"
+path = "src/lib.rs"
+
+[[test]]
+name = "level3_test"
+path = "tests/level3_test.rs"
+
+[dependencies]
+serde      = { workspace = true }
+thiserror  = { workspace = true }
+tracing    = { workspace = true }
+uuid       = { workspace = true }
+abis-matcher = { path = "../abis-matcher" }
+
+[dev-dependencies]

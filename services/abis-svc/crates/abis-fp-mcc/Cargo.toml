@@ -1,0 +1,25 @@
+[package]
+name        = "eel-abis-fp-mcc"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "Minutia Cylinder-Code (MCC) fingerprint matching -- Cappelli, Ferrara, Maltoni IEEE TPAMI 2010"
+
+[lib]
+name = "eel_abis_fp_mcc"
+path = "src/lib.rs"
+
+[[test]]
+name = "mcc_test"
+path = "tests/mcc_test.rs"
+
+[dependencies]
+serde      = { workspace = true }
+thiserror  = { workspace = true }
+tracing    = { workspace = true }
+uuid       = { workspace = true }
+sha2       = { workspace = true }
+abis-matcher = { path = "../abis-matcher" }
+
+[dev-dependencies]

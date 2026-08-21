@@ -1,0 +1,24 @@
+[package]
+name        = "eel-abis-fp-ridge-count"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "Bozorth3-style ridge counting between minutiae and K-plet descriptor matching"
+
+[lib]
+name = "eel_abis_fp_ridge_count"
+path = "src/lib.rs"
+
+[[test]]
+name = "ridge_count_test"
+path = "tests/ridge_count_test.rs"
+
+[dependencies]
+serde      = { workspace = true }
+thiserror  = { workspace = true }
+tracing    = { workspace = true }
+uuid       = { workspace = true }
+abis-matcher = { path = "../abis-matcher" }
+
+[dev-dependencies]

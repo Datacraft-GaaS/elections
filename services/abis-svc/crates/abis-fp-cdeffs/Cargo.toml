@@ -1,0 +1,25 @@
+[package]
+name        = "eel-abis-fp-cdeffs"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "CDEFFS Extended Feature Set -- NIST SP 500-290 e3 Annex A, ANSI/NIST-ITL Type-9 fields 300-999"
+
+[lib]
+name = "eel_abis_fp_cdeffs"
+path = "src/lib.rs"
+
+[[test]]
+name = "cdeffs_test"
+path = "tests/cdeffs_test.rs"
+
+[dependencies]
+serde      = { workspace = true }
+thiserror  = { workspace = true }
+tracing    = { workspace = true }
+uuid       = { workspace = true }
+sha2       = { workspace = true }
+abis-matcher = { path = "../abis-matcher" }
+
+[dev-dependencies]

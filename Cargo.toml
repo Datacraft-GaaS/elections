@@ -33,6 +33,9 @@ exclude = [
   "services/inventory-svc/crates/custody",
   # diaspora: WP-5.8 in-flight, pending workspace deps
   "services/biometric-edge-svc/crates/diaspora",
+  # abis-fp-*: in-flight stubs with no Cargo.toml yet
+  "services/abis-svc/crates/abis-fp-consensus",
+  "services/abis-svc/crates/abis-fp-tps-warp",
   # support-admin-svc: nested workspace owns these crates
   "services/support-admin-svc/crates/budget",
   "services/support-admin-svc/crates/payroll",
@@ -110,6 +113,9 @@ oqs             = { version = "0.9",  features = ["mlkem768", "mldsa65"] }
 uuid            = { version = "1",    features = ["v4", "v7", "serde"] }
 blake3          = { version = "1" }
 uuid6           = { version = "0.7" }
+
+# ONNX Runtime (deep-learning fingerprint matcher)
+ort             = { version = "2.0.0-rc.13" }
 
 # Error handling
 thiserror       = { version = "2" }
