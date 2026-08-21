@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bvr-api
+  labels:
+    app: bvr-api
+    component: api
+    service: bvr-svc
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: bvr-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: bvr-api
+    spec:
+      containers:
+        - name: bvr-api
+          image: harbor.eel.internal/eel/bvr-api:latest
+          ports:
+            - containerPort: 8080
+              name: http
+            - containerPort: 9090
+              name: grpc
+          env:
+            - name: IPRS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: bvr-secrets
+                  key: iprs_url
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: bvr-secrets
+                  key: database_url
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "256Mi"
+            limits:
+              cpu: "2"
+              memory: "1Gi"

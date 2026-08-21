@@ -1,0 +1,55 @@
+# WP-3.5 traceability matrix
+work_package: WP-3.5
+module: M02 bvr-backend
+service: bvr-svc
+
+requirements:
+  FR-M02-001:
+    description: "Ingest enrolment from BVR kits via SVID mTLS; verify Ed25519 signature"
+    implemented_in: [crates/bvr-api/src/routes/enrolments.rs]
+    status: stub
+
+  FR-M02-003:
+    description: "Idempotency per eel_idempotency_key"
+    implemented_in: [crates/bvr-batch/src/ingest.rs]
+    status: stub
+
+  FR-M02-004:
+    description: "Versioned voter record append (no in-place delete)"
+    implemented_in: [crates/bvr-domain/src/voter.rs, migrations/V1__create_voters.sql]
+    status: implemented
+
+  FR-M02-005:
+    description: "Field-encrypt biometric templates with per-field KEK"
+    implemented_in: [crates/bvr-domain/src/voter.rs, data_dictionary.yaml]
+    status: stub
+
+  FR-M02-009:
+    description: "IPRS fail-closed circuit breaker"
+    implemented_in: [crates/bvr-api/src/iprs.rs]
+    status: implemented
+
+edge_cases:
+  EC-DAT-07:
+    description: "Per-row report on partial-batch failure"
+    implemented_in: [crates/bvr-batch/src/ingest.rs - RowOutcome]
+    status: implemented
+
+  EC-DAT-08:
+    description: "Register export: streamed, checkpoint-resumable"
+    implemented_in: [crates/bvr-batch/src/export.rs]
+    status: stub
+
+  EC-SEC-16:
+    description: "Canary rows in register; canary_touched.v1 on read"
+    implemented_in:
+      - crates/bvr-domain/src/canary.rs
+      - crates/bvr-domain/src/voter.rs (is_canary field)
+      - migrations/V5__canary_reads_and_outbox.sql
+    status: implemented
+
+adrs:
+  - ADR-0012: data topology (T1-voter partition by county)
+  - ADR-0013: not event-sourced; state + audit shadow
+  - ADR-0015: outbox-only Kafka publish
+  - ADR-0016: PII tiers A/B enforced via eel-pii-rs wrappers

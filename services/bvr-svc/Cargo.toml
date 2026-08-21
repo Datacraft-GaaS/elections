@@ -1,0 +1,63 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/bvr-domain",
+    "crates/bvr-batch",
+    "crates/bvr-api",
+]
+
+[workspace.package]
+version      = "0.1.0"
+edition      = "2021"
+license      = "Apache-2.0"
+rust-version = "1.83"
+authors      = ["eel contributors"]
+repository   = "https://gitea.internal/eel/eel"
+
+[workspace.dependencies]
+# Internal
+bvr-domain  = { path = "crates/bvr-domain" }
+bvr-batch   = { path = "crates/bvr-batch" }
+
+# External packages (eel monorepo)
+eel-pii-rs        = { path = "../../packages/eel-pii-rs" }
+eel-resilience-rs = { path = "../../packages/eel-resilience-rs" }
+eel-outbox-rs     = { path = "../../packages/eel-outbox-rs" }
+eel-crypto-rs     = { path = "../../packages/eel-crypto-rs" }
+eel-events-rs     = { path = "../../packages/eel-events-rs" }
+
+# HTTP
+axum            = { version = "0.8", features = ["macros", "tokio"] }
+tower-http      = { version = "0.6", features = ["full"] }
+reqwest         = { version = "0.12", features = ["json"], default-features = false }
+
+# Async
+tokio           = { version = "1", features = ["full"] }
+
+# Serialization
+serde           = { version = "1", features = ["derive"] }
+serde_json      = { version = "1" }
+
+# IDs
+uuid            = { version = "1", features = ["v4", "v7", "serde"] }
+
+# Error handling
+thiserror       = { version = "2" }
+anyhow          = { version = "1" }
+
+# Time
+chrono          = { version = "0.4", features = ["serde"] }
+
+# Observability
+tracing              = { version = "0.1" }
+tracing-subscriber   = { version = "0.3", features = ["env-filter", "json"] }
+
+# OpenAPI
+utoipa            = { version = "4", features = ["axum_extras", "uuid"] }
+utoipa-swagger-ui = { version = "7", features = ["axum"] }
+
+# Database
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "migrate"] }
+
+# Testing
+rstest = { version = "0.23" }

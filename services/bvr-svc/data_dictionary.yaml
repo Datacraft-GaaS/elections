@@ -1,0 +1,127 @@
+# BVR service data dictionary (ADR-0016).
+# CI fails on any new column without a classification entry here.
+
+service: bvr-svc
+tables:
+  voters:
+    description: Canonical voter register table, partitioned by county_code.
+    columns:
+      voter_id:               { tier: B, description: "UUID7 voter identifier" }
+      version:                { tier: D, description: "Optimistic-lock version counter" }
+      county_code:            { tier: B, description: "Kenya county code 001-047 (partition key)" }
+      national_id_enc:        { tier: A, description: "Field-encrypted national ID number (eel-crypto-rs KEK)" }
+      full_name_enc:          { tier: A, description: "Field-encrypted full legal name" }
+      dob_enc:                { tier: A, description: "Field-encrypted date of birth (ISO 8601)" }
+      phone_enc:              { tier: A, description: "Field-encrypted phone number (optional)" }
+      polling_station_id:     { tier: B, description: "Assigned polling station identifier" }
+      election_scope:         { tier: B, description: "Election identifier, e.g. 2027-general" }
+      status:                 { tier: B, description: "Voter status: pending|active|suspended|deregistered" }
+      biometric_template_refs: { tier: A, description: "JSON array of BiometricTemplateRef (template_id, modality, key_id)" }
+      is_canary:              { tier: D, description: "True for canary rows (EC-SEC-16); access triggers security alert" }
+      key_id:                 { tier: D, description: "KEK identifier used to encrypt Tier A fields" }
+      created_at:             { tier: D, description: "Row creation timestamp" }
+      updated_at:             { tier: D, description: "Row last-modified timestamp" }
+
+  audit_voters_history:
+    description: Immutable audit shadow of voter mutations (ADR-0013).
+    columns:
+      history_id:   { tier: D, description: "UUID primary key" }
+      voter_id:     { tier: B, description: "Voter reference" }
+      county_code:  { tier: B, description: "County partition key" }
+      version_from: { tier: D, description: "Version at time of change" }
+      version_to:   { tier: D, description: "Next version or null" }
+      operation:    { tier: D, description: "INSERT|UPDATE|DELETE" }
+      changed_by:   { tier: D, description: "Actor who made the change" }
+      changed_at:   { tier: D, description: "Timestamp of change" }
+      row_snapshot: { tier: A, description: "JSONB snapshot of OLD row (contains encrypted fields)" }
+
+  dedup_orders:
+    description: Biometric deduplication orders.
+    columns:
+      order_id:       { tier: D, description: "UUID7 order identifier" }
+      voter_id:       { tier: B, description: "Primary voter under dedup" }
+      modality:       { tier: B, description: "Biometric modality: fingerprint|iris|face" }
+      status:         { tier: D, description: "pending|resolved|escalated" }
+      investigator_id: { tier: B, description: "Assigned investigator UUID" }
+      voter_ids:      { tier: B, description: "All voter IDs involved in this dedup case" }
+      created_at:     { tier: D, description: "Order creation time" }
+      resolved_at:    { tier: D, description: "Resolution time" }
+
+  sar_requests:
+    description: Subject Access Request records (DPA 2019 s.40).
+    columns:
+      sar_id:                 { tier: D, description: "UUID7 SAR identifier" }
+      voter_id:               { tier: B, description: "Voter for whom SAR is made" }
+      requester_national_id:  { tier: A, description: "Requester national ID (may equal voter)" }
+      purpose:                { tier: D, description: "Processing purpose code" }
+      status:                 { tier: D, description: "pending|under_review|fulfilled|rejected" }
+      created_at:             { tier: D, description: "Request submission time" }
+      resolved_at:            { tier: D, description: "Resolution time" }
+      resolution_notes:       { tier: D, description: "Officer resolution notes" }
+
+  canary_reads:
+    description: Log of canary voter row accesses (EC-SEC-16).
+    columns:
+      id:          { tier: D, description: "UUID primary key" }
+      voter_id:    { tier: D, description: "Canary voter ID accessed" }
+      accessed_by: { tier: D, description: "Actor identity (JWT sub or SVID)" }
+      path:        { tier: D, description: "API path that returned the canary" }
+      accessed_at: { tier: D, description: "Access timestamp" }
+
+  register_snapshots:
+    description: Register snapshot metadata (voter export runs).
+    columns:
+      snapshot_id:    { tier: D, description: "UUID7 snapshot identifier" }
+      election_scope: { tier: D, description: "Election scope identifier" }
+      station_count:  { tier: D, description: "Number of polling stations in snapshot" }
+      voter_count:    { tier: D, description: "Total voters in snapshot" }
+      merkle_root:    { tier: C, description: "Merkle root hash (hex)" }
+      signed_by:      { tier: D, description: "Key ID that signed the snapshot" }
+      checkpoint:     { tier: D, description: "Resumption token for interrupted exports" }
+      created_at:     { tier: D, description: "Snapshot creation timestamp" }
+
+  merkle_roots:
+    description: Merkle root log for transparency (posted to transparency-svc).
+    columns:
+      id:               { tier: D, description: "UUID7 primary key" }
+      root_hash:        { tier: C, description: "Merkle root hash (hex)" }
+      seq:              { tier: D, description: "Monotonic sequence number" }
+      election_scope:   { tier: D, description: "Election scope" }
+      signed_by_hsm:    { tier: D, description: "HSM key ID for countersignature" }
+      escrow_confirmed: { tier: D, description: "True once escrow partner confirmed" }
+      created_at:       { tier: D, description: "Root publication timestamp" }
+
+  outbox:
+    description: Transactional outbox (eel-outbox-rs); Debezium reads for Kafka publish.
+    columns:
+      id:                  { tier: D, description: "UUID7 event ID" }
+      event_type:          { tier: D, description: "CloudEvents type" }
+      source:              { tier: D, description: "SPIFFE source URI" }
+      subject:             { tier: D, description: "Aggregate subject" }
+      time:                { tier: D, description: "Event time" }
+      eel_stream_id:       { tier: D, description: "Aggregate stream ID" }
+      eel_seq:             { tier: D, description: "Stream sequence number" }
+      eel_hlc:             { tier: D, description: "Hybrid logical clock" }
+      eel_prev_hash:       { tier: D, description: "Previous event hash for chaining" }
+      eel_correlation_id:  { tier: D, description: "Correlation ID for tracing" }
+      eel_causation_id:    { tier: D, description: "Causation event ID" }
+      eel_producer_key_id: { tier: D, description: "Producer signing key ID" }
+      eel_signature:       { tier: D, description: "Ed25519 signature over canonical JSON" }
+      eel_election_id:     { tier: D, description: "Election identifier" }
+      eel_data_class:      { tier: D, description: "Data class tier (A-E)" }
+      data:                { tier: B, description: "Event payload JSONB" }
+      topic:               { tier: D, description: "Target Kafka topic" }
+      kafka_key:           { tier: D, description: "Kafka partition key" }
+      aggregate_type:      { tier: D, description: "Aggregate type name" }
+      aggregate_id:        { tier: D, description: "Aggregate ID" }
+      published_at:        { tier: D, description: "Null until Debezium confirms publish" }
+
+  audit_events:
+    description: Generic audit event log.
+    columns:
+      event_id:  { tier: D, description: "UUID7 event identifier" }
+      actor:     { tier: B, description: "Actor identity string" }
+      action:    { tier: D, description: "Action code" }
+      resource:  { tier: D, description: "Affected resource path" }
+      ts:        { tier: D, description: "Event timestamp" }
+      signed_by: { tier: D, description: "Signing key ID" }

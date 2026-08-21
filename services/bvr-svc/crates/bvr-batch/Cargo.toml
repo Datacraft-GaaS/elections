@@ -1,0 +1,31 @@
+[package]
+name = "bvr-batch"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "BVR batch ingest, export, SAR, and dual-approval workflows"
+
+[lib]
+name = "bvr_batch"
+path = "src/lib.rs"
+
+[[bin]]
+name = "bvr-batch"
+path = "src/main.rs"
+
+[dependencies]
+bvr-domain    = { path = "../bvr-domain" }
+eel-pii-rs    = { path = "../../../../packages/eel-pii-rs" }
+eel-outbox-rs = { path = "../../../../packages/eel-outbox-rs" }
+eel-crypto-rs = { path = "../../../../packages/eel-crypto-rs" }
+uuid          = { workspace = true }
+serde         = { workspace = true }
+serde_json    = { workspace = true }
+chrono        = { workspace = true }
+thiserror     = { workspace = true }
+anyhow        = { workspace = true }
+tokio         = { workspace = true }
+sqlx          = { workspace = true }
+tracing       = { workspace = true }
