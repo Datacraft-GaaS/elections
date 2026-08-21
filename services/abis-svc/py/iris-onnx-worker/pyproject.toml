@@ -1,0 +1,30 @@
+[project]
+name = "eel-iris-onnx-worker"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.111",
+    "uvicorn[standard]>=0.29",
+    "httpx>=0.27",
+    "pydantic>=2.7",
+    "numpy>=1.26",
+    "onnxruntime>=1.18",
+    "opencv-python-headless>=4.9",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-asyncio>=0.23", "httpx>=0.27", "pyright>=1.1"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.pyright]
+strict = true
+pythonVersion = "3.11"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/eel_iris_worker"]
