@@ -1,0 +1,34 @@
+# Chaos Mesh v2.7+ IOChaos -- disk-full simulation
+# Apply: kubectl apply -f eel-io-chaos-disk-full.yaml
+#
+# What it tests: WAL archiving pauses gracefully; Postgres enters read-only mode before OOM;
+#   alerts fire within 60 s; no data corruption; IOChaos targets the PG data volume path.
+#
+# Recovery procedure:
+#   1. kubectl delete -f eel-io-chaos-disk-full.yaml
+#   2. Verify Postgres state: psql -c "SHOW transaction_read_only;"  -- must return 'off'.
+#   3. Check WAL archiving: pgbackrest --stanza=t1-primary check
+#   4. Confirm no replication slot lag > 1 GB: SELECT slot_name, pg_size_pretty(pg_wal_lsn_diff(...))
+apiVersion: chaos-mesh.org/v1alpha1
+kind: IOChaos
+metadata:
+  name: eel-io-chaos-disk-full
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: disk-full
+    eel.io/target: postgres-t1
+    eel.io/wave: "5.9"
+spec:
+  action: fault
+  mode: one
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: postgres-t1
+      role: primary
+  volumePath: /var/lib/postgresql/data
+  path: "/var/lib/postgresql/data/**"
+  errno: 28
+  percent: 100
+  duration: "3m"

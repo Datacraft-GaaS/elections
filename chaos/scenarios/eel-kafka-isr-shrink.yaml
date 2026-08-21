@@ -1,0 +1,33 @@
+# Chaos Mesh v2.7+ PodChaos -- Kafka ISR shrink to 1
+# Apply: kubectl apply -f eel-kafka-isr-shrink.yaml
+#
+# What it tests: With ISR=1 the Kafka producer blocks (acks=all); the outbox accumulates;
+#   no message loss; alerts fire; when brokers recover ISR expands and lag drains.
+#
+# Recovery procedure:
+#   1. kubectl -n eel-prod get pods -l app=kafka --watch
+#      Killed pods restart; ISR rebuilds automatically.
+#   2. kafka-consumer-groups.sh --bootstrap-server kafka:9092 --describe --group rts-outbox
+#      Confirm lag returns to 0 within 5 min.
+#   3. Check outbox table: SELECT count(*) FROM outbox WHERE processed_at IS NULL;
+#      Must reach 0.
+#   4. Verify no duplicate events in the transparency log.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: eel-kafka-isr-shrink
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: kafka-isr-shrink
+    eel.io/target: kafka
+    eel.io/wave: "5.9"
+spec:
+  action: pod-kill
+  mode: fixed-percent
+  value: "66"
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: kafka
+  gracePeriod: 0

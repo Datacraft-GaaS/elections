@@ -1,0 +1,32 @@
+# Chaos Mesh v2.7+ -- Valkey (Redis-compatible) flush via pod-kill + exec
+# Apply: kubectl apply -f eel-valkey-flush.yaml
+#
+# What it tests: Session cache loss causes re-authentication (not silent auth failure);
+#   idempotency cache rebuilt from Postgres source-of-truth; rate-limit buckets reset safely.
+#
+# Additional manual step after apply:
+#   kubectl -n eel-prod exec deploy/valkey -- valkey-cli FLUSHALL ASYNC
+#
+# Recovery procedure:
+#   1. kubectl delete -f eel-valkey-flush.yaml
+#   2. Verify Valkey INFO keyspace shows repopulation from warm-up jobs.
+#   3. Check idempotency: no duplicate write events in outbox within 10 min window.
+#   4. Confirm active sessions forced re-login (check Keycloak session count drop then rise).
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: eel-valkey-flush
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: valkey-flush
+    eel.io/target: valkey
+    eel.io/wave: "5.9"
+spec:
+  action: pod-failure
+  mode: all
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: valkey
+  duration: "30s"

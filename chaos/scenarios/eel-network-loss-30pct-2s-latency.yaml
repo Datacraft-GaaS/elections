@@ -1,0 +1,30 @@
+# Chaos Mesh v2.7+ NetworkChaos -- 30% packet loss + 2 s latency
+# Apply: kubectl apply -f eel-network-loss-30pct-2s-latency.yaml
+#
+# What it tests: Services apply backoff/jitter; no retries exhaust budget; P99 write latency
+#   stays within 3x SLO; circuit breakers engage before cascading.
+#
+# Recovery procedure:
+#   1. kubectl delete -f eel-network-loss-30pct-2s-latency.yaml
+#   2. Watch dashboards: latency should return to baseline within 60 s.
+#   3. Check dead-letter queues: SELECT count(*) FROM dlq WHERE created_at > now()-interval '10m';
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: eel-network-loss-30pct-2s-latency
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: network-degraded
+    eel.io/target: all-pods
+    eel.io/wave: "5.9"
+spec:
+  action: netem
+  mode: all
+  selector:
+    namespaces:
+      - eel-prod
+  netem:
+    loss: "30"
+    latency: "2000ms"
+    correlation: "25"
+  duration: "10m"

@@ -1,0 +1,53 @@
+# Chaos Mesh v2.7+ TimeChaos -- clock skew +/- 10 minutes
+# Apply: kubectl apply -f eel-time-chaos-plusminus-10min.yaml
+#
+# What it tests: HLC never regresses (EC-TIM-03); JWT/SVID expiry logic unaffected by skew;
+#   time_confidence=low flag emitted when skew detected; Keycloak token validation stable.
+#
+# Recovery procedure:
+#   1. kubectl delete -f eel-time-chaos-plusminus-10min.yaml  (clock auto-corrects)
+#   2. Verify HLC monotonicity: grep "hlc_regression" in Loki for last 15 min -- must be 0.
+#   3. Check SPIRE SVID validity: spire-agent api fetch x509 -- all SVIDs must be valid.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: TimeChaos
+metadata:
+  name: eel-time-chaos-plusminus-10min
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: time-skew
+    eel.io/target: rts-svc
+    eel.io/wave: "5.9"
+spec:
+  mode: all
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: rts-svc
+  timeOffset: "-10m"
+  clockIds:
+    - CLOCK_REALTIME
+    - CLOCK_MONOTONIC
+  duration: "10m"
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: TimeChaos
+metadata:
+  name: eel-time-chaos-plus-10min
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: time-skew
+    eel.io/target: bvr-svc
+    eel.io/wave: "5.9"
+spec:
+  mode: all
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: bvr-svc
+  timeOffset: "+10m"
+  clockIds:
+    - CLOCK_REALTIME
+    - CLOCK_MONOTONIC
+  duration: "10m"

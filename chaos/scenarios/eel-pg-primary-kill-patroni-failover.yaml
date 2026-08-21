@@ -1,0 +1,33 @@
+# Chaos Mesh v2.7+ PodChaos -- PostgreSQL T1 primary kill + Patroni failover
+# Apply: kubectl apply -f eel-pg-primary-kill-patroni-failover.yaml
+#
+# What it tests: Patroni elects a new primary; rts-svc write path reconnects within RPO <= 5 min.
+#
+# Recovery procedure:
+#   1. kubectl -n eel-prod get pods -l app=postgres-t1 --watch
+#      Wait for a replica to become "primary" in patronictl output.
+#   2. patronictl -c /etc/patroni/patroni.yml list
+#      Confirm exactly one primary, no lingering leader lock.
+#   3. Check rts-svc error rate: kubectl -n eel-prod top pod -l app=rts-svc
+#      Alert if P99 write latency exceeds 5 000 ms for > 30 s.
+#   4. Old primary restarts as replica; verify via patronictl.
+#   5. Confirm no WAL gap: pgbackrest --stanza=t1-primary check
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: eel-pg-primary-kill-patroni-failover
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: pg-primary-kill
+    eel.io/target: postgres-t1
+    eel.io/wave: "5.9"
+spec:
+  action: pod-kill
+  mode: one
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: postgres-t1
+      role: primary
+  gracePeriod: 0

@@ -1,0 +1,69 @@
+# Kubernetes CronJobs for pgBackRest backup schedule
+# Full: weekly Sunday 02:00 UTC
+# Differential: daily Mon-Sat 02:00 UTC
+# WAL: continuous via archive_command in postgresql.conf (no CronJob needed)
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: eel-pgbackrest-full-voter-db
+  namespace: eel-prod
+  labels:
+    eel.io/component: pgbackrest
+    eel.io/tier: t1
+spec:
+  schedule: "0 2 * * 0"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 4
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: pgbackrest
+          restartPolicy: OnFailure
+          containers:
+            - name: pgbackrest
+              image: pgbackrest/pgbackrest:2.52
+              command:
+                - pgbackrest
+                - --stanza=voter-db
+                - --type=full
+                - backup
+              envFrom:
+                - secretRef:
+                    name: pgbackrest-credentials
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: eel-pgbackrest-diff-voter-db
+  namespace: eel-prod
+  labels:
+    eel.io/component: pgbackrest
+    eel.io/tier: t1
+spec:
+  schedule: "0 2 * * 1-6"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: pgbackrest
+          restartPolicy: OnFailure
+          containers:
+            - name: pgbackrest
+              image: pgbackrest/pgbackrest:2.52
+              command:
+                - pgbackrest
+                - --stanza=voter-db
+                - --type=diff
+                - backup
+              envFrom:
+                - secretRef:
+                    name: pgbackrest-credentials
+---
+# Duplicate for consensus-db and audit-db -- same schedule, different stanza.
+# Use Helm or Kustomize overlays to generate per-stanza jobs from this template.

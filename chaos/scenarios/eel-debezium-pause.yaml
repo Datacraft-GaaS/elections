@@ -1,0 +1,32 @@
+# Chaos Mesh v2.7+ PodChaos -- Debezium connector pause (EC-DAT-12)
+# Apply: kubectl apply -f eel-debezium-pause.yaml
+#
+# What it tests: WAL replication slot does not bloat beyond alert threshold;
+#   outbox events retained; when Debezium resumes it drains without loss or duplication.
+#
+# Recovery procedure:
+#   1. kubectl delete -f eel-debezium-pause.yaml
+#   2. Monitor lag: curl http://debezium:8083/connectors/outbox-connector/status
+#      Wait for connector state = RUNNING.
+#   3. Verify replication slot lag: SELECT pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn))
+#      FROM pg_replication_slots WHERE slot_name = 'debezium_outbox';
+#      Must return < 1 GB within 5 min.
+#   4. Check outbox drained: SELECT count(*) FROM outbox WHERE processed_at IS NULL; => 0
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: eel-debezium-pause
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: debezium-pause
+    eel.io/target: debezium
+    eel.io/wave: "5.9"
+spec:
+  action: pod-failure
+  mode: all
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: debezium
+  duration: "5m"

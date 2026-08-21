@@ -1,0 +1,127 @@
+# Kopia backup CronJob -- T1 application data
+# Runs daily at 03:00 UTC after pgBackRest differential completes.
+# Password fetched from OpenBao at runtime via init container.
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: eel-kopia-backup-t1
+  namespace: eel-prod
+  labels:
+    eel.io/component: kopia
+    eel.io/tier: t1
+spec:
+  schedule: "0 3 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: kopia
+          restartPolicy: OnFailure
+          initContainers:
+            - name: fetch-key
+              image: hashicorp/vault:1.17
+              command:
+                - sh
+                - -c
+                - |
+                  vault read -field=plaintext transit/eel/kopia-t1-key \
+                    | base64 -d > /kopia-key/t1.key
+              env:
+                - name: VAULT_ADDR
+                  value: http://openbao.eel-prod.svc.cluster.local:8200
+                - name: VAULT_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: kopia-vault-token
+                      key: token
+              volumeMounts:
+                - name: kopia-key
+                  mountPath: /kopia-key
+          containers:
+            - name: kopia
+              image: kopia/kopia:0.17
+              command:
+                - sh
+                - -c
+                - |
+                  export KOPIA_PASSWORD=$(cat /kopia-key/t1.key)
+                  kopia --config-file=/kopia-config/kopia-t1.json \
+                    snapshot create /data/t1 \
+                    --parallel=4 \
+                    --compression=zstd-fastest
+              volumeMounts:
+                - name: kopia-key
+                  mountPath: /kopia-key
+                - name: kopia-config
+                  mountPath: /kopia-config
+                - name: t1-data
+                  mountPath: /data/t1
+                  readOnly: true
+          volumes:
+            - name: kopia-key
+              emptyDir:
+                medium: Memory
+            - name: kopia-config
+              configMap:
+                name: eel-kopia-config
+            - name: t1-data
+              persistentVolumeClaim:
+                claimName: t1-appdata
+---
+# T2 equivalent -- same pattern, bucket=kopia-t2-primary, key=kopia-t2-key
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: eel-kopia-backup-t2
+  namespace: eel-prod
+  labels:
+    eel.io/component: kopia
+    eel.io/tier: t2
+spec:
+  schedule: "0 4 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: kopia
+          restartPolicy: OnFailure
+          containers:
+            - name: kopia
+              image: kopia/kopia:0.17
+              command:
+                - sh
+                - -c
+                - |
+                  export KOPIA_PASSWORD=$(vault read -field=plaintext transit/eel/kopia-t2-key | base64 -d)
+                  kopia --config-file=/kopia-config/kopia-t2.json \
+                    snapshot create /data/t2 \
+                    --parallel=4 \
+                    --compression=zstd-fastest
+              env:
+                - name: VAULT_ADDR
+                  value: http://openbao.eel-prod.svc.cluster.local:8200
+                - name: VAULT_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: kopia-vault-token
+                      key: token
+              volumeMounts:
+                - name: kopia-config
+                  mountPath: /kopia-config
+                - name: t2-data
+                  mountPath: /data/t2
+                  readOnly: true
+          volumes:
+            - name: kopia-config
+              configMap:
+                name: eel-kopia-config
+            - name: t2-data
+              persistentVolumeClaim:
+                claimName: t2-appdata

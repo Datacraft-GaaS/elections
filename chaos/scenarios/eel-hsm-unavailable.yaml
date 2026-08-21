@@ -1,0 +1,29 @@
+# Chaos Mesh v2.7+ PodChaos -- HSM (SoftHSM / hsm-signer) unavailable (EC-SEC-03)
+# Apply: kubectl apply -f eel-hsm-unavailable.yaml
+#
+# What it tests: STH pauses; ingest continues; countersigns queue in outbox; degraded-mode
+#   alert fires; when HSM recovers countersigns drain without gap or duplicate.
+#
+# Recovery procedure:
+#   1. kubectl delete -f eel-hsm-unavailable.yaml  (pod restarts automatically)
+#   2. Verify hsm-signer pod Ready: kubectl -n eel-prod get pods -l app=hsm-signer
+#   3. Check STH queue drained: SELECT count(*) FROM sth_queue WHERE signed_at IS NULL;
+#   4. Confirm Merkle root consistent with pre-chaos root + new leaves.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: eel-hsm-unavailable
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: hsm-unavailable
+    eel.io/target: hsm-signer
+    eel.io/wave: "5.9"
+spec:
+  action: pod-kill
+  mode: all
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: hsm-signer
+  gracePeriod: 0

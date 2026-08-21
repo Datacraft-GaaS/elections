@@ -1,0 +1,35 @@
+# Chaos Mesh v2.7+ StressChaos -- CPU + memory stress
+# Apply: kubectl apply -f eel-stress-chaos-cpu-mem.yaml
+#
+# What it tests: rts-svc write path degrades gracefully under resource pressure;
+#   Kubernetes HPA scales out; priority shedding kicks in; no OOM kills on critical paths.
+#
+# Recovery procedure:
+#   1. kubectl delete -f eel-stress-chaos-cpu-mem.yaml
+#   2. Check HPA: kubectl -n eel-prod get hpa rts-svc -- replicas should be scaling back.
+#   3. Confirm no OOM kills: kubectl -n eel-prod get events | grep OOMKill
+#   4. Verify write latency returned to SLO within 2 min of recovery.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: eel-stress-chaos-cpu-mem
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: resource-stress
+    eel.io/target: rts-svc
+    eel.io/wave: "5.9"
+spec:
+  mode: all
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: rts-svc
+  stressors:
+    cpu:
+      workers: 4
+      load: 90
+    memory:
+      workers: 2
+      size: "512MB"
+  duration: "10m"

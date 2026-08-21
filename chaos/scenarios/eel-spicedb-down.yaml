@@ -1,0 +1,29 @@
+# Chaos Mesh v2.7+ PodChaos -- SpiceDB unavailable (EC-IDN-10)
+# Apply: kubectl apply -f eel-spicedb-down.yaml
+#
+# What it tests: All write paths fail closed (503); class-C reads (cached) continue;
+#   503 problem+json returned; no plaintext authorisation bypass.
+#
+# Recovery procedure:
+#   1. kubectl delete -f eel-spicedb-down.yaml
+#   2. SpiceDB pods restart; watch: kubectl -n eel-prod get pods -l app=spicedb
+#   3. Verify write path unblocked: POST /api/v1/results -- should return 201 again.
+#   4. Check audit log for any writes that bypassed SpiceDB during outage -- must be 0.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: eel-spicedb-down
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: spicedb-down
+    eel.io/target: spicedb
+    eel.io/wave: "5.9"
+spec:
+  action: pod-kill
+  mode: all
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: spicedb
+  gracePeriod: 0

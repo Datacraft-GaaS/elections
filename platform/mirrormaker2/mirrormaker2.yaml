@@ -1,0 +1,133 @@
+# MirrorMaker 2 -- Kafka cross-site replication primary <-> mirror
+# Strimzi KafkaMirrorMaker2 CRD (Strimzi >= 0.42)
+# RPO target: < 10 s (async, ADR-0022 / ADR-0015)
+#
+# Topics replicated: all eel.* topics bidirectionally.
+#   primary -> mirror: active replication of production events
+#   mirror -> primary: used during DR failover; enables failback
+#
+# Offset sync interval 60 s ensures consumer group positions replicate promptly.
+# Replication factor 3 on both sites prevents ISR collapse under single-broker loss.
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaMirrorMaker2
+metadata:
+  name: eel-mirrormaker2
+  namespace: eel-prod
+  labels:
+    eel.io/component: mirrormaker2
+    eel.io/wave: "5.9"
+spec:
+  version: 3.8.0
+  replicas: 3
+  connectCluster: mirror
+  clusters:
+    - alias: primary
+      bootstrapServers: kafka-primary.eel-prod.svc.cluster.local:9092
+      tls:
+        trustedCertificates:
+          - secretName: kafka-primary-cluster-ca-cert
+            certificate: ca.crt
+      authentication:
+        type: tls
+        certificateAndKey:
+          secretName: mirrormaker2-primary-tls
+          certificate: user.crt
+          key: user.key
+      config:
+        ssl.endpoint.identification.algorithm: HTTPS
+
+    - alias: mirror
+      bootstrapServers: kafka-mirror.eel-prod.svc.cluster.local:9092
+      tls:
+        trustedCertificates:
+          - secretName: kafka-mirror-cluster-ca-cert
+            certificate: ca.crt
+      authentication:
+        type: tls
+        certificateAndKey:
+          secretName: mirrormaker2-mirror-tls
+          certificate: user.crt
+          key: user.key
+      config:
+        ssl.endpoint.identification.algorithm: HTTPS
+
+  mirrors:
+    # Primary -> Mirror (active replication)
+    - sourceCluster: primary
+      targetCluster: mirror
+      sourceConnector:
+        tasksMax: 4
+        config:
+          replication.factor: 3
+          offset-syncs.topic.replication.factor: 3
+          sync.topic.acls.enabled: "false"
+          replication.policy.separator: "."
+          replication.policy.class: org.apache.kafka.connect.mirror.IdentityReplicationPolicy
+      heartbeatConnector:
+        config:
+          heartbeats.topic.replication.factor: 3
+      checkpointConnector:
+        config:
+          checkpoints.topic.replication.factor: 3
+          sync.group.offsets.enabled: "true"
+          sync.group.offsets.interval.seconds: "60"
+          emit.checkpoints.interval.seconds: "60"
+      topicsPattern: "eel\\..*"
+      topicsExcludePattern: "eel\\..*\\.internal"
+      groupsPattern: ".*"
+
+    # Mirror -> Primary (reverse, for failback)
+    - sourceCluster: mirror
+      targetCluster: primary
+      sourceConnector:
+        tasksMax: 2
+        config:
+          replication.factor: 3
+          offset-syncs.topic.replication.factor: 3
+          sync.topic.acls.enabled: "false"
+          replication.policy.class: org.apache.kafka.connect.mirror.IdentityReplicationPolicy
+      heartbeatConnector:
+        config:
+          heartbeats.topic.replication.factor: 3
+      checkpointConnector:
+        config:
+          checkpoints.topic.replication.factor: 3
+          sync.group.offsets.enabled: "true"
+          sync.group.offsets.interval.seconds: "60"
+          emit.checkpoints.interval.seconds: "60"
+      topicsPattern: "eel\\..*"
+      topicsExcludePattern: "eel\\..*\\.internal"
+      groupsPattern: ".*"
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2
+      memory: 4Gi
+
+  logging:
+    type: inline
+    loggers:
+      log4j.logger.org.apache.kafka.connect.mirror: INFO
+
+  readinessProbe:
+    initialDelaySeconds: 30
+    timeoutSeconds: 5
+  livenessProbe:
+    initialDelaySeconds: 30
+    timeoutSeconds: 5
+
+  template:
+    pod:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    strimzi.io/cluster: eel-mirrormaker2
+                topologyKey: kubernetes.io/hostname

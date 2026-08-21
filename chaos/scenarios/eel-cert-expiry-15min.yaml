@@ -1,0 +1,35 @@
+# Chaos Mesh v2.7+ -- cert-expiry-in-15min simulation via TimeChaos fast-forward
+# Apply: kubectl apply -f eel-cert-expiry-15min.yaml
+#
+# What it tests: SPIRE rotates SVIDs before expiry (EC-IDN-03); TLS handshakes succeed
+#   throughout rotation; old SVID valid until expiry; no traffic drop.
+#   cert-manager renews before 1/3 remaining lifetime.
+#
+# Approach: advance clock by (cert_lifetime - 15min) on SPIRE agent pods so they
+#   see near-expiry and trigger rotation. Combine with a short SVID TTL in pre-prod
+#   (SPIRE_SVID_TTL=20m) so clock advance of 15 min is sufficient.
+#
+# Recovery procedure:
+#   1. kubectl delete -f eel-cert-expiry-15min.yaml  (clock normalises)
+#   2. spire-agent api fetch x509 -- new SVIDs issued with full TTL.
+#   3. Verify zero 401 errors during rotation window in Loki.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: TimeChaos
+metadata:
+  name: eel-cert-expiry-15min
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: cert-expiry
+    eel.io/target: spire-agent
+    eel.io/wave: "5.9"
+spec:
+  mode: all
+  selector:
+    namespaces:
+      - spire
+    labelSelectors:
+      app: spire-agent
+  timeOffset: "+5m"
+  clockIds:
+    - CLOCK_REALTIME
+  duration: "5m"

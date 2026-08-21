@@ -1,0 +1,83 @@
+# Velero Helm values for eel cluster-state backup
+# Chart: vmware-tanzu/velero >= 6.0
+# Backs up to MinIO on the OPPOSITE site (primary cluster -> mirror bucket; mirror cluster -> primary bucket)
+
+configuration:
+  backupStorageLocation:
+    - name: mirror-site
+      provider: aws
+      bucket: velero-mirror
+      default: true
+      config:
+        region: us-east-1
+        s3ForcePathStyle: "true"
+        s3Url: http://minio-mirror.eel-prod.svc.cluster.local:9000
+        checksumAlgorithm: ""
+    - name: primary-site
+      provider: aws
+      bucket: velero-primary
+      config:
+        region: us-east-1
+        s3ForcePathStyle: "true"
+        s3Url: http://minio-primary.eel-prod.svc.cluster.local:9000
+        checksumAlgorithm: ""
+
+  volumeSnapshotLocation:
+    - name: csi-snapshots
+      provider: csi
+      config: {}
+
+  features: EnableCSI
+
+credentials:
+  existingSecret: velero-s3-credentials
+
+initContainers:
+  - name: velero-plugin-for-aws
+    image: velero/velero-plugin-for-aws:v1.10.0
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+      - mountPath: /target
+        name: plugins
+  - name: velero-plugin-for-csi
+    image: velero/velero-plugin-for-csi:v0.7.1
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+      - mountPath: /target
+        name: plugins
+
+schedules:
+  daily-cluster-state:
+    disabled: false
+    schedule: "0 1 * * *"
+    useOwnerReferencesInBackup: false
+    template:
+      ttl: 720h0m0s
+      storageLocation: mirror-site
+      includeClusterResources: true
+      includedNamespaces:
+        - eel-prod
+        - spire
+        - chaos-testing
+        - cert-manager
+        - monitoring
+      snapshotVolumes: true
+      volumeSnapshotLocations:
+        - csi-snapshots
+      labelSelector:
+        matchExpressions:
+          - key: eel.io/backup
+            operator: NotIn
+            values: ["skip"]
+
+  weekly-full:
+    disabled: false
+    schedule: "0 0 * * 0"
+    template:
+      ttl: 2160h0m0s
+      storageLocation: mirror-site
+      includeClusterResources: true
+      includedNamespaces: ["*"]
+      snapshotVolumes: true
+      volumeSnapshotLocations:
+        - csi-snapshots

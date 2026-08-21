@@ -1,0 +1,58 @@
+# Kopia repository configuration for eel application data-at-rest backup
+# Per-tier encryption keys per ADR-0016.
+# Deployed as a Kubernetes CronJob backed by KopiaServer or kopia CLI.
+#
+# Tier keys stored in OpenBao (Vault-compatible) transit engine.
+# Key paths:
+#   T1 data: transit/eel/kopia-t1-key
+#   T2 data: transit/eel/kopia-t2-key
+#   T3 data: transit/eel/kopia-t3-key (unclassified)
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eel-kopia-config
+  namespace: eel-prod
+  labels:
+    eel.io/component: kopia
+data:
+  kopia-t1.json: |
+    {
+      "storage": {
+        "type": "s3",
+        "config": {
+          "bucket": "kopia-t1-primary",
+          "endpoint": "minio-primary.eel-prod.svc.cluster.local:9000",
+          "region": "us-east-1",
+          "doNotUseTLS": false,
+          "doNotVerifyTLS": false
+        }
+      },
+      "caching": {
+        "cacheDirectory": "/kopia-cache/t1",
+        "maxCacheSize": 5368709120,
+        "maxMetadataCacheSize": 536870912
+      },
+      "hostname": "eel-kopia-t1",
+      "username": "kopia-t1"
+    }
+  kopia-t2.json: |
+    {
+      "storage": {
+        "type": "s3",
+        "config": {
+          "bucket": "kopia-t2-primary",
+          "endpoint": "minio-primary.eel-prod.svc.cluster.local:9000",
+          "region": "us-east-1",
+          "doNotUseTLS": false,
+          "doNotVerifyTLS": false
+        }
+      },
+      "caching": {
+        "cacheDirectory": "/kopia-cache/t2",
+        "maxCacheSize": 2147483648,
+        "maxMetadataCacheSize": 268435456
+      },
+      "hostname": "eel-kopia-t2",
+      "username": "kopia-t2"
+    }

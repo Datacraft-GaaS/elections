@@ -1,0 +1,78 @@
+# Chaos Mesh v2.7+ Workflow -- infrastructure stress composite experiment
+# Bundles: disk-full on PG, Kafka ISR shrink, DNS chaos, HSM kill -- all concurrent
+# Apply: kubectl apply -f eel-infra-stress-composite.yaml
+#
+# Purpose: Multi-fault infra scenario to validate that independent fault domains
+#   do not cascade. Each fault must be recoverable independently.
+#
+# Recovery: kubectl delete -f eel-infra-stress-composite.yaml
+#   Then run: tools/dr-failover/target/release/eel-dr-failover report --drill infra-stress
+apiVersion: chaos-mesh.org/v1alpha1
+kind: Workflow
+metadata:
+  name: eel-infra-stress-composite
+  namespace: chaos-testing
+  labels:
+    eel.io/experiment: infra-stress-composite
+    eel.io/wave: "5.9"
+spec:
+  entry: entry
+  templates:
+    - name: entry
+      templateType: Parallel
+      deadline: 15m
+      children:
+        - pg-disk-pressure
+        - kafka-broker-kill
+        - dns-random
+        - hsm-kill
+
+    - name: pg-disk-pressure
+      templateType: IOChaos
+      deadline: 10m
+      ioChaos:
+        action: fault
+        mode: one
+        selector:
+          namespaces: [eel-prod]
+          labelSelectors:
+            app: postgres-t1
+            role: primary
+        volumePath: /var/lib/postgresql/data
+        path: "/var/lib/postgresql/data/**"
+        errno: 28
+        percent: 100
+
+    - name: kafka-broker-kill
+      templateType: PodChaos
+      deadline: 5m
+      podChaos:
+        action: pod-kill
+        mode: fixed-percent
+        value: "33"
+        selector:
+          namespaces: [eel-prod]
+          labelSelectors:
+            app: kafka
+
+    - name: dns-random
+      templateType: DNSChaos
+      deadline: 5m
+      dnsChaos:
+        action: random
+        mode: all
+        selector:
+          namespaces: [eel-prod]
+        patterns:
+          - "kafka.eel-prod.svc.cluster.local"
+
+    - name: hsm-kill
+      templateType: PodChaos
+      deadline: 5m
+      podChaos:
+        action: pod-kill
+        mode: all
+        selector:
+          namespaces: [eel-prod]
+          labelSelectors:
+            app: hsm-signer

@@ -1,0 +1,33 @@
+# Chaos Mesh v2.7+ NetworkChaos -- sequencer (queue-svc sequencer pod) network stall
+# Apply: kubectl apply -f eel-sequencer-stall.yaml
+#
+# What it tests: queue-svc ring buffer accumulates signed+sequenced events;
+#   on sequencer recovery gap audit confirms no counter skip; no duplicates.
+#
+# Recovery procedure:
+#   1. kubectl delete -f eel-sequencer-stall.yaml
+#   2. Verify sequence monotonicity: SELECT counter, count(*) FROM events
+#      GROUP BY counter HAVING count(*) > 1; => 0 rows.
+#   3. Check gap audit: tools/dr-failover/target/release/eel-dr-failover report --check-gaps
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: eel-sequencer-stall
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: sequencer-stall
+    eel.io/target: queue-svc
+    eel.io/wave: "5.9"
+spec:
+  action: loss
+  mode: all
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: queue-svc
+      role: sequencer
+  loss:
+    loss: "100"
+    correlation: "100"
+  duration: "5m"

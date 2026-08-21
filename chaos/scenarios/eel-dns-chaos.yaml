@@ -1,0 +1,28 @@
+# Chaos Mesh v2.7+ DNSChaos -- DNS disruption
+# Apply: kubectl apply -f eel-dns-chaos.yaml
+#
+# What it tests: Services use hardcoded fallback endpoints; DNSSEC validation fails closed;
+#   no token leaks via captive-portal style DNS (EC-CON-08).
+#
+# Recovery procedure:
+#   1. kubectl delete -f eel-dns-chaos.yaml
+#   2. Verify DNS resolution: kubectl -n eel-prod exec -it deploy/rts-svc -- nslookup postgres-t1
+#   3. Check circuit-breaker metrics: no 5xx cascades after DNS restored.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: DNSChaos
+metadata:
+  name: eel-dns-chaos
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: dns-chaos
+    eel.io/target: all-pods
+    eel.io/wave: "5.9"
+spec:
+  action: random
+  mode: all
+  selector:
+    namespaces:
+      - eel-prod
+  patterns:
+    - "*.eel-prod.svc.cluster.local"
+  duration: "5m"

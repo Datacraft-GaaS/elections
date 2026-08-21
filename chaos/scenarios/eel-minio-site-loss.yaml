@@ -1,0 +1,31 @@
+# Chaos Mesh v2.7+ PodChaos -- MinIO primary-site pods killed (site loss simulation)
+# Apply: kubectl apply -f eel-minio-site-loss.yaml
+#
+# What it tests: MinIO site-to-site replication means mirror-site bucket intact;
+#   pgBackRest switches to mirror-site endpoint; Velero and Kopia read from mirror;
+#   services using object storage degrade gracefully (read-only cache hit or 503).
+#
+# Recovery procedure:
+#   1. kubectl delete -f eel-minio-site-loss.yaml  (MinIO primary restarts)
+#   2. Verify site replication: mc admin replicate status eelprimary
+#   3. Run pgBackRest integrity check from mirror: pgbackrest --stanza=t1-primary --repo=2 check
+#   4. Confirm Velero can list backups: velero backup get
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: eel-minio-site-loss
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: minio-site-loss
+    eel.io/target: minio
+    eel.io/wave: "5.9"
+spec:
+  action: pod-kill
+  mode: all
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: minio
+      site: primary
+  gracePeriod: 0
