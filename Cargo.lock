@@ -2854,6 +2854,118 @@ dependencies = [
 ]
 
 [[package]]
+name = "eel-abis-face-3dmm"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "eel-abis-face-age"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "sha2 0.10.9",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "eel-abis-face-align"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "eel-abis-face-crossdomain"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "eel-abis-face-deident"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "sha2 0.10.9",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "eel-abis-face-detect"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "sha2 0.10.9",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "eel-abis-face-embed"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "sha2 0.10.9",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "eel-abis-face-frvt"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "eel-abis-face-kinship"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "eel-abis-face-occlusion"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "eel-abis-face-quality"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "eel-abis-face-video"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
 name = "eel-abis-fhe-match"
 version = "0.1.0"
 dependencies = [
@@ -3019,6 +3131,128 @@ dependencies = [
  "rstest",
  "serde",
  "thiserror 2.0.20",
+]
+
+[[package]]
+name = "eel-abis-iris-crosssensor"
+version = "0.1.0"
+dependencies = [
+ "eel-abis-iris-encode",
+ "rstest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "eel-abis-iris-dl"
+version = "0.1.0"
+dependencies = [
+ "eel-abis-iris-segment",
+ "hex",
+ "rstest",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "eel-abis-iris-encode"
+version = "0.1.0"
+dependencies = [
+ "eel-abis-iris-segment",
+ "rstest",
+ "serde",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "eel-abis-iris-fusion"
+version = "0.1.0"
+dependencies = [
+ "eel-abis-iris-encode",
+ "rstest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "eel-abis-iris-irex"
+version = "0.1.0"
+dependencies = [
+ "eel-abis-iris-dl",
+ "eel-abis-iris-encode",
+ "eel-abis-iris-fusion",
+ "eel-abis-iris-quality",
+ "rstest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "eel-abis-iris-lens"
+version = "0.1.0"
+dependencies = [
+ "eel-abis-iris-segment",
+ "rstest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "eel-abis-iris-motion"
+version = "0.1.0"
+dependencies = [
+ "eel-abis-iris-segment",
+ "rstest",
+ "serde",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "eel-abis-iris-pose"
+version = "0.1.0"
+dependencies = [
+ "eel-abis-iris-encode",
+ "eel-abis-iris-segment",
+ "rstest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "eel-abis-iris-quality"
+version = "0.1.0"
+dependencies = [
+ "eel-abis-iris-segment",
+ "rstest",
+ "serde",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "eel-abis-iris-segment"
+version = "0.1.0"
+dependencies = [
+ "rstest",
+ "serde",
+ "thiserror 2.0.20",
+ "tracing",
 ]
 
 [[package]]

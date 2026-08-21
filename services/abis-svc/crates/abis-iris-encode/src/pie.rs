@@ -92,7 +92,7 @@ fn shift_normalised(norm: &NormalisedIris, shift: i32) -> NormalisedIris {
 
     for row in 0..h {
         for col in 0..w {
-            let src_col = ((col as i32 + shift).rem_euclid(w as i32)) as usize;
+            let src_col = ((col as i32 - shift).rem_euclid(w as i32)) as usize;
             data[row * w + col] = norm.data[row * w + src_col];
         }
     }
@@ -107,7 +107,7 @@ fn shift_mask(mask: &IrisMask, shift: i32) -> IrisMask {
 
     for row in 0..h {
         for col in 0..w {
-            let src_col = ((col as i32 + shift).rem_euclid(w as i32)) as u32;
+            let src_col = ((col as i32 - shift).rem_euclid(w as i32)) as u32;
             new_mask.set(col, row, mask.get(src_col, row));
         }
     }

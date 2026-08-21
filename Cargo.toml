@@ -33,10 +33,6 @@ exclude = [
   "services/inventory-svc/crates/custody",
   # diaspora: WP-5.8 in-flight, pending workspace deps
   "services/biometric-edge-svc/crates/diaspora",
-  # abis-face-deident, abis-face-frvt, abis-face-kinship: directories exist but Cargo.toml is missing (in-flight)
-  "services/abis-svc/crates/abis-face-deident",
-  "services/abis-svc/crates/abis-face-frvt",
-  "services/abis-svc/crates/abis-face-kinship",
   # abis-fp-consensus and abis-fp-tps-warp: now implemented, excluded entries removed
   # support-admin-svc: nested workspace owns these crates
   "services/support-admin-svc/crates/budget",
