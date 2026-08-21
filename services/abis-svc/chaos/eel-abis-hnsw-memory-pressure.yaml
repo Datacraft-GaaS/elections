@@ -1,0 +1,29 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: eel-abis-hnsw-memory-pressure
+  namespace: abis
+  labels:
+    eel.internal/chaos-target: abis-matcher
+    eel.internal/scenario: hnsw-memory-pressure
+spec:
+  mode: all
+  selector:
+    namespaces:
+      - abis
+    labelSelectors:
+      app.kubernetes.io/name: abis-matcher
+  stressors:
+    memory:
+      workers: 4
+      size: "8GiB"
+  duration: "10m"
+---
+# Expected behaviour:
+#   - OOM pressure forces the OS to page HNSW graph segments to swap.
+#   - HPA detects pod memory usage > 80% of limit (16 GiB) and scales out
+#     to distribute graph load within 2 minutes.
+#   - recall@10 remains >= 0.95 across all matcher pods (verified post-test
+#     via /api/v1/abis/reports?type=recall).
+#   - No matcher pod is OOM-killed (requests to new pods are healthy).
+# Runbook: docs/OPERATIONS.md#shard-rebalance

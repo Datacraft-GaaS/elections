@@ -1,0 +1,37 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: eel-abis-vendor-latency
+  namespace: abis
+  labels:
+    eel.internal/chaos-target: abis-vendor
+    eel.internal/scenario: vendor-latency
+spec:
+  action: delay
+  mode: all
+  selector:
+    namespaces:
+      - abis
+    labelSelectors:
+      app.kubernetes.io/name: abis-vendor
+  delay:
+    latency: "500ms"
+    jitter: "50ms"
+    correlation: "50"
+  direction: to
+  target:
+    selector:
+      namespaces:
+        - abis
+      labelSelectors:
+        app.kubernetes.io/name: abis-api
+    mode: all
+  duration: "10m"
+---
+# Expected behaviour:
+#   - After circuit-breaker trip (default 5 consecutive 500ms+ calls),
+#     abis-api returns HTTP 503 with {"status":"degraded","reason":"vendor-timeout"}.
+#   - Prometheus alert AbisVendorRouterAllUnhealthy fires within 90s if no
+#     vendor recovers.
+#   - No enrolment data is lost; requests queue in Kafka outbox.
+# Runbook: docs/OPERATIONS.md#vendor-sdk-swap

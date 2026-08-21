@@ -1,0 +1,35 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: eel-abis-pg-primary-loss
+  namespace: abis
+  labels:
+    eel.internal/chaos-target: postgres-primary
+    eel.internal/scenario: pg-primary-loss
+spec:
+  action: partition
+  mode: all
+  selector:
+    namespaces:
+      - postgres
+    labelSelectors:
+      app.kubernetes.io/name: postgres
+      role: primary
+  direction: both
+  target:
+    selector:
+      namespaces:
+        - abis
+      labelSelectors:
+        app.kubernetes.io/name: abis-api
+    mode: all
+  duration: "8m"
+---
+# Expected behaviour:
+#   - Patroni detects primary loss within 30s (default TTL) and promotes standby.
+#   - abis-svc orchestrator reconnects to new primary via Patroni REST endpoint
+#     or PgBouncer re-routing.
+#   - Outbox queue accumulates during failover; resumes draining on reconnect.
+#   - SKIP LOCKED semantics ensure no double-processing of in-flight dedup rows.
+#   - RPO <= 5 min (EC-CON-04).
+# Runbook: docs/OPERATIONS.md#backup-restore

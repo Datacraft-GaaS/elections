@@ -1,0 +1,33 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: HTTPChaos
+metadata:
+  name: eel-abis-attest-tdx-nonce-replay
+  namespace: abis
+  labels:
+    eel.internal/chaos-target: abis-attest
+    eel.internal/scenario: nonce-replay
+spec:
+  mode: all
+  selector:
+    namespaces:
+      - abis
+    labelSelectors:
+      app.kubernetes.io/name: abis-api
+  target: Request
+  port: 8080
+  path: "/api/v1/abis/match/*"
+  method: POST
+  # Replay the same X-Eel-Attestation header value captured from a prior request.
+  # The chaos sidecar replays a stale nonce header against every incoming request
+  # for the duration of the test.
+  headers:
+    X-Eel-Attestation: "REPLAY_NONCE_CAPTURED_AT_T_MINUS_300"
+  duration: "5m"
+---
+# Expected behaviour:
+#   - abis-attest rejects nonce already seen in its nonce window (default 60s TTL).
+#   - Stale nonces (> 60s old) are rejected regardless of replay.
+#   - All rejected requests receive HTTP 401 with problem+json body.
+#   - A security event is emitted on the eel.abis.attest.nonce-replay topic.
+#   - AbisAttestationFailureSpike alert fires when > 10 rejections/minute.
+# Runbook: docs/OPERATIONS.md#dr-handoff (attestation section)

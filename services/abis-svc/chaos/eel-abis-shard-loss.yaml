@@ -1,0 +1,28 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: eel-abis-shard-loss
+  namespace: abis
+  labels:
+    eel.internal/chaos-target: abis-matcher-shard
+    eel.internal/scenario: shard-replica-loss
+spec:
+  action: pod-kill
+  mode: fixed-percent
+  value: "33"
+  selector:
+    namespaces:
+      - abis
+    labelSelectors:
+      app.kubernetes.io/name: abis-matcher
+      eel.internal/shard-tier: tier-2
+  gracePeriod: 0
+  duration: "10m"
+---
+# Expected behaviour:
+#   - With 1 of 3 shard replicas removed, matcher routes queries to the remaining 2.
+#   - p95 1:N match latency degrades but stays under 8s (p99 budget).
+#   - HPA detects elevated queue_depth and scales remaining pods within 2 minutes.
+#   - No match request returns an error; slow queries complete from remaining shards.
+#   - Shard rebalance activity panel in Grafana shows redistribution.
+# Runbook: docs/OPERATIONS.md#shard-rebalance

@@ -1,0 +1,28 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: eel-abis-svc
+  namespace: abis
+  labels:
+    app.kubernetes.io/part-of: abis-svc
+    eel.internal/managed-by: platform
+    prometheus: kube-prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: abis-svc
+  namespaceSelector:
+    matchNames:
+      - abis
+  endpoints:
+    - port: metrics
+      scheme: http
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s
+      honorLabels: false
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+          targetLabel: eel_component
+        - sourceLabels: [__meta_kubernetes_namespace]
+          targetLabel: namespace

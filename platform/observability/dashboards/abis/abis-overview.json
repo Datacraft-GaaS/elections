@@ -1,0 +1,192 @@
+{
+  "__inputs": [
+    {
+      "name": "datasource",
+      "label": "Prometheus",
+      "type": "datasource",
+      "pluginId": "prometheus"
+    }
+  ],
+  "__requires": [],
+  "title": "ABIS Overview",
+  "description": "Enrolment rate, match latency (1:N and 1:1), FMR/FNMR trend, adjudication queue, vendor health, HNSW index, shard rebalance.",
+  "uid": "eel-abis-overview",
+  "version": 1,
+  "editable": false,
+  "graphTooltip": 1,
+  "time": { "from": "now-3h", "to": "now" },
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1, "type": "row", "title": "Enrolment",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "collapsed": false
+    },
+    {
+      "id": 2, "type": "timeseries", "title": "Enrolment Rate (req/s)",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(rate(eel_abis_enrolment_ingest_total[1m]))",
+          "legendFormat": "enrolments/s"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+    },
+    {
+      "id": 3, "type": "timeseries", "title": "Dedup Latency p50/p95/p99 (ms)",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 1 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(eel_abis_dedup_duration_ms_bucket[5m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(eel_abis_dedup_duration_ms_bucket[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(eel_abis_dedup_duration_ms_bucket[5m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] }
+    },
+    {
+      "id": 4, "type": "timeseries", "title": "1:N Match p95/p99 (ms)",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 1 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(eel_abis_match1n_duration_ms_bucket[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(eel_abis_match1n_duration_ms_bucket[5m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ms" },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "p95" },
+            "properties": [{ "id": "thresholds", "value": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 5000 }] } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "p99" },
+            "properties": [{ "id": "thresholds", "value": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 8000 }] } }]
+          }
+        ]
+      }
+    },
+    {
+      "id": 5, "type": "row", "title": "1:1 Match",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 }, "collapsed": false
+    },
+    {
+      "id": 6, "type": "timeseries", "title": "1:1 Match p95/p99 (ms)",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 10 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(eel_abis_match11_duration_ms_bucket[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(eel_abis_match11_duration_ms_bucket[5m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] }
+    },
+    {
+      "id": 7, "type": "row", "title": "FMR / FNMR",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 }, "collapsed": false
+    },
+    {
+      "id": 8, "type": "timeseries", "title": "FMR / FNMR Trend (24h window)",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 19 },
+      "targets": [
+        {
+          "expr": "eel_abis_fmr_ratio",
+          "legendFormat": "FMR"
+        },
+        {
+          "expr": "eel_abis_fnmr_ratio",
+          "legendFormat": "FNMR"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] }
+    },
+    {
+      "id": 9, "type": "row", "title": "Adjudication Queue",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 }, "collapsed": false
+    },
+    {
+      "id": 10, "type": "timeseries", "title": "Adjudication Queue Depth by Tier / Priority",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "targets": [
+        {
+          "expr": "sum by (tier, priority) (eel_abis_adjudication_queue_depth)",
+          "legendFormat": "{{tier}}/{{priority}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+    },
+    {
+      "id": 11, "type": "row", "title": "Vendor Health",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 }, "collapsed": false
+    },
+    {
+      "id": 12, "type": "stat", "title": "Vendor Health Matrix",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 37 },
+      "targets": [
+        {
+          "expr": "eel_abis_vendor_healthy",
+          "legendFormat": "{{vendor}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ]
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 13, "type": "row", "title": "HNSW Index",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 43 }, "collapsed": false
+    },
+    {
+      "id": 14, "type": "timeseries", "title": "HNSW Index Size (vectors)",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 44 },
+      "targets": [
+        {
+          "expr": "sum by (shard_tier) (eel_abis_hnsw_index_size_vectors)",
+          "legendFormat": "{{shard_tier}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+    },
+    {
+      "id": 15, "type": "timeseries", "title": "Shard Rebalance Activity",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 44 },
+      "targets": [
+        {
+          "expr": "increase(eel_abis_shard_rebalance_total[10m])",
+          "legendFormat": "rebalance ops"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+    }
+  ]
+}

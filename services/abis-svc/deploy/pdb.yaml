@@ -1,0 +1,29 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: eel-abis-api-pdb
+  namespace: abis
+  labels:
+    app.kubernetes.io/name: abis-api
+    app.kubernetes.io/part-of: abis-svc
+    eel.internal/managed-by: platform
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: abis-api
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: eel-abis-matcher-pdb
+  namespace: abis
+  labels:
+    app.kubernetes.io/name: abis-matcher
+    app.kubernetes.io/part-of: abis-svc
+    eel.internal/managed-by: platform
+spec:
+  minAvailable: 4
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: abis-matcher

@@ -1,0 +1,136 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: eel-abis-slo
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: abis-svc
+    eel.internal/managed-by: platform
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: eel.abis.match-latency
+      rules:
+        - alert: AbisMatch1NLatencyBudgetBurn
+          expr: >
+            histogram_quantile(0.99,
+              sum(rate(eel_abis_match1n_duration_ms_bucket[5m])) by (le)
+            ) > 8000
+          for: 5m
+          labels:
+            severity: critical
+            eel.internal/concern: abis-slo
+          annotations:
+            summary: "ABIS 1:N match p99 > 8s for 5 min"
+            description: >
+              The 1:N biometric match p99 latency has exceeded 8000ms for 5 consecutive
+              minutes, breaching the ADR-0018 SLA. Investigate matcher pod scaling and
+              HNSW index health.
+            runbook_url: "https://gitea.internal/eel/eel/src/branch/main/services/abis-svc/docs/OPERATIONS.md#enrolment-queue-overflow"
+
+    - name: eel.abis.enrolment-backlog
+      rules:
+        - alert: AbisEnrolmentBacklog
+          expr: >
+            sum(eel_abis_enrolment_queue_depth) > 10000
+          for: 10m
+          labels:
+            severity: warning
+            eel.internal/concern: abis-slo
+          annotations:
+            summary: "ABIS enrolment queue > 10k for 10 min"
+            description: >
+              The abis-svc enrolment queue has exceeded 10,000 pending jobs for 10
+              minutes. This may indicate matcher worker capacity is insufficient or
+              Kafka consumer lag is growing.
+            runbook_url: "https://gitea.internal/eel/eel/src/branch/main/services/abis-svc/docs/OPERATIONS.md#enrolment-queue-overflow"
+
+    - name: eel.abis.adjudication-sla
+      rules:
+        - alert: AbisAdjudicationSlaBreach
+          expr: >
+            count(
+              eel_abis_adjudication_case_age_seconds{tier="Tier1"}
+              > 14400
+            ) >= 5
+          for: 5m
+          labels:
+            severity: critical
+            eel.internal/concern: abis-slo
+          annotations:
+            summary: "5+ Tier1 adjudication cases approaching 4h SLA deadline"
+            description: >
+              Five or more Tier1 adjudication cases have been open for more than 4 hours,
+              breaching the SLA target. Assign cases immediately via the Django console
+              or PATCH /api/v1/abis/adjudication/{id}.
+            runbook_url: "https://gitea.internal/eel/eel/src/branch/main/services/abis-svc/docs/OPERATIONS.md#adjudication-sla-breach"
+
+    - name: eel.abis.vendor-health
+      rules:
+        - alert: AbisVendorRouterAllUnhealthy
+          expr: >
+            sum(eel_abis_vendor_healthy) == 0
+          for: 60s
+          labels:
+            severity: critical
+            eel.internal/concern: abis-slo
+          annotations:
+            summary: "All abis-vendor endpoints unhealthy for 60s"
+            description: >
+              The abis-matcher vendor-router has no healthy vendor endpoints. Biometric
+              template extraction is unavailable; all enrolment and dedup jobs will fail
+              or queue. Escalate to on-call immediately.
+            runbook_url: "https://gitea.internal/eel/eel/src/branch/main/services/abis-svc/docs/OPERATIONS.md#vendor-sdk-swap"
+
+    - name: eel.abis.fmr
+      rules:
+        - alert: AbisFmrBreach
+          expr: >
+            eel_abis_fmr_ratio > 0.00001
+          for: 1m
+          labels:
+            severity: critical
+            eel.internal/concern: abis-accuracy
+          annotations:
+            summary: "ABIS FMR exceeds 0.001% threshold"
+            description: >
+              The false match rate (FMR) has exceeded 0.001% over the 24-hour measurement
+              window, breaching the ADR-0018 accuracy SLA. Review match score distribution
+              and lower/upper threshold configuration.
+            runbook_url: "https://gitea.internal/eel/eel/src/branch/main/services/abis-svc/docs/OPERATIONS.md#dr-handoff"
+
+    - name: eel.abis.fairness
+      rules:
+        - alert: AbisFairnessBreach
+          expr: >
+            max(eel_abis_fairness_fmr_deviation) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+            eel.internal/concern: abis-fairness
+          annotations:
+            summary: "ABIS fairness slice deviation > 5%"
+            description: >
+              At least one demographic slice (sex/age/county) has a FMR deviation
+              exceeding 5% from the population baseline. Review Grafana abis-fairness
+              dashboard and investigate data quality for the breaching slice.
+            runbook_url: "https://gitea.internal/eel/eel/src/branch/main/services/abis-svc/docs/OPERATIONS.md#adjudication-sla-breach"
+
+    - name: eel.abis.attestation
+      rules:
+        - alert: AbisAttestationFailureSpike
+          expr: >
+            sum(rate(eel_abis_attest_failure_total[1m])) * 60 > 10
+          for: 1m
+          labels:
+            severity: critical
+            eel.internal/concern: abis-security
+          annotations:
+            summary: "ABIS attestation rejections > 10/min"
+            description: >
+              More than 10 attestation rejections per minute have been observed.
+              This may indicate a nonce replay attack, stale TDX/SEV reports from
+              a misconfigured kit fleet, or a bug in the attestation token pipeline.
+              Check eel_abis_attest_nonce_replay_total for replay pattern.
+            runbook_url: "https://gitea.internal/eel/eel/src/branch/main/services/abis-svc/docs/OPERATIONS.md#dr-handoff"

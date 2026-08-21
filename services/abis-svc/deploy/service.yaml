@@ -7,10 +7,36 @@ image: harbor.eel.internal/eel/abis-svc
 artifacts:
   - name: abis-api
     image: harbor.eel.internal/eel/abis-api
-    port: 8080
+    ports:
+      - name: rest
+        containerPort: 8080
+        protocol: TCP
+      - name: grpc
+        containerPort: 8443
+        protocol: TCP
+      - name: health
+        containerPort: 8081
+        protocol: TCP
+      - name: metrics
+        containerPort: 9090
+        protocol: TCP
     binary: abis-api
+    resources:
+      requests:
+        cpu: "2"
+        memory: "4Gi"
+      limits:
+        cpu: "2"
+        memory: "4Gi"
   - name: abis-matcher
     image: harbor.eel.internal/eel/abis-matcher
+    ports:
+      - name: health
+        containerPort: 8081
+        protocol: TCP
+      - name: metrics
+        containerPort: 9090
+        protocol: TCP
     binary: abis-matcher
     node_selector:
       "eel.io/enclave": "sev-snp"
@@ -23,9 +49,44 @@ artifacts:
         operator: "Equal"
         value: "tdx"
         effect: "NoSchedule"
+    resources:
+      requests:
+        cpu: "8"
+        memory: "16Gi"
+      limits:
+        cpu: "8"
+        memory: "16Gi"
+  - name: abis-adjudicator
+    image: harbor.eel.internal/eel/abis-adjudicator
+    ports:
+      - name: health
+        containerPort: 8081
+        protocol: TCP
+      - name: metrics
+        containerPort: 9090
+        protocol: TCP
+    binary: abis-adjudicator
+    resources:
+      requests:
+        cpu: "1"
+        memory: "2Gi"
+      limits:
+        cpu: "1"
+        memory: "2Gi"
   - name: abis-vendor
     image: harbor.eel.internal/eel/abis-vendor-py
+    ports:
+      - name: vendor
+        containerPort: 8090
+        protocol: TCP
     command: ["python", "-m", "abis_vendor.worker"]
+    resources:
+      requests:
+        cpu: "1"
+        memory: "2Gi"
+      limits:
+        cpu: "2"
+        memory: "4Gi"
 
 sites: []
 

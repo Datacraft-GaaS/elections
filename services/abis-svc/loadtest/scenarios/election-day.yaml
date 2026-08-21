@@ -1,0 +1,70 @@
+# Election-day combined workload profile for abis-svc.
+# Models the peak-day traffic mix: heavy 1:1 BVI verification,
+# light enrolment top-up, and steady adjudication case creation.
+# EC-SCL-07; target: 250k check-ins, 60k RTS, 18k BVI.
+
+name: eel-abis-election-day
+description: >
+  Combined election-day rehearsal workload for abis-svc.
+  Simulates a 12-hour polling window (06:00-18:00 local) at 1x scale.
+
+duration: 12h
+
+phases:
+  - name: pre-open
+    duration: 30m
+    description: Staff authentication, system warm-up.
+    workloads:
+      match_11:    { rps: 5 }
+      enrolment:   { rph: 200 }
+
+  - name: opening-rush
+    duration: 2h
+    description: Peak BVI demand as polls open.
+    workloads:
+      match_11:    { rps: 150 }
+      match_1n:    { concurrent: 20 }
+      enrolment:   { rph: 2000 }
+      adjudication_create: { rph: 50 }
+
+  - name: midday-steady
+    duration: 6h
+    description: Sustained steady-state verification.
+    workloads:
+      match_11:    { rps: 80 }
+      match_1n:    { concurrent: 15 }
+      enrolment:   { rph: 1000 }
+      adjudication_create: { rph: 30 }
+
+  - name: late-rush
+    duration: 2h
+    description: Second peak before polls close.
+    workloads:
+      match_11:    { rps: 120 }
+      match_1n:    { concurrent: 25 }
+      enrolment:   { rph: 1500 }
+      adjudication_create: { rph: 60 }
+
+  - name: close
+    duration: 30m
+    description: Last-minute BVI; queue drains.
+    workloads:
+      match_11:    { rps: 40 }
+      match_1n:    { concurrent: 10 }
+      enrolment:   { rph: 200 }
+
+sla_assertions:
+  match_11_p99_ms:      200
+  match_11_p95_ms:      100
+  match_1n_p99_ms:     8000
+  match_1n_p95_ms:     5000
+  enrolment_ingest_p95_ms: 1000
+  error_rate_pct:         1.0
+
+k6_scripts:
+  - k6/match-11.js
+  - k6/match-1n.js
+  - k6/kit-enrolment.js
+  - k6/enrolment-throughput.js
+
+gatling_simulation: abis.AbisScenarios

@@ -1,0 +1,110 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: eel-abis-svc
+  namespace: abis
+  labels:
+    app.kubernetes.io/part-of: abis-svc
+    eel.internal/managed-by: platform
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: abis-svc
+
+  ingress:
+    # Kong gateway -> abis-api REST + gRPC
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: kong-gateway
+            io.kubernetes.pod.namespace: kong
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+            - port: "8443"
+              protocol: TCP
+
+    # SPIRE server -> all abis pods (SVID issuance)
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: spire-server
+            io.kubernetes.pod.namespace: spire
+      toPorts:
+        - ports:
+            - port: "8081"
+              protocol: TCP
+
+    # Prometheus -> metrics scrape
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: prometheus
+            io.kubernetes.pod.namespace: monitoring
+      toPorts:
+        - ports:
+            - port: "9090"
+              protocol: TCP
+
+  egress:
+    # PostgreSQL (primary and standby)
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: postgres
+            io.kubernetes.pod.namespace: postgres
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+
+    # Kafka brokers
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: kafka
+            io.kubernetes.pod.namespace: kafka
+      toPorts:
+        - ports:
+            - port: "9092"
+              protocol: TCP
+            - port: "9093"
+              protocol: TCP
+
+    # MinIO (template blob store, gallery snapshots)
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: minio
+            io.kubernetes.pod.namespace: minio
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+
+    # abis-vendor Python service
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: abis-vendor
+            io.kubernetes.pod.namespace: abis
+      toPorts:
+        - ports:
+            - port: "8090"
+              protocol: TCP
+
+    # HSM signer (mTLS)
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: hsm-signer
+            io.kubernetes.pod.namespace: hsm
+      toPorts:
+        - ports:
+            - port: "8444"
+              protocol: TCP
+
+    # DNS resolution (CoreDNS)
+    - toEndpoints:
+        - matchLabels:
+            k8s-app: kube-dns
+            io.kubernetes.pod.namespace: kube-system
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP

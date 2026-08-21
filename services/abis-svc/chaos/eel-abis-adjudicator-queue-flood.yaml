@@ -1,0 +1,32 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: HTTPChaos
+metadata:
+  name: eel-abis-adjudicator-queue-flood
+  namespace: abis
+  labels:
+    eel.internal/chaos-target: abis-adjudicator
+    eel.internal/scenario: queue-flood
+spec:
+  mode: all
+  selector:
+    namespaces:
+      - abis
+    labelSelectors:
+      app.kubernetes.io/name: abis-api
+  target: Request
+  port: 8080
+  path: "/api/v1/abis/adjudication"
+  method: POST
+  abort: false
+  # Inject 100k case-create requests over 60s via load-injection sidecar.
+  # The chaos manifest triggers the sidecar; actual flood is k6-driven.
+  # See loadtest/k6/enrolment-throughput.js for the flood script equivalent.
+  duration: "2m"
+---
+# Expected behaviour:
+#   - Priority queue serves ElectionDayHold tier first (highest priority).
+#   - Tier1/Standard cases queue behind; SLA timer starts on case creation.
+#   - AbisEnrolmentBacklog alert fires within 10 minutes if queue > 10k.
+#   - AbisAdjudicationSlaBreach fires for any Tier1 case approaching 4h deadline.
+#   - No case is silently dropped; all case IDs are persisted before queue insertion.
+# Runbook: docs/OPERATIONS.md#adjudication-sla-breach

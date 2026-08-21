@@ -1,0 +1,137 @@
+{
+  "__inputs": [
+    {
+      "name": "datasource",
+      "label": "Prometheus",
+      "type": "datasource",
+      "pluginId": "prometheus"
+    }
+  ],
+  "__requires": [],
+  "title": "ABIS Fairness",
+  "description": "FairnessSlice deviation by sex, age band, and county with breach highlighting.",
+  "uid": "eel-abis-fairness",
+  "version": 1,
+  "editable": false,
+  "graphTooltip": 1,
+  "time": { "from": "now-24h", "to": "now" },
+  "refresh": "5m",
+  "panels": [
+    {
+      "id": 1, "type": "row", "title": "Fairness Slices",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "collapsed": false
+    },
+    {
+      "id": 2, "type": "timeseries", "title": "FMR Deviation by Sex",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "eel_abis_fairness_fmr_deviation by (sex)",
+          "legendFormat": "{{sex}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.03 },
+              { "color": "red", "value": 0.05 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3, "type": "timeseries", "title": "FMR Deviation by Age Band",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 1 },
+      "targets": [
+        {
+          "expr": "eel_abis_fairness_fmr_deviation by (age_band)",
+          "legendFormat": "{{age_band}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.03 },
+              { "color": "red", "value": 0.05 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 4, "type": "timeseries", "title": "FMR Deviation by County",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 1 },
+      "targets": [
+        {
+          "expr": "eel_abis_fairness_fmr_deviation by (county)",
+          "legendFormat": "{{county}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.03 },
+              { "color": "red", "value": 0.05 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 5, "type": "row", "title": "Breach Alerts",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 }, "collapsed": false
+    },
+    {
+      "id": 6, "type": "stat", "title": "Fairness Breach Count (24h)",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 10 },
+      "targets": [
+        {
+          "expr": "sum(increase(eel_abis_fairness_breach_total[24h]))",
+          "legendFormat": "breaches"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 7, "type": "table", "title": "Active Breach Slices",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 18, "x": 6, "y": 10 },
+      "targets": [
+        {
+          "expr": "eel_abis_fairness_fmr_deviation > 0.05",
+          "legendFormat": "{{sex}}/{{age_band}}/{{county}}",
+          "instant": true
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] }
+    }
+  ]
+}

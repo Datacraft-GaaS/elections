@@ -1,0 +1,27 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: eel-abis-vendor-failure
+  namespace: abis
+  labels:
+    eel.internal/chaos-target: abis-vendor
+    eel.internal/scenario: vendor-pod-kill
+spec:
+  action: pod-kill
+  mode: one
+  selector:
+    namespaces:
+      - abis
+    labelSelectors:
+      app.kubernetes.io/name: abis-vendor
+  gracePeriod: 0
+  duration: "5m"
+---
+# Expected behaviour:
+#   - abis-matcher vendor-router detects unhealthy primary within 3 health-check cycles.
+#   - Router promotes secondary vendor endpoint (if configured) or parks requests
+#     in the vendor-retry queue.
+#   - No dedup result is silently dropped; all in-flight requests either complete
+#     via secondary or are retried after pod recovery.
+#   - Alert AbisVendorRouterAllUnhealthy fires if no vendor healthy for 60s.
+# Runbook: docs/OPERATIONS.md#vendor-sdk-swap

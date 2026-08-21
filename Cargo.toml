@@ -158,6 +158,25 @@ kit-attest      = { path = "services/biometric-edge-svc/crates/kit-attest" }
 # Intra-workspace packages (added by WP-4.3 to fix missing workspace deps)
 eel-resilience-rs = { path = "packages/eel-resilience-rs" }
 
+# CLI tooling
+clap            = { version = "4",    features = ["derive"] }
+indicatif       = { version = "0.17" }
+
+# Deps added for eel-abis-reports (WP-reports)
+tera              = { version = "1" }
+csv               = { version = "1" }
+printpdf          = { version = "0.7" }
+rust_xlsxwriter   = { version = "0.85" }
+parquet           = { version = "54", features = ["arrow"] }
+arrow-array       = { version = "54" }
+arrow-schema      = { version = "54" }
+plotters          = { version = "0.3" }
+croner            = { version = "2" }
+prometheus        = { version = "0.13", features = ["process"] }
+tokio-util        = { version = "0.7", features = ["full"] }
+tempfile          = { version = "3" }
+httpmock          = { version = "0.7" }
+
 # ---------------------------------------------------------------------------
 # Build profiles
 # ---------------------------------------------------------------------------
