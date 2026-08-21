@@ -1,0 +1,31 @@
+[package]
+name = "ballot-serial"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Event-sourced ballot serial chain with reconciliation holds (WP-3.3, M63)"
+
+[lib]
+name = "ballot_serial"
+path = "src/lib.rs"
+
+[dependencies]
+eel-eventstore-rs  = { path = "../../../../packages/eel-eventstore-rs" }
+eel-events-rs      = { path = "../../../../packages/eel-events-rs" }
+eel-hlc-rs         = { path = "../../../../packages/eel-hlc-rs" }
+eel-outbox-rs      = { path = "../../../../packages/eel-outbox-rs" }
+
+axum              = { workspace = true }
+serde             = { workspace = true }
+serde_json        = { workspace = true }
+uuid              = { workspace = true }
+chrono            = { workspace = true }
+thiserror         = { workspace = true }
+tracing           = { workspace = true }
+tokio             = { workspace = true }
+
+[dev-dependencies]
+proptest          = "1"
+tokio             = { workspace = true }

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>eel RO Desktop</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3a;
+      --text: #e2e8f0; --muted: #64748b; --accent: #3b82f6;
+      --ok: #22c55e; --warn: #f59e0b; --err: #ef4444;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+    header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
+    header h1 { font-size: 1rem; font-weight: 600; letter-spacing: 0.02em; }
+    .badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 9999px; background: var(--accent); color: #fff; }
+    .recording-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--err); animation: pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    nav { background: var(--surface); border-right: 1px solid var(--border); width: 200px; min-height: calc(100vh - 49px); padding: 16px 0; flex-shrink: 0; }
+    nav button { display: block; width: 100%; text-align: left; padding: 10px 20px; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.875rem; border-left: 3px solid transparent; transition: all .15s; }
+    nav button:hover, nav button.active { color: var(--text); border-left-color: var(--accent); background: rgba(59,130,246,.08); }
+    .layout { display: flex; flex: 1; }
+    main { flex: 1; padding: 24px; overflow-y: auto; }
+    .screen { display: none; }
+    .screen.visible { display: block; }
+    h2 { font-size: 1.125rem; font-weight: 600; margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    th { text-align: left; padding: 8px 12px; background: var(--surface); color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--border); }
+    td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:hover td { background: rgba(255,255,255,.02); }
+    .chip { display: inline-block; font-size: 0.7rem; padding: 2px 7px; border-radius: 9999px; }
+    .chip-pending { background: rgba(245,158,11,.15); color: var(--warn); }
+    .chip-ok { background: rgba(34,197,94,.15); color: var(--ok); }
+    .chip-err { background: rgba(239,68,68,.15); color: var(--err); }
+    button.btn { padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.8rem; font-weight: 500; }
+    button.btn-primary { background: var(--accent); color: #fff; }
+    button.btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+    label { font-size: 0.78rem; color: var(--muted); }
+    input, textarea, select { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 7px 10px; font-size: 0.875rem; width: 100%; }
+    .confidence { height: 4px; border-radius: 2px; background: var(--border); margin-top: 4px; }
+    .confidence-fill { height: 100%; border-radius: 2px; }
+    .offline-banner { background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.3); border-radius: 6px; padding: 8px 14px; font-size: 0.8rem; color: var(--warn); margin-bottom: 16px; display: none; }
+    #pending-count { font-size: 0.7rem; background: var(--warn); color: #000; border-radius: 9999px; padding: 1px 6px; margin-left: 4px; display: none; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>eel RO Desktop</h1>
+  <span class="badge">M09</span>
+  <div style="flex:1"></div>
+  <span id="session-indicator" style="display:none;align-items:center;gap:6px;font-size:0.78rem;color:var(--err)">
+    <span class="recording-dot"></span> Recording
+  </span>
+  <span id="offline-indicator" style="font-size:0.78rem;color:var(--warn);display:none">Offline</span>
+</header>
+<div class="layout">
+  <nav>
+    <button class="active" onclick="show('queue')">Queue <span id="pending-count"></span></button>
+    <button onclick="show('review')">34A Review</button>
+    <button onclick="show('form34b')">34B Compile</button>
+    <button onclick="show('form34c')">34C Compile</button>
+    <button onclick="show('disputes')">Disputes</button>
+    <button onclick="show('recording')">Session Recording</button>
+  </nav>
+  <main>
+
+    <!-- Queue view -->
+    <div id="screen-queue" class="screen visible">
+      <h2>Pending 34As</h2>
+      <div class="offline-banner" id="offline-banner">Offline mode: actions queued locally and will sync on reconnect.</div>
+      <table>
+        <thead><tr>
+          <th>Form ID</th><th>Station</th><th>Constituency</th><th>Position</th>
+          <th>ICR Confidence</th><th>Status</th><th></th>
+        </tr></thead>
+        <tbody id="queue-tbody"><tr><td colspan="7" style="color:var(--muted);text-align:center;padding:32px">Loading...</td></tr></tbody>
+      </table>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="loadQueue()">Refresh</button>
+      </div>
+    </div>
+
+    <!-- 34A Review -->
+    <div id="screen-review" class="screen">
+      <h2>Form 34A Review</h2>
+      <div class="form-grid">
+        <div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;height:400px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.85rem">
+            Form scan image
+          </div>
+        </div>
+        <div>
+          <div id="extracted-fields">
+            <div class="field"><label>Station Code</label><input id="f-station" type="text" /></div>
+            <div class="field"><label>Votes Cast</label><input id="f-votes-cast" type="number" /></div>
+            <div class="field"><label>Valid Votes</label><input id="f-valid" type="number" /></div>
+            <div class="field"><label>Rejected</label><input id="f-rejected" type="number" /></div>
+            <div class="field"><label>ICR Confidence</label>
+              <div class="confidence"><div class="confidence-fill" id="conf-bar" style="width:0%;background:var(--ok)"></div></div>
+            </div>
+            <div class="field"><label>Edit Reason (if amended)</label><textarea id="f-reason" rows="3"></textarea></div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button class="btn btn-primary" onclick="verifyForm()">Countersign & Verify</button>
+              <button class="btn btn-secondary" onclick="amendForm()">Amend</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 34B Compile -->
+    <div id="screen-form34b" class="screen">
+      <h2>Form 34B — Constituency Compilation</h2>
+      <div class="field"><label>Constituency Code</label><input id="b-constituency" type="text" placeholder="e.g. NAI-001" /></div>
+      <div class="field"><label>Election ID</label><input id="b-election" type="text" placeholder="GE-2027" /></div>
+      <div class="field"><label>Position</label>
+        <select id="b-position">
+          <option value="PRES">President</option>
+          <option value="GOV">Governor</option>
+          <option value="SEN">Senator</option>
+          <option value="WOMEN-REP">Woman Rep</option>
+          <option value="MP">MP</option>
+        </select>
+      </div>
+      <h3 style="margin:16px 0 8px;font-size:0.9rem;color:var(--muted)">Station subtotals</h3>
+      <table>
+        <thead><tr><th>Station</th><th>Valid</th><th>Rejected</th><th>Total Cast</th><th>Status</th></tr></thead>
+        <tbody id="station-rows"><tr><td colspan="5" style="color:var(--muted);text-align:center;padding:24px">No stations loaded</td></tr></tbody>
+      </table>
+      <div style="margin-top:16px;display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="compile34B()">Compile 34B (dual-officer sign)</button>
+      </div>
+      <div id="b-result" style="margin-top:12px;font-size:0.85rem;color:var(--ok)"></div>
+    </div>
+
+    <!-- 34C Compile (CRO only) -->
+    <div id="screen-form34c" class="screen">
+      <h2>Form 34C — National Compilation <span class="chip chip-err">CRO only</span></h2>
+      <div class="field"><label>Region Code</label><input id="c-region" type="text" placeholder="e.g. NBI" /></div>
+      <div class="field"><label>Election ID</label><input id="c-election" type="text" placeholder="GE-2027" /></div>
+      <div class="field"><label>Position</label>
+        <select id="c-position"><option value="PRES">President</option></select>
+      </div>
+      <table>
+        <thead><tr><th>Constituency</th><th>34B ID</th><th>Valid Votes</th><th>Status</th></tr></thead>
+        <tbody id="c-rows"><tr><td colspan="4" style="color:var(--muted);text-align:center;padding:24px">No constituencies loaded</td></tr></tbody>
+      </table>
+      <div style="margin-top:16px">
+        <button class="btn btn-primary" onclick="compile34C()">Compile 34C (CRO dual-officer sign)</button>
+      </div>
+      <div id="c-result" style="margin-top:12px;font-size:0.85rem;color:var(--ok)"></div>
+    </div>
+
+    <!-- Disputes -->
+    <div id="screen-disputes" class="screen">
+      <h2>Dispute Cases</h2>
+      <div class="field"><label>Form ID</label><input id="d-form-id" type="text" placeholder="UUID of disputed 34A" /></div>
+      <div class="field"><label>Reason</label><textarea id="d-reason" rows="3" placeholder="Describe the discrepancy..."></textarea></div>
+      <div class="field"><label>Evidence (MinIO refs, comma-separated)</label><input id="d-evidence" type="text" /></div>
+      <button class="btn btn-primary" onclick="raiseDispute()">Raise Dispute</button>
+      <div id="d-result" style="margin-top:12px;font-size:0.85rem;color:var(--ok)"></div>
+    </div>
+
+    <!-- Session Recording -->
+    <div id="screen-recording" class="screen">
+      <h2>Session Recording</h2>
+      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:16px">
+        Screen and audio capture are hashed every 60 s and anchored to the transparency log.
+      </p>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="startRecording()">Start Recording</button>
+        <button class="btn btn-secondary" onclick="stopRecording()">Stop Recording</button>
+      </div>
+      <div id="rec-status" style="margin-top:12px;font-size:0.85rem;color:var(--muted)">Idle</div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // Tauri IPC bridge — falls back to stubs when running outside Tauri.
+  const invoke = window.__TAURI__?.core?.invoke ?? ((cmd, args) => {
+    console.log('[stub]', cmd, args);
+    return Promise.resolve({ items: [], total: 0, pending_local: 0 });
+  });
+
+  function show(name) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('visible'));
+    document.getElementById('screen-' + name).classList.add('visible');
+    document.querySelectorAll('nav button').forEach((b, i) => {
+      b.classList.toggle('active', b.textContent.trim().toLowerCase().startsWith(name));
+    });
+    if (name === 'queue') loadQueue();
+  }
+
+  async function loadQueue() {
+    try {
+      const data = await invoke('get_queue');
+      const tbody = document.getElementById('queue-tbody');
+      if (!data.items || data.items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:32px">No pending 34As (local pending: ${data.pending_local ?? 0})</td></tr>`;
+      } else {
+        tbody.innerHTML = data.items.map(item => `
+          <tr>
+            <td style="font-family:monospace;font-size:0.75rem">${item.form_id}</td>
+            <td>${item.station_code}</td>
+            <td>${item.constituency_code}</td>
+            <td>${item.position_code}</td>
+            <td>${item.icr_confidence != null ? (item.icr_confidence * 100).toFixed(0) + '%' : '—'}</td>
+            <td><span class="chip chip-pending">${item.status}</span></td>
+            <td><button class="btn btn-primary" style="font-size:0.75rem;padding:4px 10px">Review</button></td>
+          </tr>`).join('');
+      }
+    } catch (e) { console.error(e); }
+  }
+
+  async function verifyForm() {
+    const formId = document.getElementById('f-station').value || 'STUB-FORM-ID';
+    try {
+      const r = await invoke('review_form34a', { form_id: formId, ro_signature: 'STUB-SIG' });
+      alert('Verified: ' + JSON.stringify(r));
+    } catch (e) { alert('Error: ' + e); }
+  }
+
+  async function amendForm() {
+    const reason = document.getElementById('f-reason').value;
+    if (!reason) { alert('Reason is required for an amendment.'); return; }
+    alert('Amendment submitted (stub). Reason: ' + reason);
+  }
+
+  async function compile34B() {
+    const constituency = document.getElementById('b-constituency').value;
+    const election = document.getElementById('b-election').value;
+    const position = document.getElementById('b-position').value;
+    if (!constituency || !election) { alert('Constituency and Election ID are required.'); return; }
+    try {
+      const r = await invoke('compile_34b', {
+        constituency_code: constituency, election_id: election, position_code: position,
+        ro_signature: 'STUB-RO-SIG', witness_signature: 'STUB-WIT-SIG',
+      });
+      document.getElementById('b-result').textContent = '34B compiled: ' + JSON.stringify(r);
+    } catch (e) { alert('Error: ' + e); }
+  }
+
+  async function compile34C() {
+    document.getElementById('c-result').textContent = '34C compilation submitted (stub).';
+  }
+
+  async function raiseDispute() {
+    const formId = document.getElementById('d-form-id').value;
+    const reason = document.getElementById('d-reason').value;
+    if (!formId || !reason) { alert('Form ID and reason are required.'); return; }
+    try {
+      const r = await invoke('create_dispute', { form_id: formId, reason });
+      document.getElementById('d-result').textContent = 'Dispute raised: ' + JSON.stringify(r);
+    } catch (e) { alert('Error: ' + e); }
+  }
+
+  async function startRecording() {
+    try {
+      await invoke('session_recording', { action: 'start', segment_hash: null });
+      document.getElementById('session-indicator').style.display = 'flex';
+      document.getElementById('rec-status').textContent = 'Recording — anchoring every 60 s.';
+    } catch (e) { alert('Error: ' + e); }
+  }
+
+  async function stopRecording() {
+    try {
+      await invoke('session_recording', { action: 'stop', segment_hash: null });
+      document.getElementById('session-indicator').style.display = 'none';
+      document.getElementById('rec-status').textContent = 'Stopped.';
+    } catch (e) { alert('Error: ' + e); }
+  }
+
+  window.addEventListener('online', () => document.getElementById('offline-indicator').style.display = 'none');
+  window.addEventListener('offline', () => {
+    document.getElementById('offline-indicator').style.display = 'inline';
+    document.getElementById('offline-banner').style.display = 'block';
+  });
+
+  loadQueue();
+</script>
+</body>
+</html>

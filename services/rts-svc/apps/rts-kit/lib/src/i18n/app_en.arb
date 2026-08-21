@@ -1,0 +1,75 @@
+{
+  "@@locale": "en",
+  "appTitle": "eel RTS Kit",
+  "@appTitle": {"description": "Application title"},
+
+  "scanTitle": "Scan Form 34A",
+  "@scanTitle": {"description": "Scan screen title"},
+  "scanCapture": "Capture",
+  "scanCapturing": "Capturing...",
+  "scanCaptureLabel": "Capture Form 34A photo",
+  "scanErrorBlurry": "Image too blurry. Hold the device steady and retake.",
+  "scanErrorContrast": "Poor contrast. Improve lighting and retake.",
+  "scanErrorCorners": "Could not detect form corners. Align the form in view.",
+
+  "ocrTitle": "OCR Preview",
+  "@ocrTitle": {"description": "OCR preview screen title"},
+  "ocrRunning": "Running OCR preview...",
+  "ocrDeferred": "OCR deferred to server",
+  "ocrProceedLabel": "Proceed to sign form",
+  "ocrProceedButton": "Proceed to Sign",
+
+  "signTitle": "Sign Form",
+  "@signTitle": {"description": "Sign screen title"},
+  "signInstruction": "Review the form before signing. This action is final.",
+  "signButton": "Sign Form",
+  "signSigning": "Signing...",
+  "signSuccess": "Signed successfully",
+  "signProceed": "Transmit",
+  "signProceedLabel": "Proceed to transmit",
+
+  "transmitTitle": "Transmit",
+  "@transmitTitle": {"description": "Transmit screen title"},
+  "transmitInProgress": "Transmitting Form 34A...",
+  "transmitKeepActive": "Do not power off the device.",
+  "transmitSuccess": "Form 34A transmitted",
+  "transmitFailed": "Transmission failed. Form saved to queue.",
+  "transmitRetry": "Retry",
+  "transmitRetryLabel": "Retry transmission",
+
+  "rfidTitle": "Ballot Lot RFID",
+  "@rfidTitle": {"description": "RFID scan screen title"},
+  "rfidScan": "Scan RFID",
+  "rfidRescan": "Re-scan",
+  "rfidScanning": "Scanning...",
+  "rfidScanned": "Lot scanned",
+
+  "modeTitle": "Election Mode",
+  "@modeTitle": {"description": "Mode switch screen title"},
+  "modeGeneral": "General Election",
+  "modeReferendum": "Referendum",
+  "modeByElection": "By-Election",
+  "modeCurrent": "Current mode: {mode}",
+  "@modeCurrent": {
+    "placeholders": {
+      "mode": {"type": "String"}
+    }
+  },
+
+  "stepOf": "Step {current} of {total}",
+  "@stepOf": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+
+  "confirmButton": "Confirm",
+  "cancelButton": "Cancel",
+  "errorPrefix": "Error: {message}",
+  "@errorPrefix": {
+    "placeholders": {
+      "message": {"type": "String"}
+    }
+  }
+}

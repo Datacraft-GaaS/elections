@@ -7,6 +7,11 @@ members = [
     "crates/rts-publisher",
     "crates/rts-api",
     "crates/rts-integration-tests",
+    "crates/rts-device-api",
+    "crates/rts-ro-api",
+    # WP-3.3
+    "crates/declaration",
+    "crates/ballot-serial",
 ]
 
 [workspace.package]
@@ -32,6 +37,11 @@ eel-hlc-rs         = { path = "../../packages/eel-hlc-rs" }
 eel-crypto-rs      = { path = "../../packages/eel-crypto-rs" }
 eel-api-server-rs  = { path = "../../packages/eel-api-server-rs" }
 eel-auth-rs        = { path = "../../packages/eel-auth-rs" }
+eel-outbox-rs      = { path = "../../packages/eel-outbox-rs" }
+
+# Codecs (SMS fallback)
+ciborium           = { version = "0.2" }
+zstd               = { version = "0.13" }
 
 # HTTP / gRPC
 axum              = { version = "0.8",  features = ["macros", "tokio"] }

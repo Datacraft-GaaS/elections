@@ -1,0 +1,73 @@
+name: eel_rts_kit
+description: >
+  eel Results Transmission System kit app. Scan, sign, and transmit Form 34A.
+  Supports Android (new KIEMS + legacy via feature flag) and iOS (polish only).
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  eel_kit_sdk:
+    path: ../../../../packages/kit-sdk-flutter
+
+  # State management
+  flutter_riverpod: ^2.5.0
+  hooks_riverpod: ^2.5.0
+  flutter_hooks: ^0.20.5
+
+  # Code generation
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.9.0
+
+  # Navigation
+  go_router: ^13.2.0
+
+  # Camera + image processing
+  camera: ^0.10.5+9
+  image: ^4.1.7
+
+  # Networking
+  dio: ^5.4.0
+
+  # Local persistence for queue
+  sqflite: ^2.3.2
+  path: ^1.9.0
+
+  # Secure storage
+  flutter_secure_storage: ^9.0.0
+
+  # Internationalisation
+  intl: ^0.20.0
+  flutter_localizations:
+    sdk: flutter
+
+  # Display wake-lock during transmission
+  wakelock_plus: ^1.2.7
+
+  # Cryptographic primitives (SHA-256 for payload hashing in sign.dart)
+  crypto: ^3.0.3
+
+  # Logging
+  logging: ^1.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  build_runner: ^2.4.8
+  freezed: ^2.5.2
+  json_serializable: ^6.8.0
+
+  flutter_lints: ^3.0.0
+
+flutter:
+  generate: true
+
+  assets:
+    - lib/src/i18n/

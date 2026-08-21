@@ -1,0 +1,23 @@
+[package]
+name = "rts-device-api-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+rts-device-api = { path = ".." }
+
+# Disable default features to trim the fuzz binary.
+[dependencies.rts-device-api]
+path = ".."
+default-features = false
+
+[[bin]]
+name = "fuzz_sms_decode"
+path = "fuzz_targets/fuzz_sms_decode.rs"
+test = false
+doc = false

@@ -1,0 +1,59 @@
+[package]
+name = "ro-desktop"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+rust-version = "1.83"
+publish = false
+description = "RO desktop tally application — Tauri 2 core (WP-3.2 M09)"
+
+# Isolated from the rts-svc workspace; cargo build runs in this directory.
+[workspace]
+
+[lib]
+name = "ro_desktop_lib"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "ro-desktop"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+
+sqlx = { version = "0.8", features = [
+    "runtime-tokio-rustls",
+    "sqlite",
+    "chrono",
+    "uuid",
+    "json",
+    "migrate",
+] }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1" }
+uuid = { version = "1", features = ["v4", "v7", "serde"] }
+thiserror = { version = "2" }
+tracing = { version = "0.1" }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+tempfile = "3"
+tokio = { version = "1", features = ["full"] }
+sqlx = { version = "0.8", features = [
+    "runtime-tokio-rustls",
+    "sqlite",
+    "chrono",
+    "uuid",
+    "json",
+    "migrate",
+] }
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
