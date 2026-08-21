@@ -1,0 +1,163 @@
+{
+  "realm": "eel-party",
+  "enabled": true,
+  "displayName": "EEL Party Agents",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "sslRequired": "external",
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 5,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 28800,
+  "accessTokenLifespan": 300,
+  "passwordPolicy": "length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and passwordHistory(5) and forceExpiredPasswordChange(90)",
+  "otpPolicy": {
+    "type": "totp",
+    "algorithm": "HmacSHA256",
+    "initialCounter": 0,
+    "digits": 6,
+    "lookAheadWindow": 1,
+    "period": 30
+  },
+  "eventsEnabled": true,
+  "eventsListeners": ["jboss-logging", "eel-audit-kafka"],
+  "adminEventsEnabled": true,
+  "adminEventsDetailsEnabled": true,
+  "roles": {
+    "realm": [
+      {"name": "AGENT", "description": "Party polling agent: monitors polling station on behalf of a party"},
+      {"name": "PARTY_COORDINATOR", "description": "Party coordinator: oversees agents across a region"},
+      {"name": "SERVICE_ACCOUNT", "description": "Machine-to-machine service identity"}
+    ]
+  },
+  "groups": [
+    {
+      "name": "NationalParties",
+      "subGroups": [
+        {"name": "PartyA"},
+        {"name": "PartyB"},
+        {"name": "PartyC"}
+      ]
+    },
+    {
+      "name": "CountyBranches",
+      "subGroups": []
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "ppdt",
+      "displayName": "PPDT (Political Parties Disputes Tribunal)",
+      "providerId": "oidc",
+      "enabled": true,
+      "trustEmail": false,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "eel-party-ppdt",
+        "clientSecret": "PLACEHOLDER_PPDT_SECRET",
+        "tokenUrl": "https://ppdt.eel.local/oauth2/token",
+        "authorizationUrl": "https://ppdt.eel.local/oauth2/authorize",
+        "issuer": "https://ppdt.eel.local",
+        "defaultScope": "openid profile",
+        "validateSignature": "false",
+        "useJwksUrl": "false",
+        "syncMode": "INHERIT"
+      }
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "crms-svc",
+      "name": "Candidate and Results Management System",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_CRMS_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "field-mobile-svc",
+      "name": "Field Mobile Service",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_FIELD_MOBILE_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "party-portal",
+      "name": "Party Portal BFF",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_PARTY_PORTAL_SECRET",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["https://party.eel.local/*", "http://localhost:3001/*"],
+      "webOrigins": ["https://party.eel.local", "http://localhost:3001"],
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "eel-kit-android",
+      "name": "EEL Kit Android App",
+      "enabled": true,
+      "publicClient": true,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["eelkit://callback"],
+      "webOrigins": ["+"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "access.token.lifespan": "900"
+      }
+    },
+    {
+      "clientId": "eel-kit-ios",
+      "name": "EEL Kit iOS App",
+      "enabled": true,
+      "publicClient": true,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["eelkit://callback"],
+      "webOrigins": ["+"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "access.token.lifespan": "900"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "user_agent",
+      "email": "agent@eel.local",
+      "enabled": true,
+      "credentials": [{"type": "password", "value": "eel-dev-change-me", "temporary": true}],
+      "realmRoles": ["AGENT"]
+    }
+  ]
+}

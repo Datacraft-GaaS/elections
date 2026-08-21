@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eel-keycloak-events-listener
+  namespace: eel-auth
+  labels:
+    app.kubernetes.io/name: keycloak
+    app.kubernetes.io/component: events-listener
+    app.kubernetes.io/part-of: eel-platform
+data:
+  # Keycloak SPI configuration for the custom eel-audit-kafka event listener.
+  # The listener forwards all realm and admin events to Kafka topic eel.audit.keycloak.v1.
+  # Deploy the eel-audit-kafka SPI JAR into /opt/keycloak/providers/ before enabling.
+  KC_SPI_EVENTS_LISTENER_EEL_AUDIT_KAFKA_BOOTSTRAP_SERVERS: "kafka.eel-infra.svc.cluster.local:9092"
+  KC_SPI_EVENTS_LISTENER_EEL_AUDIT_KAFKA_TOPIC: "eel.audit.keycloak.v1"
+  KC_SPI_EVENTS_LISTENER_EEL_AUDIT_KAFKA_CLIENT_ID: "keycloak-events-producer"
+  KC_SPI_EVENTS_LISTENER_EEL_AUDIT_KAFKA_ACKS: "all"
+  KC_SPI_EVENTS_LISTENER_EEL_AUDIT_KAFKA_RETRIES: "5"
+  KC_SPI_EVENTS_LISTENER_EEL_AUDIT_KAFKA_COMPRESSION_TYPE: "lz4"
+  # Schemas: events follow CloudEvents 1.0 envelope; payload is eel.audit.KeycloakEvent.v1 Avro schema.
+  KC_SPI_EVENTS_LISTENER_EEL_AUDIT_KAFKA_SCHEMA_REGISTRY_URL: "http://schema-registry.eel-infra.svc.cluster.local:8081"
+  # Realms that activate this listener (comma-separated realm names).
+  KC_SPI_EVENTS_LISTENER_EEL_AUDIT_KAFKA_REALMS: "eel-staff,eel-party,eel-observer,eel-media,eel-public,eel-county"
+  # Event types to forward: all USER_* and ADMIN_* events, plus LOGIN, LOGOUT, LOGIN_ERROR.
+  KC_SPI_EVENTS_LISTENER_EEL_AUDIT_KAFKA_INCLUDE_EVENTS: "LOGIN,LOGIN_ERROR,LOGOUT,LOGOUT_ERROR,REGISTER,REGISTER_ERROR,UPDATE_EMAIL,UPDATE_PASSWORD,UPDATE_PROFILE,UPDATE_TOTP,REMOVE_TOTP,SEND_RESET_PASSWORD,SEND_VERIFY_EMAIL,VERIFY_EMAIL,CLIENT_LOGIN,CLIENT_LOGIN_ERROR,REFRESH_TOKEN,REFRESH_TOKEN_ERROR,CODE_TO_TOKEN,CODE_TO_TOKEN_ERROR,IDENTITY_PROVIDER_LINK_ACCOUNT,IDENTITY_PROVIDER_LOGIN,IMPERSONATE"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: eel-keycloak-events-listener-kafka-auth
+  namespace: eel-auth
+  labels:
+    app.kubernetes.io/name: keycloak
+    app.kubernetes.io/component: events-listener
+    app.kubernetes.io/part-of: eel-platform
+type: Opaque
+stringData:
+  # SASL credentials for Kafka. Replace with real values via sealed-secret or Vault injection.
+  KAFKA_SASL_USERNAME: "keycloak-events-producer"
+  KAFKA_SASL_PASSWORD: "PLACEHOLDER_KAFKA_PASSWORD"
+  KAFKA_SECURITY_PROTOCOL: "SASL_SSL"
+  KAFKA_SASL_MECHANISM: "SCRAM-SHA-512"

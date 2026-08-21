@@ -1,0 +1,30 @@
+[package]
+name = "iam-seed"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Idempotent IAM seeding CLI: Keycloak realms, SpiceDB schemas, SPIRE entries, OpenBao policies"
+
+[[bin]]
+name = "iam-seed"
+path = "src/main.rs"
+
+[lib]
+name = "iam_seed"
+path = "src/lib.rs"
+
+[dependencies]
+tokio = { workspace = true }
+anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = "0.9"
+clap = { version = "4", features = ["derive", "env"] }
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+sha2 = "0.10"
+hex = "0.4"
+
+[dev-dependencies]
+tokio = { workspace = true }

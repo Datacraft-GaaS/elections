@@ -1,0 +1,21 @@
+mounts:
+  - path: kv/eel/dev
+    type: kv
+    options:
+      version: "2"
+    description: "KV v2 store for eel dev environment secrets"
+  - path: kv/eel/staging
+    type: kv
+    options:
+      version: "2"
+    description: "KV v2 store for eel staging environment secrets"
+  - path: kv/eel/pre-prod
+    type: kv
+    options:
+      version: "2"
+    description: "KV v2 store for eel pre-prod environment secrets"
+  - path: kv/eel/prod
+    type: kv
+    options:
+      version: "2"
+    description: "KV v2 store for eel prod environment secrets"

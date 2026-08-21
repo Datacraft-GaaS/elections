@@ -1,0 +1,9 @@
+# Federation bundle for the DR mirror (passive standby) site.
+# Allows the primary cluster to verify SVIDs issued by the DR mirror SPIRE server.
+# Used during failover when the mirror site is promoted to active.
+trust_domain: "eel.dr-mirror"
+bundle_endpoint:
+  address: "spire-server.dr-mirror.eel.internal"
+  port: 8443
+  spiffe_id: "spiffe://eel.dr-mirror/spire/server"
+refresh_hint: 300

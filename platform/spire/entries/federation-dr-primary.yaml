@@ -1,0 +1,9 @@
+# Federation bundle for the DR primary site.
+# Allows the primary cluster to verify SVIDs issued by the DR primary SPIRE server.
+# The bundle endpoint is fetched on startup and refreshed every refresh_hint seconds.
+trust_domain: "eel.dr-primary"
+bundle_endpoint:
+  address: "spire-server.dr-primary.eel.internal"
+  port: 8443
+  spiffe_id: "spiffe://eel.dr-primary/spire/server"
+refresh_hint: 300

@@ -1,0 +1,37 @@
+# Cross-site SPIFFE trust bundle exchange configuration.
+# Each entry defines a foreign trust domain whose bundle the local SPIRE server
+# will fetch, verify, and cache so that local workloads can authenticate peers
+# from that domain without contacting the remote server at call time.
+#
+# refresh_hint is in seconds. SPIRE will re-fetch before the bundle expires,
+# using this as a floor.
+#
+# spiffe_id under bundle_endpoint is the expected SVID of the remote server
+# itself, used to bootstrap the mTLS connection for the first fetch.
+
+federated_trust_domains:
+
+  # DR primary site: active/passive pair, promoted during a regional failover.
+  - trust_domain: "eel.dr-primary"
+    bundle_endpoint:
+      address: "spire-server.dr-primary.eel.internal"
+      port: 8443
+      spiffe_id: "spiffe://eel.dr-primary/spire/server"
+    refresh_hint: 300
+
+  # DR mirror site: passive standby, may become active if primary fails.
+  - trust_domain: "eel.dr-mirror"
+    bundle_endpoint:
+      address: "spire-server.dr-mirror.eel.internal"
+      port: 8443
+      spiffe_id: "spiffe://eel.dr-mirror/spire/server"
+    refresh_hint: 300
+
+  # Staging cluster: trusted for cross-environment integration tests only.
+  # Remove or gate behind a feature flag before promoting to prod.
+  - trust_domain: "eel.staging"
+    bundle_endpoint:
+      address: "spire-server.staging.eel.internal"
+      port: 8443
+      spiffe_id: "spiffe://eel.staging/spire/server"
+    refresh_hint: 600

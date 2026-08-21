@@ -1,0 +1,147 @@
+{
+  "realm": "eel-county",
+  "enabled": true,
+  "displayName": "EEL County Coordinators",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "sslRequired": "external",
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 5,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 28800,
+  "accessTokenLifespan": 300,
+  "passwordPolicy": "length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and passwordHistory(5) and forceExpiredPasswordChange(90)",
+  "otpPolicy": {
+    "type": "totp",
+    "algorithm": "HmacSHA256",
+    "initialCounter": 0,
+    "digits": 6,
+    "lookAheadWindow": 1,
+    "period": 30
+  },
+  "eventsEnabled": true,
+  "eventsListeners": ["jboss-logging", "eel-audit-kafka"],
+  "adminEventsEnabled": true,
+  "adminEventsDetailsEnabled": true,
+  "roles": {
+    "realm": [
+      {"name": "COUNTY_COORDINATOR", "description": "County-level electoral coordinator"},
+      {"name": "SUBCOUNTY_COORDINATOR", "description": "Sub-county level electoral coordinator"},
+      {"name": "SERVICE_ACCOUNT", "description": "Machine-to-machine service identity"}
+    ]
+  },
+  "groups": [
+    {
+      "name": "Counties",
+      "subGroups": [
+        {"name": "Nairobi"},
+        {"name": "Mombasa"},
+        {"name": "Kisumu"},
+        {"name": "Nakuru"},
+        {"name": "Eldoret"},
+        {"name": "Kakamega"},
+        {"name": "Kiambu"},
+        {"name": "Machakos"}
+      ]
+    },
+    {
+      "name": "SubCounties",
+      "subGroups": []
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "iprs",
+      "displayName": "IPRS (Kenya National Registration)",
+      "providerId": "oidc",
+      "enabled": true,
+      "trustEmail": false,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "eel-county-iprs",
+        "clientSecret": "PLACEHOLDER_IPRS_SECRET",
+        "tokenUrl": "https://iprs.eel.local/oauth2/token",
+        "authorizationUrl": "https://iprs.eel.local/oauth2/authorize",
+        "issuer": "https://iprs.eel.local",
+        "defaultScope": "openid profile",
+        "validateSignature": "false",
+        "useJwksUrl": "false",
+        "syncMode": "INHERIT"
+      }
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "governance-svc",
+      "name": "Governance and Compliance Service",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_GOVERNANCE_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "boundary-svc",
+      "name": "Boundary Delimitation Service",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_BOUNDARY_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "ecc-svc",
+      "name": "Electoral Complaints Committee Service",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_ECC_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "county-portal",
+      "name": "County Portal BFF",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_COUNTY_PORTAL_SECRET",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["https://county.eel.local/*", "http://localhost:3005/*"],
+      "webOrigins": ["https://county.eel.local", "http://localhost:3005"],
+      "attributes": {"access.token.lifespan": "300"}
+    }
+  ],
+  "users": [
+    {
+      "username": "user_county_coord",
+      "email": "county.coord@eel.local",
+      "enabled": true,
+      "credentials": [{"type": "password", "value": "eel-dev-change-me", "temporary": true}],
+      "realmRoles": ["COUNTY_COORDINATOR"]
+    }
+  ]
+}

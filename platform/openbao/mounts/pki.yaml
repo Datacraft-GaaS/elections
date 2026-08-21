@@ -1,0 +1,192 @@
+# PKI intermediate mount configuration for eel.
+# Chains to the offline HSM root CA referenced by platform/hsm-signer.
+# Each service gets its own issuance role with a 72-hour leaf TTL.
+
+mounts:
+  - path: pki/eel/intermediate
+    type: pki
+    config:
+      default_lease_ttl: 72h
+      max_lease_ttl: 8760h   # 1 year max for intermediate cert itself
+    description: "PKI intermediate CA for eel service certificates"
+
+issuer:
+  # After mounting, run:
+  #   bao write pki/eel/intermediate/config/urls \
+  #     issuing_certificates="https://bao.internal/v1/pki/eel/intermediate/ca" \
+  #     crl_distribution_points="https://bao.internal/v1/pki/eel/intermediate/crl"
+  issuing_certificates: "https://bao.internal/v1/pki/eel/intermediate/ca"
+  crl_distribution_points: "https://bao.internal/v1/pki/eel/intermediate/crl"
+  ocsp_servers: "https://bao.internal/v1/pki/eel/intermediate/ocsp"
+
+crl:
+  expiry: 72h
+  disable: false
+  cross_cluster_revocation: false
+  delta_rebuild_interval: 15m
+
+# One issuance role per service.
+# allowed_domains locks the SAN to the service's internal DNS name.
+# max_ttl caps the leaf certificate lifetime at 72 hours (re-issued by workload identity).
+roles:
+  - name: biometric-edge-svc-role
+    allowed_domains: ["biometric-edge-svc.eel.svc.cluster.local"]
+    allow_subdomains: false
+    allow_localhost: false
+    key_type: ec
+    key_bits: 256
+    max_ttl: 72h
+    require_cn: true
+
+  - name: bvr-svc-role
+    allowed_domains: ["bvr-svc.eel.svc.cluster.local"]
+    allow_subdomains: false
+    allow_localhost: false
+    key_type: ec
+    key_bits: 256
+    max_ttl: 72h
+    require_cn: true
+
+  - name: abis-svc-role
+    allowed_domains: ["abis-svc.eel.svc.cluster.local"]
+    allow_subdomains: false
+    allow_localhost: false
+    key_type: ec
+    key_bits: 256
+    max_ttl: 72h
+    require_cn: true
+
+  - name: vprs-svc-role
+    allowed_domains: ["vprs-svc.eel.svc.cluster.local"]
+    allow_subdomains: false
+    allow_localhost: false
+    key_type: ec
+    key_bits: 256
+    max_ttl: 72h
+    require_cn: true
+
+  - name: bvi-svc-role
+    allowed_domains: ["bvi-svc.eel.svc.cluster.local"]
+    allow_subdomains: false
+    allow_localhost: false
+    key_type: ec
+    key_bits: 256
+    max_ttl: 72h
+    require_cn: true
+
+  - name: rts-svc-role
+    allowed_domains: ["rts-svc.eel.svc.cluster.local"]
+    allow_subdomains: false
+    allow_localhost: false
+    key_type: ec
+    key_bits: 256
+    max_ttl: 72h
+    require_cn: true
+
+  - name: portal-svc-role
+    allowed_domains: ["portal-svc.eel.svc.cluster.local"]
+    allow_subdomains: false
+    allow_localhost: false
+    key_type: ec
+    key_bits: 256
+    max_ttl: 72h
+    require_cn: true
+
+  - name: crms-svc-role
+    allowed_domains: ["crms-svc.eel.svc.cluster.local"]
+    allow_subdomains: false
+    allow_localhost: false
+    key_type: ec
+    key_bits: 256
+    max_ttl: 72h
+    require_cn: true
+
+  - name: transparency-svc-role
+    allowed_domains: ["transparency-svc.eel.svc.cluster.local"]
+    allow_subdomains: false
+    allow_localhost: false
+    key_type: ec
+    key_bits: 256
+    max_ttl: 72h
+    require_cn: true
+
+  - name: ecc-svc-role
+    allowed_domains: ["ecc-svc.eel.svc.cluster.local"]
+    allow_subdomains: false
+    allow_localhost: false
+    key_type: ec
+    key_bits: 256
+    max_ttl: 72h
+    require_cn: true
+
+  - name: boundary-svc-role
+    allowed_domains: ["boundary-svc.eel.svc.cluster.local"]
+    allow_subdomains: false
+    allow_localhost: false
+    key_type: ec
+    key_bits: 256
+    max_ttl: 72h
+    require_cn: true
+
+  - name: queue-svc-role
+    allowed_domains: ["queue-svc.eel.svc.cluster.local"]
+    allow_subdomains: false
+    allow_localhost: false
+    key_type: ec
+    key_bits: 256
+    max_ttl: 72h
+    require_cn: true
+
+  - name: inventory-svc-role
+    allowed_domains: ["inventory-svc.eel.svc.cluster.local"]
+    allow_subdomains: false
+    allow_localhost: false
+    key_type: ec
+    key_bits: 256
+    max_ttl: 72h
+    require_cn: true
+
+  - name: governance-svc-role
+    allowed_domains: ["governance-svc.eel.svc.cluster.local"]
+    allow_subdomains: false
+    allow_localhost: false
+    key_type: ec
+    key_bits: 256
+    max_ttl: 72h
+    require_cn: true
+
+  - name: ai-platform-svc-role
+    allowed_domains: ["ai-platform-svc.eel.svc.cluster.local"]
+    allow_subdomains: false
+    allow_localhost: false
+    key_type: ec
+    key_bits: 256
+    max_ttl: 72h
+    require_cn: true
+
+  - name: field-mobile-svc-role
+    allowed_domains: ["field-mobile-svc.eel.svc.cluster.local"]
+    allow_subdomains: false
+    allow_localhost: false
+    key_type: ec
+    key_bits: 256
+    max_ttl: 72h
+    require_cn: true
+
+  - name: training-svc-role
+    allowed_domains: ["training-svc.eel.svc.cluster.local"]
+    allow_subdomains: false
+    allow_localhost: false
+    key_type: ec
+    key_bits: 256
+    max_ttl: 72h
+    require_cn: true
+
+  - name: support-admin-svc-role
+    allowed_domains: ["support-admin-svc.eel.svc.cluster.local"]
+    allow_subdomains: false
+    allow_localhost: false
+    key_type: ec
+    key_bits: 256
+    max_ttl: 72h
+    require_cn: true

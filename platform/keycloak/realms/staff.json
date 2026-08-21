@@ -1,0 +1,704 @@
+{
+  "realm": "eel-staff",
+  "enabled": true,
+  "displayName": "EEL Staff Operations",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "sslRequired": "external",
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 5,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 28800,
+  "accessTokenLifespan": 300,
+  "accessTokenLifespanForImplicitFlow": 900,
+  "offlineSessionIdleTimeout": 2592000,
+  "offlineSessionMaxLifespanEnabled": false,
+  "passwordPolicy": "length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and passwordHistory(5) and forceExpiredPasswordChange(90)",
+  "otpPolicy": {
+    "type": "totp",
+    "algorithm": "HmacSHA256",
+    "initialCounter": 0,
+    "digits": 6,
+    "lookAheadWindow": 1,
+    "period": 30
+  },
+  "webAuthnPolicyPasswordlessRpEntityName": "eel-staff",
+  "webAuthnPolicyPasswordlessRpId": "eel.local",
+  "webAuthnPolicyPasswordlessSignatureAlgorithms": ["ES256", "RS256"],
+  "webAuthnPolicyPasswordlessAttestationConveyancePreference": "direct",
+  "webAuthnPolicyPasswordlessAuthenticatorAttachment": "cross-platform",
+  "webAuthnPolicyPasswordlessRequireResidentKey": "Yes",
+  "webAuthnPolicyPasswordlessUserVerificationRequirement": "required",
+  "webAuthnPolicyPasswordlessCreateTimeout": 60,
+  "webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister": true,
+  "webAuthnPolicyPasswordlessAcceptableAaguids": [],
+  "eventsEnabled": true,
+  "eventsListeners": ["jboss-logging", "eel-audit-kafka"],
+  "adminEventsEnabled": true,
+  "adminEventsDetailsEnabled": true,
+  "roles": {
+    "realm": [
+      {"name": "STAFF", "description": "General internal staff member"},
+      {"name": "RO", "description": "Returning Officer: manages polling station operations"},
+      {"name": "CRO", "description": "County Returning Officer: oversees county-level operations"},
+      {"name": "CHAIR", "description": "Commission Chair or designee: highest privilege, WebAuthn required"},
+      {"name": "IAB", "description": "Independent Audit Board member: WebAuthn required"},
+      {"name": "DECLARATION", "description": "Results declaration role: WebAuthn required"},
+      {"name": "ECC", "description": "Electoral Complaints Committee member: WebAuthn required"},
+      {"name": "SERVICE_ACCOUNT", "description": "Machine-to-machine service identity"}
+    ]
+  },
+  "groups": [
+    {
+      "name": "Secretariat",
+      "subGroups": [
+        {"name": "Chair Office"},
+        {"name": "Legal"},
+        {"name": "ICT"},
+        {"name": "Finance"},
+        {"name": "HR"}
+      ]
+    },
+    {
+      "name": "County",
+      "subGroups": [
+        {"name": "Nairobi"},
+        {"name": "Mombasa"},
+        {"name": "Kisumu"},
+        {"name": "Nakuru"},
+        {"name": "Eldoret"}
+      ]
+    },
+    {
+      "name": "SubCounty",
+      "subGroups": []
+    },
+    {
+      "name": "PollingStation",
+      "subGroups": []
+    },
+    {
+      "name": "IAB",
+      "subGroups": []
+    }
+  ],
+  "authenticationFlows": [
+    {
+      "alias": "browser-webauthn-flow",
+      "description": "WebAuthn passwordless with OTP fallback for high-privilege roles",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-cookie",
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "authenticator": "auth-spnego",
+          "requirement": "DISABLED",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 30,
+          "flowAlias": "browser-webauthn-forms",
+          "userSetupAllowed": false,
+          "autheticatorFlow": true
+        }
+      ]
+    },
+    {
+      "alias": "browser-webauthn-forms",
+      "description": "Username + WebAuthn passwordless, OTP fallback",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-username-form",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "flowAlias": "browser-webauthn-or-otp",
+          "userSetupAllowed": false,
+          "autheticatorFlow": true
+        }
+      ]
+    },
+    {
+      "alias": "browser-webauthn-or-otp",
+      "description": "WebAuthn preferred, OTP as fallback",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "webauthn-authenticator-passwordless",
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": true,
+          "autheticatorFlow": false
+        },
+        {
+          "authenticator": "auth-otp-form",
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "userSetupAllowed": true,
+          "autheticatorFlow": false
+        }
+      ]
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "iprs",
+      "displayName": "IPRS (Kenya National Registration)",
+      "providerId": "oidc",
+      "enabled": true,
+      "trustEmail": false,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "eel-staff-iprs",
+        "clientSecret": "PLACEHOLDER_IPRS_SECRET",
+        "tokenUrl": "https://iprs.eel.local/oauth2/token",
+        "authorizationUrl": "https://iprs.eel.local/oauth2/authorize",
+        "issuer": "https://iprs.eel.local",
+        "defaultScope": "openid profile",
+        "validateSignature": "false",
+        "useJwksUrl": "false",
+        "syncMode": "INHERIT"
+      }
+    },
+    {
+      "alias": "ecitizen",
+      "displayName": "eCitizen (Kenya Government Portal)",
+      "providerId": "oidc",
+      "enabled": true,
+      "trustEmail": false,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "eel-staff-ecitizen",
+        "clientSecret": "PLACEHOLDER_ECITIZEN_SECRET",
+        "tokenUrl": "https://ecitizen.eel.local/oauth2/token",
+        "authorizationUrl": "https://ecitizen.eel.local/oauth2/authorize",
+        "issuer": "https://ecitizen.eel.local",
+        "defaultScope": "openid profile",
+        "validateSignature": "false",
+        "useJwksUrl": "false",
+        "syncMode": "INHERIT"
+      }
+    },
+    {
+      "alias": "ecourt",
+      "displayName": "eCourt (Judiciary Portal)",
+      "providerId": "oidc",
+      "enabled": true,
+      "trustEmail": false,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "eel-staff-ecourt",
+        "clientSecret": "PLACEHOLDER_ECOURT_SECRET",
+        "tokenUrl": "https://ecourt.eel.local/oauth2/token",
+        "authorizationUrl": "https://ecourt.eel.local/oauth2/authorize",
+        "issuer": "https://ecourt.eel.local",
+        "defaultScope": "openid profile",
+        "validateSignature": "false",
+        "useJwksUrl": "false",
+        "syncMode": "INHERIT"
+      }
+    },
+    {
+      "alias": "ppdt",
+      "displayName": "PPDT (Political Parties Disputes Tribunal)",
+      "providerId": "oidc",
+      "enabled": true,
+      "trustEmail": false,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "eel-staff-ppdt",
+        "clientSecret": "PLACEHOLDER_PPDT_SECRET",
+        "tokenUrl": "https://ppdt.eel.local/oauth2/token",
+        "authorizationUrl": "https://ppdt.eel.local/oauth2/authorize",
+        "issuer": "https://ppdt.eel.local",
+        "defaultScope": "openid profile",
+        "validateSignature": "false",
+        "useJwksUrl": "false",
+        "syncMode": "INHERIT"
+      }
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "biometric-edge-svc",
+      "name": "Biometric Edge Service",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_BIOMETRIC_EDGE_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "authorizationServicesEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "bvr-svc",
+      "name": "Biometric Voter Registration Service",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_BVR_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "abis-svc",
+      "name": "Automated Biometric Identification System",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_ABIS_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "vprs-svc",
+      "name": "Voter Pre-Registration System",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_VPRS_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "bvi-svc",
+      "name": "Biometric Voter Identification Service",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_BVI_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "rts-svc",
+      "name": "Results Transmission System",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_RTS_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "portal-svc",
+      "name": "Portal Service",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_PORTAL_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "crms-svc",
+      "name": "Candidate and Results Management System",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_CRMS_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "transparency-svc",
+      "name": "Transparency and Public Data Service",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_TRANSPARENCY_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "ecc-svc",
+      "name": "Electoral Complaints Committee Service",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_ECC_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "boundary-svc",
+      "name": "Boundary Delimitation Service",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_BOUNDARY_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "queue-svc",
+      "name": "Queue Management Service",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_QUEUE_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "inventory-svc",
+      "name": "Inventory Management Service",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_INVENTORY_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "governance-svc",
+      "name": "Governance and Compliance Service",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_GOVERNANCE_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "ai-platform-svc",
+      "name": "AI Platform Service",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_AI_PLATFORM_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "field-mobile-svc",
+      "name": "Field Mobile Service",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_FIELD_MOBILE_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "training-svc",
+      "name": "Training and Certification Service",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_TRAINING_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "support-admin-svc",
+      "name": "Support and Administration Service",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_SUPPORT_ADMIN_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "staff-portal",
+      "name": "Staff Portal BFF",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_STAFF_PORTAL_SECRET",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["https://staff.eel.local/*", "http://localhost:3000/*"],
+      "webOrigins": ["https://staff.eel.local", "http://localhost:3000"],
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "party-portal",
+      "name": "Party Portal BFF",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_PARTY_PORTAL_SECRET",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["https://party.eel.local/*", "http://localhost:3001/*"],
+      "webOrigins": ["https://party.eel.local", "http://localhost:3001"],
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "observer-portal",
+      "name": "Observer Portal BFF",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_OBSERVER_PORTAL_SECRET",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["https://observer.eel.local/*", "http://localhost:3002/*"],
+      "webOrigins": ["https://observer.eel.local", "http://localhost:3002"],
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "media-portal",
+      "name": "Media Portal BFF",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_MEDIA_PORTAL_SECRET",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["https://media.eel.local/*", "http://localhost:3003/*"],
+      "webOrigins": ["https://media.eel.local", "http://localhost:3003"],
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "public-portal",
+      "name": "Public Portal BFF",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_PUBLIC_PORTAL_SECRET",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["https://public.eel.local/*", "http://localhost:3004/*"],
+      "webOrigins": ["https://public.eel.local", "http://localhost:3004"],
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "county-portal",
+      "name": "County Portal BFF",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_COUNTY_PORTAL_SECRET",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["https://county.eel.local/*", "http://localhost:3005/*"],
+      "webOrigins": ["https://county.eel.local", "http://localhost:3005"],
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "eel-kit-android",
+      "name": "EEL Kit Android App",
+      "enabled": true,
+      "publicClient": true,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["eelkit://callback", "https://staff.eel.local/mobile/callback"],
+      "webOrigins": ["+"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "access.token.lifespan": "900"
+      }
+    },
+    {
+      "clientId": "eel-kit-ios",
+      "name": "EEL Kit iOS App",
+      "enabled": true,
+      "publicClient": true,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["eelkit://callback", "https://staff.eel.local/mobile/callback"],
+      "webOrigins": ["+"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "access.token.lifespan": "900"
+      }
+    },
+    {
+      "clientId": "eel-admin-cli",
+      "name": "EEL Admin CLI (kcadm)",
+      "enabled": true,
+      "publicClient": true,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [],
+      "webOrigins": [],
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "chair-portal",
+      "name": "Chair Office Portal (short-lived tokens, WebAuthn required)",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_CHAIR_PORTAL_SECRET",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "authenticationFlowBindingOverrides": {
+        "browser": "browser-webauthn-flow"
+      },
+      "redirectUris": ["https://chair.eel.local/*"],
+      "webOrigins": ["https://chair.eel.local"],
+      "attributes": {"access.token.lifespan": "300", "sso.session.max.lifespan": "900"}
+    },
+    {
+      "clientId": "iab-portal",
+      "name": "IAB Portal (short-lived tokens, WebAuthn required)",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_IAB_PORTAL_SECRET",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "authenticationFlowBindingOverrides": {
+        "browser": "browser-webauthn-flow"
+      },
+      "redirectUris": ["https://iab.eel.local/*"],
+      "webOrigins": ["https://iab.eel.local"],
+      "attributes": {"access.token.lifespan": "300", "sso.session.max.lifespan": "900"}
+    }
+  ],
+  "users": [
+    {
+      "username": "user_staff",
+      "email": "staff@eel.local",
+      "enabled": true,
+      "credentials": [{"type": "password", "value": "eel-dev-change-me", "temporary": true}],
+      "realmRoles": ["STAFF"]
+    },
+    {
+      "username": "user_ro",
+      "email": "ro@eel.local",
+      "enabled": true,
+      "credentials": [{"type": "password", "value": "eel-dev-change-me", "temporary": true}],
+      "realmRoles": ["RO"]
+    },
+    {
+      "username": "user_cro",
+      "email": "cro@eel.local",
+      "enabled": true,
+      "credentials": [{"type": "password", "value": "eel-dev-change-me", "temporary": true}],
+      "realmRoles": ["CRO"]
+    },
+    {
+      "username": "user_chair",
+      "email": "chair@eel.local",
+      "enabled": true,
+      "credentials": [{"type": "password", "value": "eel-dev-change-me", "temporary": true}],
+      "realmRoles": ["CHAIR"]
+    },
+    {
+      "username": "user_iab",
+      "email": "iab@eel.local",
+      "enabled": true,
+      "credentials": [{"type": "password", "value": "eel-dev-change-me", "temporary": true}],
+      "realmRoles": ["IAB"]
+    }
+  ]
+}

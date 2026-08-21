@@ -1,0 +1,19 @@
+# SPIRE registration entries for ai-platform-svc
+# Trust domain: eel.local (dev) / eel.staging (staging) / eel.pre-prod (pre-prod) / eel.prod (prod)
+# Applied via the SPIRE k8s controller; {{TRUST_DOMAIN}} and {{NODE_UID}} are
+# substituted by the deployment overlay for each environment.
+entries:
+  - spiffe_id: "spiffe://{{TRUST_DOMAIN}}/service/ai-platform-svc"
+    parent_id: "spiffe://{{TRUST_DOMAIN}}/spire/agent/k8s_psat/eel-primary/{{NODE_UID}}"
+    selectors:
+      - type: "k8s:sa"
+        value: "ai-platform-svc"
+      - type: "k8s:ns"
+        value: "ai-platform-svc"
+      - type: "k8s:pod-label"
+        value: "app.kubernetes.io/name:ai-platform-svc"
+    ttl: 3600
+    dns_names:
+      - "ai-platform-svc.svc.cluster.local"
+    admin: false
+    downstream: false

@@ -1,0 +1,65 @@
+# Transit mount configuration for eel.
+# Key naming follows ADR-0005 cycle-KEK convention:
+# cycle encryption keys are named kek-<YYYY>-cycle-<NN> (e.g. kek-2027-cycle-01).
+# The keys listed here are the canonical logical names; actual cycle-specific
+# key versions are created via the iam-seed CLI at the start of each election cycle.
+
+mounts:
+  - path: transit/eel
+    type: transit
+    description: "Transit secrets engine for eel cryptographic operations"
+    config:
+      default_lease_ttl: 0s   # transit does not issue leases
+      max_lease_ttl: 0s
+
+keys:
+  # Cycle Key Encryption Key (ADR-0005).
+  # Used to wrap/unwrap data-encryption keys per election cycle.
+  # Named kek-<YYYY>-cycle-<NN> at creation time; this entry is the template config.
+  - name: kek-cycle
+    type: aes256-gcm96
+    exportable: false
+    allow_plaintext_backup: false
+    auto_rotate_period: 0      # manual rotation per election cycle only
+    deletion_allowed: false
+    derived: false
+
+  # STH signing key for the transparency log (RFC 6962 / Sunlight).
+  - name: sth-signing
+    type: ecdsa-p384
+    exportable: false
+    allow_plaintext_backup: false
+    auto_rotate_period: 8760h  # annual
+    deletion_allowed: false
+
+  # Declaration signing: RTS signs voter declarations with this key.
+  - name: declaration-signing
+    type: ecdsa-p384
+    exportable: false
+    allow_plaintext_backup: false
+    auto_rotate_period: 8760h  # rotated per electoral cycle
+    deletion_allowed: false
+
+  # Kit CA signing: issues short-lived credential certificates for voter kits.
+  - name: kit-ca-signing
+    type: ecdsa-p256
+    exportable: false
+    allow_plaintext_backup: false
+    auto_rotate_period: 0      # manual rotation only
+    deletion_allowed: false
+
+  # Credential CA signing: issues verifiable credentials (W3C VC).
+  - name: credential-ca-signing
+    type: ecdsa-p256
+    exportable: false
+    allow_plaintext_backup: false
+    auto_rotate_period: 0      # manual rotation only
+    deletion_allowed: false
+
+  # Code signing: signs release artifacts.
+  - name: code-signing
+    type: ecdsa-p384
+    exportable: false
+    allow_plaintext_backup: false
+    auto_rotate_period: 17520h # biannual
+    deletion_allowed: false

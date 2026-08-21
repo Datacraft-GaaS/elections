@@ -1,0 +1,168 @@
+{
+  "realm": "eel-public",
+  "enabled": true,
+  "displayName": "EEL Public",
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "sslRequired": "external",
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 10,
+  "ssoSessionIdleTimeout": 3600,
+  "ssoSessionMaxLifespan": 86400,
+  "accessTokenLifespan": 600,
+  "passwordPolicy": "length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and passwordHistory(5) and forceExpiredPasswordChange(90)",
+  "otpPolicy": {
+    "type": "totp",
+    "algorithm": "HmacSHA256",
+    "initialCounter": 0,
+    "digits": 6,
+    "lookAheadWindow": 1,
+    "period": 30
+  },
+  "eventsEnabled": true,
+  "eventsListeners": ["jboss-logging", "eel-audit-kafka"],
+  "adminEventsEnabled": true,
+  "adminEventsDetailsEnabled": true,
+  "roles": {
+    "realm": [
+      {"name": "CITIZEN", "description": "Verified citizen using public services"},
+      {"name": "DIASPORA_VOTER", "description": "Diaspora voter registered for overseas voting"},
+      {"name": "RESEARCHER", "description": "Accredited academic or policy researcher"},
+      {"name": "SERVICE_ACCOUNT", "description": "Machine-to-machine service identity"}
+    ]
+  },
+  "groups": [
+    {
+      "name": "Citizens",
+      "subGroups": []
+    },
+    {
+      "name": "DiasporaVoters",
+      "subGroups": [
+        {"name": "NorthAmerica"},
+        {"name": "Europe"},
+        {"name": "MiddleEast"},
+        {"name": "Asia"},
+        {"name": "Africa"}
+      ]
+    },
+    {
+      "name": "Researchers",
+      "subGroups": [
+        {"name": "Academic"},
+        {"name": "PolicyInstitutes"},
+        {"name": "NGO"}
+      ]
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "iprs",
+      "displayName": "IPRS (Kenya National Registration)",
+      "providerId": "oidc",
+      "enabled": true,
+      "trustEmail": false,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "eel-public-iprs",
+        "clientSecret": "PLACEHOLDER_IPRS_SECRET",
+        "tokenUrl": "https://iprs.eel.local/oauth2/token",
+        "authorizationUrl": "https://iprs.eel.local/oauth2/authorize",
+        "issuer": "https://iprs.eel.local",
+        "defaultScope": "openid profile",
+        "validateSignature": "false",
+        "useJwksUrl": "false",
+        "syncMode": "INHERIT"
+      }
+    },
+    {
+      "alias": "ecitizen",
+      "displayName": "eCitizen (Kenya Government Portal)",
+      "providerId": "oidc",
+      "enabled": true,
+      "trustEmail": false,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "eel-public-ecitizen",
+        "clientSecret": "PLACEHOLDER_ECITIZEN_SECRET",
+        "tokenUrl": "https://ecitizen.eel.local/oauth2/token",
+        "authorizationUrl": "https://ecitizen.eel.local/oauth2/authorize",
+        "issuer": "https://ecitizen.eel.local",
+        "defaultScope": "openid profile",
+        "validateSignature": "false",
+        "useJwksUrl": "false",
+        "syncMode": "INHERIT"
+      }
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "portal-svc",
+      "name": "Portal Service",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_PORTAL_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "600"}
+    },
+    {
+      "clientId": "vprs-svc",
+      "name": "Voter Pre-Registration System",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_VPRS_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "600"}
+    },
+    {
+      "clientId": "public-portal",
+      "name": "Public Portal BFF",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_PUBLIC_PORTAL_SECRET",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["https://public.eel.local/*", "http://localhost:3004/*"],
+      "webOrigins": ["https://public.eel.local", "http://localhost:3004"],
+      "attributes": {"access.token.lifespan": "600"}
+    }
+  ],
+  "users": [
+    {
+      "username": "user_diaspora_voter",
+      "email": "diaspora@eel.local",
+      "enabled": true,
+      "credentials": [{"type": "password", "value": "eel-dev-change-me", "temporary": true}],
+      "realmRoles": ["DIASPORA_VOTER"]
+    },
+    {
+      "username": "user_researcher",
+      "email": "researcher@eel.local",
+      "enabled": true,
+      "credentials": [{"type": "password", "value": "eel-dev-change-me", "temporary": true}],
+      "realmRoles": ["RESEARCHER"]
+    }
+  ]
+}

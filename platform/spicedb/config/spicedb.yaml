@@ -1,0 +1,79 @@
+# SpiceDB application configuration for the EEL platform.
+# Environment-specific values (URIs, tokens) are injected via OpenBao / k8s secrets.
+# Rendered and mounted by the spicedb Helm chart or kustomize overlay.
+
+# ---------------------------------------------------------------------------
+# gRPC API
+# ---------------------------------------------------------------------------
+grpc-addr: ":50051"
+grpc-no-tls: false
+# TLS cert/key are provided by the SPIRE SVID injected via the CSI driver.
+# The SVID path is mounted at /run/spiffe/creds by the spiffe-csi-driver.
+grpc-tls-cert-path: /run/spiffe/creds/tls.crt
+grpc-tls-key-path:  /run/spiffe/creds/tls.key
+
+# ---------------------------------------------------------------------------
+# HTTP / dashboard
+# ---------------------------------------------------------------------------
+http-addr: ":8443"
+http-tls-cert-path: /run/spiffe/creds/tls.crt
+http-tls-key-path:  /run/spiffe/creds/tls.key
+
+# ---------------------------------------------------------------------------
+# Datastore (PostgreSQL via OpenBao-injected URI)
+# ---------------------------------------------------------------------------
+datastore-engine: postgres
+# SPICEDB_DATASTORE_URI is injected at pod startup by the OpenBao agent sidecar.
+datastore-conn-uri: "${SPICEDB_DATASTORE_URI}"
+# Connection pool tuning.
+datastore-max-tx-retries: 5
+datastore-conn-pool-read-max:  20
+datastore-conn-pool-write-max: 10
+
+# ---------------------------------------------------------------------------
+# Schema caching
+# ---------------------------------------------------------------------------
+schema-prefetch-count: 100
+
+# ---------------------------------------------------------------------------
+# Dispatch cluster (multi-node fan-out)
+# SpiceDB peers are discovered via the headless k8s service:
+#   spicedb-headless.spicedb.svc.cluster.local:50053
+# Each peer authenticates with its SPIFFE SVID (mTLS, same trust domain).
+# ---------------------------------------------------------------------------
+dispatch-upstream-addr: "spicedb-headless.spicedb.svc.cluster.local:50053"
+dispatch-upstream-ca-cert-path: /run/spiffe/creds/bundle.crt
+# Client cert presented to peers during dispatch mTLS handshake.
+dispatch-client-cert-path: /run/spiffe/creds/tls.crt
+dispatch-client-key-path:  /run/spiffe/creds/tls.key
+# Maximum depth for recursive permission checks.
+dispatch-max-depth: 50
+
+# ---------------------------------------------------------------------------
+# Request hedging (reduces tail latency on dispatch)
+# ---------------------------------------------------------------------------
+# Hedging sends a duplicate request to a second peer when the first is slow.
+dispatch-secondary-upstream-percentage: 0
+
+# Enable hedging on the external gRPC API.
+request-hedging: true
+request-hedging-initial-slow-value: "10ms"
+request-hedging-max-requests:       1000000
+request-hedging-quantile:           0.99
+
+# ---------------------------------------------------------------------------
+# Metrics (Prometheus)
+# ---------------------------------------------------------------------------
+metrics-addr: ":9090"
+
+# ---------------------------------------------------------------------------
+# Telemetry
+# ---------------------------------------------------------------------------
+# Disable the default anonymous telemetry ping to Authzed.
+telemetry-endpoint: ""
+
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
+log-level: info
+log-format: json

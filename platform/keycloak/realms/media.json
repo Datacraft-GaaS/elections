@@ -1,0 +1,143 @@
+{
+  "realm": "eel-media",
+  "enabled": true,
+  "displayName": "EEL Media",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "sslRequired": "external",
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 5,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 28800,
+  "accessTokenLifespan": 300,
+  "passwordPolicy": "length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and passwordHistory(5) and forceExpiredPasswordChange(90)",
+  "otpPolicy": {
+    "type": "totp",
+    "algorithm": "HmacSHA256",
+    "initialCounter": 0,
+    "digits": 6,
+    "lookAheadWindow": 1,
+    "period": 30
+  },
+  "eventsEnabled": true,
+  "eventsListeners": ["jboss-logging", "eel-audit-kafka"],
+  "adminEventsEnabled": true,
+  "adminEventsDetailsEnabled": true,
+  "roles": {
+    "realm": [
+      {"name": "MEDIA", "description": "Accredited media house representative"},
+      {"name": "JOURNALIST", "description": "Individual accredited journalist"},
+      {"name": "SERVICE_ACCOUNT", "description": "Machine-to-machine service identity"}
+    ]
+  },
+  "groups": [
+    {
+      "name": "PrintMedia",
+      "subGroups": []
+    },
+    {
+      "name": "BroadcastMedia",
+      "subGroups": [
+        {"name": "Television"},
+        {"name": "Radio"}
+      ]
+    },
+    {
+      "name": "OnlineMedia",
+      "subGroups": []
+    },
+    {
+      "name": "ForeignMedia",
+      "subGroups": []
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "media-council",
+      "displayName": "Media Council of Kenya (placeholder)",
+      "providerId": "oidc",
+      "enabled": true,
+      "trustEmail": false,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "eel-media-mck",
+        "clientSecret": "PLACEHOLDER_MCK_SECRET",
+        "tokenUrl": "https://mck.eel.local/oauth2/token",
+        "authorizationUrl": "https://mck.eel.local/oauth2/authorize",
+        "issuer": "https://mck.eel.local",
+        "defaultScope": "openid profile",
+        "validateSignature": "false",
+        "useJwksUrl": "false",
+        "syncMode": "INHERIT"
+      }
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "portal-svc",
+      "name": "Portal Service",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_PORTAL_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "transparency-svc",
+      "name": "Transparency and Public Data Service",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_TRANSPARENCY_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "media-portal",
+      "name": "Media Portal BFF",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_MEDIA_PORTAL_SECRET",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["https://media.eel.local/*", "http://localhost:3003/*"],
+      "webOrigins": ["https://media.eel.local", "http://localhost:3003"],
+      "attributes": {"access.token.lifespan": "300"}
+    }
+  ],
+  "users": [
+    {
+      "username": "user_media",
+      "email": "media@eel.local",
+      "enabled": true,
+      "credentials": [{"type": "password", "value": "eel-dev-change-me", "temporary": true}],
+      "realmRoles": ["MEDIA"]
+    },
+    {
+      "username": "user_journalist",
+      "email": "journalist@eel.local",
+      "enabled": true,
+      "credentials": [{"type": "password", "value": "eel-dev-change-me", "temporary": true}],
+      "realmRoles": ["JOURNALIST"]
+    }
+  ]
+}

@@ -1,0 +1,203 @@
+# Database secrets engine mount for eel.
+# Provides dynamic PostgreSQL credentials per service via short-lived roles.
+# Each service has a pre-created PostgreSQL role (e.g. biometric_edge_svc_role)
+# that the dynamic user is granted at login and revoked on lease expiry.
+
+mounts:
+  - path: database/eel
+    type: database
+    description: "Dynamic PostgreSQL credentials for eel services"
+
+connections:
+  - name: eel-postgres
+    plugin_name: postgresql-database-plugin
+    allowed_roles: "*"
+    # Connection URL pulled from KV at deploy time; placeholder shown here.
+    connection_url: "postgresql://{{username}}:{{password}}@db.eel.internal:5432/eel?sslmode=verify-full"
+    # Vault-managed rotation credentials stored separately in kv/eel/<env>/database/root
+    username: "vault_root"
+    password: "CHANGE_ME_VIA_KV"
+    max_open_connections: 5
+    max_idle_connections: 2
+    max_connection_lifetime: 300s
+
+roles:
+  - name: biometric-edge-svc-role
+    db_name: eel-postgres
+    creation_statements:
+      - "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';"
+      - "GRANT biometric_edge_svc_role TO \"{{name}}\";"
+    revocation_statements:
+      - "DROP ROLE IF EXISTS \"{{name}}\";"
+    default_ttl: 1h
+    max_ttl: 24h
+
+  - name: bvr-svc-role
+    db_name: eel-postgres
+    creation_statements:
+      - "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';"
+      - "GRANT bvr_svc_role TO \"{{name}}\";"
+    revocation_statements:
+      - "DROP ROLE IF EXISTS \"{{name}}\";"
+    default_ttl: 1h
+    max_ttl: 24h
+
+  - name: abis-svc-role
+    db_name: eel-postgres
+    creation_statements:
+      - "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';"
+      - "GRANT abis_svc_role TO \"{{name}}\";"
+    revocation_statements:
+      - "DROP ROLE IF EXISTS \"{{name}}\";"
+    default_ttl: 1h
+    max_ttl: 24h
+
+  - name: vprs-svc-role
+    db_name: eel-postgres
+    creation_statements:
+      - "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';"
+      - "GRANT vprs_svc_role TO \"{{name}}\";"
+    revocation_statements:
+      - "DROP ROLE IF EXISTS \"{{name}}\";"
+    default_ttl: 1h
+    max_ttl: 24h
+
+  - name: bvi-svc-role
+    db_name: eel-postgres
+    creation_statements:
+      - "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';"
+      - "GRANT bvi_svc_role TO \"{{name}}\";"
+    revocation_statements:
+      - "DROP ROLE IF EXISTS \"{{name}}\";"
+    default_ttl: 1h
+    max_ttl: 24h
+
+  - name: rts-svc-role
+    db_name: eel-postgres
+    creation_statements:
+      - "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';"
+      - "GRANT rts_svc_role TO \"{{name}}\";"
+    revocation_statements:
+      - "DROP ROLE IF EXISTS \"{{name}}\";"
+    default_ttl: 1h
+    max_ttl: 24h
+
+  - name: portal-svc-role
+    db_name: eel-postgres
+    creation_statements:
+      - "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';"
+      - "GRANT portal_svc_role TO \"{{name}}\";"
+    revocation_statements:
+      - "DROP ROLE IF EXISTS \"{{name}}\";"
+    default_ttl: 1h
+    max_ttl: 24h
+
+  - name: crms-svc-role
+    db_name: eel-postgres
+    creation_statements:
+      - "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';"
+      - "GRANT crms_svc_role TO \"{{name}}\";"
+    revocation_statements:
+      - "DROP ROLE IF EXISTS \"{{name}}\";"
+    default_ttl: 1h
+    max_ttl: 24h
+
+  - name: transparency-svc-role
+    db_name: eel-postgres
+    creation_statements:
+      - "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';"
+      - "GRANT transparency_svc_role TO \"{{name}}\";"
+    revocation_statements:
+      - "DROP ROLE IF EXISTS \"{{name}}\";"
+    default_ttl: 1h
+    max_ttl: 24h
+
+  - name: ecc-svc-role
+    db_name: eel-postgres
+    creation_statements:
+      - "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';"
+      - "GRANT ecc_svc_role TO \"{{name}}\";"
+    revocation_statements:
+      - "DROP ROLE IF EXISTS \"{{name}}\";"
+    default_ttl: 1h
+    max_ttl: 24h
+
+  - name: boundary-svc-role
+    db_name: eel-postgres
+    creation_statements:
+      - "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';"
+      - "GRANT boundary_svc_role TO \"{{name}}\";"
+    revocation_statements:
+      - "DROP ROLE IF EXISTS \"{{name}}\";"
+    default_ttl: 1h
+    max_ttl: 24h
+
+  - name: queue-svc-role
+    db_name: eel-postgres
+    creation_statements:
+      - "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';"
+      - "GRANT queue_svc_role TO \"{{name}}\";"
+    revocation_statements:
+      - "DROP ROLE IF EXISTS \"{{name}}\";"
+    default_ttl: 1h
+    max_ttl: 24h
+
+  - name: inventory-svc-role
+    db_name: eel-postgres
+    creation_statements:
+      - "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';"
+      - "GRANT inventory_svc_role TO \"{{name}}\";"
+    revocation_statements:
+      - "DROP ROLE IF EXISTS \"{{name}}\";"
+    default_ttl: 1h
+    max_ttl: 24h
+
+  - name: governance-svc-role
+    db_name: eel-postgres
+    creation_statements:
+      - "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';"
+      - "GRANT governance_svc_role TO \"{{name}}\";"
+    revocation_statements:
+      - "DROP ROLE IF EXISTS \"{{name}}\";"
+    default_ttl: 1h
+    max_ttl: 24h
+
+  - name: ai-platform-svc-role
+    db_name: eel-postgres
+    creation_statements:
+      - "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';"
+      - "GRANT ai_platform_svc_role TO \"{{name}}\";"
+    revocation_statements:
+      - "DROP ROLE IF EXISTS \"{{name}}\";"
+    default_ttl: 1h
+    max_ttl: 24h
+
+  - name: field-mobile-svc-role
+    db_name: eel-postgres
+    creation_statements:
+      - "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';"
+      - "GRANT field_mobile_svc_role TO \"{{name}}\";"
+    revocation_statements:
+      - "DROP ROLE IF EXISTS \"{{name}}\";"
+    default_ttl: 1h
+    max_ttl: 24h
+
+  - name: training-svc-role
+    db_name: eel-postgres
+    creation_statements:
+      - "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';"
+      - "GRANT training_svc_role TO \"{{name}}\";"
+    revocation_statements:
+      - "DROP ROLE IF EXISTS \"{{name}}\";"
+    default_ttl: 1h
+    max_ttl: 24h
+
+  - name: support-admin-svc-role
+    db_name: eel-postgres
+    creation_statements:
+      - "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';"
+      - "GRANT support_admin_svc_role TO \"{{name}}\";"
+    revocation_statements:
+      - "DROP ROLE IF EXISTS \"{{name}}\";"
+    default_ttl: 1h
+    max_ttl: 24h

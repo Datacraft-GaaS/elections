@@ -1,0 +1,19 @@
+# SPIRE registration entries for inventory-svc
+# Trust domain: eel.local (dev) / eel.staging (staging) / eel.pre-prod (pre-prod) / eel.prod (prod)
+# Applied via the SPIRE k8s controller; {{TRUST_DOMAIN}} and {{NODE_UID}} are
+# substituted by the deployment overlay for each environment.
+entries:
+  - spiffe_id: "spiffe://{{TRUST_DOMAIN}}/service/inventory-svc"
+    parent_id: "spiffe://{{TRUST_DOMAIN}}/spire/agent/k8s_psat/eel-primary/{{NODE_UID}}"
+    selectors:
+      - type: "k8s:sa"
+        value: "inventory-svc"
+      - type: "k8s:ns"
+        value: "inventory-svc"
+      - type: "k8s:pod-label"
+        value: "app.kubernetes.io/name:inventory-svc"
+    ttl: 3600
+    dns_names:
+      - "inventory-svc.svc.cluster.local"
+    admin: false
+    downstream: false

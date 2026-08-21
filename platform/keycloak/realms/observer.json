@@ -1,0 +1,136 @@
+{
+  "realm": "eel-observer",
+  "enabled": true,
+  "displayName": "EEL Observers",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "sslRequired": "external",
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 5,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 28800,
+  "accessTokenLifespan": 300,
+  "passwordPolicy": "length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and passwordHistory(5) and forceExpiredPasswordChange(90)",
+  "otpPolicy": {
+    "type": "totp",
+    "algorithm": "HmacSHA256",
+    "initialCounter": 0,
+    "digits": 6,
+    "lookAheadWindow": 1,
+    "period": 30
+  },
+  "eventsEnabled": true,
+  "eventsListeners": ["jboss-logging", "eel-audit-kafka"],
+  "adminEventsEnabled": true,
+  "adminEventsDetailsEnabled": true,
+  "roles": {
+    "realm": [
+      {"name": "OBSERVER", "description": "Domestic accredited observer"},
+      {"name": "INTERNATIONAL_OBSERVER", "description": "International or diplomatic observer"},
+      {"name": "IAB_LIAISON", "description": "IAB liaison officer embedded with observer mission"},
+      {"name": "SERVICE_ACCOUNT", "description": "Machine-to-machine service identity"}
+    ]
+  },
+  "groups": [
+    {
+      "name": "DomesticObservers",
+      "subGroups": [
+        {"name": "CivilSociety"},
+        {"name": "ReligiousOrgs"},
+        {"name": "ProfessionalBodies"}
+      ]
+    },
+    {
+      "name": "InternationalObservers",
+      "subGroups": [
+        {"name": "AU"},
+        {"name": "EU"},
+        {"name": "COMESA"},
+        {"name": "EAC"},
+        {"name": "CommonwealthObservers"}
+      ]
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "ecourt",
+      "displayName": "eCourt (Judiciary Portal)",
+      "providerId": "oidc",
+      "enabled": true,
+      "trustEmail": false,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "eel-observer-ecourt",
+        "clientSecret": "PLACEHOLDER_ECOURT_SECRET",
+        "tokenUrl": "https://ecourt.eel.local/oauth2/token",
+        "authorizationUrl": "https://ecourt.eel.local/oauth2/authorize",
+        "issuer": "https://ecourt.eel.local",
+        "defaultScope": "openid profile",
+        "validateSignature": "false",
+        "useJwksUrl": "false",
+        "syncMode": "INHERIT"
+      }
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "ecc-svc",
+      "name": "Electoral Complaints Committee Service",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_ECC_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "portal-svc",
+      "name": "Portal Service",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_PORTAL_SECRET",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": {"access.token.lifespan": "300"}
+    },
+    {
+      "clientId": "observer-portal",
+      "name": "Observer Portal BFF",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "secret": "PLACEHOLDER_OBSERVER_PORTAL_SECRET",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["https://observer.eel.local/*", "http://localhost:3002/*"],
+      "webOrigins": ["https://observer.eel.local", "http://localhost:3002"],
+      "attributes": {"access.token.lifespan": "300"}
+    }
+  ],
+  "users": [
+    {
+      "username": "user_observer",
+      "email": "observer@eel.local",
+      "enabled": true,
+      "credentials": [{"type": "password", "value": "eel-dev-change-me", "temporary": true}],
+      "realmRoles": ["OBSERVER"]
+    }
+  ]
+}
