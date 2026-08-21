@@ -1,0 +1,63 @@
+# Virtual workspace manifest for bvi-svc.
+# When running `cargo build --release --workspace` from this directory,
+# Cargo uses this as the workspace root for the service crates.
+# The root eel workspace also picks up these crates via services/*/crates/*.
+[workspace]
+resolver = "2"
+members = [
+    "crates/bvi-api",
+    "crates/bvi-config",
+    "crates/bvi-turnout",
+]
+
+[workspace.package]
+version      = "0.1.0"
+edition      = "2021"
+license      = "Apache-2.0"
+rust-version = "1.83"
+authors      = ["eel contributors"]
+repository   = "https://gitea.internal/eel/eel"
+
+[workspace.dependencies]
+axum              = { version = "0.8",  features = ["macros", "tokio"] }
+tower             = { version = "0.5",  features = ["full"] }
+tower-http        = { version = "0.6",  features = ["full"] }
+tonic             = { version = "0.12", features = ["tls", "transport"] }
+tonic-build       = { version = "0.12" }
+tokio             = { version = "1",    features = ["full"] }
+tokio-stream      = { version = "0.1" }
+sqlx              = { version = "0.8",  features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "migrate"] }
+utoipa            = { version = "4",    features = ["axum_extras", "uuid"] }
+utoipa-swagger-ui = { version = "7",    features = ["axum"] }
+serde             = { version = "1",    features = ["derive"] }
+serde_json        = { version = "1" }
+tracing           = { version = "0.1" }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+uuid              = { version = "1",    features = ["v4", "v7", "serde"] }
+thiserror         = { version = "2" }
+anyhow            = { version = "1" }
+chrono            = { version = "0.4",  features = ["serde"] }
+bytes             = "1"
+flate2            = "1"
+sha2              = "0.10"
+ed25519-dalek     = { version = "2", features = ["serde"] }
+hex               = "0.4"
+base64            = "0.22"
+prost             = "0.13"
+rdkafka           = { version = "0.37", features = ["cmake-build"] }
+tar               = "0.4"
+futures           = "0.3"
+testcontainers          = { version = "0.23" }
+testcontainers-modules  = { version = "0.11", features = ["postgres", "kafka"] }
+rstest                  = { version = "0.23" }
+
+# Internal crates
+bvi-api     = { path = "crates/bvi-api" }
+bvi-config  = { path = "crates/bvi-config" }
+bvi-turnout = { path = "crates/bvi-turnout" }
+
+[profile.release]
+lto           = "thin"
+codegen-units = 1
+strip         = true
+opt-level     = 3

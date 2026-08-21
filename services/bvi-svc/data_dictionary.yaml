@@ -1,0 +1,79 @@
+# bvi-svc data dictionary -- M06 + M07
+service: bvi-svc
+modules: [M06, M07]
+version: "1.0.0"
+
+entities:
+  - name: KitConfigBundle
+    table: kit_configs
+    data_class: C
+    store: T2
+    fields:
+      - name: bundle_id
+        type: uuid
+        notes: UUID7
+      - name: station_code
+        type: text
+        notes: IEBC station code
+      - name: version
+        type: int
+        notes: monotonically increasing; kit rejects downgrade
+      - name: voter_list_hash
+        type: text
+        notes: SHA-256 hex of register extract
+      - name: minio_key
+        type: text
+        notes: "eel-config/stations/{station_code}/v{version}.tar.gz"
+
+  - name: IdentificationEvent
+    table: identification_events
+    data_class: C
+    store: T1-audit
+    pii: false
+    fields:
+      - name: voter_id
+        type: text
+        notes: hashed on ingest for audit log; raw kept in event for idempotency
+      - name: outcome
+        type: enum
+        values: [matched, no_match, timeout, error]
+      - name: honey_mode
+        type: bool
+        notes: true if event came from a revoked kit
+
+  - name: TurnoutRollup
+    table: turnout_rollups
+    data_class: D
+    store: T2
+    notes: materialized view refreshed incrementally
+
+  - name: KitCert
+    table: kit_certs
+    data_class: C
+    store: T1-audit
+    fields:
+      - name: revoked
+        type: bool
+      - name: revoked_at
+        type: timestamptz
+        notes: triggers honey-mode cache on revocation event
+
+  - name: Objection
+    table: objections
+    data_class: B
+    store: T2
+    pii: true
+    fields:
+      - name: objection_type
+        type: enum
+        values: [rectification, transfer_request, removal_request]
+      - name: status
+        type: enum
+        values: [pending, under_review, approved, rejected]
+
+  - name: VoterLookupAudit
+    table: voter_lookup_audit
+    data_class: C
+    store: T1-audit
+    pii: false
+    notes: IP and voter ID stored as hashes only; not erasable on SAR

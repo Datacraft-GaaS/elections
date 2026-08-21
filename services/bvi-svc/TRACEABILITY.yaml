@@ -1,0 +1,79 @@
+# bvi-svc requirement traceability matrix
+service: bvi-svc
+wave: 3
+work_package: WP-3.7
+modules: [M06, M07]
+gate: G3
+
+requirements:
+  - id: FR-M06-001
+    description: Generate per-station register-extract config bundle
+    impl: crates/bvi-config/src/bundle.rs
+    tests: [crates/bvi-api/tests/kit_ingest_test.rs]
+    status: stub
+
+  - id: FR-M06-006
+    description: Kit whitelist/blacklist; revoke certificate; propagate within 60 s
+    impl: crates/bvi-api/src/handlers.rs::revoke_kit
+    tests: [crates/bvi-api/tests/revocation_test.rs]
+    status: stub
+
+  - id: FR-M06-012
+    description: Honey-mode coordination for revoked kits
+    impl: crates/bvi-turnout/src/honey.rs
+    tests: [crates/bvi-turnout/tests/honey_mode_test.rs]
+    status: implemented
+
+  - id: FR-M06-013
+    description: Ingest identification events with per-event kit signature + SVID mTLS verify
+    impl: crates/bvi-turnout/src/consumer.rs
+    tests: [crates/bvi-api/tests/kit_ingest_test.rs]
+    status: stub
+
+  - id: FR-M06-017
+    description: Ingest p99 <= 100 ms at 18,000 req/s
+    impl: crates/bvi-api/src/routes.rs
+    tests: [loadtest/k6/bvi_load.js]
+    status: loadtest-defined
+
+  - id: FR-M07-005
+    description: Anti-enumeration constant-time response
+    impl: ex/bvv_web/lib/bvv_web/live/lookup_live.ex (min 300 ms + jitter)
+    tests: [crates/bvi-turnout/tests/timing_oracle_test.rs]
+    status: implemented
+
+  - id: EC-SEC-10
+    description: Constant-time BVV lookup; p95 delta < 5 ms
+    impl: ex/bvv_web/lib/bvv_web/live/lookup_live.ex
+    tests: [crates/bvi-turnout/tests/timing_oracle_test.rs]
+    status: implemented
+
+  - id: EC-OPS-02
+    description: No-double-ID assertion via unique constraint on (voter_id, election_id)
+    impl: migrations/V3__identification_events.sql
+    tests: [crates/bvi-api/tests/kit_swap_test.rs]
+    status: implemented
+
+  - id: AC-M06-01
+    description: 5,000 events/sec sustained without loss
+    impl: crates/bvi-turnout/src/consumer.rs
+    tests: [loadtest/k6/bvi_load.js]
+    status: loadtest-defined
+
+  - id: AC-M07-04
+    description: Timing oracle p95 delta < 5 ms
+    impl: ex/bvv_web/lib/bvv_web/live/lookup_live.ex
+    tests: [crates/bvi-turnout/tests/timing_oracle_test.rs]
+    status: implemented
+
+adr_refs:
+  - ADR-0013: bvi-svc is NOT event-sourced; uses state + audit shadow table
+  - ADR-0015: transactional outbox; 64 partitions for eel.bvi.identification.v1
+  - ADR-0016: PII retention; voter_id hashed in audit log; full ID retained for idempotency only
+
+signing_role_decision:
+  role: StationConfig
+  rationale: >
+    Dedicated role separate from Sth (transparency-log signed tree heads) to isolate
+    blast radius: a compromised StationConfig key cannot forge transparency-log entries.
+    Decision recorded per WP-3.7 deliverable for bvi-config.
