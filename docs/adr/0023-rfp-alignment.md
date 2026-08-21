@@ -116,7 +116,7 @@ Six notes recording where the earlier `sw/` draft differs from the ADRs and whic
 
 ## Outstanding items
 
-IEBC-side questions in `docs/iebc-clarifications-outstanding.md`; Datacraft bid-document backlog in `docs/datacraft-internal-backlog.md`. Highlights:
+IEBC-side questions in `docs/eel-clarifications-outstanding.md`; Datacraft bid-document backlog in `docs/datacraft-internal-backlog.md`. Highlights:
 
 - DATACRAFT_SOFTWARE_SCOPE.md v2 covers only M01-M28 while module set is M01-M69.
 - ACCEPTANCE-CRITERIA.md has no OAT/FAT criteria for M35-M69.
@@ -135,4 +135,4 @@ Negative: readers must consult both the original ADR and this reconciliation to 
 
 ## Related
 
-All of ADRs 0002-0022. Spec-alignment notes under `docs/spec-alignment/`. `docs/iebc-clarifications-outstanding.md`, `docs/datacraft-internal-backlog.md`. Decision log `docs/architecture/decision-log.md` Phase 14 (RFP-alignment reconciliation).
+All of ADRs 0002-0022. Spec-alignment notes under `docs/spec-alignment/`. `docs/eel-clarifications-outstanding.md`, `docs/datacraft-internal-backlog.md`. Decision log `docs/architecture/decision-log.md` Phase 14 (RFP-alignment reconciliation).

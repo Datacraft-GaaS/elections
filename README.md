@@ -47,7 +47,7 @@ Decided in ADRs 0001-0023. See `docs/adr/README.md` for the index and `docs/arch
 - **Admin portals**: Django 5 + HTMX + Alpine.
 - **Static portals**: Astro 5 + Svelte islands.
 - **Operator desktop**: Tauri 2 (Rust + web UI).
-- **Kits + mobile**: Flutter/Dart (shared `libiebc-verifier` Rust FFI).
+- **Kits + mobile**: Flutter/Dart (shared `libeel-verifier` Rust FFI).
 - **OLTP**: PostgreSQL 17, three T1 clusters per site (voter / consensus / audit), two IEBC DR sites.
 - **Analytics**: PG read replicas + BRIN + materialised views day 1; ClickHouse deferred.
 - **Search**: OpenSearch scoped to four modules; Postgres full-text elsewhere.
@@ -66,13 +66,13 @@ Decided in ADRs 0001-0023. See `docs/adr/README.md` for the index and `docs/arch
 ## Where things live for a new contributor
 
 - Adding a new module? Design its `docs/SPEC.md` under `modules/<slug>/docs/`; its implementation lives inside the appropriate `services/<svc>/src/`.
-- Adding a new event? Follow `docs/EVENT-CONVENTIONS.md`. Schema in `packages/event-schemas/`. Topic in `platform/kafka/topics/`. Producer via `iebc-outbox-{rs,py,ex}` shared lib. Test proves idempotency.
+- Adding a new event? Follow `docs/EVENT-CONVENTIONS.md`. Schema in `packages/event-schemas/`. Topic in `platform/kafka/topics/`. Producer via `eel-outbox-{rs,py,ex}` shared lib. Test proves idempotency.
 - Adding a new API endpoint? OpenAPI 3.1 in `packages/openapi-contracts/`. Client generation lands in `packages/api-clients/<lang>/`. Follow ADR-0011 tier + signing rules.
 - Adding a new external integration? Adapter under `integrations/<name>/`. Python by default (vendor SDK ecosystem). Wrap in a thin Rust facade for the consuming service.
 - New ADR? Numbered `docs/adr/<n>-<slug>.md`, update `docs/adr/README.md` index.
 
 ## Status
 
-Design phase complete. 23 ADRs committed. Spec-alignment notes (`docs/spec-alignment/`) list the edits to apply to the bid documents. IEBC questions in `docs/iebc-clarifications-outstanding.md`; our own bid-document backlog in `docs/datacraft-internal-backlog.md`.
+Design phase complete. 23 ADRs committed. Spec-alignment notes (`docs/spec-alignment/`) list the edits to apply to the bid documents. IEBC questions in `docs/eel-clarifications-outstanding.md`; our own bid-document backlog in `docs/datacraft-internal-backlog.md`.
 
 Next: first real service — `services/transparency-svc/` in Rust per ADR-0017.

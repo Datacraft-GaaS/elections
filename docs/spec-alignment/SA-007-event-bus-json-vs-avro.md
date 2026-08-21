@@ -15,7 +15,7 @@ Status: decided (ADR takes precedence; sw/ docs to be edited)
 ## Decision (per ADRs)
 
 - **JSON + zstd on the wire**, one encoding, canonical JSON (RFC 8785) for signing.
-- **~500 topics** organised per aggregate + major version (`iebc.<context>.<aggregate>.v<major>`).
+- **~500 topics** organised per aggregate + major version (`eel.<context>.<aggregate>.v<major>`).
 - **Karapace** (Aiven Apache 2.0 fork of Confluent SR — supports both Avro and JSON Schema).
 - **90-day hot retention** (RFP-aligned per PRE_BID D13) with Kafka Tiered Storage to MinIO thereafter.
 

@@ -19,7 +19,7 @@ Date: 2026-08-21
 - **Slow-loris / low-and-slow**: strict connection timeouts, header timeouts, minimum request rates enforced at nginx.
 - **DNS**: **DNSSEC** signed, **CAA** records set, multi-provider authoritative DNS (at least two Kenyan providers + a fallback), continuously monitored for hijack.
 - **TLS**: TLS 1.3 only, **HSTS preload**, **DANE**, **ECH** where clients support it. Ciphers: PQ hybrid (ML-KEM + X25519), classical fallback X25519-only.
-- **Certificate Transparency monitoring**: alert on any cert issued for iebc.ke or lookalike domains.
+- **Certificate Transparency monitoring**: alert on any cert issued for eel.local or lookalike domains.
 - **Brand / typosquat monitoring**: continuous on public search + social; misinformation vector.
 - **Anti-clone response playbook**: quick DNS/TLS provisioning for legitimate additions; takedown workflow with Kenyan registrars for impersonation.
 

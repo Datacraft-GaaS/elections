@@ -39,7 +39,7 @@ Replace with a per-portal-shape allocation (Path B):
 
 ## Trade-offs
 
-- Three portal frameworks is more surface than one. Real cost: three build toolchains, three CI lanes, three teams' worth of expertise. Mitigated by strict per-category allocation, shared design tokens across all three, and identical `iebc-auth` shared library making the auth code identical.
+- Three portal frameworks is more surface than one. Real cost: three build toolchains, three CI lanes, three teams' worth of expertise. Mitigated by strict per-category allocation, shared design tokens across all three, and identical `eel-auth` shared library making the auth code identical.
 - Elixir is a fourth backend language. Real hiring cost in Kenya; mitigated by 2-3 senior anchors + upskilling.
 - LiveView-in-Tauri-webview for M16 Command Centre is unusual; validated in prior deployments (e.g. supabase-realtime tooling).
 

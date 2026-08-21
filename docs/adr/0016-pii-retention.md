@@ -24,7 +24,7 @@ Kenya Data Protection Act 2019 §40 grants right-to-erasure. Elections Act §32 
 - **Data dictionary per service**: `data_dictionary.yaml` classifying every column. CI fails on any new column without a classification.
 - **Rust type wrappers**: `PIIRestricted<T>`, `PIISensitive<T>`, `PIIPublic<T>` — must call `.reveal(purpose: Purpose)` to unwrap; every reveal emits an audit event.
 - **Python and Elixir parallels** with equivalent APIs.
-- **Logging discipline**: `iebc-telemetry` refuses to serialise Tier A/B types; Tier B goes through redaction wrapper.
+- **Logging discipline**: `eel-telemetry` refuses to serialise Tier A/B types; Tier B goes through redaction wrapper.
 - **Backup segregation**: Tier A/B backed up with separate keys.
 
 **Right-to-erasure implementation**: **soft-delete + scheduled hard-purge job + rotating backup encryption keys**. NOT cryptographic erasure — over-engineered for this domain.

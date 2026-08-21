@@ -9,13 +9,13 @@ Millions of concurrent viewers on election night; sustained adversarial pressure
 
 ## Decision
 
-Every service inherits these from shared crates (`iebc-resilience-{rs,py,ex}`, `iebc-loadshedding-{rs,py,ex}`) and satisfies them by construction, not by review.
+Every service inherits these from shared crates (`eel-resilience-{rs,py,ex}`, `eel-loadshedding-{rs,py,ex}`) and satisfies them by construction, not by review.
 
 - **Three operating modes per service** — normal / degraded / read-only-lockdown. Feature-flagged, one-command switchable, documented per module in `docs/runbooks/<module>-degradation.md`, rehearsed monthly.
   - Normal: live queries, real-time updates.
   - Degraded: serve last-known-good signed snapshot; disable expensive queries; freeze SSE fan-out to sampled interval.
   - Read-only lockdown: reject all writes, serve cached content, log every request, alert IR immediately.
-- **Idempotency mandatory** on every write endpoint. Client-provided `Idempotency-Key` header; server deduplicates by (subject, key) with 24h TTL. Enforced by `iebc-api-server-rs` middleware and equivalents.
+- **Idempotency mandatory** on every write endpoint. Client-provided `Idempotency-Key` header; server deduplicates by (subject, key) with 24h TTL. Enforced by `eel-api-server-rs` middleware and equivalents.
 - **Circuit breakers** on every external call: half-open probe recovery; per-dependency budget; failures open circuit, degraded mode may trigger automatically.
 - **Bounded queues everywhere**: no unbounded channels; drop policy documented per queue.
 - **Bounded concurrency**: per-upstream `Semaphore` (Rust) / equivalent, plus per-request timeout, plus per-endpoint concurrency cap.
@@ -29,7 +29,7 @@ Every service inherits these from shared crates (`iebc-resilience-{rs,py,ex}`, `
 
 Positive: no single failing dependency cascades; degraded modes are known and rehearsed, not discovered on election night; retry storms cannot amplify.
 
-Negative: shared-library discipline requires strict review — a service that bypasses `iebc-api-server-rs` middleware breaks the guarantees. Enforced by code review + linters + integration tests that assert idempotency on every write endpoint.
+Negative: shared-library discipline requires strict review — a service that bypasses `eel-api-server-rs` middleware breaks the guarantees. Enforced by code review + linters + integration tests that assert idempotency on every write endpoint.
 
 ## Alternatives rejected
 

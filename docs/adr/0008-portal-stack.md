@@ -21,7 +21,7 @@ Three portal frameworks + Tauri + Flutter, allocated strictly by portal category
 
 Rules:
 
-- All portals verify JWT against Keycloak JWKS via the `iebc-auth` shared library. Same auth pattern in Rust services, Django views, LiveView hooks, Astro server routes.
+- All portals verify JWT against Keycloak JWKS via the `eel-auth` shared library. Same auth pattern in Rust services, Django views, LiveView hooks, Astro server routes.
 - BFF discipline (ADR-0007): browsers never see refresh tokens or call SpiceDB/OpenBao directly.
 - Strict CSP with per-request nonces; no external JS ever; no CDN fetches — everything self-hosted via Harbor/nginx/MinIO.
 - Astro static builds published as cosign-signed tarballs to MinIO; served through the edge (ADR-0010).

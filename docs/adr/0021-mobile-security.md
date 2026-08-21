@@ -12,12 +12,12 @@ Voter-facing mobile apps (M13 verifier, M29 citizen verify) and accredited-user 
 - **Device attestation on every session**:
   - Android: **Google Play Integrity API** — verifies device integrity (Meets Basic + Device + Strong Integrity levels; policy per app tier).
   - iOS: **Apple App Attest + DeviceCheck** — verifies device authenticity.
-  - Attestation token attached to every authenticated request via `X-IEBC-Attest` header; backend rejects sessions without a fresh valid attestation.
+  - Attestation token attached to every authenticated request via `X-Eel-Attest` header; backend rejects sessions without a fresh valid attestation.
 - **RASP (Runtime Application Self-Protection)**:
   - Frida detection, Xposed detection, Magisk detection, root/jailbreak detection.
   - Debugger detection, emulator detection.
   - App integrity check (signature verification against pinned signing certificate).
-  - Actions on tamper: session terminate + local wipe + telemetry event to Kafka `iebc.mobile.tamper.v1` + user-facing security warning (non-technical).
+  - Actions on tamper: session terminate + local wipe + telemetry event to Kafka `eel.mobile.tamper.v1` + user-facing security warning (non-technical).
 - **Local storage**:
   - **Isar + SQLCipher** for structured data (per MOBILE-INTEGRATION-NOTES).
   - **flutter_secure_storage** (Android Keystore / iOS Keychain) for secrets.
@@ -56,4 +56,4 @@ Negative: Play Integrity / App Attest depend on Google / Apple services — offl
 
 ## Related
 
-ADR-0002 (Flutter for mobile + kits), ADR-0007 (session tokens + BFF), ADR-0008 (WCAG 2.2 AA), ADR-0011 (public API surface accepts attestation header), ADR-0015 (`iebc.mobile.tamper.v1` topic).
+ADR-0002 (Flutter for mobile + kits), ADR-0007 (session tokens + BFF), ADR-0008 (WCAG 2.2 AA), ADR-0011 (public API surface accepts attestation header), ADR-0015 (`eel.mobile.tamper.v1` topic).

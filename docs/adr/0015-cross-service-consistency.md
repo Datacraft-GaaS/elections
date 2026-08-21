@@ -11,7 +11,7 @@ State propagates across ~100 services via Kafka. Two failure modes must be impos
 
 ### Transactional outbox is the only path to Kafka
 
-Every service publishes via **transactional outbox + Debezium CDC**. Raw Kafka producers are not exposed to service code; the `iebc-outbox-{rs,py,ex}` shared library is the only public API.
+Every service publishes via **transactional outbox + Debezium CDC**. Raw Kafka producers are not exposed to service code; the `eel-outbox-{rs,py,ex}` shared library is the only public API.
 
 ```
 Service transaction:
@@ -32,7 +32,7 @@ Consumer:
 
 No dual-write hazard. No 2PC. Exactly-once effective delivery when paired with idempotent consumers.
 
-### Envelope: CloudEvents 1.0 + IEBC extensions, JSON only
+### Envelope: CloudEvents 1.0 + platform extensions, JSON only
 
 One encoding: **JSON on the wire with Kafka zstd compression**. Canonical JSON (RFC 8785) is the signing form.
 
@@ -42,23 +42,23 @@ Required fields per event:
 {
   "specversion": "1.0",
   "id": "01950f8c-...",                    // UUIDv7
-  "type": "ke.iebc.rts.form34a_captured.v1",
-  "source": "spiffe://iebc.ke/service/rts-backend",
+  "type": "eel.rts.form34a_captured.v1",
+  "source": "spiffe://eel.local/service/rts-backend",
   "subject": "form-34a/47-0001-001",
   "time": "2027-08-15T15:30:00.123Z",
   "datacontenttype": "application/json",
-  "dataschema": "https://schemas.iebc.ke/rts/form34a_captured/v1.json",
+  "dataschema": "https://schemas.eel.local/rts/form34a_captured/v1.json",
   "data": { ... },
-  "iebc_stream_id": "01950f8c-...",
-  "iebc_seq": 12345,
-  "iebc_hlc": "1723731000123.5.42",
-  "iebc_prev_hash": "sha256:...",
-  "iebc_correlation_id": "01950f8c-...",
-  "iebc_causation_id": "01950f8c-...",
-  "iebc_producer_key_id": "spiffe-svid:fp",
-  "iebc_signature": "ed25519:base64...",
-  "iebc_election_id": "2027-general",
-  "iebc_data_class": "B"
+  "eel_stream_id": "01950f8c-...",
+  "eel_seq": 12345,
+  "eel_hlc": "1723731000123.5.42",
+  "eel_prev_hash": "sha256:...",
+  "eel_correlation_id": "01950f8c-...",
+  "eel_causation_id": "01950f8c-...",
+  "eel_producer_key_id": "spiffe-svid:fp",
+  "eel_signature": "ed25519:base64...",
+  "eel_election_id": "2027-general",
+  "eel_data_class": "B"
 }
 ```
 
@@ -66,12 +66,12 @@ Wall-clock `time` legally authoritative (NTP-authenticated). HLC for causal orde
 
 ### Type & topic naming
 
-- Type: `ke.iebc.<context>.<event_name>.v<major>` (lowercase snake_case).
-- Topic: **per aggregate + major version** — `iebc.<context>.<aggregate>.v<major>`. All types for the aggregate's lifecycle share the topic; consumers filter by `type`. Estimated ~500 topics across all modules.
+- Type: `eel.<context>.<event_name>.v<major>` (lowercase snake_case).
+- Topic: **per aggregate + major version** — `eel.<context>.<aggregate>.v<major>`. All types for the aggregate's lifecycle share the topic; consumers filter by `type`. Estimated ~500 topics across all modules.
 
 ### Partitioning
 
-Partition key = `iebc_stream_id` (aggregate root). Ordering guaranteed per aggregate; parallelism across aggregates.
+Partition key = `eel_stream_id` (aggregate root). Ordering guaranteed per aggregate; parallelism across aggregates.
 
 Partitions by volume tier: **12 (standard) / 32 (medium) / 64 (high volume)**. Never reduce; over-provision by 2x day-1 need.
 
@@ -83,19 +83,19 @@ RF=3, `min.insync.replicas=2`, `unclean.leader.election.enable=false`, `acks=all
 
 | class | example | hot | cold |
 |---|---|---|---|
-| Event-source (consensus) | `iebc.rts.*`, `iebc.custody.*`, `iebc.credential.*`, `iebc.declaration.*`, `iebc.ballot_serial.*` | infinite | MinIO via Kafka Tiered Storage (KIP-405) after 30d |
-| Operational | `iebc.turnout.*`, `iebc.grievance.*`, `iebc.dispatch.*` | 30d | none |
-| Analytics | `iebc.kit.heartbeat.v1`, `iebc.queue.observation.v1`, `iebc.viewer.session.v1` | 7d | none |
+| Event-source (consensus) | `eel.rts.*`, `eel.custody.*`, `eel.credential.*`, `eel.declaration.*`, `eel.ballot_serial.*` | infinite | MinIO via Kafka Tiered Storage (KIP-405) after 30d |
+| Operational | `eel.turnout.*`, `eel.grievance.*`, `eel.dispatch.*` | 30d | none |
+| Analytics | `eel.kit.heartbeat.v1`, `eel.queue.observation.v1`, `eel.viewer.session.v1` | 7d | none |
 | DLQ / tamper | `<topic>.dlq`, `<topic>.tamper` | 90d | none |
 
-Compaction reserved for state topics only (`iebc.config.*.v1`, `iebc.feature_flag.v1`).
+Compaction reserved for state topics only (`eel.config.*.v1`, `eel.feature_flag.v1`).
 
 ### Signing on the bus
 
 Every event on **event-source and credential topics** is Ed25519-signed by the producer with a SPIFFE-issued short-lived workload key (rotated hourly, HSM-anchored chain — see ADR-0005).
 
-- Signature covers canonical JSON (RFC 8785) of envelope minus `iebc_signature`.
-- Fingerprint in `iebc_producer_key_id`; verifier fetches key from SPIRE bundle (cached).
+- Signature covers canonical JSON (RFC 8785) of envelope minus `eel_signature`.
+- Fingerprint in `eel_producer_key_id`; verifier fetches key from SPIRE bundle (cached).
 - Verification failures never applied; ship to `<topic>.tamper` + immediate page.
 
 ### Delivery semantics
@@ -139,7 +139,7 @@ Every new topic: schema PR + topic-config PR + Cilium NetworkPolicy + Kafka ACL 
 
 ### Observability
 
-Trace propagation via `iebc_correlation_id` + `iebc_causation_id` woven into OTel spans. Producer metrics (publish rate/error/outbox lag/sign time), consumer metrics (lag per partition Burrow-style, throughput, DLQ rate, dedup hit, tamper arrivals). Alerts: consumer lag >60s = page; `<topic>.tamper` arrival = page; ISR shrink = page.
+Trace propagation via `eel_correlation_id` + `eel_causation_id` woven into OTel spans. Producer metrics (publish rate/error/outbox lag/sign time), consumer metrics (lag per partition Burrow-style, throughput, DLQ rate, dedup hit, tamper arrivals). Alerts: consumer lag >60s = page; `<topic>.tamper` arrival = page; ISR shrink = page.
 
 ### What does NOT go on Kafka
 

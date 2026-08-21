@@ -3,30 +3,30 @@
 Shared cross-cutting libraries. Every service consumes these; nothing else lives here.
 
 ## Rust crates
-- **iebc-auth-rs** — JWT verify + SpiceDB check + audit + OTel decoration
-- **iebc-secrets-rs** — OpenBao client with short-lived-cred conventions
-- **iebc-eventstore-rs** — event store client (snapshotting, replay)
-- **iebc-outbox-rs** — transactional outbox writer (only path to Kafka)
-- **iebc-events-rs** — producer + consumer client with envelope validation, signing, HLC, OTel propagation
-- **iebc-pii-rs** — PII type wrappers (Restricted/Sensitive/Public with purpose-of-processing)
-- **iebc-hlc-rs** — hybrid logical clock
-- **iebc-resilience-rs** — circuit breakers, bulkheads, idempotency middleware
-- **iebc-observability-rs** — OTel + audit + SLO metrics decoration
-- **iebc-loadshedding-rs** — priority-based load shedding
-- **iebc-crypto-rs** — PKCS#11 + Ed25519 verify + PQ hybrid + cosign verify
-- **iebc-api-server-rs** — opinionated axum builder (auth + SpiceDB + rate limit + idempotency + RFC 9457 + signing)
-- **verifier-rs** — Merkle inclusion verifier; shared M13/M29/M30/M34 via Dart FFI (`libiebc-verifier`)
+- **eel-auth-rs** — JWT verify + SpiceDB check + audit + OTel decoration
+- **eel-secrets-rs** — OpenBao client with short-lived-cred conventions
+- **eel-eventstore-rs** — event store client (snapshotting, replay)
+- **eel-outbox-rs** — transactional outbox writer (only path to Kafka)
+- **eel-events-rs** — producer + consumer client with envelope validation, signing, HLC, OTel propagation
+- **eel-pii-rs** — PII type wrappers (Restricted/Sensitive/Public with purpose-of-processing)
+- **eel-hlc-rs** — hybrid logical clock
+- **eel-resilience-rs** — circuit breakers, bulkheads, idempotency middleware
+- **eel-observability-rs** — OTel + audit + SLO metrics decoration
+- **eel-loadshedding-rs** — priority-based load shedding
+- **eel-crypto-rs** — PKCS#11 + Ed25519 verify + PQ hybrid + cosign verify
+- **eel-api-server-rs** — opinionated axum builder (auth + SpiceDB + rate limit + idempotency + RFC 9457 + signing)
+- **verifier-rs** — Merkle inclusion verifier; shared M13/M29/M30/M34 via Dart FFI (`libeel-verifier`)
 - **service-template-rs** — `cargo generate` template for new services
 
 ## Python packages
-- `iebc-auth-py`, `iebc-secrets-py`, `iebc-eventstore-py`, `iebc-outbox-py`, `iebc-events-py`, `iebc-pii-py`, `iebc-hlc-py`, `iebc-resilience-py`, `iebc-observability-py`, `iebc-loadshedding-py`
-- **iebc-web-py** — Django app: shared auth middleware, SpiceDB integration, base templates, HTMX partials, session store on Postgres
+- `eel-auth-py`, `eel-secrets-py`, `eel-eventstore-py`, `eel-outbox-py`, `eel-events-py`, `eel-pii-py`, `eel-hlc-py`, `eel-resilience-py`, `eel-observability-py`, `eel-loadshedding-py`
+- **eel-web-py** — Django app: shared auth middleware, SpiceDB integration, base templates, HTMX partials, session store on Postgres
 
 ## Elixir packages
-- `iebc-auth-ex`, `iebc-secrets-ex`, `iebc-eventstore-ex`, `iebc-outbox-ex`, `iebc-events-ex`, `iebc-pii-ex`, `iebc-hlc-ex`, `iebc-resilience-ex`, `iebc-observability-ex`, `iebc-loadshedding-ex`
+- `eel-auth-ex`, `eel-secrets-ex`, `eel-eventstore-ex`, `eel-outbox-ex`, `eel-events-ex`, `eel-pii-ex`, `eel-hlc-ex`, `eel-resilience-ex`, `eel-observability-ex`, `eel-loadshedding-ex`
 
 ## Astro package
-- **iebc-web-astro** — signed-content loader, i18n scaffolding (Swahili/English), token stubs
+- **eel-web-astro** — signed-content loader, i18n scaffolding (Swahili/English), token stubs
 
 ## Flutter/Dart
 - **kit-sdk-flutter** — shared across M01/M05/M08/M24/M25/M27 kits; backed by verifier-rs via dart_ffi

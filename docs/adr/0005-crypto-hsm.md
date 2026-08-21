@@ -17,7 +17,7 @@ Election integrity requires HSM-anchored root of trust for kit provisioning, PKI
 - **Transport crypto**: **TLS 1.3 only** with **PQ hybrid ML-KEM + X25519** (via `oqs` provider for OpenSSL 3 / rustls with PQ providers). No TLS 1.2 anywhere.
 - **At-rest crypto**: **AES-256-GCM** for volume-level (LUKS + HSM-sealed keys); PostgreSQL TDE via `cryptsetup` + `pgcrypto` for column-level where a data-class-A field is stored (per ADR-0016).
 - **Artifact signing**: **cosign** with keyless via SPIFFE workload identity for CI artifacts; keyed for release artifacts using HSM-anchored key.
-- **Verification libraries**: single Rust crate `packages/iebc-crypto-rs` wraps PKCS#11, Ed25519 verify, ML-KEM+X25519, cosign verify; wrapped for Python and Elixir via PyO3/Rustler.
+- **Verification libraries**: single Rust crate `packages/eel-crypto-rs` wraps PKCS#11, Ed25519 verify, ML-KEM+X25519, cosign verify; wrapped for Python and Elixir via PyO3/Rustler.
 
 ## Consequences
 
