@@ -1,63 +1,86 @@
-# @eel/i18n
+# i18n
 
-ICU MessageFormat locale files for the eel (IEMS) citizen portal. Covers 11 languages used in Kenya.
+Shared Swahili and English locale files for all eel surfaces: kit apps, portals, and admin interfaces.
 
-## Locales
+## Purpose in context
 
-| Code | Language      | Script  |
-|------|---------------|---------|
-| en   | English       | Latin   |
-| sw   | Swahili       | Latin   |
-| ki   | Kikuyu        | Latin   |
-| luo  | Dholuo        | Latin   |
-| luy  | Luhya         | Latin   |
-| kln  | Kalenjin      | Latin   |
-| kam  | Kamba         | Latin   |
-| mer  | Meru          | Latin   |
-| guz  | Gusii         | Latin   |
-| so   | Somali        | Latin   |
-| oro  | Oromo         | Latin   |
+All user-facing text in the system must be available in both Swahili (`sw`) and English (`en`). This package provides the canonical locale files consumed by the Flutter SDK (`intl`), Astro portals (`eel-web-astro`), and Django admin (`eel-web-py`). Translators update files here; no service-level duplication is permitted.
 
-## Files per locale
-
-Each locale directory contains six JSON files with ICU MessageFormat strings:
-
-- `common.json` - Shared UI chrome: nav, footer, buttons, date/number formats
-- `voter.json` - Voter registration check, voter register, transfers, objections
-- `results.json` - Election results display, tallying, verification
-- `grievance.json` - Grievance filing, tracking, status
-- `errors.json` - Error messages, field validation
-- `accessibility.json` - ARIA labels and screen reader strings
-
-## Font stacks
-
-- **Somali (so)**: Uses Latin script (standard for Kenya). Font stack: `'Noto Sans', sans-serif`. Osmanya script (`'Noto Sans Osmanya', 'Noto Sans Arabic', sans-serif`) is not used in this deployment.
-- **Oromo (oro)**: Uses Latin script (Qubee). Font stack: `'Noto Sans', sans-serif`. Ge'ez script Oromo is not used in Kenya; Qubee (Latin) is standard.
-- **All other locales**: Latin script. Font stack: `'Noto Sans', 'Segoe UI', sans-serif`.
-
-## Tools
-
-```sh
-# Check all non-English locales have every key present in English
-node tools/i18n-lint.mjs
-
-# Generate pseudo-locale (locales/pseudo/) for UI string expansion testing
-node tools/pseudo-gen.mjs
-```
-
-## ICU MessageFormat
-
-Values use ICU MessageFormat syntax. Examples:
+## Layout
 
 ```
-{count, plural, =0 {No voters found} =1 {1 voter found} other {{count} voters found}}
-{position, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} place
-{date, date, long}
-{value, number, percent}
+i18n/
+  locales/
+    sw/
+      common.json       # shared labels, buttons, errors
+      rts.json          # RTS surface strings
+      bvr.json          # BVR surface strings
+      portal.json       # voter portal strings
+      kit.json          # kit device UI strings
+      # ... one file per bounded context
+    en/
+      common.json
+      rts.json
+      # ... mirrors of sw/
+  tools/
+    check_missing.sh    # reports keys present in one locale but absent in the other
+    extract_keys.sh     # extracts keys from source files for translator workflow
+  package.json
+  README.md
 ```
 
-Pseudo-locale generation preserves ICU placeholders (`{...}`) intact and accents all literal characters.
+## Key conventions
 
-## Non-English translations
+- Keys are dot-separated: `common.save`, `rts.form34a.submit_button`
+- Values are plain strings; no ICU message format plurals (use separate keys: `item`, `item_plural`)
+- No HTML in locale strings; use wrapper components in the UI layer
+- Swahili is the primary locale; English is secondary
 
-The 10 non-English locales currently contain English placeholder values. Replace with actual translations before production use. The lint tool (`i18n-lint.mjs`) enforces key completeness: every key present in `en/` must appear in each other locale.
+## Usage in Flutter
+
+```dart
+// pubspec.yaml: intl package + flutter gen-l10n
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
+Text(AppLocalizations.of(context)!.rtsTallySubmitButton)
+```
+
+## Usage in Astro
+
+```typescript
+import { t } from '@eel/web-astro';
+const label = t('rts.form34a.submit_button', 'sw');
+```
+
+## Usage in Django templates
+
+```html
+{% load eel_i18n %}
+{% trans "rts.form34a.submit_button" %}
+```
+
+## Validate
+
+```bash
+# Check for missing keys between locales:
+bash i18n/tools/check_missing.sh
+
+# Check all JSON files are valid:
+node -e "require('fs').readdirSync('i18n/locales/sw').forEach(f => JSON.parse(require('fs').readFileSync('i18n/locales/sw/' + f)))"
+```
+
+## Adding a new string
+
+1. Add the key to both `locales/sw/<context>.json` and `locales/en/<context>.json`
+2. Run `bash i18n/tools/check_missing.sh` to confirm parity
+3. Run Flutter `flutter gen-l10n` if the string appears in kit apps
+
+## Related docs
+
+- `packages/kit-sdk-flutter/README.md` - Flutter i18n configuration
+- `packages/eel-web-astro/README.md` - Astro i18n usage
+- `packages/eel-web-py/README.md` - Django i18n integration
+
+## Limitations
+
+Machine translation has not been reviewed for election-specific terminology. All Swahili strings must be reviewed by a native speaker with elections domain knowledge before deployment. Legal strings (declarations, oaths) must additionally be reviewed by the Commission's legal team.

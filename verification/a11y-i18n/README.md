@@ -1,63 +1,90 @@
-# Accessibility and i18n sweep (WP-6.6)
+<title>Accessibility and i18n Verification</title>
 
-Wave 6 verification of WCAG 2.2 conformance and internationalisation completeness
-across every eel UI surface.
+# Accessibility and i18n Verification
 
-## Scope
+WCAG 2.2 Level AA compliance check and internationalisation completeness verification for all
+user-facing surfaces: portal, kit Flutter app, field-mobile app, and Django admin surfaces.
 
-| Criterion | Target |
-|---|---|
-| WCAG conformance (all surfaces) | 2.2 AA |
-| WCAG conformance (M68 referendum-explainer) | 2.2 AAA |
-| Locales | 11 production locales + xxa pseudo-locale |
-| Screen readers | NVDA (Windows), TalkBack (Android), VoiceOver (macOS) |
-| Frameworks covered | Astro, Phoenix LiveView, Django, Flutter, Tauri 2 |
+## Purpose
 
-## Files
+WP-6.6. Confirms that the platform meets Kenya ICT Board accessibility requirements and that all
+three mandated languages (English, Kiswahili, and Somali) have complete translation coverage.
 
-| File | Purpose |
-|---|---|
-| `ui-inventory.yaml` | Canonical list of every UI surface with metadata |
-| `axe-sweep.sh` | Runs axe-core via `tools/wcag-audit` against every URL; aggregates to `axe-report.json` |
-| `pseudo-locale-check.sh` | Builds each UI with pseudo-locale `xxa`; asserts no string truncation via headless snapshot |
-| `locales/11-locale-audit.yaml` | Per-locale x per-surface: catalogue completeness, font fallback, ICU plurals, RTL note |
-| `screen-reader/nvda-scripts/` | Python NVDA scripts for portal and verifier web apps |
-| `screen-reader/talkback-scripts/` | ADB-driven TalkBack traversal for all Android kits and mobile apps |
-| `screen-reader/voiceover-scripts/` | AppleScript VoiceOver traversal for ro-desktop and rla-desktop (Tauri) |
-| `report-template.md.tmpl` | Per-surface report template |
-| `fixtures/local-a11y-report.md` | Worked example report |
-| `tests/test_scripts.sh` | Smoke tests: bash -n clean, YAML valid, UI directories exist |
+## Surfaces in scope
 
-## Running the sweep
+| Surface | Technology | Languages | Notes |
+|---------|-----------|-----------|-------|
+| portal-svc public portal | Astro + React | en, sw, so | Live tally and results display |
+| kit Flutter app | Flutter 3 | en, sw, so | Voter verification workflow |
+| field-mobile Flutter app | Flutter 3 | en, sw | Field officer workflow |
+| ecc-svc admin | Django | en | Commission staff only |
+| support-admin-svc | Django | en, sw | Helpdesk agents |
 
-```
-# Full sweep (requires browser + axe-core installed)
-bash verification/a11y-i18n/axe-sweep.sh
+## Modes
 
-# Pseudo-locale build check
-bash verification/a11y-i18n/pseudo-locale-check.sh
+### dry-mode
 
-# Validate scripts and YAML
-bash verification/a11y-i18n/tests/test_scripts.sh
+Validates that all ARB keys are present in all locale files and runs axe-core static analysis
+against server-rendered HTML snapshots. No live browser session required.
+
+```bash
+just a11y-i18n dry
 ```
 
-## 11 production locales
+### live-mode
 
-en-KE, sw-KE, om-ET, so-KE, kam-KE, mer-KE, guz-KE, luo-KE, luy-KE, kln-KE, mas-KE
+Launches Playwright-driven browsers against pre-prod services, runs axe-core on every page,
+captures screenshots, and checks language switching.
 
-None of these use RTL script. The RTL mechanism (CSS `dir="rtl"` + `bidi-override`, ICU BIDI) is documented
-and exercised via the `xxa` pseudo-locale which includes directionality markers.
+```bash
+just a11y-i18n live ENV=preprod
+```
 
-## WCAG target rationale
+## WCAG checks performed
 
-M68 (referendum-explainer) targets AAA because it is the primary public-information surface
-for a constitutional referendum; citizens with low vision or cognitive disabilities must be
-able to access referendum information without assistance.
+- Axe-core 4.x ruleset (WCAG 2.2 AA profile) on all routes
+- Colour contrast ratio >= 4.5:1 for normal text, >= 3:1 for large text
+- Focus visible on all interactive elements
+- All images have non-empty `alt` text
+- Form inputs have associated labels
+- Dynamic content updates announced via ARIA live regions
+- Keyboard navigation: full page operable without mouse
+- Reduced-motion respected for animated tally counters
 
-## Screen-reader coverage
+## i18n completeness checks
 
-| Platform | Tool | Surfaces |
-|---|---|---|
-| Windows | NVDA 2024.x via `nvda_at_api` | public-portal, bvv-voter-lookup |
-| Android | ADB + TalkBack | bvr-kit, rts-kit, party-agent, poll-clerk, observer-app, field-support, personnel, citizen-verify, diaspora-kit |
-| macOS | VoiceOver via AppleScript | ro-desktop (Tauri), rla-desktop (Tauri) |
+- All ARB keys present in `en`, `sw`, and `so` locale files
+- No hardcoded English strings in Flutter widget tree (caught by `l10n_utils` lint)
+- RTL layout tested for Somali (left-to-right language but flag for future Arabic support)
+- Date and number formatting locale-aware (using `intl` package)
+- Kiswahili and Somali translations reviewed by contracted native speakers (sign-off in
+  `compliance/ipr-handover/translation-signoffs.yaml`)
+
+## Expected artefacts
+
+Written to `verification/reports/a11y-i18n-<date>/`:
+
+- `axe-results.json` -- per-page axe-core violations
+- `wcag-summary.html` -- human-readable WCAG compliance matrix
+- `i18n-coverage.json` -- translation key coverage per locale
+- `screenshots/` -- full-page screenshots in each language
+- `gate-g6-a11y.sig` -- signed evidence for G6
+
+## Pass criteria
+
+- Zero axe-core violations at WCAG 2.2 AA level across all in-scope surfaces
+- i18n coverage: 100% for `en` and `sw`, >= 98% for `so` (documented exceptions for proper nouns)
+- Colour contrast: zero failures above 0-exception threshold
+- Keyboard navigation: all critical paths completable without mouse
+
+## Limitations
+
+- Screen-reader compatibility (NVDA, VoiceOver) tested manually; not automated in this harness
+- Print stylesheet accessibility not in scope
+- Automated Somali translation coverage check does not validate translation quality
+
+## Related docs
+
+- `packages/eel-web-astro/` -- Astro base package
+- `packages/kit-sdk-flutter/` -- Flutter shared components
+- `compliance/elections-tech-regs/README.md` -- accessibility regulatory requirements

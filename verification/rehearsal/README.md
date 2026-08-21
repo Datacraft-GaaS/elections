@@ -1,67 +1,96 @@
-# Election-Day Rehearsal (WP-6.1)
+<title>Election-Day Rehearsal Harness</title>
 
-Full pre-production topology rehearsal for election day. Run in CI/pre-prod; local execution deferred because it requires a live cluster.
+# Election-Day Rehearsal Harness
 
-## Topology
+Full end-to-end simulation of election day: voter verification, results transmission, transparency
+log writes, and public portal tally display. Covers the entire M08-M11 critical path (22M voters,
+46,229 polling stations, 80 k events/sec peak).
 
-- 2 sites (primary + mirror) with cross-site synchronous WAL replication
-- 5 edge regions (Nairobi, Mombasa, Kisumu, Nakuru, Eldoret)
-- Full T1/T2 service complement per `docs/adr/0020-service-topology.md`
+## Purpose
 
-## Scale targets (Appendix-A SLAs)
+WP-6.1. Produces signed evidence that the system can run a complete election cycle without manual
+intervention. Required for gate G6.
 
-| Metric | Target |
-|---|---|
-| KIEMS kits | 65,000 |
-| RTS concurrent | 60,000 |
-| BVI throughput | 18,000 req/s |
-| Portal viewers | 5,000,000 per hour |
-| Polling-station check-ins | 250,000 per 90-min window |
-| Kit verifier concurrent | 10,000,000 |
-| Kafka ingest | 100,000 events/s |
-| Write-path P99 (ADR-0018) | 25 ms end-to-end |
+## Modes
 
-Every Appendix-A numeric SLA must be met. The rehearsal also validates:
-- Witness cross-check: all 5 channels agree on the latest Signed Tree Head (STH)
-- Declaration, portal, verifier, and bundle consistency after results close
-- Reproducible bundle via `reproducibility/make-reproduce/scripts/reproduce.sh`
-- Zero proof failures from `verifier-rs`
+### dry-mode
 
-## Orchestrator stages
+Validates all fixtures, service connectivity, and config without committing any results to
+databases or the transparency log. Runs in CI on every merge to `main`.
 
-1. Verify cluster reachable
-2. Toggle election-day-mode ON
-3. Run `loadtest/scenarios/election-day.yaml` at scale 1.0
-4. Collect Prometheus metrics for every SLA
-5. Run witness cross-check
-6. Rebuild reproducible bundle
-7. Run `verifier-rs` on published proofs
-8. Render report from `report-template.md.tmpl`
-
-## Running
-
-```sh
-# Dry run (no cluster required):
-EEL_REHEARSAL_MODE=dry bash verification/rehearsal/orchestrator.sh
-
-# Full run (requires pre-prod cluster):
-EEL_CLUSTER_CONTEXT=eel-preprod \
-EEL_PROMETHEUS_URL=http://prometheus.eel-preprod:9090 \
-EEL_BASE_URL=https://api.eel-preprod \
-bash verification/rehearsal/orchestrator.sh
+```bash
+just rehearsal dry
+# or
+cd verification/rehearsal && ./orchestrator.sh --mode dry
 ```
 
-## Report
+Duration: ~3 min. No external side-effects.
 
-`fixtures/local-rehearsal-report.md` is a synthetic fixture rendered from the template. The CI run writes the real report to `verification/reports/rehearsal-YYYY-MM-DD.md`.
+### live-mode
 
-## Files
+Exercises real services with synthetic election fixtures at pre-prod scale. Writes to the
+pre-prod transparency log. Requires Change Advisory Board approval.
 
-| File | Purpose |
+```bash
+just rehearsal live ENV=preprod ELECTION_ID=rehearsal-2026-08
+# or
+cd verification/rehearsal && ./orchestrator.sh --mode live --env preprod --election rehearsal-2026-08
+```
+
+Duration: ~4 h (simulated election day compressed 6:1). Requires maintenance window.
+
+## Fixtures
+
+Located in `verification/rehearsal/fixtures/`. Contents:
+
+| Fixture file | Description |
 |---|---|
-| orchestrator.sh | Top-level driver |
-| sla-manifest.yaml | One row per Appendix-A SLA with Prometheus query |
-| witness-crosscheck.sh | Pings all 5 witness channels |
-| report-template.md.tmpl | Report skeleton for envsubst rendering |
-| fixtures/local-rehearsal-report.md | Synthetic fixture (marked) |
-| tests/test_orchestrator.sh | Bats-style dry-run tests |
+| `election-config.yaml` | Election meta: 47 counties, 290 constituencies, 1,450 wards |
+| `polling-stations.csv` | 46,229 stations with coordinates and kit serial numbers |
+| `voter-roll-sample.csv` | 500 k synthetic voters (subset of 22M for rehearsal) |
+| `candidates.yaml` | Synthetic candidates per position |
+| `result-forms.json` | Pre-signed Form 34A/34B templates |
+| `biometric-probes.bin` | Synthetic fingerprint probes for ABIS pipeline |
+
+## Expected artefacts
+
+After a successful live-mode run, the following artefacts are written to
+`verification/reports/rehearsal-<date>/`:
+
+- `sla-results.json` -- pass/fail per SLO in `sla-manifest.yaml`
+- `transparency-log-checkpoint.json` -- Merkle root at end of rehearsal
+- `witness-crosscheck-report.json` -- output of `witness-crosscheck.sh`
+- `report.html` -- human-readable summary from `report-template.md.tmpl`
+- `gate-g6-rehearsal.sig` -- Ed25519 signature over SHA-256 of `sla-results.json`
+
+## Pass criteria
+
+- All SLOs in `sla-manifest.yaml` green
+- Zero unsigned transparency log entries
+- Witness cross-check: 3 of 3 witnesses agree on final Merkle root
+- rts-svc p99 submission latency below 500 ms at peak
+- Portal tally visible within 30 s of results transmission
+
+## Extending fixtures
+
+```bash
+# Regenerate synthetic voter roll
+uv run python verification/rehearsal/fixtures/gen_voters.py --count 500000 --seed 42
+
+# Regenerate biometric probes
+cargo run -p eel-biometric-fixtures -- --count 10000 --out fixtures/biometric-probes.bin
+```
+
+## Dependencies
+
+- All 18 services deployed in target environment
+- `eel-observability` stack
+- Valid signing key in OpenBao at path `pki/election/rehearsal`
+- Chaos Mesh NOT running during rehearsal (run chaos-runner separately)
+
+## Related docs
+
+- `verification/chaos-runner/README.md`
+- `verification/dr-drill/README.md`
+- `verification/reports/README.md`
+- `docs/runbooks/rts-svc-election-day.md`

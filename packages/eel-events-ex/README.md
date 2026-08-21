@@ -1,45 +1,92 @@
 # eel-events-ex
 
-CloudEvents 1.0 envelope library for the IEBC IEMS project, implemented in Elixir.
+CloudEvents envelope with eel platform extensions, Ed25519 signing, and Broadway-based consumer for Elixir services. Mirror of `eel-events-rs`.
 
-## Features
+## Purpose in context
 
-- `Eel.Events.Envelope` - struct covering all CloudEvents core attributes plus IEBC-specific `eel_*` extensions (stream ID, HLC, data class, signatures, etc.)
-- `Eel.Events.Builder` - fluent construction API; auto-generates UUIDv4 IDs and timestamps
-- `Eel.Events.CanonicalJson` - RFC 8785 canonical JSON (key-sorted, no whitespace, shortest-round-trip numbers)
-- `Eel.Events.Signing` - Ed25519 sign and verify via OTP `:crypto` (no NIFs required)
-- `Eel.Events.Karapace` - async Karapace schema registry client backed by Finch
-- `Eel.Events.Consumer` - behaviour for event handler modules
+Phoenix LiveView services that produce or consume eel events use this library. It provides the `Envelope` struct with all eel extensions, an `EventBuilder` pipeline, a Broadway pipeline module for Kafka consumption, and an Ecto type for persisting `DataClass` values.
 
-## Installation
+## Public modules
 
-```elixir
-{:eel_events, path: "../eel-events-ex"}
+| Module | Description |
+|---|---|
+| `Eel.Events.Envelope` | Struct with all CloudEvent + eel extension fields |
+| `Eel.Events.Builder` | Fluent pipeline: `new/0`, `event_type/2`, `source/2`, `data/2`, `build/2` |
+| `Eel.Events.DataClass` | Enum module A/B/C/D/E with Ecto type |
+| `Eel.Events.Consumer` | Broadway pipeline module for Kafka topic consumption |
+| `Eel.Events.Karapace` | HTTP client for Karapace schema registry |
+
+## Layout
+
+```
+eel-events-ex/
+  lib/
+    eel_events.ex
+    eel_events/
+      envelope.ex
+      builder.ex
+      data_class.ex
+      consumer.ex
+      karapace.ex
+  test/
+  mix.exs
 ```
 
-## Quick start
+## Usage
 
 ```elixir
+alias Eel.Events.{Builder, DataClass}
+
 {:ok, envelope} =
-  Eel.Events.Builder.new("eel.rts.form34a_captured.v1", "spiffe://eel.local/rts", form_data)
-  |> Eel.Events.Builder.with_election("2027-general")
-  |> Eel.Events.Builder.with_data_class("B")
-  |> Eel.Events.Builder.build()
+  Builder.new()
+  |> Builder.event_type("eel.rts.form34a_captured.v1")
+  |> Builder.source("spiffe://eel.local/service/rts-backend")
+  |> Builder.stream_id("01950f8c-0000-7000-0000-000000000001")
+  |> Builder.seq(0)
+  |> Builder.data(%{station_id: "47-001"})
+  |> Builder.data_class(DataClass.b())
+  |> Builder.build(signing_key)
 
-{pub_key, priv_key} = :crypto.generate_key(:eddsa, :ed25519)
-{:ok, signed} = Eel.Events.Signing.sign(envelope, priv_key)
-:ok = Eel.Events.Signing.verify(signed, pub_key)
+IO.inspect(envelope.specversion)  # "1.0"
 ```
 
-## Configuration
+## Config
 
 ```elixir
-config :eel_events, :karapace_url, "https://karapace.example.com"
+# config/config.exs
+config :eel_events,
+  karapace_url: System.get_env("KARAPACE_URL"),
+  karapace_username: System.get_env("KARAPACE_USERNAME"),
+  karapace_password: System.get_env("KARAPACE_PASSWORD")
 ```
 
-## Running tests
+## Dependencies
 
+`finch`, `jason`, `broadway`. `ecto` optional.
+
+## Install
+
+```elixir
+{:eel_events, path: "../../packages/eel-events-ex"}
 ```
+
+```bash
 mix deps.get
-mix test
 ```
+
+## Test
+
+```bash
+mix test
+mix dialyzer
+```
+
+## Related docs
+
+- `packages/event-schemas/README.md` - JSON Schema per event type
+- `packages/eel-outbox-ex/README.md` - sole publication path for Elixir services
+- `docs/EVENT-CONVENTIONS.md` - envelope field semantics
+
+## Limitations
+
+Signing uses the `:crypto` OTP application (Ed25519 via `:crypto.sign/5`). The Rustler NIF from `eel-crypto-rs` is available for post-quantum signing; wire it in when PQ features are enabled in the service.

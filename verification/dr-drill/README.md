@@ -1,52 +1,87 @@
-# DR Drill (WP-6.2)
+<title>DR Drill Automation</title>
 
-Verification harness for disaster-recovery failover and restore drills. Scripts are
-designed to run in a pre-prod environment against the eel two-site topology. No
-production traffic is affected. Every restore operation is attested to the
-transparency log.
+# DR Drill Automation
 
-## RTO / RPO targets
+Automated disaster-recovery drill for the three-site topology (primary, mirror, edge). Validates
+RTO and RPO targets from ADR-0004 and ADR-0019 under simulated site failures.
 
-| Tier | Service example | RTO | RPO |
-|---|---|---|---|
-| T1-election-critical | rts-svc | 30 min | 5 min |
-| T1-cycle | bvr-svc, bvi-svc, ecc-svc, transparency-svc, abis-svc | 60 min | 15 min |
-| T2 | portal-svc, vprs-svc, governance-svc, etc. | 4 h | 1 h |
-| Edge region | nairobi, mombasa, kisumu, nakuru, eldoret | 15 min | n/a |
+## Purpose
 
-See `rto-rpo-matrix.yaml` for per-service detail.
+WP-6.2. Produces signed evidence that the platform recovers within RTO/RPO bounds after full site
+loss. Required for gate G6.
+
+## RTO/RPO targets
+
+| Scenario | RTO target | RPO target |
+|----------|-----------|-----------|
+| Primary site loss (mirror takes over) | 120 s | 0 (sync replication) |
+| Mirror site loss (primary continues) | 30 s | 0 |
+| Both sites lose contact with edge | 0 s (edge operates offline) | sync on reconnect |
+| PostgreSQL primary kill (Patroni) | 20 s | 0 (synchronous commit) |
+| Full site network partition | 180 s | 0 |
+
+## Modes
+
+### dry-mode
+
+Validates DR runbook steps, checks Patroni config, verifies Velero backup existence, and confirms
+MirrorMaker2 replication lag is below threshold. No failover performed.
+
+```bash
+just dr-drill dry
+```
+
+### live-mode
+
+Executes a controlled failover: kills primary site, measures time to mirror promotion, verifies
+data integrity, then fails back.
+
+```bash
+just dr-drill live ENV=preprod SITE=primary
+```
+
+Warning: live-mode causes a real failover in the target environment. Use preprod only.
 
 ## Drill sequence
 
-1. `primary-loss.sh` - simulate primary-site loss; verify mirror promotion via Patroni.
-2. `edge-loss.sh` - cordon one regional edge; verify anycast reroute within 15 min.
-3. `restore-pgbackrest.sh` - PITR restore against synthetic basebackup fixture.
-4. `restore-velero.sh` - Velero namespace restore against synthetic backup.
-5. `restore-kopia.sh` - Kopia snapshot restore for MinIO buckets; assert hash chain.
-6. `tlog-attest-restore.sh` - submit `eel.dr.restore_completed.v1` leaf to tlog; assert inclusion proof within 60 s.
+1. Pre-drill snapshot: `velero backup create dr-pre-drill --wait`
+2. Confirm replication lag below 5 s on MirrorMaker2
+3. Inject site partition: apply `chaos/mesh-experiments/eel-site-partition-primary-mirror.yaml`
+4. Measure time to Patroni promotion (logged to `dr-results.json`)
+5. Verify mirror site serves all traffic: run `./smoke-test.sh --site mirror`
+6. Confirm transparency log continuity: no gap in sequence numbers
+7. Restore connectivity: delete chaos experiment
+8. Verify primary rejoins as follower within 300 s
+9. Fail-back and restore snapshot if needed
 
-## Dry mode
+## Expected artefacts
 
-Set `EEL_DR_MODE=dry` to run all scripts without touching live infrastructure. Each
-script exits 0 and emits a JSON stage summary to stdout.
+Written to `verification/reports/dr-drill-<date>/`:
 
-## Prerequisites
+- `dr-results.json` -- RTO/RPO measurements per scenario
+- `patroni-timeline.json` -- Patroni cluster timeline events
+- `mirrormaker2-lag-metrics.json` -- Kafka replication lag during drill
+- `transparency-continuity.json` -- sequence number gap analysis
+- `smoke-test-report.json` -- service health on mirror after failover
+- `gate-g6-dr.sig` -- signed evidence for G6
 
-- `eel-dr-failover` binary built: `cargo build --release -p eel-dr-failover`
-- `kubectl`, `patronictl`, `pgbackrest`, `velero`, `kopia` on PATH
-- `curl` or `grpcurl` for tlog submission
-- Access to pre-prod kubeconfig at `~/.kube/config` or `EEL_KUBECONFIG`
+## Pass criteria
 
-## Fixtures
+- All RTO targets met (measured wall-clock from fault injection to healthy)
+- RPO = 0 verified by row count and sequence number comparison
+- No split-brain detected (Patroni `paused: false` on exactly one primary)
+- Transparency log has no sequence gaps
 
-`fixtures/synthetic-basebackup/` contains a minimal pgBackRest-compatible stub for
-dry-run and CI exercises. Real basebackup restores run against the live pgBackRest
-stanza in pre-prod MinIO.
+## Dependencies
 
-## References
+- Three-site Kubernetes topology deployed (primary, mirror, at least one edge)
+- Patroni >= 3.2 with synchronous replication enabled
+- Velero backup job completed within last 24 h
+- MirrorMaker2 replication lag below 5 s before drill
 
-- Runbook: `docs/runbooks/dr-failover-primary-to-mirror.md`
-- Runbook: `docs/runbooks/pgbackrest-pitr.md`
-- Runbook: `docs/runbooks/velero-restore.md`
-- ADR-0022: Release process and DR posture
-- ADR-0017: Transparency log
+## Related docs
+
+- `chaos/mesh-experiments/eel-site-partition-primary-mirror.yaml`
+- `verification/chaos-runner/README.md`
+- `docs/runbooks/patroni-failover.md`
+- ADR-0004 (multi-site topology)

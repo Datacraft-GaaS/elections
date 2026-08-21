@@ -1,36 +1,77 @@
 # eel-eventstore-ex
 
-Elixir event store library for the IEBC IEMS project. Provides optimistic-concurrency event appending and aggregate replay via Ecto.
+Append-only event store with optimistic concurrency for eel Elixir services. Shares the Postgres schema with `eel-eventstore-rs`.
 
-## Features
+## Purpose in context
 
-- `Eel.EventStore.Aggregate` behaviour for domain aggregates
-- `Eel.EventStore.Stream.append_events/4` with `SELECT ... FOR UPDATE` optimistic concurrency
-- `Eel.EventStore.Replay.replay/4` with snapshot support
-- Ecto schemas for `events` and `event_snapshots` tables
+Elixir/Phoenix services that use event sourcing store and replay event streams through this library. It wraps Ecto queries against the same `event_streams` and `snapshots` tables used by Rust services, providing bidirectional interoperability.
+
+## Public modules
+
+| Module | Description |
+|---|---|
+| `Eel.EventStore` | `append/4`, `load/2`, `replay/3`, `snapshot/3`, `load_since/3` |
+| `Eel.EventStore.StoredEvent` | Ecto schema for event stream rows |
+| `Eel.EventStore.Snapshot` | Ecto schema for snapshot rows |
+| `Eel.EventStore.OptimisticConcurrencyError` | Exception on seq conflict |
+
+## Layout
+
+```
+eel-eventstore-ex/
+  lib/
+    eel_event_store.ex
+    eel_event_store/
+      stored_event.ex
+      snapshot.ex
+      error.ex
+  priv/repo/migrations/
+  test/
+  mix.exs
+```
 
 ## Usage
 
 ```elixir
-# Define an aggregate
-defmodule MyAggregate do
-  @behaviour Eel.EventStore.Aggregate
+alias Eel.EventStore
 
-  def initial_state, do: %{count: 0}
-  def apply(state, %{type: "inc"}), do: %{state | count: state.count + 1}
-  def apply(state, _), do: state
-  def snapshot(state), do: {:ok, state}
-end
+# Append an event at seq 0 (raises on conflict):
+{:ok, _} = EventStore.append(repo, "stream-uuid", 0, %{
+  event_type: "eel.rts.tally_submitted.v1",
+  payload: %{station_id: "47-001"}
+})
 
-# Append events
-Eel.EventStore.append_events(MyRepo, "stream-1", [%{type: "inc", data: %{}}], 0)
-
-# Replay
-{:ok, state, version} = Eel.EventStore.replay(MyRepo, "stream-1", MyAggregate)
+# Replay into an aggregate:
+events = EventStore.load(repo, "stream-uuid")
+state = Enum.reduce(events, %{tallied: false}, &apply_event/2)
 ```
 
 ## Dependencies
 
-- `ecto ~> 3.12`
-- `ecto_sql ~> 3.12`
-- `jason ~> 1.4`
+`ecto`, `ecto_sql`, `jason`.
+
+## Install
+
+```elixir
+{:eel_event_store, path: "../../packages/eel-eventstore-ex"}
+```
+
+```bash
+mix deps.get
+mix ecto.migrate  # runs the shared schema migration
+```
+
+## Test
+
+```bash
+mix test
+```
+
+## Related docs
+
+- `packages/eel-eventstore-rs/README.md` - canonical schema DDL
+- `packages/eel-outbox-ex/README.md` - publishes stored events to Kafka
+
+## Limitations
+
+Snapshot compaction is not implemented. Use the `load_since/3` function to replay only events after a snapshot rather than the full stream. Elixir services should not share a Postgres connection pool with Rust services; use separate pool configurations pointing to the same database.

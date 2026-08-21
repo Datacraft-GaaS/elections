@@ -1,46 +1,93 @@
 # eel-auth-ex
 
-Elixir authentication and authorisation library for IEBC IEMS services.
+JWT/JWKS verification, SpiceDB ReBAC authorization, and audit emission for eel Elixir services. Mirror of `eel-auth-rs`.
 
-Provides Keycloak JWT verification (RS256/ES256), a SpiceDB permissions client,
-a Phoenix Plug, and a LiveView `on_mount` guard.
+## Purpose in context
 
-## Features
+Phoenix services validate bearer tokens and check SpiceDB permissions through this library. It provides a Plug that sets `conn.assigns.eel_subject`, a SpiceDB client with fail-closed semantics, and an `AuditSink` behaviour. A `require_permission` Plug builder covers common route-level authorization patterns.
 
-- `Eel.Auth.Subject` - struct representing an authenticated human or workload
-- `Eel.Auth.JWKS` - GenServer with ETS-backed JWKS key cache (TTL configurable)
-- `Eel.Auth.JWT.verify/2` - signature + claims validation
-- `Eel.Auth.SpiceDB` - check_permission and lookup_resources
-- `Eel.Auth.Plug` - drop-in Phoenix/Cowboy plug
-- `Eel.Auth.LiveAuth` - LiveView `on_mount` guard
+## Public modules
+
+| Module | Description |
+|---|---|
+| `Eel.Auth.JwksCache` | GenServer; caches JWKS keys with TTL and kid-miss refetch |
+| `Eel.Auth.Subject` | Struct: `sub`, `roles`, `scopes`, `is_service` |
+| `Eel.Auth.Plug` | Plug; sets `conn.assigns.eel_subject` or halts with 401 |
+| `Eel.Auth.RequirePermission` | Plug builder factory: `require_permission("rts", resource, action)` |
+| `Eel.Auth.SpiceDB` | GenServer client; `check/4 -> :allow | :deny`; fail-closed |
+| `Eel.Auth.AuditSink` | Behaviour; `record/4` |
+
+## Layout
+
+```
+eel-auth-ex/
+  lib/
+    eel_auth.ex
+    eel_auth/
+      jwks_cache.ex
+      subject.ex
+      plug.ex
+      require_permission.ex
+      spice_db.ex
+      audit_sink.ex
+  test/
+  mix.exs
+```
 
 ## Usage
 
 ```elixir
-# In application supervisor:
-{Finch, name: Eel.Auth.Finch},
-{Eel.Auth.JWKS, keycloak_url: "https://auth.example.com", realm: "iems"}
-
-# In Phoenix router pipeline:
-plug Eel.Auth.Plug, jwks: Eel.Auth.JWKS
-
-# In a live_session:
-live_session :authenticated, on_mount: {Eel.Auth.LiveAuth, :require_authenticated} do
-  live "/dashboard", DashboardLive
+# router.ex
+pipeline :api do
+  plug Eel.Auth.Plug
+  plug Eel.Auth.RequirePermission, context: "rts", action: "submit"
 end
 ```
 
-## Configuration
-
 ```elixir
-config :eel_auth,
-  spicedb_url: "http://spicedb.internal:50051",
-  spicedb_token: "your-token"
+# application.ex supervision tree
+children = [
+  {Eel.Auth.JwksCache, jwks_url: System.get_env("KEYCLOAK_JWKS_URL")},
+  {Eel.Auth.SpiceDB, endpoint: System.get_env("SPICEDB_ENDPOINT"),
+                     key: System.get_env("SPICEDB_PRESHARED_KEY")},
+]
 ```
+
+## Config / env
+
+| Variable | Description |
+|---|---|
+| `KEYCLOAK_JWKS_URL` | JWKS endpoint |
+| `SPICEDB_ENDPOINT` | SpiceDB gRPC address |
+| `SPICEDB_PRESHARED_KEY` | SpiceDB preshared key |
 
 ## Dependencies
 
-- `finch ~> 0.19`
-- `jason ~> 1.4`
-- `plug ~> 1.17`
-- `phoenix_live_view ~> 1.0` (optional)
+`finch`, `jason`, `plug`.
+
+## Install
+
+```elixir
+{:eel_auth, path: "../../packages/eel-auth-ex"}
+```
+
+```bash
+mix deps.get
+```
+
+## Test
+
+```bash
+mix test
+mix dialyzer
+```
+
+## Related docs
+
+- `packages/authz-schema/README.md` - SpiceDB schema per bounded context
+- `packages/eel-auth-rs/README.md` - Rust mirror
+- `docs/adr/0004-iam.md` - Keycloak realm and scope taxonomy
+
+## Limitations
+
+`Eel.Auth.SpiceDB` communicates with SpiceDB over HTTP/2 via Finch. Any connection error causes `:deny`. Include SpiceDB in the service's readiness check to prevent traffic reaching the service while SpiceDB is unreachable.

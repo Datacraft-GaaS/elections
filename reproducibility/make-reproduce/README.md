@@ -1,106 +1,111 @@
 # reproducibility/make-reproduce
 
-`make reproduce` rebuilds eel OCI images from a pinned Nix flake and re-derives the tally Merkle root from bundle events, producing a diffoscope diff on any mismatch.
+Makefile-driven pipeline for reproducing and verifying eel release artifacts. This is the
+primary entry point for auditors and the Commission's technical team to confirm that deployed
+binaries match reviewed source.
 
-## Prerequisites
+## Purpose
 
-| Tool | Version | Purpose |
-|------|---------|---------|
-| Nix | 2.22+ | Hermetic image builds |
-| cosign | 2.2+ | SBOM signature verification |
-| diffoscope | 264+ | Layer-level diffs |
-| jq | 1.6+ | JSON processing |
-| cargo | 1.78+ | Build `replay-tally-rs` |
+`make reproduce` orchestrates the full verification pipeline:
 
-## Quick start
+1. Fetch and unpack the release bundle.
+2. Verify hash manifest signature against the transparency log.
+3. Rebuild every listed artifact from source via Nix.
+4. Compare rebuilt artifacts against bundle artifacts using `diffoscope`.
+5. Replay the event log to re-derive the tally Merkle root.
+6. Write a machine-readable report to `.repro-reports/`.
 
-```sh
-# Build the tally replayer once
-cd bin/replay-tally-rs && cargo build --release && cd -
+Each step is also available as an individual Make target for partial runs.
 
-# Run the full pipeline against the synthetic fixture
-make reproduce BUNDLE=reproducibility/make-reproduce/fixtures/mini-bundle
-
-# Or against a real bundle path/URL
-make reproduce BUNDLE=/path/to/bundle.tar.gz
-make reproduce BUNDLE=https://bundles.example/eel-wave4-bundle.tar.gz
-```
-
-## Targets
+## Makefile targets
 
 | Target | Description |
 |--------|-------------|
-| `make reproduce BUNDLE=<path\|url>` | Full pipeline: fetch, SBOM verify, Nix rebuild, sha256 compare, diffoscope on mismatch |
-| `make verify-images IMAGES="img-a img-b"` | Rebuild specific images via Nix, emit hash report |
-| `make replay-tally BUNDLE=<path>` | Replay bundle events, derive Merkle root, compare to declared root |
-| `make diff-artefact A=<path> B=<path>` | Run diffoscope with JSON+HTML output |
-| `make clean-repro` | Remove `.repro-reports/` |
+| `reproduce BUNDLE=<path>` | Full pipeline: fetch, verify, rebuild, diff, replay-tally |
+| `verify-images IMAGES=<list>` | Rebuild named Nix attrs; compare sha256 against bundle |
+| `replay-tally BUNDLE=<path>` | Replay `events.jsonl`; compare derived Merkle root |
+| `diff-artefact A=<p> B=<p>` | `diffoscope` wrapper; outputs HTML + JSON report |
+| `clean-repro` | Remove `.repro-reports/` workspace |
+| `help` | Print target list with descriptions |
 
-## Pipeline stages (reproduce.sh)
+## Contents
 
-1. Fetch bundle (URL or local path), extract archive.
-2. Verify SBOM `.sig` files with cosign (warns if cosign key not configured).
-3. For each `kind=image` artefact in `manifest.json`: run `nix build .#<build_recipe>`.
-4. Compute sha256 of Nix output, compare to manifest.
-5. On mismatch: unpack OCI layers and invoke diffoscope, write JSON report.
-6. Write overall JSON report to `.repro-reports/`.
+| File | Description |
+|------|-------------|
+| `Makefile` | Top-level pipeline definition |
+| `scripts/reproduce.sh` | Full pipeline shell script called by `make reproduce` |
+| `scripts/replay-tally.sh` | Event log replay script |
+| `docker/` | Dockerfile for the reproducer container image |
+| `docker-compose.yml` | Local reproducer environment with Nix and diffoscope pre-installed |
+| `fixtures/` | Small test bundle fixtures for CI smoke tests |
+| `tests/` | pytest-based integration tests for the pipeline scripts |
 
-## Tally replay (replay-tally.sh / replay-tally-rs)
+## Usage
 
-Reads `events.jsonl` from the bundle, hashes each event using BLAKE3 over RFC 8785 canonical JSON, chains hashes into a Merkle root, and compares to `manifest.json:.tally_root`.
+```bash
+# Full pipeline from a local bundle
+cd reproducibility/make-reproduce
+make reproduce BUNDLE=/path/to/eel-release-bundle.tar.gz
 
-The Rust binary is a standalone crate (empty `[workspace]` stanza) that does not join the root Cargo workspace.
+# Partial: rebuild and diff one image
+make verify-images IMAGES="eel-rts-svc"
+make diff-artefact \
+  A=.repro-reports/bundle-eel-rts-svc.tar \
+  B=.repro-reports/rebuilt-eel-rts-svc.tar
 
-```sh
-cd bin/replay-tally-rs
-cargo build --release
-cargo test
+# Partial: tally replay only (fast, useful during results audit)
+make replay-tally BUNDLE=/path/to/eel-release-bundle.tar.gz
+
+# Docker-based reproducer (no local Nix required)
+docker compose run reproducer make reproduce BUNDLE=/bundles/eel-release.tar.gz
+
+# Run CI smoke tests against fixtures
+uv run pytest -vxs tests/ci
 ```
 
-## Multi-arch verification
+## Config and environment
 
-```sh
-bash scripts/multi-arch-verify.sh packages.x86_64-linux.eel-vprs
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BUNDLE` | required | Path or HTTPS URL to release bundle tar |
+| `IMAGES` | required for verify-images | Space-separated Nix attr paths |
+| `A`, `B` | required for diff-artefact | Paths to compare |
+| `NIX_OFFLINE` | `0` | Set `1` to pass `--offline` to nix |
+| `REPRO_DIR` | `$(CURDIR)` | Root of the make-reproduce directory |
+| `REPORT_DIR` | `$(REPRO_DIR)/.repro-reports` | Output directory |
+
+## Dependencies
+
+- GNU make >= 4.3
+- Nix >= 2.22 with flakes enabled
+- `diffoscope` on PATH
+- `jq` for JSON processing in scripts
+- Python 3.11+ for `hash-manifests/validate.py` (called by `reproduce.sh`)
+- `cosign` for manifest signature verification
+
+## Test and verify
+
+```bash
+# Smoke test against fixtures (runs in CI)
+cd reproducibility/make-reproduce
+uv run pytest -vxs tests/ci
+
+# Test replay-tally against a known-good fixture
+make replay-tally BUNDLE=fixtures/bundle-v1-test.tar.gz
+cat .repro-reports/replay-tally.json | jq .tally_match
+# Expected: true
 ```
 
-Builds the given Nix attr on x86_64-linux, aarch64-linux, and aarch64-darwin. Skips unavailable platforms with a warning. Asserts all available hashes are identical.
+## Related docs
 
-## Docker hermetic environment
+- `reproducibility/README.md`: workflow overview
+- `reproducibility/hash-manifests/README.md`: manifest schema
+- `reproducibility/nix-flakes/README.md`: Nix build fragments
+- `air-gapped-build/README.md`: offline build environment
 
-```sh
-export BUNDLE_PATH=/path/to/bundle
-export REPORT_DIR=/tmp/reports
-docker compose up --build
-```
+## Limitations
 
-The container has pinned Nix, cosign, diffoscope, b3sum, and jq. `network_mode: none` ensures no external fetches at reproduce time.
-
-## Expected outputs
-
-A successful `make reproduce` writes `.repro-reports/reproduce-<timestamp>.json`:
-
-```json
-{
-  "schema_version": "1",
-  "bundle": "mini-bundle",
-  "timestamp": "2026-08-01T00:00:00Z",
-  "overall": "ok",
-  "artefacts": [
-    {"name": "eel-fixture-image", "kind": "image", "status": "skipped"}
-  ]
-}
-```
-
-Status values: `ok` (hash match), `mismatch` (hash differs, see diff report), `no-build` (Nix unavailable), `skipped` (non-image artefact).
-
-## Failure semantics
-
-- Any `mismatch` causes `reproduce.sh` to exit non-zero after emitting diffoscope reports for all mismatched artefacts.
-- A root mismatch in `replay-tally.sh` exits non-zero with the computed vs declared roots in the report.
-- Missing tools (nix, diffoscope, cosign) produce warnings, not hard failures, except for the replay binary which is required.
-
-## Running tests
-
-```sh
-bash tests/test_reproduce.sh
-```
+- `reproduce.sh` does not retry on network failures; pre-fetch the bundle before running.
+- `diffoscope` comparison on large OCI images can use 4GB+ of RAM.
+- The `replay-tally` step requires the `events.jsonl` file to be inside the bundle; partial
+  bundles produced for intermediate waves may omit it.

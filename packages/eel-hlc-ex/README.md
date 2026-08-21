@@ -1,58 +1,71 @@
 # eel-hlc-ex
 
-Hybrid Logical Clock (HLC) for Elixir. Part of the IEBC IEMS distributed system toolkit.
+Hybrid Logical Clock for eel Elixir services: wire-compatible with `eel-hlc-rs` and `eel-hlc-py`.
 
-An HLC combines a physical wall-clock millisecond timestamp with a monotonic counter and a node identifier. It provides total event ordering across distributed nodes while staying close to real time. The string format is compatible with the Rust (`eel-hlc-rs`) and Python (`eel-hlc-py`) implementations.
+## Purpose in context
 
-## Format
+Phoenix/LiveView services that produce or consume eel events need HLC timestamps that interoperate with Rust and Python nodes. This library provides the `Hlc` struct and `HlcClock` GenServer in pure Elixir with no native dependencies.
+
+## Public modules
+
+| Module | Description |
+|---|---|
+| `Eel.Hlc` | `from_string/1`, `to_string/1`, `compare/2` |
+| `Eel.Hlc.Clock` | GenServer; `now/1`, `receive/2`, `start_link/1` |
+
+## Layout
 
 ```
-"<physical_ms>.<counter>.<node>"
-```
-
-Example: `"1723731000123.5.42"`
-
-## Installation
-
-```elixir
-# mix.exs
-{:eel_hlc, path: "../eel-hlc-ex"}
+eel-hlc-ex/
+  lib/
+    eel_hlc.ex
+    eel_hlc/clock.ex
+  test/
+  mix.exs
 ```
 
 ## Usage
 
 ```elixir
-# Parse a string produced by any IEMS node (Rust, Python, Elixir)
-{:ok, hlc} = Eel.Hlc.from_string("1723731000123.5.42")
+# Start the clock (add to your supervision tree):
+{Eel.Hlc.Clock, node_id: 3}
 
-# Advance for a local event
-wall = :erlang.system_time(:millisecond)
-next = Eel.Hlc.tick(hlc, wall)
+# Issue a timestamp:
+hlc = Eel.Hlc.Clock.now(:eel_hlc_clock)
+IO.puts(Eel.Hlc.to_string(hlc))  # "1723731000123.0.3"
 
-# Merge a received HLC
-merged = Eel.Hlc.merge(local_hlc, received_hlc)
-
-# Total ordering
-:lt = Eel.Hlc.compare(earlier, later)
-
-# Serialise back
-"1723731000123.5.42" = Eel.Hlc.to_string(hlc)
+# Advance on message receipt:
+remote = Eel.Hlc.from_string!("1723731000200.1.7")
+updated = Eel.Hlc.Clock.receive(:eel_hlc_clock, remote)
 ```
 
-### Stateful clock process
+## Dependencies
+
+No runtime dependencies. Elixir >= 1.17.
+
+## Install
 
 ```elixir
-{:ok, _pid} = Eel.Hlc.Clock.start_link(node: "node-42", name: MyApp.Clock)
-
-# Advance the clock for a local event
-hlc = Eel.Hlc.Clock.now(MyApp.Clock)
-
-# Record a clock received from a peer
-:ok = Eel.Hlc.Clock.observe(peer_hlc, MyApp.Clock)
+# mix.exs
+{:eel_hlc, path: "../../packages/eel-hlc-ex"}
 ```
 
-## Testing
+```bash
+mix deps.get
+```
 
-```sh
+## Test
+
+```bash
 mix test
+mix dialyzer
 ```
+
+## Related docs
+
+- `packages/eel-hlc-rs/README.md` - canonical wire format
+- `packages/eel-events-ex/README.md` - HLC embedded in every envelope
+
+## Limitations
+
+`Eel.Hlc.Clock` is a GenServer; register it in your application supervision tree with a unique name per node. Multiple clocks on the same node are supported but each must have a distinct node ID.

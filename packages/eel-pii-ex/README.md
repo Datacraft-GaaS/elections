@@ -1,63 +1,93 @@
 # eel-pii-ex
 
-PII handling with data class tiers and optional Ecto types for IEBC IEMS. Implements ADR-0016.
+PII classification wrappers and Ecto types for eel Elixir services, enforcing the ADR-0016 five-tier data model. Mirror of `eel-pii-rs`.
 
-## Data classes
+## Purpose in context
 
-| Class | Tier | Examples |
-|-------|------|----------|
-| :A | Restricted | biometric, national ID |
-| :B | Restricted | financial, health records |
-| :C | Sensitive | contact details |
-| :D | Sensitive | name, address |
-| :E | Public | publicly available info |
+Elixir services handling voter records wrap personal data fields in typed PII structs. The Ecto custom types prevent accidental serialization of Tier-A/B values, and every `reveal/3` call emits an audit record. Column-level encryption for Tier-A fields is enforced at the Postgres layer; these types provide the application guardrail.
 
-Values wrapped in PII structs never leak through `String.Chars` or `Inspect` — they always return a redaction string. Call `reveal/2` with a stated purpose to access the raw value; this emits an audit log entry via `Logger.info/2`.
+## Public modules
 
-## Installation
+| Module | Description |
+|---|---|
+| `Eel.PII` | `Purpose` enum, `reveal/3` function |
+| `Eel.PII.Restricted` | Tier A struct + Ecto type; `new/1`, `reveal/3`, `to_string/1` returns `"[RESTRICTED]"` |
+| `Eel.PII.Sensitive` | Tier B struct + Ecto type |
+| `Eel.PII.Public` | Tier C struct + Ecto type; transparent serialization |
+| `Eel.PII.Operational` | Tier D struct + Ecto type |
+| `Eel.PII.Ephemeral` | Tier E struct |
+| `Eel.PII.AuditSink` | Behaviour for audit record emission |
 
-```elixir
-# mix.exs
-{:eel_pii, path: "../eel-pii-ex"}
+## Layout
 
-# With Ecto support
-{:eel_pii, path: "../eel-pii-ex"},
-{:ecto, "~> 3.12"}
+```
+eel-pii-ex/
+  lib/
+    eel_pii.ex
+    eel_pii/
+      restricted.ex
+      sensitive.ex
+      public.ex
+      operational.ex
+      ephemeral.ex
+      audit_sink.ex
+  test/
+  mix.exs
 ```
 
 ## Usage
 
 ```elixir
-alias Eel.PII
+alias Eel.PII.{Restricted, Sensitive, Purpose}
 
-# Wrap values
-national_id = PII.restricted("KE-12345678", :A)
-email       = PII.sensitive("voter@example.com", :C)
-county      = PII.public("Nairobi")
+voter = %{
+  national_id: Restricted.new("KE12345678"),
+  full_name:   Sensitive.new("Jane Mwangi"),
+}
 
-# Safe display — always redacted
-IO.puts(national_id)  # => [REDACTED:A]
-inspect(email)        # => [REDACTED:C]
+# Inspect (safe):
+IO.inspect(voter.national_id)  # %Eel.PII.Restricted{value: "[RESTRICTED]"}
 
-# Reveal with audit trail
-{:ok, raw} = PII.reveal(national_id, "identity-verification")
-
-# Class and redaction
-PII.class(national_id)   # => :A
-PII.redact(national_id)  # => "[REDACTED:A]"
+# Reveal with audit:
+nid = Restricted.reveal(voter.national_id, Purpose.identification(), audit_sink)
+# => "KE12345678"
 ```
 
-### Ecto types (optional)
+## Ecto schema usage
 
 ```elixir
-field :email, Eel.PII.EctoType.Sensitive
-field :county, Eel.PII.EctoType.Public
-
-# Restricted types refuse dump/1 to prevent accidental raw storage
+schema "voters" do
+  field :national_id, Eel.PII.Restricted
+  field :full_name,   Eel.PII.Sensitive
+end
 ```
 
-## Testing
+## Dependencies
 
-```sh
+`ecto` optional.
+
+## Install
+
+```elixir
+{:eel_pii, path: "../../packages/eel-pii-ex"}
+```
+
+```bash
+mix deps.get
+```
+
+## Test
+
+```bash
 mix test
 ```
+
+## Related docs
+
+- `packages/eel-pii-rs/README.md` - canonical Rust implementation
+- `packages/data-dictionary/README.md` - column classification per table
+- `docs/adr/0016-data-classification.md` - tier definitions
+
+## Limitations
+
+The Ecto type stores values as plaintext TEXT in Postgres. Tier-A column-level encryption is a DBA-level concern; the application type provides only the access-control guardrail.

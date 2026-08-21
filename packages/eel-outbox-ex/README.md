@@ -1,62 +1,90 @@
 # eel-outbox-ex
 
-Transactional outbox pattern for the IEBC IEMS project, implemented in Elixir.
+Transactional outbox for eel Elixir services: the sole path for publishing events to Kafka. Mirror of `eel-outbox-rs`.
 
-## Features
+## Purpose in context
 
-- `Eel.Outbox.emit/2` - append a CloudEvent to the `outbox` table as part of an `Ecto.Multi` transaction
-- `Eel.Outbox.Entry` - Ecto schema for the outbox table
-- `Eel.Outbox.Blob` - optional blob offload to MinIO for large payloads
-- `Eel.Outbox.Checks.NoRawKafka` - Credo check that flags direct use of `:brod`, `:kafka_ex`, `KafkaEx`, or `Kafkaex`
+Elixir Phoenix services insert outbox rows inside their Ecto `Multi` transactions. Debezium CDC picks them up and publishes to Kafka with exactly-once semantics. This library provides the Ecto schema, the `emit/3` function for use inside `Ecto.Multi`, and migration helpers.
 
-## How it works
+## Public modules
 
-1. Business logic builds an `Ecto.Multi`.
-2. `Eel.Outbox.emit/2` inserts a row into the `outbox` table within the same transaction.
-3. A relay process (not included here) polls the table and publishes un-sent rows to Kafka, then marks them as published.
+| Module | Description |
+|---|---|
+| `Eel.Outbox` | `emit/3` - inserts an outbox row via `Ecto.Multi` |
+| `Eel.Outbox.Envelope` | Ecto schema matching the `outbox` table |
+| `Eel.Outbox.Schema` | `create_table_sql/0` DDL string |
 
-This eliminates the dual-write hazard: if the transaction rolls back, the outbox row is also rolled back.
+## Layout
 
-## Installation
+```
+eel-outbox-ex/
+  lib/
+    eel_outbox.ex
+    eel_outbox/
+      envelope.ex
+      schema.ex
+  priv/repo/migrations/
+  test/
+  mix.exs
+```
+
+## Usage
 
 ```elixir
-{:eel_outbox, path: "../eel-outbox-ex"}
+alias Eel.Outbox
+alias Eel.Events.Envelope
+
+multi =
+  Ecto.Multi.new()
+  |> Ecto.Multi.insert(:voter, voter_changeset)
+  |> Outbox.emit(:voter_registered, %Envelope{
+    id: uuid7str(),
+    event_type: "eel.bvr.voter_registered.v1",
+    source: "spiffe://eel.local/service/bvr-backend",
+    data: %{voter_id: voter.id},
+    eel_election_id: "2027-general"
+  })
+
+{:ok, _} = Repo.transaction(multi)
 ```
 
-## Migration
+## Dependencies
+
+`ecto`, `jason`. `finch` optional for large-payload MinIO upload.
+
+## Install
 
 ```elixir
-create table(:outbox, primary_key: false) do
-  add :id, :binary_id, primary_key: true, default: fragment("gen_random_uuid()")
-  add :event_id, :string, null: false
-  add :event_type, :string, null: false
-  add :topic, :string, null: false
-  add :payload, :binary, null: false
-  add :published_at, :utc_datetime
-  add :inserted_at, :utc_datetime, null: false, default: fragment("now()")
-end
-
-create index(:outbox, [:published_at], where: "published_at IS NULL", name: :outbox_unpublished_idx)
+{:eel_outbox, path: "../../packages/eel-outbox-ex"}
 ```
 
-## Quick start
-
-```elixir
-Ecto.Multi.new()
-|> MyApp.Orders.insert_order(order_params)
-|> Eel.Outbox.emit(envelope)
-|> MyApp.Repo.transaction()
-```
-
-## Configuration
-
-```elixir
-config :eel_outbox, :blob_threshold, 524_288  # 512 KB
-```
-
-## Running tests
-
-```
+```bash
 mix deps.get
+mix ecto.migrate
+```
+
+## Config
+
+```elixir
+config :eel_outbox,
+  minio_endpoint: System.get_env("MINIO_ENDPOINT"),
+  minio_bucket: System.get_env("MINIO_BUCKET"),
+  minio_access_key: System.get_env("MINIO_ACCESS_KEY"),
+  minio_secret_key: System.get_env("MINIO_SECRET_KEY")
+```
+
+## Test
+
+```bash
 mix test
 ```
+
+## Related docs
+
+- `packages/eel-outbox-rs/README.md` - Rust canonical implementation and Debezium setup
+- `packages/eel-events-ex/README.md` - `Envelope` type passed to `emit/3`
+- `platform/kafka/topics/` - topic routing configuration
+
+## Limitations
+
+`emit/3` must be called inside an `Ecto.Multi` that is executed with `Repo.transaction/1`. Calling `emit/3` outside a transaction will fail at runtime. Large payloads (> `max_inline_bytes`) require the `finch` dependency and a reachable MinIO endpoint.
