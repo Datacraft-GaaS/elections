@@ -1,23 +1,23 @@
-# deploy/service.yaml — filled by the service owner (WP-1.9 template)
-# Fields: name, image, artifacts, sites, strategy, replicas
+# deploy/service.yaml — governance-svc WP-5.1
 name: governance-svc
 image: harbor.eel.internal/eel/governance-svc
-artifacts: []
-# sites: leave empty to deploy to all 7 sites (primary, mirror, edge-*)
-sites: []
+artifacts:
+  - name: eel-governance-rla
+    port: 8091
+  - name: eel-governance-court
+    port: 8092
+  - name: eel-governance-legal-audit
+    port: 8093
+  - name: eel-governance-reporting
+    port: 8094
+  - name: eel-governance-oag
+    port: 8095
+sites:
+  - primary
+  - mirror
 strategy:
   primary: blue-green
-  mirror:  blue-green
-  edge-nairobi:  rolling
-  edge-mombasa:  rolling
-  edge-kisumu:   rolling
-  edge-eldoret:  rolling
-  edge-garissa:  rolling
+  mirror: blue-green
 replicas:
-  primary:       3
-  mirror:        3
-  edge-nairobi:  2
-  edge-mombasa:  2
-  edge-kisumu:   2
-  edge-eldoret:  2
-  edge-garissa:  2
+  primary: 3
+  mirror: 3

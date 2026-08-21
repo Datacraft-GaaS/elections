@@ -1,0 +1,116 @@
+# WP-5.1 traceability matrix
+work_package: WP-5.1
+modules: [M21, M40, M62, M58, M59]
+service: governance-svc
+
+requirements:
+  FR-M21-001:
+    description: "SHANGRLA ballot-polling and comparison audit runs with configurable risk limit"
+    implemented_in: [crates/rla/src/engine.rs, py/shangrla/src/shangrla/engine.py]
+    status: stub
+
+  FR-M21-002:
+    description: "NIST randomness beacon + HSM + IAB card seed for audit entropy"
+    implemented_in: [py/shangrla/src/shangrla/nist_beacon.py, py/shangrla/src/shangrla/iab_seed.py, crates/rla/src/manifest.rs]
+    status: stub
+
+  FR-M21-003:
+    description: "Audit manifest upload, sample draw, witness workflow, T-statistic computation"
+    implemented_in: [crates/rla/src/handlers.rs, crates/rla/src/engine.rs, py/shangrla/src/shangrla/witness.py]
+    status: stub
+
+  FR-M21-004:
+    description: "Auto recount trigger on failed audit (T-stat exceeds risk limit)"
+    implemented_in: [crates/rla/src/engine.rs, py/shangrla/src/shangrla/engine.py]
+    status: stub
+
+  FR-M21-005:
+    description: "Offline audit laptop draws sample ballots and records verdicts; HSM-signed records sync on reconnect"
+    implemented_in: [apps/rla-desktop/src-tauri/src/commands.rs, apps/rla-desktop/src-tauri/src/db.rs]
+    status: stub
+
+  FR-M40-001:
+    description: "15-item evidence bundle per Strategy §XII.4"
+    implemented_in: [crates/court-interface/src/handlers.rs, crates/court-interface/src/models.rs]
+    status: stub
+
+  FR-M40-002:
+    description: "Petitioner portal access (identity stored as hash, class A PII)"
+    implemented_in: [crates/court-interface/src/models.rs, migrations/V2__court_tables.sql]
+    status: stub
+
+  FR-M40-003:
+    description: "Supplementary request workflow"
+    implemented_in: [crates/court-interface/src/handlers.rs]
+    status: stub
+
+  FR-M40-004:
+    description: "Technical-witness pre-registration with eCourt OAuth bridge"
+    implemented_in: [crates/court-interface/src/handlers.rs]
+    status: stub
+
+  FR-M62-001:
+    description: "Transmission rules engine per §39; per-event compliance verdicts"
+    implemented_in: [crates/legal-audit/src/handlers.rs, migrations/V3__legal_audit_tables.sql]
+    status: stub
+
+  FR-M62-002:
+    description: "Party-agent summary read endpoint"
+    implemented_in: [crates/legal-audit/src/handlers.rs]
+    status: stub
+
+  FR-M62-003:
+    description: "Compliance verdicts hashed to transparency log (sigstore Rekor) immutably"
+    implemented_in: [crates/legal-audit/src/handlers.rs, migrations/V3__legal_audit_tables.sql]
+    status: stub
+
+  FR-M58-001:
+    description: "Statutory Assembly/Senate/Judiciary/SC reports generated on demand"
+    implemented_in: [crates/reporting/src/handlers.rs]
+    status: stub
+
+  FR-M58-002:
+    description: "Committee testimony prep workspace"
+    implemented_in: [crates/reporting/src/handlers.rs, migrations/V4__reporting_tables.sql]
+    status: stub
+
+  FR-M58-003:
+    description: "Judiciary handover records"
+    implemented_in: [crates/reporting/src/handlers.rs]
+    status: stub
+
+  FR-M59-001:
+    description: "SC IT Registrar pre-registration"
+    implemented_in: [crates/reporting/src/handlers.rs]
+    status: stub
+
+  FR-M59-002:
+    description: "OAG engagement scoping, evidence extract queries, response tracking"
+    implemented_in: [crates/oag/src/handlers.rs]
+    status: stub
+
+  FR-M59-003:
+    description: "Published-report registry"
+    implemented_in: [crates/oag/src/handlers.rs, migrations/V4__reporting_tables.sql]
+    status: stub
+
+edge_cases:
+  EC-GOV-01:
+    description: "Audit run interrupted mid-count: resume from last ballot"
+    implemented_in: [crates/rla/src/handlers.rs]
+    status: stub
+
+  EC-GOV-02:
+    description: "Court petition filed after statutory deadline: reject with 422"
+    implemented_in: [crates/court-interface/src/handlers.rs]
+    status: stub
+
+  EC-GOV-03:
+    description: "NIST beacon unavailable: fall back to dice entropy"
+    implemented_in: [py/shangrla/src/shangrla/nist_beacon.py]
+    status: stub
+
+  EC-GOV-04:
+    description: "Desktop offline >7 days: warn auditor, block sync until reconnected <24h"
+    implemented_in: [apps/rla-desktop/src-tauri/src/commands.rs]
+    status: stub

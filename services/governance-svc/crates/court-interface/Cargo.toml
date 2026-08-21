@@ -1,0 +1,32 @@
+[package]
+name = "eel-governance-court"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "M40 Election Court IT Interface — 15-item evidence bundle, petitioner portal, eCourt OAuth bridge (WP-5.1)"
+
+[lib]
+name = "eel_governance_court"
+path = "src/lib.rs"
+
+[[bin]]
+name = "eel-governance-court"
+path = "src/main.rs"
+
+[dependencies]
+axum              = { workspace = true }
+tower             = { workspace = true }
+tower-http        = { workspace = true }
+tokio             = { workspace = true }
+serde             = { workspace = true, features = ["derive"] }
+serde_json        = { workspace = true }
+uuid              = { workspace = true }
+chrono            = { workspace = true }
+tracing           = { workspace = true }
+tracing-subscriber = { workspace = true }
+thiserror         = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

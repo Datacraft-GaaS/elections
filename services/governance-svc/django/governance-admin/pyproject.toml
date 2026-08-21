@@ -1,0 +1,34 @@
+[project]
+name = "governance-admin"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+	"django>=4.2",
+	"djangorestframework>=3.15",
+	"pydantic>=2.0",
+	"httpx>=0.27",
+	"uuid6>=2024.1",
+]
+
+[project.optional-dependencies]
+dev = [
+	"pytest>=8.0",
+	"pytest-django>=4.8",
+	"pyright>=1.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["governance_admin", "governance_app"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "governance_admin.settings"
+pythonpath = ["."]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.pyright]
+pythonVersion = "3.12"

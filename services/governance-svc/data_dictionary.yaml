@@ -1,0 +1,129 @@
+# governance-svc data dictionary (WP-5.1 ADR-0016)
+service: governance-svc
+
+tables:
+  rla_audit_runs:
+    description: "M21 RLA audit run lifecycle records."
+    columns:
+      run_id:         { tier: D, description: "UUID7 audit run identifier" }
+      election_id:    { tier: C, description: "Election identifier" }
+      position_code:  { tier: C, description: "Electoral position under audit" }
+      audit_method:   { tier: D, description: "ballot_polling|comparison|batch_comparison" }
+      risk_limit:     { tier: D, description: "Maximum acceptable risk (0-1)" }
+      seed_ref:       { tier: D, description: "Reference to entropy source" }
+      status:         { tier: D, description: "initialised|sampling|counting|complete|escalated" }
+      completed_at:   { tier: D, description: "Completion timestamp" }
+      sig:            { tier: D, description: "HSM Ed25519 signature over run record" }
+
+  rla_entropy_sources:
+    description: "M21 Entropy sources for RLA seed: dice, NIST beacon, hardware RNG, IAB card."
+    columns:
+      source_id:    { tier: D, description: "UUID7 source identifier" }
+      run_id:       { tier: D, description: "Parent audit run" }
+      source_type:  { tier: D, description: "dice|beacon|hardware|iab_card" }
+      value_hash:   { tier: D, description: "SHA-256 of entropy value" }
+      witnessed_at: { tier: D, description: "When entropy was witnessed" }
+      witness_sigs: { tier: D, description: "JSON array of witness Ed25519 signatures" }
+
+  rla_sampled_ballots:
+    description: "M21 Ballots drawn in an audit sample."
+    columns:
+      ballot_id:               { tier: C, description: "UUID7 ballot identifier" }
+      run_id:                  { tier: D, description: "Parent audit run" }
+      station_code:            { tier: C, description: "Polling station code" }
+      batch_id:                { tier: D, description: "Physical batch identifier" }
+      ballot_position:         { tier: D, description: "Position within batch" }
+      auditor_interpretation:  { tier: D, description: "Human auditor verdict" }
+      discrepancy:             { tier: D, description: "True if discrepancy found" }
+
+  rla_audit_reports:
+    description: "M21 Final audit conclusions and recount triggers."
+    columns:
+      report_id:         { tier: D, description: "UUID7 report identifier" }
+      run_id:            { tier: D, description: "Parent audit run" }
+      conclusion:        { tier: D, description: "pass|escalate|recount_triggered" }
+      risk_achieved:     { tier: D, description: "Actual risk level reached" }
+      discrepancy_count: { tier: D, description: "Number of discrepancies found" }
+      sig:               { tier: D, description: "HSM signature over report" }
+
+  court_petitions:
+    description: "M40 Election court petitions."
+    columns:
+      petition_id:     { tier: D, description: "UUID7 petition identifier" }
+      petitioner_hash: { tier: A, description: "SHA-256 of petitioner identity (PII)" }
+      contest_code:    { tier: C, description: "Electoral contest under petition" }
+      grounds:         { tier: C, description: "Legal grounds for petition" }
+      status:          { tier: D, description: "filed|served|hearing|judgment|closed" }
+      ecourt_ref:      { tier: D, description: "eCourt system reference number" }
+
+  court_evidence_bundles:
+    description: "M40 15-item evidence bundles per Strategy §XII.4."
+    columns:
+      bundle_id:     { tier: D, description: "UUID7 bundle identifier" }
+      petition_id:   { tier: D, description: "Parent petition" }
+      item_count:    { tier: D, description: "Number of evidence items (max 15)" }
+      items:         { tier: C, description: "JSONB array of evidence items" }
+      sig:           { tier: D, description: "HSM signature over bundle" }
+
+  legal_transmission_records:
+    description: "M62 Transmission chain events with legal basis references."
+    columns:
+      record_id:          { tier: D, description: "UUID7 record identifier" }
+      event_id:           { tier: D, description: "Source event identifier" }
+      event_type:         { tier: D, description: "Event type (form transmission step)" }
+      transmission_step:  { tier: D, description: "Step in §39 transmission chain" }
+      legal_basis_refs:   { tier: D, description: "JSONB array of statutory references" }
+      officer_id_hash:    { tier: A, description: "SHA-256 of responsible officer (PII)" }
+
+  legal_compliance_verdicts:
+    description: "M62 Per-event compliance verdicts hashed to tlog."
+    columns:
+      verdict_id:   { tier: D, description: "UUID7 verdict identifier" }
+      record_id:    { tier: D, description: "Parent transmission record" }
+      rule_id:      { tier: D, description: "Rule evaluated" }
+      passed:       { tier: D, description: "True if compliant" }
+      tlog_hash:    { tier: D, description: "Rekor transparency log entry hash" }
+
+  reporting_statutory_reports:
+    description: "M58 Statutory Assembly/Senate/Judiciary/SC reports."
+    columns:
+      report_id:   { tier: D, description: "UUID7 report identifier" }
+      report_type: { tier: D, description: "Assembly|Senate|Judiciary|SC|Committee" }
+      status:      { tier: D, description: "queued|generating|ready|delivered" }
+      period_from: { tier: D, description: "Reporting period start" }
+      period_to:   { tier: D, description: "Reporting period end" }
+      sig:         { tier: D, description: "HSM signature over generated report" }
+
+  oag_engagements:
+    description: "M59 OAG audit engagement lifecycle."
+    columns:
+      engagement_id: { tier: D, description: "UUID7 engagement identifier" }
+      title:         { tier: C, description: "Engagement title" }
+      scope:         { tier: C, description: "Engagement scope description" }
+      status:        { tier: D, description: "scoping|active|responded|closed" }
+      oag_ref:       { tier: D, description: "OAG reference number" }
+
+  oag_evidence_extracts:
+    description: "M59 Evidence data extracts for OAG."
+    columns:
+      extract_id:    { tier: D, description: "UUID7 extract identifier" }
+      engagement_id: { tier: D, description: "Parent engagement" }
+      query_hash:    { tier: D, description: "SHA-256 of extract query" }
+      row_count:     { tier: D, description: "Number of rows extracted" }
+
+  oag_responses:
+    description: "M59 IEBC responses to OAG queries."
+    columns:
+      response_id:     { tier: D, description: "UUID7 response identifier" }
+      engagement_id:   { tier: D, description: "Parent engagement" }
+      response_text:   { tier: C, description: "Response content" }
+      responder_hash:  { tier: A, description: "SHA-256 of responder identity (PII)" }
+
+  oag_published_reports:
+    description: "M59 Registry of OAG published reports referencing IEBC."
+    columns:
+      pub_report_id: { tier: D, description: "UUID7 published report identifier" }
+      engagement_id: { tier: D, description: "Related OAG engagement (optional)" }
+      title:         { tier: C, description: "Report title" }
+      published_at:  { tier: D, description: "OAG publication date" }
+      url:           { tier: D, description: "Public URL of report" }

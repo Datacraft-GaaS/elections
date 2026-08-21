@@ -1,0 +1,29 @@
+[project]
+name = "shangrla"
+version = "0.1.0"
+description = "SHANGRLA risk-limiting audit engine wrapper for governance-svc (WP-5.1 M21)"
+requires-python = ">=3.12"
+dependencies = [
+	"pydantic>=2",
+	"httpx>=0.27",
+	"cryptography>=42",
+	"uuid6>=0.7",
+	"python-dateutil>=2.9",
+	"scipy>=1.13",
+	"numpy>=1.26",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/shangrla"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.pyright]
+pythonVersion = "3.12"

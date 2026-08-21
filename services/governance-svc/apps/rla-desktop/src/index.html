@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>eel RLA Audit Desktop</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; background: #f8f9fa; }
+    h1 { color: #1a1a2e; }
+    .status { padding: 0.5rem 1rem; border-radius: 4px; background: #e8f5e9; color: #2e7d32; margin: 1rem 0; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 0.5rem; text-align: left; }
+    th { background: #f0f0f0; }
+    button { padding: 0.4rem 1rem; border: none; border-radius: 4px; background: #1a1a2e; color: white; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>eel RLA Audit Desktop</h1>
+  <div class="status" id="sync-status">Offline mode — 0 records pending sync</div>
+  <h2>Sampled Ballots</h2>
+  <table>
+    <thead><tr><th>Ballot ID</th><th>Station</th><th>Position</th><th>Interpretation</th><th>Discrepancy</th><th>Action</th></tr></thead>
+    <tbody id="ballot-list"><tr><td colspan="6">No run loaded</td></tr></tbody>
+  </table>
+  <script type="module">
+    const { invoke } = window.__TAURI__.core;
+    async function refresh() {
+      const cnt = await invoke('pending_sync_count');
+      document.getElementById('sync-status').textContent =
+        cnt === 0 ? 'All records synced' : `Offline mode — ${cnt} records pending sync`;
+    }
+    refresh();
+  </script>
+</body>
+</html>

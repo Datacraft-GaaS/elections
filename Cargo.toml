@@ -26,6 +26,10 @@ exclude = [
   # vprs-api, finance-transparency: directories exist but Cargo.toml is missing (in-flight)
   "services/vprs-svc/crates/vprs-api",
   "services/transparency-svc/crates/finance-transparency",
+  # dr-failover: directory exists but Cargo.toml is missing (in-flight)
+  "tools/dr-failover",
+  # custody: uuid6 not on crates.io (in-flight)
+  "services/inventory-svc/crates/custody",
 ]
 # Cargo tolerates glob members that match no paths yet.
 # New crates under these globs are picked up automatically.

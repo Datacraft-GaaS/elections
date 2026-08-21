@@ -1,0 +1,32 @@
+[package]
+name = "eel-governance-legal-audit"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "M62 Transmission Legal Basis Audit — §39 rules engine, per-event compliance verdicts, tlog-hashed (WP-5.1)"
+
+[lib]
+name = "eel_governance_legal_audit"
+path = "src/lib.rs"
+
+[[bin]]
+name = "eel-governance-legal-audit"
+path = "src/main.rs"
+
+[dependencies]
+axum              = { workspace = true }
+tower             = { workspace = true }
+tower-http        = { workspace = true }
+tokio             = { workspace = true }
+serde             = { workspace = true, features = ["derive"] }
+serde_json        = { workspace = true }
+uuid              = { workspace = true }
+chrono            = { workspace = true }
+tracing           = { workspace = true }
+tracing-subscriber = { workspace = true }
+thiserror         = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

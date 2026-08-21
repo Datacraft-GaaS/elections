@@ -1,0 +1,13 @@
+# governance-svc OpenAPI contract index (WP-5.1)
+# Individual contracts in:
+#   governance-rla/audit.yaml         (M21)
+#   governance-court/interface.yaml   (M40)
+#   governance-legal-audit/audit.yaml (M62)
+#   governance-reporting/reports.yaml (M58/M59)
+#   governance-reporting/audit.yaml   (M58/M59 OAG)
+modules:
+  M21: governance-rla/audit.yaml
+  M40: governance-court/interface.yaml
+  M62: governance-legal-audit/audit.yaml
+  M58: governance-reporting/reports.yaml
+  M59: governance-reporting/reports.yaml

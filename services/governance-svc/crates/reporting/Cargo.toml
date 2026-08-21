@@ -1,0 +1,32 @@
+[package]
+name = "eel-governance-reporting"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "M58/M59 Parliamentary & Judiciary Reporting — statutory Assembly/Senate/Judiciary reports, SC IT pre-registration (WP-5.1)"
+
+[lib]
+name = "eel_governance_reporting"
+path = "src/lib.rs"
+
+[[bin]]
+name = "eel-governance-reporting"
+path = "src/main.rs"
+
+[dependencies]
+axum              = { workspace = true }
+tower             = { workspace = true }
+tower-http        = { workspace = true }
+tokio             = { workspace = true }
+serde             = { workspace = true, features = ["derive"] }
+serde_json        = { workspace = true }
+uuid              = { workspace = true }
+chrono            = { workspace = true }
+tracing           = { workspace = true }
+tracing-subscriber = { workspace = true }
+thiserror         = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }
