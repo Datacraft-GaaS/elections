@@ -3174,6 +3174,16 @@ dependencies = [
 [[package]]
 name = "eel-abis-search-planner"
 version = "0.1.0"
+dependencies = [
+ "chrono",
+ "rstest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "tokio",
+ "tracing",
+ "uuid",
+]
 
 [[package]]
 name = "eel-abis-shielding"
