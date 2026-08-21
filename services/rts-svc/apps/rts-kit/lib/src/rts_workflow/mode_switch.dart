@@ -72,11 +72,11 @@ class RtsModeBundle {
     final formTypeStr = raw['form_type'] as String? ?? 'form34a';
     return RtsModeBundle(
       electionType: ElectionType.values.firstWhere(
-        (e) => e.name == _camelToSnake(electionTypeStr),
+        (e) => e.name == electionTypeStr,
         orElse: () => ElectionType.general,
       ),
       formType: FormType.values.firstWhere(
-        (e) => e.name == _camelToSnake(formTypeStr),
+        (e) => e.name == formTypeStr,
         orElse: () => FormType.form34a,
       ),
       validFrom: DateTime.parse(raw['valid_from'] as String),
@@ -92,9 +92,6 @@ class RtsModeBundle {
     _log.info('Mode bundle signature verification stub - always true');
     return true;
   }
-
-  static String _camelToSnake(String s) =>
-      s.replaceAllMapped(RegExp(r'[A-Z]'), (m) => '_${m.group(0)!.toLowerCase()}').replaceFirst(RegExp(r'^_'), '');
 
   Map<String, Object?> toJson() => {
         'election_type': electionType.name,

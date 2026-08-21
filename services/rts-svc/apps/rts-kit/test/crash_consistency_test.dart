@@ -15,17 +15,22 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// Storage that throws after the first [save] call to simulate a crash between
 /// the two-phase commit's journal write and the commit write.
+///
+/// Serialises entries via JSON round-trip (like real SQLite) so that mutations
+/// to the in-memory [OutboxEntry] object after phase-1 do not retroactively
+/// change what the storage has persisted.
 class CrashAfterFirstSaveStorage implements OutboxStorage {
-  CrashAfterFirstSaveStorage(this._inner);
-  final InMemoryOutboxStorage _inner;
+  CrashAfterFirstSaveStorage();
+
+  final Map<String, Map<String, Object?>> _store = {};
   int _saveCount = 0;
 
   @override
   Future<void> save(OutboxEntry entry) async {
     _saveCount++;
     if (_saveCount == 1) {
-      // Phase 1 (journal write) succeeds.
-      await _inner.save(entry);
+      // Phase 1 (journal write) succeeds. Deep-copy via JSON.
+      _store[entry.id] = Map<String, Object?>.from(entry.toJson());
       return;
     }
     // Phase 2 (commit write) crashes.
@@ -33,10 +38,11 @@ class CrashAfterFirstSaveStorage implements OutboxStorage {
   }
 
   @override
-  Future<void> remove(String id) => _inner.remove(id);
+  Future<void> remove(String id) async => _store.remove(id);
 
   @override
-  Future<List<OutboxEntry>> loadAll() => _inner.loadAll();
+  Future<List<OutboxEntry>> loadAll() async =>
+      _store.values.map(OutboxEntry.fromJson).toList();
 }
 
 // ---- Tests ------------------------------------------------------------------
@@ -44,8 +50,7 @@ class CrashAfterFirstSaveStorage implements OutboxStorage {
 void main() {
   group('EelOfflineQueue crash-consistency', () {
     test('partial write (stepCommitted=false) is purged on reinit', () async {
-      final inner = InMemoryOutboxStorage();
-      final crashStorage = CrashAfterFirstSaveStorage(inner);
+      final crashStorage = CrashAfterFirstSaveStorage();
       final queue = EelOfflineQueue(storage: crashStorage);
       await queue.init();
 
@@ -59,18 +64,18 @@ void main() {
         throwsA(isA<StateError>()),
       );
 
-      // The entry exists in storage with stepCommitted=false.
-      final saved = await inner.loadAll();
+      // The entry exists in storage with stepCommitted=false (phase-1 snapshot).
+      final saved = await crashStorage.loadAll();
       expect(saved, hasLength(1));
       expect(saved.first.stepCommitted, isFalse);
 
       // Reinit on a new queue using the same storage: partial entry removed.
-      final queue2 = EelOfflineQueue(storage: inner);
+      final queue2 = EelOfflineQueue(storage: crashStorage);
       await queue2.init();
 
       expect(queue2.pending, isEmpty);
       expect(queue2.all(), isEmpty);
-      final afterReinit = await inner.loadAll();
+      final afterReinit = await crashStorage.loadAll();
       expect(afterReinit, isEmpty);
     });
 
