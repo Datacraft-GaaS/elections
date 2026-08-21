@@ -1,14 +1,14 @@
-# CR-003: Kenyan-sovereign edge — multi-ISP peering vs Cloudflare / Akamai
+# SA-003: Kenyan-sovereign edge — multi-ISP peering vs Cloudflare / Akamai
 
 Date: 2026-08-21
-Raises to: Datacraft
-Status: draft
+Applies to: Datacraft bid documents under work_docs/01-Projects/IEBC/sw/ (our own earlier draft)
+Status: decided (ADR takes precedence; sw/ docs to be edited)
 
-## Datacraft position
+## Earlier draft (sw/) says
 
 `sw/ARCHITECTURE.md` §3.1 / §12 names **Cloudflare Magic Transit or Akamai Prolexic** for DDoS mitigation and CDN.
 
-## Our position
+## Decision (per ADRs)
 
 - Multi-ISP peering + upstream scrubbing agreements with **Kenyan ISPs** (Safaricom, Airtel, Jamii, iColo, Konza).
 - Multi-provider anycast + BGP inside Kenya.
@@ -33,7 +33,7 @@ Status: draft
 - Kenyan-only DDoS defence means a state-actor-scale attack from outside Kenya lands entirely on Kenyan telco infrastructure; scrubbing agreements must be formalised pre-freeze.
 - Setup cost of ISP peering agreements is real engineering + relationship work; mitigated by starting T-9 months.
 
-## Fallback
+## Edits to apply to sw/
 
 If Cloudflare/Akamai is politically mandated: enforce **request-path isolation** — Cloudflare handles only anonymous public read traffic to the signed-snapshot tier (ADR-0011 Tier 1). All authenticated traffic (Tiers 2, 3, 5), all administrative surfaces, and all voter-facing personal-lookup endpoints route directly through Kenyan-ISP edges bypassing the foreign CDN. Consensus data verifiability (cosign + Merkle inclusion proofs) means the foreign CDN cannot tamper with published results — but observability of who requested what leaks to the foreign provider.
 

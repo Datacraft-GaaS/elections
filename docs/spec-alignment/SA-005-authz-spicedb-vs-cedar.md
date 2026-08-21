@@ -1,14 +1,14 @@
-# CR-005: Authorization engine — SpiceDB (ReBAC/Zanzibar) vs Cedar
+# SA-005: Authorization engine — SpiceDB (ReBAC/Zanzibar) vs Cedar
 
 Date: 2026-08-21
-Raises to: Datacraft
-Status: draft
+Applies to: Datacraft bid documents under work_docs/01-Projects/IEBC/sw/ (our own earlier draft)
+Status: decided (ADR takes precedence; sw/ docs to be edited)
 
-## Datacraft position
+## Earlier draft (sw/) says
 
 `sw/ARCHITECTURE.md` §14.4 pins **Cedar** (Amazon, Apache 2.0) as the fine-grained authorization engine, alongside OPA for admission policy.
 
-## Our position
+## Decision (per ADRs)
 
 **SpiceDB** (Authzed, Apache 2.0) for domain-resource authorization. Retain **OPA + Kyverno** for admission and cluster policy (no conflict — different concerns).
 
@@ -35,7 +35,7 @@ Status: draft
 - Cedar policies are pure functions (no external state); SpiceDB is a stateful service (one more datastore to operate + backup + fail-over). Real cost; mitigated by SpiceDB being architecturally simple (Postgres-backed).
 - Cedar has AWS-native ergonomics (IAM Identity Center integration); SpiceDB is provider-agnostic.
 
-## Fallback
+## Edits to apply to sw/
 
 If Cedar is mandated: use **Cedar for pure policy expressions** (approval workflows, config predicates) + **SpiceDB or a custom relationship store on Postgres** for the relational-permission cases. Two engines is worse than one, but the relational cases cannot be expressed cleanly in Cedar alone without shipping every relationship as call-time context.
 

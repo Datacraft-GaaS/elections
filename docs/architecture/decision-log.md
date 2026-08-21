@@ -320,8 +320,8 @@ Analysis: DPA 2019 §40 (right to erasure) has explicit exceptions for legal obl
 - **ADR-0021** (mobile security posture, Play Integrity + App Attest + RASP).
 - **ADR-0022** (release + DR, blue-green + 15-min rollback + RTO/RPO SLAs).
 - **ADR-0023** (RFP-alignment reconciliation, amendments to 0004/0005/0006/0007/0008/0012/0015/0016/0017/0018).
-- **Change-request pack** (`docs/change-requests/`): CR-001 OSS hygiene, CR-002 portal stack, CR-003 sovereign edge, CR-005 SpiceDB vs Cedar, CR-006 Cilium vs Linkerd, CR-007 event bus JSON vs Avro. (CR-004 dropped — user policy holds Rust-default without renegotiation.)
-- **Blockers doc** (`docs/blockers-to-client-2026-08-21.md`): scope gaps (M29-M69 not costed, no OAT/FAT for M35-M69, no API-CATALOG for M29-M69), legal/retention questions (voter register 5y vs 15y, digital signature standard pending, PRE_BID D9-D13 outstanding), housekeeping (kit language, HSM level, CI in air-gap, Cloudflare vs sovereignty, escrow, three-vs-two site, OPA/Cedar ambiguity).
+- **Change-request pack** (`docs/spec-alignment/`): CR-001 OSS hygiene, CR-002 portal stack, CR-003 sovereign edge, CR-005 SpiceDB vs Cedar, CR-006 Cilium vs Linkerd, CR-007 event bus JSON vs Avro. (CR-004 dropped — user policy holds Rust-default without renegotiation.)
+- **Blockers doc** (`docs/iebc-clarifications-outstanding.md and docs/datacraft-internal-backlog.md`): scope gaps (M29-M69 not costed, no OAT/FAT for M35-M69, no API-CATALOG for M29-M69), legal/retention questions (voter register 5y vs 15y, digital signature standard pending, PRE_BID D9-D13 outstanding), housekeeping (kit language, HSM level, CI in air-gap, Cloudflare vs sovereignty, escrow, three-vs-two site, OPA/Cedar ambiguity).
 
 **Left open**: three DC hardware provisioning question (PRE_BID C1), independent security certifier (PRE_BID D11), ODPC registration timing (PRE_BID D10), Kenya data residency for production (PRE_BID D9), digital signature standard for Form 34A (PRE_BID C13).
 

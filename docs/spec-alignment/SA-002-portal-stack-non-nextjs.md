@@ -1,14 +1,14 @@
-# CR-002: Portal stack — Path B (Astro + Django + LiveView + Tauri + Flutter) vs Next.js 14
+# SA-002: Portal stack — Path B (Astro + Django + LiveView + Tauri + Flutter) vs Next.js 14
 
 Date: 2026-08-21
-Raises to: Datacraft
-Status: draft
+Applies to: Datacraft bid documents under work_docs/01-Projects/IEBC/sw/ (our own earlier draft)
+Status: decided (ADR takes precedence; sw/ docs to be edited)
 
-## Datacraft position
+## Earlier draft (sw/) says
 
 `sw/ARCHITECTURE.md` §18 pins **Next.js 14** as the SSR/SSG framework for public portals (M11 public portal, M13 verifier, M29 citizen verify, M68 referendum explainer).
 
-## Our position
+## Decision (per ADRs)
 
 Replace with a per-portal-shape allocation (Path B):
 
@@ -43,11 +43,9 @@ Replace with a per-portal-shape allocation (Path B):
 - Elixir is a fourth backend language. Real hiring cost in Kenya; mitigated by 2-3 senior anchors + upskilling.
 - LiveView-in-Tauri-webview for M16 Command Centre is unusual; validated in prior deployments (e.g. supabase-realtime tooling).
 
-## Fallback
+## Edits to apply to sw/
 
-If Datacraft insists on a single framework across all portals: we insist on **SvelteKit 2** as a compromise. Same auth patterns as Path B (server-only files, form-actions with automatic CSRF, hooks as auth choke point). No Next.js in the storm-facing tier.
-
-Under no circumstances do we ship Next.js middleware as the auth boundary for M11 or M13 given the CVE-2025-29927 track record. If Next.js is mandated, all auth must be enforced in a separate Rust BFF service, with Next.js reduced to a pure rendering layer.
+None. Next.js is not RFP-binding (tender.txt names no portal framework) and is excluded from this programme. Path B is the build target; no Next.js component ships in any tier.
 
 ## Related
 

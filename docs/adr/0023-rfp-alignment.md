@@ -22,7 +22,7 @@ This ADR records the amendments the review triggered. The original ADRs remain t
 - **Add 5-zone network segmentation** (Edge / DMZ / Core / Air-gapped / Management) with hardware firewall + K8s NetPol per `sw/SECURITY.md` §2.3.
 - **Reference ADR-0019** for the 5 regional edge Kubernetes clusters.
 - **Reference ADR-0020** for the 18-service K8s topology grouping of the 69 modules.
-- Node OS remains Ubuntu 24.04 LTS (defended; Datacraft's 22.04 CIS-benchmark ask acknowledged but not adopted — the CIS L2 benchmark exists for 24.04 as well).
+- Node OS is Ubuntu 24.04 LTS (earlier draft said 22.04; CIS L2 benchmark exists for 24.04).
 
 ### ADR-0005 (Crypto & HSM) — amendments
 
@@ -44,14 +44,14 @@ This ADR records the amendments the review triggered. The original ADRs remain t
 - **Add JIT dynamic secrets**: OpenBao issues short-lived (max 4h) database and admin credentials per session.
 - **Add maximum admin session length of 4 hours** with mandatory session recording (SSH via `sshaudit` + Web via BFF audit log).
 - **Reference ADR-0021** for mobile device attestation, which extends the identity model onto citizen devices.
-- **SpiceDB defended** against spec's Cedar pin (see `docs/change-requests/CR-005-authz-spicedb-vs-cedar.md`).
-- **OpenBao defended** against spec's Vault pin (see `docs/change-requests/CR-001-oss-hygiene.md`).
+- **SpiceDB stands** (earlier draft said Cedar; see `docs/spec-alignment/SA-005-authz-spicedb-vs-cedar.md`).
+- **OpenBao stands** (earlier draft said Vault; see `docs/spec-alignment/SA-001-oss-hygiene.md`).
 
 ### ADR-0008 (Portal stack) — amendments
 
 - **Accessibility floor tightened to WCAG 2.2 AA** (was 2.1 AA per initial spec; MOBILE-INTEGRATION-NOTES mandates 2.2).
 - **Reference ADR-0021** for mobile-specific security posture.
-- **Path B defended** against spec's Next.js 14 pin (see `docs/change-requests/CR-002-portal-stack-non-nextjs.md`).
+- **Path B stands**; Next.js excluded (see `docs/spec-alignment/SA-002-portal-stack-non-nextjs.md`).
 
 ### ADR-0012 (Data topology) — amendments
 
@@ -62,9 +62,9 @@ This ADR records the amendments the review triggered. The original ADRs remain t
 ### ADR-0015 (Cross-service consistency & event bus) — amendments
 
 - **Event-source topic hot retention aligned to 90 days**, tiered to MinIO thereafter (was "infinite hot + MinIO after 30d"). RFP-driven.
-- **Karapace defended** against spec's Confluent Schema Registry pin (see `docs/change-requests/CR-001-oss-hygiene.md`).
-- **JSON + zstd defended** against spec's Avro pin. Trade-off acknowledged: Avro is tighter and registry-integrated; JSON is human-debuggable and one-codec. Karapace supports both, so if Datacraft has existing Avro artefacts, we can adopt with lower cost than a general Avro migration; otherwise JSON stands. See `docs/change-requests/CR-007-event-bus-json-vs-avro.md`.
-- **Per-aggregate topic granularity defended** against spec's ~10 domain-topic model. Consumer isolation and blast-radius arguments. See CR-007.
+- **Karapace stands** (see `docs/spec-alignment/SA-001-oss-hygiene.md`).
+- **JSON + zstd stands** (earlier draft said Avro). Trade-off acknowledged: Avro is tighter and registry-integrated; JSON is human-debuggable and one-codec. Karapace supports both, so if Datacraft has existing Avro artefacts, we can adopt with lower cost than a general Avro migration; otherwise JSON stands. See `docs/spec-alignment/SA-007-event-bus-json-vs-avro.md`.
+- **Per-aggregate topic granularity stands** (earlier draft said ~10 domain topics). Consumer isolation and blast-radius arguments. See SA-007.
 
 ### ADR-0016 (PII & retention) — amendments
 
@@ -89,7 +89,7 @@ This ADR records the amendments the review triggered. The original ADRs remain t
 
 ## What is NOT amended
 
-- **ADR-0002 (Languages)**: Rust default holds. Python fallback for ML/adapters/glue. **Flutter for kits and mobile (unchanged)** — RFP-binding ~14,100 legacy Android device reuse argues for Flutter's better legacy support over Kotlin+Compose. Datacraft's Kotlin resolution is not RFP-derived and is reversed. Additions (ONNX Runtime, Celery, BagIt as pinned tools) folded in without changing decision.
+- **ADR-0002 (Languages)**: Rust default holds. Python fallback for ML/adapters/glue. **Flutter for kits and mobile (unchanged)** — RFP-binding ~14,100 legacy Android device reuse argues for Flutter's better legacy support over Kotlin+Compose. The earlier draft's Kotlin note is not RFP-derived and is withdrawn. Additions (ONNX Runtime, Celery, BagIt as pinned tools) folded in without changing decision.
 - **ADR-0003 (Data infra)**: Karapace + Valkey + OpenSearch (scoped) + Kafka + MinIO + Postgres + ClickHouse-deferred. All defended.
 - **ADR-0009, 0010, 0011, 0013, 0014**: unchanged in substance.
 - **ADR-0001**: unchanged.
@@ -101,22 +101,22 @@ This ADR records the amendments the review triggered. The original ADRs remain t
 - **ADR-0021**: Mobile security posture (Play Integrity + App Attest + RASP).
 - **ADR-0022**: Release process + DR (blue-green + 15-min rollback, RTO/RPO SLAs).
 
-## Change-request pack raised back to Datacraft / IEBC
+## Spec-alignment notes (edits to apply to sw/)
 
-Six formal defences of our optimal picks against the Datacraft-drafted spec, tracked in `docs/change-requests/`:
+Six notes recording where the earlier `sw/` draft differs from the ADRs and which `sw/` sections to edit, tracked in `docs/spec-alignment/`:
 
-- **CR-001 — OSS hygiene** (OpenBao / Valkey / Karapace over Vault / Redis / Confluent SR).
-- **CR-002 — Portal stack non-Nextjs** (Path B defence citing CVE record).
-- **CR-003 — Kenya-sovereign edge** (surface spec's own §17.2 self-consistency argument).
-- **CR-005 — Authz engine SpiceDB vs Cedar** (relational-permissions fit).
-- **CR-006 — Mesh Cilium vs Linkerd** (operational consolidation).
-- **CR-007 — Event bus JSON + per-aggregate topics vs Avro + domain topics** (consumer-isolation argument).
+- **SA-001 — OSS hygiene** (OpenBao / Valkey / Karapace over Vault / Redis / Confluent SR).
+- **SA-002 — Portal stack non-Nextjs** (Path B defence citing CVE record).
+- **SA-003 — Kenya-sovereign edge** (surface spec's own §17.2 self-consistency argument).
+- **SA-005 — Authz engine SpiceDB vs Cedar** (relational-permissions fit).
+- **SA-006 — Mesh Cilium vs Linkerd** (operational consolidation).
+- **SA-007 — Event bus JSON + per-aggregate topics vs Avro + domain topics** (consumer-isolation argument).
 
-(CR-004 language tiering is dropped — user policy confirms Rust-default holds without renegotiation.)
+(No note for language tiering: Rust default per ADR-0002 stands; the `sw/` Python-3.13-default text is simply corrected.)
 
-## Blockers raised back to client
+## Outstanding items
 
-Tracked in `docs/blockers-to-client-2026-08-21.md`. Highlights:
+IEBC-side questions in `docs/iebc-clarifications-outstanding.md`; Datacraft bid-document backlog in `docs/datacraft-internal-backlog.md`. Highlights:
 
 - DATACRAFT_SOFTWARE_SCOPE.md v2 covers only M01-M28 while module set is M01-M69.
 - ACCEPTANCE-CRITERIA.md has no OAT/FAT criteria for M35-M69.
@@ -129,10 +129,10 @@ Tracked in `docs/blockers-to-client-2026-08-21.md`. Highlights:
 
 ## Consequences
 
-Positive: single audit-trail document; original ADRs remain immutable-after-acceptance; every amendment is traceable to a specific spec section or RFP line; change-requests are ready to hand back to Datacraft with defended positions; blockers are ready for the next client sync.
+Positive: single audit-trail document; original ADRs remain immutable-after-acceptance; every amendment is traceable to a specific spec section or RFP line; spec-alignment notes list the exact `sw/` edits; IEBC questions are separated from our own backlog.
 
 Negative: readers must consult both the original ADR and this reconciliation to see the current state; mitigated by cross-references in the ADR index (`docs/adr/README.md`) marking amended ADRs.
 
 ## Related
 
-All of ADRs 0002-0022. Change-requests under `docs/change-requests/`. Blockers doc `docs/blockers-to-client-2026-08-21.md`. Decision log `docs/architecture/decision-log.md` Phase 14 (RFP-alignment reconciliation).
+All of ADRs 0002-0022. Spec-alignment notes under `docs/spec-alignment/`. `docs/iebc-clarifications-outstanding.md`, `docs/datacraft-internal-backlog.md`. Decision log `docs/architecture/decision-log.md` Phase 14 (RFP-alignment reconciliation).

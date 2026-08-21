@@ -1,14 +1,14 @@
-# CR-006: Service mesh — Cilium (CNI + mesh + policy + observability) vs Linkerd 2
+# SA-006: Service mesh — Cilium (CNI + mesh + policy + observability) vs Linkerd 2
 
 Date: 2026-08-21
-Raises to: Datacraft
-Status: draft
+Applies to: Datacraft bid documents under work_docs/01-Projects/IEBC/sw/ (our own earlier draft)
+Status: decided (ADR takes precedence; sw/ docs to be edited)
 
-## Datacraft position
+## Earlier draft (sw/) says
 
 `sw/ARCHITECTURE.md` §6, §14.4 and §18 pin **Linkerd 2** as the service mesh for mTLS enforcement.
 
-## Our position
+## Decision (per ADRs)
 
 **Cilium** (Isovalent, Apache 2.0) as the unified CNI + service mesh + NetworkPolicy enforcement + observability (via Hubble) plane. Linkerd not used.
 
@@ -30,7 +30,7 @@ Status: draft
 - Cilium's Service Mesh mode (1.14+) is younger than Linkerd's mesh — Linkerd is more prescriptive and mature-in-the-narrow-sense. Trade-off: Cilium is broader-and-younger; Linkerd is narrower-and-older. For a 3-year contract we pin conservative versions and rehearse upgrades.
 - Some ecosystem tools (Linkerd Buoyant tooling, some observability plugins) are Linkerd-native. Cilium equivalents exist for all our needs.
 
-## Fallback
+## Edits to apply to sw/
 
 If Linkerd is mandated on operational-familiarity grounds (Datacraft ops team already trained on Linkerd): we accept **Linkerd 2 + Cilium as CNI-only** (Cilium in CNI-only mode; Linkerd for mesh). This gets us most of the eBPF network-policy and observability wins without forcing the ops team off Linkerd. Loses the consolidation win but keeps the operational muscle.
 

@@ -1,10 +1,10 @@
-# CR-001: OSS-hygiene consolidation — OpenBao, Valkey, Karapace
+# SA-001: OSS-hygiene consolidation — OpenBao, Valkey, Karapace
 
 Date: 2026-08-21
-Raises to: Datacraft (author of `sw/ARCHITECTURE.md`)
-Status: draft
+Applies to: Datacraft bid documents under work_docs/01-Projects/IEBC/sw/ (our own earlier draft)
+Status: decided (ADR takes precedence; sw/ docs to be edited)
 
-## Datacraft position
+## Earlier draft (sw/) says
 
 `sw/ARCHITECTURE.md` §18 tech-choices table pins:
 
@@ -12,7 +12,7 @@ Status: draft
 - **Redis 7 Cluster** for cache + Pub/Sub + rate-limiting.
 - **Confluent Schema Registry** with Avro for Kafka schemas.
 
-## Our position
+## Decision (per ADRs)
 
 Substitute drop-in OSS-clean forks:
 
@@ -38,7 +38,7 @@ Substitute drop-in OSS-clean forks:
 - Valkey is a straight fork; identical semantics.
 - Karapace supports both Avro and JSON Schema; if Datacraft has existing Avro artefacts, they load unchanged.
 
-## Fallback
+## Edits to apply to sw/
 
 If Datacraft mandates the source-available originals, we accept **only** on documented commitment to (a) fund the licence-terms-change risk over the 15-year retention window, and (b) accept the auditor-response burden of defending non-OSS in the security-critical path.
 

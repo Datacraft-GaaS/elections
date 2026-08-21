@@ -23,8 +23,8 @@ air-gapped-build/   Nexus mirror config + build environment definition
 environments/       dev / staging / pre-prod / prod overlays
 tests/              cross-service e2e + integration
 scripts/  tools/  assets/  config/
-docs/               architecture, ADRs, change requests, runbooks, module index
-infra/              legacy holding — being deprecated; use platform/ and edge/
+docs/               architecture, ADRs, plans, spec-alignment, runbooks, module index
+
 ```
 
 ## The 18 services
@@ -73,6 +73,6 @@ Decided in ADRs 0001-0023. See `docs/adr/README.md` for the index and `docs/arch
 
 ## Status
 
-Design phase complete. 23 ADRs committed. Change-request pack (`docs/change-requests/`) awaiting Datacraft response. Client blockers (`docs/blockers-to-client-2026-08-21.md`) awaiting IEBC + Datacraft response.
+Design phase complete. 23 ADRs committed. Spec-alignment notes (`docs/spec-alignment/`) list the edits to apply to the bid documents. IEBC questions in `docs/iebc-clarifications-outstanding.md`; our own bid-document backlog in `docs/datacraft-internal-backlog.md`.
 
 Next: first real service — `services/transparency-svc/` in Rust per ADR-0017.
