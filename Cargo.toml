@@ -5,6 +5,7 @@ members = [
   "packages/verifier-rs",
   "packages/service-template-rs",
   "services/*/crates/*",
+  "services/abis-svc/tools/*",
   "tools/*",
 ]
 exclude = [
@@ -159,14 +160,14 @@ kit-attest      = { path = "services/biometric-edge-svc/crates/kit-attest" }
 eel-resilience-rs = { path = "packages/eel-resilience-rs" }
 
 # CLI tooling
-clap            = { version = "4",    features = ["derive"] }
+clap            = { version = "4",    features = ["derive", "env"] }
 indicatif       = { version = "0.17" }
 
 # Deps added for eel-abis-reports (WP-reports)
 tera              = { version = "1" }
 csv               = { version = "1" }
 printpdf          = { version = "0.7" }
-rust_xlsxwriter   = { version = "0.85" }
+rust_xlsxwriter   = { version = "0.98" }
 parquet           = { version = "54", features = ["arrow"] }
 arrow-array       = { version = "54" }
 arrow-schema      = { version = "54" }
@@ -176,6 +177,15 @@ prometheus        = { version = "0.13", features = ["process"] }
 tokio-util        = { version = "0.7", features = ["full"] }
 tempfile          = { version = "3" }
 httpmock          = { version = "0.7" }
+
+# Ad-hoc reports (RPT-D) — DOCX + Markdown renderers + SQL AST
+docx-rs           = { version = "0.4" }
+pulldown-cmark    = { version = "0.12" }
+sqlparser         = { version = "0.51" }
+
+# Reports publication + delivery (RPT-B)
+lettre            = { version = "0.11", default-features = false, features = ["smtp-transport", "tokio1-native-tls", "builder"] }
+ssh2              = { version = "0.9" }
 
 # ---------------------------------------------------------------------------
 # Build profiles

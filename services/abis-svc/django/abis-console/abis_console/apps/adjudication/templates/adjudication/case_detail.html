@@ -1,0 +1,123 @@
+{% extends "adjudication/base.html" %}
+{% block title %}Case {{ case.id|truncatechars:12 }} - Adjudication Console{% endblock %}
+
+{% block content %}
+<h2>Adjudication Case <code>{{ case.id }}</code></h2>
+
+<section aria-label="Case metadata" style="display:flex;gap:2rem;flex-wrap:wrap;margin-bottom:1.5rem">
+  <dl style="margin:0">
+    <dt>Priority</dt><dd>{{ case.get_priority_display }}</dd>
+    <dt>Tier</dt><dd>{{ case.get_tier_display }}</dd>
+    <dt>State</dt><dd>{{ case.get_state_display }}</dd>
+  </dl>
+  <dl style="margin:0">
+    <dt>Opened</dt><dd><time datetime="{{ case.opened_at|date:'c' }}">{{ case.opened_at|date:"Y-m-d H:i" }}</time></dd>
+    <dt>SLA deadline</dt><dd><time datetime="{{ case.sla_deadline_at|date:'c' }}">{{ case.sla_deadline_at|date:"Y-m-d H:i" }}</time></dd>
+    <dt>SLA remaining</dt>
+    <dd>
+      {% if sla_hours < 0 %}
+        <span class="sla-breach">{{ sla_hours|floatformat:1 }}h (BREACHED)</span>
+      {% else %}
+        <span class="sla-ok">{{ sla_hours|floatformat:1 }}h</span>
+      {% endif %}
+    </dd>
+  </dl>
+</section>
+
+<!-- Side-by-side biometric comparison -->
+<section aria-label="Biometric evidence" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
+  <div style="background:var(--color-surface);border:1px solid var(--color-border);padding:1rem;border-radius:var(--radius)">
+    <h3>Probe biometrics</h3>
+    <p style="color:var(--color-muted);font-size:0.875rem">Fingerprint minutiae, face landmarks, iris code from enrolment capture {{ case.enrolment_job_id }}</p>
+    <div style="background:#eee;height:200px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius)" aria-label="Probe biometric visualisation placeholder">
+      Evidence loaded from <code>{{ evidence_url }}</code>
+    </div>
+  </div>
+  <div style="background:var(--color-surface);border:1px solid var(--color-border);padding:1rem;border-radius:var(--radius)">
+    <h3>Gallery candidates</h3>
+    <p style="color:var(--color-muted);font-size:0.875rem">{{ case.probable_match_subject_ids|length }} probable match(es)</p>
+    <ul>
+      {% for sid in case.probable_match_subject_ids %}
+        <li>{{ sid }}</li>
+      {% empty %}
+        <li>No candidates.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+
+<!-- Evidence upload (HTMX) -->
+<section aria-label="Evidence upload" style="margin-bottom:1.5rem">
+  <h3>Add evidence</h3>
+  <div id="evidence-result"></div>
+  {% if not is_decided %}
+  <form hx-post="{% url 'adjudication:upload_evidence' case.id %}"
+        hx-target="#evidence-result"
+        hx-swap="innerHTML"
+        enctype="multipart/form-data"
+        aria-label="Upload evidence file">
+    {% csrf_token %}
+    <label for="evidence-file" style="display:block;margin-bottom:0.5rem">Evidence file</label>
+    <input id="evidence-file" type="file" name="evidence" accept="image/*,application/pdf" required style="margin-bottom:0.75rem;display:block">
+    <button type="submit" class="btn btn-primary" style="min-height:48px">Upload evidence</button>
+  </form>
+  {% else %}
+  <p>Evidence upload disabled: case is {{ case.get_state_display }}.</p>
+  {% endif %}
+</section>
+
+<!-- Decision form -->
+<section aria-label="Decision">
+  <h3>Submit decision</h3>
+  {% if is_decided %}
+  <p>Decision: <strong>{{ case.decision_type }}</strong>{% if case.decision_reason %} - {{ case.decision_reason }}{% endif %}</p>
+  {% else %}
+  <div id="decision-result"></div>
+  <form hx-post="{% url 'adjudication:submit_decision' case.id %}"
+        hx-target="#decision-result"
+        hx-swap="innerHTML"
+        aria-label="Submit adjudication decision">
+    {% csrf_token %}
+    <div style="margin-bottom:1rem">
+      <label for="decision-type" style="display:block;margin-bottom:0.4rem">Decision</label>
+      <select id="decision-type" name="decision_type" required style="min-height:48px;padding:0.4rem;width:100%;max-width:320px">
+        <option value="">Select decision...</option>
+        <option value="ConfirmMatch">Confirm Match</option>
+        <option value="ConfirmNoMatch">Confirm No Match</option>
+        <option value="MergeInto">Merge Into</option>
+        <option value="SplitFrom">Split From</option>
+        <option value="Withdraw">Withdraw</option>
+        <option value="Escalate">Escalate</option>
+      </select>
+    </div>
+    {% if dual_signoff_required %}
+    <div style="margin-bottom:1rem;padding:0.75rem;background:#fff8e1;border:1px solid #f59e0b;border-radius:var(--radius)" role="alert">
+      <strong>Tier 3 Panel:</strong> Dual sign-off required.
+      <label for="second-reviewer" style="display:block;margin-top:0.5rem">Second reviewer ID</label>
+      <input id="second-reviewer" type="text" name="second_reviewer_id" placeholder="reviewer-uuid" required
+             style="min-height:48px;width:100%;max-width:320px;padding:0.4rem;margin-top:0.4rem">
+    </div>
+    {% endif %}
+    <button type="submit" class="btn btn-primary" style="min-height:48px">Submit decision</button>
+  </form>
+  {% endif %}
+</section>
+
+<!-- Audit trail -->
+<section aria-label="Audit trail" style="margin-top:2rem">
+  <h3>Action history ({{ actions|length }})</h3>
+  {% if actions %}
+  <ol style="padding-left:1.2rem">
+    {% for action in actions %}
+    <li style="margin-bottom:0.5rem">
+      <time datetime="{{ action.taken_at|date:'c' }}" style="color:var(--color-muted);font-size:0.875rem">{{ action.taken_at|date:"Y-m-d H:i:s" }}</time>
+      <strong>{{ action.action_type }}</strong> by {{ action.reviewer_id }}
+      {% if action.comment %}<br><span style="color:var(--color-muted)">{{ action.comment }}</span>{% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+  {% else %}
+  <p>No actions recorded yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

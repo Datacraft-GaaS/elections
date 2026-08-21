@@ -1,0 +1,8 @@
+{% extends "adjudication/base.html" %}
+{% block title %}Evidence Uploaded{% endblock %}
+{% block content %}
+<h2>Evidence uploaded</h2>
+<p>File <strong>{{ filename }}</strong> received.</p>
+<p>SHA-256: <code>{{ evidence_hash }}</code></p>
+<a href="{% url 'adjudication:case_detail' case.id %}" class="btn btn-primary">Back to case</a>
+{% endblock %}

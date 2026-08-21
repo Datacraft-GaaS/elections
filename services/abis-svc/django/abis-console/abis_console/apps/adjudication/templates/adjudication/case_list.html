@@ -1,0 +1,56 @@
+{% extends "adjudication/base.html" %}
+{% block title %}Open Cases - Adjudication Console{% endblock %}
+
+{% block content %}
+<h2>Open Adjudication Cases</h2>
+<p>{{ cases|length }} case(s) pending review, ordered by priority and SLA deadline.</p>
+
+<div style="overflow-x:auto">
+<table aria-label="Open adjudication cases">
+  <thead>
+    <tr>
+      <th scope="col">Case ID</th>
+      <th scope="col">Priority</th>
+      <th scope="col">Tier</th>
+      <th scope="col">State</th>
+      <th scope="col">Assigned to</th>
+      <th scope="col">Opened</th>
+      <th scope="col">SLA remaining</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for case in cases %}
+    <tr>
+      <td><a href="{% url 'adjudication:case_detail' case.id %}">{{ case.id|truncatechars:12 }}</a></td>
+      <td>
+        {% if case.priority == "ElectionDayHold" %}
+          <span class="badge badge-election">Election Day</span>
+        {% elif case.priority == "Urgent" %}
+          <span class="badge badge-urgent">Urgent</span>
+        {% else %}
+          <span class="badge badge-standard">Standard</span>
+        {% endif %}
+      </td>
+      <td>{{ case.get_tier_display }}</td>
+      <td>{{ case.get_state_display }}</td>
+      <td>{{ case.assigned_to|default:"Unassigned" }}</td>
+      <td><time datetime="{{ case.opened_at|date:'c' }}">{{ case.opened_at|date:"Y-m-d H:i" }}</time></td>
+      <td>
+        {% with h=case.sla_hours_remaining %}
+          {% if h < 0 %}
+            <span class="sla-breach" aria-label="SLA breached">{{ h|floatformat:1 }}h</span>
+          {% elif h < 2 %}
+            <span class="sla-warn" aria-label="SLA warning">{{ h|floatformat:1 }}h</span>
+          {% else %}
+            <span class="sla-ok">{{ h|floatformat:1 }}h</span>
+          {% endif %}
+        {% endwith %}
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="7">No open cases.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

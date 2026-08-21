@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Adjudication Console{% endblock %}</title>
+<script src="https://unpkg.com/htmx.org@1.9.12" crossorigin="anonymous"></script>
+<style>
+/* eel design tokens */
+:root {
+  --color-bg: #f8f9fa;
+  --color-surface: #ffffff;
+  --color-primary: #1a3a5c;
+  --color-accent: #c0392b;
+  --color-text: #212529;
+  --color-muted: #6c757d;
+  --color-border: #dee2e6;
+  --color-warning: #e67e22;
+  --color-success: #27ae60;
+  --radius: 4px;
+  --touch-target: 48px;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+h1 { font-size: 1.75rem; }
+h2 { font-size: 1.375rem; }
+h3 { font-size: 1.1rem; }
+a { color: var(--color-primary); }
+a:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
+/* skip-to-main */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  background: var(--color-primary);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  z-index: 9999;
+}
+.skip-link:focus { top: 0; }
+header {
+  background: var(--color-primary);
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+header h1 { margin: 0; font-size: 1.1rem; }
+main { padding: 1.5rem; max-width: 1200px; margin: 0 auto; }
+nav[aria-label] { margin-bottom: 1rem; }
+.badge {
+  display: inline-block;
+  padding: 0.2em 0.6em;
+  border-radius: 3px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.badge-urgent { background: #fde8d8; color: #c0392b; }
+.badge-election { background: #c0392b; color: #fff; }
+.badge-standard { background: #e8f0fe; color: #1a3a5c; }
+button, .btn {
+  min-height: var(--touch-target);
+  min-width: var(--touch-target);
+  padding: 0.5rem 1.25rem;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 1rem;
+}
+.btn-primary { background: var(--color-primary); color: #fff; }
+.btn-danger { background: var(--color-accent); color: #fff; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--color-border); text-align: left; }
+th { background: var(--color-surface); font-weight: 600; }
+tr:hover td { background: #f1f3f5; }
+.sla-ok { color: var(--color-success); }
+.sla-warn { color: var(--color-warning); }
+.sla-breach { color: var(--color-accent); font-weight: 700; }
+</style>
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<header role="banner">
+  <h1>eel ABIS Adjudication Console</h1>
+  {% if request.user.is_authenticated %}
+  <span style="margin-left:auto">{{ request.user.get_full_name|default:request.user.username }}</span>
+  {% endif %}
+</header>
+<nav aria-label="Primary navigation">
+  <ul style="display:flex;gap:1rem;list-style:none;padding:0.5rem 1.5rem;margin:0;background:var(--color-surface);border-bottom:1px solid var(--color-border)">
+    <li><a href="{% url 'adjudication:case_list' %}">Open Cases</a></li>
+    <li><a href="/admin/adjudication/">Admin</a></li>
+  </ul>
+</nav>
+<main id="main-content" role="main">
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

@@ -1,0 +1,29 @@
+[package]
+name = "eel-abis-enrolment"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Enrolment lifecycle and 1:N deduplication pipeline for the eel ABIS"
+
+[lib]
+name = "eel_abis_enrolment"
+path = "src/lib.rs"
+
+[dependencies]
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+sqlx        = { workspace = true }
+tokio       = { workspace = true }
+thiserror   = { workspace = true }
+tracing     = { workspace = true }
+uuid        = { workspace = true }
+chrono      = { workspace = true }
+blake3      = { workspace = true }
+
+eel-events-rs = { path = "../../../../packages/eel-events-rs", default-features = false }
+
+[dev-dependencies]
+rstest      = { workspace = true }
+tokio       = { workspace = true }
+eel-events-rs = { path = "../../../../packages/eel-events-rs", default-features = false, features = ["test-utils"] }

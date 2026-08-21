@@ -1,0 +1,4 @@
+<div aria-live="polite">
+  <p><strong>Case {{ case.id|truncatechars:12 }}</strong> - {{ case.get_state_display }} / {{ case.get_priority_display }}</p>
+  <p>SLA: {% if sla_hours < 0 %}<span class="sla-breach">{{ sla_hours|floatformat:1 }}h BREACHED</span>{% else %}<span class="sla-ok">{{ sla_hours|floatformat:1 }}h</span>{% endif %}</p>
+</div>
