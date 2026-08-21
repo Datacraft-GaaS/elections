@@ -1,0 +1,25 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: eel-forbid-hostpath
+  annotations:
+    policies.kyverno.io/title: Forbid HostPath Mounts
+    policies.kyverno.io/category: Security
+    policies.kyverno.io/severity: high
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: forbid-hostpath
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+      validate:
+        message: "HostPath volumes are not permitted. Use PVC or emptyDir."
+        deny:
+          conditions:
+            any:
+              - key: "{{ request.object.spec.volumes[].hostPath | length(@) }}"
+                operator: GreaterThan
+                value: "0"

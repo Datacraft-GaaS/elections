@@ -1,0 +1,35 @@
+---
+const palette = [
+	{ name: 'Blue',   hex: '#0072b2', textColor: '#fff' },
+	{ name: 'Orange', hex: '#e69f00', textColor: '#000' },
+	{ name: 'Sky',    hex: '#56b4e9', textColor: '#000' },
+	{ name: 'Green',  hex: '#009e73', textColor: '#fff' },
+	{ name: 'Yellow', hex: '#f0e442', textColor: '#000' },
+	{ name: 'Red',    hex: '#d55e00', textColor: '#fff' },
+	{ name: 'Purple', hex: '#cc79a7', textColor: '#000' },
+	{ name: 'Black',  hex: '#000000', textColor: '#fff' },
+];
+---
+<div class="eel-cbp" aria-label="Colour-blind safe colour palette preview" role="img">
+	<p class="eel-cbp__note">Safe for deuteranopia, protanopia, and tritanopia (verified with Coblis).</p>
+	<ul class="eel-cbp__swatches" role="list">
+		{palette.map(c => (
+			<li
+				class="eel-cbp__swatch"
+				style={`background:${c.hex};color:${c.textColor}`}
+				aria-label={`${c.name}: ${c.hex}`}
+			>
+				<span class="eel-cbp__label" aria-hidden="true">{c.name}</span>
+				<code class="eel-cbp__hex" aria-hidden="true">{c.hex}</code>
+			</li>
+		))}
+	</ul>
+</div>
+<style>
+	.eel-cbp { padding: 1rem; }
+	.eel-cbp__note { font-size: 0.875rem; color: #6b7280; margin-bottom: 1rem; }
+	.eel-cbp__swatches { display: flex; flex-wrap: wrap; gap: 0.5rem; list-style: none; margin: 0; padding: 0; }
+	.eel-cbp__swatch { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 7rem; height: 5rem; border-radius: 4px; gap: 0.25rem; }
+	.eel-cbp__label { font-size: 0.75rem; font-weight: 600; }
+	.eel-cbp__hex { font-family: monospace; font-size: 0.625rem; opacity: 0.8; }
+</style>

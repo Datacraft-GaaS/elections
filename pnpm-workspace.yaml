@@ -1,0 +1,7 @@
+packages:
+  - 'packages/*'
+  - 'packages/design-system/*'
+  - 'packages/api-clients/*'
+allowBuilds:
+  esbuild: true
+  sharp: true

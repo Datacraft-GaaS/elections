@@ -1,0 +1,24 @@
+apiVersion: sloth.slok.dev/v1
+kind: PrometheusServiceLevel
+metadata:
+  name: eel-bvr-svc-slo
+  namespace: monitoring
+  labels:
+    eel.internal/managed-by: platform
+    eel.internal/service: bvr-svc
+spec:
+  service: bvr-svc
+  labels:
+    eel.internal/tier: T1
+  slos:
+    - name: availability
+      objective: 99.9
+      description: "BVR register lookup availability"
+      sli:
+        events:
+          errorQuery: 'sum(rate(eel_http_requests_total{service="bvr-svc",status=~"5.."}[{{.window}}]))'
+          totalQuery: 'sum(rate(eel_http_requests_total{service="bvr-svc"}[{{.window}}]))'
+      alerting:
+        name: EelBvrAvailabilityBurn
+        labels:
+          eel.internal/severity: critical

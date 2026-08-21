@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eel-env-config
+  namespace: kube-system
+  labels:
+    eel.internal/environment: pre-prod
+    eel.internal/managed-by: platform
+data:
+  election_day_mode: "false"
+  election_phase: "normal"
+  freeze_active: "false"
+
+  spiffe_trust_domain: "eel.preprod"
+
+  sites: "primary,mirror,edge-nairobi,edge-mombasa,edge-kisumu,edge-eldoret,edge-garissa"
+  default_replicas: "3"
+
+  # All flags enabled in pre-prod (full-scale load test target)
+  feature_ai_monitoring: "true"
+  feature_transparency_log: "true"
+  feature_election_day_mode: "true"
+
+  # Load test profile (pre-prod runs 5x peak per ADR-0018/0022)
+  load_test_multiplier: "5"

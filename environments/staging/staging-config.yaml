@@ -1,0 +1,28 @@
+# Staging environment feature flags and config
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eel-env-config
+  namespace: kube-system
+  labels:
+    eel.internal/environment: staging
+    eel.internal/managed-by: platform
+data:
+  # ADR-0022 election-day-mode defaults (staging: always false)
+  election_day_mode: "false"
+  election_phase: "normal"
+  freeze_active: "false"
+
+  # Trust domain
+  spiffe_trust_domain: "eel.staging"
+
+  # Sites
+  sites: "primary,mirror,edge-nairobi,edge-mombasa,edge-kisumu,edge-eldoret,edge-garissa"
+
+  # Capacity (staging uses reduced replicas)
+  default_replicas: "1"
+
+  # Feature flags (staging: all experimental features on)
+  feature_ai_monitoring: "true"
+  feature_transparency_log: "true"
+  feature_election_day_mode: "true"

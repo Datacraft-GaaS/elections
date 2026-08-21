@@ -5,7 +5,22 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 publish = false
+description = "Hybrid Logical Clock for the eel platform"
 
 [lib]
 name = "eel_hlc_rs"
 path = "src/lib.rs"
+
+[dependencies]
+serde      = { version = "1", features = ["derive"] }
+thiserror  = { workspace = true }
+sqlx       = { workspace = true, optional = true }
+
+[dev-dependencies]
+proptest   = "1"
+serde_json = { workspace = true }
+tokio      = { workspace = true }
+
+[features]
+default        = ["sqlx-postgres"]
+sqlx-postgres  = ["dep:sqlx"]

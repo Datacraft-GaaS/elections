@@ -1,0 +1,34 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: eel-require-otel-annotations
+  annotations:
+    policies.kyverno.io/title: Require OTel Annotations
+    policies.kyverno.io/category: Observability
+    policies.kyverno.io/severity: low
+    policies.kyverno.io/description: >
+      Service pods must carry OpenTelemetry annotations so the OTel collector
+      can scrape metrics and associate traces with the correct service.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: require-otel-service-name
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaceSelector:
+                matchExpressions:
+                  - key: eel.internal/managed-by
+                    operator: In
+                    values: [service]
+      validate:
+        message: "Pod must have annotation instrumentation.opentelemetry.io/inject-go or similar OTel service annotation."
+        anyPattern:
+          - metadata:
+              annotations:
+                instrumentation.opentelemetry.io/inject-go: "?*"
+          - metadata:
+              annotations:
+                eel.internal/otel-service-name: "?*"

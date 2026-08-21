@@ -1,0 +1,124 @@
+# PrometheusRule manifests grouped by concern
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: eel-platform-alerts
+  namespace: monitoring
+  labels:
+    eel.internal/managed-by: platform
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    # --- Kafka consumer lag ---
+    - name: eel.kafka.consumer-lag
+      rules:
+        - alert: EelKafkaConsumerLagHigh
+          expr: max by (consumer_group, topic) (kafka_consumer_group_lag) > 10000
+          for: 5m
+          labels:
+            severity: warning
+            eel.internal/concern: kafka
+          annotations:
+            summary: "Consumer group {{ $labels.consumer_group }} lag > 10k on topic {{ $labels.topic }}"
+            runbook: https://gitea.internal/eel/eel/src/branch/main/docs/runbooks/kafka-consumer-lag.md
+
+        - alert: EelKafkaConsumerLagCritical
+          expr: max by (consumer_group, topic) (kafka_consumer_group_lag) > 100000
+          for: 2m
+          labels:
+            severity: critical
+            eel.internal/concern: kafka
+          annotations:
+            summary: "CRITICAL consumer lag > 100k for {{ $labels.consumer_group }}"
+
+    # --- Tamper arrival ---
+    - name: eel.tamper
+      rules:
+        - alert: EelTamperEventDetected
+          expr: increase(eel_tamper_events_total[5m]) > 0
+          labels:
+            severity: critical
+            eel.internal/concern: security
+          annotations:
+            summary: "Tamper event detected on service {{ $labels.service }}"
+            runbook: https://gitea.internal/eel/eel/src/branch/main/docs/runbooks/tamper-response.md
+
+    # --- ISR shrink (Kafka broker health) ---
+    - name: eel.kafka.isr
+      rules:
+        - alert: EelKafkaISRShrink
+          expr: sum by (topic) (kafka_topic_partition_under_replicated_partition) > 0
+          for: 1m
+          labels:
+            severity: warning
+            eel.internal/concern: kafka
+          annotations:
+            summary: "Under-replicated partitions on topic {{ $labels.topic }}"
+
+    # --- STH cadence (transparency log) ---
+    - name: eel.transparency.sth
+      rules:
+        - alert: EelSTHCadenceMissed
+          expr: time() - eel_transparency_last_sth_timestamp_seconds > 3600
+          labels:
+            severity: critical
+            eel.internal/concern: transparency
+          annotations:
+            summary: "No STH produced in the last hour; transparency log may be stalled"
+            runbook: https://gitea.internal/eel/eel/src/branch/main/docs/runbooks/transparency-sth-stall.md
+
+    # --- Certificate expiry ---
+    - name: eel.cert-expiry
+      rules:
+        - alert: EelCertExpiringSoon
+          expr: (certmanager_certificate_expiration_timestamp_seconds - time()) / 86400 < 30
+          for: 1h
+          labels:
+            severity: warning
+            eel.internal/concern: pki
+          annotations:
+            summary: "Certificate {{ $labels.name }} in namespace {{ $labels.namespace }} expires in < 30 days"
+
+        - alert: EelCertExpiringCritical
+          expr: (certmanager_certificate_expiration_timestamp_seconds - time()) / 86400 < 7
+          for: 1h
+          labels:
+            severity: critical
+            eel.internal/concern: pki
+          annotations:
+            summary: "CRITICAL: certificate {{ $labels.name }} expires in < 7 days"
+
+    # --- HSM unavailable ---
+    - name: eel.hsm
+      rules:
+        - alert: EelHSMUnavailable
+          expr: eel_hsm_session_pool_available == 0
+          for: 30s
+          labels:
+            severity: critical
+            eel.internal/concern: hsm
+          annotations:
+            summary: "HSM session pool empty — signing operations will fail"
+            runbook: https://gitea.internal/eel/eel/src/branch/main/docs/runbooks/hsm-recovery.md
+
+        - alert: EelHSMSessionsLow
+          expr: eel_hsm_session_pool_available < 3
+          for: 2m
+          labels:
+            severity: warning
+            eel.internal/concern: hsm
+          annotations:
+            summary: "HSM session pool low ({{ $value }} available)"
+
+    # --- Cost overrun ---
+    - name: eel.cost
+      rules:
+        - alert: EelStorageCostOverrun
+          expr: sum(ceph_osd_bytes_used) / (1024^3) > 80000
+          for: 1h
+          labels:
+            severity: warning
+            eel.internal/concern: capacity
+          annotations:
+            summary: "Ceph storage usage exceeds 80 TB — approaching capacity"

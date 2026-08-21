@@ -1,0 +1,9 @@
+{
+  "revision": "1.0.0",
+  "roots": ["eel"],
+  "metadata": {
+    "required_builtins": {
+      "builtin1": ["startswith", "contains", "sprintf"]
+    }
+  }
+}

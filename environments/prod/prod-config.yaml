@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eel-env-config
+  namespace: kube-system
+  labels:
+    eel.internal/environment: prod
+    eel.internal/managed-by: platform
+data:
+  # ADR-0022 election-day-mode defaults (prod: controlled by dual sign-off)
+  election_day_mode: "false"
+  election_phase: "normal"
+  freeze_active: "false"
+
+  # Trust domain
+  spiffe_trust_domain: "eel.prod"
+
+  # Sites (full 7-site topology per ADR-0019/0022)
+  sites: "primary,mirror,edge-nairobi,edge-mombasa,edge-kisumu,edge-eldoret,edge-garissa"
+  default_replicas: "3"
+
+  # Feature flags (prod: gated; election_day_mode flip requires dual sign-off)
+  feature_ai_monitoring: "true"
+  feature_transparency_log: "true"
+  # election_day_mode flag: set to "true" at T-0 by ops on-call with dual sign-off
+  feature_election_day_mode: "false"

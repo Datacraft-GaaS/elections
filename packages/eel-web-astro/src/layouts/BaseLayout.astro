@@ -1,0 +1,71 @@
+---
+import { generateCspNonce, buildCsp } from '../seo/index.js';
+
+export interface Props {
+	title: string;
+	description?: string;
+	locale?: string;
+	canonical?: string;
+	noIndex?: boolean;
+	ogImage?: string;
+}
+
+const {
+	title,
+	description = 'IEBC IEMS Portal',
+	locale = 'en',
+	canonical,
+	noIndex = false,
+	ogImage,
+} = Astro.props;
+
+const nonce = generateCspNonce();
+const csp = buildCsp(nonce);
+const siteUrl = import.meta.env.SITE ?? 'https://iebc.or.ke';
+const canonicalHref = canonical ?? new URL(Astro.url.pathname, siteUrl).href;
+---
+
+<!doctype html>
+<html lang={locale} dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="canonical" href={canonicalHref} />
+    {noIndex && <meta name="robots" content="noindex, nofollow" />}
+    <meta http-equiv="Content-Security-Policy" content={csp} />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    {description && <meta property="og:description" content={description} />}
+    <meta property="og:locale" content={locale.replace('-', '_')} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <slot name="head" />
+  </head>
+  <body>
+    <a href="#main-content" class="eel-skip-link">Skip to main content</a>
+    <slot />
+    <style>
+      *, *::before, *::after { box-sizing: border-box; }
+      html { font-family: 'Noto Sans', 'Segoe UI', system-ui, sans-serif; }
+      body { margin: 0; background: #fff; color: #111827; }
+      .eel-skip-link {
+        position: absolute;
+        left: -9999px;
+        top: 1rem;
+        background: #1a56db;
+        color: #fff;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        text-decoration: none;
+        z-index: 9999;
+      }
+      .eel-skip-link:focus { left: 1rem; }
+    </style>
+  </body>
+</html>

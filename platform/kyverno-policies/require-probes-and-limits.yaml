@@ -1,0 +1,75 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: eel-require-probes-and-limits
+  annotations:
+    policies.kyverno.io/title: Require Probes and Resource Limits
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-readiness-probe
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaceSelector:
+                matchExpressions:
+                  - key: eel.internal/managed-by
+                    operator: In
+                    values: [service]
+      validate:
+        message: "Every container must define a readinessProbe."
+        foreach:
+          - list: "request.object.spec.containers"
+            deny:
+              conditions:
+                all:
+                  - key: "{{ element.readinessProbe }}"
+                    operator: Equals
+                    value: null
+    - name: require-liveness-probe
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaceSelector:
+                matchExpressions:
+                  - key: eel.internal/managed-by
+                    operator: In
+                    values: [service]
+      validate:
+        message: "Every container must define a livenessProbe."
+        foreach:
+          - list: "request.object.spec.containers"
+            deny:
+              conditions:
+                all:
+                  - key: "{{ element.livenessProbe }}"
+                    operator: Equals
+                    value: null
+    - name: require-resource-limits
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaceSelector:
+                matchExpressions:
+                  - key: eel.internal/managed-by
+                    operator: In
+                    values: [service]
+      validate:
+        message: "Every container must define resources.limits.cpu and resources.limits.memory."
+        foreach:
+          - list: "request.object.spec.containers"
+            deny:
+              conditions:
+                any:
+                  - key: "{{ element.resources.limits.cpu }}"
+                    operator: Equals
+                    value: null
+                  - key: "{{ element.resources.limits.memory }}"
+                    operator: Equals
+                    value: null

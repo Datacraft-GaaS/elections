@@ -1,0 +1,18 @@
+---
+export interface Props {
+	variant?: 'default' | 'success' | 'warning' | 'danger' | 'info';
+	label: string;
+}
+const { variant = 'default', label } = Astro.props;
+---
+<span class={`eel-badge eel-badge--${variant}`} role="status" aria-label={label}>
+	{label}
+</span>
+<style>
+	.eel-badge { display: inline-flex; align-items: center; padding: 0.125rem 0.625rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+	.eel-badge--default { background: #f3f4f6; color: #374151; }
+	.eel-badge--success { background: #d1fae5; color: #065f46; }
+	.eel-badge--warning { background: #fef3c7; color: #92400e; }
+	.eel-badge--danger  { background: #fee2e2; color: #991b1b; }
+	.eel-badge--info    { background: #dbeafe; color: #1e40af; }
+</style>

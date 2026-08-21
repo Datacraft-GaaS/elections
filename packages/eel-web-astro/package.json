@@ -1,0 +1,22 @@
+{
+  "name": "@eel/web-astro",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./integration": "./src/integration.ts",
+    "./layouts/*": "./src/layouts/*",
+    "./components/*": "./src/components/*",
+    "./loaders/*": "./src/loaders/*"
+  },
+  "scripts": {
+    "build": "tsc --noEmit && echo 'eel-web-astro build ok'",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "astro": "^5.0.0",
+    "vitest": "^3.0.0",
+    "@vitest/coverage-v8": "^3.0.0",
+    "typescript": "^5.5.0"
+  }
+}

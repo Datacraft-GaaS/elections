@@ -1,0 +1,23 @@
+# deploy/service.yaml — filled by the service owner (WP-1.9 template)
+# Fields: name, image, artifacts, sites, strategy, replicas
+name: crms-svc
+image: harbor.eel.internal/eel/crms-svc
+artifacts: []
+# sites: leave empty to deploy to all 7 sites (primary, mirror, edge-*)
+sites: []
+strategy:
+  primary: blue-green
+  mirror:  blue-green
+  edge-nairobi:  rolling
+  edge-mombasa:  rolling
+  edge-kisumu:   rolling
+  edge-eldoret:  rolling
+  edge-garissa:  rolling
+replicas:
+  primary:       3
+  mirror:        3
+  edge-nairobi:  2
+  edge-mombasa:  2
+  edge-kisumu:   2
+  edge-eldoret:  2
+  edge-garissa:  2

@@ -1,0 +1,78 @@
+# Kong OSS Helm values — production
+# Helm chart: kong/kong
+# Mode: DB-less declarative; proxy + admin split; rate limits per ADR-0011 tiers
+
+image:
+  repository: kong
+  tag: "3.7"
+  pullPolicy: IfNotPresent
+
+replicaCount: 3
+
+env:
+  database: "off"
+  declarative_config: /kong_dbless/kong.yaml
+  plugins: bundled,rate-limiting,key-auth,oidc,prometheus,request-id,correlation-id
+  log_level: warn
+  proxy_access_log: /dev/stdout
+  admin_access_log: /dev/stdout
+  nginx_worker_processes: "auto"
+  # SPIFFE-aware TLS between Kong and upstreams
+  client_ssl: "on"
+  client_ssl_cert: /etc/kong/certs/tls.crt
+  client_ssl_cert_key: /etc/kong/certs/tls.key
+
+# Proxy (public-facing) — behind Envoy Gateway
+proxy:
+  enabled: true
+  type: ClusterIP
+  http:
+    enabled: false
+  tls:
+    enabled: true
+    containerPort: 8443
+    servicePort: 443
+
+# Admin API (internal only, mTLS required)
+admin:
+  enabled: true
+  type: ClusterIP
+  http:
+    enabled: false
+  tls:
+    enabled: true
+    containerPort: 8444
+    servicePort: 8444
+
+# Declarative config via ConfigMap (populated by CI)
+dblessConfig:
+  configMap: kong-declarative-config
+
+ingressController:
+  enabled: false
+
+# Rate-limit defaults (per ADR-0011 tiers; service-level overrides in declarative config)
+# Tier A (T1 critical): 10 req/s per SVID
+# Tier B (T2 standard): 100 req/s per consumer
+# Tier C (public): 20 req/s per IP
+podAnnotations:
+  eel.internal/spiffe-id: "spiffe://eel.prod/ns/kong/sa/kong-proxy"
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: 2000m
+    memory: 1Gi
+
+# Prometheus metrics
+serviceMonitor:
+  enabled: true
+  namespace: monitoring
+  labels:
+    eel.internal/managed-by: platform
+
+# TLS cert from cert-manager
+secretVolumes:
+  - kong-tls-cert

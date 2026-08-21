@@ -1,0 +1,73 @@
+# AppProject definitions — one per service
+# Pattern: each service owns its own project with source + destination scoped to that service.
+{% for svc in services %}
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: {{ svc }}
+  namespace: argocd
+spec:
+  description: "Deployment project for {{ svc }}"
+  sourceRepos:
+    - https://gitea.internal/eel/eel
+    - https://harbor.eel.internal/chartrepo/eel
+  destinations:
+    - namespace: {{ svc }}
+      server: "*"
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+    - group: cilium.io
+      kind: CiliumNetworkPolicy
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  roles:
+    - name: deployer
+      description: "CI/CD deployer for {{ svc }}"
+      policies:
+        - p, proj:{{ svc }}:deployer, applications, sync, {{ svc }}/*, allow
+        - p, proj:{{ svc }}:deployer, applications, get, {{ svc }}/*, allow
+      groups:
+        - eel-deployers
+---
+{% endfor %}
+
+# Concrete projects for the 18 canonical services
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: biometric-edge-svc
+  namespace: argocd
+spec:
+  description: "biometric-edge-svc (M01, M05)"
+  sourceRepos: ["https://gitea.internal/eel/eel"]
+  destinations: [{namespace: biometric-edge-svc, server: "*"}]
+  clusterResourceWhitelist: [{group: "", kind: Namespace}]
+  namespaceResourceWhitelist: [{group: "*", kind: "*"}]
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: rts-svc
+  namespace: argocd
+spec:
+  description: "rts-svc (M08, M09, M10, M51, M63) — T1 critical"
+  sourceRepos: ["https://gitea.internal/eel/eel"]
+  destinations: [{namespace: rts-svc, server: "*"}]
+  clusterResourceWhitelist: [{group: "", kind: Namespace}]
+  namespaceResourceWhitelist: [{group: "*", kind: "*"}]
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: transparency-svc
+  namespace: argocd
+spec:
+  description: "transparency-svc (M14, M17, M18, M22)"
+  sourceRepos: ["https://gitea.internal/eel/eel"]
+  destinations: [{namespace: transparency-svc, server: "*"}]
+  clusterResourceWhitelist: [{group: "", kind: Namespace}]
+  namespaceResourceWhitelist: [{group: "*", kind: "*"}]

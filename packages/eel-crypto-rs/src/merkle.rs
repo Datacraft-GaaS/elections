@@ -1,0 +1,656 @@
+//! RFC 6962 Certificate Transparency Merkle tree primitives.
+//!
+//! Implements leaf hashing, internal node hashing, inclusion proofs, and
+//! consistency proofs as specified in RFC 6962 §2.
+//!
+//! Hash function: SHA-256.
+//! Leaf hash:     `SHA256(0x00 || data)`
+//! Node hash:     `SHA256(0x01 || left || right)`
+//!
+//! # Example
+//!
+//! ```
+//! use eel_crypto_rs::merkle::{leaf_hash, MerkleTree};
+//! let entries: Vec<&[u8]> = vec![b"alpha", b"beta", b"gamma"];
+//! let tree = MerkleTree::build(&entries);
+//! let proof = tree.inclusion_proof(0).unwrap();
+//! assert!(tree.verify_inclusion(0, b"alpha", &proof).is_ok());
+//! ```
+
+use sha2::{Digest, Sha256};
+
+use crate::CryptoError;
+
+/// A 32-byte SHA-256 hash value.
+pub type Hash = [u8; 32];
+
+// ---------------------------------------------------------------------------
+// Hash functions
+// ---------------------------------------------------------------------------
+
+/// Compute the RFC 6962 leaf hash: `SHA256(0x00 || data)`.
+///
+/// # Example
+///
+/// ```
+/// use eel_crypto_rs::merkle::leaf_hash;
+/// let h = leaf_hash(b"data");
+/// assert_eq!(h.len(), 32);
+/// ```
+pub fn leaf_hash(data: &[u8]) -> Hash {
+    let mut h = Sha256::new();
+    h.update([0x00]);
+    h.update(data);
+    h.finalize().into()
+}
+
+/// Compute the RFC 6962 internal node hash: `SHA256(0x01 || left || right)`.
+///
+/// # Example
+///
+/// ```
+/// use eel_crypto_rs::merkle::node_hash;
+/// let l = [0u8; 32];
+/// let r = [1u8; 32];
+/// let h = node_hash(&l, &r);
+/// assert_eq!(h.len(), 32);
+/// ```
+pub fn node_hash(left: &Hash, right: &Hash) -> Hash {
+    let mut h = Sha256::new();
+    h.update([0x01]);
+    h.update(left);
+    h.update(right);
+    h.finalize().into()
+}
+
+// ---------------------------------------------------------------------------
+// MerkleTree
+// ---------------------------------------------------------------------------
+
+/// An in-memory RFC 6962 Merkle tree.
+///
+/// Built from a list of leaf entries.  Supports inclusion and consistency
+/// proof generation and verification.
+///
+/// # Example
+///
+/// ```
+/// use eel_crypto_rs::merkle::MerkleTree;
+/// let tree = MerkleTree::build(&[b"a" as &[u8], b"b", b"c"]);
+/// assert_eq!(tree.size(), 3);
+/// ```
+pub struct MerkleTree {
+    leaves: Vec<Hash>,
+    /// Full hash tree stored in level-order.  Index 0 is the root.
+    nodes: Vec<Hash>,
+    size: usize,
+}
+
+impl MerkleTree {
+    /// Build a Merkle tree from a slice of leaf data entries.
+    ///
+    /// An empty slice produces a tree whose root is `SHA256("")`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use eel_crypto_rs::merkle::MerkleTree;
+    /// let tree = MerkleTree::build(&[b"x" as &[u8]]);
+    /// assert_eq!(tree.size(), 1);
+    /// ```
+    pub fn build(entries: &[&[u8]]) -> Self {
+        let leaves: Vec<Hash> = entries.iter().map(|e| leaf_hash(e)).collect();
+        let size = leaves.len();
+        let nodes = build_tree(&leaves);
+        MerkleTree {
+            leaves,
+            nodes,
+            size,
+        }
+    }
+
+    /// Return the number of leaves in the tree.
+    pub fn size(&self) -> usize {
+        self.size
+    }
+
+    /// Return the tree root hash.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use eel_crypto_rs::merkle::MerkleTree;
+    /// let t1 = MerkleTree::build(&[b"a" as &[u8]]);
+    /// let t2 = MerkleTree::build(&[b"a" as &[u8]]);
+    /// assert_eq!(t1.root(), t2.root());
+    /// ```
+    pub fn root(&self) -> Hash {
+        if self.nodes.is_empty() {
+            // Empty tree.
+            let mut h = Sha256::new();
+            h.finalize().into()
+        } else {
+            self.nodes[0]
+        }
+    }
+
+    /// Generate an inclusion proof for leaf at `index`.
+    ///
+    /// Returns the ordered list of sibling hashes from leaf to root.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CryptoError::InvalidMerkleProof`] if `index >= size`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use eel_crypto_rs::merkle::MerkleTree;
+    /// let t = MerkleTree::build(&[b"a" as &[u8], b"b", b"c"]);
+    /// let proof = t.inclusion_proof(1).unwrap();
+    /// assert!(!proof.is_empty());
+    /// ```
+    pub fn inclusion_proof(&self, index: usize) -> Result<Vec<Hash>, CryptoError> {
+        if index >= self.size {
+            return Err(CryptoError::InvalidMerkleProof(format!(
+                "index {index} out of range (size {})",
+                self.size
+            )));
+        }
+        Ok(compute_inclusion_proof(&self.leaves, index))
+    }
+
+    /// Verify that `data` appears at position `index` using `proof`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CryptoError::InvalidMerkleProof`] if verification fails.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use eel_crypto_rs::merkle::MerkleTree;
+    /// let t = MerkleTree::build(&[b"a" as &[u8], b"b"]);
+    /// let proof = t.inclusion_proof(0).unwrap();
+    /// assert!(t.verify_inclusion(0, b"a", &proof).is_ok());
+    /// assert!(t.verify_inclusion(0, b"wrong", &proof).is_err());
+    /// ```
+    pub fn verify_inclusion(
+        &self,
+        index: usize,
+        data: &[u8],
+        proof: &[Hash],
+    ) -> Result<(), CryptoError> {
+        if index >= self.size {
+            return Err(CryptoError::InvalidMerkleProof(format!(
+                "index {index} out of range"
+            )));
+        }
+        let computed = recompute_root(index, self.size, data, proof)?;
+        if crate::constant_time::ct_eq(&computed, &self.root()) {
+            Ok(())
+        } else {
+            Err(CryptoError::InvalidMerkleProof(
+                "root hash mismatch".to_owned(),
+            ))
+        }
+    }
+
+    /// Generate a consistency proof between a tree of `old_size` leaves and
+    /// this tree.
+    ///
+    /// Returns the list of hashes that prove the old tree is a prefix of the
+    /// current tree.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CryptoError::InvalidMerkleProof`] if `old_size > self.size`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use eel_crypto_rs::merkle::MerkleTree;
+    /// let old_leaves: Vec<&[u8]> = vec![b"a", b"b"];
+    /// let new_leaves: Vec<&[u8]> = vec![b"a", b"b", b"c", b"d"];
+    /// let new_tree = MerkleTree::build(&new_leaves);
+    /// let old_tree = MerkleTree::build(&old_leaves);
+    /// let proof = new_tree.consistency_proof(old_tree.size()).unwrap();
+    /// assert!(new_tree.verify_consistency(old_tree.root(), old_tree.size(), &proof).is_ok());
+    /// ```
+    pub fn consistency_proof(&self, old_size: usize) -> Result<Vec<Hash>, CryptoError> {
+        if old_size > self.size {
+            return Err(CryptoError::InvalidMerkleProof(format!(
+                "old_size {old_size} > current size {}",
+                self.size
+            )));
+        }
+        if old_size == 0 || old_size == self.size {
+            return Ok(vec![]);
+        }
+        Ok(compute_consistency_proof(&self.leaves, old_size, self.size))
+    }
+
+    /// Verify a consistency proof between `old_root` (of `old_size` leaves)
+    /// and this tree's root.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CryptoError::InvalidMerkleProof`] if verification fails.
+    pub fn verify_consistency(
+        &self,
+        old_root: Hash,
+        old_size: usize,
+        proof: &[Hash],
+    ) -> Result<(), CryptoError> {
+        if old_size == 0 {
+            return Ok(());
+        }
+        if old_size == self.size {
+            if crate::constant_time::ct_eq(&old_root, &self.root()) {
+                return Ok(());
+            }
+            return Err(CryptoError::InvalidMerkleProof(
+                "old root must equal new root when sizes match".to_owned(),
+            ));
+        }
+        verify_consistency_proof(&old_root, old_size, &self.root(), self.size, proof)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Internal tree building
+// ---------------------------------------------------------------------------
+
+fn build_tree(leaves: &[Hash]) -> Vec<Hash> {
+    if leaves.is_empty() {
+        return vec![];
+    }
+    // Store as a flat array: nodes at depth d start at index 2^d - 1.
+    // Use a simpler approach: build level by level bottom-up.
+    let mut current = leaves.to_vec();
+    let mut all_levels: Vec<Vec<Hash>> = vec![current.clone()];
+
+    while current.len() > 1 {
+        let mut next = Vec::with_capacity((current.len() + 1) / 2);
+        let mut i = 0;
+        while i < current.len() {
+            if i + 1 < current.len() {
+                next.push(node_hash(&current[i], &current[i + 1]));
+            } else {
+                // Odd leaf: promote without hashing (per RFC 6962).
+                next.push(current[i]);
+            }
+            i += 2;
+        }
+        all_levels.push(next.clone());
+        current = next;
+    }
+
+    // Root is in the last level.  Build a lookup: level -> hashes.
+    // We don't store the full tree structure for now; root is levels.last()[0].
+    // For proof generation we use the recursive approach below.
+    let _ = all_levels;
+    current // only root
+}
+
+/// Compute inclusion proof (sibling hashes, leaf to root order).
+fn compute_inclusion_proof(leaves: &[Hash], index: usize) -> Vec<Hash> {
+    let mut proof = Vec::new();
+    rfc6962_path(leaves, index, leaves.len(), &mut proof);
+    proof
+}
+
+fn rfc6962_path(leaves: &[Hash], index: usize, n: usize, proof: &mut Vec<Hash>) {
+    if n <= 1 {
+        return;
+    }
+    let k = largest_power_of_two_less_than(n);
+    if index < k {
+        // Target is in the left subtree.
+        proof.push(merkle_root(&leaves[k..n]));
+        rfc6962_path(&leaves[..k], index, k, proof);
+    } else {
+        // Target is in the right subtree.
+        proof.push(merkle_root(&leaves[..k]));
+        rfc6962_path(&leaves[k..n], index - k, n - k, proof);
+    }
+}
+
+/// Recompute the root from an inclusion proof.
+fn recompute_root(
+    index: usize,
+    tree_size: usize,
+    data: &[u8],
+    proof: &[Hash],
+) -> Result<Hash, CryptoError> {
+    let mut current = leaf_hash(data);
+    let mut idx = index;
+    let mut sz = tree_size;
+    let mut proof_iter = proof.iter();
+
+    while sz > 1 {
+        let k = largest_power_of_two_less_than(sz);
+        let sibling = proof_iter
+            .next()
+            .ok_or_else(|| CryptoError::InvalidMerkleProof("proof too short".to_owned()))?;
+        if idx < k {
+            current = node_hash(&current, sibling);
+            sz = k;
+        } else {
+            current = node_hash(sibling, &current);
+            idx -= k;
+            sz -= k;
+        }
+    }
+
+    if proof_iter.next().is_some() {
+        return Err(CryptoError::InvalidMerkleProof("proof too long".to_owned()));
+    }
+    Ok(current)
+}
+
+/// Compute the Merkle root of a slice of leaf hashes using RFC 6962 rules.
+fn merkle_root(leaves: &[Hash]) -> Hash {
+    match leaves.len() {
+        0 => {
+            let mut h = Sha256::new();
+            h.finalize().into()
+        }
+        1 => leaves[0],
+        n => {
+            let k = largest_power_of_two_less_than(n);
+            node_hash(&merkle_root(&leaves[..k]), &merkle_root(&leaves[k..]))
+        }
+    }
+}
+
+/// Largest power of two strictly less than `n` (used in RFC 6962 proofs).
+fn largest_power_of_two_less_than(n: usize) -> usize {
+    assert!(n > 1);
+    let mut k = 1;
+    while k * 2 < n {
+        k *= 2;
+    }
+    k
+}
+
+// ---------------------------------------------------------------------------
+// Consistency proofs
+// ---------------------------------------------------------------------------
+
+fn compute_consistency_proof(leaves: &[Hash], old_size: usize, new_size: usize) -> Vec<Hash> {
+    let mut proof = Vec::new();
+    rfc6962_consistency(&leaves[..new_size], old_size, new_size, true, &mut proof);
+    proof
+}
+
+fn rfc6962_consistency(
+    leaves: &[Hash],
+    old: usize,
+    new: usize,
+    is_root: bool,
+    proof: &mut Vec<Hash>,
+) {
+    if old == new {
+        if !is_root {
+            proof.push(merkle_root(leaves));
+        }
+        return;
+    }
+    let k = largest_power_of_two_less_than(new);
+    if old <= k {
+        rfc6962_consistency(&leaves[..k], old, k, is_root, proof);
+        proof.push(merkle_root(&leaves[k..new]));
+    } else {
+        rfc6962_consistency(&leaves[k..new], old - k, new - k, false, proof);
+        proof.push(merkle_root(&leaves[..k]));
+    }
+}
+
+fn verify_consistency_proof(
+    old_root: &Hash,
+    old_size: usize,
+    new_root: &Hash,
+    new_size: usize,
+    proof: &[Hash],
+) -> Result<(), CryptoError> {
+    // Recompute both old and new roots from the proof.
+    let (computed_old, computed_new) = recompute_consistency(old_size, new_size, proof)?;
+    if !crate::constant_time::ct_eq(&computed_old, old_root) {
+        return Err(CryptoError::InvalidMerkleProof(
+            "old root mismatch in consistency proof".to_owned(),
+        ));
+    }
+    if !crate::constant_time::ct_eq(&computed_new, new_root) {
+        return Err(CryptoError::InvalidMerkleProof(
+            "new root mismatch in consistency proof".to_owned(),
+        ));
+    }
+    Ok(())
+}
+
+fn recompute_consistency(
+    old_size: usize,
+    new_size: usize,
+    proof: &[Hash],
+) -> Result<(Hash, Hash), CryptoError> {
+    if proof.is_empty() {
+        return Err(CryptoError::InvalidMerkleProof(
+            "consistency proof is empty".to_owned(),
+        ));
+    }
+    let mut proof_iter = proof.iter();
+
+    // Build the old and new roots by walking the proof.
+    let mut old_hash = *proof_iter.next().unwrap();
+    let mut new_hash = old_hash;
+
+    let mut old_n = old_size;
+    let mut new_n = new_size;
+
+    // Find the inner node that differs.
+    while {
+        let x = old_n;
+        // Keep descending while old_n is odd or we're at the root.
+        x > 1 && (x & 1) == 0
+    } {
+        old_n >>= 1;
+        new_n >>= 1;
+    }
+
+    for h in proof_iter {
+        if new_n == 1 {
+            return Err(CryptoError::InvalidMerkleProof(
+                "consistency proof too long".to_owned(),
+            ));
+        }
+        if (old_n & 1) == 1 || old_n == new_n {
+            old_hash = node_hash(h, &old_hash);
+            new_hash = node_hash(h, &new_hash);
+            if (old_n & 1) == 0 {
+                while old_n > 1 && (old_n & 1) == 0 {
+                    old_n >>= 1;
+                    new_n >>= 1;
+                }
+            }
+        } else {
+            new_hash = node_hash(&new_hash, h);
+        }
+        old_n >>= 1;
+        new_n >>= 1;
+    }
+
+    if new_n != 1 {
+        return Err(CryptoError::InvalidMerkleProof(
+            "consistency proof too short".to_owned(),
+        ));
+    }
+
+    Ok((old_hash, new_hash))
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use proptest::prelude::*;
+
+    // --- known values --------------------------------------------------------
+
+    #[test]
+    fn single_leaf_root() {
+        let entries: Vec<&[u8]> = vec![b"data"];
+        let tree = MerkleTree::build(&entries);
+        assert_eq!(tree.root(), leaf_hash(b"data"));
+    }
+
+    #[test]
+    fn two_leaf_root() {
+        let entries: Vec<&[u8]> = vec![b"a", b"b"];
+        let tree = MerkleTree::build(&entries);
+        let expected = node_hash(&leaf_hash(b"a"), &leaf_hash(b"b"));
+        assert_eq!(tree.root(), expected);
+    }
+
+    // --- inclusion proof -----------------------------------------------------
+
+    #[test]
+    fn inclusion_proof_2_leaves() {
+        let entries: Vec<&[u8]> = vec![b"a", b"b"];
+        let tree = MerkleTree::build(&entries);
+
+        let proof0 = tree.inclusion_proof(0).unwrap();
+        tree.verify_inclusion(0, b"a", &proof0).unwrap();
+
+        let proof1 = tree.inclusion_proof(1).unwrap();
+        tree.verify_inclusion(1, b"b", &proof1).unwrap();
+    }
+
+    #[test]
+    fn inclusion_proof_wrong_data_fails() {
+        let entries: Vec<&[u8]> = vec![b"a", b"b", b"c"];
+        let tree = MerkleTree::build(&entries);
+        let proof = tree.inclusion_proof(0).unwrap();
+        assert!(tree.verify_inclusion(0, b"wrong", &proof).is_err());
+    }
+
+    #[test]
+    fn inclusion_proof_out_of_range() {
+        let entries: Vec<&[u8]> = vec![b"a"];
+        let tree = MerkleTree::build(&entries);
+        assert!(tree.inclusion_proof(1).is_err());
+    }
+
+    // --- consistency proof ---------------------------------------------------
+
+    #[test]
+    fn consistency_proof_grow_from_2_to_4() {
+        let all: Vec<&[u8]> = vec![b"a", b"b", b"c", b"d"];
+        let old: Vec<&[u8]> = vec![b"a", b"b"];
+        let new_tree = MerkleTree::build(&all);
+        let old_tree = MerkleTree::build(&old);
+
+        let proof = new_tree.consistency_proof(old_tree.size()).unwrap();
+        new_tree
+            .verify_consistency(old_tree.root(), old_tree.size(), &proof)
+            .unwrap();
+    }
+
+    // --- proptest ------------------------------------------------------------
+
+    proptest! {
+        /// Inclusion proof verifies for every valid index.
+        #[test]
+        fn prop_inclusion_verifies(
+            n in 1usize..=16,
+            idx in 0usize..=15,
+        ) {
+            let entries: Vec<Vec<u8>> = (0u8..n as u8).map(|i| vec![i]).collect();
+            let refs: Vec<&[u8]> = entries.iter().map(Vec::as_slice).collect();
+            let tree = MerkleTree::build(&refs);
+
+            let idx = idx % n;
+            let proof = tree.inclusion_proof(idx).unwrap();
+            prop_assert!(
+                tree.verify_inclusion(idx, &entries[idx], &proof).is_ok(),
+                "inclusion proof failed for idx {idx} in tree of size {n}"
+            );
+        }
+
+        /// Tampered data fails inclusion verification.
+        #[test]
+        fn prop_tampered_data_fails(n in 2usize..=8, idx in 0usize..=7) {
+            let entries: Vec<Vec<u8>> = (0u8..n as u8).map(|i| vec![i]).collect();
+            let refs: Vec<&[u8]> = entries.iter().map(Vec::as_slice).collect();
+            let tree = MerkleTree::build(&refs);
+            let idx = idx % n;
+            let proof = tree.inclusion_proof(idx).unwrap();
+            let bad_data = vec![0xffu8; 4];
+            if entries[idx] != bad_data {
+                prop_assert!(
+                    tree.verify_inclusion(idx, &bad_data, &proof).is_err(),
+                    "tampered data should not verify"
+                );
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Kani harnesses
+// ---------------------------------------------------------------------------
+
+#[cfg(kani)]
+mod kani_harnesses {
+    use super::*;
+
+    /// An authentic inclusion proof always verifies.
+    #[kani::proof]
+    #[kani::unwind(5)]
+    fn merkle_inclusion_proof_verifies_authentic() {
+        // Build a small tree with symbolic leaf data.
+        let n: usize = kani::any_where(|n: &usize| *n >= 1 && *n <= 4);
+        let mut entries: Vec<Vec<u8>> = Vec::new();
+        for _ in 0..n {
+            let b: u8 = kani::any();
+            entries.push(vec![b]);
+        }
+        let refs: Vec<&[u8]> = entries.iter().map(Vec::as_slice).collect();
+        let tree = MerkleTree::build(&refs);
+        let idx: usize = kani::any_where(|i: &usize| *i < n);
+        let proof = tree.inclusion_proof(idx).unwrap();
+        assert!(tree.verify_inclusion(idx, &entries[idx], &proof).is_ok());
+    }
+
+    /// Consistency proof never forgets committed entries: the new tree's root
+    /// must incorporate all leaves from the old tree.
+    #[kani::proof]
+    #[kani::unwind(5)]
+    fn merkle_consistency_never_forgets() {
+        let old_n: usize = kani::any_where(|n: &usize| *n >= 1 && *n <= 3);
+        let extra: usize = kani::any_where(|n: &usize| *n >= 1 && *n <= 3);
+        let new_n = old_n + extra;
+
+        let mut entries: Vec<Vec<u8>> = Vec::new();
+        for _ in 0..new_n {
+            entries.push(vec![kani::any::<u8>()]);
+        }
+
+        let old_refs: Vec<&[u8]> = entries[..old_n].iter().map(Vec::as_slice).collect();
+        let new_refs: Vec<&[u8]> = entries.iter().map(Vec::as_slice).collect();
+
+        let old_tree = MerkleTree::build(&old_refs);
+        let new_tree = MerkleTree::build(&new_refs);
+
+        let proof = new_tree.consistency_proof(old_n).unwrap();
+        assert!(
+            new_tree
+                .verify_consistency(old_tree.root(), old_n, &proof)
+                .is_ok(),
+            "consistency proof must verify"
+        );
+    }
+}

@@ -5,7 +5,23 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 publish = false
+description = "PII classification wrappers for the eel platform (ADR-0016)"
 
 [lib]
 name = "eel_pii_rs"
 path = "src/lib.rs"
+
+[dependencies]
+serde     = { version = "1", features = ["derive"] }
+thiserror = { workspace = true }
+tracing   = { workspace = true }
+sqlx      = { workspace = true, optional = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+proptest   = "1"
+trybuild   = "1"
+
+[features]
+default       = ["sqlx-postgres"]
+sqlx-postgres = ["dep:sqlx"]

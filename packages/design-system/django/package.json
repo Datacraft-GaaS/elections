@@ -1,0 +1,8 @@
+{
+  "name": "@eel/design-system-django",
+  "version": "0.1.0",
+  "scripts": {
+    "build": "echo 'django design system: static assets only - run python setup'",
+    "test": "echo 'django tests run via pytest, not pnpm - skipped'"
+  }
+}

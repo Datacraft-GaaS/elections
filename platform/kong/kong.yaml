@@ -1,0 +1,45 @@
+# Kong declarative config skeleton (DB-less mode)
+# Full service routes added per-service by appset-gen overlays.
+_format_version: "3.0"
+_transform: true
+
+services:
+  # API gateway passthrough placeholder — real services registered per-overlay
+  - name: eel-health
+    url: http://127.0.0.1:8100
+    routes:
+      - name: health-route
+        paths:
+          - /healthz
+        strip_path: false
+        methods:
+          - GET
+
+plugins:
+  # Global rate limiting (ADR-0011 Tier C public default)
+  - name: rate-limiting
+    config:
+      minute: 1200
+      hour: 60000
+      policy: local
+      fault_tolerant: true
+      hide_client_headers: false
+      redis_ssl: true
+
+  # Correlation ID for distributed tracing
+  - name: correlation-id
+    config:
+      header_name: X-Eel-Request-ID
+      generator: uuid#counter
+      echo_downstream: true
+
+  # Prometheus metrics export
+  - name: prometheus
+    config:
+      status_code_metrics: true
+      latency_metrics: true
+      bandwidth_metrics: true
+      upstream_health_metrics: true
+
+consumers: []
+consumer_groups: []

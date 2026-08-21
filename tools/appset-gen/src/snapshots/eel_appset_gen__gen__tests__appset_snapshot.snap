@@ -1,0 +1,56 @@
+---
+source: tools/appset-gen/src/gen.rs
+assertion_line: 191
+expression: content
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: rts-svc
+  namespace: argocd
+  labels:
+    eel.internal/service: "rts-svc"
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - site: primary
+            clusterURL: https://k8s.primary.eel.internal:6443
+            namespace: rts-svc
+            image: harbor.eel.internal/eel/rts-svc
+    - list:
+        elements:
+          - site: mirror
+            clusterURL: https://k8s.mirror.eel.internal:6443
+            namespace: rts-svc
+            image: harbor.eel.internal/eel/rts-svc
+
+  template:
+    metadata:
+      name: "{{.name}}-{{.site}}"
+      namespace: argocd
+      labels:
+        eel.internal/service: "rts-svc"
+        eel.internal/site: "{{.site}}"
+      annotations:
+        notifications.argoproj.io/subscribe.on-sync-failed.slack: eel-ops-alerts
+        notifications.argoproj.io/subscribe.on-sync-failed.email: ops@eel.internal
+    spec:
+      project: rts-svc
+      source:
+        repoURL: https://gitea.internal/eel/eel
+        targetRevision: HEAD
+        path: "environments/{{.site}}/services/rts-svc"
+      destination:
+        server: "{{.clusterURL}}"
+        namespace: "{{.namespace}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+      revisionHistoryLimit: 3

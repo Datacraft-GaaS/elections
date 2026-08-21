@@ -1,0 +1,70 @@
+# SPIRE registration entry templates per canonical service.
+# Applied via: kubectl apply -f platform/spire/registration-entries.yaml -n spire
+# Actual registration entries are created by the SPIRE controller watching k8s.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-registration-templates
+  namespace: spire
+  labels:
+    eel.internal/managed-by: platform
+data:
+  # Template format: one entry per service SA.
+  # Environment-specific trust domains are set in staging/pre-prod/prod overlays.
+  entries.yaml: |
+    entries:
+      - spiffe_id: "spiffe://eel.prod/ns/rts-svc/sa/rts-api"
+        parent_id: "spiffe://eel.prod/spire/agent/k8s_psat/eel-primary/{{NODE_UID}}"
+        selectors:
+          - type: k8s
+            value: "ns:rts-svc"
+          - type: k8s
+            value: "sa:rts-api"
+        dns_names: ["rts-api.rts-svc.svc.cluster.local"]
+        ttl: 3600
+        admin: false
+
+      - spiffe_id: "spiffe://eel.prod/ns/bvr-svc/sa/bvr-api"
+        parent_id: "spiffe://eel.prod/spire/agent/k8s_psat/eel-primary/{{NODE_UID}}"
+        selectors:
+          - type: k8s
+            value: "ns:bvr-svc"
+          - type: k8s
+            value: "sa:bvr-api"
+        ttl: 3600
+
+      - spiffe_id: "spiffe://eel.prod/ns/abis-svc/sa/abis-api"
+        parent_id: "spiffe://eel.prod/spire/agent/k8s_psat/eel-primary/{{NODE_UID}}"
+        selectors:
+          - type: k8s
+            value: "ns:abis-svc"
+          - type: k8s
+            value: "sa:abis-api"
+        ttl: 1800
+
+      - spiffe_id: "spiffe://eel.prod/ns/transparency-svc/sa/log-consumer"
+        parent_id: "spiffe://eel.prod/spire/agent/k8s_psat/eel-primary/{{NODE_UID}}"
+        selectors:
+          - type: k8s
+            value: "ns:transparency-svc"
+          - type: k8s
+            value: "sa:log-consumer"
+        ttl: 3600
+
+      - spiffe_id: "spiffe://eel.prod/ns/portal-svc/sa/portal-api"
+        parent_id: "spiffe://eel.prod/spire/agent/k8s_psat/eel-primary/{{NODE_UID}}"
+        selectors:
+          - type: k8s
+            value: "ns:portal-svc"
+          - type: k8s
+            value: "sa:portal-api"
+        ttl: 3600
+
+      - spiffe_id: "spiffe://eel.prod/ns/ecc-svc/sa/ecc-api"
+        parent_id: "spiffe://eel.prod/spire/agent/k8s_psat/eel-primary/{{NODE_UID}}"
+        selectors:
+          - type: k8s
+            value: "ns:ecc-svc"
+          - type: k8s
+            value: "sa:ecc-api"
+        ttl: 3600

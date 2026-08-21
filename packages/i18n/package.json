@@ -1,0 +1,13 @@
+{
+  "name": "@eel/i18n",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./locales/en/index.js",
+    "./locales/*": "./locales/*"
+  },
+  "scripts": {
+    "lint": "node tools/i18n-lint.mjs",
+    "pseudo": "node tools/pseudo-gen.mjs"
+  }
+}

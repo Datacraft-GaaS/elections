@@ -1,0 +1,23 @@
+{
+  "name": "@eel/design-system-astro",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens": "../tokens.json",
+    "./components/*": "./src/components/*"
+  },
+  "scripts": {
+    "build": "tsc --noEmit && echo 'build ok'",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "^3.0.0",
+    "@vitest/coverage-v8": "^3.0.0",
+    "axe-core": "^4.10.0",
+    "typescript": "^5.5.0",
+    "astro": "^5.0.0",
+    "@astrojs/svelte": "^6.0.0",
+    "svelte": "^5.0.0"
+  }
+}

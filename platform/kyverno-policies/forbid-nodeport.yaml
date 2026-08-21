@@ -1,0 +1,25 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: eel-forbid-nodeport
+  annotations:
+    policies.kyverno.io/title: Forbid NodePort Services
+    policies.kyverno.io/category: Network Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >
+      All external access must go through Envoy Gateway (Gateway API). NodePort
+      services bypass the WAF, rate limiting, and mTLS termination layer.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: forbid-nodeport
+      match:
+        any:
+          - resources:
+              kinds: [Service]
+      validate:
+        message: "Services of type NodePort are not permitted. Use Gateway API (HTTPRoute/GRPCRoute)."
+        pattern:
+          spec:
+            =(type): "!NodePort"

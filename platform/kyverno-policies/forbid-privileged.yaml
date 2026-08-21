@@ -1,0 +1,39 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: eel-forbid-privileged
+  annotations:
+    policies.kyverno.io/title: Forbid Privileged Containers
+    policies.kyverno.io/category: Security
+    policies.kyverno.io/severity: critical
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: forbid-privileged-containers
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+      validate:
+        message: "Privileged containers are not permitted."
+        pattern:
+          spec:
+            =(initContainers):
+              - =(securityContext):
+                  =(privileged): "false"
+            containers:
+              - =(securityContext):
+                  =(privileged): "false"
+    - name: forbid-privilege-escalation
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+      validate:
+        message: "allowPrivilegeEscalation must be false."
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  allowPrivilegeEscalation: "false"

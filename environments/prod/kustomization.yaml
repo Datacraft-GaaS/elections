@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../platform/argocd/install.yaml
+  - ../../platform/cilium/default-deny.yaml
+  - ../../platform/kyverno-policies/require-signed-images.yaml
+  - ../../platform/kyverno-policies/forbid-latest-tag.yaml
+  - ../../platform/kyverno-policies/forbid-nodeport.yaml
+  - ../../platform/kyverno-policies/forbid-hostpath.yaml
+  - ../../platform/kyverno-policies/forbid-privileged.yaml
+  - ../../platform/kyverno-policies/require-probes-and-limits.yaml
+  - ../../platform/kyverno-policies/require-svid-label.yaml
+  - ../../platform/kyverno-policies/require-otel-annotations.yaml
+  - ../../platform/envoy-gateway/install.yaml
+  - ../../platform/spire/registration-entries.yaml
+  - ../../platform/observability/alerts/alerts.yaml
+  - prod-config.yaml
+labels:
+  - pairs:
+      eel.internal/environment: prod
+    includeSelectors: false

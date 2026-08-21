@@ -1,0 +1,126 @@
+# SPIRE server + agent Helm values — production
+# Helm chart: spiffe/spire
+# Trust domain overridden per-environment: eel.staging / eel.preprod / eel.prod
+
+global:
+  spire:
+    recommendations:
+      enabled: true
+    clusterName: eel-primary
+    trustDomain: eel.prod  # overridden in staging/pre-prod overlays
+    bundleConfigMap: spire-bundle
+    caSubject:
+      country: KE
+      organization: "Electoral Commission of Kenya"
+      commonName: "eel.prod SPIRE Root CA"
+
+spire-server:
+  replicaCount: 3
+  image:
+    registry: ghcr.io
+    repository: spiffe/spire-server
+    tag: 1.9.6
+
+  dataStore:
+    sql:
+      databaseType: postgres
+      connectionString: "host=postgres.spire.svc.cluster.local dbname=spire user=spire sslmode=require"
+
+  # HSM upstream authority (delegated to platform/hsm-signer/)
+  upstreamAuthority:
+    disk:
+      enabled: false
+    awsPCA:
+      enabled: false
+    certManager:
+      enabled: true
+      issuerName: eel-hsm-ca
+      issuerKind: ClusterIssuer
+      issuerGroup: cert-manager.io
+
+  nodeAttestor:
+    k8sPsat:
+      enabled: true
+      audiences: ["spire-server"]
+
+  workloadAttestor:
+    k8s:
+      enabled: true
+
+  # Federation with mirror and (optional) pre-prod
+  federation:
+    enabled: true
+    bundleEndpoint:
+      address: "0.0.0.0"
+      port: 8443
+      acme:
+        domainName: spire.eel.internal
+    federatesWith:
+      - trustDomain: eel.mirror
+        bundleEndpointURL: https://spire.mirror.eel.internal:8443
+        bundleEndpointProfile:
+          httpsSPIFFE:
+            endpointSPIFFEID: "spiffe://eel.mirror/spire/server"
+
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: ceph-block
+
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+
+  service:
+    type: ClusterIP
+
+spire-agent:
+  image:
+    registry: ghcr.io
+    repository: spiffe/spire-agent
+    tag: 1.9.6
+
+  nodeAttestor:
+    k8sPsat:
+      enabled: true
+
+  workloadAttestor:
+    k8s:
+      enabled: true
+      # TPM-backed attestation on bare-metal nodes
+    unix:
+      enabled: true
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+  socketPath: /run/spire/sockets/agent.sock
+
+  # Mount the SPIRE socket for workloads
+  hostNetwork: false
+  dnsPolicy: ClusterFirstWithHostNet
+
+spiffe-csi-driver:
+  enabled: true
+  resources:
+    requests:
+      cpu: 10m
+      memory: 16Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+
+spiffe-oidc-discovery-provider:
+  enabled: true
+  config:
+    domains:
+      - eel.prod

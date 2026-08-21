@@ -1,0 +1,11 @@
+generatorName: dart-dio
+outputDir: generated
+additionalProperties:
+  pubName: eel_api_client
+  pubAuthor: eel
+  pubAuthorEmail: nyimbi@gmail.com
+  pubHomepage: https://github.com/nyimbi/eel
+  useEnumExtension: true
+  nullableFields: true
+  legacyDiscriminatorBehavior: false
+  prependFormOrBodyParameters: false

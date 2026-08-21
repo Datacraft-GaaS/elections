@@ -1,0 +1,107 @@
+# Cilium 1.16+ Helm values — production
+# Helm chart: cilium/cilium
+# Applied to: primary, mirror (edge sites use edge-values.yaml overlay)
+
+image:
+  repository: quay.io/cilium/cilium
+  tag: v1.16.0
+  pullPolicy: IfNotPresent
+
+# Kube-proxy replacement (production only)
+kubeProxyReplacement: "true"
+k8sServiceHost: "k8s-api.eel.internal"
+k8sServicePort: "6443"
+
+# WireGuard node-to-node encryption
+encryption:
+  enabled: true
+  type: wireguard
+  nodeEncryption: true
+
+# SPIFFE integration
+authentication:
+  mutual:
+    spiffe:
+      enabled: true
+      trustDomain: "eel.prod"
+
+# Hubble observability
+hubble:
+  enabled: true
+  relay:
+    enabled: true
+    replicas: 2
+  ui:
+    enabled: true
+    replicas: 2
+  tls:
+    auto:
+      enabled: true
+      method: certmanager
+      certManagerIssuerRef:
+        group: cert-manager.io
+        kind: ClusterIssuer
+        name: eel-step-ca
+
+# L7 policy
+l7Proxy: true
+
+# Operator HA
+operator:
+  replicas: 2
+
+# Prometheus metrics
+prometheus:
+  enabled: true
+  port: 9962
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+    labels:
+      eel.internal/managed-by: platform
+
+# IPAM
+ipam:
+  mode: kubernetes
+
+# MTU for IPsec/WireGuard overhead
+MTU: 1380
+
+# Endpoint routes
+endpointRoutes:
+  enabled: true
+
+# BPF masquerade
+bpf:
+  masquerade: true
+  hostRouting: true
+
+# Local redirect policy
+localRedirectPolicy: true
+
+# Cluster mesh (for DR + edge backhaul)
+clustermesh:
+  useAPIServer: true
+  apiserver:
+    replicas: 2
+    tls:
+      auto:
+        enabled: true
+        method: certmanager
+
+# Resource limits
+resources:
+  agent:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 2000m
+      memory: 1Gi
+  operator:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi

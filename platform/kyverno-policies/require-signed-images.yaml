@@ -1,0 +1,42 @@
+# Kyverno policy: require cosign-signed images from Harbor
+# Enforcement: Enforce in prod, Audit in staging (overlay sets validationFailureAction)
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: eel-require-signed-images
+  annotations:
+    policies.kyverno.io/title: Require Signed Images
+    policies.kyverno.io/category: Software Supply Chain
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >
+      All container images must be signed with cosign against the eel Harbor registry
+      public key. Unsigned images are blocked in production.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: check-image-signature
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaceSelector:
+                matchExpressions:
+                  - key: eel.internal/managed-by
+                    operator: In
+                    values: [platform, service]
+      verifyImages:
+        - imageReferences:
+            - "harbor.eel.internal/eel/*"
+          attestors:
+            - entries:
+                - keys:
+                    publicKeys: |-
+                      -----BEGIN PUBLIC KEY-----
+                      # Replace with actual cosign public key from platform/harbor/cosign.pub
+                      -----END PUBLIC KEY-----
+                    rekor:
+                      url: https://rekor.eel.internal
+          required: true
+          mutateDigest: true
+          verifyDigest: true

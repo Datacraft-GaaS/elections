@@ -1,0 +1,66 @@
+# ClusterIssuers for cert-manager
+# 1. step-ca (internal PKI, rooted in HSM) — used by all services for internal TLS + SPIRE
+# 2. Let's Encrypt (public, edge only) — used by Envoy Gateway for public HTTPS
+# 3. Kenyan DNS provider stub for ACME DNS-01
+
+# Internal PKI via step-ca (HSM-rooted)
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: eel-step-ca
+  labels:
+    eel.internal/managed-by: platform
+spec:
+  acme:
+    server: https://ca.eel.internal/acme/acme/directory
+    email: platform@eel.internal
+    privateKeySecretRef:
+      name: eel-step-ca-account-key
+    solvers:
+      - dns01:
+          webhook:
+            groupName: eel.internal
+            solverName: eel-dns
+---
+# Public Let's Encrypt (edge-only; not deployed to DR sites)
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: eel-letsencrypt-prod
+  labels:
+    eel.internal/managed-by: platform
+    eel.internal/edge-only: "true"
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: platform@eel.internal
+    privateKeySecretRef:
+      name: eel-letsencrypt-prod-account-key
+    solvers:
+      - dns01:
+          webhook:
+            groupName: eel.internal
+            solverName: kenya-dns-provider
+        selector:
+          dnsZones:
+            - "eel.go.ke"
+            - "iebc.or.ke"
+---
+# Kenyan DNS provider webhook stub (implementation in platform/cert-manager/dns-webhook/)
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: eel-letsencrypt-staging
+  labels:
+    eel.internal/managed-by: platform
+    eel.internal/staging-only: "true"
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: platform@eel.internal
+    privateKeySecretRef:
+      name: eel-letsencrypt-staging-account-key
+    solvers:
+      - http01:
+          ingress:
+            class: ""

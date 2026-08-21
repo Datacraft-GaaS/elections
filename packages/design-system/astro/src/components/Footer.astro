@@ -1,0 +1,28 @@
+---
+export interface Props {
+	year?: number;
+	links?: Array<{ label: string; href: string }>;
+}
+const { year = new Date().getFullYear(), links = [] } = Astro.props;
+---
+<footer class="eel-footer" role="contentinfo">
+	<div class="eel-footer__inner">
+		<p class="eel-footer__copy">&copy; {year} IEBC. All rights reserved.</p>
+		{links.length > 0 && (
+			<nav aria-label="Footer navigation">
+				<ul class="eel-footer__links" role="list">
+					{links.map(l => <li><a href={l.href} class="eel-footer__link">{l.label}</a></li>)}
+				</ul>
+			</nav>
+		)}
+	</div>
+</footer>
+<style>
+	.eel-footer { background: #111827; color: #9ca3af; padding: 2rem 1rem; }
+	.eel-footer__inner { max-width: 80rem; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+	.eel-footer__copy { margin: 0; font-size: 0.875rem; }
+	.eel-footer__links { display: flex; gap: 1.5rem; list-style: none; margin: 0; padding: 0; }
+	.eel-footer__link { color: #9ca3af; text-decoration: none; font-size: 0.875rem; }
+	.eel-footer__link:hover { color: #f9fafb; text-decoration: underline; }
+	.eel-footer__link:focus-visible { outline: 2px solid #4f83f1; outline-offset: 2px; }
+</style>

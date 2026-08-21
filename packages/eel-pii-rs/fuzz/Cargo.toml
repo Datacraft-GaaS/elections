@@ -1,0 +1,19 @@
+[package]
+name = "eel-pii-rs-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[[bin]]
+name = "pii_roundtrip"
+path = "fuzz_targets/pii_roundtrip.rs"
+test = false
+doc = false
+
+[dependencies]
+libfuzzer-sys = "0.4"
+eel-pii-rs    = { path = "..", default-features = false }
+serde_json    = "1"

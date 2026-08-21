@@ -1,0 +1,169 @@
+# Rook-Ceph cluster manifest for on-prem DR sites
+# 3 mon, 3 mgr, RGW for S3, dashboard
+apiVersion: ceph.rook.io/v1
+kind: CephCluster
+metadata:
+  name: eel-ceph
+  namespace: rook-ceph
+  labels:
+    eel.internal/managed-by: platform
+spec:
+  cephVersion:
+    image: quay.io/ceph/ceph:v18.2.2
+    allowUnsupported: false
+
+  dataDirHostPath: /var/lib/rook
+
+  skipUpgradeChecks: false
+  continueUpgradeAfterChecksEvenIfNotHealthy: false
+  waitTimeoutForHealthyOSDInMinutes: 10
+
+  mon:
+    count: 3
+    allowMultiplePerNode: false
+
+  mgr:
+    count: 3
+    allowMultiplePerNode: false
+    modules:
+      - name: pg_autoscaler
+        enabled: true
+      - name: dashboard
+        enabled: true
+      - name: prometheus
+        enabled: true
+
+  dashboard:
+    enabled: true
+    ssl: true
+    port: 8443
+
+  monitoring:
+    enabled: true
+    rulesNamespaceOverride: monitoring
+
+  network:
+    connections:
+      encryption:
+        enabled: true
+      compression:
+        enabled: false
+      requireMsgr2: true
+
+  crashCollector:
+    disable: false
+    daysToRetain: 30
+
+  cleanupPolicy:
+    confirmation: ""
+    sanitizeDisks:
+      method: quick
+      dataSource: zero
+      iteration: 1
+    allowUninstallWithVolumes: false
+
+  placement:
+    all:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: role
+                  operator: In
+                  values:
+                    - storage-node
+
+  storage:
+    useAllNodes: false
+    useAllDevices: false
+    deviceFilter: "^sd[b-z]"
+    config:
+      osdsPerDevice: "1"
+      encryptedDevice: "true"
+
+  resources:
+    mon:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+    mgr:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+    osd:
+      requests:
+        cpu: 500m
+        memory: 2Gi
+      limits:
+        cpu: 4000m
+        memory: 8Gi
+---
+# Object store (S3-compatible via RGW) — MinIO layered on top is optional
+apiVersion: ceph.rook.io/v1
+kind: CephObjectStore
+metadata:
+  name: eel-s3
+  namespace: rook-ceph
+spec:
+  metadataPool:
+    failureDomain: host
+    replicated:
+      size: 3
+  dataPool:
+    failureDomain: host
+    erasureCoded:
+      dataChunks: 4
+      codingChunks: 2
+  preservePoolsOnDelete: true
+  gateway:
+    type: s3
+    sslCertificateRef: eel-rgw-tls
+    port: 80
+    securePort: 443
+    instances: 2
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+---
+# Block storage pool for PVCs
+apiVersion: ceph.rook.io/v1
+kind: CephBlockPool
+metadata:
+  name: eel-block
+  namespace: rook-ceph
+spec:
+  failureDomain: host
+  replicated:
+    size: 3
+    requireSafeReplicaSize: true
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ceph-block
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: rook-ceph.rbd.csi.ceph.com
+parameters:
+  clusterID: rook-ceph
+  pool: eel-block
+  imageFormat: "2"
+  imageFeatures: layering,fast-diff,object-map,deep-flatten,exclusive-lock
+  csi.storage.k8s.io/provisioner-secret-name: rook-csi-rbd-provisioner
+  csi.storage.k8s.io/provisioner-secret-namespace: rook-ceph
+  csi.storage.k8s.io/controller-expand-secret-name: rook-csi-rbd-provisioner
+  csi.storage.k8s.io/controller-expand-secret-namespace: rook-ceph
+  csi.storage.k8s.io/node-stage-secret-name: rook-csi-rbd-node
+  csi.storage.k8s.io/node-stage-secret-namespace: rook-ceph
+reclaimPolicy: Retain
+allowVolumeExpansion: true

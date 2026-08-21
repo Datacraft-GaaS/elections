@@ -1,0 +1,31 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: eel-require-svid-label
+  annotations:
+    policies.kyverno.io/title: Require Workload SVID Label
+    policies.kyverno.io/category: Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >
+      Every workload pod must carry the eel.internal/spiffe-id label indicating
+      its SPIFFE SVID. This is enforced so SPIRE attestation is explicit and auditable.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-svid-label
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaceSelector:
+                matchExpressions:
+                  - key: eel.internal/managed-by
+                    operator: In
+                    values: [service]
+      validate:
+        message: "Pod must have label eel.internal/spiffe-id with a spiffe:// URI."
+        pattern:
+          metadata:
+            labels:
+              eel.internal/spiffe-id: "spiffe://?*/?*"

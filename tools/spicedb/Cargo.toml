@@ -1,0 +1,7 @@
+# Stub so the workspace glob tools/* does not break cargo.
+# tools/spicedb is a script/binary directory, not a Rust crate.
+[package]
+name    = "eel-spicedb-tools"
+version = "0.0.0"
+edition = "2021"
+publish = false

@@ -5,7 +5,71 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 publish = false
+description = "Cryptographic primitives for the eel platform (ADR-0005)"
 
 [lib]
 name = "eel_crypto_rs"
 path = "src/lib.rs"
+
+[dependencies]
+# Always available (pure Rust)
+blake3          = "1"
+sha2            = "0.10"
+digest          = "0.10"
+subtle          = "2"
+hex             = "0.4"
+base64          = "0.22"
+rand_core       = { version = "0.6", features = ["getrandom"] }
+serde           = { version = "1", features = ["derive"] }
+serde_json      = { workspace = true }
+thiserror       = { workspace = true }
+tracing         = { workspace = true }
+
+# TSA client (async, pure Rust via rustls)
+reqwest         = { version = "0.12", features = ["rustls-tls", "json"], default-features = false, optional = true }
+tokio           = { workspace = true, optional = true }
+
+# Ed25519 (pure Rust)
+ed25519-dalek   = { workspace = true }
+
+# P-384 ECDSA (pure Rust; used in pq-hybrid alongside ML-DSA)
+p384            = { version = "0.13", features = ["ecdsa"], optional = true }
+ecdsa           = { version = "0.16", optional = true }
+# rand_core already declared above (always-on with getrandom); pq-hybrid reuses it
+
+# PQ: ML-DSA-65 + ML-KEM-768 (requires liboqs C library)
+oqs             = { workspace = true, optional = true }
+
+# PKCS#11 session pool (requires PKCS#11 runtime library)
+cryptoki        = { workspace = true, optional = true }
+parking_lot     = { version = "0.12", optional = true }
+
+# Cosign / sigstore bundle verification
+sigstore        = { workspace = true, optional = true }
+
+[dev-dependencies]
+proptest        = "1"
+tokio           = { workspace = true }
+serde_json      = { workspace = true }
+hex             = "0.4"
+
+[features]
+default = ["tsa"]
+
+# RFC 3161 TSA client (reqwest + tokio; pure Rust with rustls)
+tsa = ["dep:reqwest", "dep:tokio"]
+
+# ML-DSA-65 + ECDSA P-384 hybrid (requires liboqs)
+pq-hybrid = ["dep:oqs", "dep:p384", "dep:ecdsa"]  # rand_core always present (non-optional)
+
+# SLH-DSA archive signing (requires liboqs with slhdsa support)
+pq-slh = ["dep:oqs"]
+
+# ML-KEM-768 + X25519 key encapsulation (requires liboqs)
+pq-kem = ["dep:oqs"]
+
+# PKCS#11 session pool (requires a PKCS#11 runtime e.g. SoftHSMv2)
+pkcs11 = ["dep:cryptoki", "dep:parking_lot"]
+
+# Cosign bundle verification (requires sigstore crate)
+cosign = ["dep:sigstore"]
