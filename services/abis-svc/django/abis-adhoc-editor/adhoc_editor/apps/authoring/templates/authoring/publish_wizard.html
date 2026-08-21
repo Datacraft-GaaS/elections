@@ -1,0 +1,28 @@
+{% extends "authoring/base.html" %}
+{% block title %}Publish Report{% endblock %}
+{% block content %}
+<h2>Publish Report Version</h2>
+
+<form method="post" aria-label="Publish wizard">
+    {% csrf_token %}
+    <fieldset style="border:1px solid #dee2e6;padding:16px;border-radius:8px;margin-bottom:16px;">
+        <legend>Output formats</legend>
+        <label><input type="checkbox" name="formats" value="pdf"> PDF</label><br>
+        <label><input type="checkbox" name="formats" value="docx" checked> DOCX</label><br>
+        <label><input type="checkbox" name="formats" value="markdown" checked> Markdown</label><br>
+        <label><input type="checkbox" name="formats" value="csv" checked> CSV</label><br>
+        <label><input type="checkbox" name="formats" value="json"> JSON</label>
+    </fieldset>
+
+    <fieldset style="border:1px solid #dee2e6;padding:16px;border-radius:8px;margin-bottom:16px;">
+        <legend>Schedule (optional cron)</legend>
+        <label for="schedule">Cron expression:</label>
+        <input id="schedule" name="schedule" type="text" placeholder="0 8 * * 1"
+            style="width:200px;padding:6px;margin-left:8px;">
+        <p style="font-size:0.8rem;color:#6c757d;">Leave empty for on-demand only.</p>
+    </fieldset>
+
+    <button type="submit" class="btn btn-primary">Publish</button>
+    <a href="javascript:history.back()" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

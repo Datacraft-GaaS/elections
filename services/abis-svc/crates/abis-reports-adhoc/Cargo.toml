@@ -1,0 +1,42 @@
+[package]
+name            = "eel-abis-reports-adhoc"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish         = false
+description     = "Ad-hoc reports authoring, preview, and publish engine for ABIS"
+
+[lib]
+name = "eel_abis_reports_adhoc"
+path = "src/lib.rs"
+
+[dependencies]
+axum          = { workspace = true }
+tokio         = { workspace = true }
+sqlx          = { workspace = true }
+serde         = { workspace = true }
+serde_json    = { workspace = true }
+thiserror     = { workspace = true }
+tracing       = { workspace = true }
+uuid          = { workspace = true }
+chrono        = { workspace = true }
+tera          = { workspace = true }
+sqlparser     = { workspace = true }
+sha2          = { workspace = true }
+blake3        = { workspace = true }
+hex           = { workspace = true }
+tokio-util    = { workspace = true }
+tempfile      = { workspace = true }
+
+eel-abis-render-docx     = { path = "../abis-render-docx" }
+eel-abis-render-markdown = { path = "../abis-render-markdown" }
+eel-crypto-rs  = { path = "../../../../packages/eel-crypto-rs" }
+eel-events-rs  = { path = "../../../../packages/eel-events-rs" }
+eel-outbox-rs  = { path = "../../../../packages/eel-outbox-rs" }
+eel-auth-rs    = { path = "../../../../packages/eel-auth-rs" }
+
+[dev-dependencies]
+rstest        = { workspace = true }
+tokio         = { workspace = true }
+tempfile      = { workspace = true }

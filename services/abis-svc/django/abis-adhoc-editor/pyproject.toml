@@ -1,0 +1,37 @@
+[project]
+name = "eel-abis-adhoc-editor"
+version = "0.1.0"
+requires-python = ">=3.12"
+description = "Staff-facing ad-hoc report authoring editor for the eel ABIS"
+dependencies = [
+    "django>=5.0",
+    "dj-database-url>=2.1",
+    "psycopg[binary]>=3.1",
+    "django-htmx>=1.17",
+    "django-widget-tweaks>=1.5",
+    "sqlparse>=0.5",
+    "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-django>=4.8",
+    "pyright>=1.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["adhoc_editor"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "adhoc_editor.settings"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.pyright]
+pythonVersion = "3.12"
+include = ["adhoc_editor", "tests"]

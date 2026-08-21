@@ -1,0 +1,22 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Editor from '../../components/Editor';
+import ShareDialog from '../../components/ShareDialog';
+---
+<Layout title="Edit Report">
+  <main id="main-content">
+    <nav aria-label="Breadcrumb">
+      <a href="/">Reports</a> &rsaquo; <span aria-current="page">Editor</span>
+    </nav>
+    <h1>Ad-hoc Report Editor</h1>
+    <!--
+      adhocId is read from ?id=<value> at runtime by the Editor component.
+      Pass a placeholder here; Editor ignores it if empty and reads from the URL.
+    -->
+    <Editor client:load adhocId="__URL__" />
+    <hr style="margin:24px 0;">
+    <div style="display:flex;gap:16px;align-items:flex-start;">
+      <ShareDialog client:load adhocId="__URL__" />
+    </div>
+  </main>
+</Layout>

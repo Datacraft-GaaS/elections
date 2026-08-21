@@ -1,0 +1,61 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="New Ad-hoc Report">
+  <main id="main-content">
+    <nav aria-label="Breadcrumb">
+      <a href="/">Reports</a> &rsaquo; <span aria-current="page">New</span>
+    </nav>
+    <h1>New Ad-hoc Report</h1>
+    <form id="new-report-form" style="max-width:480px;">
+      <label for="title-input" style="display:block;margin-bottom:4px;">Title:</label>
+      <input id="title-input" name="title" type="text" required style="width:100%;padding:8px;margin-bottom:12px;border:1px solid #ced4da;border-radius:4px;">
+
+      <label for="slug-input" style="display:block;margin-bottom:4px;">Slug:</label>
+      <input id="slug-input" name="slug" type="text" required pattern="[a-z0-9-]+" style="width:100%;padding:8px;margin-bottom:12px;border:1px solid #ced4da;border-radius:4px;">
+
+      <label for="visibility-select" style="display:block;margin-bottom:4px;">Visibility:</label>
+      <select id="visibility-select" name="visibility" style="width:100%;padding:8px;margin-bottom:12px;border:1px solid #ced4da;border-radius:4px;">
+        <option value="private">Private</option>
+        <option value="shared">Shared</option>
+        <option value="team">Team</option>
+        <option value="org">Organisation</option>
+      </select>
+
+      <label for="data-class-select" style="display:block;margin-bottom:4px;">Data class:</label>
+      <select id="data-class-select" name="data_class" style="width:100%;padding:8px;margin-bottom:12px;border:1px solid #ced4da;border-radius:4px;">
+        <option value="sensitive">Sensitive</option>
+        <option value="restricted">Restricted</option>
+        <option value="public">Public</option>
+      </select>
+
+      <div id="form-error" role="alert" style="color:#721c24;display:none;margin-bottom:8px;"></div>
+
+      <button type="submit" style="background:#0d6efd;color:#fff;border:none;padding:10px 20px;border-radius:4px;cursor:pointer;min-height:48px;">
+        Create report
+      </button>
+    </form>
+  </main>
+  <script>
+    const form = document.getElementById('new-report-form');
+    const errorEl = document.getElementById('form-error');
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target as HTMLFormElement);
+      const body = Object.fromEntries(fd.entries());
+      try {
+        const res = await fetch('/v1/adhoc/reports', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const id = data.adhoc_id;
+        if (id) window.location.href = `/adhoc/${id}`;
+      } catch (err) {
+        if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = String(err); }
+      }
+    });
+  </script>
+</Layout>

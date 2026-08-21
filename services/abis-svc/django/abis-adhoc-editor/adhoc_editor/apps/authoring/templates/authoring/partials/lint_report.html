@@ -1,0 +1,36 @@
+{% if error_msg %}
+<div class="lint-error" role="alert">
+    <strong>API error:</strong> {{ error_msg }}
+</div>
+{% else %}
+<div>
+    <p>
+        Safety score:
+        <span class="safety-badge {% if safety_score >= 0.8 %}badge-success{% elif safety_score >= 0.5 %}badge-warning{% else %}badge-danger{% endif %}"
+              aria-label="Safety score {{ safety_score|floatformat:2 }}">
+            {{ safety_score|floatformat:2 }}
+        </span>
+    </p>
+    {% if lint_report.errors %}
+    <ul aria-label="Lint errors" style="list-style:none;padding:0;">
+        {% for err in lint_report.errors %}
+        <li class="lint-error" role="alert">
+            <strong>[{{ err.code }}]</strong> {{ err.message }}
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% if lint_report.warnings %}
+    <ul aria-label="Lint warnings" style="list-style:none;padding:0;">
+        {% for warn in lint_report.warnings %}
+        <li class="lint-warn" role="status">
+            <strong>[{{ warn.code }}]</strong> {{ warn.message }}
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% if not lint_report.errors and not lint_report.warnings %}
+    <p class="badge badge-success" role="status">No issues found.</p>
+    {% endif %}
+</div>
+{% endif %}

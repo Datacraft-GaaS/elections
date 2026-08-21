@@ -1,0 +1,113 @@
+{% extends "authoring/base.html" %}
+{% block title %}{{ report.title|default:"New Report" }} - Editor{% endblock %}
+{% block extra_head %}
+<script src="https://unpkg.com/htmx.org@2.0.0" crossorigin="anonymous"></script>
+<style>
+    .editor-grid { display: grid; grid-template-columns: 280px 1fr 1fr; gap: 16px; height: calc(100vh - 200px); }
+    .pane { border: 1px solid #dee2e6; border-radius: 8px; padding: 16px; overflow-y: auto; background: #fff; }
+    .pane h3 { margin-top: 0; font-size: 1.125rem; border-bottom: 1px solid #dee2e6; padding-bottom: 8px; }
+    .source-textarea { width: 100%; height: 300px; font-family: monospace; font-size: 0.9rem; padding: 8px; border: 1px solid #ced4da; border-radius: 4px; }
+    .safety-badge { font-size: 1.2rem; font-weight: bold; padding: 4px 12px; border-radius: 16px; }
+    .lint-error { background: #f8d7da; color: #721c24; padding: 8px; border-radius: 4px; margin: 4px 0; }
+    .lint-warn { background: #fff3cd; color: #856404; padding: 8px; border-radius: 4px; margin: 4px 0; }
+    @media (max-width: 900px) { .editor-grid { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+{% block content %}
+<nav aria-label="Breadcrumb">
+    <a href="{% url 'report_list' %}">Reports</a> &rsaquo;
+    <span aria-current="page">{{ report.title|default:"New Report" }}</span>
+</nav>
+
+<div class="editor-grid" role="region" aria-label="Report editor">
+    <!-- Pane 1: Metadata -->
+    <section class="pane" aria-label="Report metadata">
+        <h3>Metadata</h3>
+        {% if report %}
+        <dl>
+            <dt>Title</dt><dd>{{ report.title }}</dd>
+            <dt>Slug</dt><dd><code>{{ report.slug }}</code></dd>
+            <dt>Visibility</dt><dd>{{ report.get_visibility_display }}</dd>
+            <dt>Data class</dt><dd>{{ report.get_data_class_display }}</dd>
+            {% if report.description %}
+            <dt>Description</dt><dd>{{ report.description }}</dd>
+            {% endif %}
+        </dl>
+        {% else %}
+        <p>Report not found (dev/test mode).</p>
+        {% endif %}
+    </section>
+
+    <!-- Pane 2: Source -->
+    <section class="pane" aria-label="SQL source editor">
+        <h3>SQL Source</h3>
+        <form
+            hx-post="{% url 'htmx_save_version' adhoc_id %}"
+            hx-target="#lint-result"
+            hx-swap="innerHTML"
+            aria-label="Save version form"
+        >
+            {% csrf_token %}
+            <label for="source-input">SQL query:</label>
+            <textarea
+                id="source-input"
+                name="source"
+                class="source-textarea"
+                aria-describedby="source-hint"
+                autocomplete="off"
+                spellcheck="false"
+            >{{ version.source|default:"" }}</textarea>
+            <p id="source-hint" style="font-size:0.8rem;color:#6c757d;">
+                Enter a SELECT statement. Tables must be in the allowed list.
+            </p>
+            <input type="hidden" name="source_type" value="sql">
+            <label for="allowed-tables">Allowed tables (comma-separated):</label>
+            <input id="allowed-tables" name="allowed_tables" type="text"
+                value="{{ version.allowed_tables|join:',' }}"
+                style="width:100%;padding:6px;margin:4px 0;">
+            <label for="commit-message">Commit message:</label>
+            <input id="commit-message" name="commit_message" type="text"
+                style="width:100%;padding:6px;margin:4px 0;">
+            <button type="submit" class="btn btn-primary" style="margin-top:8px;">Save version</button>
+        </form>
+
+        <div id="lint-result" role="region" aria-live="polite" aria-label="Lint results" style="margin-top:16px;"></div>
+    </section>
+
+    <!-- Pane 3: Preview -->
+    <section class="pane" aria-label="Query preview">
+        <h3>Preview</h3>
+        {% if version %}
+        <form
+            hx-post="{% url 'htmx_preview' version.version_id %}"
+            hx-target="#preview-result"
+            hx-swap="innerHTML"
+            aria-label="Run preview form"
+        >
+            {% csrf_token %}
+            <label for="format-select">Format:</label>
+            <select id="format-select" name="format" style="padding:6px;margin:4px 0;">
+                <option value="json">JSON</option>
+                <option value="markdown">Markdown</option>
+                <option value="docx">DOCX</option>
+                <option value="csv">CSV</option>
+            </select>
+            <label for="sample-limit">Sample limit (max 1000):</label>
+            <input id="sample-limit" name="sample_limit" type="number" value="100" min="1" max="1000"
+                style="width:80px;padding:6px;margin:4px 0;">
+            <button type="submit" class="btn btn-secondary" style="margin-top:8px;">Run preview</button>
+        </form>
+        {% else %}
+        <p>Save a version first to enable preview.</p>
+        {% endif %}
+
+        <div id="preview-result" role="region" aria-live="polite" aria-label="Preview results" style="margin-top:16px;overflow-x:auto;"></div>
+
+        {% if version %}
+        <div style="margin-top:16px;border-top:1px solid #dee2e6;padding-top:12px;">
+            <a href="{% url 'publish_wizard' version.version_id %}" class="btn btn-primary">Publish...</a>
+        </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

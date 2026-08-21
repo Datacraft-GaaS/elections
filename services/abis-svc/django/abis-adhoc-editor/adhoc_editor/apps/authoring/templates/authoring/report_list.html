@@ -1,0 +1,45 @@
+{% extends "authoring/base.html" %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<h2>Ad-hoc Reports</h2>
+
+<form method="get" aria-label="Filter reports">
+    <label for="q">Search:</label>
+    <input id="q" name="q" type="search" value="{{ search }}" placeholder="Title..." style="margin: 0 8px; padding: 6px;">
+    <label for="scope">Scope:</label>
+    <select id="scope" name="scope" style="padding: 6px; margin: 0 8px;">
+        <option value="my" {% if scope == "my" %}selected{% endif %}>My reports</option>
+        <option value="shared" {% if scope == "shared" %}selected{% endif %}>Shared with me</option>
+        <option value="team" {% if scope == "team" %}selected{% endif %}>Team</option>
+        <option value="org" {% if scope == "org" %}selected{% endif %}>Organisation</option>
+    </select>
+    <button type="submit" class="btn btn-primary">Filter</button>
+</form>
+
+<table role="grid" style="width:100%; border-collapse:collapse; margin-top:16px;">
+    <thead>
+        <tr>
+            <th scope="col">Title</th>
+            <th scope="col">Visibility</th>
+            <th scope="col">Data class</th>
+            <th scope="col">Updated</th>
+            <th scope="col">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for report in reports %}
+        <tr>
+            <td><a href="{% url 'report_editor' report.adhoc_id %}">{{ report.title }}</a></td>
+            <td>{{ report.get_visibility_display }}</td>
+            <td>{{ report.get_data_class_display }}</td>
+            <td>{{ report.updated_at|date:"Y-m-d H:i" }}</td>
+            <td>
+                <a href="{% url 'report_editor' report.adhoc_id %}" class="btn btn-secondary" style="font-size:0.85rem;min-height:36px;">Edit</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" style="text-align:center;padding:24px;">No reports found.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

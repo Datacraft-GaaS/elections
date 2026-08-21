@@ -1,0 +1,37 @@
+{% load authoring_tags %}
+{% if error_msg %}
+<div role="alert" style="background:#f8d7da;color:#721c24;padding:12px;border-radius:4px;">
+    <strong>Preview error:</strong> {{ error_msg }}
+</div>
+{% elif not rows %}
+<p role="status">No rows returned.</p>
+{% else %}
+<p role="status" style="font-size:0.85rem;color:#6c757d;">{{ rows|length }} rows (format: {{ format }})</p>
+<div style="overflow-x:auto;">
+    <table role="grid" style="border-collapse:collapse;width:100%;font-size:0.85rem;">
+        <thead>
+            <tr>
+                {% for header in headers %}
+                <th scope="col" style="border:1px solid #dee2e6;padding:6px 10px;background:#f8f9fa;text-align:left;">
+                    {{ header }}
+                </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                {% for header in headers %}
+                <td style="border:1px solid #dee2e6;padding:6px 10px;">{{ row|lookup:header }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% if preview_id %}
+<div style="margin-top:8px;">
+    <span style="font-size:0.8rem;color:#6c757d;">Preview ID: {{ preview_id }}</span>
+</div>
+{% endif %}
+{% endif %}

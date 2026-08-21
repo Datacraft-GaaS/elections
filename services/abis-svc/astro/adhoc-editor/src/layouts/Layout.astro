@@ -1,0 +1,39 @@
+---
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+---
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title} | eel ABIS Ad-hoc Editor</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; }
+      body { margin: 0; font-family: system-ui, sans-serif; background: #f8f9fa; color: #212529; }
+      a:focus, button:focus, input:focus, select:focus, textarea:focus {
+        outline: 3px solid #0d6efd; outline-offset: 2px;
+      }
+      .skip-link { position: absolute; top: -40px; left: 0; background: #000; color: #fff; padding: 8px; z-index: 100; }
+      .skip-link:focus { top: 0; }
+      header { background: #1a1a2e; color: #fff; padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
+      header h1 { margin: 0; font-size: 1.2rem; }
+      nav.site-nav a { color: #adb5bd; margin-right: 16px; text-decoration: none; }
+      nav.site-nav a:hover { color: #fff; text-decoration: underline; }
+      main { padding: 24px; max-width: 1400px; margin: 0 auto; }
+    </style>
+  </head>
+  <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <header role="banner">
+      <h1>eel ABIS</h1>
+      <nav class="site-nav" aria-label="Main navigation">
+        <a href="/">Reports</a>
+        <a href="/adhoc/new">New report</a>
+      </nav>
+    </header>
+    <slot />
+  </body>
+</html>

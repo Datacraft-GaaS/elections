@@ -1,0 +1,9 @@
+{% if error_msg %}
+<div role="alert" style="background:#f8d7da;color:#721c24;padding:12px;border-radius:4px;">
+    <strong>Publish failed:</strong> {{ error_msg }}
+</div>
+{% elif definition_id %}
+<div role="status" style="background:#d4edda;color:#155724;padding:12px;border-radius:4px;">
+    Published. Definition ID: <code>{{ definition_id }}</code>
+</div>
+{% endif %}

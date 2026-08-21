@@ -1,0 +1,41 @@
+---
+// Landing page: report list
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="Ad-hoc Reports">
+  <main id="main-content">
+    <h1>Ad-hoc Reports</h1>
+    <p>Select a report to edit, or create a new one.</p>
+    <div id="report-list" aria-live="polite" aria-label="Report list">
+      <p>Loading reports...</p>
+    </div>
+    <a
+      href="/adhoc/new"
+      style="display:inline-block;background:#0d6efd;color:#fff;padding:10px 20px;border-radius:4px;text-decoration:none;margin-top:16px;min-height:48px;line-height:28px;"
+    >
+      New report
+    </a>
+  </main>
+  <script>
+    async function loadReports() {
+      const el = document.getElementById('report-list');
+      if (!el) return;
+      try {
+        const res = await fetch('/v1/adhoc/reports');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const reports = data.reports ?? [];
+        if (reports.length === 0) {
+          el.innerHTML = '<p>No reports yet.</p>';
+          return;
+        }
+        el.innerHTML = `<ul>${reports.map((r) =>
+          `<li><a href="/adhoc/editor?id=${r.adhoc_id}">${r.title}</a> (${r.visibility})</li>`
+        ).join('')}</ul>`;
+      } catch {
+        el.innerHTML = '<p>Could not load reports (API unavailable in dev mode).</p>';
+      }
+    }
+    loadReports();
+  </script>
+</Layout>
