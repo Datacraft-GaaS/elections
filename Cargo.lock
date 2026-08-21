@@ -2704,12 +2704,268 @@ dependencies = [
 ]
 
 [[package]]
+name = "eel-abis-bulk-ops"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "csv",
+ "rstest",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.20",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "eel-abis-cancelable"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "chrono",
+ "hex",
+ "proptest",
+ "rstest",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror 2.0.20",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "eel-abis-cert-fido"
+version = "0.1.0"
+
+[[package]]
+name = "eel-abis-cert-frvt"
+version = "0.1.0"
+
+[[package]]
+name = "eel-abis-drift-monitor"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "rstest",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.20",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "eel-abis-enhancement"
+version = "0.1.0"
+dependencies = [
+ "rstest",
+ "serde",
+ "thiserror 2.0.20",
+]
+
+[[package]]
 name = "eel-abis-enrolment"
 version = "0.1.0"
 dependencies = [
  "blake3",
  "chrono",
  "eel-events-rs",
+ "rstest",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.20",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "eel-abis-explainability"
+version = "0.1.0"
+dependencies = [
+ "rstest",
+ "serde",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "eel-abis-fhe-match"
+version = "0.1.0"
+dependencies = [
+ "proptest",
+ "rstest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "eel-abis-fusion-advanced"
+version = "0.1.0"
+dependencies = [
+ "rstest",
+ "serde",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "eel-abis-modality-ear"
+version = "0.1.0"
+dependencies = [
+ "byteorder",
+ "chrono",
+ "rstest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "eel-abis-modality-gait"
+version = "0.1.0"
+dependencies = [
+ "byteorder",
+ "chrono",
+ "rstest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "eel-abis-modality-latent"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "byteorder",
+ "chrono",
+ "rstest",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror 2.0.20",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "eel-abis-modality-palm"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "byteorder",
+ "chrono",
+ "rstest",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror 2.0.20",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "eel-abis-modality-periocular"
+version = "0.1.0"
+dependencies = [
+ "byteorder",
+ "chrono",
+ "rstest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "eel-abis-modality-signature"
+version = "0.1.0"
+dependencies = [
+ "byteorder",
+ "chrono",
+ "rstest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "eel-abis-modality-vein"
+version = "0.1.0"
+dependencies = [
+ "byteorder",
+ "chrono",
+ "rstest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "eel-abis-modality-voice"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "rstest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "eel-abis-model-canary"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "rstest",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.20",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "eel-abis-pad-advanced"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "hex",
+ "proptest",
+ "rstest",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror 2.0.20",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "eel-abis-rectification"
+version = "0.1.0"
+dependencies = [
+ "chrono",
  "rstest",
  "serde",
  "serde_json",
@@ -2852,6 +3108,118 @@ dependencies = [
 ]
 
 [[package]]
+name = "eel-abis-shielding"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "proptest",
+ "rstest",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "eel-abis-smpc-match"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "proptest",
+ "rstest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "eel-abis-standards-ansi-nist"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "hex",
+ "rstest",
+ "serde",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "eel-abis-standards-cbeff"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "rstest",
+ "serde",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "eel-abis-standards-ebts"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "rstest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "eel-abis-standards-icao"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "hex",
+ "rstest",
+ "serde",
+ "sha2 0.10.9",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "eel-abis-standards-interpol"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "rstest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "eel-abis-standards-minex"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "rstest",
+ "serde",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "eel-abis-threshold-tuning"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "rstest",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.20",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "eel-abis-twin-registry"
+version = "0.1.0"
+
+[[package]]
 name = "eel-abis-vendor"
 version = "0.1.0"
 dependencies = [
@@ -2871,6 +3239,22 @@ dependencies = [
  "tracing",
  "uuid",
  "wiremock",
+]
+
+[[package]]
+name = "eel-abis-watchlist"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "byteorder",
+ "chrono",
+ "rstest",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror 2.0.20",
+ "tracing",
+ "uuid",
 ]
 
 [[package]]
