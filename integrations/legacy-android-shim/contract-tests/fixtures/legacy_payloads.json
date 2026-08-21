@@ -1,0 +1,22 @@
+[
+  {"kit_id":"KIT-001","op":"REG","ts":"2026-01-01T08:00:00Z","seq":1,"data":{"voter_id":"V001","station":"NBI-001"},"sig":"aabbcc"},
+  {"kit_id":"KIT-002","op":"AUTH","ts":"2026-01-01T08:01:00Z","seq":2,"data":{"voter_id":"V002"},"sig":"ddeeff"},
+  {"kit_id":"KIT-003","op":"SYNC","ts":"2026-01-01T08:02:00Z","seq":3,"data":{"batch":50},"sig":"112233"},
+  {"kit_id":"KIT-004","op":"REG","ts":"2026-01-01T08:03:00Z","seq":4,"data":{"voter_id":"V004","station":"MSA-001"},"sig":"445566"},
+  {"kit_id":"KIT-005","op":"AUTH","ts":"2026-01-01T08:04:00Z","seq":5,"data":{"voter_id":"V005"},"sig":"778899"},
+  {"kit_id":"KIT-006","op":"VOTE","ts":"2026-01-01T08:05:00Z","seq":6,"data":{"ballot_ref":"BR-001"},"sig":"aabbcc01"},
+  {"kit_id":"KIT-007","op":"REG","ts":"2026-01-01T08:06:00Z","seq":7,"data":{"voter_id":"V007","station":"KSM-001"},"sig":"aabbcc02"},
+  {"kit_id":"KIT-008","op":"AUTH","ts":"2026-01-01T08:07:00Z","seq":8,"data":{"voter_id":"V008"},"sig":"aabbcc03"},
+  {"kit_id":"KIT-009","op":"SYNC","ts":"2026-01-01T08:08:00Z","seq":9,"data":{"batch":75},"sig":"aabbcc04"},
+  {"kit_id":"KIT-010","op":"REG","ts":"2026-01-01T08:09:00Z","seq":10,"data":{"voter_id":"V010","station":"ELD-001"},"sig":"aabbcc05"},
+  {"kit_id":"KIT-011","op":"AUTH","ts":"2026-01-01T08:10:00Z","seq":11,"data":{"voter_id":"V011"},"sig":"aabbcc06"},
+  {"kit_id":"KIT-012","op":"VOTE","ts":"2026-01-01T08:11:00Z","seq":12,"data":{"ballot_ref":"BR-002"},"sig":"aabbcc07"},
+  {"kit_id":"KIT-013","op":"REG","ts":"2026-01-01T08:12:00Z","seq":13,"data":{"voter_id":"V013","station":"NYR-001"},"sig":"aabbcc08"},
+  {"kit_id":"KIT-014","op":"SYNC","ts":"2026-01-01T08:13:00Z","seq":14,"data":{"batch":100},"sig":"aabbcc09"},
+  {"kit_id":"KIT-015","op":"AUTH","ts":"2026-01-01T08:14:00Z","seq":15,"data":{"voter_id":"V015"},"sig":"aabbcc10"},
+  {"kit_id":"KIT-016","op":"REG","ts":"2026-01-01T08:15:00Z","seq":16,"data":{"voter_id":"V016","station":"GAR-001"},"sig":"aabbcc11"},
+  {"kit_id":"KIT-017","op":"VOTE","ts":"2026-01-01T08:16:00Z","seq":17,"data":{"ballot_ref":"BR-003"},"sig":"aabbcc12"},
+  {"kit_id":"KIT-018","op":"AUTH","ts":"2026-01-01T08:17:00Z","seq":18,"data":{"voter_id":"V018"},"sig":"aabbcc13"},
+  {"kit_id":"KIT-019","op":"SYNC","ts":"2026-01-01T08:18:00Z","seq":19,"data":{"batch":30},"sig":"aabbcc14"},
+  {"kit_id":"KIT-020","op":"REG","ts":"2026-01-01T08:19:00Z","seq":20,"data":{"voter_id":"V020","station":"MOM-001"},"sig":"aabbcc15"}
+]

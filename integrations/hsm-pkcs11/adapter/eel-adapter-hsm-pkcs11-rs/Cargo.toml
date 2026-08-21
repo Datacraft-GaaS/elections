@@ -1,0 +1,20 @@
+[workspace]
+
+[package]
+name = "eel-adapter-hsm-pkcs11-rs"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+publish = false
+description = "HSM PKCS#11 vendor profiles: Thales Luna 7, Utimaco CryptoServer, SoftHSMv2"
+
+[lib]
+name = "eel_adapter_hsm_pkcs11_rs"
+path = "src/lib.rs"
+
+[dependencies]
+thiserror = "1"
+serde = { version = "1", features = ["derive"] }
+tracing = "0.1"
+
+[dev-dependencies]

@@ -1,0 +1,8 @@
+FROM python:3.12-slim
+WORKDIR /app
+COPY src/ src/
+COPY pyproject.toml .
+RUN pip install --no-cache-dir -e .
+ENV SMS_LATENCY_MS=0
+ENV SMS_ERROR_RATE=0
+CMD ["uvicorn", "double.service:app", "--host", "0.0.0.0", "--port", "8090"]

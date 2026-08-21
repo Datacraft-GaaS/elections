@@ -1,0 +1,21 @@
+[workspace]
+
+[package]
+name = "eel-adapter-mrz-rs"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+publish = false
+description = "ICAO 9303 MRZ parser (TD1, TD2, TD3) with checksum verification"
+
+[lib]
+name = "eel_adapter_mrz_rs"
+path = "src/lib.rs"
+crate-type = ["lib", "cdylib"]
+
+[dependencies]
+thiserror = "1"
+serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+rstest = "0.22"

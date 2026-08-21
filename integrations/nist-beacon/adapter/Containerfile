@@ -1,0 +1,3 @@
+# eel-adapter-nist-beacon-rs is a library crate consumed by rla-audit-tool.
+# No standalone container needed. See services/rla-audit-tool for the binary.
+FROM scratch

@@ -1,0 +1,14 @@
+[workspace]
+
+[package]
+name = "eel-adapter-hsm-pkcs11-contract-tests"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+eel-adapter-hsm-pkcs11-rs = { path = "../adapter/eel-adapter-hsm-pkcs11-rs" }
+
+[[test]]
+name = "vendor_profiles"
+path = "tests/vendor_profiles.rs"

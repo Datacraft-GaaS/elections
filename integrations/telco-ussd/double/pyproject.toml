@@ -1,0 +1,19 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "eel-adapter-telco-ussd-double"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+	"fastapi>=0.115",
+	"uvicorn>=0.30",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/double"]
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "standard"
