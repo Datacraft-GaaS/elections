@@ -1,0 +1,9 @@
+rules:
+  - id: no-raw-kafka-producer
+    message: Use eel-outbox-py emit() instead of a raw Kafka producer
+    severity: ERROR
+    languages: [python]
+    patterns:
+      - pattern: aiokafka.AIOKafkaProducer(...)
+      - pattern: kafka.KafkaProducer(...)
+      - pattern: confluent_kafka.Producer(...)

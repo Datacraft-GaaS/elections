@@ -1,0 +1,36 @@
+[package]
+name = "{{project-name}}-api"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[features]
+conformance-suite = []
+
+[dependencies]
+axum             = { workspace = true }
+tokio            = { workspace = true }
+serde            = { workspace = true }
+serde_json       = { workspace = true }
+utoipa           = { workspace = true }
+utoipa-swagger-ui = { workspace = true }
+thiserror        = { workspace = true }
+tracing          = { workspace = true }
+tracing-subscriber = { workspace = true }
+uuid             = { workspace = true }
+sqlx             = { workspace = true }
+
+eel-api-server-rs    = { workspace = true }
+eel-auth-rs          = { workspace = true }
+eel-resilience-rs    = { workspace = true }
+eel-observability-rs = { workspace = true }
+eel-outbox-rs        = { workspace = true }
+eel-events-rs        = { workspace = true }
+
+[lib]
+name = "{{project_name}}_api"
+path = "src/lib.rs"
+
+[[bin]]
+name = "{{project-name}}"
+path = "src/main.rs"

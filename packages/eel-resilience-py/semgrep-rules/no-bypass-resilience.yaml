@@ -1,0 +1,20 @@
+rules:
+  - id: no-bypass-resilience-get
+    pattern: httpx.get(...)
+    message: >
+      Direct httpx.get() call bypasses the circuit breaker. Wrap with
+      CircuitBreaker.call() from eel_resilience.
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: resilience
+
+  - id: no-bypass-resilience-post
+    pattern: httpx.post(...)
+    message: >
+      Direct httpx.post() call bypasses the circuit breaker. Wrap with
+      CircuitBreaker.call() from eel_resilience.
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: resilience

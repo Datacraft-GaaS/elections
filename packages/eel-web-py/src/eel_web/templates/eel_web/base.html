@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Eel{% endblock %}</title>
+    <script src="https://unpkg.com/htmx.org@1.9/dist/htmx.min.js" defer></script>
+    {% block head %}{% endblock %}
+</head>
+<body>
+    {% include "eel_web/partials/nav.html" %}
+    <main id="main-content" hx-history-elt>
+        {% include "eel_web/partials/messages.html" %}
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

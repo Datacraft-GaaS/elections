@@ -1,0 +1,14 @@
+rules:
+  - id: no-unbounded-task
+    patterns:
+      - pattern: asyncio.create_task($CORO)
+      - pattern-not: asyncio.create_task($CORO, name=...)
+    message: >
+      asyncio.create_task() called without a timeout. Use asyncio.wait_for() or
+      eel_resilience.with_timeout() to bound the task duration.
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: resilience
+      references:
+        - https://docs.python.org/3/library/asyncio-task.html#asyncio.wait_for

@@ -1,0 +1,30 @@
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+
+[workspace.package]
+edition     = "2021"
+license     = "Apache-2.0"
+rust-version = "1.83"
+version     = "0.1.0"
+authors     = ["eel contributors"]
+
+[workspace.dependencies]
+axum             = { version = "0.8", features = ["macros", "tokio"] }
+tokio            = { version = "1", features = ["full"] }
+serde            = { version = "1", features = ["derive"] }
+serde_json       = { version = "1" }
+utoipa           = { version = "4", features = ["axum_extras", "uuid"] }
+utoipa-swagger-ui = { version = "7", features = ["axum"] }
+thiserror        = { version = "2" }
+tracing          = { version = "0.1" }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+uuid             = { version = "1", features = ["v4", "v7", "serde"] }
+sqlx             = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "migrate"] }
+
+eel-api-server-rs    = { git = "https://gitea.internal/eel/eel", tag = "latest" }
+eel-auth-rs          = { git = "https://gitea.internal/eel/eel", tag = "latest" }
+eel-resilience-rs    = { git = "https://gitea.internal/eel/eel", tag = "latest" }
+eel-observability-rs = { git = "https://gitea.internal/eel/eel", tag = "latest" }
+eel-outbox-rs        = { git = "https://gitea.internal/eel/eel", tag = "latest" }
+eel-events-rs        = { git = "https://gitea.internal/eel/eel", tag = "latest" }

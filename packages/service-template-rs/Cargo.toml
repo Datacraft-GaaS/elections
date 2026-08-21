@@ -5,7 +5,24 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 publish = false
+description = "cargo-generate template for eel Rust services; also ships the shared conformance test harness"
 
 [lib]
 name = "service_template_rs"
 path = "src/lib.rs"
+
+[features]
+conformance-suite = []
+
+[dependencies]
+tokio        = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+thiserror    = { workspace = true }
+tracing      = { workspace = true }
+
+[dev-dependencies]
+tokio              = { workspace = true }
+rstest             = { workspace = true }
+reqwest            = { version = "0.12", features = ["json"], default-features = false }
+eel-api-server-rs  = { path = "../eel-api-server-rs" }

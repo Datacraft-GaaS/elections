@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "eel-observability-py"
+version = "0.1.0"
+description = "OTel initialization, SLO helpers, audit shadow triggers, and PII log scrubbing for the eel platform"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+	"opentelemetry-api>=1.20",
+	"opentelemetry-sdk>=1.20",
+	"opentelemetry-exporter-otlp-proto-grpc>=1.20",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/eel_observability"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "standard"
+
+[dependency-groups]
+dev = [
+	"pytest>=8.0",
+	"pytest-asyncio>=0.24",
+	"pyright>=1.1",
+]

@@ -1,0 +1,33 @@
+[template]
+cargo_generate_version = ">=0.20"
+name = "eel-service-template"
+description = "eel Rust service scaffold"
+ignore = ["tests/", "src/", "Cargo.toml", "cargo-generate.toml"]
+
+[placeholders.project-name]
+type = "string"
+prompt = "Service name (kebab-case, e.g. ballot-box)"
+regex = "^[a-z][a-z0-9-]+$"
+
+[placeholders.description]
+type = "string"
+prompt = "One-line service description"
+
+[placeholders.tier]
+type = "string"
+prompt = "Tier (T1-voter/T1-consensus/T1-audit/T2/T3-analytics)"
+choices = ["T1-voter", "T1-consensus", "T1-audit", "T2", "T3-analytics"]
+default = "T2"
+
+[placeholders.event-sourced]
+type = "bool"
+prompt = "Event-sourced domain?"
+default = false
+
+[placeholders.owning-modules]
+type = "string"
+prompt = "Owning M-numbers (comma-sep, e.g. M-04,M-07)"
+default = "M-01"
+
+[hooks]
+post = ["cargo-check.rhai"]

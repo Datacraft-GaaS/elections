@@ -1,0 +1,16 @@
+rules:
+  - id: no-unbounded-retry
+    patterns:
+      - pattern: |
+          while True:
+              ...
+              await asyncio.sleep(...)
+              ...
+    message: >
+      Unbounded retry loop detected (while True + sleep). Use
+      eel_resilience.retry_with_jitter() with a RetryConfig to enforce a
+      max_attempts budget.
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: resilience

@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{cookiecutter.svc_name}}
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: {{cookiecutter.svc_name}}
+  template:
+    metadata:
+      labels:
+        app: {{cookiecutter.svc_name}}
+    spec:
+      containers:
+        - name: {{cookiecutter.svc_name}}
+          image: eel/{{cookiecutter.svc_name}}:latest
+          ports:
+            - containerPort: {{cookiecutter.port}}

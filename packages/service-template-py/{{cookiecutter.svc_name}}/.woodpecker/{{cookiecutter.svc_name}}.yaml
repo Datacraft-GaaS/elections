@@ -1,0 +1,10 @@
+pipeline:
+  test:
+    image: python:{{cookiecutter.python_version}}-slim
+    commands:
+      - pip install uv
+      - cd py && uv sync && uv run pytest tests/ci -x -q
+  build:
+    image: docker:dind
+    commands:
+      - docker build -t eel/{{cookiecutter.svc_name}}:$CI_COMMIT_SHA .

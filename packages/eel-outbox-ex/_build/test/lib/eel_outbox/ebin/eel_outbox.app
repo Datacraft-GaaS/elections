@@ -1,0 +1,1 @@
+{application,eel_outbox,[{modules,['Elixir.Eel.Outbox','Elixir.Eel.Outbox.Blob','Elixir.Eel.Outbox.Checks.NoRawKafka','Elixir.Eel.Outbox.Entry']},{optional_applications,[finch]},{applications,[kernel,stdlib,elixir,logger,ecto,jason,finch]},{description,"Transactional outbox pattern for IEBC IEMS event publishing"},{registered,[]},{vsn,"0.1.0"}]}.

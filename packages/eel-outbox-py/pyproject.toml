@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "eel-outbox-py"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+	"pydantic>=2.0",
+	"sqlalchemy>=2.0",
+	"eel-events-py",
+]
+
+[project.optional-dependencies]
+minio = [
+	"minio>=7.0",
+]
+
+[dependency-groups]
+dev = [
+	"pytest>=8.0",
+	"pyright>=1.1",
+]
+
+[tool.uv.sources]
+eel-events-py = { path = "../eel-events-py", editable = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/eel_outbox"]
+
+[tool.pyright]
+pythonVersion = "3.12"
+include = ["src"]
+venvPath = "."
+venv = ".venv"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

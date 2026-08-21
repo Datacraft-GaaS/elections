@@ -1,0 +1,10 @@
+{
+    "svc_name": "my_service",
+    "svc_title": "My Service",
+    "svc_description": "A new eel service",
+    "author": "eel-team",
+    "python_version": "3.12",
+    "port": "8000",
+    "data_class": ["B", "C", "D"],
+    "election_id": "2027-general"
+}

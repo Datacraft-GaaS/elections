@@ -1,0 +1,1 @@
+{application,eel_hlc,[{modules,['Elixir.Eel.Hlc','Elixir.Eel.Hlc.Clock']},{optional_applications,[]},{applications,[kernel,stdlib,elixir,logger]},{description,"Hybrid Logical Clock for IEBC IEMS distributed systems"},{registered,[]},{vsn,"0.1.0"}]}.

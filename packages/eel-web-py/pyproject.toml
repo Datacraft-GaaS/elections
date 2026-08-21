@@ -1,0 +1,31 @@
+[project]
+name = "eel-web"
+version = "0.1.0"
+description = "Django reusable app for the eel platform"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+	"django>=4.2",
+	"pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+	"pyright>=1.1",
+	"pytest>=8.0",
+	"pytest-django>=4.8",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/eel_web"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "standard"
