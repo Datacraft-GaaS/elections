@@ -48,3 +48,14 @@ android/app/build/
 
 # desktop
 electron-dist/
+
+# Dart / Flutter generated
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.packages
+pubspec.lock
+build/
+*.iml
+.metadata
