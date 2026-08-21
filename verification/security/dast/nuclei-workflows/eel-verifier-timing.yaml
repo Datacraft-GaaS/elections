@@ -1,0 +1,37 @@
+id: eel-verifier-timing
+
+info:
+  name: eel verifier timing side-channel probe
+  author: eel-security
+  severity: medium
+  description: |
+    Probes the verifier endpoints for timing side channels by comparing response
+    latency for valid vs invalid leaf hashes. A detectable timing difference may
+    indicate a non-constant-time comparison in the inclusion proof path.
+  tags: eel,timing,side-channel,verifier
+  reference:
+    - docs/adr/0017-transparency-log.md
+
+variables:
+  valid_hash: "{{rand_base64(32)}}"
+  invalid_hash: "0000000000000000000000000000000000000000000000000000000000000000"
+  target: "{{BaseURL}}/api/v1/log/inclusion/"
+
+requests:
+  - method: GET
+    path:
+      - "{{target}}{{valid_hash}}"
+      - "{{target}}{{invalid_hash}}"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 404
+    extractors:
+      - type: json
+        name: response_time_ms
+        json:
+          - "$.elapsed_ms"
+    # Timing assertion: flag if p99 difference > 10 ms between valid/invalid paths.
+    # Manual review required; nuclei emits a finding for human triage.

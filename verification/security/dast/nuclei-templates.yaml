@@ -1,0 +1,35 @@
+# Nuclei template categories for eel DAST (WP-6.5)
+# Run with: nuclei -t <categories> -u <EEL_TARGET_URL>
+# Custom eel workflows are in nuclei-workflows/
+
+template_categories:
+  - cves
+  - exposures
+  - misconfigurations
+  - technologies
+  - default-logins
+  - network
+
+custom_workflows:
+  - nuclei-workflows/eel-verifier-timing.yaml
+  - nuclei-workflows/eel-idempotency-key.yaml
+
+# Severity filter: alert on medium, high, critical.
+severity_filter:
+  - medium
+  - high
+  - critical
+
+# Exclusions: known-safe paths that produce false positives in pre-prod.
+exclude_paths:
+  - /healthz
+  - /readyz
+  - /metrics
+
+# Rate limiting for pre-prod (protect shared environment).
+rate_limit: 50          # requests per second
+bulk_size: 25
+concurrency: 10
+
+# Output: JSON for CI aggregation.
+output_format: json

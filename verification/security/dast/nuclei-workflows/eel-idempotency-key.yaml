@@ -1,0 +1,68 @@
+id: eel-idempotency-key
+
+info:
+  name: eel idempotency-key write endpoint probe
+  author: eel-security
+  severity: medium
+  description: |
+    Probes write endpoints for correct Idempotency-Key handling.
+    Checks that:
+      1. A request with the same Idempotency-Key returns the cached response
+         rather than creating a duplicate resource.
+      2. A request without Idempotency-Key is rejected with 400.
+      3. A replayed request with a different body but the same key returns
+         the original response (not the new body).
+  tags: eel,idempotency,api-safety
+  reference:
+    - docs/adr/0022-release-dr.md
+
+variables:
+  idempotency_key: "eel-test-{{rand_base64(16)}}"
+
+requests:
+  # Probe 1: missing Idempotency-Key should yield 400.
+  - method: POST
+    path:
+      - "{{BaseURL}}/api/v1/results/transmit"
+    headers:
+      Content-Type: application/json
+    body: '{"station_id":"test","result_hash":"aaaa"}'
+    matchers:
+      - type: status
+        status:
+          - 400
+
+  # Probe 2: first request with key should succeed (201 or 202).
+  - method: POST
+    path:
+      - "{{BaseURL}}/api/v1/results/transmit"
+    headers:
+      Content-Type: application/json
+      Idempotency-Key: "{{idempotency_key}}"
+    body: '{"station_id":"test","result_hash":"bbbb"}'
+    matchers:
+      - type: status
+        status:
+          - 201
+          - 202
+
+  # Probe 3: replay with same key and different body should return cached response.
+  - method: POST
+    path:
+      - "{{BaseURL}}/api/v1/results/transmit"
+    headers:
+      Content-Type: application/json
+      Idempotency-Key: "{{idempotency_key}}"
+    body: '{"station_id":"test","result_hash":"cccc"}'
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 201
+          - 202
+      # The response body must still reference "bbbb", not "cccc".
+      - type: word
+        words:
+          - "bbbb"
+        part: body

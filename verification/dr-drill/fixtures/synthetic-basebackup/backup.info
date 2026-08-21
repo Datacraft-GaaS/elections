@@ -1,0 +1,14 @@
+[backrest]
+backrest-checksum=stub-checksum-for-ci
+backrest-format=5
+backrest-version="2.51"
+
+[db]
+db-catalog-version=202307071
+db-control-version=1300
+db-id=1
+db-system-id=7200000000000000000
+db-version="16"
+
+[db:history]
+1={"db-catalog-version":202307071,"db-control-version":1300,"db-system-id":7200000000000000000,"db-version":"16"}

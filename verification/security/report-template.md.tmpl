@@ -1,0 +1,123 @@
+# Security Verification Report
+
+**Report date**: ${REPORT_DATE}
+**Ticket**: ${REPORT_TICKET}
+**Environment**: ${REPORT_ENV}
+**Operator(s)**: ${REPORT_OPERATORS}
+
+## SAST / SCA / Container matrix
+
+| Tool | Status | Critical | High | Notes |
+|---|---|---|---|---|
+| cargo-audit | ${CARGO_AUDIT_STATUS} | ${CARGO_AUDIT_CRITICAL} | ${CARGO_AUDIT_HIGH} | ${CARGO_AUDIT_NOTES} |
+| cargo-deny | ${CARGO_DENY_STATUS} | ${CARGO_DENY_CRITICAL} | 0 | ${CARGO_DENY_NOTES} |
+| semgrep | ${SEMGREP_STATUS} | ${SEMGREP_CRITICAL} | ${SEMGREP_HIGH} | ${SEMGREP_NOTES} |
+| trivy | ${TRIVY_STATUS} | ${TRIVY_CRITICAL} | ${TRIVY_HIGH} | ${TRIVY_NOTES} |
+| grype | ${GRYPE_STATUS} | ${GRYPE_CRITICAL} | ${GRYPE_HIGH} | ${GRYPE_NOTES} |
+| bandit | ${BANDIT_STATUS} | 0 | ${BANDIT_HIGH} | ${BANDIT_NOTES} |
+| sobelow | ${SOBELOW_STATUS} | ${SOBELOW_CRITICAL} | 0 | ${SOBELOW_NOTES} |
+
+**Gate result**: ${SAST_GATE} (zero critical/high required)
+
+## DAST findings
+
+### ZAP baseline
+
+- Target: ${ZAP_TARGET}
+- High alerts: ${ZAP_HIGH_ALERTS}
+- Report: ${ZAP_REPORT_PATH}
+
+### Nuclei
+
+- Templates: cves, exposures, misconfigurations, workflows/eel-*
+- Findings (medium+): ${NUCLEI_FINDINGS}
+- Custom workflow results: ${NUCLEI_CUSTOM_RESULTS}
+
+## Fuzz coverage delta and crashes
+
+| Target | Iterations | Coverage delta | New crashes |
+|---|---|---|---|
+${FUZZ_TABLE}
+
+**Total new crashes**: ${FUZZ_TOTAL_CRASHES}
+
+## Pen-test open items
+
+| ID | Title | Severity | Status |
+|---|---|---|---|
+${PENTEST_OPEN_ITEMS}
+
+## ASVS L3 gaps
+
+- Services checked: ${ASVS_SERVICES_COUNT}
+- L3 gaps: ${ASVS_L3_GAPS}
+- Evidence file: ${ASVS_EVIDENCE_FILE}
+
+**Gate result**: ${ASVS_GATE} (zero gaps required)
+
+## PQ negotiation result
+
+| Edge URL | TLS 1.3 | Hybrid KEM | Classical fallback |
+|---|---|---|---|
+${PQ_TABLE}
+
+## Sign-off
+
+| Role | Name | Signature |
+|---|---|---|
+| Security officer | ${SIGNOFF_SEC} | |
+| Ops lead | ${SIGNOFF_OPS} | |
+| External pen-test lead | ${SIGNOFF_PENTEST} | |
+
+*Rendered with: `envsubst < report-template.md.tmpl > security-report-${REPORT_DATE}.md`*
+
+### Sample env for envsubst
+
+```
+REPORT_DATE=2026-08-21
+REPORT_TICKET=SEC-20260821
+REPORT_ENV=pre-prod
+REPORT_OPERATORS="Alice, Bob"
+CARGO_AUDIT_STATUS=run
+CARGO_AUDIT_CRITICAL=0
+CARGO_AUDIT_HIGH=0
+CARGO_AUDIT_NOTES=pass
+CARGO_DENY_STATUS=run
+CARGO_DENY_CRITICAL=0
+CARGO_DENY_NOTES=pass
+SEMGREP_STATUS=run
+SEMGREP_CRITICAL=0
+SEMGREP_HIGH=2
+SEMGREP_NOTES="2 low-severity findings, reviewed"
+TRIVY_STATUS=run
+TRIVY_CRITICAL=0
+TRIVY_HIGH=0
+TRIVY_NOTES=pass
+GRYPE_STATUS=run
+GRYPE_CRITICAL=0
+GRYPE_HIGH=0
+GRYPE_NOTES=pass
+BANDIT_STATUS=run
+BANDIT_HIGH=0
+BANDIT_NOTES=pass
+SOBELOW_STATUS=skipped
+SOBELOW_CRITICAL=0
+SOBELOW_NOTES="Elixir services not in scope this sprint"
+SAST_GATE=PASS
+ZAP_TARGET=https://nairobi.edge.eel.internal
+ZAP_HIGH_ALERTS=0
+ZAP_REPORT_PATH=/tmp/eel-zap-report/zap-baseline-report.json
+NUCLEI_FINDINGS=0
+NUCLEI_CUSTOM_RESULTS="timing probe: no side channel detected; idempotency: correct"
+FUZZ_TABLE="| envelope | 5000000 | +2.1% | 0 |"
+FUZZ_TOTAL_CRASHES=0
+PENTEST_OPEN_ITEMS="| none | | | |"
+ASVS_SERVICES_COUNT=19
+ASVS_L3_GAPS=0
+ASVS_EVIDENCE_FILE=verification/security/asvs-evidence.json
+ASVS_GATE=PASS
+PQ_TABLE="| nairobi | yes | ML-KEM+X25519 | yes |"
+SIGNOFF_SEC="Alice K."
+SIGNOFF_OPS="Bob M."
+SIGNOFF_PENTEST="External Team Ltd"
+```

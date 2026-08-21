@@ -1,0 +1,174 @@
+# 24-hour fuzz schedule (WP-6.5)
+# Targets: all section-7 API boundary crates.
+# Run with: bash fuzz/run-corpus.sh
+# Each target runs cargo-fuzz with the declared max_iterations.
+# coverage_guided: true uses libFuzzer coverage feedback.
+
+schedule_hours: 24
+
+targets:
+  - name: envelope
+    crate: packages/eel-crypto-rs
+    corpus_dir: fuzz/corpus/envelope
+    max_iterations: 5000000
+    coverage_guided: true
+
+  - name: canonical_json_rfc8785
+    crate: packages/eel-crypto-rs
+    corpus_dir: fuzz/corpus/canonical_json_rfc8785
+    max_iterations: 5000000
+    coverage_guided: true
+
+  - name: ed25519_verify
+    crate: packages/eel-crypto-rs
+    corpus_dir: fuzz/corpus/ed25519_verify
+    max_iterations: 10000000
+    coverage_guided: true
+
+  - name: ml_dsa_hybrid_verify
+    crate: packages/eel-crypto-rs
+    corpus_dir: fuzz/corpus/ml_dsa_hybrid_verify
+    max_iterations: 5000000
+    coverage_guided: true
+
+  - name: merkle_proof_decode
+    crate: services/transparency-svc
+    corpus_dir: fuzz/corpus/merkle_proof_decode
+    max_iterations: 5000000
+    coverage_guided: true
+
+  - name: cbor_decode
+    crate: packages/eel-codec
+    corpus_dir: fuzz/corpus/cbor_decode
+    max_iterations: 5000000
+    coverage_guided: true
+
+  - name: json_decode
+    crate: packages/eel-codec
+    corpus_dir: fuzz/corpus/json_decode
+    max_iterations: 5000000
+    coverage_guided: true
+
+  - name: zstd_decompress
+    crate: packages/eel-codec
+    corpus_dir: fuzz/corpus/zstd_decompress
+    max_iterations: 3000000
+    coverage_guided: true
+
+  - name: mrz_parse
+    crate: services/abis-svc
+    corpus_dir: fuzz/corpus/mrz_parse
+    max_iterations: 5000000
+    coverage_guided: true
+
+  - name: sms_ussd_codec
+    crate: services/rts-svc
+    corpus_dir: fuzz/corpus/sms_ussd_codec
+    max_iterations: 3000000
+    coverage_guided: true
+
+  - name: qr_badge_decode
+    crate: packages/eel-kit-codec
+    corpus_dir: fuzz/corpus/qr_badge_decode
+    max_iterations: 5000000
+    coverage_guided: true
+
+  - name: qr_seal_decode
+    crate: packages/eel-kit-codec
+    corpus_dir: fuzz/corpus/qr_seal_decode
+    max_iterations: 5000000
+    coverage_guided: true
+
+  - name: shapefile_parse
+    crate: packages/eel-geo
+    corpus_dir: fuzz/corpus/shapefile_parse
+    max_iterations: 3000000
+    coverage_guided: true
+
+  - name: geojson_parse
+    crate: packages/eel-geo
+    corpus_dir: fuzz/corpus/geojson_parse
+    max_iterations: 3000000
+    coverage_guided: true
+
+  - name: pdf_parse
+    crate: packages/eel-doc-ingest
+    corpus_dir: fuzz/corpus/pdf_parse
+    max_iterations: 2000000
+    coverage_guided: true
+
+  - name: image_icr
+    crate: packages/eel-doc-ingest
+    corpus_dir: fuzz/corpus/image_icr
+    max_iterations: 2000000
+    coverage_guided: true
+
+  - name: pkcs11_response_parse
+    crate: packages/eel-crypto-rs
+    corpus_dir: fuzz/corpus/pkcs11_response_parse
+    max_iterations: 3000000
+    coverage_guided: true
+
+  - name: attestation_token_parse
+    crate: packages/eel-crypto-rs
+    corpus_dir: fuzz/corpus/attestation_token_parse
+    max_iterations: 3000000
+    coverage_guided: true
+
+  - name: saml_parse
+    crate: services/boundary-svc
+    corpus_dir: fuzz/corpus/saml_parse
+    max_iterations: 3000000
+    coverage_guided: true
+
+  - name: oidc_token_parse
+    crate: services/boundary-svc
+    corpus_dir: fuzz/corpus/oidc_token_parse
+    max_iterations: 3000000
+    coverage_guided: true
+
+  - name: rfc9457_problem_json
+    crate: packages/eel-http
+    corpus_dir: fuzz/corpus/rfc9457_problem_json
+    max_iterations: 3000000
+    coverage_guided: true
+
+  - name: etag_parse
+    crate: packages/eel-http
+    corpus_dir: fuzz/corpus/etag_parse
+    max_iterations: 2000000
+    coverage_guided: true
+
+  - name: idempotency_key_parse
+    crate: packages/eel-http
+    corpus_dir: fuzz/corpus/idempotency_key_parse
+    max_iterations: 2000000
+    coverage_guided: true
+
+  - name: hlc_string_parse
+    crate: packages/eel-hlc
+    corpus_dir: fuzz/corpus/hlc_string_parse
+    max_iterations: 3000000
+    coverage_guided: true
+
+  - name: legacy_envelope_parse
+    crate: packages/eel-crypto-rs
+    corpus_dir: fuzz/corpus/legacy_envelope_parse
+    max_iterations: 3000000
+    coverage_guided: true
+
+  - name: timestamp_parse
+    crate: packages/eel-codec
+    corpus_dir: fuzz/corpus/timestamp_parse
+    max_iterations: 3000000
+    coverage_guided: true
+
+  - name: archive_extract
+    crate: packages/eel-doc-ingest
+    corpus_dir: fuzz/corpus/archive_extract
+    max_iterations: 2000000
+    coverage_guided: true
+
+# Coverage reporting endpoint (codecov-compatible stub).
+# Replace with real endpoint when available.
+coverage_upload_url: "https://codecov.eel.internal/upload"

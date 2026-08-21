@@ -1,0 +1,130 @@
+# RTO/RPO matrix per service (WP-6.2)
+# Tiers per ADR-0022.
+# restore_verification_query: SQL or command run after restore to confirm data integrity.
+
+services:
+  - name: rts-svc
+    tier: T1-election-critical
+    rto_minutes: 30
+    rpo_minutes: 5
+    backup_tool: pgBackRest
+    restore_verification_query: "SELECT COUNT(*) FROM results_transmissions WHERE created_at > NOW() - INTERVAL '5 minutes';"
+
+  - name: bvr-svc
+    tier: T1-cycle
+    rto_minutes: 60
+    rpo_minutes: 15
+    backup_tool: pgBackRest
+    restore_verification_query: "SELECT COUNT(*) FROM biometric_verifications WHERE created_at > NOW() - INTERVAL '15 minutes';"
+
+  - name: bvi-svc
+    tier: T1-cycle
+    rto_minutes: 60
+    rpo_minutes: 15
+    backup_tool: pgBackRest
+    restore_verification_query: "SELECT COUNT(*) FROM ballot_verifications WHERE created_at > NOW() - INTERVAL '15 minutes';"
+
+  - name: ecc-svc
+    tier: T1-cycle
+    rto_minutes: 60
+    rpo_minutes: 15
+    backup_tool: pgBackRest
+    restore_verification_query: "SELECT COUNT(*) FROM election_control_commands WHERE created_at > NOW() - INTERVAL '15 minutes';"
+
+  - name: transparency-svc
+    tier: T1-cycle
+    rto_minutes: 60
+    rpo_minutes: 15
+    backup_tool: pgBackRest
+    restore_verification_query: "SELECT tree_size FROM log_tree_heads ORDER BY id DESC LIMIT 1;"
+
+  - name: abis-svc
+    tier: T1-cycle
+    rto_minutes: 60
+    rpo_minutes: 15
+    backup_tool: pgBackRest
+    restore_verification_query: "SELECT COUNT(*) FROM abis_queries WHERE created_at > NOW() - INTERVAL '15 minutes';"
+
+  - name: portal-svc
+    tier: T2
+    rto_minutes: 240
+    rpo_minutes: 60
+    backup_tool: Velero
+    restore_verification_query: "kubectl get pods -n eel-portal --field-selector=status.phase=Running | grep -c portal-svc"
+
+  - name: vprs-svc
+    tier: T2
+    rto_minutes: 240
+    rpo_minutes: 60
+    backup_tool: Velero
+    restore_verification_query: "kubectl get pods -n eel-vprs --field-selector=status.phase=Running | grep -c vprs-svc"
+
+  - name: governance-svc
+    tier: T2
+    rto_minutes: 240
+    rpo_minutes: 60
+    backup_tool: Velero
+    restore_verification_query: "kubectl get pods -n eel-governance --field-selector=status.phase=Running | grep -c governance-svc"
+
+  - name: crms-svc
+    tier: T2
+    rto_minutes: 240
+    rpo_minutes: 60
+    backup_tool: Velero
+    restore_verification_query: "kubectl get pods -n eel-crms --field-selector=status.phase=Running | grep -c crms-svc"
+
+  - name: inventory-svc
+    tier: T2
+    rto_minutes: 240
+    rpo_minutes: 60
+    backup_tool: Velero
+    restore_verification_query: "kubectl get pods -n eel-inventory --field-selector=status.phase=Running | grep -c inventory-svc"
+
+  - name: queue-svc
+    tier: T2
+    rto_minutes: 240
+    rpo_minutes: 60
+    backup_tool: Kopia
+    restore_verification_query: "kopia snapshot list --json | python3 -c 'import sys,json; d=json.load(sys.stdin); print(len(d))'"
+
+  - name: minio-buckets
+    tier: T2
+    rto_minutes: 240
+    rpo_minutes: 60
+    backup_tool: Kopia
+    restore_verification_query: "kopia snapshot verify --verify-files-percent=10"
+
+  - name: edge-nairobi
+    tier: edge
+    rto_minutes: 15
+    rpo_minutes: 0
+    backup_tool: Velero
+    restore_verification_query: "curl -sf https://nairobi.edge.eel.internal/healthz | grep -q ok"
+
+  - name: edge-mombasa
+    tier: edge
+    rto_minutes: 15
+    rpo_minutes: 0
+    backup_tool: Velero
+    restore_verification_query: "curl -sf https://mombasa.edge.eel.internal/healthz | grep -q ok"
+
+  - name: edge-kisumu
+    tier: edge
+    rto_minutes: 15
+    rpo_minutes: 0
+    backup_tool: Velero
+    restore_verification_query: "curl -sf https://kisumu.edge.eel.internal/healthz | grep -q ok"
+
+  - name: edge-nakuru
+    tier: edge
+    rto_minutes: 15
+    rpo_minutes: 0
+    backup_tool: Velero
+    restore_verification_query: "curl -sf https://nakuru.edge.eel.internal/healthz | grep -q ok"
+
+  - name: edge-eldoret
+    tier: edge
+    rto_minutes: 15
+    rpo_minutes: 0
+    backup_tool: Velero
+    restore_verification_query: "curl -sf https://eldoret.edge.eel.internal/healthz | grep -q ok"
