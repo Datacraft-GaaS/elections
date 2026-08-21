@@ -1,0 +1,21 @@
+# WP-5.5 deploy fragment — support-admin-svc crates/special-voter + crates/intent.
+# Merged into service.yaml during platform manifest completion (WP-5.13).
+name: support-admin-svc
+image: harbor.eel.internal/eel/support-admin-svc
+artifacts:
+  - name: special-voter-api
+    binary: special-voter-api
+    port: 8090
+  - name: intent-api
+    binary: intent-api
+    port: 8091
+  - name: support-admin-django
+    wsgi: support_admin.wsgi:application
+    port: 8092
+env:
+  SUPPORT_ADMIN_API_BASE: "http://localhost:8090"
+  REJECTION_RATE_Z_THRESHOLD: "3.0"
+  REFUGEE_VOTING_ENABLED: "false"
+migrations:
+  - migrations/V0001__special_voter_schema.sql
+  - migrations/V0002__intent_schema.sql

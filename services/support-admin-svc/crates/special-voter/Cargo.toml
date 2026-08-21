@@ -1,0 +1,26 @@
+[package]
+name = "special-voter"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Domain aggregates, events, and guardrails for M25 special voter workflows (WP-5.5)"
+
+[lib]
+name = "special_voter"
+path = "src/lib.rs"
+
+[dependencies]
+eel-eventstore-rs = { path = "../../../../packages/eel-eventstore-rs" }
+eel-events-rs     = { path = "../../../../packages/eel-events-rs" }
+eel-hlc-rs        = { path = "../../../../packages/eel-hlc-rs" }
+serde             = { workspace = true }
+serde_json        = { workspace = true }
+uuid              = { workspace = true }
+chrono            = { workspace = true }
+thiserror         = { workspace = true }
+tracing           = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
