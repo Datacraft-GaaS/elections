@@ -29,6 +29,7 @@ use std::sync::Arc;
 use cryptoki::context::{CInitializeArgs, Pkcs11};
 use cryptoki::session::Session;
 use cryptoki::slot::Slot;
+use cryptoki::types::AuthPin;
 use parking_lot::Mutex;
 
 use crate::{CryptoError, KeyRole};
@@ -98,7 +99,10 @@ impl PkcsPool {
                 .open_rw_session(slot)
                 .map_err(|e| CryptoError::Internal(e.to_string()))?;
             session
-                .login(cryptoki::session::UserType::User, Some(&config.pin))
+                .login(
+                    cryptoki::session::UserType::User,
+                    Some(&AuthPin::new(config.pin.clone().into())),
+                )
                 .map_err(|e| CryptoError::Internal(e.to_string()))?;
             sessions.push(session);
         }
@@ -133,8 +137,11 @@ impl PkcsPool {
                 .ctx
                 .open_rw_session(self.0.slot)
                 .map_err(|e| CryptoError::Internal(e.to_string()))?;
-            s.login(cryptoki::session::UserType::User, Some(&self.0.pin))
-                .map_err(|e| CryptoError::Internal(e.to_string()))?;
+            s.login(
+                cryptoki::session::UserType::User,
+                Some(&AuthPin::new(self.0.pin.clone().into())),
+            )
+            .map_err(|e| CryptoError::Internal(e.to_string()))?;
             s
         };
         Ok(PooledSession {

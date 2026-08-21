@@ -1,0 +1,36 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hsm-signer
+  namespace: eel-hsm
+  labels:
+    app: hsm-signer
+
+---
+# Leader-election lease for key rotation coordination.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: hsm-signer-lease
+  namespace: eel-hsm
+rules:
+  - apiGroups: [coordination.k8s.io]
+    resources: [leases]
+    verbs: [get, create, update, patch, delete]
+    resourceNames: [hsm-signer-leader]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: hsm-signer-lease
+  namespace: eel-hsm
+subjects:
+  - kind: ServiceAccount
+    name: hsm-signer
+    namespace: eel-hsm
+roleRef:
+  kind: Role
+  name: hsm-signer-lease
+  apiGroup: rbac.authorization.k8s.io

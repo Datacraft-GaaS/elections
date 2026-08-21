@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hsm-signer
+  namespace: eel-hsm
+  labels:
+    app: hsm-signer
+    app.kubernetes.io/name: hsm-signer
+    app.kubernetes.io/component: crypto
+spec:
+  type: ClusterIP
+  selector:
+    app: hsm-signer
+  ports:
+    - name: grpc
+      port: 8443
+      targetPort: grpc
+      protocol: TCP
+    - name: health
+      port: 8081
+      targetPort: health
+      protocol: TCP

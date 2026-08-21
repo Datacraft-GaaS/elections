@@ -1,0 +1,17 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: hsm-signer
+  namespace: eel-hsm
+  labels:
+    app: hsm-signer
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: hsm-signer
+  endpoints:
+    - port: health
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s

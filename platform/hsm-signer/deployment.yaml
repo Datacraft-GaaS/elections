@@ -1,0 +1,123 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hsm-signer
+  namespace: eel-hsm
+  labels:
+    app: hsm-signer
+    app.kubernetes.io/name: hsm-signer
+    app.kubernetes.io/component: crypto
+    app.kubernetes.io/part-of: eel
+spec:
+  # 3 replicas per DR site; leader election via K8s lease for CycleKek rotation.
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hsm-signer
+  template:
+    metadata:
+      labels:
+        app: hsm-signer
+        spiffe.io/spiffeid: "true"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: hsm-signer
+      # K8s lease-based leader election for key rotation ops.
+      initContainers: []
+      containers:
+        - name: hsm-signer
+          image: eel/hsm-signer:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8443
+              name: grpc
+              protocol: TCP
+            - containerPort: 8081
+              name: health
+              protocol: TCP
+          env:
+            - name: EEL_HSM_VENDOR
+              valueFrom:
+                configMapKeyRef:
+                  name: hsm-signer-config
+                  key: vendor
+            - name: EEL_HSM_PIN
+              valueFrom:
+                secretKeyRef:
+                  name: hsm-signer-secrets
+                  key: user-pin
+            - name: EEL_HSM_SLOT
+              valueFrom:
+                configMapKeyRef:
+                  name: hsm-signer-config
+                  key: slot-id
+            - name: PKCS11_MODULE_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: hsm-signer-config
+                  key: module-path
+            # SPIFFE SVID mounted by SPIRE agent.
+            - name: SPIFFE_ENDPOINT_SOCKET
+              value: unix:///run/spire/sockets/agent.sock
+            - name: RUST_LOG
+              value: hsm_signer=info,warn
+          volumeMounts:
+            - name: softhsm-lib
+              mountPath: /usr/local/lib/softhsm
+              readOnly: true
+            - name: softhsm-tokens
+              mountPath: /var/lib/softhsm/tokens
+            - name: spire-socket
+              mountPath: /run/spire/sockets
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: health
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+      volumes:
+        # kind dev: hostPath to SoftHSMv2 shared library.
+        # Production: PCIe/network HSM; replace with vendor-specific volume.
+        - name: softhsm-lib
+          hostPath:
+            path: /usr/local/lib/softhsm
+            type: DirectoryOrCreate
+        - name: softhsm-tokens
+          hostPath:
+            path: /var/lib/softhsm/tokens
+            type: DirectoryOrCreate
+        - name: spire-socket
+          hostPath:
+            path: /run/spire/sockets
+            type: DirectoryOrCreate
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: hsm-signer

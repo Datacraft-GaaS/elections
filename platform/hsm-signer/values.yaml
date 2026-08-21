@@ -1,0 +1,53 @@
+# Helm values for eel/hsm-signer.
+# Override per environment with values-staging.yaml / values-pre-prod.yaml.
+
+image:
+  repository: eel/hsm-signer
+  tag: latest
+  pullPolicy: Always
+
+replicaCount: 3
+
+# PKCS#11 / HSM vendor settings.
+hsm:
+  vendor: softhsm       # softhsm | luna7 | utimaco
+  slotId: "0"
+  modulePathLinux: /usr/lib/softhsm/libsofthsm2.so
+  modulePathMacos: /usr/local/lib/softhsm/libsofthsm2.so
+
+# Secret name holding `user-pin` key.
+secretName: hsm-signer-secrets
+
+service:
+  grpcPort: 8443
+  healthPort: 8081
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+# Prometheus scraping.
+serviceMonitor:
+  enabled: true
+  interval: 30s
+
+# SPIRE SVID socket path.
+spire:
+  socketPath: /run/spire/sockets/agent.sock
+
+---
+# staging overrides
+# hsm:
+#   vendor: softhsm
+# replicaCount: 1
+
+---
+# pre-prod overrides
+# hsm:
+#   vendor: luna7
+#   modulePathLinux: /usr/lib/libCryptoki2_64.so
+# replicaCount: 3

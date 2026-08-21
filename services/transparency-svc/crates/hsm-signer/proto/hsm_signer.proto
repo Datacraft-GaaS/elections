@@ -1,0 +1,155 @@
+syntax = "proto3";
+
+package eel.hsm.v1;
+
+option java_package = "io.eel.hsm.v1";
+
+// HsmSigner provides gRPC operations against HSM-managed keys.
+// Trust domain: spiffe://eel.local/service/hsm-signer.
+// All RPCs require a valid SPIFFE SVID; missing identity returns UNAUTHENTICATED.
+service HsmSigner {
+	// Sign computes a raw signature over payload using the key bound to key_role.
+	rpc Sign(SignRequest) returns (SignResponse);
+
+	// Verify checks that signature is a valid signature over payload for key_role.
+	rpc Verify(VerifyRequest) returns (VerifyResponse);
+
+	// KeyInfo returns metadata about the active key for a role.
+	rpc KeyInfo(KeyRoleRequest) returns (KeyInfoResponse);
+
+	// RotateKey initiates a key rotation via M-of-N ceremony.
+	// ceremony_id must reference an Approved ceremony for CycleKek rotations.
+	rpc RotateKey(RotateRequest) returns (RotateResponse);
+
+	// Ceremony opens a streaming ceremony channel.
+	// Events stream until the ceremony reaches a terminal state (Complete or Aborted).
+	rpc Ceremony(CeremonyRequest) returns (stream CeremonyEvent);
+}
+
+// ---------------------------------------------------------------------------
+// Key role
+// ---------------------------------------------------------------------------
+
+enum KeyRole {
+	KEY_ROLE_UNSPECIFIED = 0;
+	KEY_ROLE_STH = 1;
+	KEY_ROLE_DECLARATION = 2;
+	KEY_ROLE_KIT_CA = 3;
+	KEY_ROLE_CREDENTIAL_CA = 4;
+	KEY_ROLE_CODE_SIGNING = 5;
+	KEY_ROLE_CYCLE_KEK = 6;
+}
+
+// ---------------------------------------------------------------------------
+// Sign / Verify
+// ---------------------------------------------------------------------------
+
+message SignRequest {
+	KeyRole key_role = 1;
+	bytes payload = 2;
+	// Human-readable purpose label, stored in the audit event.
+	string purpose = 3;
+}
+
+message SignResponse {
+	bytes signature = 1;
+	// Opaque key identifier (e.g. PKCS#11 CKA_ID hex or UUID).
+	string key_id = 2;
+	// Algorithm string, e.g. "Ed25519" or "ECDSA-P384".
+	string algorithm = 3;
+}
+
+message VerifyRequest {
+	KeyRole key_role = 1;
+	bytes payload = 2;
+	bytes signature = 3;
+}
+
+message VerifyResponse {
+	bool ok = 1;
+}
+
+// ---------------------------------------------------------------------------
+// Key info
+// ---------------------------------------------------------------------------
+
+message KeyRoleRequest {
+	KeyRole key_role = 1;
+}
+
+message KeyInfoResponse {
+	string key_id = 1;
+	string algorithm = 2;
+	// Hex-encoded SHA-256 fingerprint of the public key DER.
+	string fingerprint = 3;
+	// RFC 3339.
+	string created_at = 4;
+	// RFC 3339; empty if rotation has not been scheduled.
+	string rotation_due_at = 5;
+}
+
+// ---------------------------------------------------------------------------
+// Rotate
+// ---------------------------------------------------------------------------
+
+message RotateRequest {
+	KeyRole key_role = 1;
+	// ceremony_id that reached Approved state authorising this rotation.
+	string ceremony_id = 2;
+}
+
+message RotateResponse {
+	string new_key_id = 1;
+	string old_key_id = 2;
+	// CeremonyState serialised as string, e.g. "Executing".
+	string ceremony_state = 3;
+}
+
+// ---------------------------------------------------------------------------
+// Ceremony
+// ---------------------------------------------------------------------------
+
+message CeremonyRequest {
+	// Existing ceremony to subscribe to, or empty to open a new one.
+	string ceremony_id = 1;
+	// Required when creating a new ceremony.
+	KeyRole key_role = 2;
+	string purpose = 3;
+	// M-of-N quorum size; defaults to 3 if zero.
+	uint32 quorum_m = 4;
+	// N custodians eligible; defaults to 5 if zero.
+	uint32 quorum_n = 5;
+}
+
+message CustodianApproval {
+	string custodian_id = 1;
+	// Ed25519 signature over (ceremony_id || operation_hash).
+	bytes signature = 2;
+	// ISO 8601 timestamp.
+	string approved_at = 3;
+}
+
+enum CeremonyState {
+	CEREMONY_STATE_UNSPECIFIED = 0;
+	CEREMONY_STATE_REQUESTED = 1;
+	CEREMONY_STATE_AWAITING_QUORUM = 2;
+	CEREMONY_STATE_APPROVED = 3;
+	CEREMONY_STATE_EXECUTING = 4;
+	CEREMONY_STATE_COMPLETE = 5;
+	CEREMONY_STATE_ABORTED = 6;
+}
+
+message CeremonyEvent {
+	string ceremony_id = 1;
+	CeremonyState state = 2;
+	// Set when an approval arrives.
+	CustodianApproval approval = 3;
+	// Set when aborted.
+	string abort_reason = 4;
+	// Approvals received so far.
+	uint32 approvals_count = 5;
+	// Quorum threshold.
+	uint32 quorum_m = 6;
+	// SHA-256 hex over (ceremony_id || key_role || purpose).
+	string operation_hash = 7;
+}
