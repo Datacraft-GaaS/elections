@@ -292,29 +292,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "archive"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "axum 0.8.9",
- "chrono",
- "flate2",
- "hex",
- "rstest",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "tar",
- "thiserror 2.0.20",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "utoipa",
- "utoipa-swagger-ui",
- "uuid",
-]
-
-[[package]]
 name = "arg_enum_proc_macro"
 version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -956,27 +933,6 @@ checksum = "6bb31b46c14244e20ee9984b11bf5c992b91fb6939fea616e3512c8baecdbe5f"
 dependencies = [
  "memchr",
  "serde_core",
-]
-
-[[package]]
-name = "budget"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "axum 0.8.9",
- "chrono",
- "hex",
- "rstest",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "thiserror 2.0.20",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "utoipa",
- "utoipa-swagger-ui",
- "uuid",
 ]
 
 [[package]]
@@ -2386,6 +2342,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "eel-governance-by-election"
+version = "0.1.0"
+dependencies = [
+ "axum 0.8.9",
+ "chrono",
+ "hex",
+ "proptest",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror 2.0.20",
+ "tokio",
+ "tower 0.5.3",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
 name = "eel-governance-county-coord"
 version = "0.1.0"
 dependencies = [
@@ -2478,6 +2454,46 @@ dependencies = [
  "chrono",
  "serde",
  "serde_json",
+ "thiserror 2.0.20",
+ "tokio",
+ "tower 0.5.3",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
+name = "eel-governance-recall"
+version = "0.1.0"
+dependencies = [
+ "axum 0.8.9",
+ "chrono",
+ "hex",
+ "proptest",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror 2.0.20",
+ "tokio",
+ "tower 0.5.3",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
+name = "eel-governance-referendum"
+version = "0.1.0"
+dependencies = [
+ "axum 0.8.9",
+ "chrono",
+ "hex",
+ "proptest",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
  "thiserror 2.0.20",
  "tokio",
  "tower 0.5.3",
@@ -2622,6 +2638,52 @@ dependencies = [
  "thiserror 2.0.20",
  "tracing",
  "trybuild",
+]
+
+[[package]]
+name = "eel-portal-gazette"
+version = "0.1.0"
+dependencies = [
+ "axum 0.8.9",
+ "chrono",
+ "eel-auth-rs",
+ "eel-crypto-rs",
+ "eel-events-rs",
+ "eel-outbox-rs",
+ "reqwest 0.12.28",
+ "rstest",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.20",
+ "tokio",
+ "tower-http",
+ "tracing",
+ "utoipa",
+ "uuid",
+]
+
+[[package]]
+name = "eel-portal-inspection"
+version = "0.1.0"
+dependencies = [
+ "axum 0.8.9",
+ "chrono",
+ "eel-auth-rs",
+ "eel-crypto-rs",
+ "eel-events-rs",
+ "eel-outbox-rs",
+ "reqwest 0.12.28",
+ "rstest",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.20",
+ "tokio",
+ "tower-http",
+ "tracing",
+ "utoipa",
+ "uuid",
 ]
 
 [[package]]
@@ -4244,21 +4306,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "intent"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "eel-events-rs",
- "eel-eventstore-rs",
- "eel-hlc-rs",
- "serde",
- "serde_json",
- "thiserror 2.0.20",
- "tracing",
- "uuid",
-]
-
-[[package]]
 name = "interpolate_name"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5600,27 +5647,6 @@ name = "pastey"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "35fb2e5f958ec131621fdd531e9fc186ed768cbe395337403ae56c17a74c68ec"
-
-[[package]]
-name = "payroll"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "axum 0.8.9",
- "chrono",
- "hex",
- "rstest",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "thiserror 2.0.20",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "utoipa",
- "utoipa-swagger-ui",
- "uuid",
-]
 
 [[package]]
 name = "pbkdf2"
@@ -7968,21 +7994,6 @@ dependencies = [
  "num-traits",
  "robust",
  "smallvec",
-]
-
-[[package]]
-name = "special-voter"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "eel-events-rs",
- "eel-eventstore-rs",
- "eel-hlc-rs",
- "serde",
- "serde_json",
- "thiserror 2.0.20",
- "tracing",
- "uuid",
 ]
 
 [[package]]

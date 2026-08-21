@@ -1,0 +1,40 @@
+name: eel_diaspora_kit
+description: eel Diaspora Kit - embassy station form capture and pouch management (WP-5.8, M24).
+version: 1.0.0+1
+publish_to: none
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  eel_kit_sdk:
+    path: ../../../../packages/kit-sdk-flutter
+
+  flutter_localizations:
+    sdk: flutter
+
+  # i18n
+  intl: ^0.20.0
+
+  # Timezone handling
+  timezone: ^0.9.0
+
+  # State management
+  flutter_riverpod: ^2.5.0
+
+  # Shared local DB from kit-sdk (re-exported via eel_kit_sdk)
+  isar: ^3.1.0
+  isar_flutter_libs: ^3.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  generate: true
+  uses-material-design: true

@@ -1,0 +1,38 @@
+[package]
+name            = "eel-diaspora"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish         = false
+description     = "Diaspora voting domain, API, and transmission (WP-5.8, M24)"
+
+[lib]
+name = "eel_diaspora"
+path = "src/lib.rs"
+
+[dependencies]
+axum             = { workspace = true }
+tokio            = { workspace = true }
+sqlx             = { workspace = true }
+serde            = { workspace = true }
+serde_json       = { workspace = true }
+thiserror        = { workspace = true }
+tracing          = { workspace = true }
+tower-http       = { workspace = true }
+uuid             = { workspace = true }
+chrono           = { workspace = true }
+blake3           = { workspace = true }
+chrono-tz        = { workspace = true }
+utoipa           = { workspace = true }
+
+# eel platform packages (outside this workspace)
+eel-events-rs  = { path = "../../../../packages/eel-events-rs" }
+eel-outbox-rs  = { path = "../../../../packages/eel-outbox-rs" }
+eel-crypto-rs  = { path = "../../../../packages/eel-crypto-rs" }
+eel-auth-rs    = { path = "../../../../packages/eel-auth-rs" }
+
+[dev-dependencies]
+rstest   = { workspace = true }
+proptest = { workspace = true }
+tokio    = { workspace = true, features = ["test-util"] }

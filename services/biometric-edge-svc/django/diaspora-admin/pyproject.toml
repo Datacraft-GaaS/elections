@@ -1,0 +1,30 @@
+[project]
+name = "diaspora-admin"
+version = "0.1.0"
+description = "Diaspora voting Django admin (WP-5.8, M24)"
+requires-python = ">=3.12"
+dependencies = [
+    "django>=5.0,<6.0",
+    "dj-database-url>=2.1",
+    "psycopg[binary]>=3.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-django>=4.8",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["diaspora_admin"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "diaspora_admin.settings"
+testpaths = ["tests"]
+
+[tool.pyright]
+pythonVersion = "3.12"
