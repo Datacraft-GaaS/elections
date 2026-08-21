@@ -1,0 +1,22 @@
+[package]
+name        = "eel-abis-fp-multifinger"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "Multi-finger slap segmentation and fusion: 4-4-2 slap decomposition, per-finger scoring, DPR gating."
+
+[lib]
+name = "eel_abis_fp_multifinger"
+path = "src/lib.rs"
+
+[[test]]
+name = "multifinger_test"
+path = "tests/multifinger_test.rs"
+
+[dependencies]
+serde      = { workspace = true }
+thiserror  = { workspace = true }
+
+[dev-dependencies]
+rstest = { workspace = true }

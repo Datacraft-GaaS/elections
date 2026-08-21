@@ -1,0 +1,22 @@
+[package]
+name        = "eel-abis-fp-tps-warp"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "Thin-Plate Spline non-rigid distortion correction for fingerprint minutiae."
+
+[lib]
+name = "eel_abis_fp_tps_warp"
+path = "src/lib.rs"
+
+[[test]]
+name = "tps_test"
+path = "tests/tps_test.rs"
+
+[dependencies]
+serde      = { workspace = true }
+thiserror  = { workspace = true }
+
+[dev-dependencies]
+rstest = { workspace = true }

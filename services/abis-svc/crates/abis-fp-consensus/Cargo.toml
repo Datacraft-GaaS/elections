@@ -1,0 +1,28 @@
+[package]
+name        = "eel-abis-fp-consensus"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "Multi-algorithm consensus matcher: Bozorth3 + MCC + FingerCode + orientation + skeleton with weighted voting."
+
+[lib]
+name = "eel_abis_fp_consensus"
+path = "src/lib.rs"
+
+[[test]]
+name = "consensus_test"
+path = "tests/consensus_test.rs"
+
+[dependencies]
+serde      = { workspace = true }
+thiserror  = { workspace = true }
+abis-matcher              = { path = "../abis-matcher" }
+eel-abis-fp-mcc           = { path = "../abis-fp-mcc" }
+eel-abis-fp-texture       = { path = "../abis-fp-texture" }
+eel-abis-fp-orientation   = { path = "../abis-fp-orientation" }
+eel-abis-fp-skeleton      = { path = "../abis-fp-skeleton" }
+eel-abis-fusion-advanced  = { path = "../abis-fusion-advanced" }
+
+[dev-dependencies]
+rstest = { workspace = true }

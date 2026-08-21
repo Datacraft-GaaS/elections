@@ -1,0 +1,22 @@
+[package]
+name        = "eel-abis-fp-texture"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "Texture-based fingerprint matching: FingerCode, LBP, MB-LBP. Jain et al. IEEE TIP 2000."
+
+[lib]
+name = "eel_abis_fp_texture"
+path = "src/lib.rs"
+
+[[test]]
+name = "texture_test"
+path = "tests/texture_test.rs"
+
+[dependencies]
+serde      = { workspace = true }
+thiserror  = { workspace = true }
+
+[dev-dependencies]
+rstest = { workspace = true }

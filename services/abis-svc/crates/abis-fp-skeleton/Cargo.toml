@@ -1,0 +1,22 @@
+[package]
+name        = "eel-abis-fp-skeleton"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "Fingerprint ridge skeleton graph: Zhang-Suen thinning, graph extraction, VF2 subgraph matching."
+
+[lib]
+name = "eel_abis_fp_skeleton"
+path = "src/lib.rs"
+
+[[test]]
+name = "skeleton_test"
+path = "tests/skeleton_test.rs"
+
+[dependencies]
+serde      = { workspace = true }
+thiserror  = { workspace = true }
+
+[dev-dependencies]
+rstest = { workspace = true }

@@ -33,9 +33,7 @@ exclude = [
   "services/inventory-svc/crates/custody",
   # diaspora: WP-5.8 in-flight, pending workspace deps
   "services/biometric-edge-svc/crates/diaspora",
-  # abis-fp-*: in-flight stubs with no Cargo.toml yet
-  "services/abis-svc/crates/abis-fp-consensus",
-  "services/abis-svc/crates/abis-fp-tps-warp",
+  # abis-fp-consensus and abis-fp-tps-warp: now implemented, excluded entries removed
   # support-admin-svc: nested workspace owns these crates
   "services/support-admin-svc/crates/budget",
   "services/support-admin-svc/crates/payroll",

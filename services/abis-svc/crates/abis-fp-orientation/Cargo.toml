@@ -1,0 +1,22 @@
+[package]
+name        = "eel-abis-fp-orientation"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "Fingerprint orientation field matching: Poincare index singular points, pattern classification, field correlation."
+
+[lib]
+name = "eel_abis_fp_orientation"
+path = "src/lib.rs"
+
+[[test]]
+name = "orientation_test"
+path = "tests/orientation_test.rs"
+
+[dependencies]
+serde      = { workspace = true }
+thiserror  = { workspace = true }
+
+[dev-dependencies]
+rstest = { workspace = true }
