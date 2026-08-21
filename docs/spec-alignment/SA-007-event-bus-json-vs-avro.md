@@ -1,4 +1,4 @@
-# SA-007: Event bus — JSON + zstd + per-aggregate topics vs Avro + domain topics
+# SA-007: Event bus: JSON + zstd + per-aggregate topics vs Avro + domain topics
 
 Date: 2026-08-21
 Applies to: Datacraft bid documents under work_docs/01-Projects/IEBC/sw/ (our own earlier draft)
@@ -16,22 +16,22 @@ Status: decided (ADR takes precedence; sw/ docs to be edited)
 
 - **JSON + zstd on the wire**, one encoding, canonical JSON (RFC 8785) for signing.
 - **~500 topics** organised per aggregate + major version (`eel.<context>.<aggregate>.v<major>`).
-- **Karapace** (Aiven Apache 2.0 fork of Confluent SR — supports both Avro and JSON Schema).
+- **Karapace** (Aiven Apache 2.0 fork of Confluent SR, supports both Avro and JSON Schema).
 - **90-day hot retention** (RFP-aligned per PRE_BID D13) with Kafka Tiered Storage to MinIO thereafter.
 
 ## RFP status
 
-**Not RFP-binding on payload encoding or topic granularity.** tender.txt names neither Avro, JSON, MessagePack, nor specific topic taxonomy. RFP DOES mandate 90-day online log retention (tender.txt Sec V + PRE_BID D13) — the 7-day figure in ARCHITECTURE.md §9 is Datacraft-drafted and short of the RFP requirement.
+**Not RFP-binding on payload encoding or topic granularity.** tender.txt names neither Avro, JSON, MessagePack, nor specific topic taxonomy. RFP DOES mandate 90-day online log retention (tender.txt Sec V + PRE_BID D13), the 7-day figure in ARCHITECTURE.md §9 is Datacraft-drafted and short of the RFP requirement.
 
 ## Rationale
 
 ### JSON + zstd
 
-1. **Debuggability**. Election-critical events are legally-relevant artefacts. When an investigator (auditor, court, IAB) reads an event, JSON is human-legible; Avro requires the schema plus tooling to decode. Debug-ability is not marketing — it is auditor-defensibility.
+1. **Debuggability**. Election-critical events are legally-relevant artefacts. When an investigator (auditor, court, IAB) reads an event, JSON is human-legible; Avro requires the schema plus tooling to decode. Debug-ability is not marketing, it is auditor-defensibility.
 2. **Signing model.** Canonical JSON (RFC 8785 JCS) is a well-specified deterministic canonicalisation. Cross-language Ed25519 verification works out of the box. Canonical Avro (via cross-encoding) is possible but adds a codec dependency to every verifier.
 3. **One codec path**. Two encodings (Avro + something-else for signing) doubles the surface. One encoding is simpler across ~100 services and ~500 topics.
 4. **Client footprint**. Mobile clients (Flutter M13/M29-M34) get JSON natively; adding Avro would import an Avro codec into every mobile app.
-5. **Karapace parity**. If we adopt JSON Schema in Karapace, we get schema validation + evolution + registry integration matching what Avro-in-Confluent-SR offers — without the vendor licence issue (see SA-001).
+5. **Karapace parity**. If we adopt JSON Schema in Karapace, we get schema validation + evolution + registry integration matching what Avro-in-Confluent-SR offers, without the vendor licence issue (see SA-001).
 
 ### Per-aggregate topics (~500) vs domain topics (~10)
 
@@ -47,7 +47,7 @@ Avro is genuinely tighter (smaller payload, schema-enforced at write time) and m
 ## Edits to apply to sw/
 
 - **On encoding**: if Datacraft has existing Avro artefacts for M01-M28 already generated, we accept **Avro via Karapace** (Apache 2.0 fork; solves the licence-hygiene concern from SA-001) as the wire format for existing topics, with new topics allowed either encoding. Signing scheme becomes canonical-Avro (deterministic Avro binary encoding).
-- **On topic granularity**: we compromise on **medium-granularity — one topic per (bounded-context, event-class)** — roughly 50-100 topics. Less than 500, more than 10. Preserves consumer isolation for the biggest event classes without exploding topic count.
+- **On topic granularity**: we compromise on **medium-granularity, one topic per (bounded-context, event-class)**, roughly 50-100 topics. Less than 500, more than 10. Preserves consumer isolation for the biggest event classes without exploding topic count.
 - **On retention**: **90 days hot is non-negotiable** (RFP-binding, PRE_BID D13). Datacraft's 7-day figure must be revised regardless of the other outcomes.
 
 ## Related

@@ -6,14 +6,14 @@ The full decision text lives in **ADR-0015**. This document is the operational c
 
 ---
 
-## Adding a new event type — checklist
+## Adding a new event type: checklist
 
 Every new event type requires all of the following in the same PR:
 
 - [ ] JSON Schema written at `packages/event-schemas/<context>/<aggregate>/<event_name>/v<n>.schema.json`.
 - [ ] Type name matches `eel.<context>.<event_name>.v<major>` (lowercase snake_case).
 - [ ] Topic exists at `eel.<context>.<aggregate>.v<major>` (or PR to create it in `platform/kafka/topics/`).
-- [ ] Producer service publishes via `eel-outbox-{rs,py,ex}` shared library — never a raw Kafka producer.
+- [ ] Producer service publishes via `eel-outbox-{rs,py,ex}` shared library, never a raw Kafka producer.
 - [ ] Ed25519 signature produced by SPIFFE-issued workload key (automatic if using the shared library).
 - [ ] Consumer test proves idempotency by `event.id`.
 - [ ] If event is on an event-source or credential topic: signed-verification test on the consumer path.
@@ -27,7 +27,7 @@ CI enforces: schema validity, `type` ↔ topic mapping, backward compatibility w
 
 ## Envelope reference
 
-Every event carries CloudEvents 1.0 required fields plus platform extensions. The shared library populates all of these — service code sets `data` and (optionally) `subject`, `eel_correlation_id`, `eel_causation_id`.
+Every event carries CloudEvents 1.0 required fields plus platform extensions. The shared library populates all of these, service code sets `data` and (optionally) `subject`, `eel_correlation_id`, `eel_causation_id`.
 
 ```json
 {
@@ -147,12 +147,12 @@ The `eel-events-{rs,py,ex}` library propagates both automatically when you emit 
 
 ## What does NOT go on Kafka
 
-- Bulk data transfer — use MinIO signed URLs.
-- Request-response — use gRPC or REST.
-- Long-running orchestration — use in-service state machines (Oban / arq / tokio task).
-- Session state — use Valkey.
-- Hourly-changing config — use Kubernetes ConfigMap or a feature-flag service.
-- Public read fan-out — use signed static tarballs via CDN edge (ADR-0011 Tier 1).
+- Bulk data transfer, use MinIO signed URLs.
+- Request-response, use gRPC or REST.
+- Long-running orchestration, use in-service state machines (Oban / arq / tokio task).
+- Session state, use Valkey.
+- Hourly-changing config, use Kubernetes ConfigMap or a feature-flag service.
+- Public read fan-out, use signed static tarballs via CDN edge (ADR-0011 Tier 1).
 
 Kafka is for events. If it's not an event, do not put it there.
 
@@ -160,10 +160,10 @@ Kafka is for events. If it's not an event, do not put it there.
 
 ## Related
 
-- **ADR-0015** — canonical decision text and full contract.
-- **ADR-0013** — event-sourcing boundaries (which modules emit event-source topics).
-- **ADR-0016** — PII data classes referenced by `eel_data_class`.
-- **ADR-0017** — transparency log ingests event-source topics.
+- **ADR-0015**, canonical decision text and full contract.
+- **ADR-0013**, event-sourcing boundaries (which modules emit event-source topics).
+- **ADR-0016**, PII data classes referenced by `eel_data_class`.
+- **ADR-0017**, transparency log ingests event-source topics.
 - `docs/runbooks/consumer-lag-response.md`
 - `docs/runbooks/tamper-topic-response.md`
 - `docs/runbooks/replay-projection-rebuild.md`

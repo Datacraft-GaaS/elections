@@ -5,13 +5,13 @@ Date: 2026-08-21
 
 ## Context
 
-Voter-facing mobile apps (M13 verifier, M29 citizen verify) and accredited-user apps (M30 party agent, M31 poll clerk, M32 field support, M33 dispatch, M34 observer) run on citizen and staff devices outside the physical trust boundary. `sw/MOBILE-INTEGRATION-NOTES.md` §5 and `sw/mobile/SECURITY.md` mandate device attestation, in-app RASP, and hardened storage — extensions to ADR-0007 that do not fit inside a portal/backend ADR.
+Voter-facing mobile apps (M13 verifier, M29 citizen verify) and accredited-user apps (M30 party agent, M31 poll clerk, M32 field support, M33 dispatch, M34 observer) run on citizen and staff devices outside the physical trust boundary. `sw/MOBILE-INTEGRATION-NOTES.md` §5 and `sw/mobile/SECURITY.md` mandate device attestation, in-app RASP, and hardened storage, extensions to ADR-0007 that do not fit inside a portal/backend ADR.
 
 ## Decision
 
 - **Device attestation on every session**:
-  - Android: **Google Play Integrity API** — verifies device integrity (Meets Basic + Device + Strong Integrity levels; policy per app tier).
-  - iOS: **Apple App Attest + DeviceCheck** — verifies device authenticity.
+  - Android: **Google Play Integrity API**, verifies device integrity (Meets Basic + Device + Strong Integrity levels; policy per app tier).
+  - iOS: **Apple App Attest + DeviceCheck**, verifies device authenticity.
   - Attestation token attached to every authenticated request via `X-Eel-Attest` header; backend rejects sessions without a fresh valid attestation.
 - **RASP (Runtime Application Self-Protection)**:
   - Frida detection, Xposed detection, Magisk detection, root/jailbreak detection.
@@ -45,7 +45,7 @@ Voter-facing mobile apps (M13 verifier, M29 citizen verify) and accredited-user 
 
 Positive: attestation removes rooted/tampered devices from valid session pool; RASP raises attacker cost on device-side manipulation; secure-storage discipline defends stolen-device scenarios; distribution channels enforce provenance.
 
-Negative: Play Integrity / App Attest depend on Google / Apple services — offline citizens using non-standard Android forks may fail attestation. Fallback: SMS/USSD verification path (M13 multi-channel) covers this population without a mobile app.
+Negative: Play Integrity / App Attest depend on Google / Apple services, offline citizens using non-standard Android forks may fail attestation. Fallback: SMS/USSD verification path (M13 multi-channel) covers this population without a mobile app.
 
 ## Alternatives rejected
 

@@ -75,68 +75,132 @@ none
 
 ## Feature checklist
 
-1. FR-M11-001: serve latest national/regional/constituency results snapshots; CDN-cacheable with 30 s TTL.
-2. FR-M11-002: inclusion proof endpoint: given form_id, return Merkle proof verifiable client-side.
-3. FR-M11-003: live turnout display with configurable delay (default 60 s) from BVI feed.
-4. FR-M11-004: historical snapshots accessible by version (append-only; no overwrites).
-5. FR-M11-005: signed snapshot download: JSON + detached Ed25519 signature file.
-6. FR-M11-006: civic content CMS: polling centre locations, candidate list, how-to-verify guide.
-7. FR-M11-007: multilingual: English + Kiswahili; extensible to 11 languages.
-8. FR-M11-008: WCAG 2.2 AA; screen-reader and keyboard-only support.
-9. FR-M11-009: 5M concurrent readers; p95 <= 200 ms; p99 <= 500 ms from platform CDN edge.
-10. FR-M11-010: no PII; no biometrics; no voter-specific data in public surface.
-11. FR-M11-011: petition-window peak: results remain readable during high-traffic petition filing.
-12. FR-M11-012: cache-key includes Merkle root + signature version; no stale poisoning.
-13. FR-M11-013: all admin content mutations signed + audit-logged.
-14. FR-M11-014: graceful degradation: stale snapshot clearly labelled with last-updated timestamp.
-15. FR-M11-015: machine-readable CSV/JSON bulk export with inclusion proofs (tier 4 accredited).
+Results display:
+1. FR-M11-001: home dashboard: national totals per elective position and turnout with time-of-last-update. (spec FR-M11-001)
+2. FR-M11-002: drill-down navigation: national to county to constituency to ward to polling station. (spec FR-M11-002)
+3. FR-M11-003: per-polling-station page: signed Form 34A image, extracted tally per candidate, Merkle-inclusion proof, transparency-log index, PO and agent signatures. (spec FR-M11-003)
+4. FR-M11-004: provenance overlay on each form: HSM signature indicator, Merkle-inclusion index, and escrow-mirror confirmation. (spec FR-M11-016)
+5. FR-M11-005: live turnout feed with configurable delay (default 60 s) to prevent gaming. (spec FR-M11-017)
+6. FR-M11-006: transparency dashboard: every published Merkle root, every quorum operation, and every high-severity incident (anonymised). (spec FR-M11-009)
+7. FR-M11-007: historical snapshot access by version; append-only; no overwrites; earliest snapshot preserved.
+8. FR-M11-008: disputed form status shown; original signed image and Merkle proof remain accessible to petitioners.
+
+Downloads and exports:
+9. FR-M11-009: bulk download of signed forms per constituency, county, and national with Ed25519 signature bundles. (spec FR-M11-004)
+10. FR-M11-010: transparency-log root retrieval: any citizen can fetch current root and any historical root. (spec FR-M11-005)
+11. FR-M11-011: inclusion-proof retrieval: given form_id or station code, return Merkle-inclusion proof verifiable client-side. (spec FR-M11-006)
+12. FR-M11-012: signed snapshot download: JSON plus detached Ed25519 signature file verifiable against IEBC public key. (spec FR-M11-008)
+13. FR-M11-013: RSS/Atom feed of published forms for automation-friendly consumers. (spec FR-M11-013)
+14. FR-M11-014: OpenAPI JSON endpoints for programmatic access with rate limit. (spec FR-M11-014)
+15. FR-M11-015: machine-readable CSV/JSON bulk export with inclusion proofs (tier 4 accredited only).
+16. FR-M11-016: petition-window peak: results immutable; inclusion proofs unaffected; bulk downloads throttled; off-peak windows offered.
+
+Architecture and reliability:
+17. FR-M11-017: static-first CDN architecture: pages served from CDN cache; origin serves update generator only. (spec FR-M11-007)
+18. FR-M11-018: signed URLs on CDN; tampered snapshots detectable on client-side verification. (spec FR-M11-008)
+19. FR-M11-019: active-active HA across primary and mirror DCs; CDN edge serves read traffic; failover RTO <= 30 s. (spec NFR-M11-006)
+20. FR-M11-020: graceful degradation: stale snapshot clearly labelled with last-updated timestamp; no silent serving of outdated data.
+21. FR-M11-021: DDoS resilience: origin protected by upstream scrubbing, anycast, WAF, and L7 challenge; static snapshots continue on origin loss. (spec NFR-M11-003)
+22. FR-M11-022: 5M unique visitors in 1 hour peak; 50M total in first 24 h; p95 <= 200 ms; p99 <= 500 ms. (spec NFR-M11-001)
+23. FR-M11-023: availability 99.9% during election cycle; degrade to signed CDN static on origin loss. (spec NFR-M11-004)
+
+Security and integrity:
+24. FR-M11-024: cache key includes Merkle root and signature version; no stale poisoning on CDN or Valkey. (spec FR-M11-012)
+25. FR-M11-025: every response carries Ed25519 signature verifiable against IEBC public key on canonical domains. (spec NFR-M11-005)
+26. FR-M11-026: no PII: forms show only statutorily required data; agent identities anonymised. (spec FR-M11-015)
+27. FR-M11-027: rate limit on proof and bulk-download endpoints; key by IP and /64; priority shed on burst.
+28. FR-M11-028: SSRF prevention on civic CMS URL fields: allowlist only; no private IP ranges.
+29. FR-M11-029: all admin CMS mutations signed and audit-logged before publication.
+30. FR-M11-030: secrets in logs refused; Semgrep Tier A/B log ban enforced in CI.
+31. FR-M11-031: injection prevention on all CMS and API inputs; parameterised queries; ZAP scan clean.
+
+Content and accessibility:
+32. FR-M11-032: civic CMS: polling centre locations, candidate list, how-to-verify guide. (spec FR-M11-006)
+33. FR-M11-033: multilingual: English and Kiswahili on all user-facing surfaces; extensible to 11 languages. (spec FR-M11-010)
+34. FR-M11-034: WCAG 2.2 AA: screen-reader; keyboard-only; text-only fallback for slow connections. (spec FR-M11-011)
+35. FR-M11-035: mobile-first responsive design; page weight < 200 KB on initial load over 3G. (spec FR-M11-012)
+36. FR-M11-036: KSL video explainer for result verification process; captions on all video.
+37. FR-M11-037: high-contrast mode and configurable text scaling on web portal.
+38. FR-M11-038: colour-blind accessible status indicators: symbol plus text plus pattern; delta-E registry.
+
+Monitoring:
+39. FR-M11-039: Grafana dashboard: CDN cache-hit ratio, snapshot age, Merkle anchor lag, proof request latency, bulk-download queue depth.
+40. FR-M11-040: SLO burn-rate alerts: p95/p99 read latency; snapshot staleness threshold; origin availability.
+
+Transparency log:
+41. FR-M11-041: cache last N transparency-log roots; degrade gracefully if log unreachable; alert on staleness.
+42. FR-M11-042: escrow mirror status shown on transparency dashboard; lag alerted if mirror falls behind.
+
+Legal and statutory:
+43. FR-M11-043: petition-window countdown displayed: T+7 days from national declaration per s.75(1).
+44. FR-M11-044: presidential run-off rules displayed if no majority declared.
+45. FR-M11-045: referendum county-majority threshold visualised: 24-of-47 counties requirement clearly shown.
+
+CMS governance:
+46. FR-M11-046: CMS approval workflow: content staged, previewed, and dual-signed before going live.
+47. FR-M11-047: content version history retained; rollback available to any previous signed version.
+48. FR-M11-048: content update live within 30 s p95 of CMS approval.
+
+API governance:
+49. FR-M11-049: OpenAPI published at well-known URL; openapi-diff clean on every release.
+50. FR-M11-050: generated API clients compile and smoke test in 4 languages on each publish.
 
 ## Acceptance criteria
 
-AC-M11-01: 5M concurrent reads; p95 <= 200 ms; p99 <= 500 ms (load test).
-AC-M11-02: inclusion proof verified independently by reference client (integration test).
+AC-M11-01: 5M concurrent reads; p95 <= 200 ms; p99 <= 500 ms from CDN edge (load test).
+AC-M11-02: inclusion proof verified independently by reference client within 30 s (integration test).
 AC-M11-03: stale snapshot clearly labelled; no silent serving of outdated data (chaos exercise).
 AC-M11-04: signed snapshot download integrity verified post-download (UAT).
-AC-M11-05: cache poisoning attempt blocked; key includes Merkle root (red-team).
-AC-M11-06: WCAG 2.2 AA audit pass (independent audit).
-AC-M11-07: civic content published within 30 s of CMS approval (integration test).
-AC-M11-08: 99.9% availability during election cycle (SLO measurement).
+AC-M11-05: CDN cache poisoning attempt blocked; cache key includes Merkle root (red-team).
+AC-M11-06: DDoS on origin does not stop portal; static CDN snapshots continue serving (chaos exercise).
+AC-M11-07: WCAG 2.2 AA audit pass: axe zero violations; screen-reader traversal completes (independent audit).
+AC-M11-08: civic content live within 30 s of CMS approval (integration test).
+AC-M11-09: 99.9% availability during election cycle (SLO measurement).
+AC-M11-10: no PII or biometric data in any published surface (automated scan plus manual review).
+AC-M11-11: 11-language smoke test: no truncated strings; ICU plural forms correct (i18n test).
+AC-M11-12: petition-window peak: all inclusion proofs retrievable under 5M concurrent (load test).
+AC-M11-13: transparency-log root cached; stale root alerted within 60 s of log failure (chaos exercise).
 
 ## Applicable edge cases
 
-**connectivity**
-EC-CON-02: mobile-first; CDN-cached; 3G SLAs.
-EC-CON-05: flapping link; read-through Valkey; no error.
+connectivity:
+EC-CON-02: mobile-first; CDN-cached; 3G SLAs; page weight < 200 KB on initial 3G load.
+EC-CON-05: flapping link; read-through Valkey cache; no error surfaced to user.
 
-**time**
-EC-TIM-05: snapshot staleness; last-updated label; stale threshold alert.
+time:
+EC-TIM-05: snapshot staleness; last-updated label; stale-threshold alert fires.
+EC-TIM-07: extended tallying window; portal updated when HSM-signed extension event received.
+EC-TIM-08: petition window T+7 midnight EAT; results immutable; s.75(1) inclusive boundary enforced.
 
-**identity**
-EC-IDN-02: JWT expires on CMS edit; silent refresh.
-EC-IDN-10: SpiceDB down; admin writes blocked; public reads from cache.
+identity:
+EC-IDN-02: JWT expires on CMS admin edit; in-flight completes; next request 401 plus silent refresh.
+EC-IDN-10: SpiceDB down; admin CMS writes blocked; public reads served from CDN cache.
+EC-IDN-11: stale JWKS on CMS admin path; refetch on kid miss; no 401 storm.
 
-**data**
-EC-DAT-01: duplicate snapshot push; idempotent upsert on root_id.
-EC-DAT-09: Unicode candidate names; NFC; grapheme-safe.
-EC-DAT-13: form marked disputed after publication; status shown; proof still valid.
+data:
+EC-DAT-01: duplicate snapshot push same root_id; idempotent upsert; no duplicate publication.
+EC-DAT-02: same snapshot key different body; 422 idempotency-key-reuse; alert.
+EC-DAT-09: Unicode candidate names in snapshot JSON; NFC normalisation; grapheme-safe.
+EC-DAT-13: form marked disputed after publication; disputed status shown; proof still valid.
 
-**security**
-EC-SEC-06: SSRF via civic content URL fields; allowlist only.
-EC-SEC-09: rate-limit on proof endpoint; key by IP+/64; priority shed.
-EC-SEC-12: Valkey cache poisoning; ETags include Merkle root.
-EC-SEC-16: secrets in logs refused.
+security:
+EC-SEC-05: injection on CMS admin inputs and API query params; parameterised only; Semgrep clean.
+EC-SEC-06: SSRF via civic CMS URL fields; allowlist; no private IP ranges.
+EC-SEC-09: rate-limit evasion on proof and bulk-download endpoints; key by IP+/64; priority shed.
+EC-SEC-12: Valkey cache poisoning; cache keys and ETags include Merkle root and sig version.
+EC-SEC-16: secrets in logs refused; no IEBC signing keys in telemetry.
 
-**scale**
-EC-SCL-01: CDN cache stampede on snapshot publish; staggered TTL jitter.
-EC-SCL-04: Valkey eviction at 5M peak; LRU + PG durable store.
-EC-SCL-07: 5M concurrent; p95 200 ms; p99 500 ms SLA.
+scale:
+EC-SCL-01: CDN cache stampede on snapshot publish; staggered TTL jitter; origin p99 <= 500 ms.
+EC-SCL-02: thundering herd on STH root fetch; SDK jitter; ETag 304; rate-limit.
+EC-SCL-04: Valkey eviction at 5M peak; PG-durable store; Valkey is cache only; no idempotency loss.
+EC-SCL-07: 5M concurrent; p95 200 ms; p99 500 ms SLA sustained 30 min.
+EC-SCL-08: Valkey eviction of snapshot cache key; PG durable store serves; Valkey refills async.
 
-**legal**
-EC-TIM-08: petition window; results remain immutable; inclusion proof unaffected.
-
-**human**
-EC-HUM-06: screen readers; WCAG 2.2 AA.
-EC-HUM-08: 11 languages; no truncation.
+legal:
+EC-LEG-04: recount ordered; new snapshot version via compensating event; both versions shown with proofs.
+EC-LEG-05: presidential run-off; rules engine blocks certificate; run-off portal page created.
+EC-LEG-07: referendum 24-of-47 county threshold; exact >= semantics enforced; visualisation accurate.
 
 ## Test plan
 

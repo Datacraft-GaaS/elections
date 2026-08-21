@@ -5,7 +5,7 @@ Date: 2026-08-21
 
 ## Context
 
-Event sourcing offers immutable audit, natural transparency-log integration, decoupled schema evolution, and time-travel — at the cost of projections, snapshots, replay logic, versioned events, and CQRS discipline. Not every module earns that cost. Under a minimise-complexity constraint, event sourcing is reserved for the modules where the event log itself is the deliverable — court evidence, statutory audit artefact.
+Event sourcing offers immutable audit, natural transparency-log integration, decoupled schema evolution, and time-travel, at the cost of projections, snapshots, replay logic, versioned events, and CQRS discipline. Not every module earns that cost. Under a minimise-complexity constraint, event sourcing is reserved for the modules where the event log itself is the deliverable, court evidence, statutory audit artefact.
 
 ## Decision
 

@@ -81,67 +81,104 @@ none
 
 ## Feature checklist
 
-1. FR-M12-001: candidate self-nomination portal with document upload (nomination papers, IPRS, affidavit).
-2. FR-M12-002: IPRS identity verification on candidacy submission.
-3. FR-M12-003: statutory clearance workflow: KRA tax compliance, EACC integrity check, court clearance.
-4. FR-M12-004: quota enforcement: gender (2/3 rule, Art.81b), youth, PWD quotas per constituency/region/national.
-5. FR-M12-005: quota compliance dashboard for IEBC officers and parties.
-6. FR-M12-006: candidate approval workflow: officer review -> legal sign-off -> public list.
-7. FR-M12-007: candidate withdrawal: before deadline only; full audit; replacement workflow.
-8. FR-M12-008: public candidate list published after nomination close; signed JSON + CSV.
-9. FR-M12-009: ballot design package: signed PDF layout per position/constituency sent to gov printer.
-10. FR-M12-010: ballot proof: HSM-signed hash of ballot design; publicly verifiable.
-11. FR-M12-011: multi-position: simultaneous pipelines for all elective positions + referenda.
-12. FR-M12-012: full audit trail: every status change signed + anchored.
-13. FR-M12-013: RBAC: party agents, IEBC officers, legal team, printer liaison have scoped access.
-14. FR-M12-014: deadline enforcement: submission, withdrawal, clearance windows enforced by OPA policy.
-15. FR-M12-015: appeal workflow: rejected candidate can appeal; escalation to M40 election court interface.
-16. Nomination deadline enforcement: OPA hard-close; no late submissions.
-17. KRA/EACC circuit-breaker: fail-open on lookup; fail-closed on approval.
-18. Ballot proof published to printer within 24 h of nomination close.
-19. Public candidate list serves p95 <= 200 ms (CDN-cached).
+Registration and nomination:
+1. FR-M12-001: party portal MFA login per party official; FIDO2 or TOTP; session scoped to party. (spec FR-M12-001)
+2. FR-M12-002: nomination form per elective position: biographic, ICAO-compliant portrait, party affiliation, running-mate for President/Governor, area code, symbol. (spec FR-M12-002)
+3. FR-M12-003: independent-candidate registration with signature-collection evidence upload; evidence integrity check. (spec FR-M12-003)
+4. FR-M12-004: voter-register cross-check via M02: candidate must be a registered voter; automatic verification at submission. (spec FR-M12-004)
+5. FR-M12-005: KRA tax-compliance check via adapter (advisory); circuit-breaker on KRA timeout; manual override with reason logged. (spec FR-M12-005)
+6. FR-M12-006: EACC integrity clearance check via adapter (advisory); similar circuit-breaker and override flow. (spec FR-M12-006)
+7. FR-M12-007: document upload: educational certificates, integrity clearance, ethics affidavits, party clearance; PDF only; malware scan; max 20 MB per document. (spec FR-M12-006)
+8. FR-M12-008: gender quota enforcement per Elections Act (two-thirds gender rule) at party and national level; alert on violation. (spec FR-M12-007)
+9. FR-M12-009: PWD and youth quota tracking: counts per party per position; dashboard for IEBC officers and parties. (spec FR-M12-007)
+10. FR-M12-010: nominations window enforcement: OPA hard-close at gazetted deadline; no further submissions accepted. (spec FR-M12-013)
+
+Clearance workflow:
+11. FR-M12-011: RO clearance workflow: review submission, request additional documents, approve or reject with reason. (spec FR-M12-008)
+12. FR-M12-012: clearance lifecycle: SUBMITTED -> DOCS_UPLOADED -> RO_REVIEWING -> CLEARED / REJECTED -> GAZETTED. (spec FR-M12-009)
+13. FR-M12-013: candidate appeal workflow: rejected candidate appeals; escalation to M40 election court interface. (spec FR-M12-015)
+14. FR-M12-014: withdrawal workflow: before deadline only; full audit trail; replacement nomination workflow. (spec FR-M12-007)
+15. FR-M12-015: dual-officer sign-off required for gazette publication step; separate HSM challenges. (spec FR-M12-010)
+
+Publication and ballot:
+16. FR-M12-016: public gazette publication of cleared candidates with all statutory details; signed JSON and CSV. (spec FR-M12-010, FR-M12-008)
+17. FR-M12-017: ballot proof generation: PDF layout per position matching printer specifications; symbol plus portrait plus name plus party colour. (spec FR-M12-011)
+18. FR-M12-018: ballot lottery or registration-time ordering per IEBC policy; deterministic and reproducible. (spec FR-M12-011)
+19. FR-M12-019: ballot proof preview and party sign-off required before printer handoff. (spec FR-M12-012)
+20. FR-M12-020: HSM-signed hash of ballot PDF published for public verifiability. (spec FR-M12-010)
+21. FR-M12-021: ballot proof delivered to printer within 24 h of nomination close.
+22. FR-M12-022: multi-position: simultaneous independent pipelines for all elective positions and referenda. (spec FR-M12-011)
+
+Audit, access control, and monitoring:
+23. FR-M12-023: full audit trail: every status change signed and anchored to transparency log. (spec FR-M12-014)
+24. FR-M12-024: RBAC: party agents, IEBC officers, legal team, and printer liaison have scoped access; SpiceDB enforced. (spec FR-M12-013)
+25. FR-M12-025: public candidate list CDN-cached; p95 <= 200 ms; no PII beyond statutory fields.
+26. FR-M12-026: candidate withdrawal post-ballot-print: status frozen on ballot; tallied and annotated per EC-LEG-01. (spec FR-M12-007)
+27. FR-M12-027: WCAG 2.2 AA on public gazette and party portal; screen-reader and keyboard-only support. (spec NFR-M12-003)
+28. FR-M12-028: multilingual: English and Kiswahili on all surfaces; extensible to 11 languages.
+29. FR-M12-029: SSRF prevention on document and URL fields in nomination form; allowlist; no private IP ranges.
+30. FR-M12-030: XXE and unsafe deserialization prevention on PDF and SAML inputs; DTD off; strict models.
+31. FR-M12-031: secrets in logs refused; Semgrep Tier A/B log ban enforced in CI.
+32. FR-M12-032: injection prevention on all nomination and search inputs; parameterised queries; ZAP scan clean.
 
 ## Acceptance criteria
 
-AC-M12-01: quota compliance alerts fire when 2/3 rule is breached (UAT).
-AC-M12-02: KRA circuit-breaker triggers on KRA blackhole; manual override available (chaos test).
-AC-M12-03: ballot proof verifiable independently by reference client (integration test).
-AC-M12-04: candidate withdrawal blocked after deadline (regression test).
-AC-M12-05: all status changes in audit log; chain verifiable (audit trace).
-AC-M12-06: appeal escalates to M40 correctly (integration test).
-AC-M12-07: 99.9% availability during nomination cycle (SLO measurement).
+AC-M12-01: end-to-end nomination + clearance + gazette flow passes UAT with real party and IEBC personas.
+AC-M12-02: voter-register cross-check prevents non-voter candidates at submission (bench).
+AC-M12-03: gender quota alert fires when two-thirds rule is breached (UAT).
+AC-M12-04: ballot proof matches printer specification; party sign-off captured (printer sign-off).
+AC-M12-05: nominations window OPA hard-close enforced; no late submissions accepted (regression test).
+AC-M12-06: public gazette accessible with WCAG 2.2 AA audit pass (independent audit).
+AC-M12-07: appeal escalation to M40 court interface works end-to-end (integration test).
+AC-M12-08: KRA/EACC circuit-breaker triggers on blackhole; manual override path available (chaos test).
+AC-M12-09: all status changes in audit log; chain verifiable against transparency log (audit trace).
+AC-M12-10: 99.9% availability during nomination cycle (SLO measurement).
+AC-M12-11: 11-language smoke test: no truncated strings on gazette and portal (i18n test).
+AC-M12-12: ballot proof HSM signature verifiable independently by reference client (integration test).
 
 ## Applicable edge cases
 
-**connectivity**
-EC-CON-08: DNS poisoned; DNSSEC; hardcoded fallback for KRA/EACC.
+connectivity:
+EC-CON-05: flapping link; nomination draft saved locally; retry on reconnect; no duplicate submission.
+EC-CON-08: DNS poisoned; DNSSEC; hardcoded fallback endpoints for KRA and EACC adapters.
 
-**time**
-EC-TIM-09: nomination deadline OPA hard-close; all-or-nothing on in-flight.
-EC-TIM-04: KRA/EACC SLA breach; manual clearance path.
+time:
+EC-TIM-04: DST/TZ: nomination deadline computed in UTC; displayed in EAT; no off-by-one at boundary.
+EC-TIM-09: nomination deadline OPA hard-close; all-or-nothing on in-flight submission at deadline second.
 
-**identity**
-EC-IDN-02: JWT expires mid-upload; in-flight completes; next 401.
-EC-IDN-10: SpiceDB down; fail closed quota-override writes.
-EC-IDN-11: stale JWKS; refetch on kid miss.
+identity:
+EC-IDN-02: JWT expires mid-document upload; in-flight upload completes; next request 401.
+EC-IDN-09: dual-officer gazette publication: re-validate both at commit; approver revocation mid-flow causes re-delegation.
+EC-IDN-10: SpiceDB down; quota-override and gazette writes fail closed; read-only portal continues.
+EC-IDN-11: stale JWKS; refetch on kid miss; no 401 storm on party portal.
 
-**data**
-EC-DAT-01: duplicate nomination same key; cached response.
-EC-DAT-09: Unicode candidate names; NFC normalisation.
-EC-DAT-13: withdrawn candidate still in public list (tombstone); status shown.
+data:
+EC-DAT-01: duplicate nomination same key; cached response; no re-processing.
+EC-DAT-02: same key different body; 422 idempotency-key-reuse.
+EC-DAT-09: Unicode candidate names; NFC normalisation; grapheme-safe display on gazette.
+EC-DAT-13: withdrawn candidate still in public gazette (tombstone); withdrawn status shown clearly.
 
-**security**
-EC-SEC-05: injection on document upload; parameterised; content-type allowlist.
-EC-SEC-06: SSRF via document URL; allowlist.
-EC-SEC-16: secrets in logs refused.
+security:
+EC-SEC-05: injection on nomination form inputs and document metadata; parameterised only.
+EC-SEC-06: SSRF via document URL fields; allowlist; no private IP ranges; rebinding guard.
+EC-SEC-08: XXE on PDF and SAML inputs; DTD off; no pickle; strict Pydantic models.
+EC-SEC-16: secrets in logs refused; party credential hashes not in plaintext telemetry.
 
-**legal**
-EC-LEG-01: candidate withdraws post-ballot-print; status frozen; ballot annotated.
-EC-LEG-02: court injunction; status frozen by legal officer; audit-logged.
+legal:
+EC-LEG-01: candidate withdraws post-ballot-print; status frozen; ballot annotated; tallied separately.
+EC-LEG-02: court-ordered postponement or injunction; status frozen by legal officer; audit-logged.
 
-**human**
-EC-HUM-06: screen readers; WCAG 2.2 AA.
-EC-HUM-08: 11 languages.
+human:
+EC-HUM-06: screen readers; WCAG 2.2 AA on gazette and party portal.
+EC-HUM-08: 11 languages; no string truncation; ICU plural forms.
+
+scale:
+EC-SCL-04: consumer lag > 60 s on clearance event topic; backpressure applied; no OOM.
+EC-SCL-08: Valkey eviction of idempotency keys for document upload; PG-durable store used.
+
+EC-OPS-04: degradation-mode misconfiguration; OPA policy rejects nomination writes; gazette reads continue.
+EC-OPS-09: wrong degradation mode; canary telemetry detects; auto-rollback triggered.
+EC-DAT-07: partial document upload; atomic store; no partial record visible to clearance workflow.
 
 ## Test plan
 

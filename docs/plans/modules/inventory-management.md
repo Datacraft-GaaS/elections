@@ -87,66 +87,178 @@ none
 
 ## Feature checklist
 
-1. FR-M20-001: register assets with serial number, type, model, and initial custodian.
-2. FR-M20-002: custody transfer with HSM-signed event; dual-officer for high-value assets.
-3. FR-M20-003: RFID/barcode scan at transfer points; manual fallback if scanner fails.
-4. FR-M20-004: seal lifecycle: affix, verify, break (dual-officer) with HSM-signed events.
-5. FR-M20-005: reserve pool management: alert ECC when below threshold.
-6. FR-M20-006: consumable tracking: ballot paper count, ink, seals, by station.
-7. FR-M20-007: mobile field app: offline-capable; queue events locally; drain on reconnect.
-8. FR-M20-008: batch reconciliation: compare physical count vs event-sourced ledger; generate discrepancy report.
-9. FR-M20-009: OEM warranty integration: asset registration triggers warranty record creation.
-10. FR-M20-010: logistics partner tracking: shipment status linked to asset custody events.
-11. FR-M20-011: full custody chain query: any asset's complete history from registration to current location.
-12. FR-M20-012: election-day summary: count of deployed/returned/unaccounted assets per scope.
-13. FR-M20-013: kit revocation event from M06 triggers asset status update to "revoked".
-14. FR-M20-014: geofence validation: custody transfer location validated against M18 polygon.
-15. Zero untracked assets at election day start (reconciliation target).
-16. Custody transfer HSM sign <= 2 s p95.
-17. Batch reconciliation for national election <= 4 h.
-18. Reserve alert delivered to ECC within 60 s of threshold breach.
-19. Offline mobile queue holds up to 7 days; no data loss on reconnect.
-20. Dual-officer required for seal break and high-value transfers.
+Asset register:
+
+FR-M20-001: Append-only master asset register: every asset has immutable UID, SKU, parent UID, state, condition, factory serial, and batch ID; WORM-capable append log.
+FR-M20-002: No record deletable or modifiable; only new state-transition events appended; any attempt to modify returns 405 with audit log entry.
+FR-M20-003: UID formats: kit KE27-KIT-{BATCH}-{SEQ}, component KE27-KIT-{BATCH}-{SEQ}-{TYPE}-{INSTANCE}, ballot KE27-BAL-{CONST}-{STN}-{SEQ}, seal KE27-SEL-{TYPE}-{SEQ}, consumable lot KE27-CSM-{TYPE}-{MFGYYMM}-{LOT}.
+FR-M20-004: Triple carrier encoding per asset: Code 128 barcode (ISO/IEC 15417), HF RFID tag (ISO 14443A/15693, 13.56 MHz), and printed human-readable label.
+FR-M20-005: Asset registration: serial number, type, model, SKU, initial custodian, and batch ID recorded at birth; birth record received from OEM MES or entered by Datacraft provisioning.
+FR-M20-006: Kit component hierarchy: parent UID links kit to all sub-components; component lineage queryable in full event chain.
+
+Chain of custody:
+
+FR-M20-007: Eight choreographed custody workflows: OEM birth to Mombasa port, port clearance to Nairobi, Nairobi provisioning and acceptance testing, cascade to 47 counties (T-30 to T-21), county to 290 constituencies (T-20 to T-14), constituency to 55,393 stations (T-13 to T-7), reverse logistics (T+1 to T+7), post-petition disposition (T+30 to T+90).
+FR-M20-008: Every custody event: signed by both transferor and transferee (mobile app + biometric where available), timestamped with HLC, geo-stamped, linked to seal UIDs and optional photograph hash.
+FR-M20-009: Custody transfer HSM-signed p95 <=2 s; dual-officer required for high-value transfers and seal breaks.
+FR-M20-010: Bulk custody transfer endpoint for county and constituency cascade batches; streaming ingest; checkpoint-resumable; bounded memory.
+FR-M20-011: RFID gate reader: passive read at all warehouse entry/exit points without manual handling; events appended automatically.
+FR-M20-012: Handheld RFID scan for ad-hoc condition checks; manual barcode entry fallback if reader fails; alert when manual rate exceeds threshold (indicating reader outage).
+FR-M20-013: Mobile field app: offline-first; WAL-backed local event queue (100,000-event capacity, exceeding 7 days of county activity); drains on reconnect with exactly-once delivery.
+FR-M20-014: County edge cache: read-only SQLite offline replica at all 47 county stores; events queue locally; sync on reconnect with zero loss.
+FR-M20-015: Full custody chain query for any asset from birth to current location; p99 <1 s.
+FR-M20-016: Geofence validation: custody transfer location validated against M18 station polygon; out-of-geofence event triggers P0 alert.
+
+Condition state machine:
+
+FR-M20-017: Kit lifecycle states: new, in_transit, in_warehouse, provisioned, deployed, returned, faulty, in_repair, decommissioned, destroyed (terminal); plus donated and evidentiary_hold.
+FR-M20-018: Every state transition signed by responsible officer; invalid or retrograde transitions rejected with reason.
+FR-M20-019: Faulty kit: automatic nearest-reserve lookup; dispatch alert to County Coordinator; L1 county spare 2-hour response SLA.
+FR-M20-020: DOA kit (dead on arrival): P0 issue ticket auto-created; assigned to field engineer within 2 h; P0 SLA countdown shown.
+
+Seal tracking:
+
+FR-M20-021: Seal lifecycle: register, affix (officer identity + timestamp + photograph hash), verify, break; every state HSM-signed.
+FR-M20-022: Seal break requires dual-officer HSM auth; single officer cannot complete; both officers re-validated at commit.
+FR-M20-023: Sealed item with broken seal outside a custody transfer event triggers P0 alert to ECC within 5 min.
+FR-M20-024: All seal events appended to Merkle chain; seal break events use dual-HSM signature.
+
+RFID and GPS:
+
+FR-M20-025: Kit GPS self-location reported every 15 min when powered; deviation from assigned station polygon triggers geofence alert.
+FR-M20-026: Container-tracker (satellite/cellular) on sea-freight containers: door-open event outside Mombasa port geofence triggers P0 alert to Datacraft Ops and DCI within 5 min.
+FR-M20-027: Truck GPS tracking on all road-leg movements; GPS milestones linked to custody events.
+
+Consumables and ballot reconciliation:
+
+FR-M20-028: Consumable tracking by lot UID, expiry date, issue location, and quantity; expiry enforcement; expired lot flagged before issue.
+FR-M20-029: At station close: reconciliation of issued vs used plus unused plus spoilt consumables; variance outside tolerance auto-flags.
+FR-M20-030: Ballot-box smart-lid integration (XV.4): reads passive RFID chip on each ballot deposit; ballots deposited vs authentications cross-checked; discrepancy >0.1% triggers automatic result hold.
+FR-M20-031: RFID chip compatibility confirmed with ballot printer (Al Ghurair) at procurement; chip manifest received via SFTP + PGP.
+
+Reserve pool:
+
+FR-M20-032: Reserve pool tiers: L1 county spare (~100/county), L2 regional hub (5 hubs), L3 air-freight emergency (500 at 5 hubs).
+FR-M20-033: Reserve pool status visible to ECC in real time; ECC reserve-pool dashboard shows tier breakdown per county with dispatch button.
+FR-M20-034: L3 air-freight emergency spare: 30-min activation SLA for critical failures.
+FR-M20-035: Reserve alert delivered to ECC within 60 s of pool dropping below threshold; alert includes nearest-spare calculation.
+
+Merkle chain:
+
+FR-M20-036: Every CustodyEvent, ConditionEvent, and LocationEvent appended to Merkle tree; Merkle root computed and published every 10 min.
+FR-M20-037: Merkle root published every 10 min to five independent channels: IEBC.or.ke, GitHub, IAB domain, Twitter/X, IPFS; 100% of windows during election period.
+FR-M20-038: Any channel showing a different Merkle root triggers IAB P0 alert within 5 min.
+FR-M20-039: Merkle root delivered to M15 IAB Dashboard for live display.
+FR-M20-040: Merkle chain integrity verified on every read and monitored continuously; any break triggers P0 alert within 5 min.
+
+Alert engine:
+
+FR-M20-041: Rule-based alerts: missing kit (not returned on schedule), late delivery (off SLA), tampered item (seal broken outside custody event), out-of-geofence, expired consumable, weight variance at pallet load, container door-open outside expected location.
+FR-M20-042: Alert severity tiers: P0/P1/P2/P3; P0 routes immediately to ECC and IEBC Ops Director.
+FR-M20-043: Seal-break P0 alert delivered to ECC p99 <5 min.
+
+Issue management:
+
+FR-M20-044: Issue taxonomy: hardware fault, missing, tampered, consumable issue, environmental damage, DOA.
+FR-M20-045: Issue SLAs: P0 2 h, P1 8 h, P2 24 h, P3 72 h; SLA countdown timer visible in ticket; automated escalation on breach.
+FR-M20-046: Ticket lifecycle: open, assigned, in_progress, resolved, closed; every transition audit-logged.
+FR-M20-047: Escalation ladder: unacknowledged P0 escalates to IEBC Ops Director at 30 min; further escalation to IEBC Commissioner at 1 h.
+
+Auditor-General access:
+
+FR-M20-048: Daily signed event-log extract delivered to Auditor-General via SFTP + PGP; batch covers all events in prior 24 h.
+FR-M20-049: Cumulative dataset accessible to Auditor-General and IAB via authenticated REST at all times.
+FR-M20-050: Daily extract hash published on IAB domain; IAB can independently verify extract integrity.
+
+OEM and logistics integrations:
+
+FR-M20-051: Mechrevo MES integration: birth records, FAT results, component serials via REST/mTLS; fallback to offline batch file if API unavailable.
+FR-M20-052: KRA eCargo integration: import declaration and inspection outcome linked to custody events.
+FR-M20-053: KEBS PVoC registry: certificate verification per batch; batch blocked if certificate missing.
+FR-M20-054: Al Ghurair ballot printer: lot data, serial ranges, RFID chip manifest received via SFTP + PGP.
+FR-M20-055: Logistics partner tracking: DHL/FedEx/G4S/Kenya Airways Cargo shipment milestone events linked to custody events.
+FR-M20-056: OEM warranty: asset registration triggers warranty record creation; fallback to manual CSV import if OEM API unavailable before G4.
+
+Post-election disposition:
+
+FR-M20-057: Three disposition tracks: refurbishment (cryptographic erasure + TPM key destruction ceremony), donation (DPA 2019 s.41 erasure certificate), physical destruction (licensed e-waste, witnessed shredding, destruction certificate).
+FR-M20-058: TPM key destruction ceremony: witnessed by Datacraft DPO and IAB representative; signed ceremony record produced; biometric data cryptographic erasure per SECURITY.md SR-PRIV-008.
+FR-M20-059: Biometric erasure certificates generated for 100% of decommissioned kits; DPA 2019 s.41 compliant.
+FR-M20-060: Post-election reconciliation report: all 65,287 kits with final disposition; signed PDF export; delivered to Auditor-General at T+30; target zero missing assets.
+
+Access control and admin UI:
+
+FR-M20-061: RBAC: geographic scoping enforced at data layer; county officer cannot read or write another county's assets.
+FR-M20-062: Every data access logged with actor, purpose code, and timestamp per DPA 2019 s.26.
+FR-M20-063: Mechrevo factory access limited to own output; DPA 2019 s.36 processor obligation enforced.
+FR-M20-064: Supreme Court IT Registrar: read-only access; pre-produced evidentiary extract per kit on-demand; signed PDF; IAB co-signs.
+FR-M20-065: National asset map: county-level kit-count summary; click county for constituency drill-down; click station for individual kit detail.
+FR-M20-066: Asset search: by UID, serial, station code, officer name; full event-chain timeline rendered.
+FR-M20-067: Custody transfer screen (mobile): RFID/QR scan, destination officer select, biometric sign, seal UID entry, photo capture, submit; offline queue if no connectivity.
+FR-M20-068: Reserve pool dashboard (ECC): tier breakdown per county; dispatch button with nearest-spare calculation.
+FR-M20-069: Merkle root status panel: five-channel publication status; timestamp; hash; discrepancy highlighted.
+FR-M20-070: Post-election reconciliation screen: all-asset final-state breakdown; missing count (target 0); disposition breakdown; signed PDF export.
+
+Provisioning:
+
+FR-M20-071: Provisioning throughput: 686 kits/day (20 parallel lines, 2 shifts, 28 min/kit); IMS handles batch rate without latency degradation (NFR-20.02).
+FR-M20-072: Kit 1 birth record ingested by T-180; all 65,287 UIDs provisioned and assigned by T-30 (full-fleet dry run milestone).
 
 ## Acceptance criteria
 
-AC-M20-01: custody chain verifiable end-to-end for a kit from warehouse to station (integration test).
-AC-M20-02: seal break requires dual-officer HSM auth; single officer cannot complete (UAT).
-AC-M20-03: batch reconciliation generates discrepancy report with zero false-negatives (test with injected missing asset).
-AC-M20-04: reserve alert reaches ECC within 60 s (integration test).
-AC-M20-05: offline mobile queue drains without data loss after 7-day accumulation (chaos test).
-AC-M20-06: OEM warranty record created on asset registration (integration test).
-AC-M20-07: 99.9% availability during election cycle (SLO measurement).
+AC-M20-01: Custody chain for any kit verifiable end-to-end from factory birth record to station deployment; every event hash-chained (integration test).
+AC-M20-02: Seal break requires dual-officer HSM auth; single-officer attempt returns 403; both officers re-validated at commit (UAT + security test).
+AC-M20-03: Merkle root published within 10 min in all five channels; discrepancy on any one channel triggers P0 alert within 5 min (integration test).
+AC-M20-04: Seal-break P0 alert delivered to ECC p99 <5 min; no missed alerts in chaos injection of 100 concurrent seal breaks (integration test).
+AC-M20-05: Reserve alert delivered to ECC within 60 s of pool dropping below threshold; alert includes nearest-spare coordinates (integration test).
+AC-M20-06: Offline mobile queue holds 100,000 events (7-day typical county volume); drains to server without loss or duplication after reconnect (chaos test; WAL verified).
+AC-M20-07: Batch reconciliation for all 65,287 kits completes within 4 h (load test; per appendix SLA; checkpoint-resumable after kill).
+AC-M20-08: Out-of-geofence custody transfer location triggers P0 alert; transfer blocked at data layer (integration test).
+AC-M20-09: Container door-open outside Mombasa port geofence triggers P0 alert within 5 min (integration test with container-tracker stub).
+AC-M20-10: Biometric erasure certificate generated for 100% of decommissioned kits; DPA 2019 s.41 attestation signed by DPO and IAB representative (process audit).
+AC-M20-11: Auditor-General daily extract hash published and independently verifiable via IAB domain (integration test; hash comparison).
+AC-M20-12: Geographic access scoping enforced: IEBC Procurement JWT blocked from writing to kit outside its jurisdiction (penetration test at data layer).
+AC-M20-13: Ballot-box smart-lid discrepancy >0.1% between deposited ballots and authentications triggers result hold (integration test with injected mismatch at exactly 0.1%).
+AC-M20-14: Provisioning throughput sustained at 686 kits/day across 20 parallel lines without IMS API p99 degradation (load test).
+AC-M20-15: 99.9% availability during election cycle; county edge caches operational in read-only offline mode when primary unreachable (SLO measurement per appendix cycle-critical class).
 
 ## Applicable edge cases
 
-**connectivity**
-EC-CON-01: offline mobile; local event queue; drain on reconnect.
-EC-CON-09: tunnel drop mid-custody transfer; resume at event sequence.
-
-**time**
-EC-TIM-03: HLC on all custody events; no regression.
-
-**identity**
-EC-IDN-01: field officer cert revoked; mobile app refuses custody transfer.
-EC-IDN-09: dual-officer: re-validate both at commit; no surrogate.
-EC-IDN-10: SpiceDB down; fail closed custody + seal writes.
-
-**data**
-EC-DAT-01: duplicate custody event same key; cached; no double-transfer.
-EC-DAT-04: replayed signed event; reject on seq counter.
-
-**security**
-EC-SEC-01: HSM signature mismatch on custody event; reject; tamper alert.
-EC-SEC-03: HSM unavailable; custody + seal blocked; alert.
-EC-SEC-02: RFID tag cloned; tamper detection via signed event chain.
-
-**operations**
-EC-OPS-01: power cut mid-reconciliation; journal-before-act; resume.
-EC-OPS-08: RFID reader fails; manual barcode entry logged; alert on high manual rate.
-
-**scale**
-EC-SCL-06: 60k kits + ballot paper counts for 40k stations; batch reconciliation parallelism.
+EC-TIM-01: Kit clock skew >5 min at boot; kit refuses custody session until NTS/GNSS time confirmed; event rejected by backend.
+EC-TIM-02: NTP/NTS unreachable all day; HLC monotonic with time_confidence=low; custody events accepted but flagged; tolerance window applied.
+EC-TIM-03: Backend clock jumps backward; HLC never regresses; skew alert fires; Merkle sequence number maintained in strictly increasing order.
+EC-TIM-04: DST/TZ on diaspora kits: all custody event timestamps stored UTC; EAT displayed; cascade schedule computed in UTC.
+EC-TIM-05: Leap second; timestamp parser tolerates 23:59:60; no custody event dropped.
+EC-TIM-06: Event time < causation time (delayed sync from offline kit); accepted; audit skew anomaly logged; projection independent of wall order.
+EC-TIM-07: Station assignment changes post-geofence-bundle; new polygon re-issued; kit must acknowledge; unacknowledged assignments listed in ECC.
+EC-TIM-08: Post-petition disposition must complete by statutory T+90; scheduling constraint enforced; alert fires if disposition track falls behind.
+EC-TIM-09: Asset freeze at T-60/T-30 provisioning milestone; OPA hard-close on retroactive disposition writes; all-or-nothing transaction.
+EC-DAT-01: Duplicate custody event same idempotency key and body; cached response returned; no double-transfer; Merkle sequence not incremented.
+EC-DAT-02: Same custody event key, different body; rejected with 422 idempotency-key-reuse; transfer not applied.
+EC-DAT-03: Out-of-order CustodyEvent in stream; buffered until sequence gap filled or DLQ after timeout.
+EC-DAT-04: Replayed signed CustodyEvent; rejected on Merkle sequence counter; tamper topic populated; alert fired.
+EC-DAT-05: Poison consumable lot message (negative quantity); DLQ with reason; partition continues; ECC notified.
+EC-DAT-06: CustodyEvent schema v1/v2 coexist during rolling deploy; both accepted; dual-emit; Karapace compat check.
+EC-DAT-07: Partial bulk custody transfer failure (batch of 200 kits, 3 fail); per-row report; valid transfers committed; failed ones returned with reason.
+EC-DAT-08: 65,287 kit operations during election cascade day; streaming ingest; checkpoint-resumable after kill; bounded memory.
+EC-DAT-09: Unicode officer names and station names; NFC normalisation; ICU collation; grapheme-safe in all UI and reports.
+EC-DAT-10: Zero reserve pool count is valid; no divide-by-zero; renders "0 units" with critical-level alert.
+EC-DAT-11: Seal count exceeds expected (phantom seals scanned); blocked with reason; investigation flag auto-created.
+EC-DAT-12: Debezium slot lag and WAL bloat on high-volume cascade day; alert at 60 s lag; outbox retained; disk guard prevents write-stop.
+EC-DAT-13: Soft-deleted (decommissioned) asset appears in search; tombstone honoured; excluded from active counts; purge removes after legal hold.
+EC-DAT-14: Oversized custody event (bulk photo attachments); outbox rejects >1 MB; photo blob stored in MinIO with hash reference.
+EC-DAT-15: Mechrevo MES returns two serial numbers for the same physical kit; AdjudicationCase created; no auto-merge until resolved.
+EC-DAT-16: Legacy kit pre-CloudEvents payload; shim upgrades envelope; original HSM signature preserved; field corpus tested.
+EC-SEC-02: RFID tag cloned by adversary; multi-modal redundancy (RFID + barcode + photograph + weight) catches discrepancy; tamper alert; chain continues with quarantine flag.
+EC-SEC-03: HSM unavailable; custody and seal events blocked; STH pauses; ingest continues in degraded mode; alert to ECC.
+EC-SEC-05: Injection on asset search, condition-note, and resolution fields; parameterised queries only; Semgrep compile-time and ZAP dynamic scan required.
+EC-SEC-16: Secrets or PII in custody-event notes refused at ingest; telemetry scrubbed; log-scanner fixture in CI.
+EC-IDN-02: JWT expires mid-custody transfer; in-flight request completes; next request returns 401 with silent-refresh hint.
+EC-IDN-09: Dual-officer: approver revoked between first and second sign; re-validate both at commit; transfer aborted if approver invalid.
+EC-IDN-10: SpiceDB down; fail closed custody and seal writes; class-C reads (asset lookup, manifest download) allowed.
+EC-SCL-04: Consumer lag >60 s on eel.inventory.asset.v1 topic; backpressure activated; page fired; no OOM.
+EC-OPS-01: Power cut mid-reconciliation on field device; WAL journal-before-act; exact resume from last checkpoint; no double-transfer.
+EC-OPS-08: RFID reader fails at warehouse gate; manual barcode entry logged; alert when manual rate exceeds 20% of total scans indicating systematic reader outage.
 
 ## Test plan
 

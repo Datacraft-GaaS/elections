@@ -14,7 +14,7 @@ Single monorepo. Modules are the primary axis: `modules/<name>/{shared,server,de
 ## Consequences
 
 + One team can own a module end to end without coordinating across repos.
-+ Contracts (`shared/`) are colocated with implementations — drift is visible in a single diff.
++ Contracts (`shared/`) are colocated with implementations, drift is visible in a single diff.
 + Refactors that touch all three platforms of a module are one PR.
 - Repo-wide tooling (build graph, CI selectivity) becomes load-bearing early. Revisit if module count or team count grows past what a single graph can schedule cleanly.
 - Requires strict discipline: no `mod-A` importing `mod-B`. Enforce with lint rules once the language is picked (ADR-0002).

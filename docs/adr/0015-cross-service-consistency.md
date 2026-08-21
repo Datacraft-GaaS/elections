@@ -67,7 +67,7 @@ Wall-clock `time` legally authoritative (NTP-authenticated). HLC for causal orde
 ### Type & topic naming
 
 - Type: `eel.<context>.<event_name>.v<major>` (lowercase snake_case).
-- Topic: **per aggregate + major version** — `eel.<context>.<aggregate>.v<major>`. All types for the aggregate's lifecycle share the topic; consumers filter by `type`. Estimated ~500 topics across all modules.
+- Topic: **per aggregate + major version**, `eel.<context>.<aggregate>.v<major>`. All types for the aggregate's lifecycle share the topic; consumers filter by `type`. Estimated ~500 topics across all modules.
 
 ### Partitioning
 
@@ -75,11 +75,11 @@ Partition key = `eel_stream_id` (aggregate root). Ordering guaranteed per aggreg
 
 Partitions by volume tier: **12 (standard) / 32 (medium) / 64 (high volume)**. Never reduce; over-provision by 2x day-1 need.
 
-### Cluster settings — non-negotiable
+### Cluster settings: non-negotiable
 
 RF=3, `min.insync.replicas=2`, `unclean.leader.election.enable=false`, `acks=all`, `enable.idempotence=true` on producers.
 
-### Retention — four topic classes
+### Retention: four topic classes
 
 | class | example | hot | cold |
 |---|---|---|---|
@@ -92,7 +92,7 @@ Compaction reserved for state topics only (`eel.config.*.v1`, `eel.feature_flag.
 
 ### Signing on the bus
 
-Every event on **event-source and credential topics** is Ed25519-signed by the producer with a SPIFFE-issued short-lived workload key (rotated hourly, HSM-anchored chain — see ADR-0005).
+Every event on **event-source and credential topics** is Ed25519-signed by the producer with a SPIFFE-issued short-lived workload key (rotated hourly, HSM-anchored chain, see ADR-0005).
 
 - Signature covers canonical JSON (RFC 8785) of envelope minus `eel_signature`.
 - Fingerprint in `eel_producer_key_id`; verifier fetches key from SPIRE bundle (cached).

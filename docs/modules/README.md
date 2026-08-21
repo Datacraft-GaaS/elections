@@ -1,4 +1,4 @@
-# Modules index — 69 modules
+# Modules index: 69 modules
 
 Slugs match the upstream Datacraft spec (`work_docs/01-Projects/IEBC/sw/modules/M<nn>-<slug>.md`) with the M-number prefix dropped. M-numbers are preserved here for traceability.
 

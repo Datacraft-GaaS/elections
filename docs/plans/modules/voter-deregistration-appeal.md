@@ -42,16 +42,16 @@ OpenAPI file: `packages/openapi-contracts/bvr/deregistration-appeal.yaml`
 | method + path | tier | auth | idempotent write? | notes |
 |---|---|---|---|---|
 | POST /v1/deregistration/cases | internal gRPC | SVID mTLS (M35_INTERNAL) | yes | create deregistration case from M35 approval |
-| GET /v1/deregistration/cases | 2 | JWT+SpiceDB (IEBC_OFFICER) | n/a | triage queue |
-| GET /v1/deregistration/cases/{id} | 2 | JWT+SpiceDB (IEBC_OFFICER) | n/a | case detail |
-| PATCH /v1/deregistration/cases/{id} | 2 | JWT+SpiceDB (IEBC_OFFICER) | yes | update triage recommendation |
+| GET /v1/deregistration/cases | 2 | JWT+SpiceDB (COMMISSION_OFFICER) | n/a | triage queue |
+| GET /v1/deregistration/cases/{id} | 2 | JWT+SpiceDB (COMMISSION_OFFICER) | n/a | case detail |
+| PATCH /v1/deregistration/cases/{id} | 2 | JWT+SpiceDB (COMMISSION_OFFICER) | yes | update triage recommendation |
 | POST /v1/deregistration/cases/{id}/appeals | 1 | public + case reference | yes | file appeal (voter or representative) |
-| GET /v1/deregistration/cases/{id}/appeals/{aid} | 2 | JWT+SpiceDB (IEBC_ADJUDICATOR) | n/a | get appeal record |
-| POST /v1/deregistration/cases/{id}/decision | 2 | JWT+SpiceDB (IEBC_ADJUDICATOR) | yes | record adjudicator decision |
-| POST /v1/deregistration/cases/{id}/minimise | 2 | JWT+SpiceDB (IEBC_OFFICER) | yes | execute data-minimisation action |
+| GET /v1/deregistration/cases/{id}/appeals/{aid} | 2 | JWT+SpiceDB (COMMISSION_ADJUDICATOR) | n/a | get appeal record |
+| POST /v1/deregistration/cases/{id}/decision | 2 | JWT+SpiceDB (COMMISSION_ADJUDICATOR) | yes | record adjudicator decision |
+| POST /v1/deregistration/cases/{id}/minimise | 2 | JWT+SpiceDB (COMMISSION_OFFICER) | yes | execute data-minimisation action |
 | GET /v1/deregistration/reports | 1 | public | n/a | list quarterly deregistration reports |
 | GET /v1/deregistration/reports/{id} | 1 | public | n/a | download report PDF + Merkle proof |
-| POST /v1/deregistration/reports/{id}/sign | 2 | JWT+SpiceDB (IEBC_COMMISSIONER) + HSM | yes | Commissioner sign and publish; 2/quarter |
+| POST /v1/deregistration/reports/{id}/sign | 2 | JWT+SpiceDB (COMMISSION_COMMISSIONER) + HSM | yes | Commissioner sign and publish; 2/quarter |
 
 ## Events
 
@@ -92,56 +92,122 @@ OpenAPI file: `packages/openapi-contracts/bvr/deregistration-appeal.yaml`
 
 ## Feature checklist
 
-1. FR-M36-001: deregistration notice (PDF) for every M35-approved removal; dispatch via SMS link + postal address + M13 push; notice period 30 days per Elections Act s.8A; dispatch within 1 hour of M35 approval
-2. FR-M36-002: appeal intake via 4 channels: M13 Public Verifier App, web form, *IEBC# USSD, in-person IAB office; creates case record with uuid7 appeal_id, intake channel, appellant identity, grounds, supporting documents
-3. FR-M36-003: case-officer triage; categorises appeal as IDENTITY_ERROR/ALIVE_AND_PRESENT/DATA_MATCH_ERROR/FAMILY_DISPUTE; requests additional evidence if needed; recommends UPHOLD_REMOVAL or OVERTURN
-4. FR-M36-004: adjudicator hearing; full case file view (officer recommendation, evidence, M35 source summary; no raw CRS/NRB data); written decision within 14 days; decision final for administrative purposes; voter retains court petition right
-5. FR-M36-005: OVERTURN path; M35 event reversed; ABIS soft-hold lifted; voter record REINSTATED; voter notified within 24 hours
-6. FR-M36-006: UPHOLD path; record moved to DEREGISTERED; ABIS template soft-deleted (recoverable for 7 years); contact data purged per DPA 2019 s.26; voter notified with right-to-petition advisory
-7. FR-M36-007: no-appeal expiry; after 30-day notice period with no appeal, case officer confirms; record moved to DEREGISTERED after Commissioner countersign
-8. FR-M36-008: ODPC compliance; before final deregistration, system checks DPIA register; logs data-minimisation action (contact/address/photo purge) with officer_id, timestamp, DPA basis code; compliance receipt retained 7 years
-9. FR-M36-009: quarterly deregistration report; aggregated per county (proposed, noticed, appealed, overturned, confirmed); signed by IEBC Commissioner; published on M11
-10. FR-M36-010: quarterly report PDF hash anchored in P05 Merkle chain at publication
-11. FR-M36-011: multi-language; notices in EN + SW + county-detected language; appeal intake supports EN + SW + Kikuyu + Luo + Kamba + Kalenjin + Luhya
-12. FR-M36-012: deadline tracking; 30-day notice period and 14-day adjudication SLA enforced; supervisor alert when deadline at risk
-13. Legal representative appeal: uploads power of attorney + appeal grounds; system accepts authorisation
-14. Raw CRS/NRB source documents never stored in appeal case file; adjudicator sees only IEBC-generated summary
-15. 7-year audit-hold flag prevents irreversible data purge during appeal window; officer confirmation required for minimisation action
-16. WCAG 2.2 AA: voter notice page, appeal intake form, status tracker
+Notice generation and dispatch:
+
+1. FR-M36-001: deregistration notice PDF generated for every M35-approved removal; content includes grounds, evidence summary (non-technical), 30-day appeal deadline, and case reference in voter's county-detected language
+2. FR-M36-002: notice dispatched via SMS link within 1 hour of M35 approval event; SMS includes case reference and short appeal URL
+3. FR-M36-003: notice dispatched via postal address on file; postal dispatch logged with date and tracking reference
+4. FR-M36-004: notice dispatched via M13 Public Verifier App in-app push notification sent in parallel with SMS
+5. FR-M36-005: notice page available in EN, SW, Kikuyu, Luo, Kamba, Kalenjin, Luhya; language auto-detected from voter's registered county; manual language selector available
+6. FR-M36-006: 30-day notice period countdown displayed on voter notice page; page remains accessible to voter until deadline
+
+Appeal intake:
+
+7. FR-M36-007: appeal intake via M13 Public Verifier App; authenticated by OTP to voter's registered phone; case reference pre-filled from notification link
+8. FR-M36-008: appeal intake via web form at public appeal URL; accessible without IEBC account; case reference required to proceed
+9. FR-M36-009: appeal intake via *IEBC# USSD; voter enters case reference and grounds in <= 5 numeric menu steps; case reference SMS returned within 5 minutes
+10. FR-M36-010: appeal intake in-person at IAB office; officer creates record on behalf of voter; identity verified by document; intake channel recorded as IN_PERSON
+11. FR-M36-011: legal representative appeal: power of attorney PDF uploaded and stored against appeal record; representative identity and relationship logged; system accepts authorisation before creating case
+12. FR-M36-012: appeal record created with uuid7 appeal_id; fields include intake_channel, appellant_id_hash (SHA-256 of National ID), grounds (IDENTITY_ERROR/ALIVE_AND_PRESENT/DATA_MATCH_ERROR/FAMILY_DISPUTE/OTHER), grounds_detail, supporting_doc_ids, language (BCP-47), filed_at
+13. FR-M36-013: appeal acknowledgment delivered to appellant within 5 minutes of submission; includes case reference and hearing-scheduled advisory; delivery via SMS and M13 push
+14. FR-M36-014: raw CRS/NRB/KRA source documents never stored in appeal case file; adjudicator sees only IEBC-generated summary of source data
+
+Case officer triage:
+
+15. FR-M36-015: case officer console shows all pending appeals with status badge and SLA countdown; sortable by deadline proximity and grounds category
+16. FR-M36-016: officer categorises each appeal: IDENTITY_ERROR, ALIVE_AND_PRESENT, DATA_MATCH_ERROR, FAMILY_DISPUTE, or OTHER; category logged immutably
+17. FR-M36-017: officer can request additional evidence from appellant; appellant notified by SMS with secure upload link; uploaded document stored against case file
+18. FR-M36-018: officer records recommendation (UPHOLD_REMOVAL or OVERTURN) with mandatory written basis before submission; recommendation immutable once submitted
+19. FR-M36-019: officer recommendation and evidence package forwarded to adjudicator queue automatically after officer submission
+
+Adjudicator hearing:
+
+20. FR-M36-020: adjudicator workspace shows full case file: officer recommendation, evidence list, M35 source summary; no raw agency (CRS/NRB/KRA) documents accessible at any path
+21. FR-M36-021: adjudicator issues written decision within 14 days of appeal receipt; decision field (UPHOLD/OVERTURN) with mandatory written rationale; rationale stored immutably
+22. FR-M36-022: adjudicator credential (JWT + SpiceDB COMMISSION_ADJUDICATOR role) required at decision submission; decision immutable once submitted; dual-control: officer who recommended may not also decide
+23. FR-M36-023: voter notified of court petition right in county-detected language in every uphold notification; advisory text legally approved per EN and SW versions
+
+OVERTURN path:
+
+24. FR-M36-024: M35 event reversed on OVERTURN; eel.bvr.voter_overturned.v1 emitted with exactly-once delivery to eel.bvr.deregistration.v1 topic
+25. FR-M36-025: ABIS soft-hold lifted within 60 seconds of OVERTURN decision; voter biometric reactivated in M03
+26. FR-M36-026: voter record restored to ACTIVE status in M02 BVR Back-End; voter notified of reinstatement within 24 hours via SMS and M13 push
+
+UPHOLD and no-appeal expiry:
+
+27. FR-M36-027: record moved to DEREGISTERED on UPHOLD decision; ABIS template soft-deleted (recoverable for 7 years); eel.bvr.voter_deregistered.v1 emitted with exactly-once delivery
+28. FR-M36-028: contact data (address, photo, phone) purged per DPA 2019 s.26 within 30 days of DEREGISTERED status; eel.bvr.data_minimisation.v1 emitted; data-minimisation action logged
+29. FR-M36-029: voter notified of UPHOLD outcome with right-to-petition advisory in county-detected language; notification includes adjudicator written decision reference
+30. FR-M36-030: no-appeal expiry: after 30-day notice period with no appeal filed, case officer confirms expiry; Commissioner countersigns; record moved to DEREGISTERED
+
+ODPC compliance:
+
+31. FR-M36-031: DPIA register checked before final deregistration; processing basis code required and logged for every data-minimisation action
+32. FR-M36-032: data-minimisation action logged with officer_id, timestamp, DPA basis code; compliance receipt retained 7 years; receipt accessible to ODPC Compliance Lead
+33. FR-M36-033: 7-year audit-hold flag prevents irreversible purge while case is in any non-terminal state; officer confirmation required; flag clears only on reaching DEREGISTERED terminal state
+
+Quarterly report:
+
+34. FR-M36-034: quarterly deregistration report generated per county with breakdown: proposed, noticed, appealed, overturned, confirmed deregistered
+35. FR-M36-035: Commissioner HSM-signs report using P06 HSM credential; published on M11 public portal within T+7 of quarter-end
+36. FR-M36-036: report PDF hash anchored in P05 Merkle chain at publication; Merkle inclusion proof stored with QuarterlyDeregistrationReport record
+37. FR-M36-037: automated PII scan run on report PDF before publication; publication blocked if any voter name, National ID, or address detected in output
+
+Deadline and SLA tracking:
+
+38. FR-M36-038: 30-day notice deadline tracked per case; supervisor alert fired when < 3 days remain without appeal filed or expiry confirmed
+39. FR-M36-039: 14-day adjudication SLA tracked per appeal; supervisor alert fired when < 48 hours remain without decision issued
+40. FR-M36-040: SLA breach dashboard available to IEBC Supervisor showing red-flagged cases; sortable by breach severity
+
+Accessibility and language:
+
+41. FR-M36-041: WCAG 2.2 AA on voter notice page, appeal intake form, and status tracker; axe-core zero critical errors; keyboard navigation complete for all flows
+42. FR-M36-042: screen reader completes full appeal intake flow (web and USSD paths) with zero accessibility blockers; tested with NVDA and VoiceOver at each release
 
 ## Acceptance criteria
 
-1. AC-M36-01: notice dispatch within 1 hour of M35 approval; dispatch timestamp measurement
-2. AC-M36-02: appeal acknowledgement <= 5 minutes from submission; case-creation timestamp
-3. AC-M36-03: adjudication SLA compliance >= 95% within 14 days; SLA tracking log
-4. AC-M36-04: data-minimisation completion 100% within 30 days of confirmed deregistration; ODPC audit log
-5. AC-M36-05: quarterly report published within T+7 of quarter-end; publication timestamp
-6. AC-M36-06: 100% quarterly report Merkle anchors; Merkle reconciliation
-7. AC-M36-07: zero PII in public report; automated PII scan on report before publication
+1. AC-M36-01: notice dispatched to voter within 1 hour of M35 approval event; measured by dispatch_timestamp minus m35_approval_timestamp; 100% of cases within SLA; SLO alert fires when any case exceeds 1 hour
+2. AC-M36-02: appeal acknowledgment (case reference by SMS) delivered within 5 minutes of submission; measured by case_created_at minus filed_at; verified in integration test across USSD, web, and M13 channels
+3. AC-M36-03: adjudication SLA compliance >= 95% of appeals decided within 14 days of filing; measured from filed_at to adjudicator_decision_at; reported weekly to IEBC Commissioner; breach triggers P1 page
+4. AC-M36-04: data-minimisation action completed for 100% of DEREGISTERED cases within 30 days of terminal status; measured from deregistered_at to data_minimisation_at; ODPC audit log confirms with zero gaps
+5. AC-M36-05: quarterly deregistration report published within T+7 of quarter-end; measured by published_at minus quarter_end; failure triggers P2 alert
+6. AC-M36-06: 100% of quarterly reports anchored in P05 Merkle chain before M11 publication; Merkle reconciliation report confirms zero gaps after each publish cycle
+7. AC-M36-07: zero PII (voter name, National ID, address) present in public quarterly report; verified by automated PII scan on report PDF before each publication; any detected PII blocks publication and raises P1 alert
+8. AC-M36-08: appeal intake p99 <= 500 ms under 5,000 concurrent submissions; >= 99.5% availability on 30-day rolling window; verified by k6 load test at OAT gate
+9. AC-M36-09: dual-control enforced: officer who filed triage recommendation cannot also be adjudicator on the same case; OPA policy enforced; verified by security test attempting same-principal decision; zero exceptions
+10. AC-M36-10: raw CRS/NRB/KRA source data never returned by any appeal API endpoint; verified by security test suite calling every appeal API as COMMISSION_ADJUDICATOR; zero raw-document fields in any response body
+11. AC-M36-11: WCAG 2.2 AA confirmed on voter notice page, appeal intake form, and status tracker by axe-core automated scan (zero critical errors) and manual screen-reader audit; verified at each release
+12. AC-M36-12: 7-year audit-hold flag prevents data-minimisation action during any active appeal; verified by attempting minimise call while case is in APPEAL_FILED state; 409 conflict returned; 100% enforcement in unit test suite
+13. AC-M36-13: 10,000 concurrent deregistration cases processed without queue starvation; case creation p99 <= 1 s; verified by load test simulating post-census catch-up batch
+14. AC-M36-14: module availability >= 99.5% on 30-day rolling window (routine availability class); SLO alert fires within 5 minutes of threshold breach
 
 ## Applicable edge cases
 
-**identity**
-- EC-IDN-04: voter unreachable at registered contact; multi-channel notice (SMS + postal + M13 push); public gazette as constructive notice
-
-**data**
-- EC-DAT-12: premature data-minimisation action requested; 7-year audit-hold flag blocks irreversible purge during appeal window; officer confirmation required
-- EC-DAT-16: adjudicator attempts to access raw CRS/NRB source data; access denied; only IEBC-generated summary accessible
-
-**legal**
-- EC-LEG-01: 30-day appeal deadline enforced strictly; system rejects late appeals; officer can escalate to Commissioner for extraordinary extension
-- EC-LEG-06: adjudicator decision challenged in court; written decision required; Merkle-anchored evidence trail admissible
-
-**operations**
-- EC-OPS-04: high appeal volume overwhelming adjudicators; case officer pre-filters weak appeals; IEBC can assign additional commissioners
-- EC-OPS-06: M35 event queue backlog; case creation does not block notice dispatch; parallel queues
-
-**scale**
-- EC-SCL-01: 5,000 concurrent appeal submissions during large post-census batch; back-end worker auto-scales; appeal intake p99 <= 500 ms
-
-**human**
-- EC-HUM-06: WCAG 2.2 AA on notice page, appeal form, status tracker; screen reader support
-- EC-HUM-08: 7-language appeal intake; county-detected language for notices
+- EC-DAT-01: duplicate appeal submission from same appellant with same case reference returns cached acknowledgment without creating a duplicate AppealRecord
+- EC-DAT-02: same case idempotency key submitted with different appeal body returns 422 idempotency-key-reuse; original appeal record preserved
+- EC-DAT-07: partial batch of DeregistrationCase creation events from M35 (some malformed); valid cases created and notices dispatched; failed cases logged to per-row error report; notice dispatch not blocked
+- EC-DAT-09: appellant name or grounds_detail containing multi-codepoint Unicode characters stored as NFC; ICU plurals correct; rendered correctly in all 7 supported languages without truncation
+- EC-DAT-12: data-minimisation action requested while case is in APPEAL_FILED or UNDER_REVIEW state; 7-year audit-hold flag blocks irreversible purge; 409 conflict returned; officer confirmation required
+- EC-DAT-13: soft-deleted (DEREGISTERED) voter record does not reappear in active triage queue; tombstone honoured in case projection layer
+- EC-SEC-05: SQL injection on appeal intake form or API endpoint; parameterized queries prevent execution; ZAP and fuzz corpus confirm at each release
+- EC-SEC-10: voter enumeration attempted via appeal status lookup API; constant-time response shape returned regardless of whether case exists; rate-capped at 10 requests/hour per IP
+- EC-SEC-16: officer actions, adjudicator decisions, and data-minimisation events redact Tier A/B PII before export to telemetry; CI log-scanner blocks any violations in each build
+- EC-IDN-02: JWT expires mid-adjudicator decision submission; in-flight save fails gracefully; next request returns 401 with silent-refresh header; decision not partially committed to store
+- EC-IDN-04: voter unreachable at registered SMS and postal address; multi-channel notice sent (SMS plus postal plus M13 push); public gazette used as constructive notice; case proceeds after gazette publication confirmation
+- EC-IDN-09: adjudicator's account revoked between officer recommendation submission and adjudicator decision; re-validation at commit prevents decision by revoked principal; case returned to adjudicator queue
+- EC-IDN-10: SpiceDB unavailable during adjudicator sign-off write; write fails closed; 503 problem+json returned; no partial decision state persisted
+- EC-SCL-01: 5,000 concurrent appeal submissions during post-census batch; appeal intake p99 <= 500 ms; autoscale triggered within 30 seconds; no backlog over 500 items sustained
+- EC-SCL-04: Kafka consumer lag on eel.bvr.deregistration.v1 topic exceeds 60 seconds; page fires; backpressure applied; no OOM condition
+- EC-SCL-08: Valkey eviction loses idempotency key for appeal intake; PG-durable idempotency store is source of truth; duplicate detection falls back to PG lookup without error
+- EC-HUM-06: screen reader completes full appeal intake flow (web and USSD paths) with zero accessibility blockers; tested with NVDA and VoiceOver at each release
+- EC-HUM-08: Kalenjin and Luhya notice strings at 150% pseudo-length cause no truncation on voter notice page; ICU plurals correct in all 7 languages; font fallback declared for all scripts
+- EC-SEC-15: LiveView session hijack attempt on case officer console; CSRF token plus session binding plus re-auth on step-up action prevent hijack; ExUnit and Playwright tests confirm
+- EC-LEG-01: 30-day appeal deadline enforced strictly; late appeal rejected with advisory message; officer can escalate to Commissioner for extraordinary extension via admin action
+- EC-LEG-06: adjudicator decision challenged in election court; written decision required and present; Merkle-anchored evidence trail admissible; proof retrievable via M40 court interface
+- EC-LEG-08: adjudicator evidence request arrives at T+6d 23h relative to appeal deadline; 24-hour evidence response clock active; not blocked by register freeze; adjudicator retrieves without error
+- EC-TIM-08: 30-day notice period deadline falls at midnight EAT (UTC+3); boundary table enforces inclusive semantics; one-second boundary test confirms no off-by-one rejection of valid same-day appeals
+- EC-OPS-04: high appeal volume overwhelming adjudicator pool; case officer pre-filters weak appeals; IEBC Commissioner assigns additional adjudicators via admin console; caseload redistributed without data loss
+- EC-CON-05: flapping link during notice SMS dispatch; backoff plus jitter retry; retry budget prevents duplicate SMS; final failure triggers postal fallback and alert
 
 ## Test plan
 

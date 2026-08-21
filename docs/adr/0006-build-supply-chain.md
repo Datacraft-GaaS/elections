@@ -17,7 +17,7 @@ Date: 2026-08-21
 - **Air-gapped dependency mirror**: **Sonatype Nexus OSS** mirroring PyPI, npm, cargo registry, Maven, apt, OCI, hex. All builds pull from Nexus only; no direct upstream fetch on the build path.
 - **Container registry**: **Harbor** with cosign verification (see ADR-0004).
 - **Artifact signing**: **cosign** with **Sigstore** for provenance. Keyless signing via SPIFFE workload identity for CI-built artifacts; keyed signing for release artifacts using HSM-anchored key.
-- **Supply-chain attestations**: **SLSA L3** — provenance, isolated builds, reproducible, non-falsifiable. **in-toto** attestations across build stages.
+- **Supply-chain attestations**: **SLSA L3**, provenance, isolated builds, reproducible, non-falsifiable. **in-toto** attestations across build stages.
 - **Dependency review**: `cargo-vet` + `cargo-deny` + `cargo-audit` (Rust); `pip-audit` + `pip-licenses` (Python); `pnpm audit` + `npm-audit-resolver` (TS); `mix deps.audit` (Elixir). Trust base shared across teams.
 - **Vulnerability scanning**: **Trivy** + **Grype** + **Syft** on every image + every dep manifest, gating deploy.
 - **Renovate** for dependency PRs, running in a segregated environment (not on the production build path); PRs reviewed by humans, tested in staging, merged manually.
@@ -27,7 +27,7 @@ Date: 2026-08-21
 
 Positive: bit-identical rebuilds satisfy M14 reproducibility bundle without extra tooling. Cosign + SLSA L3 gives auditors a verifiable chain from source to running container. Air-gapped mirror removes upstream availability as a build-path failure mode.
 
-Negative: Nix has a steep learning curve; mitigated by a shared `flake.nix` template per language. Nexus mirror is a stateful component to keep in sync; automated nightly sync with lag alerts. Reproducibility discipline requires locking every input (compiler toolchain, base image, transitive deps) — real ongoing cost but non-negotiable.
+Negative: Nix has a steep learning curve; mitigated by a shared `flake.nix` template per language. Nexus mirror is a stateful component to keep in sync; automated nightly sync with lag alerts. Reproducibility discipline requires locking every input (compiler toolchain, base image, transitive deps), real ongoing cost but non-negotiable.
 
 ## Alternatives rejected
 

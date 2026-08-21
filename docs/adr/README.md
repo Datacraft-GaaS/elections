@@ -28,4 +28,4 @@ Numbered, immutable-after-acceptance. Amendments come as new ADRs that supersede
 | [0022](0022-release-dr.md) | Release process & DR: blue-green with 15-min rollback, RTO/RPO SLAs, election-day mode | accepted |
 | [0023](0023-rfp-alignment.md) | RFP-alignment reconciliation: amendments to 0004/0005/0006/0007/0008/0012/0015/0016/0017/0018 | accepted |
 
-Amended ADRs: 0004, 0005, 0006, 0007, 0008, 0012, 0015, 0016, 0017, 0018 — see ADR-0023 for the amendment delta. Original ADR text remains the canonical decision record for its subject; amendments are captured in one auditable location.
+Amended ADRs: 0004, 0005, 0006, 0007, 0008, 0012, 0015, 0016, 0017, 0018, see ADR-0023 for the amendment delta. Original ADR text remains the canonical decision record for its subject; amendments are captured in one auditable location.

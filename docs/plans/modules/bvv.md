@@ -70,66 +70,110 @@ none
 
 ## Feature checklist
 
-1. FR-M07-001: public self-lookup by ID number + OTP to registered mobile.
-2. FR-M07-002: IEBC kiosk self-service with QR-scan or manual ID entry.
-3. FR-M07-003: return name, DOB (year only), polling station, ward, constituency, county, status.
-4. FR-M07-004: mask sensitive fields; biometrics never displayed; full DOB masked; mobile masked.
-5. FR-M07-005: file objection on own record (rectification, transfer, removal).
-6. FR-M07-006: file objection on third-party record with justification + evidence upload.
-7. FR-M07-007: objection tracking: citizen sees status of filed objection.
-8. FR-M07-008: IEBC back-office objection queue with adjudication workflow and response templates.
-9. FR-M07-009: anti-abuse: rate limit per IP + per session; CAPTCHA; alerts on enumeration patterns.
-10. FR-M07-010: per-lookup audit entry: actor, target voter hash, timestamp, IP hash.
-11. FR-M07-011: multilingual: English + Kiswahili; extensible.
-12. FR-M07-012: WCAG 2.2 AA + screen-reader support.
-13. FR-M07-013: Kenya DPA compliance: consent, purpose disclosure, retention policy shown.
-14. Lookup p99 <= 2 s; 100 000 concurrent users during peak inspection days.
-15. Per-session cap of 20 lookups/day enforced.
-16. Every lookup permanently logged; log not erasable even on SAR.
-17. Enumeration pattern alert fires at configured threshold; IP blocked; IEBC alerted.
-18. Kiosk mode locks to single-session after idle timeout; no PII cached in browser.
-19. OTP delivery <= 60 s p95; email OTP fallback if SMS fails.
-20. Objection SLA: first response to objector <= 48 h; resolution <= 30 days.
+Lookup and display:
+1. FR-M07-001: public self-lookup by national ID number + OTP sent to registered mobile. (spec FR-M07-001)
+2. FR-M07-002: kiosk self-service with QR-scan or manual ID entry; kiosk session isolated per citizen. (spec FR-M07-002)
+3. FR-M07-003: return name, DOB year only, polling station name and code, ward, constituency, county, and registration status. (spec FR-M07-003)
+4. FR-M07-004: mask all sensitive fields: biometrics never returned; full DOB masked to year; mobile number starred. (spec FR-M07-004)
+5. FR-M07-005: anti-enumeration constant-time response: hit and miss return identical payload structure and size.
+6. FR-M07-006: CDN-cached public responses; cache key excludes session data; no PII stored at CDN edge.
+7. FR-M07-007: lookup p99 <= 2 s; 100,000 concurrent users supported during peak 30-day inspection window.
+8. FR-M07-008: per-session cap of 20 lookups/day enforced server-side; counter resets at midnight EAT.
+9. FR-M07-009: voter inspection window enforcement: portal closes outside gazetted 30-day window; countdown and re-open date displayed.
+10. FR-M07-010: USSD short-code path: citizen dials code, enters ID, receives SMS reply with polling station name.
+
+Objections:
+11. FR-M07-011: file objection on own record: types are rectification, transfer request, and removal request; each creates an audit trail. (spec FR-M07-005)
+12. FR-M07-012: file objection on third-party record: justification required; evidence upload accepted (PDF, JPG, PNG, <= 10 MB, malware scan). (spec FR-M07-006)
+13. FR-M07-013: objection status tracking: citizen views current status and history via web or SMS. (spec FR-M07-007)
+14. FR-M07-014: SMS/email notification sent to objector on every status change.
+15. FR-M07-015: back-office objection queue with adjudication workflow, response templates, and SLA countdown timers. (spec FR-M07-008)
+16. FR-M07-016: objection SLA: first response to objector <= 48 h; full resolution <= 30 days; both configurable.
+17. FR-M07-017: escalation trigger: overdue objection auto-escalates to senior officer with audit entry.
+
+Anti-abuse and audit:
+18. FR-M07-018: rate limit per IP, per session, and per NID; CAPTCHA on suspicious patterns; configurable thresholds hot-reloadable. (spec FR-M07-009)
+19. FR-M07-019: enumeration-pattern alert: fires within 60 s at configured lookup-rate threshold; IP blocked; M26 anomaly detector notified. (spec FR-M07-009)
+20. FR-M07-020: per-lookup audit entry: actor session hash, target voter ID hash, timestamp, IP hash, result status. (spec FR-M07-010)
+21. FR-M07-021: every lookup permanently logged; entries not erasable even on data-subject access request (SAR); SAR returns lookup metadata only.
+22. FR-M07-022: audit log anchored to transparency log (P05) for tamper-evidence; anchor event emitted per batch.
+23. FR-M07-023: ODPC data-subject access request handler: exports citizen's own lookup audit entries on demand.
+
+Kiosk and accessibility:
+24. FR-M07-024: kiosk mode auto-clear: session wiped on idle timeout; no PII cached in browser or local storage.
+25. FR-M07-025: OTP delivery p95 <= 60 s; email OTP fallback activated after two SMS retries.
+26. FR-M07-026: multilingual: English and Kiswahili on all user-facing surfaces; extensible to 11 languages. (spec FR-M07-011)
+27. FR-M07-027: WCAG 2.2 AA on all surfaces; full screen-reader support; keyboard-only navigation. (spec FR-M07-012)
+28. FR-M07-028: KSL video explainer for objection filing accessible from help panel; captions on all video.
+29. FR-M07-029: high-contrast mode and configurable font scaling on web portal.
+30. FR-M07-030: low-literacy mode: minimal text, icon + label pairs, <= 3 steps to station name.
+
+Compliance and privacy:
+31. FR-M07-031: Kenya DPA 2019 s.30(1)(e) compliance: consent banner, purpose disclosure, and retention notice shown before first lookup. (spec FR-M07-013)
+32. FR-M07-032: DPA retention policy enforced: audit log entries purged after statutory retention period; purge job audited.
 
 ## Acceptance criteria
 
-AC-M07-01: 100 000 concurrent lookups sustained without p99 degradation (load test).
-AC-M07-02: bulk-enumeration attempt blocked at configured threshold; IP blocked; alert fired (red-team).
-AC-M07-03: ODPC audit rated compliant (ODPC review).
-AC-M07-04: objection workflow closes cases within SLA (UAT).
-AC-M07-05: per-lookup audit entry present for every request (audit trace).
-AC-M07-06: no biometric or full DOB exposed in any response (automated + manual scan).
-AC-M07-07: anti-enumeration timing oracle p95 delta < 5 ms (security test).
+AC-M07-01: 100,000 concurrent lookups sustained; p99 <= 2 s at peak (load test).
+AC-M07-02: 5M lookups/day load test: CDN-cached responses contain no PII; origin p99 <= 500 ms (load test).
+AC-M07-03: bulk-enumeration attempt blocked at configured threshold; IP blocked; alert fired within 60 s (red-team).
+AC-M07-04: constant-time anti-enumeration: p95 response-time delta between hit and miss < 5 ms (timing oracle test).
+AC-M07-05: ODPC audit rated compliant: consent, purpose, and retention controls evidenced (ODPC review).
+AC-M07-06: objection workflow closes within SLA: 48 h first response; 30-day resolution (UAT).
+AC-M07-07: per-lookup audit entry present for every request; contains actor hash, target hash, IP hash, timestamp (audit trace).
+AC-M07-08: no biometric data or full DOB exposed in any API response or CDN cache entry (automated scan + manual review).
+AC-M07-09: portal outside inspection window returns 423 with countdown; no voter data returned (functional test).
+AC-M07-10: WCAG 2.2 AA: axe zero violations; screen-reader traversal completes full lookup + objection flow (accessibility audit).
+AC-M07-11: 11-language smoke test: no truncated strings; ICU plural forms correct (i18n test).
+AC-M07-12: availability >= 99.5% over rolling 30-day window (SLO burn-rate alert).
+AC-M07-13: USSD path delivers polling station name within 2 SMS round-trips (USSD simulator test).
 
 ## Applicable edge cases
 
-**connectivity**
-EC-CON-02: 3G SLAs; CDN cached; mobile-first.
+connectivity:
+EC-CON-02: 3G SLAs met; CDN serves cached lookups; mobile-first page weight <= 100 KB.
+EC-CON-05: flapping SMS gateway; OTP retry budget exhausted; email OTP fallback activates.
+EC-CON-06: captive portal; cert pinning fails closed; "network blocked" UX; no token leaked.
+EC-CON-08: DNS poisoned; DNSSEC enforced; hardcoded fallback CDN endpoints used.
 
-**identity**
-EC-IDN-02: JWT expires mid-request; in-flight completes; 401 + refresh.
-EC-IDN-07: OTP is device-bound for accredited kiosk path.
-EC-IDN-11: stale JWKS; refetch on kid miss.
+time:
+EC-TIM-04: DST/TZ: inspection window close computed in UTC; displayed in EAT; no off-by-one at boundary.
+EC-TIM-08: petition window T+7 midnight; s.75(1) inclusive boundary; portal closes at exact UTC second.
 
-**data**
-EC-DAT-09: Unicode voter names; NFC; grapheme-safe.
-EC-DAT-13: soft-deleted voter in lookup; tombstone honoured.
+identity:
+EC-IDN-02: JWT expires mid-lookup; in-flight request completes; next request returns 401 and silent refresh.
+EC-IDN-07: kiosk path uses device-bound FIDO2 credential; no SMS OTP for accredited operator.
+EC-IDN-10: SpiceDB down; back-office objection admin fails closed; read-only portal degrades gracefully with cached register snapshot.
+EC-IDN-11: realm key rotated; stale JWKS; refetch on kid miss; no 401 storm.
 
-**security**
-EC-SEC-05: injection on ID lookup input; parameterised.
-EC-SEC-09: rate-limit evasion; key by subject+device+/64; priority shed.
-EC-SEC-10: voter enumeration; constant-time shape; caps; step-up.
-EC-SEC-12: cache poisoning; key includes sig version.
-EC-SEC-15: CSRF + session binding + re-auth on step-up.
-EC-SEC-16: secrets in logs refused.
+data:
+EC-DAT-01: duplicate objection submission same key+body; cached response returned; no re-execution.
+EC-DAT-02: same key different body; 422 idempotency-key-reuse returned.
+EC-DAT-09: Unicode voter names; NFC normalisation; ICU collation; grapheme-safe display.
+EC-DAT-13: soft-deleted voter; tombstone returned as "record not found"; no PII leaked.
 
-**human**
-EC-HUM-06: screen readers; full task AA.
-EC-HUM-08: 11 languages; no truncation.
-EC-HUM-10: low-literacy; simple ID-entry flow.
+security:
+EC-SEC-05: injection on ID lookup and objection text inputs; parameterised queries only; ZAP and Semgrep clean.
+EC-SEC-09: rate-limit evasion; key by subject, device, and /64 prefix; priority shed; IP block logged.
+EC-SEC-10: voter enumeration timing oracle; constant-time response shape enforced; p95 delta < 5 ms verified.
+EC-SEC-12: CDN cache poisoning; cache key includes signature version; client-side verification.
+EC-SEC-15: CSRF + session binding + step-up re-auth required on third-party objection filing.
+EC-SEC-16: secrets in logs refused; IP hash not raw IP; voter ID hash not raw NID.
 
-**legal**
-EC-TIM-08: petition window T+7 midnight; s.75(1) inclusive boundary.
+human:
+EC-HUM-06: screen readers; full task completion WCAG 2.2 AA on lookup and objection flows.
+EC-HUM-07: KSL video explainer for objection filing; captions on all video content.
+EC-HUM-08: 11 languages; no string truncation; ICU plural forms; font fallback for extended scripts.
+EC-HUM-09: colour-blind; symbol + text + pattern on status indicators; ΔE registry.
+EC-HUM-10: low-literacy USSD path; numeric flow <= 5 steps to polling station name.
+
+scale:
+EC-SCL-01: 5M lookups/hr at peak inspection day; >= 95% CDN edge hit ratio; origin p99 <= 500 ms.
+EC-SCL-04: consumer lag > 60 s on audit event topic; backpressure applied; no OOM on audit writer.
+EC-SCL-08: Valkey eviction loses objection idempotency key; PG-durable store used; Valkey is cache only.
+
+legal:
+EC-LEG-09: T-60 auto-referral race for objections; single referral issued; idempotent scheduler.
 
 ## Test plan
 

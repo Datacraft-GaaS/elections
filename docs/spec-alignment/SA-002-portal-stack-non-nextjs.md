@@ -1,4 +1,4 @@
-# SA-002: Portal stack — Path B (Astro + Django + LiveView + Tauri + Flutter) vs Next.js 14
+# SA-002: Portal stack: Path B (Astro + Django + LiveView + Tauri + Flutter) vs Next.js 14
 
 Date: 2026-08-21
 Applies to: Datacraft bid documents under work_docs/01-Projects/IEBC/sw/ (our own earlier draft)
@@ -27,9 +27,9 @@ Replace with a per-portal-shape allocation (Path B):
 ## Rationale
 
 1. **Next.js CVE record over the past 18 months is disqualifying for an election-scale system:**
-   - **CVE-2025-29927** (March 2025) — critical middleware authentication bypass via `x-middleware-subrequest` header. Any auth check in Next.js middleware bypassable by adding one header.
-   - **CVE-2024-46982** — cache poisoning via SSR.
-   - **CVE-2024-34351** — SSRF via server actions.
+   - **CVE-2025-29927** (March 2025), critical middleware authentication bypass via `x-middleware-subrequest` header. Any auth check in Next.js middleware bypassable by adding one header.
+   - **CVE-2024-46982**, cache poisoning via SSR.
+   - **CVE-2024-34351**, SSRF via server actions.
    - The middleware-as-auth-boundary pattern has been fundamentally questioned by the security community.
 2. **Vercel-driven direction**. Next.js's roadmap prioritises Vercel-hosted features (edge runtime, image optimisation, ISR). On-prem deployments are second-class.
 3. **The portals are not one shape.** Static content, admin CRUD, and real-time dashboards have different threat models and different optimal frameworks. One-size-fits-all imports every framework's worst-case surface into every portal.

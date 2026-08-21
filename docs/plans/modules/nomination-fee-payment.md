@@ -81,73 +81,124 @@ none
 
 ## Feature checklist
 
-1. FR-M47-001: Display current fee schedule per election and candidate category on public portal.
-2. FR-M47-002: Initiate STK push via Daraja C2B with candidate mobile number and amount.
-3. FR-M47-003: Receive Daraja C2B callback and confirm payment idempotently on mpesa_reference.
-4. FR-M47-004: Reject duplicate Daraja callback with same mpesa_reference and different amount (422).
-5. FR-M47-005: Return payment status on GET /payments/{id}.
-6. FR-M47-006: Block nomination submission in M12 when payment status is not confirmed or waiver not granted.
-7. FR-M47-007: Allow RO to submit waiver application with documentary evidence URL.
-8. FR-M47-008: Route waiver for dual approval (RO + Commissioner) above threshold amount.
-9. FR-M47-009: Approve or reject waiver with mandatory reason; emit waiver event.
-10. FR-M47-010: Record waiver grounds (gender, disability, youth) with evidence reference.
-11. FR-M47-011: Initiate B2C refund on nomination withdrawal or disqualification.
-12. FR-M47-012: Track refund status through Daraja B2C callback.
-13. FR-M47-013: Alert operations team when refund fails after three retries.
-14. FR-M47-014: Generate daily reconciliation report (collected, waivers, refunds, shortfall).
-15. FR-M47-015: Export reconciliation as CSV and XLSX with audit timestamp.
-16. FR-M47-016: Admin screen lists all payments with filter by election, category, status.
-17. FR-M47-017: Admin screen shows audit trail of payment status transitions.
-18. FR-M47-018: Admin can manually override payment status with dual approval and reason (break-glass).
-19. FR-M47-019: Fee schedule management: create, publish, retire per election.
-20. FR-M47-020: Fee schedule is versioned and signed; changes require approval.
-21. FR-M47-021: System enforces that only one active schedule exists per category per election.
-22. FR-M47-022: Candidate can view their payment receipt with mpesa reference and timestamp.
-23. FR-M47-023: Candidate can download PDF receipt for cleared payment.
-24. FR-M47-024: All financial amounts stored in KES integer (no floating point).
-25. FR-M47-025: System enforces Idempotency-Key header on all payment initiation requests.
-26. FR-M47-026: Payment initiation returns pending status if STK push succeeds; failed if telco rejects.
-27. FR-M47-027: STK push times out after 60 s; status set to failed automatically.
-28. FR-M47-028: i18n: all portal text in 11 languages; Swahili mandatory.
-29. FR-M47-029: WCAG 2.2 AA compliance on all public surfaces.
-30. FR-M47-030: Audit log records every payment state transition with actor and timestamp.
+Fee schedule:
+1. FR-M47-001: Fee schedule configured per contest tier (President, Governor, Senator, MP, CWR, MCA) per IEBC gazette notice; schedule version-controlled; active schedule drives all payment validations.
+2. FR-M47-002: Fee schedule published on public portal (no login required) with gazette reference and effective date.
+3. FR-M47-019: Fee schedule management: create, publish, retire per election; changes require approval before activation.
+4. FR-M47-020: Fee schedule is versioned and HSM-signed; only one active schedule per category per election enforced.
+5. FR-M47-021: System enforces that only one active schedule exists per category per election; duplicate activation attempt returns 409.
+
+M-Pesa payment:
+6. FR-M47-003: M-Pesa Paybill payment: portal generates unique UUID7-based payment reference; candidate pays via Paybill; Daraja C2B callback confirms payment; reference matched to candidate in M12.
+7. FR-M47-025: Idempotency-Key header enforced on all payment initiation requests; missing header returns 400.
+8. FR-M47-026: Payment initiation returns PENDING status if STK push accepted by Daraja; FAILED if telco rejects immediately.
+9. FR-M47-027: STK push times out after 60 s; status transitions to FAILED automatically; candidate notified.
+10. FR-M47-004: Duplicate Daraja C2B callback with same mpesa_reference and different amount returns 422 idempotency-key-reuse; original payment unchanged.
+11. FR-M47-005: Payment status returned on GET /v1/fees/payments/{id}; includes mpesa_reference, confirmed_at, and amount_kes.
+
+Bank transfer payment:
+12. FR-M47-031: Bank transfer payment: portal generates unique pay-in reference; candidate presents to bank; Finance Officer manually confirms receipt within 2 working days; candidate notified on confirmation.
+13. FR-M47-033: Payment reference expiry: M-Pesa reference expires 24 hours after generation; bank transfer reference expires 5 working days; expired references return EXPIRED status; candidate notified.
+
+Party bulk payment:
+14. FR-M47-032: Party bulk payment: party official generates batch of payment references for multiple candidates; pays single bank transfer; Finance Officer splits and allocates per candidate on confirmation.
+
+Nomination gate:
+15. FR-M47-006: M12 nomination workflow blocked until payment status is CONFIRMED or WAIVED; unpaid candidates cannot advance to DOCS_UPLOADED step; M12 queries M47 API for current status.
+16. FR-M47-009: Payment window enforcement: references generated only within the gazetted nomination period; late requests rejected with statutory reference.
+
+Waiver:
+17. FR-M47-007: Candidate submits waiver application with grounds (financial hardship, disability, youth per IEBC Regulations) and supporting document URLs; evidence format-validated.
+18. FR-M47-008: Waiver routed for dual approval (Finance Officer + Commissioner) above configurable threshold amount.
+19. FR-M47-010: Waiver grounds (gender, disability, youth) recorded with evidence reference; grounds immutable after submission.
+20. FR-M47-034: Waiver decision issued within 5 working days; decision letter (signed PDF via P06 HSM) sent to candidate; WAIVED status propagated to M12.
+21. FR-M47-035: Waiver anonymised statistics: IEBC publishes count by contest tier and county post-nomination window; no individual names published.
+
+Refund:
+22. FR-M47-011: B2C refund initiated on nomination disqualification (full refund, Elections Act s.22(4)) or withdrawal before gazette (50% refund per IEBC Regulations); refund basis recorded.
+23. FR-M47-012: Refund status tracked through Daraja B2C callback; PENDING -> APPROVED -> PAID state machine.
+24. FR-M47-013: Alert operations team when refund fails after three retries; escalation recorded in audit log.
+25. FR-M47-036: Refund PDF receipt: digitally signed via P06 HSM; downloadable from candidate portal on PAID status.
+26. FR-M47-037: Refund reconciliation: Finance Officer reconciles all refunds against IEBC designated account by T+30; reconciliation report archived with Merkle path.
+
+Receipts and audit:
+27. FR-M47-022: Candidate views payment receipt with mpesa_reference, confirmed_at, and amount_kes on portal.
+28. FR-M47-023: Candidate downloads HSM-signed PDF receipt on CONFIRMED status; receipt generated within 30 seconds of CONFIRMED event.
+29. FR-M47-024: All financial amounts stored as KES integer (no floating point); Semgrep rule enforced in CI.
+30. FR-M47-030: Audit log records every payment state transition with actor, timestamp, and reason; appended to P05 Merkle chain.
+
+Reconciliation:
+31. FR-M47-014: Daily reconciliation report: collected, waivers, refunds, shortfall; available to Finance Officer and Auditor.
+32. FR-M47-015: Export reconciliation as CSV and XLSX with audit timestamp; export includes P05 Merkle path for each payment event.
+33. FR-M47-016: Admin payment queue: filter by election, category, status; unmatched items flagged.
+34. FR-M47-017: Admin audit trail view: all payment status transitions with actor and timestamp.
+35. FR-M47-018: Admin manual payment status override with dual approval and reason (break-glass); override event logged to P05.
+
+Portal and accessibility:
+36. FR-M47-028: i18n: all portal text in 11 languages; Swahili mandatory; no hardcoded strings; ICU plurals.
+37. FR-M47-029: WCAG 2.2 AA compliance on all public and candidate-facing surfaces; EN + SW.
 
 ## Acceptance criteria
 
-1. AC-M47-01: Duplicate Daraja callback with same mpesa_reference returns 200 with cached result and triggers no second DB write (EC-DAT-01, EC-LEG-10).
-2. AC-M47-02: Duplicate callback with same key but different amount returns 422 idempotency-key-reuse (EC-DAT-02).
-3. AC-M47-03: Payment confirmed event emitted exactly once per confirmed payment; consumer idempotency test passes.
-4. AC-M47-04: Nomination in M12 is blocked until payment confirmed or waiver granted; e2e test proves.
-5. AC-M47-05: Waiver approval requires dual-officer sign-off above configurable threshold; unit test.
-6. AC-M47-06: Refund B2C callback idempotent; refund_processed event emitted once; test.
-7. AC-M47-07: Reconciliation export matches sum of payment rows; property test on 10k synthetic rows.
-8. AC-M47-08: API p99 latency under nominal load at routine 99.5% SLA.
-9. AC-M47-09: All amounts stored as integer KES; no floating-point arithmetic in payment path; Semgrep rule passes.
-10. AC-M47-10: 11-locale snapshot tests pass; no hardcoded strings.
+1. AC-M47-01: Duplicate Daraja callback with same mpesa_reference returns 200 with cached result and triggers no second DB write; idempotency integration test passes (EC-DAT-01, EC-LEG-10).
+2. AC-M47-02: Duplicate callback with same mpesa_reference but different amount returns 422 idempotency-key-reuse; original payment unchanged; test passes (EC-DAT-02).
+3. AC-M47-03: eel.crms.payment_confirmed.v1 event emitted exactly once per confirmed payment; consumer idempotency test and property test pass.
+4. AC-M47-04: Nomination in M12 blocked until payment CONFIRMED or waiver WAIVED; e2e Playwright test confirms block and unblock.
+5. AC-M47-05: Waiver approval requires dual-officer sign-off above configurable threshold; unit test validates both approver signatures required.
+6. AC-M47-06: Refund B2C callback idempotent; eel.crms.refund_processed.v1 emitted once; Daraja B2C stub replay test.
+7. AC-M47-07: Reconciliation export total collected matches sum of CONFIRMED payment rows; property test on 10k synthetic rows with zero shortfall.
+8. AC-M47-08: API p99 latency <= defined threshold under 2,000 concurrent users during nomination window; k6 load test at cycle-critical 99.9% availability class.
+9. AC-M47-09: All amounts stored as KES integer; no floating-point arithmetic in payment or refund path; Semgrep rule `no-float-kes` passes in CI.
+10. AC-M47-10: 11-locale snapshot tests pass; no hardcoded strings; 150% pseudo-locale renders without truncation.
+11. AC-M47-11: M-Pesa STK push confirmation end-to-end <= 5 s; Daraja sandbox integration test measures round-trip; circuit breaker fires after 3 consecutive failures.
+12. AC-M47-12: Bank transfer reference expires at 5 working days; status transitions to EXPIRED automatically; scheduler unit test with mocked clock passes.
+13. AC-M47-13: System availability >= 99.9% during nomination window (T-60 to T-46); SLO burn-rate alert fires at > 0.1% error budget per hour; Alertmanager test passes.
+14. AC-M47-14: Payment data encrypted at rest; Daraja phone number stored only for refund routing; 7-year retention enforced; DPIA registration confirmed; DPA compliance audit passes.
 
 ## Applicable edge cases
 
-**Data integrity:**
-- EC-DAT-01: duplicate payment callback with same key replayed; must cache and return without re-executing.
-- EC-DAT-02: same Idempotency-Key with different body; 422 returned.
-- EC-DAT-10: zero-balance waiver (full fee waived); no divide-by-zero in reconciliation.
+data:
+- EC-DAT-01: duplicate Daraja C2B callback with same mpesa_reference replayed; cached 200 returned; no second DB write; no duplicate payment created
+- EC-DAT-02: same Idempotency-Key with different payment body; 422 idempotency-key-reuse returned; original payment unchanged
+- EC-DAT-05: waiver amount exceeds fee schedule amount (poison waiver); validation rejects; Finance Officer alerted; no waiver persisted
+- EC-DAT-07: partial batch failure in party bulk payment allocation; per-candidate report returned; successfully allocated candidates unaffected; failed allocations retryable
+- EC-DAT-10: zero-balance waiver (full fee waived); no divide-by-zero in reconciliation; shortfall computed as 0; property test passes
+- EC-DAT-14: oversized Daraja callback payload (> 1 MB); outbox rejects with 413; logged; callback not silently dropped
 
-**Legal:**
-- EC-LEG-10: duplicate Daraja callback; single payment recorded, idempotent refund.
+legal:
+- EC-LEG-02: court-ordered suspension of nomination window; payment reference generation blocked; existing references retain original expiry; candidates notified via portal
+- EC-LEG-10: duplicate Daraja callback; single payment recorded; refund idempotent; eel.crms.payment_confirmed.v1 emitted once
 
-**Security:**
-- EC-SEC-05: injection on fee amount or mpesa reference fields; parameterised queries only.
-- EC-SEC-09: rate-limit evasion on payment initiation; key by subject and IP /64.
-- EC-SEC-16: payment amounts and mpesa references must not appear in logs.
+security:
+- EC-SEC-03: P06 HSM unavailable during receipt generation; generation deferred to HSM recovery; candidate notified receipt delayed; no corrupt receipt issued
+- EC-SEC-05: injection on fee_amount, mpesa_reference, or candidate_id fields; parameterised queries only; Semgrep and ZAP tests pass
+- EC-SEC-06: SSRF via receipt URL or evidence document URL; allowlist enforced; private-range redirect blocked; Nuclei test passes
+- EC-SEC-09: rate-limit evasion on payment initiation; key by subject and IP/64; k6 rotating IP test passes
+- EC-SEC-11: timing side-channel on payment reference lookup; constant-time comparison; dudect-style test passes
+- EC-SEC-16: payment amounts and mpesa_reference must not appear in logs, traces, or spans; log-scanner CI fixture passes on every build
 
-**Scale:**
-- EC-SCL-08: Valkey eviction loses idempotency key; PG-durable idempotency store.
+identity:
+- EC-IDN-02: candidate JWT expires mid-payment wizard; in-flight step completes; next request returns 401 and silent refresh; no payment data lost
+- EC-IDN-09: waiver dual-approval; approver revoked mid-flow; re-validation at commit; approval blocked if approver revoked; compensating event logged
+- EC-IDN-10: SpiceDB down during waiver approval action; fail closed; 503 returned; no partial approval persisted
 
-**Human:**
-- EC-HUM-08: 11 languages including long strings; no truncation in UI.
+scale:
+- EC-SCL-01: 2,000 concurrent STK push initiations during nomination-window open; STK queue handles burst; p99 <= 5 s end-to-end; k6 load test
+- EC-SCL-04: Kafka consumer lag > 60 s during nomination peak; backpressure applied; no payment event lost; SRE alerted
+- EC-SCL-08: Valkey eviction loses idempotency key; PG-durable idempotency store fallback; no duplicate payment recorded
 
-**Connectivity:**
-- EC-CON-05: flapping Daraja webhook; backoff with retry budget; no duplicate.
+connectivity:
+- EC-CON-05: flapping Daraja C2B webhook; exponential backoff with retry budget; no duplicate payment confirmed; server dedupe count 0
+
+operations:
+- EC-OPS-05: Daraja API downtime during nomination window; bank transfer fallback pathway activated; Finance Officer manual confirmation within 2 working days; circuit breaker opens after 3 consecutive Daraja failures
+
+human:
+- EC-HUM-08: 11 languages including long strings; no truncation on payment portal; 150% pseudo-locale test passes
+- EC-HUM-06: screen reader support on payment portal; full task completion via keyboard and ARIA; axe-core audit passes
+
+time:
+- EC-TIM-04: payment reference expiry computed in EAT; nomination window boundaries in EAT; UTC storage with EAT display; boundary test passes
 
 ## Test plan
 

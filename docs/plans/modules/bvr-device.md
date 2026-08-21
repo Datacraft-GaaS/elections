@@ -79,115 +79,173 @@ OpenAPI file: packages/openapi-contracts/bvr/device-ingest.yaml
 
 ## Feature checklist
 
-1. FR-M01-001: capture all 22 mandated biographic fields including INTERSEX gender option.
-2. FR-M01-002: capture 10 fingerprints with FBI PIV IQS sensor at FAP 50/60; ISO 19794-2 minutiae; WSQ at 500 PPI.
-3. FR-M01-003: capture both iris images with ISO 19794-6 encoding.
-4. FR-M01-004: capture ICAO 9303 / ISO 19794-5 facial image with automated quality gate (pose, lighting, expression).
-5. FR-M01-005: capture on-screen signature with stylus.
-6. FR-M01-006: scan 2nd-gen ID, Maisha card, or passport with MRZ parse and encrypted-PDF output.
-7. FR-M01-007: on-device ABIS-lite dedup against last-N station enrolments.
-8. FR-M01-008: client-side validation: names alpha-only, DOB >= 18, MRZ validity, passport expiry >= 6 months.
-9. FR-M01-009: offline-first encrypted queue; all records survive power failure and sync on reconnect.
-10. FR-M01-010: biometric login for Enrolment Clerk and Supervisor roles.
-11. FR-M01-011: voter transfer workflow authenticated by Supervisor biometric.
-12. FR-M01-012: configurable per-station capacity (default 700); QR-code station lock.
-13. FR-M01-013: enrolment window enforcement per Elections Act s.6A; refuse outside gazetted window.
-14. FR-M01-014: per-action audit trail (who, what, timestamp) synced to back-end.
-15. FR-M01-015: screen-lock after configurable inactivity; biometric re-auth to resume.
-16. FR-M01-016: language toggle English / Kiswahili; extensible to 11 languages.
-17. FR-M01-017: tactile-overlay input, audio-guided workflow, high-contrast mode; WCAG 2.1 AA.
-18. FR-M01-018: distress finger triggers covert alert while displaying normal auth flow.
-19. FR-M01-019: kit-health telemetry (battery, connectivity, storage, temperature) at configurable interval.
-20. FR-M01-020: signed OTA firmware update with A/B slots and rollback.
-21. Clerk session ends and records are sealed when enrolment window closes.
-22. Supervisor-approved transfer generates a signed TransferEvent submitted to back-end.
-23. Per-record digital signature binds record to kit serial and clerk identity.
-24. Sync progress visible to clerk: pending count, last sync timestamp.
-25. Kit refuses operation outside geo-fence polygon; alert sent to back-end.
-26. Kit refuses operation if NTP/GNSS time confidence is low for more than configured tolerance.
-27. Firmware attestation mismatch at boot quarantines kit centrally within 60 s.
-28. Kit certificate revoked centrally propagates in <= 60 s; kit becomes inoperable.
-29. Local ABIS-lite cache managed with LRU eviction; cache size configurable per station load.
-30. MRZ parse pre-populates biographic fields; clerk confirms before biometric capture.
-31. QR confirmation slip displayed/printed after successful enrolment with voter reference.
-32. Double-feed detection on document scanner; re-scan prompt on failure.
-33. Battery and storage thresholds trigger progressive warnings to clerk.
-34. Legacy Android feature-matrix: documents which modalities degrade and how.
-35. Per-field i18n for all 22 biographic fields across 11 languages.
+Biographic capture
+FR-M01-001: capture all 22 mandated biographic fields: name(s), DOB, gender (MALE, FEMALE, INTERSEX), ID type, ID number, ID expiry, mobile, email, education level, physical-challenge type, assistance-required flag, county, constituency, ward, and polling centre.
+FR-M01-002: capture 10 fingerprints with FBI PIV IQS or STQC-certified sensor at FAP 50/60; extract ISO/IEC 19794-2 minutiae; encode with FBI-certified WSQ at 500 PPI and JPEG-2000 (ISO/IEC 15444-1:2019) at <= 15:1 average compression.
+FR-M01-003: capture both iris images with ISO/IEC 19794-6 encoding; liveness detection rejects artificial iris before template extraction.
+FR-M01-004: capture ICAO 9303 / ISO 19794-5 facial image with automated quality gate (pose, lighting, expression); auto-exposure and torch activation on poor illumination.
+FR-M01-005: capture on-screen signature with stylus; stylus vector hash stored; raw vectors discarded after hashing.
+FR-M01-006: scan 2nd-gen national ID, Maisha card, or passport; auto-alignment; double-feed detection; MRZ parse; encrypted-PDF output with hash reference stored in MinIO.
+FR-M01-007: on-device ABIS-lite dedup against last-N station enrolments; LRU eviction manages cache size; cache-miss flagged for server-side check.
+FR-M01-008: client-side validation: names alpha-only and NFC-normalised; DOB >= 18 at registration date; MRZ check-digit validity; passport expiry >= 6 months from registration date.
+
+Offline queue and sync
+FR-M01-009: offline-first: full enrolment flow works with no network; records stored in encrypted SQLite WAL queue with per-record Ed25519 digital signature; submitted on reconnect.
+FR-M01-010: offline queue ring-buffer capacity covers >= 7 days of peak station throughput without loss or overflow; signed-sequenced records allow gap audit.
+FR-M01-011: each enrolment record signature binds voter biographic hash, kit serial, clerk biometric ID, and HLC timestamp.
+FR-M01-012: idempotent re-send by eel_idempotency_key on reconnect; server dedup prevents duplicate voter records.
+FR-M01-013: sync progress visible to clerk: pending record count, last successful sync timestamp, last error code displayed in status bar.
+
+Authentication and access
+FR-M01-014: biometric fingerprint login for Enrolment Clerk and Supervisor roles; PIN fallback rate-limited; no downgrade to weaker auth policy.
+FR-M01-015: screen-lock after configurable inactivity period; biometric re-authentication required to resume; partial captures discarded on timeout.
+FR-M01-016: role-based access enforced per SVID; SVID rotation during session handled without session drop; new SVID accepted on next API call.
+FR-M01-017: distress finger (designated at PO briefing) triggers covert eel.bve.distress_detected.v1 event to back-end while UI remains identical to normal auth.
+FR-M01-018: revoked-kit login enters honeypot mode: sandbox environment served; attacker biometric silently captured for forensics.
+
+Station and window control
+FR-M01-019: enrolment window enforced per Elections Act s.6A; kit refuses new enrolments outside gazetted window; HSM-signed extension bundle reopens window; forged extension rejected.
+FR-M01-020: configurable per-station capacity (default 700); QR-code station lock prevents cross-station capture; capacity exhaustion notifies clerk.
+FR-M01-021: county, constituency, ward, and polling centre selection validated against loaded electoral-area map bundle; unrecognised codes rejected with reason.
+FR-M01-022: MRZ parse pre-populates all matching biographic fields; clerk confirms every field before biometric capture begins.
+FR-M01-023: QR confirmation slip displayed and printable after successful enrolment with voter registration reference and station code.
+FR-M01-024: clerk session sealed and all pending records signed when enrolment window closes; no new enrolment session until next window.
+
+Voter transfer
+FR-M01-025: voter transfer workflow authenticated by Supervisor biometric and originating voter biometric; produces signed eel.bvr.transfer_initiated.v1 event submitted to back-end.
+FR-M01-026: KitCustodyEvent produced on kit hand-off between officers; seal UIDs recorded; event submitted to back-end immediately.
+
+Audit and attestation
+FR-M01-027: per-action audit trail (who, what, timestamp, kit serial) appended to local SQLite audit table; synced to back-end T1-audit on each batch.
+FR-M01-028: KitAttestation (TPM quote + firmware digest) sent as eel.bve.kit_attested.v1 on every boot; kit quarantined centrally within 60 s on mismatch.
+FR-M01-029: kit certificate revocation propagated from central SpIFFE/SPIRE within 60 s; kit becomes inoperable; local queue quarantined; custodian alerted.
+
+Firmware and OTA
+FR-M01-030: signed OTA firmware and app updates via A/B partitioned slots; automatic rollback on boot failure; unsigned or unverified images refused at install.
+FR-M01-031: OTA interrupted at any phase triggers A/B rollback; current running firmware restored; update retried on next MDM push.
+
+Geo-fence and time
+FR-M01-032: kit refuses enrolment outside geo-fence polygon; multi-constellation GNSS (GPS, GLONASS, Galileo) with IMU delta for spoof detection; eel_geo_violation alert sent within 30 s.
+FR-M01-033: kit blocks operation when NTP/GNSS time confidence is low beyond configured tolerance; eel_time_confidence=low stamped on every affected record.
+FR-M01-034: UTC used for all storage and computations; gazetted TZ displayed to clerk; DST transitions handled transparently on diaspora kits.
+
+Health telemetry
+FR-M01-035: kit-health telemetry (battery, connectivity, storage, temperature) emitted as eel.bve.kit_health_reported.v1 at configurable interval; escalated to war-room on sensor failure.
+FR-M01-036: battery and storage threshold warnings displayed progressively (warning at 20%, critical at 10%); back-end pull-priority triggered on near-full storage.
+
+Biometric quality and exception paths
+FR-M01-037: NFIQ2 quality gate: fingerprint rejected below configurable threshold; re-capture prompted up to three attempts before exception path is offered.
+FR-M01-038: iris liveness detection on every capture; liveness confidence below threshold triggers reject and re-prompt.
+FR-M01-039: multi-finger retry with adaptive threshold for worn, faded, or gloved fingerprints; s.44A-compliant fallback to face-and-ID path documented.
+FR-M01-040: biometric exception path (amputee, injury, s.44A): face-and-ID enrolment enabled; eel_biometric_exception flag set; no denial of registration.
+FR-M01-041: assisted voting path: assistant identity and biometric recorded; voter consent captured; audio guidance active; assistant identity excluded from voter secrecy audit fields.
+FR-M01-042: NFIQ2 distribution per station logged in health telemetry payload; outlier stations alerted via Grafana burn-rate rule.
+
+Accessibility and localisation
+FR-M01-043: WCAG 2.1 AA throughout: tactile-overlay-compatible input; audio-guided workflow on every step; high-contrast mode switchable at any point without restart.
+FR-M01-044: screen-reader full task completion on TalkBack (Android) and NVDA (Windows); every interactive element has accessible label and role.
+FR-M01-045: all interactive controls meet >= 48 dp hit-target size; Braille/tactile overlay calibrated; audio confirmation on each action.
+FR-M01-046: language toggle between at least English and Kiswahili; architecture extensible to 11 languages without code change; per-field i18n for all 22 biographic fields.
+FR-M01-047: all 11 languages render without truncation at 150% pseudo-locale on every field; ICU plural rules applied; font fallback stack defined per locale.
+FR-M01-048: colour-blind support: symbol, text label, and pattern accompany every colour-coded state; ΔE contrast validated per registry.
+FR-M01-049: Kenyan Sign Language video available for every clerk-facing explainer flow; captions present for all audio content.
+
+Security and crypto
+FR-M01-050: all biometric templates and PII encrypted at rest with per-field keys managed via eel-crypto-rs; no plaintext template observable outside enclave or encrypted store.
+FR-M01-051: TLS 1.3 minimum for all outbound connections; PQ-hybrid negotiated where peer supports; TLS 1.2 refused.
+FR-M01-052: all log output scanned against eel_pii_tier_a and eel_pii_tier_b regex patterns before write; telemetry pipeline refuses classified fields at the sink.
+
+Legacy and interoperability
+FR-M01-053: legacy Android feature-matrix degradation layer documents which modalities degrade on each device tier; policy-marked capabilities enforced at runtime.
+FR-M01-054: legacy kit pre-CloudEvents payload shim upgrades envelope to eel.<ctx>.<event>.v1 format; original signature preserved; Pact golden corpus verified.
 
 ## Acceptance criteria
 
-AC-M01-01: end-to-end enrolment completes in <= 3 min under field conditions (field trial).
-AC-M01-02: offline for 4 h with 100 records enrolled; all records sync on reconnect with zero loss (bench).
-AC-M01-03: fingerprint template NFIQ2 >= 60 for >= 95% of captures on certified sensor (bench).
-AC-M01-04: distress finger triggers silent alert to back-end with no visible cue to bystanders (red-team).
-AC-M01-05: geo-fence violation blocks enrolment and sends alert within 30 s (field trial).
-AC-M01-06: firmware attestation deviation quarantines kit centrally within 60 s (chaos exercise).
-AC-M01-07: all 22 biographic fields present; INTERSEX gender selectable; field validation passes (manual).
-AC-M01-08: screen-reader traversal completes full enrolment flow on TalkBack (accessibility audit).
-AC-M01-09: legacy Android runs with documented feature degradation on lowest-tier IEBC device (bench).
-AC-M01-10: boot-to-ready within 90 s; >= 12 enrolments/hr sustained throughput (SLA bench).
-AC-M01-11: zero records lost on simulated power failure at each workflow state transition (property test).
-AC-M01-12: kit revocation propagates from central in <= 60 s; kit refuses new sessions (chaos exercise).
+AC-M01-01: end-to-end enrolment completes in <= 3 min under field conditions on certified sensor hardware, measured across 20 physical kits in staging environment (field trial).
+AC-M01-02: offline for 4 h with 100 records enrolled; all records sync on reconnect with zero loss and zero duplication confirmed by proptest suite (bench).
+AC-M01-03: fingerprint templates NFIQ2 >= 60 for >= 95% of captures on FBI PIV IQS certified sensor across 1 000 captures (bench).
+AC-M01-04: distress finger triggers silent eel.bve.distress_detected.v1 event to back-end with no visible change in UI or display to bystanders (red-team exercise).
+AC-M01-05: geo-fence violation blocks enrolment immediately and sends alert to back-end within 30 s (field trial with simulated boundary crossing).
+AC-M01-06: firmware attestation mismatch quarantines kit centrally within 60 s; kit refuses all new sessions after quarantine (chaos exercise).
+AC-M01-07: all 22 biographic fields present and validated; INTERSEX gender selectable; MRZ pre-populate correct for 2nd-gen ID, Maisha card, and passport (manual test).
+AC-M01-08: screen-reader traversal completes full enrolment flow on TalkBack; WCAG 2.1 AA audit passes with zero critical violations (accessibility audit by independent WCAG specialist).
+AC-M01-09: legacy Android feature-matrix executes with documented degradation on lowest-tier IEBC device; parity matrix signed off by IEBC ICT (bench on real IEBC device).
+AC-M01-10: kit boot-to-ready within 90 s; >= 12 enrolments/hr sustained throughput over 10 h continuous operation (SLA bench).
+AC-M01-11: zero records lost on simulated power failure at every FSM transition; journal-before-act verified by property test with arbitrary cut-point corpus (proptest).
+AC-M01-12: kit certificate revocation propagated from central; kit refuses new sessions within 60 s of revocation event (chaos exercise).
+AC-M01-13: 11-language UI renders without truncation at 150% pseudo-locale across all 22 biographic fields and all workflow screens (i18n regression test).
+AC-M01-14: biometric exception path (amputee, worn fingerprint, s.44A invocation) completes enrolment without denial; biometric_exception flag present in record (UAT with PWD participants).
+AC-M01-15: offline queue survives 7-day accumulation at peak station throughput without ring-buffer overflow or record drop (property test).
+AC-M01-16: TLS 1.3 minimum enforced on all outbound connections; TLS 1.2 actively rejected on probe (testssl.sh in CI).
 
 ## Applicable edge cases
 
-**connectivity**
-EC-CON-01: offline 7-day queue must survive; ring-buffer with signed-sequenced records prevents loss.
-EC-CON-02: 3G SLAs met; CBOR+zstd negotiated for submission payloads.
-EC-CON-03: 2G only; kit refuses data path; uses SMS/USSD fallback signing.
-EC-CON-05: flapping link; backoff+jitter retry; server dedup by Idempotency-Key.
-EC-CON-06: captive portal; pinning fails closed; "network blocked" UX; no token leak.
-EC-CON-07: satellite 600 ms+ RTT; transport-tuned timeouts; MTU-safe payloads.
-EC-CON-08: DNS poisoned; hardcoded fallback endpoints; DNSSEC.
-EC-CON-09: IPsec tunnel drop mid-batch; resume at sequence; idempotent re-send.
-EC-CON-10: dual-SIM failover; same signed blob on SIM B.
+connectivity
+EC-CON-01: 7-day offline accumulation; ring-buffer with signed-sequenced records prevents loss; gap audit run on reconnect.
+EC-CON-02: 3G (500 kbps, 300 ms RTT); kit meets enrolment submission SLAs; CBOR+zstd negotiated for payloads.
+EC-CON-03: 2G only; kit refuses data path; switches to SMS/USSD signed fallback; clerk shown USSD path prompt.
+EC-CON-05: flapping link; backoff+jitter retry with budget; server dedup by eel_idempotency_key; zero duplicates.
+EC-CON-06: captive portal intercepts; certificate pinning fails closed; "network blocked" UX shown; no auth tokens leaked.
+EC-CON-07: satellite 600 ms+ RTT; transport-tuned timeouts applied; MTU-safe payloads avoid fragmentation.
+EC-CON-08: DNS poisoned or down; DNSSEC enforced; hardcoded fallback endpoints used; circuit opens on repeated failure.
+EC-CON-09: IPsec tunnel drops mid-batch; resume from last committed sequence number; idempotent re-send by key.
+EC-CON-10: dual-SIM failover mid-send; same signed blob submitted on SIM B; exactly one record committed.
 
-**time**
-EC-TIM-01: kit clock skew >5 min at boot; refuse session until NTS/GNSS re-synced.
-EC-TIM-02: NTP/NTS unreachable; last-auth time + monotonic; time_confidence=low.
-EC-TIM-04: DST/TZ on diaspora kits; UTC storage, gazetted TZ display.
+time
+EC-TIM-01: kit clock skew > 5 min at boot; session refused until NTS or GNSS re-sync confirmed.
+EC-TIM-02: NTP/NTS unreachable all day; last-auth time + monotonic clock used; eel_time_confidence=low stamped on every record.
+EC-TIM-04: DST or TZ change on diaspora kit; UTC stored; gazetted TZ displayed; window close computed in UTC.
+EC-TIM-07: s.14A close time moves 17:00 to 19:00; HSM-signed extension bundle reopens fence; forged extension rejected.
 
-**identity**
-EC-IDN-01: kit cert revoked mid-session; refuse within 60 s; queue quarantined.
-EC-IDN-03: SVID rotates during batch; old SVID valid to expiry.
-EC-IDN-07: no SMS OTP for accredited clerk; device-bound credential only.
-EC-IDN-08: duress finger; covert ECC alert; UI identical to normal auth.
+identity
+EC-IDN-01: kit cert revoked mid-session; refused within 60 s; queue quarantined; honeypot served if theft confirmed.
+EC-IDN-02: JWT expires mid-request; in-flight request completes; next request returns 401 with silent refresh.
+EC-IDN-08: duress finger recognised; covert eel.bve.distress_detected.v1 sent; UI display identical to normal auth.
+EC-IDN-10: SpiceDB down; fail-closed on write operations; class-C reads from local cache; 503 returned.
 
-**data**
-EC-DAT-01: duplicate submission same key+body; cached response; no re-execution.
-EC-DAT-02: same key different body; 422 idempotency-key-reuse.
-EC-DAT-09: Unicode names; NFC normalisation; ICU collation; grapheme-safe.
+data
+EC-DAT-01: duplicate submission same eel_idempotency_key and body; cached 200 returned; no re-execution.
+EC-DAT-02: same eel_idempotency_key different body; 422 idempotency-key-reuse returned.
+EC-DAT-09: Unicode names; NFC normalisation applied; ICU collation used; grapheme-safe splitting for display.
+EC-DAT-16: legacy kit pre-CloudEvents payload; shim upgrades envelope to eel.bvr.enrolment_captured.v1; original Ed25519 signature preserved.
 
-**security**
-EC-SEC-02: tamper/chassis seal; kill-on-open; quarantine stream; ECC alert.
-EC-SEC-05: injection on every input; parameterised only; Semgrep clean.
-EC-SEC-11: timing side-channel on biometric compare; constant-time.
-EC-SEC-14: stolen kit honey mode; sandbox served; attacker biometric captured.
-EC-SEC-16: secrets in logs; telemetry refuses Tier A/B.
-EC-SEC-17: PQ hybrid; TLS 1.3 only; never 1.2.
+security
+EC-SEC-02: chassis tamper or seal broken; kill-on-open triggered; eel_tamper quarantine stream event; ECC alert sent; custody event generated.
+EC-SEC-05: injection attempt on biographic fields; parameterised storage only; Semgrep Tier A/B passes in CI.
+EC-SEC-11: timing side-channel on ABIS-lite biometric compare; constant-time comparison enforced in eel-biometric-rs.
+EC-SEC-14: stolen kit in honeypot mode; sandbox environment served; attacker biometric silently captured and forwarded.
+EC-SEC-16: secrets or PII emitted to logs or traces; telemetry sink refuses eel_pii_tier_a and eel_pii_tier_b fields; CI regex check enforced.
+EC-SEC-17: PQ-hybrid negotiation attempted; TLS 1.3 enforced; TLS 1.2 refused on all outbound connections.
 
-**human**
-EC-HUM-01: worn fingerprints; multi-finger retry; s.44A-compliant fallback.
-EC-HUM-02: amputee; face/ID path; biometric_exception; no denial.
-EC-HUM-03: gloves/wet/dust; liveness reject + prompt.
-EC-HUM-04: low-light/direct sun; auto-exposure; torch; quality gate.
-EC-HUM-05: assisted voting; assistant recorded; consent; audio.
-EC-HUM-06: screen readers; full task completion AA.
-EC-HUM-08: 11 languages; no truncation; ICU plurals; font fallback.
-EC-HUM-09: colour-blind; symbol+text+pattern.
-EC-HUM-11: Braille/tactile overlay; >= 48 dp calibrated; audio confirm.
+human
+EC-HUM-01: worn or faded fingerprints; multi-finger retry with adaptive threshold; s.44A-compliant face-and-ID fallback activated.
+EC-HUM-02: amputee or missing digits; face-and-ID enrolment path; eel_biometric_exception flag set in record; no denial.
+EC-HUM-03: gloves, wet hands, or dust on platen; liveness reject with re-prompt; enrolment latency SLA maintained.
+EC-HUM-04: low-light or direct sun environment; auto-exposure triggered; torch activated; perspective correction applied; quality gate enforced.
+EC-HUM-05: assisted voting; assistant identity and biometric recorded; consent captured; audio guidance active; no secrecy leak in audit.
+EC-HUM-06: screen readers (TalkBack, NVDA); full task completion with assistive tech; WCAG 2.1 AA semantics verified.
+EC-HUM-07: Deaf or KSL users; KSL video present on all explainer and instruction flows; captions on all audio.
+EC-HUM-08: 11 languages displayed; no truncation at 150% pseudo-locale; ICU plurals applied; font fallback stack defined.
+EC-HUM-09: colour-blind operators; symbol, text label, and pattern accompany every colour-coded state; ΔE registry compliant.
+EC-HUM-10: low-literacy clerk on USSD path; numeric steps <= 5; IVR alternative available.
+EC-HUM-11: Braille or tactile overlay user; >= 48 dp hit targets calibrated; audio confirmation on every action.
+EC-HUM-12: clerk fatigue causes wrong column entry; ICR cross-check flags low confidence; forced re-entry before submission.
 
-**kit**
-EC-KIT-01: GNSS jam/spoof; multi-constellation + IMU; refuse outside fence.
-EC-KIT-02: legacy Android parity; software attestation tier; parity matrix.
-EC-KIT-03: OTA interrupted; A/B slots; rollback; signed only.
-EC-KIT-04: mode switch not propagated; signed bundle acked; unacked listed in ECC.
+kit
+EC-KIT-01: GNSS jam or spoof attempt; multi-constellation + IMU delta check; enrolment refused when outside verified polygon.
+EC-KIT-02: legacy Android device; software attestation tier applied; policy-marked capabilities enforced; parity matrix maintained.
+EC-KIT-03: OTA update interrupted at any phase; A/B slot rollback restores running firmware; only signed images accepted.
+EC-KIT-04: mode-switch bundle not acknowledged by kit; unacknowledged kit listed in ECC dashboard; signed bundle re-sent on ack timeout.
 
-**operations**
-EC-OPS-01: battery death mid-session; journal-before-act; exact resume; no double token.
-EC-OPS-02: kit swap <= 10 min; inherit roll + watermark; old revoked.
-EC-OPS-03: seal broken in transit; custody event; quarantine; alert.
+operations
+EC-OPS-01: battery death mid-session; journal-before-act ensures exact FSM resume; no double token or duplicate record.
+EC-OPS-02: kit swap required; replacement inherits roll and watermark within <= 10 min; old kit revoked; event streams linked.
+EC-OPS-03: seal broken in transit; KitCustodyEvent generated; kit quarantined; alert sent to ECC.
+EC-OPS-04: dual-control officer absent at critical step; time-boxed ECC remote co-sign flow triggered.
+EC-OPS-06: flood or curfew forces station relocation; HSM-signed geo-fence polygon update only accepted; portal notice issued.
+
+scale
+EC-SCL-04: consumer lag > 60 s on submission sync channel; backpressure applied; kit paged; no OOM on queue buffer.
 
 ## Test plan
 

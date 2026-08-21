@@ -1,4 +1,4 @@
-# eel — Kenya IEBC IEMS (2026-2027)
+# eel: Kenya IEBC IEMS (2026-2027)
 
 Integrated Elections Management System for the Independent Electoral and Boundaries Commission of Kenya. Datacraft software prime under IEBC/OIT/01/2026-2027.
 
@@ -75,4 +75,4 @@ Decided in ADRs 0001-0023. See `docs/adr/README.md` for the index and `docs/arch
 
 Design phase complete. 23 ADRs committed. Spec-alignment notes (`docs/spec-alignment/`) list the edits to apply to the bid documents. IEBC questions in `docs/eel-clarifications-outstanding.md`; our own bid-document backlog in `docs/datacraft-internal-backlog.md`.
 
-Next: first real service — `services/transparency-svc/` in Rust per ADR-0017.
+Next: first real service, `services/transparency-svc/` in Rust per ADR-0017.

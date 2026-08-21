@@ -11,10 +11,10 @@ Date: 2026-08-21
 
 - **Multi-ISP peering inside Kenya**: agreements with Safaricom, Airtel, Jamii Telecommunications, iColo, Konza / Safaricom DC. Multi-provider anycast + BGP. Upstream scrubbing agreements formalised before the freeze.
 - **Origin shield per site**: **nginx + Varnish** (or Apache Traffic Server) in front of every service. Long-TTL for signed snapshots (ADR-0011 Tier 1); short-TTL for live surfaces.
-- **Static-first**: everything that can be pre-rendered is — candidate lists, boundary GeoJSON, voter-ed content, gazette, results snapshots. Rendered on cadence, cosign-signed, published to MinIO, cached at every edge.
+- **Static-first**: everything that can be pre-rendered is, candidate lists, boundary GeoJSON, voter-ed content, gazette, results snapshots. Rendered on cadence, cosign-signed, published to MinIO, cached at every edge.
 - **Protocols**: HTTP/3 (QUIC) at the edge for mobile users on lossy Kenyan networks; HTTP/2 fallback; HTTP/1.1 blocked except for known agents.
 - **WAF**: **Coraza** (OSS OWASP ModSec-compatible, Apache 2.0) in front of every ingress. Rules tuned per service, not default CRS.
-- **Bot mitigation**: **Anubis** (MIT proof-of-work challenge under load) as escalation. Escalation ladder — normal → JS challenge → PoW → mTLS-only for authenticated surfaces. Alternatives evaluated: `go-away`, Curiefense.
+- **Bot mitigation**: **Anubis** (MIT proof-of-work challenge under load) as escalation. Escalation ladder, normal → JS challenge → PoW → mTLS-only for authenticated surfaces. Alternatives evaluated: `go-away`, Curiefense.
 - **Rate limiting**: per-IP + per-token + per-API-key + per-endpoint, sliding window, at the Envoy Gateway. Adaptive tightening under load.
 - **Slow-loris / low-and-slow**: strict connection timeouts, header timeouts, minimum request rates enforced at nginx.
 - **DNS**: **DNSSEC** signed, **CAA** records set, multi-provider authoritative DNS (at least two Kenyan providers + a fallback), continuously monitored for hijack.

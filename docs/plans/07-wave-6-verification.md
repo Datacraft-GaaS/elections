@@ -1,4 +1,4 @@
-# Wave 6 — Full-system verification
+# Wave 6: Full-system verification
 
 Part of the IEBC IEMS full build plan. See `README.md` for conventions, `08-edge-case-matrix.md` for EC-IDs, `10-definition-of-done.md` for the WP exit bar.
 

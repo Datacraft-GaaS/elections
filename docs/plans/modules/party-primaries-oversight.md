@@ -89,53 +89,141 @@ OpenAPI file: `packages/openapi-contracts/crms/primaries.yaml`
 
 ## Feature checklist
 
-1. FR-M46-001: party opt-in; registered party (ACTIVE in M45) applies; IEBC Oversight Officer approves; party signs MOU committing to result publication and IEBC oversight
-2. FR-M46-002: KIEMS-lite kit configuration: voter-roll import (party-supplied CSV), biometric or PIN authentication (party choice), ballot casting, result tallying; no ABIS integration; offline-capable; no national network connectivity required
-3. FR-M46-003: voter roll supplied by party per constituency (party members eligible to vote); format validated but not CVR-cross-referenced (party-member data outside IEBC mandate)
-4. FR-M46-004: kit serial bound to constituency code and primary election date; cannot be used at another constituency
-5. FR-M46-005: result submission via signed JSON upload; party-provisioned certificate verified; Merkle receipt returned within 2 minutes
-6. FR-M46-006: results published to public portal within 4 hours of submission; per-constituency breakdown; CSV/JSON download
-7. FR-M46-007: each result hash-anchored in P05 Merkle chain; public Merkle path verifiable
-8. FR-M46-008: result amendment within 48 hours with supporting documentation; IEBC Oversight Officer approves; original and amended versions both retained
-9. FR-M46-009: Oversight Officer dashboard: constituency map with submission status (SUBMITTED/PENDING/LATE/DISPUTED); turnout anomaly flags (> 2 SD from historical primary turnout)
-10. FR-M46-010: complaint density heat map: disputes per constituency as choropleth; hot-spots highlighted
-11. FR-M46-011: IEBC oversight notice: Oversight Officer issues formal notice to party for specific constituency irregularities; notice published on public portal alongside those constituency results
-12. FR-M46-012: candidate dispute submission within 48 hours of result publication; structured form (constituency, grounds, evidence)
-13. FR-M46-013: PDM first-step attestation required; if PDM unresolved within 7 days, dispute auto-escalates to PPDT; 7-day deadline enforced by system; non-overridable
-14. FR-M46-014: PPDT referral package (result PDF, dispute form, PDM response) generated and dispatched within 24 hours of PDM escalation; PPDT case number returned
-15. FR-M46-015: dispute status tracker: SUBMITTED -> PDM_REVIEW -> PPDT_REFERRED -> HEARING -> DETERMINATION/WITHDRAWN; candidates and parties track lifecycle
-16. FR-M46-016: determination-driven result correction: PPDT determination mandates correction; Oversight Officer updates published result with determination reference; original archived; Merkle proof of both versions retained
-17. KIEMS-lite kit: fully offline; result upload batch on connectivity restoration; kit tracked in M20
-18. Party-member voter rolls not retained beyond tallying session; only aggregate results retained by IEBC; DPA 2019 DPIA registered
+KIEMS-lite opt-in and provisioning:
+1. FR-M46-001: party opt-in: registered ACTIVE party (M45 status gate checked on each request) applies; IEBC Oversight Officer approves; party signs MOU committing to result publication and IEBC oversight
+2. FR-M46-002: MOU signing via authenticated portal; MOU document stored; mou_signed_at timestamp recorded; party cannot submit results without approved opt-in
+3. FR-M46-003: KIEMS-lite kit configuration: voter-roll import (party-supplied CSV), biometric or PIN voter authentication (party choice), ballot casting, result tallying; no ABIS integration; offline-capable; no national network connectivity required
+4. FR-M46-004: voter roll supplied by party per constituency (party members eligible to vote); CSV validated (column schema, UTF-8 encoding, max 50,000 rows) but not CVR-cross-referenced
+5. FR-M46-005: voter roll upload error report: per-row format errors listed; valid rows accepted; party may re-upload corrected rows before primary date
+6. FR-M46-006: kit serial bound to constituency code and primary election date; cannot be used at another constituency; binding signed and recorded in M20 inventory
+7. FR-M46-007: kit provisioning tracked in M20 inventory management; kit serial, constituency code, handover timestamp, and custodian recorded
+8. FR-M46-008: party Returning Officer credentials provisioned per kit; credentials scoped to constituency and primary date; cannot be reused across events
+
+Result submission:
+9. FR-M46-009: result submission via signed JSON upload; party-provisioned certificate verified against stored public key; rejected with 401 on certificate mismatch; event logged; Oversight Officer alerted
+10. FR-M46-010: result payload must include candidate tallies (list of {candidate_name, votes}), spoilt_ballots, total_turnout, constituency_code, position, submitted_at
+11. FR-M46-011: Merkle receipt returned within 2 minutes of submission; receipt includes result_hash (SHA-256 of canonical JSON) and merkle_leaf_id
+12. FR-M46-012: idempotent result submission: duplicate submission with same constituency_code, position, party_id, and primary date returns cached Merkle receipt; no second DB write
+13. FR-M46-013: result amendment within 48 hours of publication with supporting documentation; IEBC Oversight Officer approves amendment; original version retained; amendment_reason recorded
+14. FR-M46-014: both original and amended result versions retained; amendment chain visible on Oversight Officer dashboard and public portal
+
+Publication:
+15. FR-M46-015: results published to public portal within 4 hours of submission; per-constituency breakdown; CSV and JSON download available
+16. FR-M46-016: result publication event emitted (eel.crms.primary_result_published.v1); M12 CRMS receives primary winners for nomination confirmation
+17. FR-M46-017: each result hash-anchored in P05 Merkle chain; public Merkle path verifiable via portal verifier endpoint
+18. FR-M46-018: public portal shows per-constituency results with party, position, candidate tallies, spoilt ballots, total turnout; oversight notice banner shown where issued
+19. FR-M46-019: results downloadable as CSV and JSON; download includes result_hash for independent verification
+
+Oversight dashboard:
+20. FR-M46-020: Oversight Officer dashboard: constituency map with submission status per constituency (SUBMITTED / PENDING / LATE / DISPUTED)
+21. FR-M46-021: turnout anomaly flags: > 2 SD deviation from party historical primary turnout flagged; historical baseline sourced from M44 Turnout Forecasting
+22. FR-M46-022: complaint density heat map: disputes per constituency displayed as choropleth; hot-spots highlighted for Oversight Officer attention
+23. FR-M46-023: Oversight Officer can filter dashboard by party, county, position, and anomaly flag
+24. FR-M46-024: Oversight Officer receives alert when constituency result is LATE (> 6 hours post-primary-close without submission)
+25. FR-M46-025: IEBC oversight notice: Oversight Officer issues formal notice to party for specific constituency irregularities; mandatory structured reason field
+26. FR-M46-026: oversight notice Merkle-anchored in P05; published to public portal alongside constituency results within 1 hour of issuance; eel.crms.oversight_notice_issued.v1 emitted
+27. FR-M46-027: Oversight Officer can retract oversight notice with reason; original notice retained; retraction recorded; retraction published on public portal
+
+Dispute intake:
+28. FR-M46-028: candidate dispute submission within 48 hours of result publication; structured form: constituency, position, grounds, supporting evidence URLs
+29. FR-M46-029: dispute form requires attestation that candidate first referred dispute to party internal dispute mechanism (PDM); PDM attestation timestamp recorded
+30. FR-M46-030: PDM 7-day hard deadline enforced by system scheduler; if PDM unresolved at day 7, auto-escalation to PPDT triggered; non-overridable by any user role
+31. FR-M46-031: PPDT referral package generated automatically on PDM escalation: result PDF, dispute form, PDM chronology; package stored against dispute record
+32. FR-M46-032: PPDT referral package dispatched within 24 hours of PDM escalation; eel.crms.primary_dispute_ppdt_referred.v1 emitted; dispatch timestamp logged
+33. FR-M46-033: PPDT case number stored on dispute record within 24 hours of referral; eel_ppdt_case_number field set
+34. FR-M46-034: dispute status tracker: SUBMITTED -> PDM_REVIEW -> PPDT_REFERRED -> HEARING -> DETERMINATION / WITHDRAWN; candidates and parties track via portal
+35. FR-M46-035: determination-driven result correction: PPDT determination mandates correction; Oversight Officer updates published result with determination reference; original archived; Merkle proof of both versions retained
+36. FR-M46-036: PPDT determination ingest: signed PDF uploaded by PPDT Clerk; stored against dispute record; dispute status updated to DETERMINATION
+
+Offline and connectivity:
+37. FR-M46-037: KIEMS-lite kit fully offline during primary; local result stored with digital signature; batch-uploaded on connectivity restoration; no duplicate submission on reconnect
+38. FR-M46-038: kit offline duration tracked; if offline > 48 hours post-primary-close, Oversight Officer alerted and constituency marked LATE on dashboard
+39. FR-M46-039: offline result stored on kit with signing key; transmission includes original signed blob; Merkle receipt issued on backend arrival
+
+Access control and security:
+40. FR-M46-040: result submission endpoint authenticated with party-provisioned certificate; certificate tied to party_id, constituency_code, and primary date; not JWT
+41. FR-M46-041: public results portal: no authentication required; rate-limited by IP/64; WCAG 2.2 AA; EN + SW
+42. FR-M46-042: candidate dispute portal: public submission; rate-limited; WCAG 2.2 AA; EN + SW
+43. FR-M46-043: all dispute evidence uploads virus-scanned and format-validated before acceptance; malformed or infected files rejected with structured error
+
+Data protection and retention:
+44. FR-M46-044: party-member voter rolls not retained beyond tallying session; only aggregate results retained by IEBC; deletion confirmed within 1 hour of session end; DPIA registered
+45. FR-M46-045: public results portal contains no party-member PII; only candidate names, vote tallies, and aggregate turnout published
+46. FR-M46-046: all audit events appended to P05 Merkle chain: result submission, publication, amendment, dispute submission, PPDT referral, determination, oversight notice
+
+Availability and SLAs:
+47. FR-M46-047: system availability >= 99.5% during primary result submission windows (T-90 to T-75)
+48. FR-M46-048: result submission p99 upload response <= 2 s; Merkle receipt returned within 2 minutes of submission
+49. FR-M46-049: public portal p99 <= 2 s under 20,000 concurrent users
+50. FR-M46-050: PPDT referral dispatch within 24 hours of PDM escalation trigger
+
+Observability:
+51. FR-M46-051: Grafana dashboard `eel-iems-46` exists; SLO alerts for result publication <= 4 hours, PPDT referral <= 24 hours, portal p99 <= 2 s; alert ruleset `iems-46-alerts` in Alertmanager
+52. FR-M46-052: OpenTelemetry traces exported to central collector; trace IDs included in Merkle receipt responses for correlation
 
 ## Acceptance criteria
 
-1. AC-M46-01: party opts in and signs MOU; KIEMS-lite kit provisioned; result submitted offline and batch-uploaded on connectivity restore; Merkle receipt verified; UAT
-2. AC-M46-02: result published to public portal within 4 hours of submission; Merkle hash on portal matches submitted hash; integration test
-3. AC-M46-03: dispute submitted; PDM clock runs 7 days; auto-escalation to PPDT; structured referral package dispatched; PPDT stub test
-4. AC-M46-04: oversight notice issued by IEBC Oversight Officer; appears on public portal alongside constituency results within 1 hour; UAT
-5. AC-M46-05: PPDT determination received; published result updated with determination reference; original archived; both Merkle proofs verifiable; integration test
-6. AC-M46-06: M45 ACTIVE status gate prevents non-ACTIVE party from opting in; unit test
+1. AC-M46-01: M45 ACTIVE status gate prevents non-ACTIVE (SUSPENDED, DEREGISTERED) party from opting in; 403 returned; unit test with each non-ACTIVE status
+2. AC-M46-02: result submitted offline by KIEMS-lite kit; batch-uploaded on connectivity restore; Merkle receipt issued on arrival; no duplicate submission; offline netem integration test passes
+3. AC-M46-03: result published to public portal within 4 hours of submission; end-to-end integration test measures publication latency
+4. AC-M46-04: result_hash on public portal matches SHA-256 of canonical submitted JSON; deterministic hash property test with 50 synthetic results
+5. AC-M46-05: dispute submitted; PDM clock runs exactly 7 days; auto-escalation fires at day 7; PPDT referral package dispatched within 24 hours; PPDT stub integration test
+6. AC-M46-06: oversight notice issued by Oversight Officer; appears on public portal within 1 hour; Merkle-anchored; integration test
+7. AC-M46-07: PPDT determination received; published result updated with determination reference; original archived; both Merkle proofs independently verifiable; integration test
+8. AC-M46-08: result submission p99 <= 2 s under 200 concurrent uploads in 2-hour window; k6 load test passes
+9. AC-M46-09: public portal p99 <= 2 s under 20,000 concurrent users; k6 load test passes
+10. AC-M46-10: system availability >= 99.5% during primary result submission window (T-90 to T-75); SLO burn-rate alert fires at > 0.1% error budget per hour
+11. AC-M46-11: WCAG 2.2 AA axe-core audit passes on public results portal and candidate dispute portal; EN + SW strings verified; manual review sign-off
+12. AC-M46-12: party-member voter rolls deleted within 1 hour of tallying session end; integration test measures deletion timestamp against session_end_at
+13. AC-M46-13: duplicate result submission returns cached Merkle receipt; no second DB write; idempotency integration test with same constituency + party + position + date
+14. AC-M46-14: PPDT referral dispatch <= 24 hours of PDM escalation trigger; timer integration test with mocked clock
 
 ## Applicable edge cases
 
-**connectivity**
-- EC-CON-01: KIEMS-lite kit offline during primary; local result stored; batch-uploaded on reconnect; Merkle receipt issued on arrival; no duplicate submission
+connectivity:
+- EC-CON-01: KIEMS-lite kit offline during primary; local result stored with digital signature; batch-uploaded on reconnect; Merkle receipt issued on arrival; no duplicate submission on reconnect
+- EC-CON-05: party result upload link flapping; exponential backoff with retry budget; no duplicate result; server dedupe count 0
 
-**security**
-- EC-SEC-08: party submits fraudulent result; result hash and Merkle anchoring make post-hoc tampering detectable; observer presence encouraged via M43; Oversight Officer can issue oversight notice and request amendment
-- EC-SEC-01: result submission with invalid party-provisioned certificate; rejected with 401; logged
+data:
+- EC-DAT-01: duplicate result submission with same constituency, party, position, and date; cached Merkle receipt returned; no second DB write; no second Merkle leaf created
+- EC-DAT-02: same submission idempotency key with different candidate tally body; 422 idempotency-key-reuse; original result unchanged
+- EC-DAT-07: partial batch in voter-roll CSV upload; per-row error report returned; valid rows accepted; invalid rows listed; party re-uploads corrections before primary date
+- EC-DAT-09: Unicode candidate names in result JSON; NFC normalisation applied; correct display on public portal in EN and SW
+- EC-DAT-10: zero candidate tallies (all spoilt ballots constituency); no divide-by-zero in turnout percentage; valid result stored and published
 
-**operations**
-- EC-OPS-05: PPDT overwhelmed by volume of primary disputes; structured intake reduces manual work; PPDT capacity planning based on opt-in party count and primary constituency count
-- EC-OPS-06: PDM stage used to delay legitimate disputes; 7-day hard PDM deadline enforced by system; auto-escalation non-overridable
+security:
+- EC-SEC-01: result submission with invalid party-provisioned certificate; rejected with 401; event logged; Oversight Officer alerted
+- EC-SEC-05: injection on grounds, candidate_name, or constituency_code fields in dispute or result submissions; parameterised queries only; Semgrep and ZAP pass
+- EC-SEC-08: party submits fraudulent result; result_hash and Merkle anchoring make post-hoc tampering detectable; observer presence via M43; Oversight Officer issues oversight notice and requests amendment
+- EC-SEC-16: candidate NIN and party-member voter data must not appear in logs, traces, or spans; log-scanner CI fixture passes on every build
 
-**legal**
-- EC-LEG-02: party-member voter rolls not retained post-tally; IEBC retains only aggregate results; DPA 2019 DPIA filed; data minimisation enforced at tallying session end
-- EC-LEG-04: low opt-in rate means many party primaries occur without KIEMS-lite; result publication obligation applies to all parties per PPA 2011 s.22 regardless of opt-in; IEBC Oversight Officer can request result submission from any party
+identity:
+- EC-IDN-02: party Returning Officer JWT expires mid-upload; in-flight upload completes; next request returns 401 and silent refresh; no result data lost
+- EC-IDN-09: dual-control required for result amendment; approver revoked mid-flow; re-validation at commit; amendment blocked if approver invalid; compensating event logged
+- EC-IDN-10: SpiceDB unavailable during Oversight Officer action; fail closed; 503 returned; no oversight notice persisted in partial state
 
-**scale**
-- EC-SCL-01: 200 result uploads in 2-hour window at primary close; crms-svc horizontally scaled; Merkle anchor pipeline handles burst
+scale:
+- EC-SCL-01: 200 result uploads in 2-hour window at primary close; crms-svc horizontally scales; p99 <= 2 s maintained; Merkle anchor pipeline handles burst
+- EC-SCL-04: Kafka consumer lag > 60 s during result burst; backpressure applied; Merkle anchor pipeline drains without OOM; no result lost
+
+legal:
+- EC-LEG-02: court-ordered injunction on a specific primary result; Oversight Officer places result in LEGAL_HOLD status; public portal displays pending-legal-challenge notice; result not amended without court resolution
+- EC-LEG-04: low opt-in rate; parties not using KIEMS-lite still obligated under PPA 2011 s.22; Oversight Officer uses manual result upload channel; results ingested via same API with manual flag; audit-logged
+
+operations:
+- EC-OPS-05: PPDT API unavailable; fallback to structured PDF email; dispute record marked PPDT_FALLBACK; case number manually entered by IEBC staff after PPDT responds
+- EC-OPS-06: PDM 7-day deadline used by parties to delay legitimate disputes; hard deadline enforced by system scheduler; auto-escalation non-overridable; PPDT alerted
+
+human:
+- EC-HUM-08: EN and SW UI strings on public results portal; Swahili candidate names with long strings; no truncation; 150% pseudo-locale test passes
+- EC-HUM-06: screen reader support on candidate dispute portal; full task completion via keyboard and ARIA; axe-core audit passes
+
+time:
+- EC-TIM-04: primary date stored in UTC; display converted to EAT on portal; DST handling correct; timezone snapshot test passes
+- EC-TIM-08: PDM 7-day escalation deadline computed in EAT; boundary test +/- 1 second; escalation fires at correct EAT midnight timestamp
+
+ML:
+- EC-ML-03: KIEMS-lite biometric capture on degraded sensor (dust, humidity); quality gate routes to PIN fallback; no denial of vote; UAT scenario covered
 
 ## Test plan
 

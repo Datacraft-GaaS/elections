@@ -17,9 +17,9 @@ Election-day write budget estimated at 400-600M events, peak 30-50k writes/sec s
 | **T1-consensus** | Results (M08/M09/M10 RTS 34A/B), tally, declaration (M51), credential issuance, transparency-log super-root | Single primary, HSM-hot, sync replicas |
 | **T1-audit** | RLA audit events (M21), cross-service audit trail, per-domain transparency log leaves | Single primary, async replicas OK (audit tolerates seconds of lag) |
 
-**No Citus day 1.** Modern PG 17 on serious hardware (64-128 cores, 512GB-1TB RAM, NVMe RAID, dedicated NVMe for WAL) with declarative hourly partitioning + batched inserts + async commit + PgBouncer transaction mode holds 50-100k writes/sec (Instagram, Discord, Notion at this scale on vanilla PG). Citus adds coordinator layer, cross-shard transaction semantics, extension coupling, rebalancing operations — each a class of incident that cannot happen without it. Turn on Citus only if 5x-load tests prove necessity.
+**No Citus day 1.** Modern PG 17 on serious hardware (64-128 cores, 512GB-1TB RAM, NVMe RAID, dedicated NVMe for WAL) with declarative hourly partitioning + batched inserts + async commit + PgBouncer transaction mode holds 50-100k writes/sec (Instagram, Discord, Notion at this scale on vanilla PG). Citus adds coordinator layer, cross-shard transaction semantics, extension coupling, rebalancing operations, each a class of incident that cannot happen without it. Turn on Citus only if 5x-load tests prove necessity.
 
-**T2 (operational transactional)**: shared PostgreSQL clusters, schema-per-service, row-level security across schemas. Candidate registration (M12), accreditation (M42/M43), CMS (M37), dispatch, inventory operational rows — CRUD-heavy, not consensus-critical.
+**T2 (operational transactional)**: shared PostgreSQL clusters, schema-per-service, row-level security across schemas. Candidate registration (M12), accreditation (M42/M43), CMS (M37), dispatch, inventory operational rows, CRUD-heavy, not consensus-critical.
 
 **T3 (analytics)**: PostgreSQL read replicas + hourly partitions + BRIN indexes + materialised views day 1. ClickHouse deferred.
 
@@ -40,7 +40,7 @@ Election-day write budget estimated at 400-600M events, peak 30-50k writes/sec s
 
 Positive: three T1 clusters × three sites is manageable; failure blast-radius bounded to one trust boundary; single-primary topology is boring, understood, defensible. Analytics on PG buys time before ClickHouse ops cost lands.
 
-Negative: an incident affecting T1-voter takes down turnout + register + custody together — voter-cluster RTO becomes the load-bearing operational number. If load tests reveal PG cannot hold turnout peak, Citus is the escape hatch (migration path documented as a follow-on ADR when needed).
+Negative: an incident affecting T1-voter takes down turnout + register + custody together, voter-cluster RTO becomes the load-bearing operational number. If load tests reveal PG cannot hold turnout peak, Citus is the escape hatch (migration path documented as a follow-on ADR when needed).
 
 ## Alternatives rejected
 

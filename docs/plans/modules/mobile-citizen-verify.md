@@ -85,21 +85,21 @@ OpenAPI file: `packages/openapi-contracts/field/citizen-verify.yaml`
 ## Feature checklist
 
 1. FR-M29-001: first-launch DPA consent screen; what data collected, why, retention, right to withdraw; must accept to proceed
-2. FR-M29-002: language selection (EN + SW at launch; extensible)
+2. FR-M29-002: language selection (EN + SW at launch; extensible to Kikuyu, Dholuo, Kalenjin, Kamba, Luhya in phased release)
 3. FR-M29-003: sign-in via ID number + OTP to registered mobile; optional biometric unlock enrolled after sign-in
 4. FR-M29-004: "Continue without sign-in" for anonymous browsing of results, candidates, civic info; most read features require no identity
 5. FR-M29-005: register lookup; ID number + OTP challenge + own register entry display
 6. FR-M29-006: register-entry screen shows name (as registered), polling station, ward, constituency, county, status; DOB masked to year; no biometrics shown
 7. FR-M29-007: "Not on register" screen offers VPRS pre-registration path
-8. FR-M29-008: rate limit 20 lookups/day per authenticated session
+8. FR-M29-008: rate limit 20 lookups/day per authenticated session; 429 with Retry-After returned on breach
 9. FR-M29-009: file objection on own record (rectification, transfer, removal) via BVV back-end
 10. FR-M29-010: polling-station finder; registered polling station shown on map (Google Maps with OSM fallback)
 11. FR-M29-011: directions button opens native maps app
-12. FR-M29-012: offline: last-known polling-station data cached; viewable without network
+12. FR-M29-012: offline: last-known polling-station data cached in Isar + SQLCipher; viewable without network; "last updated" timestamp shown
 13. FR-M29-013: "Wrong station?" flow to check current station if voter moved
 14. FR-M29-014: VPRS pre-registration start from within app; deep-link or webview with signed challenge
 15. FR-M29-015: IPRS verification via VPRS back-end
-16. FR-M29-016: SMS OTP for identity verification in pre-registration
+16. FR-M29-016: SMS OTP for identity verification in pre-registration; email fallback on OTP delivery failure
 17. FR-M29-017: save QR handoff code locally; show at polling centre
 18. FR-M29-018: track pre-registration application status
 19. FR-M29-019: election picker; list of gazetted elections
@@ -108,70 +108,109 @@ OpenAPI file: `packages/openapi-contracts/field/citizen-verify.yaml`
 22. FR-M29-022: "Verify this result" button; Merkle-inclusion proof fetched; computed client-side using Rust FFI verifier; compared to published root from transparency-log service; shows "Verified" or "Failed to verify"
 23. FR-M29-023: bulk verification; verify all polling stations in voter's constituency in one action
 24. FR-M29-024: bookmark specific polling stations for follow-along notifications
-25. FR-M29-025: share verified snapshot (with signature bundle) via native share to WhatsApp / Twitter / email; recipient can independently verify
+25. FR-M29-025: share verified snapshot (with signature bundle) via native share to WhatsApp / Twitter / email; recipient can independently verify without the app
 26. FR-M29-026: candidate directory per election, per position, per area
 27. FR-M29-027: candidate profile: portrait, party, biographic (public fields only), symbol, ballot order
 28. FR-M29-028: candidate search by name / party / area
-29. FR-M29-029: curated civic information from IEBC; how to vote, what to bring, polling hours, rights
-30. FR-M29-030: signed civic-information content bundle fetched from IEBC; managed by IEBC
+29. FR-M29-029: curated civic information from the election authority; how to vote, what to bring, polling hours, rights
+30. FR-M29-030: signed civic-information content bundle fetched and cached; managed by the election authority
 31. FR-M29-031: in-app report form; type, description, optional photo / short video, optional location (opt-in per report)
-32. FR-M29-032: location consent opt-in per report only
+32. FR-M29-032: location consent opt-in per report only; no background location collected
 33. FR-M29-033: report status tracked; anonymised for public reporting when relevant
 34. FR-M29-034: anti-abuse: rate limit + captcha for anonymous reports; verified reports from signed-in users prioritised
 35. FR-M29-035: push notifications (opt-in): registration-window opens, own entry updated, own polling-station results published, bookmarked-station results published
 36. FR-M29-036: no PII in push payloads; content fetched authenticated on receipt
-37. FR-M29-037: WCAG 2.2 AA on every screen
-38. FR-M29-038: TalkBack / VoiceOver support
+37. FR-M29-037: WCAG 2.2 AA on every screen; axe-core audit in CI
+38. FR-M29-038: TalkBack / VoiceOver support; all interactive elements reachable via accessibility tree
 39. FR-M29-039: high-contrast mode
-40. FR-M29-040: font-size scaling up to 200%
+40. FR-M29-040: font-size scaling up to 200% without horizontal scroll or text truncation
 41. FR-M29-041: audio-guided workflow in EN + SW for results-verification flow
-42. FR-M29-042: text-only fallback for slow connections
-43. FR-M29-043: in-app "Verify this app" screen; signing-key fingerprint + version + build info; matches public fingerprints on eel.or.ke and canonical domains
-44. Device attestation: required (soft-fail warn); biometric unlock optional; root / jailbreak warn on objection-filing screens; screen-capture protection on PII screens; no PII in logs
-45. Cold start <= 3 s on mid-tier Android 8; verification cycle <= 5 s per station; download size <= 50 MB; battery <= 3% per hour foreground; 5M concurrent verifications via CDN
+42. FR-M29-042: text-only fallback for slow connections; form images deferred on 2G
+43. FR-M29-043: in-app "Verify this app" screen; signing-key fingerprint + version + build info; matches public fingerprints on canonical domains
+44. FR-M29-044: screen-capture protection on PII screens (register lookup, objection filing); OS-level screen-share disabled during register view; no PII in logs
+45. FR-M29-045: root/jailbreak detection warns on objection-filing and register-lookup screens; degrades to read-only browse; soft-warn, not hard-fail
+46. FR-M29-046: device attestation required (soft-fail warn); biometric unlock optional; attestation failure warns user; read-only browse continues
+47. FR-M29-047: cold start <= 3 s on mid-tier Android 8; verification cycle (fetch + Rust FFI proof) <= 5 s per station; download size <= 50 MB; battery <= 3% per hour foreground
+48. FR-M29-048: Isar + SQLCipher local store for cached polling station, candidate, and civic content; SQLCipher key derived from device keystore; no plaintext at rest
+49. FR-M29-049: dio + mTLS interceptor chain for all API calls; certificate pinning on field-mobile-api; pinned certificates updated via signed OTA
+50. FR-M29-050: Riverpod state management; verification state immutable after proof computed; no mutable shared state across concurrent verification tasks
+51. FR-M29-051: UUID7 IDs for all CitizenReport entities; generated locally with eel-crypto-rs FFI shim; server validates UUID7 format on receipt
+52. FR-M29-052: consumer lag on eel.field.citizen-report.v1 monitored; alert fires if lag > 60 s; backpressure; no OOM
+53. FR-M29-053: 5M concurrent verifications served via CDN edge with signed snapshots; back-end Merkle service on separate read path; p99 verification latency <= 5 s at 5M concurrency
+54. FR-M29-054: verification failure (signature mismatch or Merkle proof fail) shown as "Unverifiable" with explanation; never shown as "Verified"; failure logged client-side for debugging
 
 ## Acceptance criteria
 
-1. AC-M29-01: full verification flow end-to-end on real Android device; UAT
-2. AC-M29-02: cached content works offline; airplane-mode test
-3. AC-M29-03: Merkle-inclusion proof validates on device; live retrieval
-4. AC-M29-04: signed snapshot shareable and independently verifiable by recipient; share flow
-5. AC-M29-05: WCAG 2.2 AA audit pass; independent audit
-6. AC-M29-06: Google Play + Apple App Store submission approved; store review
-7. AC-M29-07: 5M concurrent verifications sustained; load test on back-end
-8. AC-M29-08: Kiswahili native-speaker signed off; human reviewer
-9. AC-M29-09: data-safety declaration + privacy nutrition label accurate; manual check
-10. AC-M29-10: runs on Android 8 mid-tier device with <= 3 s cold start; device bench
+1. AC-M29-01: full verification flow end-to-end on real Android device; measurement: UAT sign-off
+2. AC-M29-02: cached polling-station content and results work in airplane mode; measurement: airplane-mode integration test
+3. AC-M29-03: Merkle-inclusion proof validates on device using Rust FFI verifier against live published root; measurement: live retrieval test
+4. AC-M29-04: signed snapshot shareable and independently verifiable by recipient without the app; measurement: share-flow test + independent verification
+5. AC-M29-05: WCAG 2.2 AA audit pass on all screens; measurement: independent axe-core + manual audit report
+6. AC-M29-06: Google Play + Apple App Store submission approved before T-60; measurement: store approval timestamp
+7. AC-M29-07: 5M concurrent verifications sustained at p99 <= 5 s; measurement: k6 load test on back-end + CDN
+8. AC-M29-08: Kiswahili native-speaker signed off on all screen text; measurement: human reviewer sign-off record
+9. AC-M29-09: data-safety declaration + privacy nutrition label accurate on both stores; measurement: manual check against actual data collection
+10. AC-M29-10: cold start <= 3 s on mid-tier Android 8 reference device; measurement: device bench on reference hardware
+11. AC-M29-11: OS kill mid-verification resumes correctly; no duplicate report submissions; measurement: background-kill integration test at each step
+12. AC-M29-12: duplicate CitizenReport submission same key+body returns cached response without re-execution; measurement: auto-generated idempotency test
 
 ## Applicable edge cases
 
 **connectivity**
-- EC-CON-01: no network; polling-station cached; results verification queued or shown from cache; clear "last updated" timestamp shown
-- EC-CON-03: 2G network; text-only fallback; form images deferred
+- EC-CON-01: offline 48 h; polling-station cached; results from cache; clear "last updated" timestamp shown
+- EC-CON-02: 3G (500 kbps, 300 ms RTT); text-only fallback; form images deferred; verification SLA met
+- EC-CON-03: 2G only; text-only fallback; form images deferred; USSD path suggested
+- EC-CON-04: site partition primary/mirror; CDN serves cached signed snapshot; back-end Merkle on separate path
+- EC-CON-05: flapping link; dio retry with backoff+jitter; no duplicate submissions
+- EC-CON-06: captive portal; pinning fails closed; "network blocked" UX; no token leak
+- EC-CON-07: satellite 600 ms+ RTT; transport-tuned timeouts; MTU-safe; text-only CDN path
+- EC-CON-08: DNS poisoned/down; hardcoded fallback endpoints; circuit opens
+- EC-CON-09: IPsec tunnel drop mid-report; idempotent re-send on reconnect
+- EC-CON-10: dual-SIM failover mid-OTP; retry on SIM B; one OTP consumed
+- EC-CON-11: Kafka ISR shrink on eel.field.citizen-report.v1; producer blocks; outbox accumulates; no loss
 
 **identity**
+- EC-IDN-01: kit cert revoked mid-session; not applicable (no kit in M29); API JWT refresh handles session boundary
+- EC-IDN-02: JWT expires mid-request; in-flight completes; next 401 + silent refresh
+- EC-IDN-03: SVID rotates during batch; no SVID in M29 public path; field-mobile-api SVID rotation transparent to client
 - EC-IDN-04: OTP delivery fails; retry up to 3 times; email fallback; suggest official kiosk
+- EC-IDN-05: rooted/emulator/Frida; root warn on objection-filing screen; Frida RASP terminates
+- EC-IDN-06: clone app; pin mismatch; backend rejects digest; user warned and directed to authentic store listing
+- EC-IDN-07: SIM swap on OTP; OTP device-bound; new-device OTP challenge required
+- EC-IDN-08: voter under duress; no covert alert path in M29 public app; refer to grievance report flow
+- EC-IDN-09: dual-control approver revoked; not applicable in M29 public path
+- EC-IDN-10: SpiceDB down; register lookup fail-closed; 503 problem+json; cached read available
+- EC-IDN-11: realm key rotated; stale JWKS; refetch on kid miss; no access interruption
 
 **data**
+- EC-DAT-01: duplicate CitizenReport submission same key+body; cached response; no re-execution
+- EC-DAT-02: same report key, different body; 422 idempotency-key-reuse
 - EC-DAT-10: verification fails (signature mismatch on result); mark "Unverifiable"; never show as "Verified"
 
 **security**
-- EC-SEC-02: app attestation fails; warn user; degrade to read-only; no objection filing
-- EC-SEC-09: store impersonation; user warning + link to authentic version on eel.or.ke
-
-**human**
-- EC-HUM-06: screen readers; TalkBack / VoiceOver; AA compliance on all screens
-- EC-HUM-08: language selection at launch; extensible to 6+ Kenyan languages
+- EC-SEC-05: injection on all citizen API inputs; parameterised only; Semgrep + ZAP + fuzz
+- EC-SEC-09: store impersonation; user warning + link to authentic version on canonical domain
+- EC-SEC-16: secrets absent from all client logs and server traces; CI regex gate + log-scanner fixture
 
 **scale**
 - EC-SCL-01: 5M concurrent result verifications via CDN; signed snapshot cache; back-end Merkle service on separate read path
 - EC-SCL-02: register lookup rate-limited 20/day; explain limit; suggest official kiosk
+- EC-SCL-04: consumer lag on eel.field.citizen-report.v1 > 60 s; page alert; backpressure; no OOM
 
 **mobile**
-- EC-MOB-01: battery < 20% on election day; text-only mode; reduced animation; polling-station finder still works
-- EC-MOB-02: Android 8 mid-tier; cold start <= 3 s; download <= 50 MB
-- EC-MOB-04: GPS unavailable; polling-station lookup from register data (no GPS required)
-- EC-MOB-07: 5M concurrent verifications; CDN edge + signed-snapshot cache absorbs peak
+- EC-MOB-01: OS kills mid-sync; resumable; no duplicate; WAL intact
+- EC-MOB-02: storage full; graceful refusal; bounded queue; user prompted to free space
+- EC-MOB-03: 1 GB RAM KES-10k device; <= 15 MB RAM; p99 <= 2 s on 3G; no OOM
+- EC-MOB-04: Doze/background limits; resume on foreground; polling-station finder works without GPS
+- EC-MOB-05: push token rotation / FCM down; idempotent re-register; SMS for critical alerts
+- EC-MOB-06: update mid-election below floor; force floor; 7-day block; cached content survives update
+- EC-MOB-07: GPS spoof check-in; not applicable (M29 has no GPS check-in); polling-station lookup from register data
+- EC-MOB-08: device time wrong; server authoritative timestamp used for "last updated" display
+- EC-MOB-09: biometric sensor broken; PIN fallback rate-limited; optional biometric does not block access
+
+**human**
+- EC-HUM-06: screen readers; TalkBack / VoiceOver; AA compliance on all screens
+- EC-HUM-08: language selection at launch; extensible to 6+ Kenyan languages
 
 ## Test plan
 
@@ -199,5 +238,5 @@ Tags: `testWidgets('verify result [FR-M29-022,AC-M29-03,EC-DAT-10]')`
 ## Open questions
 
 - Shared Rust FFI Merkle-verifier library: must be extracted into `libeel-verifier` (Android JNI + iOS XCFramework) before M13 or M29 ships; dependency on M13 team; resolve ownership before integration sprint per MOBILE-INTEGRATION-NOTES.md §8.
-- Google Play + Apple App Store account registration: IEBC must be the publisher entity; account setup must begin at T-180.
+- Google Play + Apple App Store account registration: the election authority must be the publisher entity; account setup must begin at T-180.
 - International language packs (Kikuyu, Dholuo, Kalenjin, Kamba, Luhya): translator contracts must be in place by T-90; phased release timeline must be confirmed.

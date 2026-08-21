@@ -82,72 +82,150 @@ none
 
 ## Feature checklist
 
-1. FR-M49-001: Create referendum configuration with question text in 11 languages.
-2. FR-M49-002: Configure county threshold (default 24 of 47) and national majority (50%+1).
-3. FR-M49-003: Validate county and national threshold rules via TLA+ model before activation.
-4. FR-M49-004: Activate referendum and trigger HSM-signed kit OTA mode bundle to switch kits.
-5. FR-M49-005: Track kit mode bundle acknowledgement across all deployed kits.
-6. FR-M49-006: Alert ECC on unacknowledged kit mode switches (EC-KIT-04).
-7. FR-M49-007: Receive county YES/NO results from RO via M10 feed.
-8. FR-M49-008: Certify county result with RO signature.
-9. FR-M49-009: Compute national aggregate in real time as counties certify.
-10. FR-M49-010: Enforce exact 24-of-47 county threshold (no rounding; TLA+ invariant).
-11. FR-M49-011: Display real-time county-by-county tracker on public portal.
-12. FR-M49-012: Block declaration if county threshold not met; show reason.
-13. FR-M49-013: Trigger declaration via M51 when both thresholds satisfied.
-14. FR-M49-014: Generate national result summary signed by Commission.
-15. FR-M49-015: Public tracker shows YES/NO percentages per county without PII.
-16. FR-M49-016: Admin can correct county result via compensating event with dual approval.
-17. FR-M49-017: Petition window tracking delegated to M51 post-declaration.
-18. FR-M49-018: Support multiple simultaneous referendum questions (e.g., constitutional + initiative).
-19. FR-M49-019: Gazette notice for referendum schedule published via M52.
-20. FR-M49-020: i18n of question text mandatory before activation; all 11 languages required.
-21. FR-M49-021: WCAG 2.2 AA on public tracker.
-22. FR-M49-022: County result corrections emit compensating events; original immutable.
-23. FR-M49-023: Audit trail of all threshold computation changes with version number.
-24. FR-M49-024: Off-by-one boundary tests: 23, 24, 25 counties; property test.
-25. FR-M49-025: Presidential run-off logic: declaration blocked if national majority not met.
+Referendum configuration:
+FR-M49-001: Create referendum record with constitutional pathway selector (Art 255, Art 256, Art 257, popular initiative).
+FR-M49-002: Store question text in all 11 languages; reject activation if any locale is missing.
+FR-M49-003: Configure county threshold (default 24 of 47) and national majority rule (50%+1 of total votes cast).
+FR-M49-004: Configure participating county list (all 47 for constitutional; subset for devolved referenda).
+FR-M49-005: Validate threshold rules against TLA+ formal model before allowing activation; CI gate blocks activation if TLC fails.
+FR-M49-006: Support up to 5 simultaneous referendum questions on a single ballot (multi-question mode, activation gated).
+FR-M49-007: Publish gazette notice for referendum schedule via M52 before activation; activation blocked without gazette reference.
+FR-M49-008: Store statutory basis citation (e.g. "Constitution Art 255(2)") per referendum and surface it on declaration output.
+
+Kit mode management:
+FR-M49-009: Activate referendum and emit HSM-signed OTA kit mode bundle to all deployed kits.
+FR-M49-010: Kit mode bundle delivery: all kits must acknowledge within 4 hours of bundle publication.
+FR-M49-011: Track per-kit OTA acknowledgement status; surface unacknowledged kits in ECC operations console.
+FR-M49-012: Alert ECC when any kit remains unacknowledged at T-2 h and T-30 min before polls open.
+FR-M49-013: Block kit from opening polls if referendum mode bundle not confirmed (kit enforces locally).
+FR-M49-014: After referendum close, emit OTA reset bundle returning kits to general-election mode; archive referendum data on kit.
+FR-M49-015: Kit mode bundle signing uses HSM (P06); degraded-mode queue accumulates if HSM unavailable per EC-SEC-03.
+
+Tally ingest:
+FR-M49-016: Ingest Form 37A (polling station) referendum tallies from M10 isolated referendum pipeline; no cross-contamination with general-election streams.
+FR-M49-017: Aggregate Form 37A to Form 37B (constituency) automatically; no manual re-entry by RO.
+FR-M49-018: Aggregate Form 37B to Form 37C (county); require RO digital signature on 37C before county result is accepted.
+FR-M49-019: Ingest Form 37C county result; reject if yes_votes + no_votes + rejected_votes exceeds registered voters (EC-DAT-11).
+FR-M49-020: Emit `eel.governance.county_result_certified.v1` exactly once per county per certification; idempotency enforced by outbox deduplication.
+FR-M49-021: Store rejected_votes separately from yes and no; include in published county result.
+FR-M49-022: Tally pipeline ingest-to-confirmation p99 <= 30 s under election-critical load.
+
+County threshold engine:
+FR-M49-023: Evaluate county YES majority per county (yes_votes > no_votes); no tie-break rounding; exact integer comparison.
+FR-M49-024: Maintain running count of counties where YES majority is confirmed; emit `eel.governance.referendum_threshold_met.v1` when count reaches county_threshold.
+FR-M49-025: Emit `eel.governance.referendum_threshold_failed.v1` when all counties reported and count is below threshold.
+FR-M49-026: County threshold engine updated within 60 s of each Form 37C certification.
+FR-M49-027: Expose county threshold counter in real time on public tracker ("YES leads in X of 47 counties").
+FR-M49-028: Property test: boundary at 23, 24, and 25 counties; invariant: threshold_met = (counties_yes_majority >= county_threshold).
+FR-M49-029: TLA+ model (docs/tla/Referendum.tla) checked by TLC in CI; any violated invariant blocks merge.
+
+National result computation:
+FR-M49-030: Compute national result automatically once all 47 county Forms 37C are confirmed; surface as NationalResult record.
+FR-M49-031: National majority check: threshold_met = total_yes > total_no (50%+1 of valid votes); block declaration if not met.
+FR-M49-032: Compute Form 37D (national) hash and Merkle root; anchor via P05; include in NationalResult.
+FR-M49-033: National result endpoint serves latest computed aggregate; p95 <= 200 ms, p99 <= 500 ms at election-critical load (5M/hr).
+FR-M49-034: National result recomputes on county result correction; versioned; old version retained with proof.
+FR-M49-035: Public national result omits all PII; shows only aggregate YES/NO counts, percentage, and county breakdown.
+
+Declaration and M51 handoff:
+FR-M49-036: Block POST /v1/referendums/{id}/declare if county threshold or national majority is not met; return 422 with machine-readable reason.
+FR-M49-037: Declaration requires Commissioner HSM signature (M-of-N dual approval); POST idempotent.
+FR-M49-038: On declaration, emit signed national result snapshot to M51 for certification and to M11 for publication.
+FR-M49-039: Trigger M52 gazette notice automatically on successful declaration; include statutory basis, date, county breakdown.
+FR-M49-040: Petition window alert: send ECC and legal-team notifications at T-48 h and T-24 h before petition window closes (petition window = 7 days post-declaration per Art 87 / Elections Act s.75).
+
+Public dashboard and portal:
+FR-M49-041: Serve live county-by-county YES/NO tracker via SSE push; 500k concurrent public viewers; p99 page load <= 2 s via CDN.
+FR-M49-042: 47-county grid shows YES/NO lead badge per county, confirmed status, and running threshold counter.
+FR-M49-043: National YES/NO bar chart and turnout display; auto-refresh without full page reload.
+FR-M49-044: Public results page shows Form 37A image links with Merkle proof per polling station (same as general election via M11).
+FR-M49-045: Public tracker is WCAG 2.2 AA compliant; axe-core scan runs in CI on every deploy.
+FR-M49-046: All public-facing referendum strings available in all 11 languages; language toggle present on tracker.
+
+Correction and immutability:
+FR-M49-047: County result correction requires dual-approval workflow; original event immutable; compensating event carries amended values.
+FR-M49-048: Correction triggers recomputation of national aggregate; new NationalResult version emitted; both versions visible with cryptographic proofs.
+FR-M49-049: Admin audit log records who initiated correction, approvers, timestamp, and diff; retained permanently.
+FR-M49-050: Corrections after declaration require re-declaration flow through M51; system enforces state machine transition.
+
+Security and integrity:
+FR-M49-051: All county result events carry RO digital signature; signature verified on ingest; mismatched events routed to tamper topic (EC-SEC-01).
+FR-M49-052: Kit mode bundle integrity: bundle hash verified by kit firmware before applying; tampered bundle rejected and logged.
+FR-M49-053: All API inputs validated and parameterised; ZAP + Semgrep + cargo-fuzz gates in CI (EC-SEC-05).
+FR-M49-054: Telemetry sanitiser strips Tier A/B PII fields from logs and traces before export (EC-SEC-16).
+FR-M49-055: SpiceDB authorisation enforced on all state-mutating endpoints; fail-closed on SpiceDB unavailability (EC-IDN-10).
+
+Observability and operations:
+FR-M49-056: OpenTelemetry traces exported for all referendum lifecycle transitions; trace IDs correlate kit OTA, tally ingest, and threshold events.
+FR-M49-057: Grafana dashboard `eel-iems-49` exists at OAT gate; alert ruleset `eel-49-alerts` active in Alertmanager.
+FR-M49-058: SLO burn-rate alert fires when election-critical 99.99% budget is at risk; page ECC on-call.
+FR-M49-059: Circuit breaker on M10 tally feed; on open, serve provisional national result from last confirmed snapshot with staleness label.
+FR-M49-060: Kafka consumer lag on `eel.governance.referendum.v1` topic monitored; backpressure applied; OOM prevention verified (EC-SCL-04).
 
 ## Acceptance criteria
 
-1. AC-M49-01: 24-of-47 county threshold computed exactly; TLA+ model checks in CI; boundary property test at 23, 24, 25 (EC-LEG-07).
-2. AC-M49-02: Kit mode bundle signed by HSM; unacknowledged bundles listed in ECC within 1 min (EC-KIT-04).
-3. AC-M49-03: Declaration blocked in M51 when threshold not met; e2e test.
-4. AC-M49-04: County result certified event emitted exactly once per county; idempotency test.
-5. AC-M49-05: national-result endpoint p95 200 ms at election-critical 99.99% SLA under load.
-6. AC-M49-06: All 11 language question texts required before activation; API returns 422 if missing.
-7. AC-M49-07: Compensating event issued for county result correction; original event immutable; kani append-only test.
-8. AC-M49-08: RTO ≤30 min, RPO ≤5 min in DR drill.
+AC-M49-01: County threshold engine computes exactly county_yes_majority >= 24; TLA+ invariant checked by TLC in CI; property test covers boundary at 23, 24, and 25 counties (EC-LEG-07). Zero tolerance for off-by-one.
+AC-M49-02: Kit mode bundle signed by HSM and delivered to all kits within 4 hours of activation; unacknowledged kits listed in ECC operations console within 60 s of bundle publish (EC-KIT-04).
+AC-M49-03: POST /declare returns 422 with machine-readable reason when county threshold or national majority is not met; e2e Playwright test asserts blocked state.
+AC-M49-04: `eel.governance.county_result_certified.v1` emitted exactly once per county per certification; duplicate-submission replay returns cached 200 with no second event (EC-DAT-01).
+AC-M49-05: GET /v1/referendums/{id}/national-result p95 <= 200 ms, p99 <= 500 ms at 5M requests/hr; availability 99.99%; verified by k6 load test in pre-prod.
+AC-M49-06: Tally ingest pipeline p99 form-ingest-to-confirmation <= 30 s at election-critical load; measured end-to-end from Form 37C POST to county_result_certified event on Kafka.
+AC-M49-07: Public dashboard serves 500k concurrent viewers with p99 page load <= 2 s via CDN; CDN hit ratio >= 95%; k6 + Gatling load test.
+AC-M49-08: All 11 language question texts must be present before activation; POST /activate returns 422 listing missing locales if any are absent (FR-M49-002).
+AC-M49-09: County result correction emits compensating event; original event immutable; append-only invariant verified by kani proof; both event versions retrievable with cryptographic proof.
+AC-M49-10: RTO <= 30 min, RPO <= 5 min; verified by DR drill against isolated referendum schema partition; drill result documented in runbook.
+AC-M49-11: Public tracker achieves WCAG 2.2 AA; axe-core zero critical or serious violations on every CI deploy; manual keyboard-navigation pass on declaration screen.
+AC-M49-12: Petition window alerts delivered to ECC and legal team at T-48 h and T-24 h with 100% delivery rate; alert system log audited post-declaration.
+AC-M49-13: Secrets and PII (Tier A/B fields) absent from all exported logs and traces; log-scanner CI fixture passes; no regex hit on voter ID or biometric fields (EC-SEC-16).
+AC-M49-14: SpiceDB authorisation enforced on POST, PUT, and declare endpoints; chaos test (SpiceDB pod killed) confirms writes fail-closed with HTTP 503 and no unauthorised state change (EC-IDN-10).
+AC-M49-15: Unit test line coverage >= 80% on county threshold FSM and national result computation (Rust); mutation score >= 60% on threshold boundary logic; lcov report uploaded to CI.
 
 ## Applicable edge cases
 
-**Legal:**
-- EC-LEG-07: referendum 24-of-47 county threshold off-by-one; exact semantics enforced; TLA+ + boundary tests.
-- EC-LEG-05: presidential run-off analogy; declaration blocked; run-off state created.
-- EC-LEG-04: recount ordered; compensating event; both versions shown with proofs.
-- EC-LEG-02: court-ordered postponement; signed calendar amendment; kits refuse to open.
+Legal:
+EC-LEG-07: Referendum 24-of-47 county threshold off-by-one; exact integer comparison enforced; TLA+ invariant checked in CI; boundary property test at 23/24/25.
+EC-LEG-05: National majority not met (YES <= NO nationally); declaration blocked with statutory reason; system remains in CLOSED state awaiting Commission review.
+EC-LEG-04: Recount ordered post-certification; compensating event issued with dual approval; both original and amended result versions retained with Merkle proofs; re-triggers national recomputation.
+EC-LEG-02: Court-ordered postponement of referendum; signed calendar amendment via M52; kits receive OTA signal to refuse opening; portal displays postponement notice.
+EC-LEG-08: Petition evidence request arrives at T+6d 23h inside the 7-day window; petition window not yet closed; system honours statutory 24 h clock without premature freeze.
+EC-LEG-09: Gazette notice auto-trigger races declaration event; idempotent scheduler ensures single gazette referral even if declaration event fires twice.
+EC-LEG-11: County result correction arrives after national declaration; amendment requires re-declaration dual-custody workflow; both versions published with cryptographic proofs.
 
-**Time:**
-- EC-TIM-01: kit clock skew; refuse session until NTS/GNSS time.
-- EC-TIM-04: DST on diaspora kits; UTC storage, gazetted TZ display.
+Time:
+EC-TIM-01: Kit clock skew > 5 min at boot; kit refuses to open referendum session until NTS/GNSS time confirmed; session FSM unit test with faked RTC.
+EC-TIM-04: DST or non-EAT timezone on diaspora kits; all timestamps stored UTC; close time computed in UTC; displayed in gazetted EAT for public tracker.
+EC-TIM-08: Petition window boundary at T+7 midnight EAT (Elections Act s.75(1) inclusive); boundary table test covers T+6d 23:59:59 and T+7d 00:00:01.
 
-**Scale:**
-- EC-SCL-07: 250k check-ins, 60k RTS, 18k BVI at election-critical load; SLAs met.
-- EC-SCL-04: consumer lag on county result topic; backpressure; no OOM.
+Scale:
+EC-SCL-04: Kafka consumer lag on `eel.governance.referendum.v1` exceeds 60 s; backpressure applied; no OOM; lag alert pages ECC; verified by slow-consumer integration test.
+EC-SCL-07: 250k check-ins, 60k RTS, 18k BVI concurrent at election-critical load; referendum endpoints remain within SLA (p95 200 ms, p99 500 ms); verified by pre-prod simulator.
+EC-SCL-03: Hot partition on referendum result topic (all 47 county events arriving within minutes); stream-id spread over partitions; lag alert; HPA scales consumers.
 
-**Data:**
-- EC-DAT-11: county totals exceed registered voters; block with reason; TLA+ invariant.
-- EC-DAT-10: zero results on close day; valid; no division by zero.
+Data:
+EC-DAT-01: Duplicate Form 37C submission with identical idempotency key and body; cached 200 response returned; no second county_result_certified event emitted.
+EC-DAT-02: Same idempotency key reused with different county body (body mismatch); API returns 422 `idempotency-key-reuse`; original result preserved unchanged.
+EC-DAT-10: Zero YES or NO votes for a county on close day (valid low-turnout result); national computation proceeds; no division-by-zero; county_yes_majority = false when yes = 0.
+EC-DAT-11: County result where yes + no + rejected > registered voters; ingest blocked with machine-readable reason; RO must correct Form 37C before certification; TLA+ invariant asserted.
+EC-DAT-03: Form 37A events arrive out of order from M10 pipeline; buffer until constituency gap filled or route to DLQ; shuffled-replay property test.
 
-**Kit:**
-- EC-KIT-04: mode switch not propagated; signed bundle acked; unacked listed in ECC.
+Security:
+EC-SEC-01: RO digital signature mismatch on county result event; event never applied to state; routed to tamper topic; ECC paged within 30 s.
+EC-SEC-03: HSM (P06) unavailable when kit mode bundle needs signing; bundle queued in degraded mode; ingest continues; countersign completes when HSM recovers; no gap in audit trail.
+EC-SEC-05: Injection attack on question text, county result payload, and all API inputs; parameterised queries and input validation enforced; Semgrep + sqlx compile-time + ZAP + cargo-fuzz gates in CI.
+EC-SEC-16: Voter ID, biometric reference, or other Tier A/B PII inadvertently included in referendum event payload; telemetry sanitiser strips field before export; CI log-scanner regex fixture asserts no hit.
 
-**Security:**
-- EC-SEC-01: signature mismatch on county result; tamper topic; page.
-- EC-SEC-03: HSM unavailable; kit bundle signs queue in degraded mode.
+Identity:
+EC-IDN-02: Commissioner JWT expires mid-declaration request; in-flight request completes (token valid at entry); subsequent retry receives 401 and silent refresh; re-auth required for HSM step.
+EC-IDN-10: SpiceDB unavailable during county result certification or declaration; all state-mutating endpoints fail-closed (HTTP 503); class-C read-only endpoints continue; chaos PodChaos test asserts no unauthorised write.
 
-**Connectivity:**
-- EC-CON-04: site partition primary/mirror; Patroni fencing; RPO ≤5 min.
+Connectivity:
+EC-CON-04: Site partition between primary and mirror PostgreSQL; Patroni fencing prevents split-brain; MirrorMaker lag alert fires; RPO <= 5 min; linearizability check on tally stream post-partition.
+EC-CON-11: Kafka ISR shrinks to 1 during county result ingest; producer blocks; outbox accumulates; no event loss; ECC paged; outbox drains when ISR recovers.
+EC-CON-03: 2G-only connectivity to kit in remote county; kit refuses 2G data path for OTA bundle; uses signed SMS/USSD fallback; mode switch confirmed via SMS ACK.
+
+Kit:
+EC-KIT-03: OTA mode-switch bundle download interrupted (power cut or flapping link); A/B slot mechanism allows rollback; kit retries signed bundle on next connection; old mode preserved until new bundle verified.
+EC-KIT-04: Referendum mode bundle not propagated to one or more kits by T-2 h; unacknowledged kits listed in ECC console within 60 s of bundle publish; ECC must resolve before polls-open gate passes.
 
 ## Test plan
 

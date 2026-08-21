@@ -1,4 +1,4 @@
-# SA-006: Service mesh — Cilium (CNI + mesh + policy + observability) vs Linkerd 2
+# SA-006: Service mesh: Cilium (CNI + mesh + policy + observability) vs Linkerd 2
 
 Date: 2026-08-21
 Applies to: Datacraft bid documents under work_docs/01-Projects/IEBC/sw/ (our own earlier draft)
@@ -27,7 +27,7 @@ Status: decided (ADR takes precedence; sw/ docs to be edited)
 ## Trade-offs
 
 - Cilium is a bigger technology (larger surface, more concepts). Learning cost is real; documented, active community; mitigated by "one thing to learn" beating "three things to learn."
-- Cilium's Service Mesh mode (1.14+) is younger than Linkerd's mesh — Linkerd is more prescriptive and mature-in-the-narrow-sense. Trade-off: Cilium is broader-and-younger; Linkerd is narrower-and-older. For a 3-year contract we pin conservative versions and rehearse upgrades.
+- Cilium's Service Mesh mode (1.14+) is younger than Linkerd's mesh, Linkerd is more prescriptive and mature-in-the-narrow-sense. Trade-off: Cilium is broader-and-younger; Linkerd is narrower-and-older. For a 3-year contract we pin conservative versions and rehearse upgrades.
 - Some ecosystem tools (Linkerd Buoyant tooling, some observability plugins) are Linkerd-native. Cilium equivalents exist for all our needs.
 
 ## Edits to apply to sw/

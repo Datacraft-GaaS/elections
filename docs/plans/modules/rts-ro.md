@@ -83,25 +83,49 @@ ICR (intelligent character recognition) for handwritten tallies is invoked serve
 
 ## Feature checklist
 
-1. FR-M09-001: receive signed Form 34A batches from M10; verify kit signature before display.
-2. FR-M09-002: ICR-assisted count extraction; highlight low-confidence fields; prompt RO correction.
-3. FR-M09-003: station-by-station comparison: extracted vs kit-reported; flag discrepancies.
-4. FR-M09-004: dispute workflow: raise, evidence upload, inter-party witness, resolution.
-5. FR-M09-005: Form 34B assembly: aggregate station subtotals; totals locked when all stations adjudicated.
-6. FR-M09-006: Form 34C assembly (regional): aggregate 34B totals; regional RO signs.
-7. FR-M09-007: dual-officer signing for 34B/34C: primary RO + witness with separate HSM keys.
-8. FR-M09-008: published 34B/34C forwarded to M10 tally and M11 public portal.
-9. FR-M09-009: session recording: all user actions logged and anchored to Merkle root for audit.
-10. FR-M09-010: offline-capable Tauri desktop; local event queue survives network loss.
-11. FR-M09-011: real-time tallying progress dashboard for constituency.
-12. FR-M09-012: multi-position support: simultaneous 34B/34C per position.
-13. FR-M09-013: party agent countersignature on 34B/34C (optional, within window).
-14. FR-M09-014: print certified 34B/34C with QR watermark for physical distribution.
-15. Dispute UX: every step recorded with actor + timestamp + ICR confidence score.
-16. Dual-officer signing workflow requires physically separate auth challenges.
-17. p95 form retrieval <= 2 s; p95 34B publish <= 5 s.
-18. Session recording screen-capture anchored every 60 s.
-19. Offline queue holds up to 7 days; drains without data loss on reconnect.
+Form receipt and ICR review:
+1. FR-M09-001: receive signed Form 34A batches from M10; verify kit signature before display. (spec FR-M09-001)
+2. FR-M09-002: ICR-assisted count extraction with highlighted low-confidence fields; prompt RO to confirm or correct with reason. (spec FR-M09-002 / spec FR-M09-003)
+3. FR-M09-003: station-by-station comparison: extracted counts vs kit-reported counts; flag discrepancies for RO review.
+4. FR-M09-004: human review mandatory for low-confidence ICR extractions (below configurable threshold) and for random sample of high-confidence forms.
+5. FR-M09-005: ICR confidence threshold configurable without code deploy; hot-reload via config bundle.
+6. FR-M09-006: ICR correction captured as adjudicator decision with confidence delta; streamed back to M10 as training signal.
+7. FR-M09-007: side-by-side display of ICR extraction and original form scan image; RO confirms or edits.
+
+Disputes:
+8. FR-M09-008: dispute workflow: raise dispute on Form 34A or 34B; upload evidence; inter-party witness; resolution tracked. (spec FR-M09-004)
+9. FR-M09-009: dispute escalation: unresolved disputes after configurable timeout auto-escalate to national tally board.
+10. FR-M09-010: party agent may flag a Form 34A or 34B for dispute; workflow escalates without blocking other stations.
+
+Aggregation and signing:
+11. FR-M09-011: Form 34B assembly: aggregate station subtotals; totals locked when all stations adjudicated. (spec FR-M09-005)
+12. FR-M09-012: Form 34C assembly (regional): aggregate 34B totals per region; regional RO signs. (spec FR-M09-006)
+13. FR-M09-013: multi-position support: simultaneous independent 34B/34C pipelines per elective position.
+14. FR-M09-014: validation rules enforced: votes cast <= registered voters; rejected + valid = total; non-negative counts. (spec, validation)
+15. FR-M09-015: dual-officer signing for 34B/34C: primary RO plus witness with separate HSM keys; physically separate auth challenges. (spec FR-M09-007)
+16. FR-M09-016: zero silent auto-tally: every constituency total requires RO signature or explicit documented skip with dual-officer justification.
+17. FR-M09-017: emergency close of constituency count with dual-control justification recorded. (spec FR-M09-015)
+
+Publication:
+18. FR-M09-018: publish signed 34B/34C to M10 tally and M11 public portal with Merkle-inclusion proof. (spec FR-M09-008)
+19. FR-M09-019: party agent countersignature on 34B/34C: optional, within configurable window post-RO-sign. (spec FR-M09-013)
+20. FR-M09-020: print certified 34B/34C with QR watermark for physical distribution to agents. (spec FR-M09-014)
+21. FR-M09-021: PDF and CSV export per gazette template for archival. (spec FR-M09-012)
+
+Session recording and audit:
+22. FR-M09-022: session recording: all screen actions encrypted with dual custody; anchor to Merkle root every 60 s. (spec FR-M09-014)
+23. FR-M09-023: real-time tallying progress dashboard: expected vs reported station count per elective position. (spec FR-M09-002)
+24. FR-M09-024: offline-capable Tauri desktop: local event queue survives network loss; drain on reconnect without loss. (spec FR-M09-010)
+
+Accessibility and language:
+25. FR-M09-025: WCAG 2.1 AA on Tauri desktop UI; screen-reader support on all officer-facing surfaces.
+26. FR-M09-026: 11-language support on all officer-facing screens; no hardcoded strings.
+
+Compliance:
+27. FR-M09-027: ODPC data flows: RO identity in signed events covered by DPIA; data minimisation applied.
+28. FR-M09-028: audit export: RO can export their session events for self-review and court submission.
+29. FR-M09-029: participation token count shown alongside station tally; cross-referenced against M14 bundle.
+30. FR-M09-030: Elections Act s.39 compliance: Form 34B/34C published with statutory deadline tracking.
 
 ## Acceptance criteria
 
@@ -113,43 +137,70 @@ AC-M09-05: Form 34C aggregates 34B totals accurately across all positions (prope
 AC-M09-06: published 34B/34C appears on public portal (M11) within 60 s (integration test).
 AC-M09-07: session audit log anchored to transparency log; chain verifiable (integration test).
 AC-M09-08: 99.99% availability over tallying window (SLO measurement).
+AC-M09-09: Form 34B generated within 60 s of last station adjudicated (UAT).
+AC-M09-10: 290 constituency RO simulations in parallel in pre-production; p99 submission <= 2 s (load test).
+AC-M09-11: WCAG 2.1 AA: axe zero violations on Tauri desktop; screen-reader traversal of tally flow (accessibility audit).
+AC-M09-12: 11 locales: no truncated strings on printed 34B/34C; ICU plural forms correct (i18n test).
+AC-M09-13: zero silent auto-tally: every constituency total has RO signature or documented skip in audit log (integration test).
 
 ## Applicable edge cases
 
-**connectivity**
-EC-CON-01: offline Tauri; local event queue; drain on reconnect.
-EC-CON-09: tunnel drop mid-publish; resume at sequence; idempotent.
+connectivity:
+EC-CON-01: offline Tauri; local event queue; drain on reconnect without gap.
+EC-CON-09: tunnel drop mid-publish; resume at sequence; idempotent re-send.
 
-**time**
-EC-TIM-01: desktop clock skew; HLC from M10 reference; skew alert.
-EC-TIM-07: extended tallying window; signed extension event consumed.
+time:
+EC-TIM-01: desktop clock skew; HLC from M10 reference; skew alert on large delta.
+EC-TIM-02: NTP/NTS unreachable all day; last-auth time plus monotonic; time_confidence=low.
+EC-TIM-03: back-end clock jumps backward; HLC never regresses; skew alert.
+EC-TIM-04: DST/TZ: tallying deadline computed in UTC; displayed in EAT.
+EC-TIM-05: leap second in event timestamp; tolerates 23:59:60 in parser.
+EC-TIM-06: event time < causation time in event log; accept; audit skew anomaly.
+EC-TIM-07: extended tallying window; signed extension event consumed; fence reopened.
+EC-TIM-08: tallying deadline s.75(1); signed deadline extension or close with partial.
+EC-TIM-09: register freeze race at T-60; OPA hard-close; all-or-nothing aggregation.
 
-**identity**
+identity:
 EC-IDN-01: RO cert revoked mid-session; halt; escalate to M16 ECC.
+EC-IDN-02: JWT expires mid-request; in-flight completes; next request 401 + silent refresh.
 EC-IDN-03: SVID rotates; old valid to expiry; producer_key_id per event.
-EC-IDN-09: dual-officer: re-validate both at commit; no surrogate signing.
+EC-IDN-09: dual-officer signing: re-validate both at commit; approver revocation mid-flow causes re-delegation.
+EC-IDN-10: SpiceDB down; fail closed on 34B publish writes; class-C reads continue.
 
-**data**
-EC-DAT-01: duplicate 34B publish same key+body; cached.
+data:
+EC-DAT-01: duplicate 34B publish same key+body; cached response; no re-execution.
 EC-DAT-02: same key different body; 422 idempotency-key-reuse.
-EC-DAT-04: replayed signed event; reject on seq counter.
-EC-DAT-11: extracted counts > registered voters; block; RO override -> DisputeCase.
+EC-DAT-03: out-of-order Form 34A in stream; buffer until gap filled or DLQ.
+EC-DAT-04: replayed signed event; reject on monotonic seq counter.
+EC-DAT-05: poison Form 34A (votes > registered); DLQ with reason; partition continues.
+EC-DAT-06: schema v1/v2 coexist in stream; both accepted; dual-emit; compat check.
+EC-DAT-07: partial batch failure during aggregation; per-row report; valid rows committed.
+EC-DAT-09: Unicode candidate names on 34B; NFC normalisation; grapheme-safe.
+EC-DAT-10: zero votes for candidate; valid; renders "0"; no div-by-zero.
+EC-DAT-11: extracted counts > registered voters; block; RO override creates DisputeCase.
+EC-DAT-12: Debezium slot lag; alert 60 s; outbox retained; disk guard.
+EC-DAT-14: oversized ICR evidence payload > 1 MB; blob to MinIO + hash reference.
 
-**security**
+security:
 EC-SEC-01: signature mismatch on form receipt; never applied; tamper alert.
-EC-SEC-02: tamper of Tauri binary; integrity check on launch.
-EC-SEC-03: HSM unavailable; publishing blocked; incident escalated to ECC.
-EC-SEC-16: secrets in logs refused.
+EC-SEC-02: tamper of Tauri binary; integrity check on launch; refuse if digest mismatch.
+EC-SEC-03: HSM unavailable; 34B/34C publishing blocked; incident escalated to ECC.
+EC-SEC-05: injection on ICR correction inputs and dispute reason fields; parameterised only.
+EC-SEC-16: secrets in logs refused; RO identity hash not plaintext in telemetry.
 
-**legal**
+legal:
 EC-LEG-01: candidate withdrew post-print; status frozen; tallied + annotated in 34B.
 EC-LEG-03: s.44A invoked; dual S44AEvent; manual count logged separately.
-EC-TIM-08: tallying deadline (s.75(1)); signed deadline extension or close with partial.
+EC-LEG-04: recount ordered; new version via compensating event; both versions shown with proofs.
 
-**operations**
+operations:
 EC-OPS-01: power loss mid-34B assembly; journal-before-act; exact resume.
 EC-OPS-02: desktop swap; event log transferred; old session revoked.
+EC-OPS-04: dual-control, approver absent; time-boxed ECC remote co-sign.
+EC-OPS-05: power outage at tally centre; SQLite WAL resume; no duplicate 34B.
 
+scale:
+EC-SCL-04: consumer lag > 60 s on form topic; backpressure applied; no OOM on aggregator.
 ## Test plan
 
 | layer | what is covered | harness | test-ID prefix |

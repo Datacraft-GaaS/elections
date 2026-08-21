@@ -12,7 +12,7 @@
 
 ## Purpose
 
-Give every accredited party agent a phone-in-hand tool that authenticates them into their assigned polling station, lets them independently verify that the Form 34A transmitted from the KIEMS matches the physical form in front of them, countersigns that verification cryptographically via HSM-backed party-agent signature, retrieves and validates constituency and county rollups, and reports incidents to the IEBC war room in a structured, signed way.
+Give every accredited party agent a phone-in-hand tool that authenticates them into their assigned polling station, lets them independently verify that the Form 34A transmitted from the KIEMS matches the physical form in front of them, countersigns that verification cryptographically via HSM-backed party-agent signature, retrieves and validates constituency and county rollups, and reports incidents to the election authority war room in a structured, signed way.
 
 ## Surfaces and languages
 
@@ -21,7 +21,7 @@ Give every accredited party agent a phone-in-hand tool that authenticates them i
 | Party Agent App (Android 10+ / iOS 15+) | Flutter | services/field-mobile-svc/apps/party-agent/ |
 | API | Rust (axum) | services/field-mobile-svc/crates/field-mobile-api/ |
 
-Distribution: private via IEBC MDM (Google Play Managed + Apple Business Manager). Languages: EN + SW.
+Distribution: private via MDM (Google Play Managed + Apple Business Manager). Languages: EN + SW.
 
 ## Domain model
 
@@ -82,68 +82,113 @@ OpenAPI file: `packages/openapi-contracts/field/party-agent.yaml`
 
 ## Feature checklist
 
-1. FR-M30-001: agent enrols via IEBC accreditation ID + party-issued token + biometric enrolment on device
+1. FR-M30-001: agent enrols via accreditation ID + party-issued token + biometric enrolment on device
 2. FR-M30-002: assignment bound to specific polling station (or constituency scope for chief agent) per election
-3. FR-M30-003: device attestation required; refuses on rooted / jailbroken / attestation-fail devices
-4. FR-M30-004: MFA sign-in: biometric + short PIN + device attestation
-5. FR-M30-005: agent checks in at assigned polling station; biometric + GPS-verified location
-6. FR-M30-006: Presiding Officer receives notification of agent presence via BVI back-end
-7. FR-M30-007: party badge display on app for identification to PO
+3. FR-M30-003: device attestation required (hard-fail); refuses on rooted / jailbroken / attestation-fail devices
+4. FR-M30-004: MFA sign-in: biometric + short PIN + device attestation; all three required
+5. FR-M30-005: agent checks in at assigned polling station; biometric + GPS-verified location; check-in rejected if GPS places agent > 200 m from station
+6. FR-M30-006: Presiding Officer receives notification of agent presence via BVI back-end on check-in
+7. FR-M30-007: party badge display on app for identification to PO; badge includes party name, agent name, station assignment
 8. FR-M30-008: real-time station dashboard (configurable delay); voters authenticated, turnout %, opening/closing status, kit status; no PII; aggregates only
-9. FR-M30-009: aggregate counters only; no voter-level data exposed
-10. FR-M30-010: when PO scans Form 34A on KIEMS RTS device, transmission includes QR code visible to agents
+9. FR-M30-009: aggregate counters only; no voter-level data exposed at any point
+10. FR-M30-010: when PO scans Form 34A on KIEMS RTS device, transmission includes QR code visible to agents present
 11. FR-M30-011: agent scans QR from physical form or from kit screen
 12. FR-M30-012: app fetches signed Form 34A record from RTS back-end; displays digital signature chain (PO signature, kit signature, back-end countersignature)
 13. FR-M30-013: agent compares displayed values to physical form in front of them
-14. FR-M30-014: agent presses "Verify": app fetches Merkle-inclusion proof, validates client-side, confirms transmission integrity
-15. FR-M30-015: agent presses "Countersign": biometric + PIN authorises HSM-backed party-agent countersignature attached to form's audit trail
-16. FR-M30-016: agent presses "Dispute": flags form as disputed with mandatory reason; escalates to national tally and war room
+14. FR-M30-014: agent presses "Verify": app fetches Merkle-inclusion proof, validates client-side via Rust FFI verifier, confirms transmission integrity
+15. FR-M30-015: agent presses "Countersign": biometric + PIN authorises HSM-backed party-agent countersignature attached to form's audit trail; eel.field.form_countersigned.v1 emitted
+16. FR-M30-016: agent presses "Dispute": flags form as disputed with mandatory reason; eel.field.form_disputed.v1 emitted exactly-once; escalates to national tally and war room
 17. FR-M30-017: Chief Agent view: aggregated Form 34B / 34C as they publish; per-position counts; per-station contribution
-18. FR-M30-018: "Verify" button on rollups: fetches Merkle root, validates aggregated hashes
-19. FR-M30-019: "Dispute" available at rollup level
+18. FR-M30-018: "Verify" button on rollups: fetches Merkle root, validates aggregated hashes against contributing forms
+19. FR-M30-019: "Dispute" available at rollup level; chief agent can dispute 34B or 34C with mandatory reason
 20. FR-M30-020: structured incident form: obstruction, tampering, voter intimidation, kit malfunction, illegal campaigning, other; description; evidence upload (photo, short video, audio)
-21. FR-M30-021: location auto-captured with consent per-report
-22. FR-M30-022: reports encrypted locally; queued; signed by agent; sent to IEBC war room
-23. FR-M30-023: report status tracked; IEBC responder can request more info via in-app messaging
-24. FR-M30-024: push notifications for: assigned-station events (opening, closing, form submission), chief-agent rollup publication, IEBC broadcast messages
-25. FR-M30-025: no PII in push payloads
-26. FR-M30-026: offline verification works for cached signed records
-27. FR-M30-027: countersignatures and incident reports queued locally; encrypted; signed; submitted on reconnect with idempotency keys
-28. Full verification cycle (scan QR + fetch + verify + countersign) <= 30 s
-29. Rust FFI signature verifier shared with M29 libeel-verifier
-30. Security: duress code triggers silent war-room alert; hooking detection (Frida, Xposed) refuses; screen-capture protection on all screens; local AES-256-GCM encrypted store; no PII in logs
+21. FR-M30-021: location auto-captured with consent per-report; no background location collected
+22. FR-M30-022: reports encrypted locally in Isar + SQLCipher; queued; signed by agent key; sent to war room on reconnect
+23. FR-M30-023: report status tracked; war room responder can request more info via in-app messaging
+24. FR-M30-024: push notifications for: assigned-station events (opening, closing, form submission), chief-agent rollup publication, broadcast messages
+25. FR-M30-025: no PII in push payloads; content fetched authenticated on receipt
+26. FR-M30-026: offline verification works for cached signed records fetched before connectivity loss
+27. FR-M30-027: countersignatures and incident reports queued locally; encrypted; signed; submitted on reconnect with idempotency keys; local queue survives phone reboot
+28. FR-M30-028: verification cycle (scan QR + fetch + verify + countersign) <= 30 s on LTE; extended SLA on 2G with user notification
+29. FR-M30-029: Rust FFI signature verifier shared with M29 libeel-verifier crate; Android JNI + iOS XCFramework; single canonical implementation
+30. FR-M30-030: duress code triggers silent war-room alert; eel.field.agent_incident.v1 with type DURESS emitted exactly-once; visible flow continues normally
+31. FR-M30-031: hooking detection (Frida, Xposed) at runtime; RASP terminates app; tamper event emitted; MDM notified
+32. FR-M30-032: screen-capture protection on all screens; app-switcher preview hidden; OS-level screenshot blocked
+33. FR-M30-033: local AES-256-GCM encrypted store (Isar + SQLCipher) with key in device secure enclave; no plaintext at rest
+34. FR-M30-034: UUID7 IDs for AgentCheckIn, AgentCountersignature, AgentIncidentReport; generated locally with eel-crypto-rs FFI shim; server validates format
+35. FR-M30-035: Riverpod state management; countersignature state immutable after HSM sign; no mutable shared state
+36. FR-M30-036: MDM force-update policy: app below floor version blocked on start; MDM notifies agent; local queue survives update
 
 ## Acceptance criteria
 
-1. AC-M30-01: end-to-end verify + countersign flow on real device; UAT
-2. AC-M30-02: attestation fail refuses correctly; rooted-device test
-3. AC-M30-03: countersignature reaches audit ledger with Merkle proof; audit trace
-4. AC-M30-04: duress code triggers silent war-room alert; red team test
-5. AC-M30-05: incident report end-to-end with attachments; UAT
-6. AC-M30-06: offline verification works for cached records; bench test
-7. AC-M30-07: MDM force-update policy applied; bench test
+1. AC-M30-01: end-to-end verify + countersign flow on real device; measurement: UAT sign-off
+2. AC-M30-02: attestation fail refuses correctly on rooted device; measurement: rooted-device test with pre-defined test device
+3. AC-M30-03: countersignature reaches audit ledger with Merkle proof; measurement: audit trace on T1-audit store
+4. AC-M30-04: duress code triggers silent war-room alert; eel.field.agent_incident.v1 DURESS emitted; measurement: red team test
+5. AC-M30-05: incident report end-to-end with photo, video, audio attachments reaches war room; measurement: UAT
+6. AC-M30-06: offline verification works for cached signed Form 34A; measurement: bench test with netem loss 100%
+7. AC-M30-07: MDM force-update policy applied; app below floor version blocked within 60 s of policy push; measurement: bench test
+8. AC-M30-08: duplicate countersignature submission same key+body returns cached response without re-execution; measurement: idempotency test
+9. AC-M30-09: GPS spoof attempt flagged; check-in refused when cell/Wi-Fi delta > 1 km; measurement: mock-location test
+10. AC-M30-10: WCAG 2.2 AA audit pass on all screens; measurement: axe-core + manual audit report
+11. AC-M30-11: queue survives phone reboot; countersignatures and incidents resubmit on reconnect without duplication; measurement: reboot + reconnect integration test
+12. AC-M30-12: hooking detection refuses Frida attach; RASP terminates within 5 s; measurement: Frida attach test on reference device
 
 ## Applicable edge cases
 
 **connectivity**
-- EC-CON-01: no network at polling station; cached signed Form 34A verifiable offline; countersignature queued; submitted on reconnect
-- EC-CON-03: 2G network; QR scan and proof fetch deferred; 30 s SLA under LTE, extended on 2G
+- EC-CON-01: offline 48 h; cached signed Form 34A verifiable offline; countersignature queued; submitted on reconnect
+- EC-CON-02: 3G (500 kbps, 300 ms RTT); verification SLA extended; user notified of delay
+- EC-CON-03: 2G only; QR scan and proof fetch deferred; 30 s SLA under LTE; extended on 2G with user notification
+- EC-CON-04: site partition primary/mirror; cached form data verifiable offline; queue accumulates until mirror reconnects
+- EC-CON-05: flapping link; backoff+jitter; retry budget; no duplicate countersignature submissions
+- EC-CON-06: captive portal; mTLS pinning fails closed; "network blocked" UX; no token leak
+- EC-CON-07: satellite 600 ms+ RTT; transport-tuned timeouts; MTU-safe
+- EC-CON-08: DNS poisoned/down; hardcoded fallback endpoints; circuit opens
+- EC-CON-09: IPsec tunnel drop mid-submission; idempotent re-send on reconnect
+- EC-CON-10: dual-SIM failover mid-send; same signed blob retried on SIM B
+- EC-CON-11: Kafka ISR shrink on eel.field.agent.v1; producer blocks; outbox accumulates; no loss
+
+**identity**
+- EC-IDN-01: agent cert revoked mid-session; refuse <= 60 s; honey mode if stolen; queue quarantined
+- EC-IDN-02: JWT expires mid-countersign request; in-flight completes; next 401 + silent refresh
+- EC-IDN-03: SVID rotates during batch submission; old SVID valid to expiry; producer_key_id per event
+- EC-IDN-04: attestation fails (custom ROM); hard-fail; refuse; support code shown
+- EC-IDN-05: rooted/emulator/Frida; RASP terminate; wipe; tamper event
+- EC-IDN-06: clone app; pin mismatch; backend rejects digest; MDM notified
+- EC-IDN-07: SIM swap on staff OTP; no SMS OTP for accredited agent; OTP is device-bound biometric
+- EC-IDN-08: duress code entered; silent alert to war room; visible flow continues
+- EC-IDN-09: approver revoked mid-countersign dual-control; re-validate both at commit
+- EC-IDN-10: SpiceDB down; fail-closed writes; class-C reads only; 503 problem+json
+- EC-IDN-11: realm key rotated; stale JWKS; refetch on kid miss
+
+**data**
+- EC-DAT-01: duplicate countersignature submission same key+body; cached response; no re-execution
+- EC-DAT-02: same countersign key, different body; 422 idempotency-key-reuse
 
 **security**
-- EC-SEC-02: GPS spoof attempt by adversary near polling station; multi-constellation + IMU cross-check; spoof alert
-- EC-SEC-06: duress code entered by agent under coercion; silent alert to war room; visible flow proceeds normally
-- EC-SEC-08: device rooted; attestation hard-fails; app refuses to open
+- EC-SEC-05: injection on all agent API inputs; parameterised only; Semgrep + ZAP + fuzz
+- EC-SEC-16: secrets absent from all logs and traces; CI regex gate + log-scanner fixture
+
+**scale**
+- EC-SCL-04: consumer lag on eel.field.agent.v1 > 60 s; page alert; backpressure; no OOM
+
+**mobile**
+- EC-MOB-01: OS kills mid-sync; resumable; no duplicate; WAL intact
+- EC-MOB-02: storage full; graceful refusal; bounded queue; user prompted
+- EC-MOB-03: 1 GB RAM mid-tier device; <= 15 MB RAM; no OOM
+- EC-MOB-04: Doze/background limits; accredited terminate; resume on foreground
+- EC-MOB-05: push token rotation / FCM down; idempotent re-register; SMS for critical alerts
+- EC-MOB-06: update mid-election below floor; force floor; 7-day block; queue survives update
+- EC-MOB-07: GPS spoof check-in; cell/Wi-Fi delta > 1 km flagged; check-in refused
+- EC-MOB-08: device time wrong; server authoritative timestamp used
+- EC-MOB-09: biometric sensor broken; PIN fallback rate-limited; no policy downgrade; biometric is required for countersign
 
 **human**
 - EC-HUM-05: agent assists a voter with a dispute; incident report filed with agent biometric; no voter PII in report
 
 **operations**
 - EC-OPS-05: wrong-station check-in attempt; GPS distance validation refuses; agent instructed to correct station
-
-**mobile**
-- EC-MOB-02: mid-tier Android 10 device; battery <= 5% per hour foreground
-- EC-MOB-05: hooking detection; Frida / Xposed refuse
-- EC-MOB-06: certificate pinning; mTLS mandatory
 
 ## Test plan
 
@@ -171,4 +216,4 @@ Tags: `testWidgets('countersign form [FR-M30-015,AC-M30-03,EC-CON-01]')`
 
 - Shared Rust FFI Merkle-verifier library (libeel-verifier): ownership and delivery timeline must be agreed with M13/M29 teams before integration sprint; single shared crate.
 - HSM-backed party-agent key provisioning: private key provisioning workflow for accredited agents must be designed with P06 team; key-ceremony timing and agent-device binding protocol.
-- MDM enrollment for party-sourced devices: parties supply device list; IEBC MDM enrolls; process must be operationalised at T-60.
+- MDM enrollment for party-sourced devices: parties supply device list; MDM enrolls; process must be operationalised at T-60.

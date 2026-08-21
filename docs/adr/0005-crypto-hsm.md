@@ -28,8 +28,8 @@ Negative: PKCS#11 abstraction adds indirection versus native vendor SDK. PQ hybr
 ## Alternatives rejected
 
 - Native Thales / Utimaco SDKs in application code (vendor lock-in).
-- Classical TLS 1.3 only (no PQ hybrid) — inadequate for a 15-year audit window given known harvest-now-decrypt-later posture of state adversaries.
-- Software-only crypto (no HSM) — non-starter for election-critical roots.
+- Classical TLS 1.3 only (no PQ hybrid), inadequate for a 15-year audit window given known harvest-now-decrypt-later posture of state adversaries.
+- Software-only crypto (no HSM), non-starter for election-critical roots.
 
 ## Related
 

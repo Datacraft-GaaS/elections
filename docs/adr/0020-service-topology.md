@@ -1,4 +1,4 @@
-# ADR 0020: Service topology — 18 K8s services grouping 69 modules
+# ADR 0020: Service topology: 18 K8s services grouping 69 modules
 
 Status: accepted
 Date: 2026-08-21
@@ -32,7 +32,7 @@ Sixty-nine module specs do not equal sixty-nine services. `sw/ARCHITECTURE.md` �
 | `training-svc` | M37 voter-ed CMS, M38 LMS, M42 media-accreditation, M43 observer-accreditation, M60 medical-response | Django admin surfaces (ADR-0008); shared T2 cluster |
 | `support-admin-svc` | M20 admin ops, M23 grievance backoffice, M25 special-voter workflows, M27 intent-preservation, M54 budget/expenditure, M55 HR/payroll, M69 long-term archive | internal admin + finance + archive (BagIt) |
 
-Total: 18 services, 69 modules. **Cardinality is a design choice, not a physical constraint** — a service may be split later as an ADR change if scale demands.
+Total: 18 services, 69 modules. **Cardinality is a design choice, not a physical constraint**, a service may be split later as an ADR change if scale demands.
 
 ## How this shapes the scaffold
 
@@ -44,7 +44,7 @@ Total: 18 services, 69 modules. **Cardinality is a design choice, not a physical
 
 Positive: 18 units of deployment is manageable; each service owns a coherent bounded context; ArgoCD fans out cleanly; ownership is clear (one team per service or per small group of services).
 
-Negative: some services (governance-svc, transparency-svc) span many modules — internal boundary discipline required. A service can be split as needed via new ADR without cross-cutting cost.
+Negative: some services (governance-svc, transparency-svc) span many modules, internal boundary discipline required. A service can be split as needed via new ADR without cross-cutting cost.
 
 ## Alternatives rejected
 

@@ -1,6 +1,6 @@
 # ADR 0002: App stacks (desktop, mobile, server)
 
-Status: proposed — needs input
+Status: superseded by ADR-0002 (0002-languages.md) and ADR-0008 (0008-portal-stack.md). Retained for history only.
 Date: 2026-08-21
 
 ## Context

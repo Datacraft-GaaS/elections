@@ -24,8 +24,8 @@ Eighteen Kubernetes services grouping the 69 modules per ADR-0020. Each subdirec
 | support-admin-svc | Django + Rust | M20 ops, M25, M27, M54, M55, M69 |
 
 Each service has:
-- `src/` — implementation
-- `tests/` — unit + integration
-- `migrations/` — schema migrations (Refinery / sqlx / Django / Ecto per language)
-- `deploy/` — Kubernetes manifests, ArgoCD Application, Helm chart if used
-- `docs/` — service-specific docs (README, threat model, event catalog)
+- `src/`, implementation
+- `tests/`, unit + integration
+- `migrations/`, schema migrations (Refinery / sqlx / Django / Ecto per language)
+- `deploy/`, Kubernetes manifests, ArgoCD Application, Helm chart if used
+- `docs/`, service-specific docs (README, threat model, event catalog)

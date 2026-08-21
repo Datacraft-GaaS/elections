@@ -1,4 +1,4 @@
-# Appendix A — Module inventory (condensed)
+# Appendix A: Module inventory (condensed)
 
 Size key: S <2 dev-wk, M 2-6, L 6-12, XL >12. Home service per ADR-0020.
 

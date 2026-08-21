@@ -5,7 +5,7 @@ Date: 2026-08-21
 
 ## Context
 
-Public verifiability is an active defence — it makes disinformation attacks quantifiably falsifiable and gives observers, media, and courts an independent basis to confirm no rewrite happened. The spec (`sw/ARCHITECTURE.md:174`) mandates a CT-style Merkle transparency log. M14 reproducibility bundle depends on it. The log is also the first real service we plan to build — foundational, self-contained, exercises the full Rust + HSM + event-source + OpenAPI stack.
+Public verifiability is an active defence, it makes disinformation attacks quantifiably falsifiable and gives observers, media, and courts an independent basis to confirm no rewrite happened. The spec (`sw/ARCHITECTURE.md:174`) mandates a CT-style Merkle transparency log. M14 reproducibility bundle depends on it. The log is also the first real service we plan to build, foundational, self-contained, exercises the full Rust + HSM + event-source + OpenAPI stack.
 
 ## Decision
 
@@ -17,17 +17,17 @@ Public verifiability is an active defence — it makes disinformation attacks qu
 - **Signed Tree Head cadence**: **1 second hot / 60 second default / 5 minute batch**. Batch STHs consolidate multiple hot STHs into a single canonical snapshot for external witnesses.
 - **STH signature**: HSM-signed (see ADR-0005). One HSM signature per STH covers up to millions of events. HSM throughput is not a constraint at this cadence.
 - **Leaf signature**: producer-signed with SPIFFE Ed25519 key (see ADR-0015). Log verifies signature before hashing.
-- **Split-view prevention**: STH cross-posted to independent witnesses — IAB service (day 1), external observers (day 2), Gazette daily anchor, optional blockchain anchor (deferred).
+- **Split-view prevention**: STH cross-posted to independent witnesses, IAB service (day 1), external observers (day 2), Gazette daily anchor, optional blockchain anchor (deferred).
 - **Third-party witness cosigning**: witnesses cosign STHs they observe; a fork produces divergent witness signatures, visible.
 - **Consistency proofs** between any two STHs (verifier proves tree only grew).
 - **Inclusion proofs** for any leaf (verifier proves event is in tree).
 - **APIs**: gRPC (tonic) for internal producers/consumers; REST + OpenAPI (utoipa) for public verifiers, media, observers, M14 reproducibility bundle.
 - **Public endpoints**:
-  - `GET /api/v1/log/sth/latest` — latest STH per cadence tier.
-  - `GET /api/v1/log/sth/{tree_size}` — historical STH.
-  - `GET /api/v1/log/inclusion/{leaf_hash}` — inclusion proof.
-  - `GET /api/v1/log/consistency/{from_size}/{to_size}` — consistency proof.
-  - `GET /api/v1/log/entries?start=&count=` — bounded, rate-limited.
+  - `GET /api/v1/log/sth/latest`, latest STH per cadence tier.
+  - `GET /api/v1/log/sth/{tree_size}`, historical STH.
+  - `GET /api/v1/log/inclusion/{leaf_hash}`, inclusion proof.
+  - `GET /api/v1/log/consistency/{from_size}/{to_size}`, consistency proof.
+  - `GET /api/v1/log/entries?start=&count=`, bounded, rate-limited.
 - **Availability**: log downtime does NOT block writes. Producer services buffer in outbox + Kafka; log ingest consumer catches up when the log recovers.
 - **What goes on the log**:
   - Every T1 event from every event-sourced service.
@@ -45,7 +45,7 @@ Public verifiability is an active defence — it makes disinformation attacks qu
 
 Positive: single canonical log is simple to explain to auditors, simple to verify ("here is THE root"), single external contract; witness cosigning + Gazette anchoring makes split-view attacks visible; the M14 reproducibility bundle can rebuild the tree from raw events and compare to the published record; log availability is decoupled from write path.
 
-Negative: log is a load-bearing service — its integrity is the election's integrity. Requires the strictest ops posture in the fleet: dedicated on-call rotation, monthly restore drill, quarterly witness cross-check drill. Sequencer performance is the internal scaling axis — internal storage sharding when needed, not external.
+Negative: log is a load-bearing service, its integrity is the election's integrity. Requires the strictest ops posture in the fleet: dedicated on-call rotation, monthly restore drill, quarterly witness cross-check drill. Sequencer performance is the internal scaling axis, internal storage sharding when needed, not external.
 
 ## Alternatives rejected
 

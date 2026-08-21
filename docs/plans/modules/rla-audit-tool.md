@@ -79,58 +79,98 @@ none (all audit computations are statistical / deterministic; SHANGRLA or MINERV
 
 ## Feature checklist
 
-1. FR-M21-001: ballot-polling audit method (SHANGRLA) with configurable risk limit.
-2. FR-M21-002: comparison audit method with reported vote totals from M10 Form 34B.
-3. FR-M21-003: entropy source: NIST randomness beacon + hardware dice + witnessed ceremony; seed signed by >= 3 independent witnesses.
-4. FR-M21-004: ballot sample generation: deterministic from seed; reproducible by any party.
-5. FR-M21-005: auditor interpretation entry: paper ballot image shown; auditor records candidate marks.
-6. FR-M21-006: discrepancy tracking: flag ballots where audit interpretation differs from reported tally.
-7. FR-M21-007: audit conclusion: pass (risk limit met) or escalate (recount recommended).
-8. FR-M21-008: recount trigger: if escalate, generate HSM-signed recount recommendation; forward to M40.
-9. FR-M21-009: published audit report: HSM-signed PDF + JSON; anchored to tlog; publicly verifiable.
-10. FR-M21-010: offline-capable Tauri desktop: auditor can work without network; sync on reconnect.
-11. FR-M21-011: CLI tools: import/export audit data; verify seed; reproduce sample list.
-12. FR-M21-012: multi-position: independent audit runs per elective position.
-13. Entropy seed ceremony logged with witness signatures before sampling begins.
-14. Audit run reproducible by any party with seed and tally snapshot.
-15. Recount recommendation delivered to M40 within 4 h of audit completion.
-16. Report published within 1 h of run completion.
+Audit methods and setup:
+
+FR-M21-001: Ingest published Form 34C JSON tally and its Merkle root as the starting point for the audit; validate Merkle inclusion proof before proceeding.
+FR-M21-002: Ballot-polling audit method via SHANGRLA framework (Stark 2020); integrate upstream pbstark/audit-tools; all modifications published open-source under OSS licence.
+FR-M21-003: Comparison audit method using reported vote totals from M10 Form 34B alongside SHANGRLA ballot-polling.
+FR-M21-004: Sample size computation: margin of victory (from Form 34C), risk limit alpha (default 0.05, range 0.01-0.10), and contest structure as inputs; formula and all inputs displayed before drawing.
+FR-M21-005: Multi-contest: independent audit runs per elective position (presidential, gubernatorial, senatorial, MP, women representative, MCA); independent alpha per contest.
+
+Entropy and sample generation:
+
+FR-M21-006: Five independent public entropy sources: NIST Randomness Beacon, UK National Lottery, BBC World Service shortwave hash, Kenya Gazette publication hash, SHA-256 of last Bitcoin block header at draw time.
+FR-M21-007: All five source values with fetch timestamps recorded in audit log before seed computation; any fetch failure logged with rationale before fallback.
+FR-M21-008: Composite seed: XOR of five sources (hex); any party with published values and software can reproduce exactly.
+FR-M21-009: Deterministic ballot manifest: station code, ballot-box number, and sequential ballot position per sampled ballot; reproducible from seed alone on any POSIX system with Python 3.11+.
+FR-M21-010: Manifest publication within 30 min of seed draw: on-screen sortable table, PDF download with QR code linking to manifest hash, HSM-signed JSON; all three published to public audit portal.
+FR-M21-011: Entropy ceremony: seed draw requires IAB Commissioner HSM card and >=3 independent witness signatures before sampling begins; witnesses logged with identity and time.
+FR-M21-012: Air-gapped environment for seed draw and sample computation; one-way data diode for public portal publication.
+FR-M21-013: Sample manifest computation <=60 s for 55,393 stations on reference hardware (2 vCPU, 8 GB RAM).
+
+Ballot retrieval and tally:
+
+FR-M21-014: Ballot-retrieval checklist per sampling-team member: station name, GPS coordinates link, ballot-box number, expected seal numbers; QR-code scan-to-confirm for each retrieved ballot.
+FR-M21-015: 48-hour advance notice delivered to presiding officers at sampled stations; ballot boxes must remain sealed and accessible.
+FR-M21-016: Tally interface: auditor records candidate marks per retrieved ballot (or undervote, overvote, unreadable); Form 34A tallies shown read-only alongside for comparison.
+FR-M21-017: Party-agent witness counter-signature on each retrieved ballot retrieval record before tally is locked.
+FR-M21-018: Tally entry immutable after party-agent counter-signature; any modification attempt logged and rejected.
+FR-M21-019: Discrepancy tracking: flag every ballot where audit interpretation differs from reported tally; discrepancy count displayed in real time.
+FR-M21-020: Running SHANGRLA T-statistic computed after each batch of tallied ballots; current confidence level, remaining sample needed, and stopping condition status displayed.
+
+Conclusions and reporting:
+
+FR-M21-021: Stopping condition: if T-statistic fails to confirm at risk limit after maximum sample exhausted, RECOUNT_REQUIRED event generated immediately; published to IEBC Chair, IAB, and public portal; HSM-signed; forwarded to M40 election court interface.
+FR-M21-022: Audit conclusion: CONFIRMED (risk limit met) or RECOUNT_REQUIRED; conclusion computed deterministically from published inputs.
+FR-M21-023: Signed audit report on completion: seed values, sample manifest hash, tally data, T-statistic trajectory, outcome, party-agent and IAB signatures; HSM-signed PDF + JSON.
+FR-M21-024: Audit report published on public portal and submitted to Supreme Court IT Registrar by T+7 days post-election.
+FR-M21-025: Cryptographic sortition log appended to P05 Merkle chain within 1 h of seed draw.
+
+Reproducibility and offline:
+
+FR-M21-026: Reproduce-me script published alongside every audit; bit-identical output on any POSIX system; CI test verifies on every release.
+FR-M21-027: Offline-capable Tauri desktop: complete statistical computation and tally entry without network; signed results sync on reconnect.
+FR-M21-028: CLI tools: import/export audit data; verify seed; reproduce sample manifest; verify report signature.
+
+Accessibility and DPA:
+
+FR-M21-029: WCAG 2.2 AA for all auditor-facing and public-facing screens; EN + SW for auditor interface; EN + SW + per-county Kenyan language for public portal.
+FR-M21-030: DPA 2019: audit log contains no voter-identifiable data; sampled-ballot records contain station code and ballot position only.
+FR-M21-031: Audit log immutability: append-only; every entry SHA-256-chained; deletion or modification detectable; chain-break triggers P0 alert.
 
 ## Acceptance criteria
 
-AC-M21-01: audit sample reproducible from seed by independent party (reproducibility test).
-AC-M21-02: recount trigger delivered to M40 when risk limit not met (integration test).
-AC-M21-03: entropy ceremony requires >= 3 witness signatures (UAT).
-AC-M21-04: offline desktop syncs audit data without loss on reconnect (chaos test).
-AC-M21-05: published report anchored to tlog; chain verifiable (integration test).
-AC-M21-06: SHANGRLA p-value computation matches NIST reference implementation (unit test).
-AC-M21-07: 99.9% availability (SLO measurement).
+AC-M21-01: Ballot sample reproducible from seed; independent party running reproduce-me script gets byte-identical manifest; CI gate enforces on every release (reproducibility test).
+AC-M21-02: RECOUNT_REQUIRED event delivered to M40 and public portal with HSM signature when risk limit not met after maximum sample exhausted (integration test).
+AC-M21-03: Entropy ceremony requires IAB Commissioner HSM card and >=3 witness signatures before sampling proceeds; single-officer attempt rejected (UAT + security test).
+AC-M21-04: Tally entry immutable after party-agent counter-signature; POST to modify returns 403 and audit-log entry (security test).
+AC-M21-05: Offline Tauri desktop completes tally entry and syncs signed results without loss after 48-h network partition (chaos test).
+AC-M21-06: Published audit report anchored to P05 Merkle chain; inclusion proof verifiable by any party using published chain (integration test).
+AC-M21-07: SHANGRLA T-statistic matches NIST reference implementation for all published test vectors to at least 15 significant figures (unit test).
+AC-M21-08: Sample manifest published within 30 min of seed draw; timestamp delta verified by integration test against 30-min deadline.
+AC-M21-09: Audit report delivered to Supreme Court IT Registrar signed receipt obtained by T+7 days post-election; process audit.
+AC-M21-10: Sample manifest computation <=60 s for 55,393 stations on reference hardware (2 vCPU, 8 GB RAM); performance test on every release.
+AC-M21-11: Public audit portal available >=99.9% during 30-day petition window (cycle-critical SLO per appendix; burn-rate alert fires before budget exhausted).
+AC-M21-12: WCAG 2.2 AA: axe-core passes on all auditor-facing and public-facing screens; manual screen-reader verification with NVDA and ChromeVox (accessibility audit).
 
 ## Applicable edge cases
 
-**connectivity**
-EC-CON-01: offline Tauri; local queue; drain on reconnect.
-EC-CON-06: NIST beacon unavailable; hardware dice fallback; ceremony documented.
-
-**time**
-EC-TIM-10: audit run must complete before petition window close; alert if behind schedule.
-
-**identity**
-EC-IDN-01: auditor cert revoked mid-run; halt; re-provision procedure.
-EC-IDN-09: witness signing: >= 3 witnesses; no single-actor shortcut.
-
-**data**
-EC-DAT-01: duplicate ballot interpretation same key; cached.
-EC-DAT-11: reported tally differs from Form 34B; discrepancy flagged; audit engine uses canonical 34B figure.
-
-**security**
-EC-SEC-01: report signature mismatch; CLI rejects.
-EC-SEC-03: HSM unavailable; report publish blocked; alert.
-EC-SEC-13: split-view on tlog; witness divergence.
-
-**legal**
-EC-LEG-09: recount recommendation legal basis: only IEBC Chair can act on it; recommendation is advisory.
-EC-TIM-08: audit must complete within petition window T+7; scheduling constraint enforced.
+EC-CON-01: Tauri desktop offline for 48+ h; tally entry proceeds in local queue; signed results sync on reconnect; no data loss; ECC receives historical snapshots on reconnection.
+EC-CON-06: NIST Randomness Beacon unreachable at seed draw; 15-min retry window; fallback to cached NIST value from prior 24 h with published rationale; other four entropy sources still provide full diversity.
+EC-CON-08: DNS poisoned during entropy source fetch; DNSSEC enforced; hardcoded fallback NIST beacon endpoint; fetch failure logged with rationale.
+EC-TIM-06: Audit event time < causation time (delayed sync from offline Tauri); accepted; audit skew anomaly logged; T-statistic projection independent of wall order.
+EC-TIM-08: Audit must complete and report delivered to Supreme Court IT Registrar by T+7 (statutory petition window); scheduling constraint enforced; alert fires at T+5 if completion risk detected.
+EC-DAT-01: Duplicate ballot tally interpretation same idempotency key and body; cached response returned; T-statistic not double-counted.
+EC-DAT-02: Same ballot tally key, different interpretation body; rejected 422 idempotency-key-reuse before counter-signature.
+EC-DAT-03: Out-of-order tally entries in stream (offline sync); buffered until sequence gap filled or DLQ after timeout.
+EC-DAT-04: Replayed signed entropy event; rejected on sequence counter; tamper topic populated.
+EC-DAT-05: Poison tally value (e.g., candidate ID not in contest); DLQ with reason; audit run continues with remaining ballots.
+EC-DAT-06: Schema v1/v2 coexist during rolling deploy; both accepted; dual-emit; Karapace compat check.
+EC-DAT-09: Unicode candidate names in tally interface (all 11 locales); NFC normalisation; no truncation on tally-entry screen or report.
+EC-DAT-10: Zero discrepancies is a valid and expected outcome; renders "0 discrepancies detected" with confidence level; no divide-by-zero in T-statistic path.
+EC-DAT-11: Reported tally in Form 34C differs from Form 34B; discrepancy flagged; audit engine uses canonical Form 34C as audit input; discrepancy logged for investigator review.
+EC-DAT-13: Soft-deleted (voided) audit run appears in search; tombstone honoured; excluded from active conclusions.
+EC-IDN-02: JWT expires mid-tally entry; in-flight request completes; next request returns 401 with silent-refresh hint.
+EC-IDN-09: Party-agent witness revoked between ballot retrieval and counter-signature; re-validate at commit; IAB observer replaces per MoU affidavit procedure.
+EC-IDN-10: SpiceDB down; fail closed on tally writes and report publish; class-C reads (public manifest, entropy source list) allowed.
+EC-SEC-01: Report signature mismatch on CLI reproduce-me verification; tampering immediately evident; verification fails with clear error; alert.
+EC-SEC-03: HSM unavailable; report publish blocked; seed draw blocked; ingest continues; alert to IAB; degraded mode documented in runbook.
+EC-SEC-05: Injection on tally entry free-text field (unreadable reason); parameterised queries only; Semgrep compile-time and ZAP dynamic scan required.
+EC-SEC-13: Split-view on P05 tlog; witness divergence detected between IAB domain and GitHub channel; portal shows discrepancy; IAB notified.
+EC-SEC-16: Secrets in audit logs or traces refused; telemetry redacted; log-scanner fixture in CI.
+EC-SCL-04: Consumer lag >60 s on eel.rla.run.v1 topic; backpressure activated; page fired; no OOM.
+EC-LEG-04: Recount ordered post-audit; compensating-event version created; original and recount conclusions both shown with Merkle proofs; append-only invariant verified.
+EC-HUM-06: Screen readers: audit portal fully navigable; WCAG 2.2 AA verified with axe-core and manual NVDA test; tally entry form operable via keyboard only.
 
 ## Test plan
 

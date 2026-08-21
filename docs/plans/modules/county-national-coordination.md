@@ -77,45 +77,99 @@ none
 
 ## Feature checklist
 
-1. FR-M56-001: Create MoU with county and ministry parties.
-2. FR-M56-002: Dual-sign MoU with county and national officer signatures.
-3. FR-M56-003: Track MoU expiry and alert on approaching renewal.
-4. FR-M56-004: Submit and approve county datasets (register, boundary, facility data).
-5. FR-M56-005: SAML brokering for heterogeneous county government IdPs.
-6. FR-M56-006: Fail closed on SAML authentication failure.
-7. FR-M56-007: Report coordination incident with severity and county code.
-8. FR-M56-008: Escalate high-severity incidents to ECC alert (M16).
-9. FR-M56-009: Resolve incident with resolution notes.
-10. FR-M56-010: County portal accessible under county subdomain with county-scoped RBAC.
-11. FR-M56-011: Ministry approval tracking for cross-ministry MoUs.
-12. FR-M56-012: Admin list of incidents with filter by county, severity, status.
-13. FR-M56-013: Audit trail of all MoU and incident transitions.
-14. FR-M56-014: i18n on county portal in 11 languages.
-15. FR-M56-015: WCAG 2.2 AA on county portal.
+MoU Management:
+1. FR-M56-001: Create MoU with county or ministry party, recording party type, party code, and party name. (spec FR-M56-01)
+2. FR-M56-002: Dual-sign MoU with two distinct officer signatures; SpiceDB policy enforces separation of duties. (spec FR-M56-01)
+3. FR-M56-003: Track MoU through draft, review, signed, active, and expired states. (spec FR-M56-01)
+4. FR-M56-004: Generate expiry alerts at T-90 and T-30 days before MoU expiry; 100% delivery rate. (spec FR-M56-01)
+5. FR-M56-005: Trigger MoU renewal workflow automatically when expiry alert fires.
+6. FR-M56-006: Store signed MoU as HSM-timestamped PDF blob; hash stored in transparency log. (spec FR-M56-01)
+7. FR-M56-007: Version-control MoU drafts; diff view between any two versions.
+8. FR-M56-008: Ministry approval tracking for cross-ministry MoUs; link approval to originating MoU. (spec FR-M56-04)
+
+County Dataset Management:
+9. FR-M56-009: Accept county dataset uploads in five types: population, school-facility, health-facility, road-access, security-history. (spec FR-M56-02)
+10. FR-M56-010: Validate each county dataset against published JSON Schema v7 before acceptance; reject non-conforming payloads. (spec FR-M56-02)
+11. FR-M56-011: Return field-level validation errors to the uploader on schema failure, referencing the failing field and rule.
+12. FR-M56-012: Tag every data point with provenance: source county, uploader, timestamp, and schema version. (spec FR-M56-03)
+13. FR-M56-013: Export merged polling-station siting-layer dataset to M18 Boundary Transparency within 60 s of dataset approval. (spec FR-M56-03)
+14. FR-M56-014: Scope county dataset access to the submitting county; cross-county request returns 403.
+15. FR-M56-015: Capture DPA 2019 s.30(1)(d) lawful-basis code and purpose code on every dataset upload; absence returns 422. (spec FR-M56-06)
+16. FR-M56-016: Set retention-until date on every dataset record per the retention schedule; field cannot be blank.
+
+Ministerial Approval Tracking:
+17. FR-M56-017: Create structured ministerial approval request with statutory basis, deadline, and escalation path. (spec FR-M56-04)
+18. FR-M56-018: Track approval through pending, approved, rejected, and overdue states.
+19. FR-M56-019: Alert Director of Operations when an approval passes its deadline. (spec FR-M56-04)
+20. FR-M56-020: Record ministry response with timestamp and responding officer identity. (spec FR-M56-04)
+
+Incident Coordination:
+21. FR-M56-021: Report cross-jurisdiction incidents in five types: road-closure, health-emergency, security-event, infrastructure, other. (spec FR-M56-05)
+22. FR-M56-022: Link incidents to one or more polling-station codes and a county code.
+23. FR-M56-023: Emit eel.governance.coordination_incident_raised.v1 to M16 ECC; p99 delivery < 30 s. (spec FR-M56-05)
+24. FR-M56-024: Track incident through open, assigned, and resolved states.
+25. FR-M56-025: Require sign-off from both a Commission officer and a county officer to close an incident. (spec FR-M56-05)
+
+SAML Brokering and Authentication:
+26. FR-M56-026: SAML brokering for heterogeneous county-government IdPs via SAML ACS endpoint. (spec NFR-M56-03)
+27. FR-M56-027: Fail closed on SAML IdP unavailability; no partial authentication granted; circuit breaker logged.
+28. FR-M56-028: Support TOTP-based authentication for Commission-issued county credentials.
+
+Coordination Calendar and Portal:
+29. FR-M56-029: Maintain coordination calendar with attendee lists, minutes-upload slots, and action-item tracker. (spec FR-M56-07)
+30. FR-M56-030: County coordination portal available under county subdomain with county-scoped RBAC.
+31. FR-M56-031: Admin console lists all incidents, MoUs, and datasets with filter by county, type, and status.
+
+DPA Audit and Internationalisation:
+32. FR-M56-032: Log every inbound and outbound data exchange in P05 with actor, timestamp, event type, and DPA purpose code. (spec FR-M56-06)
+33. FR-M56-033: Produce DPA audit report for any queried time window via `/v1/dpa/audit`; row count verifiable against P05 log.
+34. FR-M56-034: County portal and admin console available in EN and SW; all upload templates provided in EN and SW with field-level guidance. (spec FR-M56-08)
+35. FR-M56-035: County-facing portal meets WCAG 2.2 AA; verified by axe-core and manual test in EN and SW. (spec NFR-M56-04)
 
 ## Acceptance criteria
 
-1. AC-M56-01: SAML ACS fails closed on IdP unavailability; no partial auth; test.
-2. AC-M56-02: High-severity incident escalated to ECC within 60 s; integration test.
-3. AC-M56-03: MoU dual-sign requires two distinct officers; SpiceDB policy test.
-4. AC-M56-04: County dataset scoped to requesting county; no cross-county data leak; test.
-5. AC-M56-05: API p99 within routine 99.5% SLA.
+AC-M56-01: SAML ACS fails closed on IdP unavailability; no partial auth granted; integration test with IdP stub returning 503.
+AC-M56-02: High-severity incident emits eel.governance.coordination_incident_raised.v1 visible in M16 ECC within p99 < 30 s; measured over 50 runs.
+AC-M56-03: MoU dual-sign requires two distinct officers; same-officer dual-sign returns 403; SpiceDB policy unit test.
+AC-M56-04: County dataset access scoped to submitting county; cross-county request returns 403; access-control integration test.
+AC-M56-05: Dataset upload rejected with field-level errors when payload fails JSON Schema v7 validation; unit test per dataset type.
+AC-M56-06: MoU expiry alerts delivered for 100% of expiring MoUs at T-90 and T-30; scheduler test with synthetic MoU set covering all 47 counties.
+AC-M56-07: Every dataset upload record carries a DPA lawful-basis code and purpose code; absence of either returns 422; unit test.
+AC-M56-08: County coordination portal API p99 < 1.5 s at 500 concurrent county users; k6 load test at synthetic 500-user concurrency.
+AC-M56-09: Portal availability >= 99.5% over T-180 to T+30 window; SLO alert configured in Alertmanager ruleset iems-56-alerts.
+AC-M56-10: Incident resolution requires both Commission and county officer sign-off; single-party close returns 403; integration test.
+AC-M56-11: County portal and upload wizard pass WCAG 2.2 AA in EN and SW; axe-core zero critical violations; manual test documented.
+AC-M56-12: All inbound and outbound data exchanges logged in P05 with actor, timestamp, and DPA purpose code; audit-log completeness test over a full county-upload cycle confirms zero gaps.
+AC-M56-13: Merged siting-layer export reaches M18 within 60 s of dataset approval; integration test with M18 double.
+AC-M56-14: Incident routing to M16 ECC p99 < 30 s sustained under 47 concurrent county incident submissions; k6 scenario test.
 
 ## Applicable edge cases
 
-**Identity:**
-- EC-IDN-09: dual-control MoU signer revoked mid-flow; re-validate both at commit.
-- EC-IDN-10: SpiceDB down; fail closed writes.
-
-**Security:**
-- EC-SEC-05: injection on MoU content or dataset URL fields.
-- EC-SEC-08: XML/SAML XXE; DTD disabled in SAML parser.
-
-**Connectivity:**
-- EC-CON-05: flapping county SAML IdP; backoff; fail closed.
-
-**Human:**
-- EC-HUM-08: 11 languages; no truncation.
+EC-DAT-01: duplicate county dataset upload with same key and body returns cached 200; no second validation run triggered.
+EC-DAT-02: duplicate county dataset upload with same key but different body returns 422 idempotency-key-reuse; upload rejected.
+EC-DAT-03: out-of-order incident events in the coordination stream buffered until gap filled or routed to DLQ; replay correctness tested.
+EC-DAT-06: county dataset schema v1 and v2 coexist during migration; both accepted; dual-emit verified in Karapace compat test.
+EC-DAT-09: county and sub-location names containing Unicode grapheme clusters stored in NFC, collated with ICU; display tested across 11 locales.
+EC-DAT-14: county dataset upload exceeding 1 MB outbox limit rejected from outbox; blob redirected to MinIO with hash reference.
+EC-IDN-02: JWT expires mid county-upload request; in-flight request completes; next request returns 401 and triggers silent refresh.
+EC-IDN-09: MoU dual-control approver credential revoked between first and second sign; second sign re-validates both at commit; 403 returned.
+EC-IDN-10: SpiceDB unavailable; write operations fail closed; class-C reads allowed with stale-cache label; 503 returned with problem+json.
+EC-IDN-11: realm key rotated while county SAML session is active; JWKS refetched on kid miss; session not invalidated.
+EC-SEC-05: injection attempted on MoU content fields, dataset URL, and incident description; parameterised queries only; ZAP and Semgrep verified.
+EC-SEC-06: SSRF attempted via county dataset URL field; allowlist enforced; private IP ranges blocked; rebinding guard active.
+EC-SEC-08: SAML response containing XXE payload rejected; DTD disabled in SAML parser; billion-laughs fuzz verified.
+EC-SEC-16: sensitive county demographic data fields (population counts, facility GPS coordinates) absent from traces and application logs; log-scanner fixture enforced in CI.
+EC-CON-05: flapping county SAML IdP triggers exponential backoff with jitter; fail closed after retry budget exhausted; no token leaked.
+EC-CON-08: DNS poisoned for county SAML IdP endpoint; DNSSEC validation fails; hardcoded fallback endpoint used; circuit opens.
+EC-CON-11: Kafka ISR shrinks during incident event publication; producer blocks; incident outbox accumulates; no event loss; drains on ISR recovery.
+EC-SCL-04: Kafka consumer lag on eel.governance.coordination.v1 exceeds 60 s; Alertmanager fires iems-56-alerts; backpressure applied; no OOM.
+EC-SCL-03: hot partition on coordination topic when all 47 counties submit datasets simultaneously; stream-id spread across partitions; lag alert fires; HPA scales consumers.
+EC-TIM-06: incident event timestamp earlier than causal event accepted; audit skew anomaly logged; stream ordering unaffected.
+EC-LEG-03: s.44A invoked; incident coordination log records the manual-ID override event with dual-officer sign-off and routes alert to ECC.
+EC-HUM-08: county portal and upload wizard render correctly in all 11 languages with no truncation; pseudo-localisation at 150% tested.
+EC-HUM-09: county portal incident map uses symbol and pattern alongside colour for severity; ΔE contrast registry check passes.
+EC-OPS-07: county SAML coordinator credential reassigned due to staff no-show; old credential revoked; new credential issued with exactly-once guarantee.
+EC-SCL-08: Valkey eviction loses idempotency cache for dataset upload; PostgreSQL-durable store used as authoritative source; Valkey is cache only.
 
 ## Test plan
 

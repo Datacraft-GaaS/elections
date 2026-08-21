@@ -13,15 +13,15 @@ Date: 2026-08-21
 
 - **GitOps** via ArgoCD (ADR-0004). Every environment is one directory of manifests.
 - **Environments** (four):
-  - `dev` — per-team ephemeral namespaces, no PII, synthetic voter register (ADR-0016).
-  - `staging` — full production topology in shape (2 sites + 5 edges), reduced capacity, synthetic data.
-  - `pre-prod` — full production topology at full capacity, synthetic data, load-test target, chaos-engineering target.
-  - `prod` — the two IEBC DR sites + five regional edges (ADR-0019).
+  - `dev`, per-team ephemeral namespaces, no PII, synthetic voter register (ADR-0016).
+  - `staging`, full production topology in shape (2 sites + 5 edges), reduced capacity, synthetic data.
+  - `pre-prod`, full production topology at full capacity, synthetic data, load-test target, chaos-engineering target.
+  - `prod`, the two IEBC DR sites + five regional edges (ADR-0019).
 - **Release train**:
   - Nightly deploy to `dev`.
   - Weekly deploy to `staging` on Wednesdays; must pass full CI + Pact contract tests + Semgrep/Bandit + Trivy/Grype.
   - Bi-weekly deploy to `pre-prod` on green-only. Full load test (5x peak, ADR-0018) runs against pre-prod every deploy from month 2 onwards.
-  - Manual deploy to `prod` — quorum approval (2 humans + ops on-call), tabletop-reviewed release notes.
+  - Manual deploy to `prod`, quorum approval (2 humans + ops on-call), tabletop-reviewed release notes.
 - **Deployment strategy**: **Blue-green** for stateful services (rts-svc, bvr-svc, bvi-svc, abis-svc, transparency-svc, ecc-svc). **Rolling** for stateless services. **Canary (10% → 50% → 100%)** for public-portal services (portal-svc, vprs-svc) during non-freeze windows.
 - **Hot rollback**: 15 minutes maximum from decision to rollback complete for any service. Achieved by keeping blue+green both warm and DB migrations rollback-tested (ADR-0014).
 

@@ -5,7 +5,7 @@ Date: 2026-08-21
 
 ## Context
 
-`sw/ARCHITECTURE.md` §3.3 (v3 stitching pass) mandates five regional edge Kubernetes clusters to reduce kit round-trip latency to 30-60ms across Kenya's geography. The RFP itself mandates only two IEBC-provided DR sites (primary + mirror), so edge topology is Datacraft-optimised, not RFP-binding — but it directly supports the RFP's 60,000-concurrent-RTS SLA and legacy-Android device latency budget (see ADR-0018).
+`sw/ARCHITECTURE.md` §3.3 (v3 stitching pass) mandates five regional edge Kubernetes clusters to reduce kit round-trip latency to 30-60ms across Kenya's geography. The RFP itself mandates only two IEBC-provided DR sites (primary + mirror), so edge topology is Datacraft-optimised, not RFP-binding, but it directly supports the RFP's 60,000-concurrent-RTS SLA and legacy-Android device latency budget (see ADR-0018).
 
 ## Decision
 
@@ -26,8 +26,8 @@ Date: 2026-08-21
 - Coraza WAF + Anubis PoW + rate limiting (ADR-0010)
 - Local caching (Varnish + nginx)
 - LiveView presence sharding for M11/M19 real-time surfaces
-- **No stateful T1 workloads** — writes route to the nearest of the two IEBC DR sites (primary or mirror per ADR-0012)
-- **No secrets storage** — edge pulls short-lived credentials from OpenBao on the DR side via mesh mTLS
+- **No stateful T1 workloads**, writes route to the nearest of the two IEBC DR sites (primary or mirror per ADR-0012)
+- **No secrets storage**, edge pulls short-lived credentials from OpenBao on the DR side via mesh mTLS
 
 **Edge cluster shape:**
 

@@ -85,63 +85,104 @@ OpenAPI file: `packages/openapi-contracts/field/observer.yaml`
 
 ## Feature checklist
 
-1. FR-M34-001: enrolment via IEBC accreditation ID + biometric + device attestation
-2. FR-M34-002: MFA sign-in with FIDO2 or platform authenticator
-3. FR-M34-003: accreditation category determines feature availability; only categories with countersign rights get countersignature feature
-4. FR-M34-004: full read of Public Portal (M11) data: national, county, constituency, station results with signed Form 34A images
-5. FR-M34-005: Merkle-inclusion-proof retrieval and client-side verification via Rust FFI verifier
-6. FR-M34-006: independent verification of published snapshots against transparency-log roots
-7. FR-M34-007: bookmark stations of interest for follow-along notifications
-8. FR-M34-008: bulk download of signed forms per constituency (rate-limited)
-9. FR-M34-009: GPS check-in at each polling station visited
-10. FR-M34-010: time-boxed observation session; sign off when leaving
-11. FR-M34-011: signed observation record submitted to IEBC observer registry
-12. FR-M34-012: structured incident form with 7 categories: PROCEDURAL, SECURITY, LEGAL, OPERATIONAL, TAMPERING, TRANSPARENCY, OTHER; description; evidence upload; GPS
-13. FR-M34-013: reports encrypted locally; signed; queued; submitted to IEBC observer coordination, war-room, and Auditor-General mirror
-14. FR-M34-014: anonymised aggregated observer-report dashboard on Public Portal per IEBC policy
-15. FR-M34-015: observer chief can signal a systemic incident requiring immediate IEBC response
-16. FR-M34-016: guided verification sampling workflow; n stations per constituency chosen randomly per statistical protocol
-17. FR-M34-017: for each sampled station, structured checklist: form-hash matches transmitted, agent countersignatures present, geo-fence intact, seals intact
-18. FR-M34-018: observer countersignature attached to verification record (where accreditation permits)
-19. FR-M34-019: end-of-mission report auto-compiled: stations visited, verifications completed, incidents reported
-20. FR-M34-020: end-of-mission report exported to PDF for observer's own mission report handoff
-21. FR-M34-021: feeds Auditor-General post-election audit via M21 observation feed
-22. FR-M34-022: Public Portal snapshots cached; verifiable offline
-23. FR-M34-023: station visit and incident reports queued; submitted on reconnect
-24. FR-M34-024: chief-observer signal delivered via SMS/USSD fallback if network unavailable
-25. Verification cycle per station <= 60 s; battery cost <= 5% per hour; mTLS + certificate pinning; biometric unlock required; screen-capture protection on incident screens; AES-256-GCM local store; multilingual EN + SW + French + Portuguese
-26. Verification hash mismatch: automatic incident report generated; mark "Unverifiable" not "Verified"
+1. FR-M34-001: observer enrolment via IEBC accreditation ID + biometric template capture + Play Integrity or App Attest device attestation; attestation failure blocks enrolment; accreditation category recorded and immutable after issue
+2. FR-M34-002: MFA sign-in with FIDO2 or platform biometric authenticator + device attestation; fallback to PIN rate-limited at 5 attempts then 30-minute lockout; no SMS OTP for accredited observers
+3. FR-M34-003: accreditation category (CIVIL_SOCIETY, INTERNATIONAL, ACADEMIC, MEDIA) determines feature availability at runtime via SpiceDB; only categories with countersign_rights flag receive countersignature UI
+4. FR-M34-004: full read of Public Portal (M11) data: national, county, constituency, and station-level results with signed Form 34A images; data fetched from M10 RTS back-end with CDN fallback
+5. FR-M34-005: Merkle-inclusion-proof retrieval per station from M10 RTS; client-side verification via shared Rust FFI libeel-verifier crate; verification result displayed within 60 s on LTE
+6. FR-M34-006: independent verification of published snapshots against transparency-log (P05) roots; root hash pinned in app bundle at release; mismatch triggers automatic incident report
+7. FR-M34-007: bookmark polling stations of interest; bookmarked stations surface in a watch list with push notification when Form 34A published or results updated
+8. FR-M34-008: bulk download of signed forms per constituency (rate-limited per accreditation category per hour); download includes Form 34A images and Merkle proofs; progress shown
+9. FR-M34-009: GPS check-in on arrival at polling station; distance validated against station polygon; check-in timestamp signed with observer biometric; record submitted to IEBC observer registry
+10. FR-M34-010: time-boxed observation session per station; observer signs off with biometric when leaving; session duration and notes recorded; sign-off triggers submission of observation record
+11. FR-M34-011: signed observation record (visit log) submitted to IEBC observer registry with UUID7 idempotency key; queued if offline; submitted on reconnect
+12. FR-M34-012: structured incident form with 7 categories: PROCEDURAL, SECURITY, LEGAL, OPERATIONAL, TAMPERING, TRANSPARENCY, OTHER; free-text description; photo and short-video evidence upload; GPS coordinates captured at submission
+13. FR-M34-013: incident reports AES-256-GCM encrypted locally in Isar + SQLCipher; signed by observer biometric; queued with UUID7 idempotency key; submitted to IEBC observer coordination, war-room topic, and Auditor-General mirror on reconnect
+14. FR-M34-014: anonymised aggregated observer-report dashboard visible on Public Portal per IEBC policy; individual reports not linked back to observer identity in public view
+15. FR-M34-015: observer chief (OBSERVER_CHIEF role) can signal a systemic incident requiring immediate IEBC response; signal delivered via eel.field.systemic_incident_flagged.v1 exactly-once; SMS/USSD fallback if no network
+16. FR-M34-016: guided verification sampling workflow: n stations per constituency selected randomly using cryptographic seed per statistical protocol; protocol version recorded in each verification record
+17. FR-M34-017: structured verification checklist per sampled station: form-hash matches transmitted value, party-agent countersignatures present, geo-fence polygon intact, physical seals intact; each item Boolean with notes field
+18. FR-M34-018: observer countersignature attached to verification record where accreditation category permits; countersignature anchored to P05 Merkle chain; SpiceDB check enforced at API level
+19. FR-M34-019: end-of-mission report auto-compiled from local records: stations visited count, verifications completed, incidents reported by category, duration of field deployment
+20. FR-M34-020: end-of-mission report exported to PDF via server-side render; PDF available for download by observer for their own mission-report handoff; PDF hash stored in verification record
+21. FR-M34-021: observer verification records feed Auditor-General post-election audit via M21 RLA observation stream; records delivered with signed provenance metadata
+22. FR-M34-022: Public Portal snapshots and signed Form 34A images cached in Isar; Merkle-proof verification executable offline against cached root; stale-since timestamp displayed
+23. FR-M34-023: station visit logs and incident reports queued in Isar + SQLCipher; submitted on reconnect with UUID7 idempotency keys; no duplicate events on retry
+24. FR-M34-024: systemic-incident signal delivered via I08 SMS/USSD fallback (short-code reserved pre-election) if network unavailable; fallback confirmed by IVR ack
+25. FR-M34-025: verification cycle per station completes in <= 60 s end-to-end on LTE; battery cost <= 5% per hour foreground; mTLS certificate pinning enforced; biometric unlock required before each submission
+26. FR-M34-026: verification hash mismatch detected by Rust FFI verifier; automatic incident report generated with category TAMPERING; station marked "Unverifiable" in app; status never silently cleared without a new successful verification
+27. FR-M34-027: screen-capture protection (FLAG_SECURE on Android) active on incident submission screens; SQLCipher AES-256-GCM on all local Isar stores; keys in hardware-backed keystore
+28. FR-M34-028: multilingual UI: EN + SW at launch; international language pack (French, Portuguese) loadable on demand via signed MDM or download; language switch persists across sessions
+29. FR-M34-029: WCAG 2.2 AA on every screen; TalkBack and VoiceOver traversal completes primary verification and incident flows; minimum touch target 48 dp; font scales to 200%
+30. FR-M34-030: offline integrity: Isar WAL journaled before every state mutation; OS-kill at any transition resumable without data loss or duplicate submission; background-kill harness exercises all FSM states
+31. FR-M34-031: app build reproducible byte-for-byte across three CI runs; SBOM (SPDX) generated and cosign-verified; MDM private distribution tested on both Android and iOS
+32. FR-M34-032: AG mirror integration: observer records mirrored to Auditor-General escrow endpoint with signed provenance within 24 h of submission; delivery confirmed by integrations/ag-mirror/ adapter
 
 ## Acceptance criteria
 
-1. AC-M34-01: end-to-end verification of a polling station; UAT
-2. AC-M34-02: incident submission with signed attachments; UAT
-3. AC-M34-03: end-of-mission PDF generated; bench test
-4. AC-M34-04: Auditor-General mirror receives observer records; audit trace
-5. AC-M34-05: multilingual language pack loads for international observers; bench test
+1. AC-M34-01: end-to-end verification of a polling station completed: GPS check-in, checklist filled, Merkle proof verified client-side, countersignature attached (where permitted), session signed off; UAT with accredited observer on real device
+2. AC-M34-02: incident report with photo evidence signed, queued offline, transmitted on reconnect, confirmed received without duplicate; re-send of identical request returns cached 201; UAT sign-off
+3. AC-M34-03: end-of-mission PDF generated server-side from local records; PDF hash stored in verification record; PDF downloadable by observer; verified in integration test with M21 stub
+4. AC-M34-04: Auditor-General mirror receives observer records signed with provenance metadata within 24 h; delivery confirmed by audit-trace query in integrations/ag-mirror/; integration test with AG mirror stub
+5. AC-M34-05: French and Portuguese language packs load correctly in EN UI; all user-facing strings translated; date/time formatting uses Kenyan locale; native-speaker sign-off on both packs
+6. AC-M34-06: verification hash mismatch on a tampered Form 34A triggers automatic TAMPERING incident report, marks station "Unverifiable", and never silently passes; proptest confirms property over all tampered inputs
+7. AC-M34-07: countersignature denied at SpiceDB level to accreditation categories without countersign_rights; attempt returns 403 and is logged; integration test with each category
+8. AC-M34-08: MFA sign-in succeeds on Android 10+ and iOS 15+ real devices; attestation failure on rooted emulator blocks sign-in within 2 s and emits tamper event
+9. AC-M34-09: mTLS pinning refuses rogue CA cert; zero auth-header bytes in captive-portal intercept test
+10. AC-M34-10: Public Portal snapshots verifiable offline; Merkle proof verified against cached root returns correct result in <= 60 s on mid-tier Android without network; airplane-mode integration test
+11. AC-M34-11: 500 observers bulk downloading constituency forms simultaneously; rate-limit applied per accreditation category; CDN cache absorbs origin load; k6 simulation confirms p99 <= 2 s
+12. AC-M34-12: WCAG 2.2 AA independent audit returns zero Priority 1 findings; TalkBack traversal of verification and incident flows completes; axe-core scan clean on every screen
+13. AC-M34-13: no PII (observer ID combined with GPS coordinates, biometric hash) in logs, crash reports, or OTel traces; log-scanner CI fixture passes
+14. AC-M34-14: JWT expiry mid-session triggers silent refresh; in-flight request completes; no re-authentication prompt; Keycloak 5-second TTL test
+15. AC-M34-15: systemic-incident signal delivered via SMS/USSD fallback when network unavailable; short-code confirmed operational in field trial; IVR ack received within 2 min
 
 ## Applicable edge cases
 
+**mobile**
+- EC-MOB-01: OS kills app mid-sync; Isar WAL intact; queue resumes on next launch without duplicate submission; background-kill harness exercises every verification FSM state
+- EC-MOB-02: storage full on observer device; app refuses new evidence uploads with graceful error; incident text queued; bounded queue via Isar compaction; verified on filled-disk device
+- EC-MOB-03: 1 GB RAM KES-10k device; app heap <= 15 MB; Merkle proof FFI call p99 <= 2 s on 3G; no OOM; verified in device-farm memory gate
+- EC-MOB-04: Android Doze or iOS background limits suspend sync; cached snapshots remain verifiable offline; queue drains on foreground; no data loss
+- EC-MOB-05: push token rotated or FCM unavailable; observer re-registers token silently on next foreground; bookmark notifications fall back to in-app polling
+- EC-MOB-06: app version below MDM floor; update forced within 48 h; local Isar queue survives update; N-1 to N schema migration verified
+- EC-MOB-07: GPS mock-location enabled at station check-in; check-in flagged spoof-suspect; cell/Wi-Fi delta applied; DPO notified; not silently accepted
+- EC-MOB-08: device clock wrong; server-authoritative timestamp used for all visit logs and audit events; local clock shown as informational only
+- EC-MOB-09: biometric sensor broken; PIN fallback rate-limited to 5 attempts then lockout; no policy downgrade; patrol test with sensor-disabled device
+
 **connectivity**
-- EC-CON-01: observer offline in remote area; Public Portal snapshots and cached form data verifiable offline; incident queued
-- EC-CON-03: 2G connectivity; chief-observer systemic signal falls back to SMS/USSD
+- EC-CON-01: observer offline in remote area >= 48 h; Public Portal snapshots and Form 34A images verifiable offline against cached root; incident and visit logs queued; gap-audit on reconnect
+- EC-CON-02: 3G 500 kbps / 300 ms RTT; verification cycle completes in <= 60 s; CBOR+zstd negotiated; k6 behind toxiproxy confirms SLA
+- EC-CON-03: 2G only; systemic-incident signal falls back to SMS/USSD short-code; app shows "limited connectivity" banner; offline verification remains functional
+- EC-CON-05: flapping link during incident submission; backoff + jitter retry; UUID7 idempotency key prevents duplicate; toxiproxy toggle test confirms single event
+- EC-CON-06: captive portal intercepts TLS; pinning fails closed; "network blocked" UX shown; no auth tokens emitted; mitmproxy captive-mode test
+- EC-CON-08: DNS poisoned; hardcoded fallback endpoints used; circuit opens after 3 failures; observer notified
+
+**identity**
+- EC-IDN-02: JWT expires mid-request; in-flight request completes; silent refresh on next call; no re-authentication prompt; Keycloak 5-second TTL test
+- EC-IDN-04: device attestation fails (custom ROM); hard-fail blocks sign-in; support code shown; no partial access granted
+- EC-IDN-05: rooted or Frida-attached device; RASP terminates session; SQLCipher keys wiped from memory; tamper event emitted within 2 s; rooted AVD test
+- EC-IDN-06: cloned APK with resigned cert; TLS pin mismatch; back-end rejects SVID digest; event emitted to M28
+- EC-IDN-07: no SMS OTP for accredited observers; FIDO2 device-bound credential required; new device denied without MDM re-enrolment
+- EC-IDN-10: SpiceDB unavailable; countersign and write operations fail closed with 503; read-only result view continues from cache; PodChaos test
+- EC-IDN-11: Keycloak realm key rotated; JWKS refetched on kid miss; next request succeeds without user action
+
+**data**
+- EC-DAT-01: duplicate visit-log submission with same UUID7 key and body; back-end returns cached 201; no duplicate in eel.field.observer.v1 topic
+- EC-DAT-02: same UUID7 key with different body; back-end returns 422 idempotency-key-reuse; app surfaces conflict error to observer
+- EC-DAT-09: station names with Unicode characters; NFC normalisation before storage; ICU collation in display; no truncation; hypothesis unicode corpus
 
 **security**
-- EC-SEC-08: verification hash mismatch detected; automatic incident report; "Unverifiable" shown; never silently passed
-
-**legal**
-- EC-LEG-04: accreditation category check; countersign right denied to categories without it; hard check in SpiceDB
-
-**mobile**
-- EC-MOB-02: mid-tier Android 10; battery <= 5% per hour; verification <= 60 s
-- EC-MOB-06: mTLS + certificate pinning; attestation hard-fail
-
-**human**
-- EC-HUM-06: WCAG 2.2 AA; accessible incident form
-- EC-HUM-08: EN + SW + French + Portuguese; language-pack download before offline operation
+- EC-SEC-05: all free-text incident inputs validated server-side with parameterised queries; no injection path; Semgrep and ZAP scans clean
+- EC-SEC-11: biometric hash comparison uses constant-time compare; no timing oracle on countersignature path; dudect-style CI test
+- EC-SEC-16: no PII (observer ID + GPS, biometric hash) in logs, crash reports, or OTel traces; log-scanner CI fixture passes
 
 **scale**
-- EC-SCL-02: 500 observers bulk downloading constituency forms simultaneously; rate-limited; CDN cache absorbs
+- EC-SCL-02: 500 observers concurrently bulk-downloading constituency forms; rate-limit per category applied; CDN cache absorbs origin load; STH SDK jitter applied; k6 simulation confirms p99 <= 2 s
+- EC-SCL-04: consumer lag on eel.field.observer.v1 topic exceeds 60 s; back-end pages on-call; backpressure applied; app queue bounded; no data loss
+
+**human**
+- EC-HUM-06: WCAG 2.2 AA on every screen; TalkBack traversal of verification checklist and incident form completes; axe-core and manual walk both pass
+- EC-HUM-08: EN + SW at launch; French + Portuguese language packs downloadable; ICU plurals; font fallback; all strings tested in 150% pseudo-locale
 
 ## Test plan
 

@@ -1,4 +1,4 @@
-# SA-005: Authorization engine — SpiceDB (ReBAC/Zanzibar) vs Cedar
+# SA-005: Authorization engine: SpiceDB (ReBAC/Zanzibar) vs Cedar
 
 Date: 2026-08-21
 Applies to: Datacraft bid documents under work_docs/01-Projects/IEBC/sw/ (our own earlier draft)
@@ -10,7 +10,7 @@ Status: decided (ADR takes precedence; sw/ docs to be edited)
 
 ## Decision (per ADRs)
 
-**SpiceDB** (Authzed, Apache 2.0) for domain-resource authorization. Retain **OPA + Kyverno** for admission and cluster policy (no conflict — different concerns).
+**SpiceDB** (Authzed, Apache 2.0) for domain-resource authorization. Retain **OPA + Kyverno** for admission and cluster policy (no conflict, different concerns).
 
 ## RFP status
 
@@ -22,7 +22,7 @@ Status: decided (ADR takes precedence; sw/ docs to be edited)
    - "An observer with active accreditation A can read constituency results for C only if C is in A's accreditation set AND the current time is past close-of-poll for C."
    - "A party agent for party P can attest to Form 34A for polling station S only if P has a candidate on the ballot at S AND agent A is the currently-delegated agent for S."
    - "A media accreditee can access the results firehose only if their accreditation status is active AND their credential has not been revoked in the last 60 seconds."
-   These are all **relationship traversals over live state** — Zanzibar's home turf.
+   These are all **relationship traversals over live state**, Zanzibar's home turf.
 2. **SpiceDB's zookies (consistency tokens)** enforce read-after-write consistency across the authz decision graph. Under adversarial pressure this matters: a permission revocation must be visible to every service within a bounded time, and a request whose authz was decided against stale state must fail-close.
 3. **Cedar can express relational permissions**, but does so verbosely and requires the calling service to hand it the full context. SpiceDB stores the relationships once, so any service asking `CheckPermission(user, action, resource)` gets the same answer without re-shipping context.
 4. **Operational history**. SpiceDB has 3+ years of production deployment at scale (Authzed, Netflix, Turo, Datadog). Cedar is younger in the deployed-at-scale category.

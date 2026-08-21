@@ -25,7 +25,7 @@ At 69+ services with 15-year retention and a 30-day pre-election software freeze
 
 Positive: zero-downtime schema changes are routine; rollbacks are tested, not aspirational; freeze window compliance is automated. Schema drift between environments detected in CI, not discovered at deploy.
 
-Negative: expand-migrate-contract requires patience — a rename ships across three or four releases. Cultural discipline required; enforced by lint gates so shortcuts fail the build.
+Negative: expand-migrate-contract requires patience, a rename ships across three or four releases. Cultural discipline required; enforced by lint gates so shortcuts fail the build.
 
 ## Alternatives rejected
 

@@ -45,11 +45,11 @@ OpenAPI file: `packages/openapi-contracts/support/intent-preservation.yaml`
 | POST /v1/intent/pre-mark-events | internal gRPC | SVID mTLS | yes | submit pre-mark validation aggregate from kit |
 | POST /v1/intent/spoilt-events | internal gRPC | SVID mTLS | yes | submit spoilt ballot event from kit |
 | POST /v1/intent/adjudication | internal gRPC | SVID mTLS | yes | submit adjudication event from kit |
-| GET /v1/intent/adjudication/{id} | 2 | JWT+SpiceDB (IEBC_OFFICER) | n/a | fetch adjudication detail |
+| GET /v1/intent/adjudication/{id} | 2 | JWT+SpiceDB (COMMISSION_OFFICER) | n/a | fetch adjudication detail |
 | GET /v1/intent/adjudication/{id}/photo | 2 | JWT+SpiceDB (IAB_AUDITOR) | n/a | access ballot photo (access-logged, AES-256) |
-| GET /v1/intent/rejection-rates | 2 | JWT+SpiceDB (IEBC_OFFICER) | n/a | rejection rates per station and constituency |
-| GET /v1/intent/rejection-alerts | 2 | JWT+SpiceDB (IEBC_RO) | n/a | statistical outlier alerts |
-| PATCH /v1/intent/rejection-alerts/{id} | 2 | JWT+SpiceDB (IEBC_RO) | yes | record review outcome |
+| GET /v1/intent/rejection-rates | 2 | JWT+SpiceDB (COMMISSION_OFFICER) | n/a | rejection rates per station and constituency |
+| GET /v1/intent/rejection-alerts | 2 | JWT+SpiceDB (COMMISSION_RO) | n/a | statistical outlier alerts |
+| PATCH /v1/intent/rejection-alerts/{id} | 2 | JWT+SpiceDB (COMMISSION_RO) | yes | record review outcome |
 | GET /v1/intent/report | 1 | public | n/a | post-election rejection analysis report |
 | GET /v1/intent/model-card | 1 | public | n/a | pre-mark vision model card |
 
@@ -90,82 +90,115 @@ OpenAPI file: `packages/openapi-contracts/support/intent-preservation.yaml`
 1. FR-M27-001: ballot design for all 6 simultaneous contests; tested with >= 200 real Kenyan voters across literacy strata and regions before finalisation
 2. FR-M27-002: candidate photograph + party symbol; marking box >= 15 mm per side; colour per contest (presidential yellow, gubernatorial blue, senate green, MP red, women-rep purple, MCA orange)
 3. FR-M27-003: per-ballot instructions at Grade 5 reading level in EN + SW; pictogram "make one mark inside the box"
-4. FR-M27-004: ballot design published at T-30 for party-agent and public review; change after T-30 requires IEBC Chair approval + IAB notification
+4. FR-M27-004: ballot design published at T-30 for party-agent and public review; change after T-30 requires chair approval + IAB notification
 5. FR-M27-005: ballot design artefacts (PDF + test-results summary) in T-14 evidentiary bundle
-6. FR-M27-006: opt-in pre-mark check prompt displayed after voter marks ballot, before depositing; voter can decline with one tap; 10-second auto-dismiss defaults to Skip; no default to participation
-7. FR-M27-007: on-device vision model; ballot held face-down to camera; inference in <= 3 s; returns VALID/UNMARKED/MULTIPLE_MARKS/AMBIGUOUS_MARK/WRONG_BALLOT
-8. FR-M27-008: result displayed in plain language; replacement offered if issue detected per Elections Act s.54
-9. FR-M27-009: MANDATORY: ballot image processed on-device; deleted within 1 second of inference; OS secure-erase call; no image, feature vector, or artefact transmitted or stored
-10. FR-M27-010: kit logs opted_in (bool), result_code, voter_proceeded per event; no voter_id; station-aggregate only
-11. FR-M27-011: opt-in rate published as anonymised station-level aggregate in post-election report
-12. FR-M27-012: Presiding Officer can disable pre-mark validation for a session; requires reason code + party-agent witness; disable event feeds M26 Layer 1 telemetry; ECC analyst reviews any station with > 5% disable rate
-13. FR-M27-013: Elections Act s.54 spoilt-ballot replacement; up to 3 times per voter per contest
-14. FR-M27-014: kit tracks spoilt events per voter per contest; session-only; third spoil locks further replacement and logs event
-15. FR-M27-015: spoilt ballot retained by Presiding Officer in RFID-tagged sealed envelope; count recorded on Form 34A
-16. FR-M27-016: spoilt ballots retained for 30-day petition window; available for IAB sample audit
-17. FR-M27-017: any ballot Presiding Officer cannot clearly accept or reject enters adjudication flow
-18. FR-M27-018: Presiding Officer + >= 2 party agents view ballot together; each party agent states position; Presiding Officer determines with reason code
-19. FR-M27-019: reason-code catalogue: A1 UNMARKED_BALLOT, A2 OVER_MARK, A3 AMBIGUOUS_MARK, A4 TORN_DEFACED, A5 VOTER_IDENTIFIABLE, A6 NON_STANDARD_MARK, A7 WRONG_CONTEST_BALLOT, A8 UNAUTHENTICATED_BALLOT, V1 VALID_STANDARD_MARK, V2 VALID_CROSS_ACCEPTED, V3 VALID_AMBIGUOUS_ACCEPTED; new category requires IEBC Chair sign-off
-20. FR-M27-020: kit records adjudication event: reason code, PO decision, party-agent signatures, timestamp; ballot photographed with kit camera; photo encrypted AES-256; synced centrally; included in Form 34A attachments
-21. FR-M27-021: party-agent dissent recorded with agent name and reason; dissent log included in Form 34A
-22. FR-M27-022: voter education: interactive tutorial in Public Verifier app (Learn tab); IVR audio guide in EN + SW + 5 additional languages; sample ballot at every polling station entrance; 15-episode radio drama series
-23. FR-M27-023: practice ballot: voter completes marking exercise in Public Verifier app; anonymous; discarded; shows real ballot design
-24. FR-M27-024: barrier-specific messaging: elderly voters (simplified audio), first-time voters (step-by-step illustrated), North Eastern and Coast regions (language-specific)
-25. FR-M27-025: Presiding Officer standardised adjudication training: 100+ example ballots with official reasoning; interactive quiz; 30-day pre-election online refresher; in-person training; laminated reference card
-26. FR-M27-026: training completion tracked in CRMS (M12); deployment blocked without completing online module and in-person session
-27. FR-M27-027: per-station reconciliation after close: rejected + spoilt + valid + assisted = ballots issued; arithmetic mismatch triggers Form 34A hold pending PO explanation
-28. FR-M27-028: outlier flagging: any station rejection rate > 3 sigma above constituency mean auto-flagged for IEBC Returning Officer review; flag published in post-election report
-29. FR-M27-029: IAB adjudication-accuracy audit: >= 5% sample of adjudicated-ballot photographs; IAB auditor vs Presiding Officer comparison; disagreement rate published; target > 99% agreement
-30. FR-M27-030: post-election rejection analysis report: per-contest, per-county, per-reason-code; comparison to 2013/2017/2022 baselines; published within T+30
-31. Adjudicated-ballot photos: accessible only to IEBC Returning Officer and IAB auditor; all access logged with officer identity and reason; deletion 7 years post-election
-32. Large-print ballot version available at station on request
-33. Opt-in prompt and result display in 12 Kenyan languages; audio plays automatically; presiding officer training includes anti-coercion instruction
-34. Third spoilt-ballot lock: kit locks further replacement; Presiding Officer guidance to voter; log included in Form 34A
+6. FR-M27-006: large-print ballot version available at every polling station on request; Presiding Officer records provision on Form 34A
+7. FR-M27-007: ballot design accessibility reviewed with voters with low vision and low literacy at T-60; results included in T-14 evidentiary bundle
+8. FR-M27-008: opt-in pre-mark check prompt displayed after voter marks ballot, before depositing; voter can decline with one tap; 10-second auto-dismiss defaults to Skip; no default to participation
+9. FR-M27-009: opt-in prompt and result display localised in 12 Kenyan languages (EN, SW, Turkana, Somali, Dholuo, Gikuyu, Kamba, Luhya, Kalenjin, Meru, Borana, Taita); audio plays automatically without voter navigating a menu
+10. FR-M27-010: on-device vision model (INT8 quantised, <= 10 MB, no internet call during inference); ballot held face-down to camera; inference <= 3 s; returns VALID/UNMARKED/MULTIPLE_MARKS/AMBIGUOUS_MARK/WRONG_BALLOT
+11. FR-M27-011: result displayed in plain language in active session language; replacement offered if issue detected per Elections Act s.54
+12. FR-M27-012: MANDATORY: ballot image processed on-device; deleted within 1 second of inference via OS secure-erase API; no image, feature vector, or artefact transmitted or stored
+13. FR-M27-013: kit logs opted_in (bool), result_code, voter_proceeded per event; no voter_id; station-aggregate only
+14. FR-M27-014: opt-in rate published as anonymised station-level aggregate in post-election report
+15. FR-M27-015: Presiding Officer can disable pre-mark validation for a session; requires reason code + party-agent witness; disable event feeds M26 Layer 1 telemetry; ECC analyst reviews any station with > 5% disable rate
+16. FR-M27-016: pre-mark validation disabled gracefully if camera hardware faults; kit records hardware_fault disable reason; event flows to M26 as telemetry alert
+17. FR-M27-017: pre-mark vision model registered in M28 model registry with published model card before T-90; eval harness results included; model card public-accessible via /v1/intent/model-card
+18. FR-M27-018: Elections Act s.54 spoilt-ballot replacement; up to 3 times per voter per contest
+19. FR-M27-019: kit tracks spoilt events per voter per contest; session-only; third spoil locks further replacement and logs event
+20. FR-M27-020: third spoilt-ballot lock: kit locks further replacement; Presiding Officer guidance to voter; lock event included in Form 34A
+21. FR-M27-021: spoilt ballot retained by Presiding Officer in RFID-tagged sealed envelope; count recorded on Form 34A
+22. FR-M27-022: spoilt ballots retained for 30-day petition window; available for IAB sample audit
+23. FR-M27-023: any ballot Presiding Officer cannot clearly accept or reject enters adjudication flow
+24. FR-M27-024: Presiding Officer + >= 2 party agents view ballot together; each party agent states position; Presiding Officer determines with reason code
+25. FR-M27-025: reason-code catalogue: A1 UNMARKED_BALLOT, A2 OVER_MARK, A3 AMBIGUOUS_MARK, A4 TORN_DEFACED, A5 VOTER_IDENTIFIABLE, A6 NON_STANDARD_MARK, A7 WRONG_CONTEST_BALLOT, A8 UNAUTHENTICATED_BALLOT, V1 VALID_STANDARD_MARK, V2 VALID_CROSS_ACCEPTED, V3 VALID_AMBIGUOUS_ACCEPTED; new category requires chair sign-off
+26. FR-M27-026: kit records adjudication event: reason code, PO decision, party-agent signatures, timestamp; ballot photographed with kit camera; photo encrypted AES-256; synced centrally; included in Form 34A attachments
+27. FR-M27-027: adjudication event signed by kit HSM key before transmission; merkle_node_id assigned on central receipt; anchored in P05 transparency log
+28. FR-M27-028: party-agent dissent recorded with agent name and reason; dissent log included in Form 34A
+29. FR-M27-029: adjudicated-ballot photographs accessible only to Returning Officers and IAB auditors; all access logged with officer identity and reason; deletion 7 years post-election
+30. FR-M27-030: ballot photo access triggers access-log event; IAB has continuous read access to access log
+31. FR-M27-031: voter education: interactive tutorial in Public Verifier app (Learn tab); IVR audio guide in EN + SW + 5 additional languages; sample ballot at every polling station entrance; 15-episode radio drama series
+32. FR-M27-032: practice ballot: voter completes marking exercise in Public Verifier app; anonymous; discarded; shows real ballot design
+33. FR-M27-033: barrier-specific messaging: elderly voters (simplified audio), first-time voters (step-by-step illustrated), North Eastern and Coast regions (language-specific)
+34. FR-M27-034: public Learn tab visit target > 2M before election day; analytics reported in post-election report
+35. FR-M27-035: Presiding Officer standardised adjudication training: 100+ example ballots with official reasoning; interactive quiz; 30-day pre-election online refresher; in-person training; laminated reference card
+36. FR-M27-036: training completion tracked in CRMS (M12); deployment blocked without completing online module and in-person session
+37. FR-M27-037: per-station reconciliation after close: rejected + spoilt + valid + assisted = ballots issued; arithmetic mismatch triggers Form 34A hold pending PO explanation
+38. FR-M27-038: reconciliation result stored as eel.support.premark_aggregate.v1 event; signed and queued on kit; replayed on reconnect without duplication (idempotent)
+39. FR-M27-039: outlier flagging: any station rejection rate > 3 sigma above constituency mean auto-flagged for Returning Officer review; flag published in post-election report
+40. FR-M27-040: z-score computed per constituency per contest; RejectionRateAlert records station_rejection_rate, constituency_mean_rejection_rate, z_score
+41. FR-M27-041: IAB adjudication-accuracy audit: >= 5% sample of adjudicated-ballot photographs; IAB auditor vs PO comparison; disagreement rate published; target > 99% agreement
+42. FR-M27-042: post-election rejection analysis report: per-contest, per-county, per-reason-code; comparison to 2013/2017/2022 baselines; published within T+30
+43. FR-M27-043: rejection rate report on public portal as signed content bundle; interactive choropleth map; downloadable CSV
+44. FR-M27-044: all eel.support.intent.v1 events delivered at-least-once idempotent; duplicate submission same id+body returns cached response; no re-execution
+45. FR-M27-045: duplicate submission same key, different body returns 422 idempotency-key-reuse
+46. FR-M27-046: API rate limiting on all /v1/intent endpoints per rate table; 429 with Retry-After header on breach; no voter-enumeration surface
+47. FR-M27-047: secrets (HSM keys, JWT signing keys) excluded from all telemetry, traces, and logs; CI regex gate enforces no Tier A/B secret in log lines
+48. FR-M27-048: WCAG 2.2 AA on all voter-facing screens (opt-in prompt, result display) and officer-facing screens (adjudication workflow, rejection rate dashboard); axe-core audit in CI
+49. FR-M27-049: spoilt-ballot reconciliation completed within 60 minutes of station close; latency alert if exceeded
+50. FR-M27-050: consumer lag on eel.support.intent.v1 topic monitored; alert fires if lag > 60 s; backpressure applied; no OOM under sustained load
+51. FR-M27-051: SpiceDB enforces role boundaries for ballot photo access; write operations fail closed if SpiceDB unavailable; class-C reads served from cache
+52. FR-M27-052: JWT expiry mid-adjudication handled gracefully; in-flight event completes; subsequent 401 triggers silent refresh; no data loss
 
 ## Acceptance criteria
 
-1. AC-M27-01: rejected ballot rate < 1.0% per contest nationally; Form 34A aggregate
-2. AC-M27-02: pre-mark validation inference time <= 3 s on reference kit hardware; kit performance test
-3. AC-M27-03: ballot image deleted within 1 second of inference; 100% coverage; OS erase log audit
-4. AC-M27-04: 100% of adjudicated ballots have a reason code from the standardised catalogue; Form 34A audit by IAB
-5. AC-M27-05: IAB adjudication-accuracy audit agreement rate > 99%; IAB audit report
-6. AC-M27-06: rejection-rate outlier alert available to Returning Officers within 4 hours post Form 34C; report timestamp
-7. AC-M27-07: post-election rejection report published <= T+30; publication timestamp
-8. AC-M27-08: ballot image and feature vector absent from all network logs and server-side stores; privacy audit
-9. AC-M27-09: WCAG 2.2 AA audit pass on all voter-facing and officer-facing screens
-10. AC-M27-10: 100% Presiding Officers completed online adjudication module and in-person session before deployment; CRMS training log
+1. AC-M27-01: rejected ballot rate < 1.0% per contest nationally; measurement: Form 34A aggregate post-election; sign-off: chair
+2. AC-M27-02: pre-mark validation inference time <= 3 s on reference kit hardware; measurement: kit performance test on reference hardware under sustained load
+3. AC-M27-03: ballot image deleted within 1 second of inference; 100% coverage; measurement: OS erase log audit; 0 exceptions
+4. AC-M27-04: 100% of adjudicated ballots have a reason code from the standardised catalogue; measurement: Form 34A audit by IAB post-election
+5. AC-M27-05: IAB adjudication-accuracy audit agreement rate > 99%; measurement: IAB audit report on >= 5% sample of adjudicated-ballot photographs
+6. AC-M27-06: rejection-rate outlier alert available to Returning Officers within 4 hours post Form 34C publication; measurement: alert timestamp vs Form 34C publication timestamp
+7. AC-M27-07: post-election rejection report published <= T+30; measurement: publication timestamp
+8. AC-M27-08: ballot image and feature vector absent from all network logs and server-side stores; measurement: packet capture + storage audit; 0 occurrences
+9. AC-M27-09: WCAG 2.2 AA audit pass on all voter-facing and officer-facing screens; measurement: independent axe-core + manual audit report
+10. AC-M27-10: 100% Presiding Officers completed online adjudication module and in-person session before deployment; measurement: CRMS training log
+11. AC-M27-11: eel.support.intent.v1 events delivered without loss over 8-hour simulated offline session; measurement: netem offline integration test; gap audit shows 0 missing events
+12. AC-M27-12: duplicate pre-mark event submission same key+body returns cached response without re-execution; measurement: auto-generated idempotency test per write endpoint
 
 ## Applicable edge cases
 
-**identity**
-- EC-IDN-06: voter cannot present biometrics in normal way (amputee, burns); s.44A complementary mechanism; Presiding Officer records reason code on spoilt or assisted ballot
-- EC-IDN-08: voter under duress; covert alert from BVI; intent-preservation flow continues; officer observation
-
 **data**
-- EC-DAT-11: spoilt count > ballots issued in reconciliation; Form 34A hold triggered; PO explanation required
-- EC-DAT-16: adjudicated-ballot photo access outside authorised roles; DPA breach notification; access-log alert
+- EC-DAT-01: duplicate pre-mark event same key+body; cached response; no re-execution
+- EC-DAT-02: same pre-mark event key, different body; 422 idempotency-key-reuse
+- EC-DAT-11: spoilt count > ballots issued in reconciliation; Form 34A hold; PO explanation required
 
 **security**
-- EC-SEC-03: adjudicated-ballot photo attempted access without IAB or RO role; SpiceDB denies; access attempt logged
-- EC-SEC-10: pre-mark validation disable event without party-agent witness; kit blocks disable; requires dual confirmation
+- EC-SEC-01: adjudication event signature mismatch on ingest; rejected; tamper topic emitted; page <= 30 s
+- EC-SEC-03: HSM unavailable during ballot photo sync; photo queue held; ingest continues; degraded-mode alert
+- EC-SEC-05: injection on all /v1/intent inputs; parameterised queries only; Semgrep + ZAP + fuzz enforced
+- EC-SEC-10: rejection rate endpoint probed for voter enumeration; constant-time response shape; rate cap
+- EC-SEC-11: timing side-channel on ballot photo access check; constant-time compare
+- EC-SEC-16: secrets absent from all logs and traces; CI regex gate + log-scanner fixture
 
-**legal**
-- EC-LEG-01: Elections Act s.54 replacement limit reached (third spoilt); kit locks further replacement; voter guidance
-- EC-LEG-03: s.44A invoked for physically assisted voter; assistant identity and patient consent logged; no secrecy leak
-- EC-LEG-05: Layer 3 rejection-rate outlier used as petition evidence; methodology disclosure in report
+**identity**
+- EC-IDN-02: JWT expires mid-adjudication; in-flight completes; next 401 + silent refresh
+- EC-IDN-05: Frida hooking on kit during pre-mark inference; RASP terminates; tamper event emitted
+- EC-IDN-08: voter under duress; covert BVI alert; intent-preservation flow continues; officer observes
+- EC-IDN-10: SpiceDB down during ballot photo access request; fail closed; 503 problem+json; no photo served
 
-**human**
-- EC-HUM-01: worn fingerprints on presiding officer; kit uses face biometric for PO sign-off on adjudication; fallback PIN with party-agent witness
-- EC-HUM-02: amputee voter; face path; reason code V3 (valid ambiguous accepted) or A6 if mark type non-standard
-- EC-HUM-05: assisted voting; assistant identity logged; no ballot content exposed to log
-- EC-HUM-06: screen readers; AA compliance on all surfaces
-- EC-HUM-08: 12 languages for opt-in prompt; audio plays automatically without voter needing to navigate menu
-
-**operations**
-- EC-OPS-01: kit battery death mid-adjudication; journal-before-act; exact resume on restart; adjudication event not duplicated
+**scale**
+- EC-SCL-04: consumer lag on eel.support.intent.v1 > 60 s; page; backpressure; no OOM
 
 **ML**
-- EC-ML-01: pre-mark vision model misclassifies valid ballot as MULTIPLE_MARKS; voter retains right to override and deposit as-is; model result is advisory; no autonomous action
+- EC-ML-01: pre-mark model misclassifies valid ballot as MULTIPLE_MARKS; voter overrides; model result is advisory only
+- EC-ML-02: adversarial ballot image fed to on-device model; confidence gate; no crash; AMBIGUOUS_MARK returned
+
+**human**
+- EC-HUM-01: worn fingerprints on PO for adjudication sign-off; face biometric fallback; PIN with party-agent witness
+- EC-HUM-02: amputee voter; face path; reason code V3 or A6 on adjudicated ballot
+- EC-HUM-05: assisted voting; assistant identity logged; no ballot content exposed; reason code recorded
+- EC-HUM-06: screen readers on opt-in prompt and adjudication workflow; WCAG 2.2 AA compliance
+- EC-HUM-08: 12-language opt-in prompt; audio auto-plays without voter navigating a menu
+
+**legal**
+- EC-LEG-01: candidate withdraws after ballot printed; ballot design frozen; tallied + annotated; vacancy rules applied
+- EC-LEG-03: s.44A invoked for physically assisted voter; assistant identity and consent logged; no secrecy leak
+
+**operations**
+- EC-OPS-01: kit battery death mid-adjudication; journal-before-act; exact resume on restart; event not duplicated
+
+**time**
+- EC-TIM-07: s.14A station close extension; HSM-signed fence reopens; pre-mark validation continues in extended window
 
 ## Test plan
 
@@ -182,7 +215,7 @@ OpenAPI file: `packages/openapi-contracts/support/intent-preservation.yaml`
 | load | 55,393 stations submitting rejection-rate data simultaneously; outlier computation within 4 hours | k6 | M27-LOAD- |
 | offline | 8-hour offline session; adjudication events sync on reconnect with integrity preserved | netem | M27-OFFLN- |
 
-Tags: `#[trace("FR-M27-009","AC-M27-03","EC-ML-01")]`
+Tags: `#[trace("FR-M27-012","AC-M27-03","EC-ML-01")]`
 
 ## Runbooks and dashboards
 

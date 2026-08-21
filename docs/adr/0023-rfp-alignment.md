@@ -16,7 +16,7 @@ This ADR records the amendments the review triggered. The original ADRs remain t
 
 ## Decision (amendments)
 
-### ADR-0004 (Platform) — amendments
+### ADR-0004 (Platform): amendments
 
 - **Three-site topology → two IEBC-provided DR sites** (primary + mirror). RFP mandates two (tender.txt Sec V; PRE_BID C1). A third defence-in-depth site is optional (reproducibility-bundle mirror only) and budget-dependent.
 - **Add 5-zone network segmentation** (Edge / DMZ / Core / Air-gapped / Management) with hardware firewall + K8s NetPol per `sw/SECURITY.md` §2.3.
@@ -24,14 +24,14 @@ This ADR records the amendments the review triggered. The original ADRs remain t
 - **Reference ADR-0020** for the 18-service K8s topology grouping of the 69 modules.
 - Node OS is Ubuntu 24.04 LTS (earlier draft said 22.04; CIS L2 benchmark exists for 24.04).
 
-### ADR-0005 (Crypto & HSM) — amendments
+### ADR-0005 (Crypto & HSM): amendments
 
 - **FIPS level closed to 140-3 L3+.** `expect.md`'s 140-2 L3 is stale; ARCHITECTURE + SECURITY concur on 140-3 L3+. Remove the deferred placeholder.
 - **Extend PQ suite**: add **ML-DSA + ECDSA P-384 hybrid signatures** and **SLH-DSA (FIPS 205)** for archive re-signing (long-tail 15-year retention). ML-KEM-768 + X25519 for KEM (already committed).
 - **Confidential compute for ABIS**: **AMD SEV-SNP or Intel TDX** enclaves for `abis-svc` (see ADR-0020) with **remote attestation**. Adds a hardware-selector requirement to the ABIS nodes in the K8s cluster manifest.
-- **Per-election-cycle KEK hierarchy** — every election cycle has its own KEK, sealed by the HSM. Cycle KEKs escrow to OAG post-election. **See ADR-0016 amendment** for how this pairs with per-record erasure.
+- **Per-election-cycle KEK hierarchy**, every election cycle has its own KEK, sealed by the HSM. Cycle KEKs escrow to OAG post-election. **See ADR-0016 amendment** for how this pairs with per-record erasure.
 
-### ADR-0006 (Build & supply chain) — amendments
+### ADR-0006 (Build & supply chain): amendments
 
 - **Add Pact** for cross-service contract testing (every service-pair contract).
 - **Add CycloneDX** as an SBOM output format alongside SPDX (both generated per artifact).
@@ -39,7 +39,7 @@ This ADR records the amendments the review triggered. The original ADRs remain t
 - **Add RFC 3161 timestamps** for evidentiary chain on release artifacts.
 - **Add BLAKE3** as the high-throughput local hash for kit audit logs (SHA-256 remains for cross-system signatures).
 
-### ADR-0007 (AuthN + AuthZ + Secrets) — amendments
+### ADR-0007 (AuthN + AuthZ + Secrets): amendments
 
 - **Add JIT dynamic secrets**: OpenBao issues short-lived (max 4h) database and admin credentials per session.
 - **Add maximum admin session length of 4 hours** with mandatory session recording (SSH via `sshaudit` + Web via BFF audit log).
@@ -47,31 +47,31 @@ This ADR records the amendments the review triggered. The original ADRs remain t
 - **SpiceDB stands** (earlier draft said Cedar; see `docs/spec-alignment/SA-005-authz-spicedb-vs-cedar.md`).
 - **OpenBao stands** (earlier draft said Vault; see `docs/spec-alignment/SA-001-oss-hygiene.md`).
 
-### ADR-0008 (Portal stack) — amendments
+### ADR-0008 (Portal stack): amendments
 
 - **Accessibility floor tightened to WCAG 2.2 AA** (was 2.1 AA per initial spec; MOBILE-INTEGRATION-NOTES mandates 2.2).
 - **Reference ADR-0021** for mobile-specific security posture.
 - **Path B stands**; Next.js excluded (see `docs/spec-alignment/SA-002-portal-stack-non-nextjs.md`).
 
-### ADR-0012 (Data topology) — amendments
+### ADR-0012 (Data topology): amendments
 
 - **Three-site T1 topology → two IEBC DR sites**, one T1 cluster set per site (voter / consensus / audit). Total 6 cluster instances instead of 9.
 - **Ninety-day online log retention** aligned to RFP (tender.txt Sec V; PRE_BID D13); permanent archive via MinIO tiered storage.
 - **Read replicas** at both DR sites plus at each of the five regional edge clusters (ADR-0019) for the read paths that edges serve.
 
-### ADR-0015 (Cross-service consistency & event bus) — amendments
+### ADR-0015 (Cross-service consistency & event bus): amendments
 
 - **Event-source topic hot retention aligned to 90 days**, tiered to MinIO thereafter (was "infinite hot + MinIO after 30d"). RFP-driven.
 - **Karapace stands** (see `docs/spec-alignment/SA-001-oss-hygiene.md`).
 - **JSON + zstd stands** (earlier draft said Avro). Trade-off acknowledged: Avro is tighter and registry-integrated; JSON is human-debuggable and one-codec. Karapace supports both, so if Datacraft has existing Avro artefacts, we can adopt with lower cost than a general Avro migration; otherwise JSON stands. See `docs/spec-alignment/SA-007-event-bus-json-vs-avro.md`.
 - **Per-aggregate topic granularity stands** (earlier draft said ~10 domain topics). Consumer isolation and blast-radius arguments. See SA-007.
 
-### ADR-0016 (PII & retention) — amendments
+### ADR-0016 (PII & retention): amendments
 
 - **Add per-election-cycle KEK hierarchy** (see ADR-0005 amendment). KEK destruction at end of statutory retention (15y after election cycle) triggers cryptographic erasure of the entire cycle's Tier A data as a single action. **This is the only cryptographic-erasure primitive we adopt**; per-record erasure requests continue to use soft-delete + scheduled purge + rotating backup keys as decided.
 - **Voter data ownership statement**: no third-party use permitted (RFP Sec V); enforced by data-egress policy + audit alerting on any Tier A read whose destination is outside IEBC-controlled infrastructure.
 
-### ADR-0017 (Transparency log) — amendments
+### ADR-0017 (Transparency log): amendments
 
 - **Five-channel publication for STHs and Merkle roots**, per `sw/ARCHITECTURE.md` §17.2:
   1. IEBC public website (signed JSON endpoint).
@@ -81,7 +81,7 @@ This ADR records the amendments the review triggered. The original ADRs remain t
   5. Daily **KBC Radio** hash bulletin (audible cross-check).
 - **STH cadence unchanged**: 1s hot / 60s default / 5min batch. The 10-minute "public Merkle root" cadence in spec ARCHITECTURE §1.5 maps to a subset of the 5-minute batch STHs, cross-published to the five channels above.
 
-### ADR-0018 (Write-path performance) — amendments
+### ADR-0018 (Write-path performance): amendments
 
 - **Add explicit SLA: 60,000 concurrent RTS sessions** per RFP (tender.txt Sec V). Load-test target adjusts to sustain 60k concurrent sessions with per-session write rate at realistic bimodal peak (~1 write per session per second at peak).
 - **Add rts-svc RTO ≤ 30 min / RPO ≤ 5 min** per `sw/ARCHITECTURE.md` §14.3.
@@ -89,7 +89,7 @@ This ADR records the amendments the review triggered. The original ADRs remain t
 
 ## What is NOT amended
 
-- **ADR-0002 (Languages)**: Rust default holds. Python fallback for ML/adapters/glue. **Flutter for kits and mobile (unchanged)** — RFP-binding ~14,100 legacy Android device reuse argues for Flutter's better legacy support over Kotlin+Compose. The earlier draft's Kotlin note is not RFP-derived and is withdrawn. Additions (ONNX Runtime, Celery, BagIt as pinned tools) folded in without changing decision.
+- **ADR-0002 (Languages)**: Rust default holds. Python fallback for ML/adapters/glue. **Flutter for kits and mobile (unchanged)**, RFP-binding ~14,100 legacy Android device reuse argues for Flutter's better legacy support over Kotlin+Compose. The earlier draft's Kotlin note is not RFP-derived and is withdrawn. Additions (ONNX Runtime, Celery, BagIt as pinned tools) folded in without changing decision.
 - **ADR-0003 (Data infra)**: Karapace + Valkey + OpenSearch (scoped) + Kafka + MinIO + Postgres + ClickHouse-deferred. All defended.
 - **ADR-0009, 0010, 0011, 0013, 0014**: unchanged in substance.
 - **ADR-0001**: unchanged.
@@ -105,12 +105,12 @@ This ADR records the amendments the review triggered. The original ADRs remain t
 
 Six notes recording where the earlier `sw/` draft differs from the ADRs and which `sw/` sections to edit, tracked in `docs/spec-alignment/`:
 
-- **SA-001 — OSS hygiene** (OpenBao / Valkey / Karapace over Vault / Redis / Confluent SR).
-- **SA-002 — Portal stack non-Nextjs** (Path B defence citing CVE record).
-- **SA-003 — Kenya-sovereign edge** (surface spec's own §17.2 self-consistency argument).
-- **SA-005 — Authz engine SpiceDB vs Cedar** (relational-permissions fit).
-- **SA-006 — Mesh Cilium vs Linkerd** (operational consolidation).
-- **SA-007 — Event bus JSON + per-aggregate topics vs Avro + domain topics** (consumer-isolation argument).
+- **SA-001, OSS hygiene** (OpenBao / Valkey / Karapace over Vault / Redis / Confluent SR).
+- **SA-002, Portal stack non-Nextjs** (Path B defence citing CVE record).
+- **SA-003, Kenya-sovereign edge** (surface spec's own §17.2 self-consistency argument).
+- **SA-005, Authz engine SpiceDB vs Cedar** (relational-permissions fit).
+- **SA-006, Mesh Cilium vs Linkerd** (operational consolidation).
+- **SA-007, Event bus JSON + per-aggregate topics vs Avro + domain topics** (consumer-isolation argument).
 
 (No note for language tiering: Rust default per ADR-0002 stands; the `sw/` Python-3.13-default text is simply corrected.)
 
@@ -124,8 +124,8 @@ IEBC-side questions in `docs/eel-clarifications-outstanding.md`; Datacraft bid-d
 - Voter register retention contradiction (5y in DATA-MODEL vs 15y statutory).
 - Kit language stale text (Flutter mentions after "Kotlin resolved" stitch).
 - HSM level stale text in expect.md.
-- CI in air-gapped path — ARCHITECTURE §14.1 names GitHub Actions / GitLab CI; contradicts air-gap mandate.
-- Escrow line contradiction — tender explicitly says NOT required (L9556, L11377), yet Datacraft's plan referenced escrow.
+- CI in air-gapped path, ARCHITECTURE §14.1 names GitHub Actions / GitLab CI; contradicts air-gap mandate.
+- Escrow line contradiction, tender explicitly says NOT required (L9556, L11377), yet Datacraft's plan referenced escrow.
 
 ## Consequences
 

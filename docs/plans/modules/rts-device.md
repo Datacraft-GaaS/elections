@@ -78,91 +78,152 @@ none (ICR/OCR runs server-side in M10)
 
 ## Feature checklist
 
-1. FR-M08-001: scan Form 34A with auto-alignment, double-feed detection, encrypted PDF output.
-2. FR-M08-002: support all elective-position forms (34A, 35A, 36A, 37A, 38A, MCA, referenda); automatic naming by station code + election + position.
-3. FR-M08-003: image quality validation; reject and prompt re-scan if OCR-hostile.
-4. FR-M08-004: embed per-station QR code + digital signature at scan time; binds station + kit + form + election.
-5. FR-M08-005: PO biometric signature required to authorise transmission; party agent countersignature optional.
-6. FR-M08-006: transmit to RTS back-end over telco VPN with mTLS; kit-certificate auth.
-7. FR-M08-007: retry with exponential backoff + jitter; local signed queue survives reboot.
-8. FR-M08-008: SMS/USSD signed fallback: compressed signed Form 34A summary; back-end reconstructs.
-9. FR-M08-009: regular event reports during and after transmission (opening, closing, turnout, incident, attempt, result).
-10. FR-M08-010: local audit log of every submission attempt with signature + timestamp + GPS fix.
-11. FR-M08-011: post-transmission local retention of signed form image until end-of-election-cycle.
-12. FR-M08-012: confirmation slip with form ID, hash, transmission status, transparency-log index.
-13. FR-M08-013: party agent QR verification on own phone confirms transmitted form matches physical form.
-14. FR-M08-014: LoRa mesh third-tier fallback for enabled stations.
-15. Scan + sign + transmit <= 90 s per form under normal conditions.
-16. SMS fallback end-to-end <= 2 min; compressed signed submission.
-17. Bandwidth budget <= 200 KB compressed per form on average.
-18. Queue survives 7-day offline accumulation without data loss.
-19. Multi-carrier failover in <= 30 s.
-20. Participation token issued for every authenticated voter before poll closes.
-21. Party agent countersignature can be added after PO-only transmission within configured window.
-22. Each form transmission gets a unique Idempotency-Key preventing server-side duplicates.
-23. Kit refuses to scan if GPS fix unavailable and geo-fence unknown.
-24. All 6 simultaneous position pipelines run independently; failure in one does not block another.
+Scanning and form capture:
+1. FR-M08-001: scan Form 34A with auto-alignment, deskew, double-feed detection, and encrypted-PDF output; SSIM >= 0.95. (spec FR-M08-001)
+2. FR-M08-002: support all elective-position forms: 34A (President), 35A (Governor), 36A (Senator), 37A (Woman Rep), 38A (MP), MCA, and referenda equivalents; automatic naming by station code, election, and position. (spec FR-M08-002)
+3. FR-M08-003: image quality validation: reject and prompt re-scan on OCR-hostile images (skew, blur, missing corners, resolution below spec). (spec FR-M08-003)
+4. FR-M08-004: embed per-station QR code at scan time binding station code, kit serial, form type, and election event. (spec FR-M08-004)
+5. FR-M08-005: Ed25519 digital signature applied at scan via HSM-backed kit key; covers image hash, station code, timestamp, and kit serial. (spec FR-M08-004)
+6. FR-M08-006: all 6 simultaneous position pipelines run independently; failure in one does not block others.
+7. FR-M08-007: form bandwidth budget <= 200 KB compressed per form on average; CBOR+zstd negotiated on all channels.
+8. FR-M08-008: post-transmission local retention of signed form image until end-of-election-cycle; encrypted at rest. (spec FR-M08-011)
+
+Authentication and signing:
+9. FR-M08-009: Presiding Officer biometric signature required to authorise transmission; reject if NFIQ2 below threshold. (spec FR-M08-005)
+10. FR-M08-010: party agent countersignature via biometric or issued PIN; optional at initial transmission; addable within configurable window. (spec FR-M08-005)
+11. FR-M08-011: duress finger detection: covert ECC alert to M16 while displaying normal auth flow to bystanders.
+12. FR-M08-012: participation token issued for every authenticated voter before poll close; batch signed and submitted to M10 and M14.
+13. FR-M08-013: participation token count reconciled with total voter-auth count; discrepancy alert sent to ECC.
+14. FR-M08-014: party agent countersignature window configurable (default 30 min post-PO-sign); auto-closes and logs if missed.
+
+Transmission:
+15. FR-M08-015: primary transmission to RTS back-end (M10) over telco VPN with mTLS; kit-certificate authentication. (spec FR-M08-006)
+16. FR-M08-016: exponential backoff + jitter retry on network failure; local signed queue survives kit reboot and power failure. (spec FR-M08-007)
+17. FR-M08-017: each form transmission carries a unique Idempotency-Key preventing server-side duplicate execution. (spec FR-M08-007)
+18. FR-M08-018: SMS/USSD signed fallback: compressed binary-encoded Form 34A summary via SMS short code; back-end reconstructs and verifies. (spec FR-M08-008)
+19. FR-M08-019: SMS fallback compressed to <= 5 SMS segments; end-to-end delivery <= 10 min from initiation to back-end ack.
+20. FR-M08-020: LoRa mesh third-tier fallback for flagged high-risk stations; constituency uplink node relays; latency <= 15 min accepted. (spec FR-M08-014)
+21. FR-M08-021: dual-SIM failover in <= 30 s: same signed payload retransmitted on SIM B; back-end deduplicates by Idempotency-Key. (spec FR-M08-006)
+22. FR-M08-022: multi-carrier failover alert logged and telemetered to ECC when failover triggers.
+
+Event reporting:
+23. FR-M08-023: poll-opened and poll-closed events signed by kit and submitted as event-sourced records. (spec FR-M08-009)
+24. FR-M08-024: regular event reports: poll open, periodic turnout, incident, transmission attempt, and success or failure. (spec FR-M08-009)
+25. FR-M08-025: local audit log of every submission attempt: signature, timestamp, GPS fix, channel, and sequence number. (spec FR-M08-010)
+26. FR-M08-026: confirmation slip displayed or printed: form ID, image hash, transmission status, transparency-log index, and QR. (spec FR-M08-012)
+27. FR-M08-027: transparency-log index returned in M10 acknowledgement; stored locally and displayed on slip. (spec FR-M08-012)
+
+Party agent verification:
+28. FR-M08-028: party agent QR verification on own phone: agent scans transmitted form QR, confirms hash matches physical form. (spec FR-M08-013)
+29. FR-M08-029: party agent absence recorded; PO may proceed unilaterally with recorded justification; absence audit trail mandatory.
+30. FR-M08-030: Elections Act s.39(1C) compliance: electronic transmission logged as statutory evidence with TLA+-proven state machine.
+
+Offline and resilience:
+31. FR-M08-031: 7-day signed offline queue without data loss; ring-buffer with gap audit on sync.
+32. FR-M08-032: kit refuses scan if GPS fix unavailable and geo-fence polygon unknown; ECC alert sent within 60 s.
+33. FR-M08-033: ballot serial chain (M63) reconciliation: ballot count submitted post-transmission; mismatch creates DisputeCase.
+
+Kit management:
+34. FR-M08-034: boot-time firmware integrity check via TPM quote; quarantine centrally within 60 s on mismatch.
+35. FR-M08-035: kit clock verified at boot: refuse session if skew > 5 min until NTS/GNSS resynced.
+36. FR-M08-036: kit certificate revocation propagated in <= 60 s; kit halts; PO uses paper backup.
+37. FR-M08-037: battery and storage threshold progressive warnings to Presiding Officer.
+38. FR-M08-038: screen-lock after configurable inactivity; biometric re-auth to resume.
+39. FR-M08-039: kit health telemetry (battery, connectivity, storage, temperature, GPS accuracy) at configured interval to ECC.
+40. FR-M08-040: escalation to ECC within 60 s: all channels exhausted, GPS fix lost, or kit cert revoked.
+41. FR-M08-041: signed OTA firmware update with A/B slots; rollback on integrity failure.
+42. FR-M08-042: configuration bundle hot-update via eel.rts.config_bundle_updated.v1 without restart.
+43. FR-M08-043: legacy Android feature-matrix degradation: documents which modalities degrade and how on lowest-tier device.
+
+Language and accessibility:
+44. FR-M08-044: multilingual: English and Kiswahili on all screens; extensible to 11 languages per constituency profile.
+45. FR-M08-045: WCAG 2.1 AA: audio-guided workflow, high-contrast mode, >= 48 dp touch targets on all controls.
+
+Security:
+46. FR-M08-046: Semgrep Tier A/B log ban: no PII or biometric data in telemetry or error logs.
+47. FR-M08-047: PQ hybrid TLS 1.3 only; no TLS 1.2 fallback; cert pinning with fail-closed on mismatch.
+48. FR-M08-048: constant-time biometric compare on PO and party agent authentication; no timing side channel.
+49. FR-M08-049: stolen-kit honey mode: on revocation, sandbox environment served; attacker biometric captured.
+50. FR-M08-050: form scan quality score logged and transmitted with form; used by M10 ICR engine as confidence prior.
 
 ## Acceptance criteria
 
-AC-M08-01: scan + sign + transmit <= 90 s per form (bench).
-AC-M08-02: SMS fallback delivers signed submission end-to-end (field trial).
-AC-M08-03: party agent QR verification confirms form match (UAT).
-AC-M08-04: local queue survives kit reboot; all records retained (chaos exercise).
-AC-M08-05: multi-carrier failover in <= 30 s (live carrier flap test).
+AC-M08-01: scan + sign + transmit <= 90 s per form under LTE conditions (bench).
+AC-M08-02: SMS fallback delivers signed submission end-to-end within 10 min (field trial).
+AC-M08-03: party agent QR verification confirms transmitted form hash matches physical form (UAT).
+AC-M08-04: local signed queue survives kit reboot; all records retained and synced without loss (chaos exercise).
+AC-M08-05: dual-SIM failover in <= 30 s; back-end receives exactly one copy (live carrier flap test).
 AC-M08-06: confirmation slip includes transparency-log index (manual test).
-AC-M08-07: 7-day offline queue accumulates without loss; drains on reconnect (bench).
-AC-M08-08: participation tokens issued for 100% of authenticated voters at test station (integration).
+AC-M08-07: 7-day offline queue accumulates without loss; drains without duplication on reconnect (bench).
+AC-M08-08: participation tokens issued for 100% of authenticated voters; no token missing or duplicated (integration test).
+AC-M08-09: kit certificate revocation propagated in <= 60 s; kit halts and refuses new sessions (chaos exercise).
+AC-M08-10: GPS fix lost; kit refuses scan; alert sent to ECC within 60 s (HIL bench).
+AC-M08-11: WCAG 2.1 AA: axe zero violations; audio-guided workflow completes full scan-sign-transmit (accessibility audit).
+AC-M08-12: SSIM >= 0.95 on transmitted form image vs physical; quality rejection rate < 5% on certified scanner (bench).
+AC-M08-13: 11 locales: no truncated strings on confirmation slip; ICU plural forms correct (i18n test).
+AC-M08-14: availability 99.99% over election-day window (SLO burn-rate alert).
+AC-M08-15: TLA+ formal proof of no double-counting and no lost write submitted as regulatory evidence.
 
 ## Applicable edge cases
 
-**connectivity**
-EC-CON-01: 7-day offline queue; ring-buffer signed-sequenced; gap audit on sync.
-EC-CON-02: 3G SLAs; CBOR+zstd; 200 KB form budget.
-EC-CON-03: 2G only; SMS fallback; compressed signed submission.
-EC-CON-05: flapping link; backoff+jitter; dedup by Idempotency-Key.
-EC-CON-07: satellite 600 ms+ RTT; transport timeouts tuned; MTU-safe.
+connectivity:
+EC-CON-01: 7-day offline queue; ring-buffer signed-sequenced; gap audit on reconnect sync.
+EC-CON-02: 3G SLAs met; CBOR+zstd negotiated; 200 KB form budget enforced.
+EC-CON-03: 2G only; data path refused; SMS/USSD fallback activated with compressed signed submission.
+EC-CON-05: flapping link; exponential backoff + jitter; dedup by Idempotency-Key.
+EC-CON-06: captive portal; cert pinning fails closed; "network blocked" UX; no token leaked.
+EC-CON-07: satellite 600 ms+ RTT; transport timeouts tuned; MTU-safe payloads.
+EC-CON-08: DNS poisoned; hardcoded fallback endpoints; DNSSEC enforced.
 EC-CON-09: IPsec tunnel drop mid-batch; resume at sequence; idempotent re-send.
-EC-CON-10: dual-SIM failover; same signed blob on SIM B; one DB row.
+EC-CON-10: dual-SIM failover; same signed blob on SIM B; back-end deduplicates to one row.
 
-**time**
-EC-TIM-01: kit clock skew >5 min; refuse session until re-synced.
-EC-TIM-02: NTP/NTS unreachable all day; time_confidence=low; tolerance window.
-EC-TIM-07: s.14A close time moves; HSM-signed extension reopens fence.
+time:
+EC-TIM-01: kit clock skew > 5 min at boot; refuse session until NTS/GNSS resynced.
+EC-TIM-02: NTP/NTS unreachable all day; time_confidence=low; tolerance window applied.
+EC-TIM-04: DST/TZ: UTC storage; gazetted EAT display; poll close computed in UTC.
+EC-TIM-06: event time < causation time in audit log; accept; audit skew anomaly recorded.
+EC-TIM-07: s.14A close time extended; HSM-signed extension reopens fence; forged extension rejected.
+EC-TIM-09: register freeze race T-60; OPA hard-close at tx time; all-or-nothing token batch.
 
-**identity**
-EC-IDN-01: kit cert revoked mid-session; halt; PO uses paper backup.
+identity:
+EC-IDN-01: kit cert revoked mid-session; halt within 60 s; PO uses paper backup.
+EC-IDN-02: JWT expires mid-request on back-end path; in-flight completes; next 401 + silent refresh.
 EC-IDN-03: SVID rotates during batch; old SVID valid to expiry; producer_key_id per event.
-EC-IDN-08: duress finger on PO auth; covert alert; normal UI.
+EC-IDN-08: duress finger on PO auth; covert ECC alert; UI identical to normal auth flow.
+EC-IDN-10: SpiceDB down on back-end; fail closed on writes; class-C reads only.
 
-**data**
-EC-DAT-01: duplicate submission same key+body; cached response; no re-execution.
+data:
+EC-DAT-01: duplicate form submission same key+body; cached response; no re-execution.
 EC-DAT-02: same key different body; 422 idempotency-key-reuse.
-EC-DAT-04: replayed signed event; reject on counter.
-EC-DAT-11: votes > registered voters in scanned form; block with reason; RO override -> DisputeCase.
+EC-DAT-04: replayed signed event; reject on monotonic counter.
+EC-DAT-11: votes > registered voters in scanned form; block with reason; RO override creates DisputeCase.
 EC-DAT-16: legacy kit pre-CloudEvents payload; shim upgrades envelope; signature preserved.
 
-**security**
+security:
 EC-SEC-01: signature mismatch on submission; back-end rejects; kit re-signs and retries.
-EC-SEC-02: chassis tamper; kill-on-open; quarantine.
-EC-SEC-11: constant-time biometric compare on PO auth.
-EC-SEC-14: stolen kit honey mode.
-EC-SEC-17: PQ hybrid; TLS 1.3 only.
+EC-SEC-02: chassis tamper or seal break; kill-on-open; quarantine stream; ECC alert.
+EC-SEC-05: injection on all user inputs; parameterised only; Semgrep clean.
+EC-SEC-11: constant-time biometric compare on PO and agent auth; no timing side channel.
+EC-SEC-14: stolen kit honey mode; sandbox served; attacker biometric captured.
+EC-SEC-16: secrets in logs refused; telemetry refuses Tier A/B fields.
+EC-SEC-17: PQ hybrid; TLS 1.3 only; never TLS 1.2.
 
-**kit**
-EC-KIT-01: GNSS jam; multi-constellation + IMU.
-EC-KIT-02: legacy Android parity; software attestation tier.
-EC-KIT-03: OTA interrupted; A/B slots; rollback.
-EC-KIT-04: mode switch not propagated; signed bundle acked.
+kit:
+EC-KIT-01: GNSS jam or spoof; multi-constellation + IMU; refuse outside geo-fence.
+EC-KIT-02: legacy Android parity; software attestation tier; policy-marked; parity matrix tested.
+EC-KIT-03: OTA interrupted; A/B slots; rollback; signed update only.
+EC-KIT-04: mode switch not propagated; signed bundle acked; unacked listed in ECC.
 
-**operations**
+operations:
 EC-OPS-01: battery death mid-session; journal-before-act; exact resume; no double token.
-EC-OPS-02: kit swap <= 10 min; streams linked; old revoked.
+EC-OPS-02: kit swap <= 10 min; streams linked; old kit revoked; watermark inherited.
+EC-OPS-03: seal broken in transit; custody event; quarantine; alert to ECC.
+EC-OPS-06: flood or curfew relocation; HSM-signed geo-fence polygon update; portal notice.
+EC-OPS-07: staff no-show or swap; credential exactly-once; old credential revoked.
+EC-OPS-08: disk full on kit; bounded queue; 507 surfaced to PO; no corruption.
 
-**legal**
-EC-LEG-01: candidate withdraws post-print; status frozen; tallied + annotated.
-EC-LEG-03: s.44A invoked; dual-officer S44AEvent; manual IDs logged.
-
+scale:
+EC-SCL-04: consumer lag > 60 s on form topic at back-end; backpressure applied; no OOM.
 ## Test plan
 
 | layer | what is covered | harness | test-ID prefix |

@@ -1,4 +1,4 @@
-# IEBC IEMS — session design log
+# IEBC IEMS: session design log
 
 Date: 2026-08-21
 Status: living document; reflects the state at end of the initial design session
@@ -28,7 +28,7 @@ Ending point: a committed scaffold at commit `4d7e5c6` on branch `main`, an OSS-
 
 ## 3. Chronological decision log
 
-### Phase 1 — Empty scaffold
+### Phase 1: Empty scaffold
 
 **Question**: Give the repository a shape before requirements are read.
 
@@ -42,9 +42,9 @@ Ending point: a committed scaffold at commit `4d7e5c6` on branch `main`, an OSS-
 
 ---
 
-### Phase 2 — Discovery of the actual requirements
+### Phase 2: Discovery of the actual requirements
 
-**Trigger**: User pointed at `/Users/nyimbiodero/src/pjs/work_docs/01-Projects/IEBC/sw` — a 250KB+ requirements corpus including PRD, ARCHITECTURE, DATA-MODEL, SECURITY, API-CATALOG, ACCEPTANCE-CRITERIA, DATACRAFT_SOFTWARE_SCOPE (127KB), plus a `modules/` directory of individual module specs.
+**Trigger**: User pointed at `/Users/nyimbiodero/src/pjs/work_docs/01-Projects/IEBC/sw`, a 250KB+ requirements corpus including PRD, ARCHITECTURE, DATA-MODEL, SECURITY, API-CATALOG, ACCEPTANCE-CRITERIA, DATACRAFT_SOFTWARE_SCOPE (127KB), plus a `modules/` directory of individual module specs.
 
 **Method**: Forked a reader (agent id `a15be2448ea981ce3`) with instructions to skim the master scope, deep-read only where it resolved specific questions, index all module specs from filenames plus first paragraph, and return a synthesized brief under 800 words. Rationale: keep raw specs out of the main context; only the synthesis returns.
 
@@ -59,7 +59,7 @@ Ending point: a committed scaffold at commit `4d7e5c6` on branch `main`, an OSS-
 
 ---
 
-### Phase 3 — Stack ideation with an OSS-first constraint
+### Phase 3: Stack ideation with an OSS-first constraint
 
 **User constraint stated**: "Use as much open source software as possible to obviate any unnecessary licensing/integration costs and complexity. Use the highest available level of tooling + software. Clean slugs."
 
@@ -79,25 +79,25 @@ Ending point: a committed scaffold at commit `4d7e5c6` on branch `main`, an OSS-
 
 ---
 
-### Phase 4 — Language reversal: Rust-default, Python fallback
+### Phase 4: Language reversal: Rust-default, Python fallback
 
 **User challenge**: "I am not averse to rust as a default and python as a fallback, does that change the analysis above? What will give us the fastest most secure development?"
 
 **Analysis rendered**:
 
 - Distinguished time-to-first-prototype (Python wins) from velocity at month 18 with 5 teams and 100 services (Rust wins decisively).
-- Named three categories where pure-Rust is a net loss: (1) ML/data-science (M17, M26, M28, M21 SHANGRLA — Python owns the reference implementations), (2) vendor-SDK-bound integrations (IPRS, KRA, telco USSD/SMS gateways — SDKs ship in Java/Python), (3) ops glue and one-off tools.
+- Named three categories where pure-Rust is a net loss: (1) ML/data-science (M17, M26, M28, M21 SHANGRLA, Python owns the reference implementations), (2) vendor-SDK-bound integrations (IPRS, KRA, telco USSD/SMS gateways, SDKs ship in Java/Python), (3) ops glue and one-off tools.
 - Named where Rust-default is straight-win: security-boundary services (HSM broker, cert validator, PKI issuer, transparency log, results ingest, ABIS orchestrator, ceremony orchestrator, audit-log writer, mTLS gateway, kit provisioning API).
 - Committed a specific Rust stack: axum + tower + sqlx + tokio + utoipa + tonic + tracing + opentelemetry-rust + Ecto-equivalent absent so sqlx with compile-time query checks + serde + garde + rdkafka + fred + opensearch-rs + cryptoki + oqs + sigstore-rs + cargo-nextest + testcontainers-rs + cargo-fuzz.
 - Named the team risk honestly: Kenya's Rust hiring pool is thin; mitigate with 2-3 senior anchors, 6-8 week Rust immersion for existing Python/Java devs, one-stack-one-template discipline, AI-assisted coding.
 
-**User decision**: "Don't push pure rust — be pragmatic — you are going to develop all the software as quickly and as robustly as you can."
+**User decision**: "Don't push pure rust, be pragmatic, you are going to develop all the software as quickly and as robustly as you can."
 
 **Resolution**: Tiered policy. Rust-default with a small principled exception list (ML/data-science → Python; vendor-SDK-bound adapters → Python or Java behind a Rust facade; ops glue → Python). Locked in as ADR-0002.
 
 ---
 
-### Phase 5 — AuthN, AuthZ, Secrets: Keycloak + SpiceDB + OpenBao
+### Phase 5: AuthN, AuthZ, Secrets: Keycloak + SpiceDB + OpenBao
 
 **User question**: "For authn + authz should we use keycloak + spicedb + openbao?"
 
@@ -116,7 +116,7 @@ Ending point: a committed scaffold at commit `4d7e5c6` on branch `main`, an OSS-
 
 ---
 
-### Phase 6 — Portal framework rethink: dropping Next.js
+### Phase 6: Portal framework rethink: dropping Next.js
 
 **User challenge**: "Nextjs has been prone to attack lately, we should consider alternative mature, secure options."
 
@@ -130,7 +130,7 @@ Ending point: a committed scaffold at commit `4d7e5c6` on branch `main`, an OSS-
 
 ---
 
-### Phase 7 — Re-examining LiveView and SolidJS
+### Phase 7: Re-examining LiveView and SolidJS
 
 **User challenge**: "Examine Phoenix LiveView (Elixir, Apache 2.0) and SolidJS again, why are we not choosing these if they are technically excellent?"
 
@@ -157,17 +157,17 @@ Ending point: a committed scaffold at commit `4d7e5c6` on branch `main`, an OSS-
 
 **Three revised paths presented**:
 
-- **Path A**: original — Astro + Django + SvelteKit + Tauri + Flutter.
-- **Path B**: LiveView-anchored — Astro + Django + LiveView (for M11, M13, M15, M16, M19, M23, M26) + Tauri + Flutter. Adds Elixir.
-- **Path C**: LiveView-maximal — LiveView for most web, Astro only for pure-static, Tauri, Flutter. Drops Django and SvelteKit.
+- **Path A**: original, Astro + Django + SvelteKit + Tauri + Flutter.
+- **Path B**: LiveView-anchored, Astro + Django + LiveView (for M11, M13, M15, M16, M19, M23, M26) + Tauri + Flutter. Adds Elixir.
+- **Path C**: LiveView-maximal, LiveView for most web, Astro only for pure-static, Tauri, Flutter. Drops Django and SvelteKit.
 
 **Recommendation given**: Path B. LiveView owns the surfaces it is best-in-class for; Django keeps form-heavy admin in the boring, secure, Python-tier stack; Astro keeps pure-static simple.
 
 ---
 
-### Phase 8 — Robustness escalation
+### Phase 8: Robustness escalation
 
-**User constraint escalation**: "Robustness, reliability, performance and security are the key issues we need to address. There will be millions of viewers on election day — our systems will be challenged from every quarter."
+**User constraint escalation**: "Robustness, reliability, performance and security are the key issues we need to address. There will be millions of viewers on election day, our systems will be challenged from every quarter."
 
 **Framework decision confirmed**: Path B, with LiveView owning the exposed surfaces. Under this constraint LiveView is not a preference; it is the right substrate for the surfaces where the storm lands.
 
@@ -188,11 +188,11 @@ Ending point: a committed scaffold at commit `4d7e5c6` on branch `main`, an OSS-
 11. Public verifiability as active defence: on-chain/Gazette-anchored Merkle roots, reproducibility bundle.
 12. Incident response with named humans, pre-drafted legal-approved comms, quarterly tabletops, external red team 8 weeks before election.
 
-**Budget conversation flagged**: multi-ISP peering agreements, external red team, 24/7 SOC during election window, four language teams — none of this is optional under the stated constraint.
+**Budget conversation flagged**: multi-ISP peering agreements, external red team, 24/7 SOC during election window, four language teams, none of this is optional under the stated constraint.
 
 ---
 
-### Phase 9 — Public API surface strategy
+### Phase 9: Public API surface strategy
 
 **User question**: "How will we expose APIs to the public? from django?"
 
@@ -200,11 +200,11 @@ Ending point: a committed scaffold at commit `4d7e5c6` on branch `main`, an OSS-
 
 **Five-tier public API surface committed**:
 
-- **Tier 1** — Signed static snapshots (~90% of load). Rust producer → cosign-signed JSON/CBOR/GeoJSON tarballs → MinIO → nginx+Varnish → ISP edges.
-- **Tier 2** — Live per-user reads. Rust axum + utoipa behind Envoy Gateway + WAF.
-- **Tier 3** — Accredited / authenticated APIs. Rust axum with Keycloak JWT + SpiceDB check + audit log.
-- **Tier 4** — Bulk data feeds. Nightly signed Parquet+CSV to MinIO with checksum + Merkle proof.
-- **Tier 5** — Real-time streams. SSE for unauthenticated public, WebSockets for authenticated, Kafka spine, LiveView Channels for the portals.
+- **Tier 1**, Signed static snapshots (~90% of load). Rust producer → cosign-signed JSON/CBOR/GeoJSON tarballs → MinIO → nginx+Varnish → ISP edges.
+- **Tier 2**, Live per-user reads. Rust axum + utoipa behind Envoy Gateway + WAF.
+- **Tier 3**, Accredited / authenticated APIs. Rust axum with Keycloak JWT + SpiceDB check + audit log.
+- **Tier 4**, Bulk data feeds. Nightly signed Parquet+CSV to MinIO with checksum + Merkle proof.
+- **Tier 5**, Real-time streams. SSE for unauthenticated public, WebSockets for authenticated, Kafka spine, LiveView Channels for the portals.
 
 **Conventions**: OpenAPI 3.1 spec-first, generated Dart/TS/Python/Rust clients, signed responses with cosign signature + Merkle inclusion proof + snapshot ID in headers, strong ETag + Cache-Control, RFC 9457 problem+json errors, mandatory Idempotency-Key on writes, JSON default + CBOR alternate for mobile, URL-path versioning.
 
@@ -216,25 +216,25 @@ Ending point: a committed scaffold at commit `4d7e5c6` on branch `main`, an OSS-
 
 ---
 
-### Phase 10 — Data & schema governance
+### Phase 10: Data & schema governance
 
 **Decision to design A (data & schema) and B (event bus) before writing ADRs**: schema governance is load-bearing across every service; retrofitting across 69 services later is prohibitive.
 
 **Six areas addressed**:
 
-1. **Database topology** — tiered proposal: 7-8 dedicated PG clusters for consensus-critical event-sourced modules, 2-3 shared clusters (schema-per-service) for operational transactional, one ClickHouse for analytics, one OpenSearch for search, Valkey per site.
-2. **Event sourcing scope** — proposed 8 modules event-sourced (M02, M06, M08/M09/M10, M20, M21, M27, M51, M63), rest state + immutable audit shadow.
-3. **Event store shape** — PostgreSQL-backed event table with prev_hash chain, HLC, UUIDv7 keys, snapshots, outbox.
-4. **Schema evolution** — expand-migrate-contract, zero-downtime required, no breaking DDL, tested rollback per migration, 30-day pre-election freeze, CI gates via atlas/squawk.
-5. **Cross-service consistency** — transactional outbox pattern, Debezium CDC, exactly-once effective delivery with idempotent consumers, no dual-write, no 2PC. Temporal only for the small number of genuinely orchestrated workflows.
-6. **PII classification & retention** — five tiers (A voter PII, B voter operational, C public, D operational metadata, E ephemeral) with encryption / access / retention per tier. Initially proposed cryptographic erasure for right-to-erasure.
-7. **Transparency log** — CT-style Merkle log per election, HSM-signed Signed Tree Heads, split-view prevention via witnesses, reproducibility-bundle-verifiable.
+1. **Database topology**, tiered proposal: 7-8 dedicated PG clusters for consensus-critical event-sourced modules, 2-3 shared clusters (schema-per-service) for operational transactional, one ClickHouse for analytics, one OpenSearch for search, Valkey per site.
+2. **Event sourcing scope**, proposed 8 modules event-sourced (M02, M06, M08/M09/M10, M20, M21, M27, M51, M63), rest state + immutable audit shadow.
+3. **Event store shape**, PostgreSQL-backed event table with prev_hash chain, HLC, UUIDv7 keys, snapshots, outbox.
+4. **Schema evolution**, expand-migrate-contract, zero-downtime required, no breaking DDL, tested rollback per migration, 30-day pre-election freeze, CI gates via atlas/squawk.
+5. **Cross-service consistency**, transactional outbox pattern, Debezium CDC, exactly-once effective delivery with idempotent consumers, no dual-write, no 2PC. Temporal only for the small number of genuinely orchestrated workflows.
+6. **PII classification & retention**, five tiers (A voter PII, B voter operational, C public, D operational metadata, E ephemeral) with encryption / access / retention per tier. Initially proposed cryptographic erasure for right-to-erasure.
+7. **Transparency log**, CT-style Merkle log per election, HSM-signed Signed Tree Heads, split-view prevention via witnesses, reproducibility-bundle-verifiable.
 
 **Six A-decisions posed to user**.
 
 ---
 
-### Phase 11 — Write-scale reality check
+### Phase 11: Write-scale reality check
 
 **User challenge**: "Think millions of writes on election day into the db."
 
@@ -259,35 +259,35 @@ Ending point: a committed scaffold at commit `4d7e5c6` on branch `main`, an OSS-
 1. Shard T1-voter cluster with Citus (Apache 2.0, PG extension), distribute by county_id (47 shards).
 2. HSM signs Signed Tree Heads only; producers sign events with SPIFFE-issued keys (short-lived, software Ed25519, per-workload).
 3. Transparency log sharded by domain (5-7 logs) with a merged super-root every 60s.
-4. Producer-side durable outbox — kits never block on log availability; events replay from Kafka when log recovers.
+4. Producer-side durable outbox, kits never block on log availability; events replay from Kafka when log recovers.
 5. PostgreSQL tuning specifics for T1 write path (shared_buffers, checkpoint, WAL, fillfactor, BRIN indexes, PgBouncer transaction mode).
-6. Load test as first-class deliverable — 46k virtual kits, bimodal traffic curve, 5x peak simulation, weekly from month 2.
-7. Election-day operational mode — migrations frozen, autovacuum aggressive, statement timeouts tightened, circuit breakers hair-triggered, no admin queries on T1 primaries.
+6. Load test as first-class deliverable, 46k virtual kits, bimodal traffic curve, 5x peak simulation, weekly from month 2.
+7. Election-day operational mode, migrations frozen, autovacuum aggressive, statement timeouts tightened, circuit breakers hair-triggered, no admin queries on T1 primaries.
 
 **Four write-scale decisions posed to user**.
 
 ---
 
-### Phase 12 — A-decisions consolidated
+### Phase 12: A-decisions consolidated
 
 **User answers** (batch):
 
 1. Consolidate T1 to 3 clusters. → Restructured to T1-voter (turnout, register, custody), T1-consensus (results, credentials, transparency super-root), T1-audit (RLA, cross-service audit, per-domain logs). ×3 sites = 9 cluster instances, template-managed.
 2. Narrower event-sourcing scope. → Trimmed to 4 modules: M08/M09/M10 RTS, M20 custody, M63 ballot serial, M51 declaration. M02, M06, M21, M27 demoted to state + immutable audit shadow. Cascading benefits: fewer projections, fewer replay operations, simpler day-1 delivery.
-3. Cryptographic erasure — user pushback: "when will this ever be necessary — should we not just have soft delete?"
+3. Cryptographic erasure, user pushback: "when will this ever be necessary, should we not just have soft delete?"
 4. Transparency log cadence: 1s hot / 60s default / 5min batch. → Confirmed.
 5. Third-party witnesses: defer. → Internal IAB witness stands as day-1 model; external + on-chain witnesses deferred to a later diplomatic conversation.
 6. Synthetic voter register generator as first-class deliverable: yes. → Built week 1, all non-prod environments use synthetic data only.
 
 **Honest response to #3**: user was right to push back. Cryptographic erasure was over-engineering for this domain.
 
-Analysis: DPA 2019 §40 (right to erasure) has explicit exceptions for legal obligation, public interest, and legal claims; Elections Act §32 statutorily requires 15-year retention of the Tier A data most people picture as "PII to erase." Where erasure requests actually land — grievance intake, voter-ed CMS accounts, helpdesk logs, non-accredited media applications, withdrawn VPRS/diaspora registrations — soft-delete + scheduled purge + rotating backup encryption keys is legally sufficient and regulator-defensible.
+Analysis: DPA 2019 §40 (right to erasure) has explicit exceptions for legal obligation, public interest, and legal claims; Elections Act §32 statutorily requires 15-year retention of the Tier A data most people picture as "PII to erase." Where erasure requests actually land, grievance intake, voter-ed CMS accounts, helpdesk logs, non-accredited media applications, withdrawn VPRS/diaspora registrations, soft-delete + scheduled purge + rotating backup encryption keys is legally sufficient and regulator-defensible.
 
 **Revised policy**: soft delete + scheduled purge is default; cryptographic erasure infrastructure dropped from scope. Saves per-subject DEK management, per-column encryption complexity, months of build time. Retained option: if a specific system later demands stronger erasure guarantees, layer it on then.
 
 ---
 
-### Phase 14 — RFP-alignment reconciliation (post-session)
+### Phase 14: RFP-alignment reconciliation (post-session)
 
 **Trigger**: user reported the `sw/` corpus had been updated (~2-3x growth) and asked for a conflict review against the ADRs just committed.
 
@@ -320,20 +320,20 @@ Analysis: DPA 2019 §40 (right to erasure) has explicit exceptions for legal obl
 - **ADR-0021** (mobile security posture, Play Integrity + App Attest + RASP).
 - **ADR-0022** (release + DR, blue-green + 15-min rollback + RTO/RPO SLAs).
 - **ADR-0023** (RFP-alignment reconciliation, amendments to 0004/0005/0006/0007/0008/0012/0015/0016/0017/0018).
-- **Change-request pack** (`docs/spec-alignment/`): CR-001 OSS hygiene, CR-002 portal stack, CR-003 sovereign edge, CR-005 SpiceDB vs Cedar, CR-006 Cilium vs Linkerd, CR-007 event bus JSON vs Avro. (CR-004 dropped — user policy holds Rust-default without renegotiation.)
+- **Change-request pack** (`docs/spec-alignment/`): CR-001 OSS hygiene, CR-002 portal stack, CR-003 sovereign edge, CR-005 SpiceDB vs Cedar, CR-006 Cilium vs Linkerd, CR-007 event bus JSON vs Avro. (CR-004 dropped, user policy holds Rust-default without renegotiation.)
 - **Blockers doc** (`docs/eel-clarifications-outstanding.md and docs/datacraft-internal-backlog.md`): scope gaps (M29-M69 not costed, no OAT/FAT for M35-M69, no API-CATALOG for M29-M69), legal/retention questions (voter register 5y vs 15y, digital signature standard pending, PRE_BID D9-D13 outstanding), housekeeping (kit language, HSM level, CI in air-gap, Cloudflare vs sovereignty, escrow, three-vs-two site, OPA/Cedar ambiguity).
 
 **Left open**: three DC hardware provisioning question (PRE_BID C1), independent security certifier (PRE_BID D11), ODPC registration timing (PRE_BID D10), Kenya data residency for production (PRE_BID D9), digital signature standard for Form 34A (PRE_BID C13).
 
 ---
 
-### Phase 13 — Simplification pass
+### Phase 13: Simplification pass
 
 **User instruction**: "Make the choices that are defensible, simplest and can function under extreme pressure and load. Minimize complexity."
 
 **Four write-scale decisions taken decisively**:
 
-1. **No Citus day 1.** Modern PG 17 on serious hardware with declarative hourly partitioning + batched inserts + async commit + PgBouncer transaction mode holds 50-100k writes/sec (Instagram, Discord, Notion at this scale on vanilla PG). Citus adds coordinator layer, cross-shard transaction semantics, extension-version coupling, rebalancing operations — each a class of incident that can't happen without it. Ship vanilla PG; turn on Citus only if 5x-load tests prove necessity.
+1. **No Citus day 1.** Modern PG 17 on serious hardware with declarative hourly partitioning + batched inserts + async commit + PgBouncer transaction mode holds 50-100k writes/sec (Instagram, Discord, Notion at this scale on vanilla PG). Citus adds coordinator layer, cross-shard transaction semantics, extension-version coupling, rebalancing operations, each a class of incident that can't happen without it. Ship vanilla PG; turn on Citus only if 5x-load tests prove necessity.
 2. **HSM signs Signed Tree Heads only; producers sign leaves with SPIFFE keys.** Only viable pattern at scale; matches Trillian / Sigstore Rekor design. Locked.
 3. **Single monolithic transparency log with domain tags on leaves.** Simpler to operate, simpler to explain to auditors, simpler to verify. Internal partitioning of underlying storage for headroom; external contract stays "one canonical log."
 4. **Load-test SLA: 50k writes/sec sustained for 4 hours per cluster, P99 25ms end-to-end (kit-to-ACK).** Non-negotiable release gate.
@@ -341,7 +341,7 @@ Analysis: DPA 2019 §40 (right to erasure) has explicit exceptions for legal obl
 **Complexity cuts applied across the earlier design**:
 
 - **Temporal removed from day-1 stack.** Ceremony workflows can be state machines in the owning service backed by PG row + Oban / arq / tokio task; adding Temporal means running Cassandra/PG for Temporal plus the server plus operator training for 3-5 workflows.
-- **ClickHouse deferred to Phase 2.** PostgreSQL 17 with hourly partitions + BRIN indexes + read replicas + materialised views handles analytics well past election day. ClickHouse pays off past 100M hot analytics rows with sub-second aggregation requirements — a Phase 2 problem. Modules that later demand columnar performance can request it in their module ADR.
+- **ClickHouse deferred to Phase 2.** PostgreSQL 17 with hourly partitions + BRIN indexes + read replicas + materialised views handles analytics well past election day. ClickHouse pays off past 100M hot analytics rows with sub-second aggregation requirements, a Phase 2 problem. Modules that later demand columnar performance can request it in their module ADR.
 - **OpenSearch confined to modules that actually search.** M07 register inspection, M18 boundary search, M22 candidate search, M52 gazette search need full-text + fuzzy + geo. Every other module uses Postgres full-text (pg_trgm + tsvector). One shared OpenSearch cluster for the four; no OpenSearch anywhere else.
 
 ---
@@ -406,12 +406,12 @@ Analysis: DPA 2019 §40 (right to erasure) has explicit exceptions for legal obl
 
 Named so we don't forget:
 
-1. **HSM FIPS level** — 140-2 L3 vs 140-3 L3+. Procurement question. Placeholder in ADR-0005; code against PKCS#11 abstractly so the vendor is swappable.
-2. **IPRS / e-Citizen federation timing** — Phase 1 (day 1 for citizen-facing modules M04, M07, M13, M29, M35, M42, M43) or Phase 2 (mock IdP until federation lands).
-3. **Elixir hiring plan** — 2-3 senior anchors + 4-6 upskilled devs; remote OK; timing depends on HR alignment.
-4. **External red team + 24/7 SOC funding** — flagged as budget-shape questions.
-5. **Third-party witness engagement for transparency log** — external observers + on-chain anchoring diplomatic engagement.
-6. **Contradictions in source spec to reconcile with client** — module count drift across README/expect/PRD, PRD.md §8.3 broken filename links, missing `MOBILE-INTEGRATION-NOTES.md`, strategy sections §XIV/§XV/§XVIII/§XIX referenced but not in the sw corpus.
+1. **HSM FIPS level**, 140-2 L3 vs 140-3 L3+. Procurement question. Placeholder in ADR-0005; code against PKCS#11 abstractly so the vendor is swappable.
+2. **IPRS / e-Citizen federation timing**, Phase 1 (day 1 for citizen-facing modules M04, M07, M13, M29, M35, M42, M43) or Phase 2 (mock IdP until federation lands).
+3. **Elixir hiring plan**, 2-3 senior anchors + 4-6 upskilled devs; remote OK; timing depends on HR alignment.
+4. **External red team + 24/7 SOC funding**, flagged as budget-shape questions.
+5. **Third-party witness engagement for transparency log**, external observers + on-chain anchoring diplomatic engagement.
+6. **Contradictions in source spec to reconcile with client**, module count drift across README/expect/PRD, PRD.md §8.3 broken filename links, missing `MOBILE-INTEGRATION-NOTES.md`, strategy sections §XIV/§XV/§XVIII/§XIX referenced but not in the sw corpus.
 
 ---
 

@@ -21,10 +21,10 @@ Public consumers span millions of concurrent read viewers, mobile apps on lossy 
 
 **Common conventions across all tiers:**
 
-- **OpenAPI 3.1 spec-first** — schemas in `packages/openapi-contracts/`; generated Dart/TS/Python/Rust clients into `packages/api-clients/`; CI gates on `openapi-diff` and `buf breaking`.
+- **OpenAPI 3.1 spec-first**, schemas in `packages/openapi-contracts/`; generated Dart/TS/Python/Rust clients into `packages/api-clients/`; CI gates on `openapi-diff` and `buf breaking`.
 - **Everything consensus-relevant is signed and verifiable**. Cosign signature + Merkle inclusion proof + snapshot ID in response headers. Client SDKs verify automatically.
 - **Content negotiation**: JSON default, **CBOR alternative for mobile** (Accept: application/cbor). Zstd for large payloads.
-- **Errors as RFC 9457 `application/problem+json`** — never leak stack traces or schema internals.
+- **Errors as RFC 9457 `application/problem+json`**, never leak stack traces or schema internals.
 - **Cache negotiation**: strong `ETag`, `Cache-Control`, `Last-Modified`; cache key includes signature version.
 - **Rate limits** with `RateLimit-*` response headers.
 - **Idempotency-Key** mandatory on all writes.
@@ -47,7 +47,7 @@ Negative: five tiers is more surface than one, but each is genuinely different i
 ## Alternatives rejected
 
 - One-tier API for everything: cannot serve 5-10M cached reads and per-user auth from the same layer under adversarial load.
-- Django for public: rejected — Django is behind the admin realm.
+- Django for public: rejected, Django is behind the admin realm.
 - GraphQL: attack surface hard to defend at DDoS scale.
 - No signing: fails the "everything verifiable" ambition and undermines transparency-log utility.
 

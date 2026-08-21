@@ -1,4 +1,4 @@
-# SA-003: Kenyan-sovereign edge — multi-ISP peering vs Cloudflare / Akamai
+# SA-003: Kenyan-sovereign edge: multi-ISP peering vs Cloudflare / Akamai
 
 Date: 2026-08-21
 Applies to: Datacraft bid documents under work_docs/01-Projects/IEBC/sw/ (our own earlier draft)
@@ -17,7 +17,7 @@ Status: decided (ADR takes precedence; sw/ docs to be edited)
 
 ## RFP status
 
-**Not RFP-binding directly** — tender.txt does not name a specific edge/CDN provider. **However, the spec is internally self-contradictory**: `sw/ARCHITECTURE.md` §17.2 mandates Kenya-sovereign residency for public data publication, which §3.1's Cloudflare/Akamai proposal violates. This CR reconciles the internal contradiction against the sovereign posture.
+**Not RFP-binding directly**, tender.txt does not name a specific edge/CDN provider. **However, the spec is internally self-contradictory**: `sw/ARCHITECTURE.md` §17.2 mandates Kenya-sovereign residency for public data publication, which §3.1's Cloudflare/Akamai proposal violates. This CR reconciles the internal contradiction against the sovereign posture.
 
 ## Rationale
 
@@ -35,7 +35,7 @@ Status: decided (ADR takes precedence; sw/ docs to be edited)
 
 ## Edits to apply to sw/
 
-If Cloudflare/Akamai is politically mandated: enforce **request-path isolation** — Cloudflare handles only anonymous public read traffic to the signed-snapshot tier (ADR-0011 Tier 1). All authenticated traffic (Tiers 2, 3, 5), all administrative surfaces, and all voter-facing personal-lookup endpoints route directly through Kenyan-ISP edges bypassing the foreign CDN. Consensus data verifiability (cosign + Merkle inclusion proofs) means the foreign CDN cannot tamper with published results — but observability of who requested what leaks to the foreign provider.
+If Cloudflare/Akamai is politically mandated: enforce **request-path isolation**, Cloudflare handles only anonymous public read traffic to the signed-snapshot tier (ADR-0011 Tier 1). All authenticated traffic (Tiers 2, 3, 5), all administrative surfaces, and all voter-facing personal-lookup endpoints route directly through Kenyan-ISP edges bypassing the foreign CDN. Consensus data verifiability (cosign + Merkle inclusion proofs) means the foreign CDN cannot tamper with published results, but observability of who requested what leaks to the foreign provider.
 
 ## Related
 

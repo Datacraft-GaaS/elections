@@ -1,4 +1,4 @@
-# SA-001: OSS-hygiene consolidation — OpenBao, Valkey, Karapace
+# SA-001: OSS-hygiene consolidation: OpenBao, Valkey, Karapace
 
 Date: 2026-08-21
 Applies to: Datacraft bid documents under work_docs/01-Projects/IEBC/sw/ (our own earlier draft)
@@ -34,7 +34,7 @@ Substitute drop-in OSS-clean forks:
 
 ## Trade-offs
 
-- OpenBao is younger than Vault; some Vault Enterprise features (namespaces, performance replication modes) not yet mirrored. **We do not need Vault Enterprise features** — every capability we use (KV, PKI, transit, database dynamic creds, HSM seal via PKCS#11) is in OpenBao today.
+- OpenBao is younger than Vault; some Vault Enterprise features (namespaces, performance replication modes) not yet mirrored. **We do not need Vault Enterprise features**, every capability we use (KV, PKI, transit, database dynamic creds, HSM seal via PKCS#11) is in OpenBao today.
 - Valkey is a straight fork; identical semantics.
 - Karapace supports both Avro and JSON Schema; if Datacraft has existing Avro artefacts, they load unchanged.
 

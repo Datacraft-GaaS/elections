@@ -11,7 +11,7 @@ Kenya-sovereign three-site on-prem deployment (Anniversary Towers primary, Bomas
 
 - **Kubernetes 1.31** provisioned with kubeadm; one cluster per site (three total).
 - **Container runtime**: containerd.
-- **Node OS**: **Ubuntu 24.04 LTS** — ops-team familiarity over Talos's image-based elegance for a 3-year contract. Immutability provided by kernel-signed boot + hardened base image + read-only rootfs where feasible.
+- **Node OS**: **Ubuntu 24.04 LTS**, ops-team familiarity over Talos's image-based elegance for a 3-year contract. Immutability provided by kernel-signed boot + hardened base image + read-only rootfs where feasible.
 - **CNI + service mesh**: **Cilium** (Apache 2.0) providing CNI, service mesh, NetworkPolicy enforcement, and Hubble observability in one component. Linkerd rejected because Cilium consolidates four separate concerns.
 - **Workload identity**: **SPIFFE/SPIRE** with HSM-sealed root (see ADR-0005). Every workload gets an SVID (X.509 or JWT) attested from K8s SA + TPM + HSM selectors.
 - **Ingress**: **Envoy Gateway** (Apache 2.0).
