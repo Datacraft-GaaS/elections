@@ -21,4 +21,11 @@ Numbered, immutable-after-acceptance. Amendments come as new ADRs that supersede
 | [0015](0015-cross-service-consistency.md) | Cross-service consistency: outbox + Debezium + Kafka + CloudEvents envelope + signing | accepted |
 | [0016](0016-pii-retention.md) | PII classification & retention: 5 tiers, soft-delete + scheduled purge, rotating backup keys | accepted |
 | [0017](0017-transparency-log.md) | Transparency log: single monolithic Rust service, HSM-signed STHs at 1s/60s/5min | accepted |
-| [0018](0018-write-path-performance.md) | Write path performance: 50k/sec sustained per cluster, P99 25ms end-to-end, 5x load buffer | accepted |
+| [0018](0018-write-path-performance.md) | Write path performance: 50k/sec sustained per cluster, P99 25ms end-to-end, 5x load buffer | accepted (amended by 0023) |
+| [0019](0019-edge-topology.md) | Regional edge topology: 5 K8s clusters (Nairobi/Mombasa/Kisumu/Eldoret/Garissa) | accepted |
+| [0020](0020-service-topology.md) | Service topology: 18 K8s services grouping the 69 modules | accepted |
+| [0021](0021-mobile-security.md) | Mobile security posture: Play Integrity + App Attest + RASP + Isar+SQLCipher | accepted |
+| [0022](0022-release-dr.md) | Release process & DR: blue-green with 15-min rollback, RTO/RPO SLAs, election-day mode | accepted |
+| [0023](0023-rfp-alignment.md) | RFP-alignment reconciliation: amendments to 0004/0005/0006/0007/0008/0012/0015/0016/0017/0018 | accepted |
+
+Amended ADRs: 0004, 0005, 0006, 0007, 0008, 0012, 0015, 0016, 0017, 0018 — see ADR-0023 for the amendment delta. Original ADR text remains the canonical decision record for its subject; amendments are captured in one auditable location.
