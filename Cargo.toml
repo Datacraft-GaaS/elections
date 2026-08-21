@@ -8,7 +8,8 @@ members = [
   "tools/*",
 ]
 exclude = [
-  "tools/softhsm",
+  
+    "services/queue-svc/crates/*","tools/softhsm",
   "tools/spectral",
   "services/bvr-svc/crates/bvr-api",
   "services/bvr-svc/crates/bvr-domain",

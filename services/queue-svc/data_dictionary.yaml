@@ -1,0 +1,29 @@
+version: "1.0"
+service: eel-queue-svc
+module: M19
+tables:
+  eel_queue_snapshots:
+    description: "Fused queue snapshot per polling station"
+    fields:
+      id: {type: uuid, description: "Primary key"}
+      station_code: {type: text, description: "Polling station code"}
+      kit_throughput_per_hour: {type: int, description: "Kit-side throughput signal"}
+      clerk_report_count: {type: int, description: "Clerk-reported count"}
+      cv_headcount: {type: int, description: "Computer vision headcount"}
+      qr_scan_count: {type: int, description: "QR scan count"}
+      estimated_wait_minutes: {type: int, description: "Fused wait time estimate"}
+      disenfranchisement_flag: {type: bool, description: "True when wait exceeds threshold"}
+      s14a_recommended: {type: bool, description: "True when s.14A extension recommended"}
+      signature: {type: text, nullable: true, description: "HSM signature over snapshot"}
+  eel_queue_events:
+    description: "CloudEvent records for queue domain events"
+    fields:
+      id: {type: uuid, description: "Primary key"}
+      event_type: {type: text, description: "CloudEvent type e.g. eel.queue.snapshot.v1"}
+      station_code: {type: text, description: "Polling station code"}
+      payload: {type: jsonb, description: "Full event payload"}
+events:
+  eel.queue.snapshot.v1: {description: "Queue snapshot fused from all sources"}
+  eel.queue.wait_time_breached.v1: {description: "Wait time exceeded threshold"}
+  eel.queue.disenfranchisement_flag.v1: {description: "Disenfranchisement risk flagged"}
+  eel.queue.s14a_recommended.v1: {description: "s.14A extension recommended, awaiting Chair HSM sign"}

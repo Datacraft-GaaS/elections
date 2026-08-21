@@ -1,0 +1,32 @@
+[package]
+name = "eel-queue-pipeline"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+rust-version = "1.83"
+publish = false
+description = "Queue snapshot fusion pipeline for eel queue-svc (WP-4.2)"
+
+[lib]
+name = "eel_queue_pipeline"
+path = "src/lib.rs"
+
+[[bin]]
+name = "eel-queue-pipeline"
+path = "src/main.rs"
+
+[dependencies]
+tokio          = { version = "1",   features = ["full"] }
+serde          = { version = "1",   features = ["derive"] }
+serde_json     = { version = "1" }
+uuid           = { version = "1",   features = ["v4", "serde"] }
+chrono         = { version = "0.4", features = ["serde"] }
+tracing        = { version = "0.1" }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+thiserror      = { version = "2" }
+axum           = { version = "0.8", features = ["json", "macros", "tokio"] }
+tower          = { version = "0.5", features = ["full"] }
+tower-http     = { version = "0.6", features = ["full"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
