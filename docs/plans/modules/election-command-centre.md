@@ -55,13 +55,13 @@ OpenAPI file: packages/openapi-contracts/ecc/command.yaml
 
 | event type | direction | topic | retention class | signed? | delivery |
 |---|---|---|---|---|---|
-| ke.iebc.ecc.alert_created.v1 | emits | iebc.ecc.alert.v1 | operational | yes | at-least-once idempotent |
-| ke.iebc.ecc.alert_resolved.v1 | emits | iebc.ecc.alert.v1 | operational | yes | at-least-once idempotent |
-| ke.iebc.ecc.s44a_authorised.v1 | emits | iebc.ecc.s44a.v1 | operational | yes (dual) | exactly-once |
-| ke.iebc.ecc.dispatch_created.v1 | emits | iebc.ecc.dispatch.v1 | operational | yes | at-least-once idempotent |
-| ke.iebc.bvi.session_accepted.v1 | consumes | iebc.bvi.session.v1 | operational | yes | at-least-once idempotent |
-| ke.iebc.bvi.distress_received.v1 | consumes | iebc.bvi.security.v1 | operational | yes | exactly-once |
-| ke.iebc.rts.form_ingested.v1 | consumes | iebc.rts.form.v1 | event-source | yes | exactly-once |
+| eel.ecc.alert_created.v1 | emits | eel.ecc.alert.v1 | operational | yes | at-least-once idempotent |
+| eel.ecc.alert_resolved.v1 | emits | eel.ecc.alert.v1 | operational | yes | at-least-once idempotent |
+| eel.ecc.s44a_authorised.v1 | emits | eel.ecc.s44a.v1 | operational | yes (dual) | exactly-once |
+| eel.ecc.dispatch_created.v1 | emits | eel.ecc.dispatch.v1 | operational | yes | at-least-once idempotent |
+| eel.bvi.session_accepted.v1 | consumes | eel.bvi.session.v1 | operational | yes | at-least-once idempotent |
+| eel.bvi.distress_received.v1 | consumes | eel.bvi.security.v1 | operational | yes | exactly-once |
+| eel.rts.form_ingested.v1 | consumes | eel.rts.form.v1 | event-source | yes | exactly-once |
 
 ## Integrations
 
@@ -85,7 +85,7 @@ No ML runs inside this module. It consumes flags from M17 (speech integrity) and
 
 - Modules: M08, M10, M13, M17, M18, M19, M20, M26, M33
 - Platform: P05 (audit), P06 (HSM)
-- Packages: iebc-crypto-rs, iebc-outbox-rs, kit-sdk-flutter
+- Packages: eel-crypto-rs, eel-outbox-rs, kit-sdk-flutter
 
 ## Feature checklist
 
