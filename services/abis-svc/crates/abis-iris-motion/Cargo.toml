@@ -1,0 +1,19 @@
+[package]
+name            = "eel-abis-iris-motion"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+
+[lib]
+name = "eel_abis_iris_motion"
+path = "src/lib.rs"
+
+[dependencies]
+serde         = { workspace = true }
+thiserror     = { workspace = true }
+tracing       = { workspace = true }
+eel-abis-iris-segment = { path = "../abis-iris-segment" }
+
+[dev-dependencies]
+rstest = { workspace = true }
