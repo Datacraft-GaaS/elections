@@ -1,4 +1,4 @@
-# mobile-citizen-verify — spec
+# mobile-citizen-verify, spec
 
 Status: draft
 Owner: TBD

@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Custody Chain & Inventory Management API
   description: |
-    Module M20 — inventory-management (custody events).
+    Module M20, inventory-management (custody events).
     Tracks physical electoral assets through chain-of-custody events, seal
     integrity, reserves management, and reconciliation reporting.
 
@@ -13,10 +13,10 @@ info:
 
     ## Data Classification
     Property annotations use `x-eel-data-class`:
-    - **A** — secret / biometric
-    - **B** — sensitive personal data (voter-linked)
-    - **C** — controlled operational data
-    - **D** — aggregate / public-safe statistics
+    - **A**, secret / biometric
+    - **B**, sensitive personal data (voter-linked)
+    - **C**, controlled operational data
+    - **D**, aggregate / public-safe statistics
 
     ## Idempotency
     All write operations require an `Idempotency-Key` header (UUID v4/v7).
@@ -108,7 +108,7 @@ paths:
                 created_at: '2026-01-15T08:00:00Z'
                 updated_at: '2026-01-15T08:00:00Z'
         '200':
-          description: Duplicate idempotency key — returning original record
+          description: Duplicate idempotency key, returning original record
           content:
             application/json:
               schema:
@@ -327,7 +327,7 @@ paths:
                 sealed_at: '2026-08-09T07:30:00Z'
                 status: intact
         '200':
-          description: Duplicate idempotency key — returning original record
+          description: Duplicate idempotency key, returning original record
           content:
             application/json:
               schema:
@@ -400,7 +400,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          description: Forbidden — may indicate dual-control failure
+          description: Forbidden, may indicate dual-control failure
           content:
             application/problem+json:
               schema:
@@ -484,7 +484,7 @@ paths:
       operationId: getCustodySummary
       summary: Get aggregate custody statistics
       description: |
-        Returns a real-time aggregate snapshot. Data-class D — aggregate counts
+        Returns a real-time aggregate snapshot. Data-class D, aggregate counts
         only, no individual asset identifiers. Results are cached with a 60-second
         TTL; callers may pass `Cache-Control: no-cache` to force a fresh
         computation (subject to rate-limiting).
@@ -582,7 +582,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ReconcileReport'
         '200':
-          description: Duplicate idempotency key — returning existing record
+          description: Duplicate idempotency key, returning existing record
           content:
             application/json:
               schema:
@@ -1260,7 +1260,7 @@ components:
 
   responses:
     BadRequest:
-      description: Bad request — malformed input
+      description: Bad request, malformed input
       content:
         application/problem+json:
           schema:
@@ -1312,7 +1312,7 @@ components:
             instance: /api/v1/custody/assets/ast-unknown
 
     Conflict:
-      description: State conflict — resource already exists or concurrent modification
+      description: State conflict, resource already exists or concurrent modification
       content:
         application/problem+json:
           schema:
@@ -1325,7 +1325,7 @@ components:
             instance: /api/v1/custody/assets
 
     UnprocessableEntity:
-      description: Semantically invalid request — validation passed but business rule failed
+      description: Semantically invalid request, validation passed but business rule failed
       content:
         application/problem+json:
           schema:

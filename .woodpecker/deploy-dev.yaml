@@ -1,5 +1,5 @@
 ---
-# WP-0.5: dev cluster deploy — ArgoCD app sync on main branch
+# WP-0.5: dev cluster deploy, ArgoCD app sync on main branch
 when:
   - event: push
     branch: main
@@ -15,7 +15,7 @@ steps:
       - |
         appsets=$(find platform/argocd/applicationsets -name '*.yaml' 2>/dev/null)
         if [ -z "$appsets" ]; then
-          echo "no ArgoCD ApplicationSets found — skip deploy-dev"
+          echo "no ArgoCD ApplicationSets found, skip deploy-dev"
           exit 0
         fi
         for appset in $appsets; do

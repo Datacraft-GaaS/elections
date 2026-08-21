@@ -22,7 +22,7 @@ authors     = ["eel contributors"]
 repository  = "https://gitea.internal/eel/eel"
 
 # ---------------------------------------------------------------------------
-# Shared dependency versions — pin here, reference with { workspace = true }
+# Shared dependency versions, pin here, reference with { workspace = true }
 # ---------------------------------------------------------------------------
 [workspace.dependencies]
 # HTTP / gRPC

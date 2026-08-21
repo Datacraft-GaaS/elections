@@ -1,4 +1,4 @@
-# queue-transparency — spec
+# queue-transparency, spec
 
 Status: draft
 Owner: TBD

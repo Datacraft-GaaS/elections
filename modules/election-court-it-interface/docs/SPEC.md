@@ -1,4 +1,4 @@
-# election-court-it-interface — spec
+# election-court-it-interface, spec
 
 Status: draft
 Owner: TBD

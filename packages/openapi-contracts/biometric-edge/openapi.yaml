@@ -45,7 +45,7 @@ paths:
         Receives a biometric enrolment record captured at the edge device.
         The device performs local quality screening before submission.
         The backend triggers ABIS deduplication and transparency log append.
-        Idempotent via Idempotency-Key — replay-safe for intermittent field links.
+        Idempotent via Idempotency-Key, replay-safe for intermittent field links.
         Data-class A (biometric): encrypted in transit, stored encrypted at rest,
         access requires elevated SVID identity.
       tags: [enrolment]
@@ -104,7 +104,7 @@ paths:
               schema:
                 $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
         "422":
-          description: "Validation error — quality score below threshold, unknown modality, etc."
+          description: "Validation error, quality score below threshold, unknown modality, etc."
           content:
             application/problem+json:
               schema:
@@ -124,7 +124,7 @@ paths:
         Triggers a 1:N biometric search against the enrolled voter register
         within the scoped station. Used during polling day verification.
         Response indicates match/no-match with a confidence score.
-        Idempotent per session_id — prevents duplicate identification events
+        Idempotent per session_id, prevents duplicate identification events
         on flaky field links.
         Data-class A (biometric): same controls as enrolment.
       tags: [identification]
@@ -159,7 +159,7 @@ paths:
               $ref: "#/components/schemas/EdgeIdentificationRequest"
       responses:
         "200":
-          description: "Identification result — match or no-match"
+          description: "Identification result, match or no-match"
           headers:
             X-Request-Id:
               $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
@@ -183,7 +183,7 @@ paths:
               schema:
                 $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
         "422":
-          description: "Validation error — quality too low, unknown station, etc."
+          description: "Validation error, quality too low, unknown station, etc."
           content:
             application/problem+json:
               schema:
@@ -267,7 +267,7 @@ paths:
         with firmware hash and boot log hash. The backend verifies the quote
         against the registered EK certificate and stored golden PCR values.
         Devices must successfully attest before tier-5 endpoints are unblocked.
-        Idempotent — repeated submission of an identical quote is safe.
+        Idempotent, repeated submission of an identical quote is safe.
         Data-class C: no biometric content, but attestation evidence is operationally
         sensitive and must not be exposed publicly.
       tags: [attestation]
@@ -297,7 +297,7 @@ paths:
               device_sig: "MEUCIQDxyz..."
       responses:
         "200":
-          description: "Attestation verified — device is trusted for tier-5 operations"
+          description: "Attestation verified, device is trusted for tier-5 operations"
           headers:
             X-Request-Id:
               $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
@@ -312,7 +312,7 @@ paths:
               schema:
                 $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
         "403":
-          description: "Attestation failed — PCR mismatch, replay detected, or unknown EK"
+          description: "Attestation failed, PCR mismatch, replay detected, or unknown EK"
           content:
             application/problem+json:
               schema:
@@ -339,7 +339,7 @@ paths:
         operational telemetry: battery level, temperature, GPS position,
         and cellular signal. Used by field ops dashboards to monitor device
         health without biometric data exposure.
-        Idempotent — duplicate heartbeats within the same timestamp window are
+        Idempotent, duplicate heartbeats within the same timestamp window are
         deduplicated server-side.
         Data-class D: no PII or biometric content.
       tags: [heartbeat]
@@ -576,7 +576,7 @@ components:
         session_id:
           type: string
           format: uuid
-          description: "UUID7 voter interaction session. Used as secondary idempotency scope — one identification result per session."
+          description: "UUID7 voter interaction session. Used as secondary idempotency scope, one identification result per session."
           x-eel-data-class: C
           example: "01933b2a-7d4c-7e5f-a1b2-3c4d5e6f7a8b"
       additionalProperties: false
@@ -606,7 +606,7 @@ components:
           format: float
           minimum: 0
           maximum: 1
-          description: "Confidence score of the best match (0–1). Present regardless of matched flag."
+          description: "Confidence score of the best match (0-1). Present regardless of matched flag."
           x-eel-data-class: D
           example: 0.974
         voter_ref:

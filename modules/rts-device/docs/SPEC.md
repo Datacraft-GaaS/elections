@@ -1,4 +1,4 @@
-# rts-device — spec
+# rts-device, spec
 
 Status: draft
 Owner: TBD

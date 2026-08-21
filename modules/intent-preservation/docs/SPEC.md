@@ -1,4 +1,4 @@
-# intent-preservation — spec
+# intent-preservation, spec
 
 Status: draft
 Owner: TBD

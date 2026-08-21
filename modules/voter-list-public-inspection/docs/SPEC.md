@@ -1,4 +1,4 @@
-# voter-list-public-inspection — spec
+# voter-list-public-inspection, spec
 
 Status: draft
 Owner: TBD

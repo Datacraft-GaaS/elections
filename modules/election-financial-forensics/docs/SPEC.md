@@ -1,4 +1,4 @@
-# election-financial-forensics — spec
+# election-financial-forensics, spec
 
 Status: draft
 Owner: TBD

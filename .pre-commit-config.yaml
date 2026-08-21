@@ -57,7 +57,7 @@ repos:
       - id: spectral-lint
         name: spectral lint OpenAPI contracts
         language: system
-        entry: bash -c 'if find packages/openapi-contracts -name "*.yaml" 2>/dev/null | grep -q .; then spectral lint "packages/openapi-contracts/**/*.yaml" --fail-severity=warn; else echo "spectral: no contracts yet — skipping"; fi'
+        entry: bash -c 'if find packages/openapi-contracts -name "*.yaml" 2>/dev/null | grep -q .; then spectral lint "packages/openapi-contracts/**/*.yaml" --fail-severity=warn; else echo "spectral: no contracts yet, skipping"; fi'
         files: packages/openapi-contracts/.*\.yaml$
         pass_filenames: false
 
@@ -69,7 +69,7 @@ repos:
       - id: no-dashes-in-md
         name: reject em/en dashes in .md files
         language: pygrep
-        entry: '[–—]'
+        entry: '[-, ]'
         types: [markdown]
         args: [--multiline]
 

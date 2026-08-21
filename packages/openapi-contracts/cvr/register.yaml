@@ -67,7 +67,7 @@ paths:
       tags: [register]
       operationId: getRegisterSnapshot
       summary: Bulk register download (anonymised aggregate)
-      description: Returns a presigned MinIO URL for a signed Parquet/CSV export. Contains station-level counts only — no individual records. Tier 4, requires JWT, SpiceDB, and explicit bulk-access scope.
+      description: Returns a presigned MinIO URL for a signed Parquet/CSV export. Contains station-level counts only, no individual records. Tier 4, requires JWT, SpiceDB, and explicit bulk-access scope.
       x-eel-sla:
         p95_ms: 150
         p99_ms: 400

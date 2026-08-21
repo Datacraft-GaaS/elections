@@ -1,4 +1,4 @@
-# rts-backend — spec
+# rts-backend, spec
 
 Status: draft
 Owner: TBD

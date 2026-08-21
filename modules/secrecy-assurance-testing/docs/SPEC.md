@@ -1,4 +1,4 @@
-# secrecy-assurance-testing — spec
+# secrecy-assurance-testing, spec
 
 Status: draft
 Owner: TBD

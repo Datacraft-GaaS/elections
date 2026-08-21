@@ -1,4 +1,4 @@
-# bvi-backend — spec
+# bvi-backend, spec
 
 Status: draft
 Owner: TBD

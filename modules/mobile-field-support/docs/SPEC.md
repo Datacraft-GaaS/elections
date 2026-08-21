@@ -1,4 +1,4 @@
-# mobile-field-support — spec
+# mobile-field-support, spec
 
 Status: draft
 Owner: TBD

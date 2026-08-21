@@ -1,4 +1,4 @@
-# cvr-continuous-voter-register — spec
+# cvr-continuous-voter-register, spec
 
 Status: draft
 Owner: TBD

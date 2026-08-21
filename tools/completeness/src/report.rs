@@ -1,4 +1,4 @@
-//! `eel-completeness report` — combines scan + trace into docs/audit/completeness-report.md
+//! `eel-completeness report`, combines scan + trace into docs/audit/completeness-report.md
 
 use crate::allowlist::Allowlist;
 use anyhow::{Context, Result};

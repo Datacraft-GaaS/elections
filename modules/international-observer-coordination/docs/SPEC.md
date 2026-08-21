@@ -1,4 +1,4 @@
-# international-observer-coordination — spec
+# international-observer-coordination, spec
 
 Status: draft
 Owner: TBD

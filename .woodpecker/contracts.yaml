@@ -11,7 +11,7 @@ steps:
         if find packages/openapi-contracts -name '*.yaml' | grep -q .; then
           spectral lint packages/openapi-contracts/**/*.yaml --ruleset .spectral.yaml
         else
-          echo "no OpenAPI contracts — skip"
+          echo "no OpenAPI contracts, skip"
         fi
 
   - name: zed-validate
@@ -22,7 +22,7 @@ steps:
           find packages/authz-schema -name '*.zed' -print0 \
             | xargs -0 -I{} zed validate {}
         else
-          echo "no ZED schemas — skip"
+          echo "no ZED schemas, skip"
         fi
 
   - name: json-schema-validate
@@ -33,7 +33,7 @@ steps:
           find packages/event-schemas -name '*.schema.json' -print0 \
             | xargs -0 -I{} ajv validate --strict=true --spec=draft2020 -s {}
         else
-          echo "no event schemas — skip"
+          echo "no event schemas, skip"
         fi
 
   - name: buf-breaking
@@ -45,7 +45,7 @@ steps:
         if find . -name 'buf.yaml' -not -path '*/node_modules/*' | grep -q .; then
           buf breaking --against '.git#branch=main'
         else
-          echo "no buf configs — skip"
+          echo "no buf configs, skip"
         fi
 
   - name: openapi-diff
@@ -62,7 +62,7 @@ steps:
             openapi-diff /tmp/prev-spec.yaml "$spec" --fail-on-incompatible
           done
         else
-          echo "no OpenAPI specs — skip"
+          echo "no OpenAPI specs, skip"
         fi
 
   - name: topic-coverage
@@ -75,5 +75,5 @@ steps:
             --schemas packages/event-schemas \
             --topics platform/kafka/topics
         else
-          echo "no event schemas — skip topic coverage check"
+          echo "no event schemas, skip topic coverage check"
         fi

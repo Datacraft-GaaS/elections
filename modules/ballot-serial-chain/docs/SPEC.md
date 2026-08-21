@@ -1,4 +1,4 @@
-# ballot-serial-chain — spec
+# ballot-serial-chain, spec
 
 Status: draft
 Owner: TBD

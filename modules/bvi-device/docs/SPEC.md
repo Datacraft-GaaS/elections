@@ -1,4 +1,4 @@
-# bvi-device — spec
+# bvi-device, spec
 
 Status: draft
 Owner: TBD

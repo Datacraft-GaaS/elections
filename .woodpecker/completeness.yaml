@@ -1,5 +1,5 @@
 ---
-# WP-0.5: completeness scanner — blocking check on every PR; strict on main
+# WP-0.5: completeness scanner, blocking check on every PR; strict on main
 when:
   - event: [push, pull_request]
 

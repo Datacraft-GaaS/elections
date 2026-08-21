@@ -1,5 +1,5 @@
 {
-  description = "eel node workspace flake — deterministic hello build";
+  description = "eel node workspace flake, deterministic hello build";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";

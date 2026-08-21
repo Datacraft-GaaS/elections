@@ -1,4 +1,4 @@
-# rla-audit-tool — spec
+# rla-audit-tool, spec
 
 Status: draft
 Owner: TBD

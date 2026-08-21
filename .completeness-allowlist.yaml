@@ -1,0 +1,32 @@
+# Completeness scanner allowlist.
+# Every entry needs a reason and an expiry (YYYY-MM-DD). CI blocks past expiry.
+# See docs/plans/11-completeness-audit.md §9.1 for allowlist policy.
+
+allowlist:
+  # The completeness scanner itself contains the very regex patterns it hunts
+  # for, plus intentional test fixtures. These are self-references, not stubs.
+  - path: "tools/completeness/src/scan.rs"
+    reason: "regex patterns and message strings match themselves"
+    reference: "adr/0006-build-supply-chain.md"
+    expires: "2099-12-31"
+  - path: "tools/completeness/tests/"
+    reason: "test fixtures deliberately contain stub patterns"
+    reference: "adr/0006-build-supply-chain.md"
+    expires: "2099-12-31"
+  - path: "tools/completeness/fixtures/"
+    reason: "positive-case fixtures for the scanner"
+    reference: "adr/0006-build-supply-chain.md"
+    expires: "2099-12-31"
+
+  # Hello service exists only to prove the toolchain compiles.
+  - path: "services/hello-svc/"
+    reason: "smoke-test service, not a real module; removed by G6"
+    reference: "docs/plans/01-wave-0-toolchain.md"
+    expires: "2099-12-31"
+
+  # ClickHouse is the sole ADR-sanctioned deferral until Phase 2.
+  # Any code that stubs ClickHouse integration is allowed until then.
+  - path: "packages/eel-observability-rs/src/clickhouse.rs"
+    reason: "ClickHouse deferred to Phase 2"
+    reference: "adr/0003-data-infrastructure.md"
+    expires: "2099-12-31"

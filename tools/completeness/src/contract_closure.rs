@@ -1,4 +1,4 @@
-//! `eel-completeness contract-closure` — verifies that every service pair,
+//! `eel-completeness contract-closure`, verifies that every service pair,
 //! every OpenAPI path, and every event schema has producer and consumer test coverage.
 //!
 //! Sources read:
@@ -70,7 +70,7 @@ pub fn run(root: &Path, fail: bool) -> Result<i32> {
             ));
         } else if in_tests == 1 {
             issues.push(format!(
-                "Event type `{ev_type}` appears in only {in_tests} test file — need both producer and consumer"
+                "Event type `{ev_type}` appears in only {in_tests} test file, need both producer and consumer"
             ));
         }
     }

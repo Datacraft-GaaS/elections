@@ -1,4 +1,4 @@
-# nomination-fee-payment — spec
+# nomination-fee-payment, spec
 
 Status: draft
 Owner: TBD

@@ -36,7 +36,7 @@ steps:
             "$image"
         done
         if ! find services/*/deploy/nix -maxdepth 2 -name flake.nix 2>/dev/null | grep -q .; then
-          echo "no service images — skip cosign"
+          echo "no service images, skip cosign"
         fi
 
   - name: slsa-provenance

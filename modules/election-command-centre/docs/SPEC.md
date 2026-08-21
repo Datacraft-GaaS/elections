@@ -1,4 +1,4 @@
-# election-command-centre — spec
+# election-command-centre, spec
 
 Status: draft
 Owner: TBD

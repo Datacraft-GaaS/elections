@@ -4,7 +4,7 @@ info:
   title: eel-portal-public
   version: "1.0.0"
   description: >
-    M11 public portal API — election results, Merkle proofs, civic content, and live turnout.
+    M11 public portal API, election results, Merkle proofs, civic content, and live turnout.
     Tier 1 (signed-static) read endpoints return X-Eel-Cosign-Sig, X-Eel-Merkle-Proof, and
     X-Eel-Snapshot-Id response headers for client-side cryptographic verification.
     All data classes C and D. No PII returned from any endpoint.
@@ -337,7 +337,7 @@ components:
 
     TurnoutSummary:
       type: object
-      description: "Live turnout aggregate — updated every 5 minutes during polling day."
+      description: "Live turnout aggregate, updated every 5 minutes during polling day."
       required:
         - election_id
         - total_registered

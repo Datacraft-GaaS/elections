@@ -1,4 +1,4 @@
-# party-symbol-colour-registry — spec
+# party-symbol-colour-registry, spec
 
 Status: draft
 Owner: TBD

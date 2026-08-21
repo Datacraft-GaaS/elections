@@ -1,4 +1,4 @@
-# speech-integrity — spec
+# speech-integrity, spec
 
 Status: draft
 Owner: TBD

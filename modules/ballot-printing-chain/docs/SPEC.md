@@ -1,4 +1,4 @@
-# ballot-printing-chain — spec
+# ballot-printing-chain, spec
 
 Status: draft
 Owner: TBD

@@ -1,4 +1,4 @@
-# election-calendar-gazette — spec
+# election-calendar-gazette, spec
 
 Status: draft
 Owner: TBD

@@ -1,4 +1,4 @@
-# boundary-transparency — spec
+# boundary-transparency, spec
 
 Status: draft
 Owner: TBD

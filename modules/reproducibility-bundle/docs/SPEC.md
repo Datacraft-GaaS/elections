@@ -1,4 +1,4 @@
-# reproducibility-bundle — spec
+# reproducibility-bundle, spec
 
 Status: draft
 Owner: TBD

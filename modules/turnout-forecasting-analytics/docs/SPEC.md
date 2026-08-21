@@ -1,4 +1,4 @@
-# turnout-forecasting-analytics — spec
+# turnout-forecasting-analytics, spec
 
 Status: draft
 Owner: TBD

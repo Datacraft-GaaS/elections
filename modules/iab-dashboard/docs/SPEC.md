@@ -1,4 +1,4 @@
-# iab-dashboard — spec
+# iab-dashboard, spec
 
 Status: draft
 Owner: TBD

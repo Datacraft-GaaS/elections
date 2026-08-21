@@ -1,4 +1,4 @@
-# media-accreditation-portal — spec
+# media-accreditation-portal, spec
 
 Status: draft
 Owner: TBD

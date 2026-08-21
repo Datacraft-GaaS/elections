@@ -1,4 +1,4 @@
-# county-national-coordination — spec
+# county-national-coordination, spec
 
 Status: draft
 Owner: TBD

@@ -1,1 +1,1 @@
-// Stub — implementation added in Wave 1.
+// Stub, implementation added in Wave 1.

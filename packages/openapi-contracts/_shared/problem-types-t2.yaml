@@ -1,4 +1,4 @@
-# T2 problem type catalogue — extends WP-0.4a problem-types.yaml.
+# T2 problem type catalogue: extends WP-0.4a problem-types.yaml.
 # Do not modify the base file; add only problem types NOT in the T1 catalogue.
 # Languages follow BCP-47 tags. Message values are display strings (not keys).
 # All URIs resolve to https://errors.eel.local/t2/<id> per trust domain eel.local.

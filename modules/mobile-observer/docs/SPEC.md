@@ -1,4 +1,4 @@
-# mobile-observer — spec
+# mobile-observer, spec
 
 Status: draft
 Owner: TBD

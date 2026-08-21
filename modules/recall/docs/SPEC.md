@@ -1,4 +1,4 @@
-# recall — spec
+# recall, spec
 
 Status: draft
 Owner: TBD

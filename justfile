@@ -1,4 +1,4 @@
-# eel monorepo — root justfile
+# eel monorepo, root justfile
 # Use `just <recipe>` from any directory.
 # Sub-justfiles are imported with `mod`; each language owns its own recipes.
 
@@ -28,7 +28,7 @@ up:
     @if [ -f environments/dev/compose/docker-compose.yml ]; then \
       docker compose -f environments/dev/compose/docker-compose.yml up -d; \
     else \
-      echo "[up] compose file not yet present — skipping (WP-0.2)"; \
+      echo "[up] compose file not yet present, skipping (WP-0.2)"; \
     fi
 
 # Tear down the local dev cluster
@@ -37,7 +37,7 @@ down:
     @if [ -f environments/dev/compose/docker-compose.yml ]; then \
       docker compose -f environments/dev/compose/docker-compose.yml down; \
     else \
-      echo "[down] compose file not yet present — skipping (WP-0.2)"; \
+      echo "[down] compose file not yet present, skipping (WP-0.2)"; \
     fi
 
 # ---------------------------------------------------------------------------
@@ -54,21 +54,21 @@ test-unit:
         "import sys,json; w=json.load(sys.stdin); exit(0 if w['workspace_members'] else 1)" 2>/dev/null; then \
       cargo nextest run --lib --bins -q; \
     else \
-      echo "[test-unit] no Rust workspace members yet — skipping"; \
+      echo "[test-unit] no Rust workspace members yet, skipping"; \
     fi
     @echo "[test-unit] running Python tests..."
     @if find services -name "pyproject.toml" -maxdepth 5 | grep -q .; then \
       find services -name "pyproject.toml" -maxdepth 5 -exec dirname {} \; | \
         xargs -I{} sh -c 'cd {} && uv run pytest -q tests/ci 2>/dev/null || true'; \
     else \
-      echo "[test-unit] no Python projects yet — skipping"; \
+      echo "[test-unit] no Python projects yet, skipping"; \
     fi
     @echo "[test-unit] running Elixir tests..."
     @if find services -name "mix.exs" -maxdepth 6 | grep -q .; then \
       find services -name "mix.exs" -maxdepth 6 -exec dirname {} \; | \
         xargs -I{} sh -c 'cd {} && mix test --no-color 2>/dev/null || true'; \
     else \
-      echo "[test-unit] no Elixir projects yet — skipping"; \
+      echo "[test-unit] no Elixir projects yet, skipping"; \
     fi
 
 # Integration tests (require cluster up)
@@ -78,7 +78,7 @@ test-integration:
         "import sys,json; w=json.load(sys.stdin); exit(0 if w['workspace_members'] else 1)" 2>/dev/null; then \
       cargo nextest run --test '*' -q 2>/dev/null || echo "[test-integration] no integration tests yet"; \
     else \
-      echo "[test-integration] no workspace members yet — skipping"; \
+      echo "[test-integration] no workspace members yet, skipping"; \
     fi
 
 # ---------------------------------------------------------------------------
@@ -94,7 +94,7 @@ _lint-rust:
       cargo clippy --all-targets --all-features -- -D warnings -q; \
       cargo fmt --all --check; \
     else \
-      echo "[lint] no Rust crates yet — skipping"; \
+      echo "[lint] no Rust crates yet, skipping"; \
     fi
 
 _lint-python:
@@ -102,7 +102,7 @@ _lint-python:
     @if find services packages -name "*.py" -maxdepth 8 2>/dev/null | grep -q .; then \
       ruff check . && ruff format --check .; \
     else \
-      echo "[lint] no Python files yet — skipping"; \
+      echo "[lint] no Python files yet, skipping"; \
     fi
 
 _lint-elixir:
@@ -111,7 +111,7 @@ _lint-elixir:
       find services -name "mix.exs" -maxdepth 6 -exec dirname {} \; | \
         xargs -I{} sh -c 'cd {} && mix format --check-formatted 2>/dev/null || true'; \
     else \
-      echo "[lint] no Elixir projects yet — skipping"; \
+      echo "[lint] no Elixir projects yet, skipping"; \
     fi
 
 _lint-contracts:
@@ -119,7 +119,7 @@ _lint-contracts:
     @if find packages/openapi-contracts -name "*.yaml" 2>/dev/null | grep -q .; then \
       spectral lint "packages/openapi-contracts/**/*.yaml" --fail-severity=warn; \
     else \
-      echo "[lint] no OpenAPI contracts yet — skipping"; \
+      echo "[lint] no OpenAPI contracts yet, skipping"; \
     fi
 
 # Format everything
@@ -146,19 +146,19 @@ build:
     @if find . -name "Cargo.toml" -not -path "*/target/*" | xargs grep -l '^\[package\]' 2>/dev/null | grep -q .; then \
       cargo build --release --workspace -q; \
     else \
-      echo "[build] no Rust crates yet — skipping"; \
+      echo "[build] no Rust crates yet, skipping"; \
     fi
     @if find services -name "pyproject.toml" -maxdepth 5 2>/dev/null | grep -q .; then \
       find services -name "pyproject.toml" -maxdepth 5 -exec dirname {} \; | \
         xargs -I{} sh -c 'cd {} && uv build 2>/dev/null || true'; \
     else \
-      echo "[build] no Python projects yet — skipping"; \
+      echo "[build] no Python projects yet, skipping"; \
     fi
     @if find services -name "mix.exs" -maxdepth 6 2>/dev/null | grep -q .; then \
       find services -name "mix.exs" -maxdepth 6 -exec dirname {} \; | \
         xargs -I{} sh -c 'cd {} && mix compile 2>/dev/null || true'; \
     else \
-      echo "[build] no Elixir projects yet — skipping"; \
+      echo "[build] no Elixir projects yet, skipping"; \
     fi
 
 # ---------------------------------------------------------------------------
@@ -168,7 +168,7 @@ build:
 # Generate SBOM (SPDX + CycloneDX) with syft
 sbom:
     @echo "[sbom] generating SBOM..."
-    @command -v syft >/dev/null 2>&1 || { echo "[sbom] syft not found — install via nix or brew"; exit 1; }
+    @command -v syft >/dev/null 2>&1 || { echo "[sbom] syft not found, install via nix or brew"; exit 1; }
     mkdir -p dist/sbom
     syft . -o spdx-json=dist/sbom/eel.spdx.json -o cyclonedx-json=dist/sbom/eel.cdx.json
     echo "[sbom] written to dist/sbom/"
@@ -177,7 +177,7 @@ sbom:
 sign:
     @echo "[sign] signing artifacts..."
     @command -v cosign >/dev/null 2>&1 || { echo "[sign] cosign not found"; exit 1; }
-    @echo "[sign] placeholder — wire to CI SPIFFE identity in WP-0.5"
+    @echo "[sign] placeholder, wire to CI SPIFFE identity in WP-0.5"
 
 # ---------------------------------------------------------------------------
 # Contracts
@@ -186,13 +186,13 @@ sign:
 # Lint + validate all contracts
 contracts: _lint-contracts
     @echo "[contracts] Karapace compat check..."
-    @echo "[contracts] placeholder — wire Karapace in WP-0.4a"
+    @echo "[contracts] placeholder, wire Karapace in WP-0.4a"
     @echo "[contracts] SpiceDB schema validation..."
     @if find packages/authz-schema -name "*.zed" 2>/dev/null | grep -q .; then \
       find packages/authz-schema -name "*.zed" -exec zed validate {} \; 2>/dev/null || \
-        echo "[contracts] zed not found — skipping"; \
+        echo "[contracts] zed not found, skipping"; \
     else \
-      echo "[contracts] no .zed schemas yet — skipping"; \
+      echo "[contracts] no .zed schemas yet, skipping"; \
     fi
 
 # Regenerate API clients from OpenAPI specs
@@ -205,7 +205,7 @@ gen-clients:
         openapi-generator-cli generate -i "$spec" -g rust -o "packages/eel-client-$ctx" 2>/dev/null || true; \
       done; \
     else \
-      echo "[gen-clients] no OpenAPI contracts yet — skipping"; \
+      echo "[gen-clients] no OpenAPI contracts yet, skipping"; \
     fi
 
 # ---------------------------------------------------------------------------
@@ -218,7 +218,7 @@ synth:
     @if cargo metadata --no-deps --quiet 2>/dev/null | grep -q '"eel-synth"'; then \
       cargo run -p eel-synth -- register geo forms kits personnel; \
     else \
-      echo "[synth] eel-synth crate not yet present — skipping (WP-0.3)"; \
+      echo "[synth] eel-synth crate not yet present, skipping (WP-0.3)"; \
     fi
 
 # Seed the local database with synthetic data
@@ -229,7 +229,7 @@ seed: synth
       find services -name "migrations" -type d -maxdepth 4 | \
         xargs -I{} sh -c 'sqlx migrate run --source {} 2>/dev/null || true'; \
     else \
-      echo "[seed] DATABASE_URL not set or sqlx missing — skipping"; \
+      echo "[seed] DATABASE_URL not set or sqlx missing, skipping"; \
     fi
 
 # ---------------------------------------------------------------------------

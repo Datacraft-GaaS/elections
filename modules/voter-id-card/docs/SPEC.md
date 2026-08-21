@@ -1,4 +1,4 @@
-# voter-id-card — spec
+# voter-id-card, spec
 
 Status: draft
 Owner: TBD

@@ -16,10 +16,10 @@ info:
     - **Tier 3 endpoints**: JWT bearer + SpiceDB relationship-based authorization.
 
     ## Data Classification
-    - **A** — biometric templates / raw features (never logged, never cached)
-    - **B** — voter-linked personal data (encrypted at rest, access audited)
-    - **C** — controlled operational data
-    - **D** — aggregate / public-safe statistics
+    - **A**, biometric templates / raw features (never logged, never cached)
+    - **B**, voter-linked personal data (encrypted at rest, access audited)
+    - **C**, controlled operational data
+    - **D**, aggregate / public-safe statistics
 
     ## Idempotency
     All write operations accept an `Idempotency-Key` header (UUID v4/v7).
@@ -120,7 +120,7 @@ paths:
                 closed_at: null
                 identifications_count: 0
         '200':
-          description: Duplicate idempotency key — returning original session
+          description: Duplicate idempotency key, returning original session
           content:
             application/json:
               schema:
@@ -142,7 +142,7 @@ paths:
       summary: Close a BVI device session
       description: |
         Called at poll-close or on device shutdown. Marks the session as closed
-        and finalises the identification count. Idempotent — closing an already-
+        and finalises the identification count. Idempotent, closing an already-
         closed session returns 200 with the existing record.
       tags: [Sessions]
       x-eel-auth: SVID-mTLS
@@ -200,7 +200,7 @@ paths:
       description: |
         Submitted by the BVI device immediately after a match decision is reached.
         The `biometric_ref` field is a reference token to the encrypted biometric
-        template stored in the secure enclave — it is **never** the raw template.
+        template stored in the secure enclave, it is **never** the raw template.
         The server re-validates the match decision against the stored record and
         may override a `no_match` decision if the stored score exceeds the
         configured `match_threshold`.
@@ -249,7 +249,7 @@ paths:
                 identified_at: '2026-08-09T09:14:37Z'
                 device_serial: BVI-KIT-00342
         '200':
-          description: Duplicate idempotency key — returning original record
+          description: Duplicate idempotency key, returning original record
           content:
             application/json:
               schema:
@@ -283,7 +283,7 @@ paths:
       summary: Submit device health telemetry
       description: |
         Devices submit telemetry readings on a configurable interval (default 60 s).
-        Data-class D — no voter or officer identifiers; safe to aggregate and
+        Data-class D, no voter or officer identifiers; safe to aggregate and
         forward to Prometheus/Loki without redaction.
       tags: [Telemetry]
       x-eel-auth: SVID-mTLS
@@ -313,7 +313,7 @@ paths:
         '204':
           description: Telemetry accepted
         '200':
-          description: Duplicate idempotency key — telemetry already recorded
+          description: Duplicate idempotency key, telemetry already recorded
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -369,7 +369,7 @@ paths:
                 details: Officer pressed duress key sequence
                 raised_at: '2026-08-09T10:22:05Z'
         '200':
-          description: Duplicate idempotency key — returning original record
+          description: Duplicate idempotency key, returning original record
           content:
             application/json:
               schema:
@@ -533,7 +533,7 @@ paths:
       operationId: getTurnout
       summary: Get aggregated voter turnout statistics
       description: |
-        Returns real-time turnout aggregates. Data-class D — no voter identifiers.
+        Returns real-time turnout aggregates. Data-class D, no voter identifiers.
         Available at tier 2 (JWT only, no SpiceDB) because the data is safe for
         wider distribution. Supports `application/cbor` for bandwidth-constrained
         links.
@@ -609,7 +609,7 @@ paths:
       summary: List kit health status for the caller's scope
       description: |
         Returns health telemetry for all kits within the caller's SpiceDB scope.
-        Useful for NOC dashboards and field supervisors. Data-class D — device
+        Useful for NOC dashboards and field supervisors. Data-class D, device
         identifiers and aggregate counts only, no voter data.
       tags: [Kits]
       x-eel-auth: JWT+SpiceDB
@@ -663,7 +663,7 @@ paths:
       operationId: getVoterStation
       summary: Get the assigned polling station for a voter
       description: |
-        Returns the voter's registered polling station. Data-class B — voter
+        Returns the voter's registered polling station. Data-class B, voter
         identifiers are encrypted at rest and access is audit-logged. The caller
         must hold the `voter_station:read` permission in SpiceDB.
 
@@ -865,7 +865,7 @@ components:
           x-eel-data-class: C
         voter_id:
           type: string
-          description: Voter identifier — encrypted at rest, access audited
+          description: Voter identifier, encrypted at rest, access audited
           x-eel-data-class: B
         biometric_ref:
           type: string
@@ -1247,7 +1247,7 @@ components:
       properties:
         voter_id:
           type: string
-          description: Opaque voter identifier — not the National ID number
+          description: Opaque voter identifier, not the National ID number
           x-eel-data-class: B
         station_code:
           type: string
@@ -1302,7 +1302,7 @@ components:
 
   responses:
     BadRequest:
-      description: Bad request — malformed input
+      description: Bad request, malformed input
       content:
         application/problem+json:
           schema:
@@ -1370,7 +1370,7 @@ components:
             instance: /api/v1/bvi/sessions/ses-unknown
 
     Conflict:
-      description: State conflict — resource already exists or concurrent modification
+      description: State conflict, resource already exists or concurrent modification
       content:
         application/problem+json:
           schema:
@@ -1383,7 +1383,7 @@ components:
             instance: /api/v1/bvi/sessions
 
     UnprocessableEntity:
-      description: Semantically invalid request — validation passed but business rule failed
+      description: Semantically invalid request, validation passed but business rule failed
       content:
         application/problem+json:
           schema:

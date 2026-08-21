@@ -1,4 +1,4 @@
-# parliamentary-judiciary-reporting — spec
+# parliamentary-judiciary-reporting, spec
 
 Status: draft
 Owner: TBD

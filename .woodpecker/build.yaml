@@ -1,5 +1,5 @@
 ---
-# WP-0.5: build pipeline — Nix OCI images per service
+# WP-0.5: build pipeline, Nix OCI images per service
 when:
   - event: [push, pull_request]
 
@@ -11,7 +11,7 @@ steps:
         SHORT_SHA=$(git rev-parse --short HEAD)
         flakes=$(find services/*/deploy/nix -maxdepth 2 -name flake.nix 2>/dev/null)
         if [ -z "$flakes" ]; then
-          echo "no service flakes found — skip OCI build"
+          echo "no service flakes found, skip OCI build"
           exit 0
         fi
         for flake in $flakes; do

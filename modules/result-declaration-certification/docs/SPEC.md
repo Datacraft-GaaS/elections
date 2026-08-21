@@ -1,4 +1,4 @@
-# result-declaration-certification — spec
+# result-declaration-certification, spec
 
 Status: draft
 Owner: TBD

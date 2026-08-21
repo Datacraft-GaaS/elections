@@ -1,4 +1,4 @@
-# Fixture: clean Python file — should produce zero findings.
+# Fixture: clean Python file, should produce zero findings.
 
 
 def add(a: int, b: int) -> int:

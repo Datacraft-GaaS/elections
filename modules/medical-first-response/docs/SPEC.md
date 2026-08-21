@@ -1,4 +1,4 @@
-# medical-first-response — spec
+# medical-first-response, spec
 
 Status: draft
 Owner: TBD

@@ -1,4 +1,4 @@
-# party-primaries-oversight — spec
+# party-primaries-oversight, spec
 
 Status: draft
 Owner: TBD

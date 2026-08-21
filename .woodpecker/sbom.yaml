@@ -1,5 +1,5 @@
 ---
-# WP-0.5: SBOM generation — syft SPDX + CycloneDX; publish to Harbor as attestations
+# WP-0.5: SBOM generation, syft SPDX + CycloneDX; publish to Harbor as attestations
 when:
   - event: [push, pull_request]
 
@@ -27,7 +27,7 @@ steps:
           fi
         done
         if ! find services -type d -name 'py' | grep -q .; then
-          echo "no Python dirs — skip"
+          echo "no Python dirs, skip"
         fi
 
   - name: sbom-oci-images
@@ -51,7 +51,7 @@ steps:
             --yes
         done
         if ! find services/*/deploy/nix -maxdepth 2 -name flake.nix 2>/dev/null | grep -q .; then
-          echo "no service images — skip OCI SBOM"
+          echo "no service images, skip OCI SBOM"
         fi
 
   - name: grype-scan

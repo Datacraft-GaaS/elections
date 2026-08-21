@@ -1,5 +1,5 @@
-# Harbor Helm values — staging and production.
-# Local dev variant is under platform/harbor/local/ (WP-0.2 scope — do not modify here).
+# Harbor Helm values, staging and production.
+# Local dev variant is under platform/harbor/local/ (WP-0.2 scope, do not modify here).
 # Chart: harbor/harbor >= 1.14
 # Image name convention: eel/harbor-* (no iebc_ prefix)
 
@@ -43,7 +43,7 @@ persistence:
       storageClass: rook-ceph-block
       size: 10Gi
 
-# Cosign verification requirement (enforced via Kyverno policy — see ADR-0004)
+# Cosign verification requirement (enforced via Kyverno policy, see ADR-0004)
 # Harbor itself is configured to require signed images on push.
 core:
   replicas: 2
@@ -122,7 +122,7 @@ notary:
 # Default: keep last 10 tags per repository; delete untagged artifacts after 7 days.
 # Pre-election freeze: retention policies are tightened to keep-last-20 during freeze window.
 
-# Image scanning on push — required for all projects
+# Image scanning on push, required for all projects
 scanner:
   enabled: true
   primary: trivy
@@ -153,7 +153,7 @@ metrics:
     additionalLabels:
       prometheus.io/scrape: "true"
 
-# Database — use external PG17 (platform/postgres/) for staging/prod
+# Database, use external PG17 (platform/postgres/) for staging/prod
 database:
   type: external
   external:
@@ -164,7 +164,7 @@ database:
     existingSecret: harbor-db-secret
     sslmode: require
 
-# Redis — use external Valkey (platform/valkey/)
+# Redis, use external Valkey (platform/valkey/)
 redis:
   type: external
   external:

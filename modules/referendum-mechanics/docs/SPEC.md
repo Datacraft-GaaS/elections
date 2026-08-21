@@ -1,4 +1,4 @@
-# referendum-mechanics — spec
+# referendum-mechanics, spec
 
 Status: draft
 Owner: TBD

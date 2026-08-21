@@ -1,4 +1,4 @@
-# diaspora-voting — spec
+# diaspora-voting, spec
 
 Status: draft
 Owner: TBD

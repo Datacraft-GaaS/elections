@@ -1,4 +1,4 @@
-# bvr-backend — spec
+# bvr-backend, spec
 
 Status: draft
 Owner: TBD

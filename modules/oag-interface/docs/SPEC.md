@@ -1,4 +1,4 @@
-# oag-interface — spec
+# oag-interface, spec
 
 Status: draft
 Owner: TBD

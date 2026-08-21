@@ -1,4 +1,4 @@
-# WP-0.4b shared components — reusable across all eel OpenAPI contracts.
+# WP-0.4b shared components: reusable across all eel OpenAPI contracts.
 # This file is NOT a standalone OAS document; reference it via $ref from module specs.
 # Trust domain: eel.local
 
@@ -262,7 +262,7 @@ components:
 
     EelSla:
       type: object
-      description: "x-eel-sla extension shape — inline this object as an OAS extension on each operation."
+      description: "x-eel-sla extension shape, inline this object as an OAS extension on each operation."
       required:
         - p95_ms
         - p99_ms

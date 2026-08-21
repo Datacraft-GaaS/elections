@@ -1,4 +1,4 @@
-# budget-expenditure — spec
+# budget-expenditure, spec
 
 Status: draft
 Owner: TBD

@@ -1,4 +1,4 @@
-# rts-ro — spec
+# rts-ro, spec
 
 Status: draft
 Owner: TBD

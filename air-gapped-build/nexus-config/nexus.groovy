@@ -17,7 +17,7 @@ import groovy.json.JsonOutput
 def createProxy(String name, String format, String remoteUrl, Map extra = [:]) {
     def exists = repository.repositoryManager.get(name) != null
     if (exists) {
-        log.info("repo $name already exists — skip")
+        log.info("repo $name already exists, skip")
         return
     }
     def cfg = repository.repositoryManager.newConfiguration()
@@ -50,7 +50,7 @@ def createProxy(String name, String format, String remoteUrl, Map extra = [:]) {
 
 def createHosted(String name, String format, Map extra = [:]) {
     def exists = repository.repositoryManager.get(name) != null
-    if (exists) { log.info("repo $name already exists — skip"); return }
+    if (exists) { log.info("repo $name already exists, skip"); return }
     def cfg = repository.repositoryManager.newConfiguration()
     cfg.repositoryName = name
     cfg.recipeName = "${format}-hosted"
@@ -68,7 +68,7 @@ def createHosted(String name, String format, Map extra = [:]) {
 }
 
 // ---------------------------------------------------------------------------
-// Proxy repos (upstream mirrors — all traffic goes through these in air-gapped)
+// Proxy repos (upstream mirrors, all traffic goes through these in air-gapped)
 // ---------------------------------------------------------------------------
 
 createProxy("eel-pypi-proxy",   "pypi",  "https://pypi.org/")
@@ -113,7 +113,7 @@ if (existingPolicy == null) {
     cleanupPolicyStorage.add(policy)
     log.info("created cleanup policy: $policyName")
 } else {
-    log.info("cleanup policy $policyName already exists — skip")
+    log.info("cleanup policy $policyName already exists, skip")
 }
 
 // ---------------------------------------------------------------------------
@@ -124,7 +124,7 @@ def userName = "eel-ci-runner"
 def securitySystem = container.lookup(org.sonatype.nexus.security.SecuritySystem.class)
 try {
     securitySystem.getUser(userName, "default")
-    log.info("user $userName already exists — skip")
+    log.info("user $userName already exists, skip")
 } catch (Exception ignored) {
     def user = securitySystem.getAuthorizationManager("default")
         .listRoles().find { it.roleId == "nx-anonymous" }

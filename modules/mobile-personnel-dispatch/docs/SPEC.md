@@ -1,4 +1,4 @@
-# mobile-personnel-dispatch — spec
+# mobile-personnel-dispatch, spec
 
 Status: draft
 Owner: TBD

@@ -4,7 +4,7 @@ info:
   title: eel-vprs-portal
   version: "1.0.0"
   description: >
-    Voter Pre-Registration System (VPRS) public and accredited API — module M04.
+    Voter Pre-Registration System (VPRS) public and accredited API, module M04.
     Citizens submit pre-registration applications before in-person registration.
     Field kits retrieve pre-filled forms via the handoff endpoint using mTLS.
     All write endpoints require Idempotency-Key. Error responses use RFC 9457 problem+json.
@@ -109,7 +109,7 @@ components:
         expires_at:
           type: string
           format: date-time
-          description: "Application expiry — after this the QR token and pre-filled form are invalidated."
+          description: "Application expiry, after this the QR token and pre-filled form are invalidated."
           x-eel-data-class: B
           example: "2027-01-22T08:30:00Z"
       additionalProperties: false
@@ -423,7 +423,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/VPRSApplication"
         "200":
-          description: "Idempotent replay — application already exists for this Idempotency-Key."
+          description: "Idempotent replay, application already exists for this Idempotency-Key."
           content:
             application/json:
               schema:
@@ -713,7 +713,7 @@ paths:
   /api/v1/vprs/admin/analytics:
     get:
       operationId: getVPRSAnalytics
-      summary: "Admin analytics — aggregate application statistics by county"
+      summary: "Admin analytics, aggregate application statistics by county"
       description: >
         Returns aggregate pre-registration statistics per county. No PII is returned.
         Requires vprs:admin:read scope and SpiceDB VPRS_ANALYST or higher role.

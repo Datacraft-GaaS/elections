@@ -1,4 +1,4 @@
-# long-term-archive — spec
+# long-term-archive, spec
 
 Status: draft
 Owner: TBD

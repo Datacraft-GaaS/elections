@@ -1,4 +1,4 @@
-# inventory-management — spec
+# inventory-management, spec
 
 Status: draft
 Owner: TBD

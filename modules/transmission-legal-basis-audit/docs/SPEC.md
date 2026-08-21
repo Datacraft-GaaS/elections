@@ -1,4 +1,4 @@
-# transmission-legal-basis-audit — spec
+# transmission-legal-basis-audit, spec
 
 Status: draft
 Owner: TBD

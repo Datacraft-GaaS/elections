@@ -1,4 +1,4 @@
-# ai-monitoring-stack — spec
+# ai-monitoring-stack, spec
 
 Status: draft
 Owner: TBD

@@ -1,4 +1,4 @@
-# mobile-party-agent — spec
+# mobile-party-agent, spec
 
 Status: draft
 Owner: TBD

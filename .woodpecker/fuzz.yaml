@@ -33,12 +33,12 @@ steps:
               -- -max_total_time="$FUZZ_SECS" \
               -artifact_prefix=".woodpecker/artifacts/fuzz/${crate_name}-${target}-" \
               2>&1 || {
-                echo "CRASH detected in $crate_name/$target — artifacts saved"
+                echo "CRASH detected in $crate_name/$target, artifacts saved"
               }
           done
         done
         if [ "$found" -eq 0 ]; then
-          echo "no cargo-fuzz targets found — skip"
+          echo "no cargo-fuzz targets found, skip"
         fi
 
   artifacts:

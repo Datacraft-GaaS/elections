@@ -31,13 +31,13 @@ security:
 
 tags:
   - name: sth
-    description: "Signed Tree Head retrieval — public, no auth"
+    description: "Signed Tree Head retrieval, public, no auth"
   - name: proof
-    description: "Inclusion and consistency proofs — JWT required"
+    description: "Inclusion and consistency proofs, JWT required"
   - name: entries
-    description: "Log entry retrieval — JWT required, rate-limited"
+    description: "Log entry retrieval, JWT required, rate-limited"
   - name: append
-    description: "Leaf append — internal SVID mTLS only"
+    description: "Leaf append, internal SVID mTLS only"
 
 paths:
   /api/v1/log/sth/latest:
@@ -103,7 +103,7 @@ paths:
       description: |
         Returns the STH that was published when the tree reached tree_size leaves.
         Enables clients to verify that a specific historical tree state was committed
-        by the HSM. Immutable once the tree has grown past tree_size — cacheable
+        by the HSM. Immutable once the tree has grown past tree_size, cacheable
         indefinitely.
 
         Same signature response headers as /sth/latest.
@@ -148,7 +148,7 @@ paths:
             Cache-Control:
               schema:
                 type: string
-              description: "immutable — this STH will not change."
+              description: "immutable, this STH will not change."
           content:
             application/json:
               schema:
@@ -393,7 +393,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/LogEntriesPage"
         "400":
-          description: "Invalid range — window exceeds 1000 or end < start"
+          description: "Invalid range, window exceeds 1000 or end < start"
           content:
             application/problem+json:
               schema:
@@ -435,7 +435,7 @@ paths:
         Internal endpoint for backend services to append a new leaf to the
         transparency log. Accepts a hash of the entry data plus metadata.
         The log service queues the leaf for inclusion in the next STH rotation.
-        Idempotent via Idempotency-Key — the same data_hash from the same
+        Idempotent via Idempotency-Key, the same data_hash from the same
         submitter_id is a no-op, returning the existing leaf_index.
 
         Only reachable via SVID mTLS. Not exposed through the external gateway.
@@ -474,7 +474,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/LeafAppendResult"
         "200":
-          description: "Idempotent replay — leaf already exists, returning existing index"
+          description: "Idempotent replay, leaf already exists, returning existing index"
           headers:
             X-Request-Id:
               $ref: "../_shared/headers.yaml#/components/headers/X-Request-Id"
@@ -501,7 +501,7 @@ paths:
               schema:
                 $ref: "../_shared/common.yaml#/components/schemas/ProblemDetail"
         "422":
-          description: "Validation error — unknown entry_type, invalid hash format, etc."
+          description: "Validation error, unknown entry_type, invalid hash format, etc."
           content:
             application/problem+json:
               schema:

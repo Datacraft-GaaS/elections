@@ -1,4 +1,4 @@
-# post-election-review — spec
+# post-election-review, spec
 
 Status: draft
 Owner: TBD

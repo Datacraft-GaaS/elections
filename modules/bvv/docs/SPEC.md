@@ -1,4 +1,4 @@
-# bvv — spec
+# bvv, spec
 
 Status: draft
 Owner: TBD

@@ -1,4 +1,4 @@
-# referendum-explainer — spec
+# referendum-explainer, spec
 
 Status: draft
 Owner: TBD

@@ -1,4 +1,4 @@
-# mobile-poll-clerk — spec
+# mobile-poll-clerk, spec
 
 Status: draft
 Owner: TBD

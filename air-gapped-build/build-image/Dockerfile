@@ -1,4 +1,4 @@
-# EEL build-image — Docker variant.
+# EEL build-image, Docker variant.
 # Identical to Containerfile; provided for environments where Podman is unavailable.
 # Prefer Containerfile for air-gapped Podman builds.
 # Syntax is compatible with BuildKit (docker buildx).
@@ -70,6 +70,6 @@ RUN nix-collect-garbage --delete-old
 WORKDIR /workspace
 
 LABEL org.opencontainers.image.title="eel/build-image" \
-      org.opencontainers.image.description="EEL CI build environment — Docker variant" \
+      org.opencontainers.image.description="EEL CI build environment, Docker variant" \
       org.opencontainers.image.source="https://gitea.internal/eel/eel" \
       org.opencontainers.image.licenses="Apache-2.0"

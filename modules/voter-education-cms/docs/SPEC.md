@@ -1,4 +1,4 @@
-# voter-education-cms — spec
+# voter-education-cms, spec
 
 Status: draft
 Owner: TBD

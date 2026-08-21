@@ -1,4 +1,4 @@
-# by-election-operations — spec
+# by-election-operations, spec
 
 Status: draft
 Owner: TBD

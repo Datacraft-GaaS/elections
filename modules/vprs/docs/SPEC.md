@@ -1,4 +1,4 @@
-# vprs — spec
+# vprs, spec
 
 Status: draft
 Owner: TBD

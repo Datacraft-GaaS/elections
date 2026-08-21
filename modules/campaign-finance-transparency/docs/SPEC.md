@@ -1,4 +1,4 @@
-# campaign-finance-transparency — spec
+# campaign-finance-transparency, spec
 
 Status: draft
 Owner: TBD

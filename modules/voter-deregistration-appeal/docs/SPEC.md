@@ -1,4 +1,4 @@
-# voter-deregistration-appeal — spec
+# voter-deregistration-appeal, spec
 
 Status: draft
 Owner: TBD

@@ -1,4 +1,4 @@
-//! `eel-completeness scan` — regex-based stub/skip finder.
+//! `eel-completeness scan`, regex-based stub/skip finder.
 //!
 //! Patterns (from docs/plans/11-completeness-audit.md §9.1):
 //!   Rust:   todo!(), unimplemented!(), #[ignore], empty match arms: _ => Unsupported
@@ -46,7 +46,7 @@ fn build_patterns() -> Vec<Pattern> {
             kind: "todo_macro",
             re: Regex::new(r"\btodo!\s*\(").unwrap(),
             severity: Severity::Warning,
-            message: "todo!() — unimplemented code path",
+            message: "todo!(), unimplemented code path",
             extensions: &["rs"],
         },
         // Rust: unimplemented!() macro
@@ -54,7 +54,7 @@ fn build_patterns() -> Vec<Pattern> {
             kind: "unimplemented_macro",
             re: Regex::new(r"\bunimplemented!\s*\(").unwrap(),
             severity: Severity::Error,
-            message: "unimplemented!() — this will panic at runtime",
+            message: "unimplemented!(), this will panic at runtime",
             extensions: &["rs"],
         },
         // Rust: #[ignore] on a test
@@ -62,7 +62,7 @@ fn build_patterns() -> Vec<Pattern> {
             kind: "ignored_test",
             re: Regex::new(r"#\[ignore\b").unwrap(),
             severity: Severity::Warning,
-            message: "#[ignore] — test is skipped",
+            message: "#[ignore], test is skipped",
             extensions: &["rs"],
         },
         // Rust: empty match arm returning Unsupported/unimplemented
@@ -78,7 +78,7 @@ fn build_patterns() -> Vec<Pattern> {
             kind: "pass_only_body",
             re: Regex::new(r"^\s+pass\s*$").unwrap(),
             severity: Severity::Info,
-            message: "bare `pass` — placeholder body",
+            message: "bare `pass`, placeholder body",
             extensions: &["py"],
         },
         // Python: NotImplementedError
@@ -86,7 +86,7 @@ fn build_patterns() -> Vec<Pattern> {
             kind: "not_implemented_error",
             re: Regex::new(r"\bNotImplementedError\b").unwrap(),
             severity: Severity::Warning,
-            message: "NotImplementedError — stub function",
+            message: "NotImplementedError, stub function",
             extensions: &["py"],
         },
         // Python: pytest.mark.skip
@@ -94,7 +94,7 @@ fn build_patterns() -> Vec<Pattern> {
             kind: "pytest_skip",
             re: Regex::new(r"pytest\.mark\.skip\b").unwrap(),
             severity: Severity::Warning,
-            message: "pytest.mark.skip — test is skipped",
+            message: "pytest.mark.skip, test is skipped",
             extensions: &["py"],
         },
         // Elixir: @tag :skip
@@ -102,7 +102,7 @@ fn build_patterns() -> Vec<Pattern> {
             kind: "exunit_tag_skip",
             re: Regex::new(r"@tag\s+:skip\b").unwrap(),
             severity: Severity::Warning,
-            message: "@tag :skip — ExUnit test is skipped",
+            message: "@tag :skip, ExUnit test is skipped",
             extensions: &["ex", "exs"],
         },
         // Elixir: UnimplementedError (not stdlib but common in generated stubs)
@@ -110,7 +110,7 @@ fn build_patterns() -> Vec<Pattern> {
             kind: "elixir_unimplemented",
             re: Regex::new(r"\bUnimplementedError\b").unwrap(),
             severity: Severity::Error,
-            message: "UnimplementedError — Elixir stub",
+            message: "UnimplementedError, Elixir stub",
             extensions: &["ex", "exs"],
         },
         // Dart/Flutter: it.skip, xit, test.skip
@@ -145,7 +145,7 @@ fn build_patterns() -> Vec<Pattern> {
             kind: "http_501",
             re: Regex::new(r"\b501\b.*[Nn]ot\s+[Ii]mplemented|StatusCode::NOT_IMPLEMENTED|http\.StatusNotImplemented").unwrap(),
             severity: Severity::Error,
-            message: "HTTP 501 Not Implemented response — stub endpoint",
+            message: "HTTP 501 Not Implemented response, stub endpoint",
             extensions: &["rs", "py", "ts", "js", "go"],
         },
         // Kotlin: TODO() / NotImplementedError
@@ -153,7 +153,7 @@ fn build_patterns() -> Vec<Pattern> {
             kind: "kotlin_stub",
             re: Regex::new(r"\bTODO\s*\(\s*\)|\bNotImplementedError\b").unwrap(),
             severity: Severity::Warning,
-            message: "Kotlin TODO()/NotImplementedError — stub",
+            message: "Kotlin TODO()/NotImplementedError, stub",
             extensions: &["kt"],
         },
         // default-off feature flag without enabling test
@@ -162,7 +162,7 @@ fn build_patterns() -> Vec<Pattern> {
             kind: "default_off_flag",
             re: Regex::new(r#"(?:default\s*:\s*false|enabled\s*:\s*false)\s*(?:#[^\n]*)?\n"#).unwrap(),
             severity: Severity::Info,
-            message: "default-off feature flag — verify an enabling test exists",
+            message: "default-off feature flag, verify an enabling test exists",
             extensions: &["yaml", "yml", "toml"],
         },
     ]
@@ -217,7 +217,7 @@ pub fn run(root: &Path, allowlist: &Allowlist) -> Result<Vec<Finding>> {
 
         let content = match std::fs::read_to_string(path) {
             Ok(c) => c,
-            Err(_) => continue, // binary file or permission error — skip
+            Err(_) => continue, // binary file or permission error, skip
         };
 
         for (lineno, line) in content.lines().enumerate() {

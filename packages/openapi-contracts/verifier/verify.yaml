@@ -4,7 +4,7 @@ info:
   title: eel-verifier
   version: "1.0.0"
   description: >
-    M13 public verifier API — citizen-facing mobile app and USSD/WhatsApp webhook surface.
+    M13 public verifier API, citizen-facing mobile app and USSD/WhatsApp webhook surface.
     Allows citizens to verify their voter registration status, locate their polling station,
     and view election result summaries.
 
@@ -63,7 +63,7 @@ components:
 
     VerificationResult:
       type: object
-      description: "Voter registration verification result. Returns only class-C/B fields — no PII."
+      description: "Voter registration verification result. Returns only class-C/B fields, no PII."
       required:
         - registered
         - lookup_id
@@ -71,7 +71,7 @@ components:
       properties:
         lookup_id:
           $ref: "../_shared/components.yaml#/components/schemas/UUIDv7"
-          description: "Opaque identifier for this lookup event (for audit only — not returned to caller with PII)."
+          description: "Opaque identifier for this lookup event (for audit only, not returned to caller with PII)."
           x-eel-data-class: D
         registered:
           type: boolean
@@ -339,7 +339,7 @@ paths:
       description: >
         Citizen queries their registration status using their hashed national ID.
         The X-Eel-Attest header is required (Play Integrity / App Attest).
-        id_number_hash MUST be SHA-256(salt||id_number) — the raw ID must never be transmitted.
+        id_number_hash MUST be SHA-256(salt||id_number), the raw ID must never be transmitted.
         Idempotent on Idempotency-Key: identical requests within 60 s return cached result.
         Rate-limited to 5 lookups per 10-minute window per attestation device binding.
       tags: [verifier-lookup]

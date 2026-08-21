@@ -23,7 +23,7 @@ steps:
           ruff check services packages tools
           ruff format --check services packages tools
         else
-          echo "no Python sources — skip"
+          echo "no Python sources, skip"
         fi
 
   - name: elixir-fmt
@@ -34,7 +34,7 @@ steps:
           find services -type d -name '_build' -prune -o -name 'mix.exs' -print \
             | xargs -I{} sh -c 'cd "$(dirname {})" && mix format --check-formatted'
         else
-          echo "no Elixir sources — skip"
+          echo "no Elixir sources, skip"
         fi
 
   - name: spectral-openapi
@@ -44,7 +44,7 @@ steps:
         if ls packages/openapi-contracts/**/*.yaml 2>/dev/null | grep -q .; then
           spectral lint packages/openapi-contracts/**/*.yaml --ruleset .spectral.yaml
         else
-          echo "no OpenAPI specs — skip"
+          echo "no OpenAPI specs, skip"
         fi
 
   - name: buf-lint
@@ -54,7 +54,7 @@ steps:
         if find . -name 'buf.yaml' -not -path '*/node_modules/*' | grep -q .; then
           buf lint
         else
-          echo "no buf configs — skip"
+          echo "no buf configs, skip"
         fi
 
   - name: pnpm-lint
@@ -64,7 +64,7 @@ steps:
         if find services packages -name 'package.json' -not -path '*/node_modules/*' | grep -q .; then
           pnpm --recursive lint
         else
-          echo "no TypeScript sources — skip"
+          echo "no TypeScript sources, skip"
         fi
 
   - name: pre-commit

@@ -237,13 +237,13 @@ just down                  # tear down
 
 Seven waves. Each work package (WP) is a self-contained agent brief with paths, contracts, tests, and a hard exit bar (`docs/plans/10-definition-of-done.md`, 25 items).
 
-- **Wave 0** — Toolchain, local profile, contracts, CI. `docs/plans/01-wave-0-toolchain.md`
-- **Wave 1** — 43 shared packages + templates + platform base. `docs/plans/02-wave-1-packages.md`
-- **Wave 2** — Trust core: transparency log, HSM signer, IAM, boundary, tier-A integrations. `docs/plans/03-wave-2-trust-core.md`
-- **Wave 3** — Election-night critical path: rts, bvr, abis, bvi, kits, portal, load harness. `docs/plans/04-wave-3-critical-path.md`
-- **Wave 4** — Operations, oversight, AI, mobile suite, register surfaces, candidates, edge, observability. `docs/plans/05-wave-4-operations.md`
-- **Wave 5** — Governance long tail, training, support-admin, diaspora, chaos/DR, runbooks, compliance, reproducibility, manifests, handover. `docs/plans/06-wave-5-governance.md`
-- **Wave 6** — Full-system verification: rehearsal, DR drill, chaos suite, 5x load, security harness, a11y/i18n sweep, completeness audit. `docs/plans/07-wave-6-verification.md`
+- **Wave 0**, Toolchain, local profile, contracts, CI. `docs/plans/01-wave-0-toolchain.md`
+- **Wave 1**, 43 shared packages + templates + platform base. `docs/plans/02-wave-1-packages.md`
+- **Wave 2**, Trust core: transparency log, HSM signer, IAM, boundary, tier-A integrations. `docs/plans/03-wave-2-trust-core.md`
+- **Wave 3**, Election-night critical path: rts, bvr, abis, bvi, kits, portal, load harness. `docs/plans/04-wave-3-critical-path.md`
+- **Wave 4**, Operations, oversight, AI, mobile suite, register surfaces, candidates, edge, observability. `docs/plans/05-wave-4-operations.md`
+- **Wave 5**, Governance long tail, training, support-admin, diaspora, chaos/DR, runbooks, compliance, reproducibility, manifests, handover. `docs/plans/06-wave-5-governance.md`
+- **Wave 6**, Full-system verification: rehearsal, DR drill, chaos suite, 5x load, security harness, a11y/i18n sweep, completeness audit. `docs/plans/07-wave-6-verification.md`
 
 The completeness audit (`docs/plans/11-completeness-audit.md`) fails the build if any module × acceptance criterion × edge case in `docs/plans/TRACEABILITY.yaml` maps to zero passing tagged tests. Nothing ships stubbed.
 

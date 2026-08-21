@@ -1,4 +1,4 @@
-# special-voter-workflows — spec
+# special-voter-workflows, spec
 
 Status: draft
 Owner: TBD

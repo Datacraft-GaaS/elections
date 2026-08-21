@@ -1,4 +1,4 @@
-# poll-worker-training-lms — spec
+# poll-worker-training-lms, spec
 
 Status: draft
 Owner: TBD

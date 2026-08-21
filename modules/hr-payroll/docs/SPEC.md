@@ -1,4 +1,4 @@
-# hr-payroll — spec
+# hr-payroll, spec
 
 Status: draft
 Owner: TBD

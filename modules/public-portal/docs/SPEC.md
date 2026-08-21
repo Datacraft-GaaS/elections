@@ -1,4 +1,4 @@
-# public-portal — spec
+# public-portal, spec
 
 Status: draft
 Owner: TBD

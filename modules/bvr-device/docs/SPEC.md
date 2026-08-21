@@ -1,4 +1,4 @@
-# bvr-device — spec
+# bvr-device, spec
 
 Status: draft
 Owner: TBD

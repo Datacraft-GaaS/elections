@@ -1,4 +1,4 @@
-# grievance-channels — spec
+# grievance-channels, spec
 
 Status: draft
 Owner: TBD

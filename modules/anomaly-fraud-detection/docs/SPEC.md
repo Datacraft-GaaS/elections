@@ -1,4 +1,4 @@
-# anomaly-fraud-detection — spec
+# anomaly-fraud-detection, spec
 
 Status: draft
 Owner: TBD

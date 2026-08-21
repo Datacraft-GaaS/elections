@@ -1,5 +1,5 @@
 {
-  description = "eel dart/flutter workspace flake — deterministic hello build";
+  description = "eel dart/flutter workspace flake, deterministic hello build";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";

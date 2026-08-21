@@ -1,4 +1,4 @@
-# public-verifier-app — spec
+# public-verifier-app, spec
 
 Status: draft
 Owner: TBD

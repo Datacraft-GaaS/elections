@@ -23,7 +23,7 @@ steps:
           | sed 's|/Cargo.toml||' \
           | sort -u)
         if [ -z "$changed_crates" ]; then
-          echo "no changed Rust crates — skip mutation"
+          echo "no changed Rust crates, skip mutation"
           exit 0
         fi
         for crate in $changed_crates; do

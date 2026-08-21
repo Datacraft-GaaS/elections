@@ -1,4 +1,4 @@
-# observer-accreditation-portal — spec
+# observer-accreditation-portal, spec
 
 Status: draft
 Owner: TBD

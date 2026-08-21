@@ -42,7 +42,7 @@
             sqlx-cli
             buf
             just
-            # spectral via npm — not in nixpkgs stable, use node wrapper
+            # spectral via npm, not in nixpkgs stable, use node wrapper
             nodejs_22
           ];
           RUSTC_WRAPPER = "${pkgs.sccache}/bin/sccache";

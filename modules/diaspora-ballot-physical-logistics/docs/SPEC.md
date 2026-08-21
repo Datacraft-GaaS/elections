@@ -1,4 +1,4 @@
-# diaspora-ballot-physical-logistics — spec
+# diaspora-ballot-physical-logistics, spec
 
 Status: draft
 Owner: TBD

@@ -1,4 +1,4 @@
-# party-registration-management — spec
+# party-registration-management, spec
 
 Status: draft
 Owner: TBD

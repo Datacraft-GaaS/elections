@@ -1,4 +1,4 @@
-# EEL build-image — Podman / OCI build.
+# EEL build-image, Podman / OCI build.
 # Nix-reproducible: pin every external fetch to a known hash.
 # Image name: eel/build-image
 #
@@ -89,6 +89,6 @@ RUN nix-collect-garbage --delete-old
 WORKDIR /workspace
 
 LABEL org.opencontainers.image.title="eel/build-image" \
-      org.opencontainers.image.description="EEL CI build environment — Nix-reproducible" \
+      org.opencontainers.image.description="EEL CI build environment, Nix-reproducible" \
       org.opencontainers.image.source="https://gitea.internal/eel/eel" \
       org.opencontainers.image.licenses="Apache-2.0"

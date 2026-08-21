@@ -7,7 +7,7 @@ use std::path::PathBuf;
 #[derive(Parser)]
 #[command(
     name = "eel-completeness",
-    about = "EEL completeness scanner — finds stubs, maps test coverage, verifies contract closure",
+    about = "EEL completeness scanner, finds stubs, maps test coverage, verifies contract closure",
     version
 )]
 struct Cli {
