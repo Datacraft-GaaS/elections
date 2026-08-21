@@ -5,9 +5,19 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 
+[features]
+default = ["mock"]
+mock = []
+bench = []
+
 [lib]
 name = "abis_matcher"
 path = "src/lib.rs"
+
+[[bench]]
+name = "matching_bench"
+harness = false
+required-features = ["bench"]
 
 [dependencies]
 serde         = { workspace = true }
@@ -19,6 +29,8 @@ hex           = { workspace = true }
 thiserror     = { workspace = true }
 tracing       = { workspace = true }
 tokio         = { workspace = true }
+blake3        = { workspace = true }
 
 [dev-dependencies]
 rstest        = { workspace = true }
+criterion     = { workspace = true }
