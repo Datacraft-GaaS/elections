@@ -1,0 +1,69 @@
+service: boundary-svc
+module: M18-boundary-transparency
+requirements:
+  - id: FR-M18-01
+    description: Public read access to county, constituency, ward, and polling station boundaries.
+    acceptance_criteria:
+      - AC-M18-01-01: GET /boundary/constituencies returns all constituencies with GeoJSON geometry.
+      - AC-M18-01-02: GET /boundary/wards returns all wards, filterable by constituency_code.
+      - AC-M18-01-03: GET /boundary/counties returns all 47 counties.
+      - AC-M18-01-04: GET /boundary/stations returns stations filterable by ward/constituency/county.
+      - AC-M18-01-05: Response carries X-Eel-Cosign-Sig and X-Eel-Merkle-Proof headers.
+    evidence_crates:
+      - boundary-api::handlers::list_constituencies
+      - boundary-api::handlers::list_wards
+      - boundary-api::handlers::list_counties
+      - boundary-api::handlers::list_stations
+
+  - id: FR-M18-02
+    description: Boundary change history accessible to accredited parties.
+    acceptance_criteria:
+      - AC-M18-02-01: GET /boundary/changes requires JWT. Returns paginated history.
+    evidence_crates:
+      - boundary-api::handlers::list_boundary_changes
+
+  - id: FR-M18-03
+    description: Admin can publish a new boundary snapshot.
+    acceptance_criteria:
+      - AC-M18-03-01: POST /boundary/admin/publish requires JWT+SpiceDB boundary.admin. Returns 201.
+      - AC-M18-03-02: Idempotency-Key header prevents duplicate publishes within 24 h.
+    evidence_crates:
+      - boundary-api::handlers::publish_boundary_snapshot
+
+  - id: FR-M18-04
+    description: Geofence.Check gRPC returns point-in-polygon result with signed polygon.
+    acceptance_criteria:
+      - AC-M18-04-01: Check returns in_boundary=true for a point inside the polygon.
+      - AC-M18-04-02: Check p99 < 20 ms local (criterion bench).
+      - AC-M18-04-03: Unsigned polygon MUST be rejected at ingest (HTTP 422).
+    evidence_crates:
+      - boundary-geofence::geo_check
+      - boundary-geofence::server::GeofenceService
+      - boundary-api::handlers::upload_geofence
+
+  - id: FR-M18-05
+    description: Fairness metrics (compactness, population equality, VRA-analog) computed and published.
+    acceptance_criteria:
+      - AC-M18-05-01: GET /api/v1/metrics/fairness returns metric list.
+      - AC-M18-05-02: Worker recomputes every 15 min.
+    evidence_crates:
+      - boundary-worker::fairness
+      - boundary-api::handlers::get_fairness_metrics
+
+  - id: FR-M18-06
+    description: Shapefile ingest from NLC/KNBS sources.
+    acceptance_criteria:
+      - AC-M18-06-01: POST /api/v1/imports/shapefile accepts file_ref and queues ingest.
+      - AC-M18-06-02: Emits shapefile_imported.v1 event on success.
+    evidence_crates:
+      - boundary-worker::shapefile
+      - boundary-api::handlers::import_shapefile
+
+  - id: EC-OPS-06
+    description: Flood/curfew relocation polygon update must be HSM-countersigned.
+    acceptance_criteria:
+      - AC-EC-OPS-06-01: GeofencePolygon.validate_signature rejects empty signature.
+      - AC-EC-OPS-06-02: geojson_producer::produce_signed_bundle aborts on empty HSM signature.
+    evidence_crates:
+      - boundary-domain::types::GeofencePolygon::validate_signature
+      - boundary-worker::geojson_producer::produce_signed_bundle

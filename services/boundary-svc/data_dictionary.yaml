@@ -1,0 +1,156 @@
+service: boundary-svc
+tier: T2
+owning_modules:
+  - M18-boundary-transparency
+# Data classification per ADR-0016:
+#   A = secret/restricted, B = internal, C = public, D = derived/operational, E = ephemeral
+entities:
+  - table: boundaries
+    columns:
+      - name: id
+        type: uuid
+        classification: C
+        description: Surrogate key.
+      - name: kind
+        type: text
+        classification: C
+        description: "county | constituency | ward | polling_station"
+      - name: code
+        type: text
+        classification: C
+        description: Official electoral code.
+      - name: name
+        type: text
+        classification: C
+        description: Official name.
+      - name: geom
+        type: geometry(Geometry,4326)
+        classification: C
+        description: WGS-84 polygon. Public data.
+      - name: effective_from
+        type: date
+        classification: C
+      - name: effective_to
+        type: date
+        classification: C
+      - name: version
+        type: int
+        classification: D
+      - name: status
+        type: text
+        classification: D
+  - table: boundary_changes
+    columns:
+      - name: id
+        type: uuid
+        classification: C
+      - name: boundary_id
+        type: uuid
+        classification: C
+      - name: change_type
+        type: text
+        classification: C
+      - name: old_version
+        type: int
+        classification: D
+      - name: new_version
+        type: int
+        classification: D
+      - name: gazette_ref
+        type: text
+        classification: C
+      - name: submitted_by
+        type: text
+        classification: B
+        description: Identity of the submitting principal. Internal.
+      - name: decided_by
+        type: text
+        classification: B
+      - name: decided_at
+        type: timestamptz
+        classification: D
+      - name: status
+        type: text
+        classification: D
+  - table: boundary_submissions
+    columns:
+      - name: id
+        type: uuid
+        classification: C
+      - name: submitter_class
+        type: text
+        classification: C
+      - name: payload_ref
+        type: text
+        classification: B
+        description: MinIO object key. Not surfaced publicly.
+      - name: submitted_at
+        type: timestamptz
+        classification: D
+      - name: status
+        type: text
+        classification: D
+  - table: fairness_metrics
+    columns:
+      - name: id
+        type: uuid
+        classification: C
+      - name: boundary_kind
+        type: text
+        classification: C
+      - name: metric_name
+        type: text
+        classification: C
+      - name: value
+        type: double precision
+        classification: C
+      - name: computed_at
+        type: timestamptz
+        classification: D
+      - name: methodology_version
+        type: text
+        classification: C
+  - table: geofence_polygons
+    columns:
+      - name: id
+        type: uuid
+        classification: C
+      - name: station_code
+        type: text
+        classification: C
+      - name: polygon
+        type: geometry(Polygon,4326)
+        classification: C
+      - name: signed_by
+        type: text
+        classification: B
+      - name: signature
+        type: bytea
+        classification: B
+        description: Ed25519 + HSM countersignature. Never served raw.
+      - name: effective_from
+        type: date
+        classification: C
+  - table: shapefile_imports
+    columns:
+      - name: id
+        type: uuid
+        classification: D
+      - name: source
+        type: text
+        classification: C
+      - name: version
+        type: text
+        classification: C
+      - name: file_ref
+        type: text
+        classification: B
+      - name: imported_at
+        type: timestamptz
+        classification: D
+      - name: imported_by
+        type: text
+        classification: B
+      - name: verified
+        type: boolean
+        classification: D

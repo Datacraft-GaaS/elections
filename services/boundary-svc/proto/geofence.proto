@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package eel.boundary;
+
+option java_package = "io.eel.boundary";
+
+// Geofence.Check is consumed by kit-side and bvi-svc via internal gRPC.
+// SPIFFE identity of the caller must be spiffe://eel.local/service/boundary-svc.
+service Geofence {
+    rpc Check(CheckRequest) returns (CheckResponse);
+}
+
+message CheckRequest {
+    double latitude      = 1;
+    double longitude     = 2;
+    string station_code  = 3;
+}
+
+message CheckResponse {
+    bool   in_boundary               = 1;
+    double distance_from_boundary_m  = 2;
+    string polygon_version           = 3;
+    bytes  signed_polygon            = 4;
+}

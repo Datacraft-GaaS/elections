@@ -1,23 +1,64 @@
-# deploy/service.yaml — filled by the service owner (WP-1.9 template)
-# Fields: name, image, artifacts, sites, strategy, replicas
-name: boundary-svc
-image: harbor.eel.internal/eel/boundary-svc
-artifacts: []
-# sites: leave empty to deploy to all 7 sites (primary, mirror, edge-*)
-sites: []
-strategy:
-  primary: blue-green
-  mirror:  blue-green
-  edge-nairobi:  rolling
-  edge-mombasa:  rolling
-  edge-kisumu:   rolling
-  edge-eldoret:  rolling
-  edge-garissa:  rolling
-replicas:
-  primary:       3
-  mirror:        3
-  edge-nairobi:  2
-  edge-mombasa:  2
-  edge-kisumu:   2
-  edge-eldoret:  2
-  edge-garissa:  2
+apiVersion: eel.internal/v1alpha1
+kind: EelService
+metadata:
+  name: boundary-svc
+spec:
+  tier: "T2"
+  description: "Module M18: Boundary Transparency. SPIFFE: spiffe://eel.local/service/boundary-svc"
+  image: gitea.internal/eel/boundary-svc:latest
+  port: 8080
+  grpc_port: 9090
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "256Mi"
+    limits:
+      cpu: "2"
+      memory: "1Gi"
+  env:
+    - name: OTEL_SERVICE_NAME
+      value: boundary-svc
+    - name: HTTP_ADDR
+      value: "0.0.0.0:8080"
+    - name: GRPC_ADDR
+      value: "0.0.0.0:9090"
+    - name: JWKS_URL
+      valueFrom:
+        secretKeyRef:
+          name: eel-auth
+          key: jwks-url
+    - name: DATABASE_URL
+      valueFrom:
+        secretKeyRef:
+          name: boundary-svc-db
+          key: url
+    - name: MINIO_ENDPOINT
+      valueFrom:
+        secretKeyRef:
+          name: eel-minio
+          key: endpoint
+    - name: MINIO_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: eel-minio
+          key: access-key
+    - name: MINIO_SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: eel-minio
+          key: secret-key
+  spiffe:
+    id: "spiffe://eel.local/service/boundary-svc"
+  probes:
+    liveness:
+      httpGet:
+        path: /healthz
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    readiness:
+      httpGet:
+        path: /readyz
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 10

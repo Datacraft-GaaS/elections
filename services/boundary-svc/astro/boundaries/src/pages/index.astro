@@ -1,0 +1,32 @@
+---
+// Boundary Explorer - entry page
+// Consumes boundary-svc public API.
+const title = "eel Boundary Explorer";
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 0; padding: 1rem 2rem; }
+      h1   { font-size: 1.5rem; }
+      nav a { margin-right: 1rem; }
+    </style>
+  </head>
+  <body>
+    <h1>{title}</h1>
+    <nav>
+      <a href="/constituencies">Constituencies</a>
+      <a href="/wards">Wards</a>
+      <a href="/counties">Counties</a>
+      <a href="/fairness">Fairness Dashboard</a>
+    </nav>
+    <p>
+      Public boundary data for Kenya's electoral units.
+      All geometry is class C (public). Responses carry
+      cryptographic proof headers for independent verification.
+    </p>
+  </body>
+</html>

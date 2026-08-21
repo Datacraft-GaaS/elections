@@ -1,0 +1,28 @@
+[package]
+name        = "boundary-geofence"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+boundary-domain = { path = "../boundary-domain" }
+tonic    = { workspace = true }
+prost    = { workspace = true }
+tokio    = { workspace = true }
+serde    = { workspace = true }
+thiserror = { workspace = true }
+tracing  = { workspace = true }
+chrono   = { workspace = true }
+uuid     = { workspace = true }
+
+[build-dependencies]
+tonic-build = { workspace = true }
+
+[dev-dependencies]
+rstest    = { workspace = true }
+criterion = { workspace = true }
+
+[[bench]]
+name    = "polygon_check"
+harness = false
