@@ -1,0 +1,21 @@
+[package]
+name            = "eel-abis-cert-frvt"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+
+[lib]
+name = "eel_abis_cert_frvt"
+path = "src/lib.rs"
+
+[dependencies]
+serde         = { workspace = true }
+serde_json    = { workspace = true }
+thiserror     = { workspace = true }
+tracing       = { workspace = true }
+chrono        = { workspace = true }
+
+[dev-dependencies]
+rstest        = { workspace = true }
+proptest      = "1"
