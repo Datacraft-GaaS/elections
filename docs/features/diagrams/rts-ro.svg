@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+<title>Module M09 RTS Returning Officer</title>
+<desc>Returning Officer desktop app - Tauri desktop compiles Form 34B/34C, supports edit-with-reason audit trail, agent countersign, and session hash anchored to transparency log.</desc>
+<defs>
+  <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+  </marker>
+  <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+    <feDropShadow dx="2" dy="2" stdDeviation="2" flood-opacity="0.15"/>
+  </filter>
+</defs>
+
+<!-- Background -->
+<rect width="1200" height="800" fill="white"/>
+
+<!-- Title bar -->
+<rect x="0" y="0" width="1200" height="60" fill="#1a3a5c"/>
+<text x="600" y="38" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="white" text-anchor="middle">Module M09 RTS Returning Officer</text>
+
+<!-- Human Persona: Returning Officer (left) -->
+<circle cx="55" cy="195" r="14" fill="none" stroke="#333" stroke-width="2"/>
+<line x1="55" y1="209" x2="55" y2="240" stroke="#333" stroke-width="2"/>
+<line x1="55" y1="220" x2="35" y2="235" stroke="#333" stroke-width="2"/>
+<line x1="55" y1="220" x2="75" y2="235" stroke="#333" stroke-width="2"/>
+<line x1="55" y1="240" x2="38" y2="260" stroke="#333" stroke-width="2"/>
+<line x1="55" y1="240" x2="72" y2="260" stroke="#333" stroke-width="2"/>
+<text x="55" y="278" font-family="Arial, sans-serif" font-size="13" fill="#333" text-anchor="middle">Returning</text>
+<text x="55" y="293" font-family="Arial, sans-serif" font-size="13" fill="#333" text-anchor="middle">Officer</text>
+<line x1="85" y1="225" x2="130" y2="320" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<!-- Box 1: Tauri Desktop App (RO) -->
+<rect x="140" y="300" width="160" height="80" rx="6" fill="#1f77b4" stroke="#1558a0" stroke-width="2" filter="url(#shadow)"/>
+<text x="220" y="328" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Tauri Desktop</text>
+<text x="220" y="348" font-family="Arial, sans-serif" font-size="13" fill="white" text-anchor="middle">App (RO)</text>
+
+<!-- Arrow Box1 to Box2 -->
+<line x1="300" y1="340" x2="355" y2="340" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- Box 2: 34B/34C Compiler -->
+<rect x="360" y="300" width="160" height="80" rx="6" fill="#2ca02c" stroke="#1e8a1e" stroke-width="2" filter="url(#shadow)"/>
+<text x="440" y="328" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">34B/34C</text>
+<text x="440" y="348" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Compiler</text>
+
+<!-- Event label on arrow from Box2 -->
+<text x="440" y="295" font-family="Arial, sans-serif" font-size="11" fill="#555" text-anchor="middle">eel.rts.form34b_compiled.v1</text>
+
+<!-- Arrow Box2 to Box3 -->
+<line x1="520" y1="340" x2="575" y2="340" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- Box 3: Edit-with-Reason Audit Trail -->
+<rect x="580" y="300" width="160" height="80" rx="6" fill="#2ca02c" stroke="#1e8a1e" stroke-width="2" filter="url(#shadow)"/>
+<text x="660" y="325" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Edit-with-Reason</text>
+<text x="660" y="345" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Audit Trail</text>
+
+<!-- Arrow down from Box3 to Audit Event DB -->
+<line x1="660" y1="380" x2="660" y2="420" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- Box 6: Audit Event DB -->
+<rect x="580" y="425" width="160" height="70" rx="6" fill="#ff7f0e" stroke="#c96000" stroke-width="2" filter="url(#shadow)"/>
+<text x="660" y="453" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Audit Event</text>
+<text x="660" y="473" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">DB</text>
+
+<!-- Arrow Box3 to Box4 -->
+<line x1="740" y1="340" x2="795" y2="340" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- Box 4: Agent Countersign -->
+<rect x="800" y="300" width="160" height="80" rx="6" fill="#9467bd" stroke="#7a50a8" stroke-width="2" filter="url(#shadow)"/>
+<text x="880" y="328" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Agent</text>
+<text x="880" y="348" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Countersign</text>
+
+<!-- Human Persona: Party Agent (below countersign box) -->
+<circle cx="880" cy="450" r="14" fill="none" stroke="#333" stroke-width="2"/>
+<line x1="880" y1="464" x2="880" y2="495" stroke="#333" stroke-width="2"/>
+<line x1="880" y1="475" x2="860" y2="490" stroke="#333" stroke-width="2"/>
+<line x1="880" y1="475" x2="900" y2="490" stroke="#333" stroke-width="2"/>
+<line x1="880" y1="495" x2="863" y2="515" stroke="#333" stroke-width="2"/>
+<line x1="880" y1="495" x2="897" y2="515" stroke="#333" stroke-width="2"/>
+<text x="880" y="533" font-family="Arial, sans-serif" font-size="13" fill="#333" text-anchor="middle">Party Agent</text>
+<line x1="880" y1="380" x2="880" y2="435" stroke="#555" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+
+<!-- Arrow Box4 to Box5 -->
+<line x1="960" y1="340" x2="1015" y2="340" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- Box 5: Session Hash -> tlog anchor -->
+<rect x="1020" y="300" width="160" height="80" rx="6" fill="#9467bd" stroke="#7a50a8" stroke-width="2" filter="url(#shadow)"/>
+<text x="1100" y="325" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Session Hash</text>
+<text x="1100" y="345" font-family="Arial, sans-serif" font-size="13" fill="white" text-anchor="middle">&#128274; tlog anchor</text>
+
+<!-- Event label on arrow to tlog -->
+<text x="1100" y="295" font-family="Arial, sans-serif" font-size="11" fill="#555" text-anchor="middle">eel.rts.session_anchored.v1</text>
+
+<!-- Human Persona: IAB Observer (right) -->
+<circle cx="1155" cy="430" r="14" fill="none" stroke="#333" stroke-width="2"/>
+<line x1="1155" y1="444" x2="1155" y2="475" stroke="#333" stroke-width="2"/>
+<line x1="1155" y1="455" x2="1135" y2="470" stroke="#333" stroke-width="2"/>
+<line x1="1155" y1="455" x2="1175" y2="470" stroke="#333" stroke-width="2"/>
+<line x1="1155" y1="475" x2="1138" y2="495" stroke="#333" stroke-width="2"/>
+<line x1="1155" y1="475" x2="1172" y2="495" stroke="#333" stroke-width="2"/>
+<text x="1155" y="513" font-family="Arial, sans-serif" font-size="13" fill="#333" text-anchor="middle">IAB</text>
+<text x="1155" y="528" font-family="Arial, sans-serif" font-size="13" fill="#333" text-anchor="middle">Observer</text>
+<text x="1155" y="543" font-family="Arial, sans-serif" font-size="11" fill="#555" text-anchor="middle">viewing tlog</text>
+<line x1="1155" y1="380" x2="1155" y2="415" stroke="#555" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+
+<!-- Section label -->
+<text x="550" y="610" font-family="Arial, sans-serif" font-size="13" fill="#7f7f7f" text-anchor="middle">RO compiles form, every edit audited, agent countersigns, session hash published to transparency log</text>
+
+<!-- Legend -->
+<rect x="900" y="635" width="285" height="155" rx="6" fill="#f9f9f9" stroke="#bbb" stroke-width="1"/>
+<text x="915" y="655" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#333">Legend</text>
+<rect x="915" y="663" width="16" height="11" rx="2" fill="#1f77b4"/><text x="937" y="673" font-family="Arial,sans-serif" font-size="12" fill="#333">Kit / Device</text>
+<rect x="915" y="680" width="16" height="11" rx="2" fill="#2ca02c"/><text x="937" y="690" font-family="Arial,sans-serif" font-size="12" fill="#333">Service / Backend</text>
+<rect x="915" y="697" width="16" height="11" rx="2" fill="#ff7f0e"/><text x="937" y="707" font-family="Arial,sans-serif" font-size="12" fill="#333">Database / Store</text>
+<rect x="915" y="714" width="16" height="11" rx="2" fill="#9467bd"/><text x="937" y="724" font-family="Arial,sans-serif" font-size="12" fill="#333">Event / Crypto</text>
+<rect x="915" y="731" width="16" height="11" rx="2" fill="none" stroke="#7f7f7f" stroke-dasharray="4 2" stroke-width="1.5"/><text x="937" y="741" font-family="Arial,sans-serif" font-size="12" fill="#333">External / Planned</text>
+<text x="915" y="762" font-family="Arial,sans-serif" font-size="12" fill="#333">&#9900; Human Persona</text>
+<text x="915" y="779" font-family="Arial,sans-serif" font-size="12" fill="#333">&#128274; Crypto / HSM Touchpoint</text>
+</svg>

@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">M28 AI Monitoring Stack — Architecture Diagram</title>
+  <desc id="desc">Model registry with cosign-signed artefacts, decision logs routed to tlog, PII stripping pipeline, and LiteLLM plus NLLB double deployments.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#f8f9fa"/>
+  <text x="600" y="36" font-family="Arial,sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#111">M28 AI Monitoring Stack</text>
+  <text x="600" y="56" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#555">Model registry · cosign-signed artefacts · decision tlog · PII stripping · LiteLLM + NLLB doubles</text>
+
+  <!-- Model Registry -->
+  <rect x="30" y="100" width="250" height="120" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="155" y="126" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">Model Registry</text>
+  <text x="155" y="146" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">ModelCard: name, version</text>
+  <text x="155" y="164" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">cosign signature, SBOM</text>
+  <text x="155" y="182" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">training_data_hash</text>
+  <text x="155" y="200" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">bias_eval_report, drift_p</text>
+  <text x="155" y="216" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">data class B — T1-consensus</text>
+  <rect x="255" y="100" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="266" y="116" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+
+  <!-- cosign / SBOM verify -->
+  <rect x="320" y="100" width="220" height="120" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="430" y="126" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f77b4">Cosign Verify</text>
+  <text x="430" y="146" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">sigstore cosign sign</text>
+  <text x="430" y="164" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">artefact digest in tlog</text>
+  <text x="430" y="182" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">SBOM provenance</text>
+  <text x="430" y="200" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">model_registered.v1 event</text>
+  <text x="430" y="216" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">Rekor tlog anchor</text>
+  <rect x="515" y="100" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="526" y="116" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="280" y1="160" x2="320" y2="160" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- LiteLLM doubles -->
+  <rect x="30" y="280" width="250" height="100" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="155" y="306" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">LiteLLM Double</text>
+  <text x="155" y="326" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">62.169.25.77:4000</text>
+  <text x="155" y="344" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">primary inference router</text>
+  <text x="155" y="362" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">dev stub double available</text>
+  <text x="155" y="376" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">OpenAI-compat API</text>
+
+  <!-- NLLB doubles -->
+  <rect x="320" y="280" width="220" height="100" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="430" y="306" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">NLLB Translation</text>
+  <text x="430" y="326" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">No Language Left Behind</text>
+  <text x="430" y="344" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">42 languages incl. SW/KI</text>
+  <text x="430" y="362" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">dev stub double</text>
+  <text x="430" y="376" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">ml/vault host (Ollama)</text>
+
+  <!-- PII Stripping -->
+  <rect x="580" y="280" width="260" height="100" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2"/>
+  <text x="710" y="306" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">PII Stripping Pipeline</text>
+  <text x="710" y="326" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">presidio NER → token replace</text>
+  <text x="710" y="344" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">national_id, dob, name hash</text>
+  <text x="710" y="362" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">before log storage + tlog</text>
+  <text x="710" y="376" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">GDPR / Kenya DPA compliant</text>
+
+  <!-- Decision Log -->
+  <rect x="580" y="100" width="560" height="130" rx="8" fill="#fce7f3" stroke="#d62728" stroke-width="2"/>
+  <text x="860" y="126" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">Decision Log (ModelDecisionLog)</text>
+  <text x="860" y="146" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">model_id, version, input_hash, output_hash</text>
+  <text x="860" y="166" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">confidence_score, decision, human_override</text>
+  <text x="860" y="186" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">pii_stripped_at, logged_at, merkle_node_id</text>
+  <text x="860" y="206" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">data class A — T1-audit — tlog anchored</text>
+  <text x="860" y="222" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">POST /v1/ai/decision-logs (internal gRPC)</text>
+  <rect x="1113" y="100" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="1124" y="116" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="540" y1="160" x2="580" y2="160" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="710" y1="280" x2="820" y2="230" stroke="#ff7f0e" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Drift Monitor -->
+  <rect x="30" y="440" width="250" height="90" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2"/>
+  <text x="155" y="466" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">Drift Monitor</text>
+  <text x="155" y="486" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">Kolmogorov-Smirnov test</text>
+  <text x="155" y="506" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">p &lt; 0.05 → drift alert</text>
+  <text x="155" y="522" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">model_drift_alert.v1</text>
+  <line x1="155" y1="380" x2="155" y2="440" stroke="#ff7f0e" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Bias Eval -->
+  <rect x="320" y="440" width="220" height="90" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2"/>
+  <text x="430" y="466" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">Bias Eval</text>
+  <text x="430" y="486" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">demographic parity check</text>
+  <text x="430" y="506" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">equal opportunity metric</text>
+  <text x="430" y="522" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">bias_eval_report in ModelCard</text>
+  <line x1="430" y1="380" x2="430" y2="440" stroke="#ff7f0e" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Model Cards public -->
+  <rect x="580" y="440" width="580" height="90" rx="8" fill="#f3f4f6" stroke="#7f7f7f" stroke-width="1.5"/>
+  <text x="870" y="466" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">Public Model Cards (Astro)</text>
+  <text x="870" y="486" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#555">GET /v1/ai/model-cards — public tier</text>
+  <text x="870" y="506" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#555">cosign signature URL, training data reference, bias report</text>
+  <text x="870" y="522" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">Astro static site — CDN served</text>
+  <line x1="870" y1="230" x2="870" y2="440" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Tlog (Rekor) -->
+  <rect x="30" y="600" width="250" height="80" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="155" y="626" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">Rekor tlog (P05)</text>
+  <text x="155" y="646" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">model artefact + decision log</text>
+  <text x="155" y="664" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">Merkle anchors — immutable</text>
+  <text x="155" y="676" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">cosign verify at deploy time</text>
+  <rect x="255" y="600" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="266" y="616" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="155" y1="530" x2="155" y2="600" stroke="#9467bd" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="430" y1="230" x2="250" y2="600" stroke="#9467bd" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+
+  <!-- Kafka -->
+  <rect x="320" y="600" width="840" height="50" rx="8" fill="#f3f4f6" stroke="#7f7f7f" stroke-width="1.5"/>
+  <text x="740" y="623" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Kafka: eel.ai.model_registered.v1 · eel.ai.decision_logged.v1 · eel.ai.model_drift_alert.v1</text>
+  <text x="740" y="640" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#555">operational retention — signed</text>
+  <line x1="740" y1="530" x2="740" y2="600" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Inference consumers -->
+  <rect x="30" y="710" width="580" height="60" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="1.5"/>
+  <text x="320" y="736" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#1f77b4">Downstream AI Consumers</text>
+  <text x="320" y="754" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">M26 anomaly detection · M27 intent preservation · M35 CVR classify · M44 turnout forecast</text>
+  <line x1="155" y1="680" x2="200" y2="710" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="430" y1="530" x2="350" y2="710" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Legend -->
+  <rect x="930" y="600" width="240" height="150" rx="6" fill="#fff" stroke="#ccc" stroke-width="1"/>
+  <text x="1050" y="620" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Legend</text>
+  <rect x="942" y="630" width="20" height="14" rx="2" fill="#ede9fe" stroke="#9467bd"/>
+  <text x="970" y="642" font-family="Arial,sans-serif" font-size="12" fill="#333">Model registry / tlog</text>
+  <rect x="942" y="650" width="20" height="14" rx="2" fill="#dcfce7" stroke="#2ca02c"/>
+  <text x="970" y="662" font-family="Arial,sans-serif" font-size="12" fill="#333">LLM / NLLB doubles</text>
+  <rect x="942" y="670" width="20" height="14" rx="2" fill="#fce7f3" stroke="#d62728"/>
+  <text x="970" y="682" font-family="Arial,sans-serif" font-size="12" fill="#333">Decision log (audit)</text>
+  <rect x="942" y="690" width="20" height="14" rx="2" fill="#fef9c3" stroke="#ff7f0e"/>
+  <text x="970" y="702" font-family="Arial,sans-serif" font-size="12" fill="#333">Monitoring / eval</text>
+  <rect x="942" y="710" width="14" height="14" rx="2" fill="#9467bd"/>
+  <text x="962" y="722" font-family="Arial,sans-serif" font-size="12" fill="white">🔒</text>
+  <text x="970" y="722" font-family="Arial,sans-serif" font-size="12" fill="#333">cosign / tlog anchor</text>
+  <rect x="942" y="730" width="20" height="14" rx="2" fill="#f3f4f6" stroke="#7f7f7f"/>
+  <text x="970" y="742" font-family="Arial,sans-serif" font-size="12" fill="#333">Public / downstream</text>
+</svg>

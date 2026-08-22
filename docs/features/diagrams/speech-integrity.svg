@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
+<title>Module M17 Speech Integrity</title>
+<desc>Speech and content integrity monitoring - content flag ingestion, CIB clustering detection, deepfake audio/video detection, with platform and NCIC referral.</desc>
+<defs>
+  <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+  </marker>
+</defs>
+<!-- Background -->
+<rect width="1200" height="800" fill="#ffffff"/>
+<!-- Title bar -->
+<rect x="0" y="0" width="1200" height="60" fill="#1a3a5c"/>
+<text x="20" y="38" font-family="Arial,sans-serif" font-size="22" font-weight="bold" fill="white">M17 Speech Integrity</text>
+
+<!-- Section label -->
+<text x="20" y="95" font-family="Arial,sans-serif" font-size="16" font-weight="bold" fill="#1a3a5c">Pipeline: Content Ingestion to Platform/NCIC Referral</text>
+
+<!-- Human: IEBC Monitor -->
+<text x="30" y="245" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#333">* IEBC Monitor</text>
+
+<!-- Content Ingestion -->
+<rect x="30" y="260" width="160" height="90" rx="6" fill="#2ca02c" stroke="#1e7020" stroke-width="2"/>
+<text x="110" y="290" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="white" text-anchor="middle">Content</text>
+<text x="110" y="308" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="white" text-anchor="middle">Ingestion</text>
+<text x="110" y="326" font-family="Arial,sans-serif" font-size="12" fill="#ddd" text-anchor="middle">(flags + scrape)</text>
+
+<!-- Arrow 1 -->
+<line x1="190" y1="305" x2="265" y2="305" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- CIB Clustering Detector (ML) -->
+<rect x="270" y="260" width="160" height="90" rx="6" fill="#9467bd" stroke="#7a4fa0" stroke-width="2"/>
+<text x="350" y="290" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="white" text-anchor="middle">CIB Clustering</text>
+<text x="350" y="308" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="white" text-anchor="middle">Detector</text>
+<text x="350" y="326" font-family="Arial,sans-serif" font-size="12" fill="#ddd" text-anchor="middle">(ML)</text>
+
+<!-- Arrow 2 with event -->
+<line x1="430" y1="305" x2="485" y2="305" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="457" y="290" font-family="Arial,sans-serif" font-size="9" fill="#9467bd" text-anchor="middle">eel.speech.</text>
+<text x="457" y="300" font-family="Arial,sans-serif" font-size="9" fill="#9467bd" text-anchor="middle">cib_cluster_</text>
+<text x="457" y="310" font-family="Arial,sans-serif" font-size="9" fill="#9467bd" text-anchor="middle">detected.v1</text>
+
+<!-- Deepfake Detector (ONNX) - dashed = in-flight -->
+<rect x="490" y="260" width="160" height="90" rx="6" fill="#9467bd" stroke="#7a4fa0" stroke-width="2" stroke-dasharray="6 3"/>
+<text x="570" y="290" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="white" text-anchor="middle">Deepfake</text>
+<text x="570" y="308" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="white" text-anchor="middle">Detector</text>
+<text x="570" y="326" font-family="Arial,sans-serif" font-size="12" fill="#ffdd88" text-anchor="middle">(ONNX) [in-flight]</text>
+
+<!-- Arrow 3 with event -->
+<line x1="650" y1="305" x2="715" y2="305" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="682" y="290" font-family="Arial,sans-serif" font-size="9" fill="#9467bd" text-anchor="middle">eel.speech.</text>
+<text x="682" y="300" font-family="Arial,sans-serif" font-size="9" fill="#9467bd" text-anchor="middle">deepfake_</text>
+<text x="682" y="310" font-family="Arial,sans-serif" font-size="9" fill="#9467bd" text-anchor="middle">flagged.v1</text>
+
+<!-- Evidence Packaging -->
+<rect x="720" y="260" width="160" height="90" rx="6" fill="#2ca02c" stroke="#1e7020" stroke-width="2"/>
+<text x="800" y="295" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Evidence</text>
+<text x="800" y="313" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Packaging</text>
+
+<!-- Outputs fan-out right from Evidence Packaging -->
+<line x1="880" y1="285" x2="955" y2="215" stroke="#aaa" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arrow)"/>
+<line x1="880" y1="305" x2="955" y2="315" stroke="#aaa" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arrow)"/>
+
+<!-- Social Media Platforms (dashed = external) -->
+<rect x="960" y="180" width="160" height="70" rx="6" fill="none" stroke="#7f7f7f" stroke-dasharray="4 2" stroke-width="2"/>
+<text x="1040" y="208" font-family="Arial,sans-serif" font-size="13" fill="#7f7f7f" text-anchor="middle">Social Media</text>
+<text x="1040" y="226" font-family="Arial,sans-serif" font-size="13" fill="#7f7f7f" text-anchor="middle">Platforms</text>
+
+<!-- NCIC (Nat. Cohesion) (dashed = external) -->
+<rect x="960" y="280" width="160" height="70" rx="6" fill="none" stroke="#7f7f7f" stroke-dasharray="4 2" stroke-width="2"/>
+<text x="1040" y="308" font-family="Arial,sans-serif" font-size="13" fill="#7f7f7f" text-anchor="middle">NCIC</text>
+<text x="1040" y="326" font-family="Arial,sans-serif" font-size="12" fill="#7f7f7f" text-anchor="middle">(Nat. Cohesion)</text>
+
+<!-- Human: NCIC Officer -->
+<text x="960" y="390" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#7f7f7f">* NCIC Officer</text>
+<text x="960" y="408" font-family="Arial,sans-serif" font-size="12" fill="#999">[dashed external]</text>
+
+<!-- ai-platform-svc (M17 backend) below deepfake -->
+<rect x="490" y="420" width="160" height="70" rx="6" fill="#2ca02c" stroke="#1e7020" stroke-width="2"/>
+<text x="570" y="448" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="white" text-anchor="middle">ai-platform-svc</text>
+<text x="570" y="466" font-family="Arial,sans-serif" font-size="13" fill="#ddd" text-anchor="middle">(M17 backend)</text>
+
+<!-- Arrow: Deepfake -> ai-platform-svc -->
+<line x1="570" y1="350" x2="570" y2="415" stroke="#555" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arrow)"/>
+
+<!-- Evidence DB (MinIO + PG) -->
+<rect x="720" y="420" width="160" height="70" rx="6" fill="#ff7f0e" stroke="#c05a00" stroke-width="2"/>
+<text x="800" y="448" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="white" text-anchor="middle">Evidence DB</text>
+<text x="800" y="466" font-family="Arial,sans-serif" font-size="13" fill="#fff" text-anchor="middle">(MinIO + PG)</text>
+
+<!-- Arrow: Evidence Packaging -> Evidence DB -->
+<line x1="800" y1="350" x2="800" y2="415" stroke="#555" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arrow)"/>
+
+<!-- Arrow: ai-platform-svc -> Evidence DB -->
+<line x1="650" y1="455" x2="715" y2="455" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<!-- Legend -->
+<rect x="900" y="635" width="285" height="155" rx="6" fill="#f9f9f9" stroke="#bbb" stroke-width="1"/>
+<text x="915" y="655" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#333">Legend</text>
+<rect x="915" y="663" width="16" height="11" rx="2" fill="#1f77b4"/><text x="937" y="673" font-family="Arial,sans-serif" font-size="12" fill="#333">Kit / Device</text>
+<rect x="915" y="680" width="16" height="11" rx="2" fill="#2ca02c"/><text x="937" y="690" font-family="Arial,sans-serif" font-size="12" fill="#333">Service / Backend</text>
+<rect x="915" y="697" width="16" height="11" rx="2" fill="#ff7f0e"/><text x="937" y="707" font-family="Arial,sans-serif" font-size="12" fill="#333">Database / Store</text>
+<rect x="915" y="714" width="16" height="11" rx="2" fill="#9467bd"/><text x="937" y="724" font-family="Arial,sans-serif" font-size="12" fill="#333">Event / Crypto</text>
+<rect x="915" y="731" width="16" height="11" rx="2" fill="none" stroke="#7f7f7f" stroke-dasharray="4 2" stroke-width="1.5"/><text x="937" y="741" font-family="Arial,sans-serif" font-size="12" fill="#333">External / Planned</text>
+<text x="915" y="760" font-family="Arial,sans-serif" font-size="12" fill="#333">* Human Persona</text>
+<text x="915" y="778" font-family="Arial,sans-serif" font-size="12" fill="#333">Lock = HSM / Crypto Touchpoint</text>
+</svg>

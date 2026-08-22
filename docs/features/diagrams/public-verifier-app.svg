@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
+<title>Module M13 Public Verifier App</title>
+<desc>Public verifier supporting 10M concurrent users via mobile-bff, USSD, WhatsApp, and IVR fanout with attestation gate and read-only responses.</desc>
+<defs>
+  <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+  </marker>
+</defs>
+<!-- Background -->
+<rect width="1200" height="800" fill="#ffffff"/>
+<!-- Title bar -->
+<rect x="0" y="0" width="1200" height="60" fill="#1a3a5c"/>
+<text x="20" y="38" font-family="Arial,sans-serif" font-size="22" font-weight="bold" fill="white">M13 Public Verifier App</text>
+
+<!-- Section label -->
+<text x="20" y="95" font-family="Arial,sans-serif" font-size="16" font-weight="bold" fill="#1a3a5c">Fan-out: 10M Concurrent Users across 5 Channels</text>
+
+<!-- Human persona -->
+<text x="20" y="155" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#333">* Citizen Voter</text>
+
+<!-- Channel boxes (left column) -->
+
+<!-- Mobile App -->
+<rect x="30" y="170" width="160" height="70" rx="6" fill="#1f77b4" stroke="#155a8a" stroke-width="2"/>
+<text x="110" y="198" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="white" text-anchor="middle">Mobile App</text>
+<text x="110" y="214" font-family="Arial,sans-serif" font-size="12" fill="#ddd" text-anchor="middle">(10M concurrent)</text>
+
+<!-- Web Browser -->
+<rect x="30" y="260" width="160" height="70" rx="6" fill="#1f77b4" stroke="#155a8a" stroke-width="2"/>
+<text x="110" y="295" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Web Browser</text>
+
+<!-- USSD -->
+<rect x="30" y="350" width="160" height="70" rx="6" fill="#1f77b4" stroke="#155a8a" stroke-width="2"/>
+<text x="110" y="388" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">USSD *400#</text>
+
+<!-- WhatsApp Bot (dashed = planned) -->
+<rect x="30" y="440" width="160" height="70" rx="6" fill="#1f77b4" stroke="#155a8a" stroke-width="2" stroke-dasharray="6 3"/>
+<text x="110" y="468" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">WhatsApp</text>
+<text x="110" y="486" font-family="Arial,sans-serif" font-size="13" fill="#ddd" text-anchor="middle">Bot [planned]</text>
+
+<!-- IVR Voice (dashed = planned) -->
+<rect x="30" y="530" width="160" height="70" rx="6" fill="#1f77b4" stroke="#155a8a" stroke-width="2" stroke-dasharray="6 3"/>
+<text x="110" y="558" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">IVR</text>
+<text x="110" y="576" font-family="Arial,sans-serif" font-size="13" fill="#ddd" text-anchor="middle">Voice [planned]</text>
+
+<!-- Arrows from channels to BFF -->
+<line x1="190" y1="205" x2="265" y2="385" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="190" y1="295" x2="265" y2="385" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="190" y1="385" x2="265" y2="390" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="190" y1="475" x2="265" y2="410" stroke="#555" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arrow)"/>
+<line x1="190" y1="565" x2="265" y2="425" stroke="#555" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arrow)"/>
+
+<!-- Mobile BFF (API Gateway) -->
+<rect x="270" y="350" width="160" height="80" rx="6" fill="#2ca02c" stroke="#1e7020" stroke-width="2"/>
+<text x="350" y="380" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Mobile BFF</text>
+<text x="350" y="398" font-family="Arial,sans-serif" font-size="13" fill="#ddd" text-anchor="middle">(API Gateway)</text>
+
+<!-- Arrow: BFF -> Attestation Gate -->
+<line x1="430" y1="390" x2="495" y2="390" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- Attestation Gate -->
+<rect x="500" y="350" width="150" height="80" rx="6" fill="#9467bd" stroke="#7a4fa0" stroke-width="2"/>
+<text x="575" y="380" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Attestation</text>
+<text x="575" y="398" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Gate</text>
+
+<!-- Arrows from Attestation Gate to Voter Register and Cache -->
+<line x1="650" y1="375" x2="715" y2="320" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="650" y1="400" x2="715" y2="435" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<!-- Voter Register (read-only) -->
+<rect x="720" y="280" width="160" height="80" rx="6" fill="#ff7f0e" stroke="#c05a00" stroke-width="2"/>
+<text x="800" y="308" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Voter Register</text>
+<text x="800" y="326" font-family="Arial,sans-serif" font-size="13" fill="#fff" text-anchor="middle">(read-only)</text>
+
+<!-- Verification Cache (Redis) -->
+<rect x="720" y="400" width="160" height="70" rx="6" fill="#ff7f0e" stroke="#c05a00" stroke-width="2"/>
+<text x="800" y="428" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Verification</text>
+<text x="800" y="446" font-family="Arial,sans-serif" font-size="13" fill="#fff" text-anchor="middle">Cache (Redis)</text>
+
+<!-- Arrows from Register and Cache to Response Formatter -->
+<line x1="880" y1="320" x2="915" y2="375" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="880" y1="435" x2="915" y2="400" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<!-- Response Formatter -->
+<rect x="920" y="350" width="150" height="80" rx="6" fill="#2ca02c" stroke="#1e7020" stroke-width="2"/>
+<text x="995" y="380" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Response</text>
+<text x="995" y="398" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Formatter</text>
+
+<!-- Arrow: Response Formatter back to BFF -->
+<line x1="920" y1="430" x2="350" y2="430" stroke="#555" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arrow)"/>
+<text x="635" y="448" font-family="Arial,sans-serif" font-size="12" fill="#555" text-anchor="middle">read-only response</text>
+
+<!-- Event label -->
+<text x="920" y="470" font-family="Arial,sans-serif" font-size="11" fill="#9467bd">eel.verifier.verification_completed.v1</text>
+
+<!-- Legend -->
+<rect x="900" y="635" width="285" height="155" rx="6" fill="#f9f9f9" stroke="#bbb" stroke-width="1"/>
+<text x="915" y="655" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#333">Legend</text>
+<rect x="915" y="663" width="16" height="11" rx="2" fill="#1f77b4"/><text x="937" y="673" font-family="Arial,sans-serif" font-size="12" fill="#333">Kit / Device</text>
+<rect x="915" y="680" width="16" height="11" rx="2" fill="#2ca02c"/><text x="937" y="690" font-family="Arial,sans-serif" font-size="12" fill="#333">Service / Backend</text>
+<rect x="915" y="697" width="16" height="11" rx="2" fill="#ff7f0e"/><text x="937" y="707" font-family="Arial,sans-serif" font-size="12" fill="#333">Database / Store</text>
+<rect x="915" y="714" width="16" height="11" rx="2" fill="#9467bd"/><text x="937" y="724" font-family="Arial,sans-serif" font-size="12" fill="#333">Event / Crypto</text>
+<rect x="915" y="731" width="16" height="11" rx="2" fill="none" stroke="#7f7f7f" stroke-dasharray="4 2" stroke-width="1.5"/><text x="937" y="741" font-family="Arial,sans-serif" font-size="12" fill="#333">External / Planned</text>
+<text x="915" y="760" font-family="Arial,sans-serif" font-size="12" fill="#333">* Human Persona</text>
+<text x="915" y="778" font-family="Arial,sans-serif" font-size="12" fill="#333">Lock = HSM / Crypto Touchpoint</text>
+</svg>

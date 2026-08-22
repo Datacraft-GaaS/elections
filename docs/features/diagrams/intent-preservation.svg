@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">M27 Intent Preservation — Architecture Diagram</title>
+  <desc id="desc">PreMarkValidationEvent pipeline with image_delete_elapsed_ms threshold, A1-A8/V1-V3 anomaly catalogue, z-score outlier detection, and rejection-rate alert.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+    <marker id="arrow-warn" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#d62728"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#f8f9fa"/>
+  <text x="600" y="36" font-family="Arial,sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#111">M27 Intent Preservation</text>
+  <text x="600" y="56" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#555">PreMarkValidation · image_delete_elapsed_ms ≤ 1000 ms · A1-A8/V1-V3 catalogue · z-score outlier · rejection-rate alert</text>
+
+  <!-- BVI Device -->
+  <rect x="30" y="100" width="200" height="90" rx="8" fill="#fff" stroke="#7f7f7f" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="130" y="130" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">BVI Device (M05)</text>
+  <text x="130" y="150" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#555">ballot image capture</text>
+  <text x="130" y="168" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#555">on-device CV mark detect</text>
+  <text x="130" y="184" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">Flutter — offline-first</text>
+
+  <!-- PreMarkValidationEvent -->
+  <rect x="270" y="100" width="280" height="90" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="410" y="130" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f77b4">PreMarkValidationEvent</text>
+  <text x="410" y="150" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">ballot_image_id, station_code</text>
+  <text x="410" y="168" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">candidate_marks[], contest_id</text>
+  <text x="410" y="184" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">emitted before image delete</text>
+  <line x1="230" y1="145" x2="270" y2="145" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="235" y="137" font-family="Arial,sans-serif" font-size="11" fill="#333">capture →</text>
+
+  <!-- Timing gate -->
+  <rect x="590" y="100" width="260" height="90" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2.5"/>
+  <text x="720" y="126" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">Timing Gate</text>
+  <text x="720" y="146" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">image_delete_elapsed_ms</text>
+  <text x="720" y="165" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">≤ 1000 ms SLA</text>
+  <text x="720" y="182" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">violation → TIMING_VIOLATION alert</text>
+  <line x1="550" y1="145" x2="590" y2="145" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="555" y="137" font-family="Arial,sans-serif" font-size="11" fill="#333">event →</text>
+
+  <!-- Anomaly catalogue -->
+  <rect x="270" y="240" width="560" height="160" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="550" y="265" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">Anomaly Catalogue — A1-A8 · V1-V3</text>
+  <text x="550" y="288" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">A1: multiple marks same contest   A2: blank ballot returned   A3: overvote pattern</text>
+  <text x="550" y="308" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">A4: ambiguous mark below threshold   A5: image quality degraded   A6: sequence gap</text>
+  <text x="550" y="328" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">A7: station-level spike in A1-A6   A8: timing SLA violation cluster</text>
+  <text x="550" y="350" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">V1: valid undervote   V2: valid write-in   V3: provisional envelope</text>
+  <text x="550" y="370" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">MarkAnomalyRecord entity — data class B — T1-consensus</text>
+  <text x="550" y="390" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">classification_model: rule-based + CV confidence score</text>
+  <line x1="410" y1="190" x2="410" y2="240" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="720" y1="190" x2="680" y2="240" stroke="#ff7f0e" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Z-score outlier -->
+  <rect x="270" y="450" width="260" height="80" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2"/>
+  <text x="400" y="476" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">Z-Score Outlier</text>
+  <text x="400" y="496" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">station rejection rate vs constituency</text>
+  <text x="400" y="514" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">|z| &gt; 2.5 → anomaly flag</text>
+  <text x="400" y="526" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">per-contest rolling window</text>
+  <line x1="400" y1="400" x2="400" y2="450" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Rejection-rate alert -->
+  <rect x="570" y="450" width="260" height="80" rx="8" fill="#fce7f3" stroke="#d62728" stroke-width="2"/>
+  <text x="700" y="476" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">Rejection-Rate Alert</text>
+  <text x="700" y="496" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">rejection_rate_alert.v1 event</text>
+  <text x="700" y="514" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">ECC console + IAB notification</text>
+  <text x="700" y="526" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">operator must acknowledge</text>
+  <line x1="530" y1="490" x2="570" y2="490" stroke="#d62728" stroke-width="1.5" marker-end="url(#arrow-warn)"/>
+
+  <!-- HSM / Merkle -->
+  <rect x="900" y="240" width="260" height="90" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="1030" y="266" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">HSM + Merkle Chain</text>
+  <text x="1030" y="286" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">MarkAnomalyRecord anchored</text>
+  <text x="1030" y="306" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">per-batch Merkle node</text>
+  <text x="1030" y="322" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">tlog: tamper-evident record</text>
+  <rect x="1135" y="240" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="1146" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="830" y1="320" x2="900" y2="285" stroke="#9467bd" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+
+  <!-- BVI Backend consumer -->
+  <rect x="900" y="100" width="260" height="90" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="1030" y="126" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f77b4">BVI Back-End (M06)</text>
+  <text x="1030" y="146" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">validate + store ballot cast</text>
+  <text x="1030" y="164" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">consumes PreMarkValidation</text>
+  <text x="1030" y="180" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">Rust axum — T1-audit</text>
+  <line x1="850" y1="145" x2="900" y2="145" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Downstream: ECC console -->
+  <rect x="270" y="590" width="260" height="70" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="400" y="616" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">ECC Alert Console</text>
+  <text x="400" y="636" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">human review of anomaly clusters</text>
+  <text x="400" y="650" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">GET /v1/bvi/anomalies (ECC_ANALYST)</text>
+  <line x1="400" y1="530" x2="400" y2="590" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="700" y1="530" x2="500" y2="590" stroke="#d62728" stroke-width="1.5" marker-end="url(#arrow-warn)"/>
+
+  <!-- IAB dashboard -->
+  <rect x="570" y="590" width="260" height="70" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="700" y="616" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">IAB Dashboard</text>
+  <text x="700" y="636" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">rejection rate trend · anomaly heatmap</text>
+  <text x="700" y="650" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">GET /v1/bvi/anomalies/summary (IAB_AUDITOR)</text>
+
+  <!-- Kafka -->
+  <rect x="270" y="710" width="560" height="50" rx="8" fill="#f3f4f6" stroke="#7f7f7f" stroke-width="1.5"/>
+  <text x="550" y="733" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Kafka: eel.bvi.pre_mark_validation.v1 · eel.bvi.mark_anomaly.v1 · eel.bvi.rejection_rate_alert.v1</text>
+  <text x="550" y="750" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#555">operational retention — signed — at-least-once idempotent</text>
+  <line x1="400" y1="660" x2="430" y2="710" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="700" y1="660" x2="670" y2="710" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Legend -->
+  <rect x="900" y="450" width="260" height="140" rx="6" fill="#fff" stroke="#ccc" stroke-width="1"/>
+  <text x="1030" y="470" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Legend</text>
+  <rect x="912" y="480" width="20" height="14" rx="2" fill="#dbeafe" stroke="#1f77b4"/>
+  <text x="940" y="492" font-family="Arial,sans-serif" font-size="12" fill="#333">Internal service / event</text>
+  <rect x="912" y="500" width="20" height="14" rx="2" fill="#fef9c3" stroke="#ff7f0e"/>
+  <text x="940" y="512" font-family="Arial,sans-serif" font-size="12" fill="#333">Timing / threshold gate</text>
+  <rect x="912" y="520" width="20" height="14" rx="2" fill="#dcfce7" stroke="#2ca02c"/>
+  <text x="940" y="532" font-family="Arial,sans-serif" font-size="12" fill="#333">Anomaly catalogue</text>
+  <rect x="912" y="540" width="20" height="14" rx="2" fill="#fce7f3" stroke="#d62728"/>
+  <text x="940" y="552" font-family="Arial,sans-serif" font-size="12" fill="#333">Alert / violation</text>
+  <rect x="912" y="560" width="14" height="14" rx="2" fill="#9467bd"/>
+  <text x="932" y="572" font-family="Arial,sans-serif" font-size="12" fill="white">🔒</text>
+  <text x="940" y="572" font-family="Arial,sans-serif" font-size="12" fill="#333">HSM / tlog anchor</text>
+  <rect x="912" y="580" width="20" height="14" rx="2" fill="#fff" stroke="#7f7f7f" stroke-dasharray="4,2"/>
+  <text x="940" y="592" font-family="Arial,sans-serif" font-size="12" fill="#333">External device</text>
+</svg>

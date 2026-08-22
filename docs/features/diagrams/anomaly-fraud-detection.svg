@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">M26 Anomaly and Fraud Detection — Architecture Diagram</title>
+  <desc id="desc">Seven-layer defence-in-depth detection stack: telemetry IsoForest, cross-source, Benford, 2nd-digit Benford, cryptographic canary, convergence audit, kit L1 — routing to ECC console and public detection report.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+    <marker id="arrow-red" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#d62728"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#f8f9fa"/>
+  <text x="600" y="36" font-family="Arial,sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#111">M26 Anomaly &amp; Fraud Detection</text>
+  <text x="600" y="56" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#555">7-layer defence-in-depth stack — every layer must be defeated for rigging to succeed</text>
+
+  <!-- Layer header band -->
+  <rect x="20" y="80" width="920" height="30" rx="4" fill="#1f77b4" opacity="0.15"/>
+  <text x="480" y="100" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#1f77b4">Detection Layers L1–L7</text>
+
+  <!-- L1: Kit Telemetry IsoForest -->
+  <rect x="20" y="120" width="200" height="80" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="120" y="143" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#1f77b4">L1: Kit Telemetry</text>
+  <text x="120" y="161" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">IsolationForest model</text>
+  <text x="120" y="179" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">1/kit/min · on-device score</text>
+  <text x="120" y="195" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">KitTelemetryPacket</text>
+
+  <!-- L2: Cross-station statistical -->
+  <rect x="240" y="120" width="200" height="80" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="340" y="143" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#1f77b4">L2: Cross-Station</text>
+  <text x="340" y="161" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">auth_rate, throughput</text>
+  <text x="340" y="179" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">constituency z-score</text>
+  <text x="340" y="195" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">layer2_alert.v1</text>
+
+  <!-- L3: Benford + 2nd-digit -->
+  <rect x="460" y="120" width="200" height="80" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="560" y="143" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#2ca02c">L3: Distributional</text>
+  <text x="560" y="161" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">Benford's Law</text>
+  <text x="560" y="179" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">2nd-digit Benford (BEBER)</text>
+  <text x="560" y="195" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">DistributionalAnalysisResult</text>
+
+  <!-- L4: Cryptographic canary -->
+  <rect x="680" y="120" width="200" height="80" rx="8" fill="#fce7f3" stroke="#d62728" stroke-width="2"/>
+  <text x="780" y="143" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#d62728">L4: Crypto Canary</text>
+  <text x="780" y="161" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">hash-chain reproducibility</text>
+  <text x="780" y="179" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">cosign-verified artefacts</text>
+  <text x="780" y="195" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">layer4_critical.v1 (exactly-once)</text>
+  <rect x="857" y="120" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="868" y="136" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+
+  <!-- L5: RLA convergence -->
+  <rect x="20" y="240" width="200" height="80" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2"/>
+  <text x="120" y="263" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#ff7f0e">L5: RLA Linkage</text>
+  <text x="120" y="281" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">convergence audit (M22)</text>
+  <text x="120" y="299" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">ballot-level reconcile</text>
+  <text x="120" y="315" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">risk-limiting audit</text>
+
+  <!-- L6: Cross-source triangulation -->
+  <rect x="240" y="240" width="200" height="80" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2"/>
+  <text x="340" y="263" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#ff7f0e">L6: Cross-Source</text>
+  <text x="340" y="281" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">KIEMS vs PVT vs manual</text>
+  <text x="340" y="299" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">vs party vs press tallies</text>
+  <text x="340" y="315" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">CrossSourceComparison</text>
+
+  <!-- L7: Human tip line -->
+  <rect x="460" y="240" width="200" height="80" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="560" y="263" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#9467bd">L7: Human Adjudication</text>
+  <text x="560" y="281" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">tip lines + observer input</text>
+  <text x="560" y="299" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">no autonomous authority</text>
+  <text x="560" y="315" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">named human decision point</text>
+
+  <!-- Layer arrows down to DetectionAlert -->
+  <line x1="120" y1="200" x2="120" y2="240" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="340" y1="200" x2="340" y2="380" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="560" y1="200" x2="560" y2="380" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="780" y1="200" x2="780" y2="380" stroke="#d62728" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+  <line x1="120" y1="320" x2="350" y2="380" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="560" y1="320" x2="560" y2="380" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- DetectionAlert aggregate -->
+  <rect x="200" y="380" width="660" height="90" rx="8" fill="#fce7f3" stroke="#d62728" stroke-width="2.5"/>
+  <text x="530" y="406" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">DetectionAlert (aggregate)</text>
+  <text x="530" y="426" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">layer L1–L7 · severity · contributing_signals · anomaly_score · dimensional_scores</text>
+  <text x="530" y="446" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">assigned_analyst_id · resolution · merkle_node_id — data class B — T1-consensus</text>
+  <text x="530" y="462" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">PATCH /v1/detection/alerts/{id}/resolve → ECC_ANALYST required</text>
+  <rect x="835" y="380" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="846" y="396" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+
+  <!-- ECC Console -->
+  <rect x="200" y="520" width="300" height="80" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="350" y="546" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">ECC Unified Alert Console</text>
+  <text x="350" y="566" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">Phoenix LiveView — ECC_ANALYST role</text>
+  <text x="350" y="582" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">alert triage · resolve · escalate</text>
+  <text x="350" y="596" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">GET /v1/detection/alerts</text>
+  <line x1="350" y1="470" x2="350" y2="520" stroke="#9467bd" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- IAB Statistical Dashboard -->
+  <rect x="540" y="520" width="320" height="80" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="700" y="546" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">IAB Statistical Auditor Dashboard</text>
+  <text x="700" y="566" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">distributional + canary + cross-source</text>
+  <text x="700" y="582" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">GET /v1/detection/distributional (public)</text>
+  <line x1="700" y1="470" x2="700" y2="520" stroke="#2ca02c" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Public Detection Report -->
+  <rect x="200" y="650" width="660" height="70" rx="8" fill="#f3f4f6" stroke="#7f7f7f" stroke-width="1.5"/>
+  <text x="530" y="676" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">Public Detection Report (Astro)</text>
+  <text x="530" y="696" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#555">model cards · canary history · distributional results · post-election report</text>
+  <text x="530" y="712" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">GET /v1/detection/report | /model-cards | /canary — public tier</text>
+  <line x1="350" y1="600" x2="400" y2="650" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="700" y1="600" x2="660" y2="650" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Inputs (external) -->
+  <rect x="930" y="120" width="230" height="80" rx="8" fill="#fff" stroke="#7f7f7f" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="1045" y="148" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#7f7f7f">PVT / KEOG / eLOG</text>
+  <text x="1045" y="168" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#7f7f7f">observer network submissions</text>
+  <text x="1045" y="186" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">POST /v1/detection/pvt-submission</text>
+  <line x1="930" y1="160" x2="880" y2="280" stroke="#7f7f7f" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+
+  <!-- Kit feed -->
+  <rect x="930" y="240" width="230" height="60" rx="8" fill="#fff" stroke="#7f7f7f" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="1045" y="266" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#7f7f7f">BVI/BVR Kits</text>
+  <text x="1045" y="284" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">gRPC telemetry ingest (1/kit/min)</text>
+  <line x1="930" y1="270" x2="320" y2="200" stroke="#7f7f7f" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+
+  <!-- ML Worker -->
+  <rect x="930" y="380" width="230" height="60" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="1045" y="406" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#1f77b4">ML Worker (Python)</text>
+  <text x="1045" y="424" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#333">IsoForest · Benford · ROZENAS</text>
+  <line x1="930" y1="410" x2="860" y2="410" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Legend -->
+  <rect x="930" y="470" width="240" height="150" rx="6" fill="#fff" stroke="#ccc" stroke-width="1"/>
+  <text x="1050" y="490" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Legend</text>
+  <rect x="942" y="500" width="20" height="14" rx="2" fill="#dbeafe" stroke="#1f77b4"/>
+  <text x="970" y="512" font-family="Arial,sans-serif" font-size="12" fill="#333">L1/L2: telemetry / stat</text>
+  <rect x="942" y="520" width="20" height="14" rx="2" fill="#dcfce7" stroke="#2ca02c"/>
+  <text x="970" y="532" font-family="Arial,sans-serif" font-size="12" fill="#333">L3: distributional</text>
+  <rect x="942" y="540" width="20" height="14" rx="2" fill="#fce7f3" stroke="#d62728"/>
+  <text x="970" y="552" font-family="Arial,sans-serif" font-size="12" fill="#333">L4/alert: crypto / critical</text>
+  <rect x="942" y="560" width="20" height="14" rx="2" fill="#ede9fe" stroke="#9467bd"/>
+  <text x="970" y="572" font-family="Arial,sans-serif" font-size="12" fill="#333">L7 / ECC: human gate</text>
+  <rect x="942" y="580" width="20" height="14" rx="2" fill="#fff" stroke="#7f7f7f" stroke-dasharray="4,2"/>
+  <text x="970" y="592" font-family="Arial,sans-serif" font-size="12" fill="#333">External input</text>
+  <rect x="942" y="600" width="14" height="14" rx="2" fill="#9467bd"/>
+  <text x="962" y="612" font-family="Arial,sans-serif" font-size="12" fill="white">🔒</text>
+  <text x="970" y="612" font-family="Arial,sans-serif" font-size="12" fill="#333">HSM / tlog anchor</text>
+</svg>

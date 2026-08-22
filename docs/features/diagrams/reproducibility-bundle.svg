@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
+<title>Module M14 Reproducibility Bundle</title>
+<desc>Reproducibility bundle builder - Nix hermetic build, diffoscope verification, tlog anchor, and 5-channel publication for audit reproducibility.</desc>
+<defs>
+  <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+  </marker>
+</defs>
+<!-- Background -->
+<rect width="1200" height="800" fill="#ffffff"/>
+<!-- Title bar -->
+<rect x="0" y="0" width="1200" height="60" fill="#1a3a5c"/>
+<text x="20" y="38" font-family="Arial,sans-serif" font-size="22" font-weight="bold" fill="white">M14 Reproducibility Bundle</text>
+
+<!-- Section label -->
+<text x="20" y="95" font-family="Arial,sans-serif" font-size="16" font-weight="bold" fill="#1a3a5c">Pipeline: Hermetic Build to 5-Channel Publication</text>
+
+<!-- Bundle Builder -->
+<rect x="50" y="270" width="160" height="80" rx="6" fill="#2ca02c" stroke="#1e7020" stroke-width="2"/>
+<text x="130" y="300" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Bundle Builder</text>
+<text x="130" y="318" font-family="Arial,sans-serif" font-size="13" fill="#ddd" text-anchor="middle">(source + deps)</text>
+
+<!-- Arrow 1 -->
+<line x1="210" y1="310" x2="275" y2="310" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- Nix Hermetic Build -->
+<rect x="280" y="270" width="150" height="80" rx="6" fill="#2ca02c" stroke="#1e7020" stroke-width="2"/>
+<text x="355" y="300" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Nix Hermetic</text>
+<text x="355" y="318" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Build</text>
+
+<!-- Arrow 2 -->
+<line x1="430" y1="310" x2="485" y2="310" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- diffoscope Verify -->
+<rect x="490" y="270" width="150" height="80" rx="6" fill="#9467bd" stroke="#7a4fa0" stroke-width="2"/>
+<text x="565" y="300" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">diffoscope</text>
+<text x="565" y="318" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Verify</text>
+
+<!-- Arrow 3 with label -->
+<line x1="640" y1="310" x2="695" y2="310" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="667" y="298" font-family="Arial,sans-serif" font-size="10" fill="#555" text-anchor="middle">MATCH /</text>
+<text x="667" y="310" font-family="Arial,sans-serif" font-size="10" fill="#555" text-anchor="middle">MISMATCH</text>
+
+<!-- tlog Anchor -->
+<rect x="700" y="270" width="150" height="80" rx="6" fill="#9467bd" stroke="#7a4fa0" stroke-width="2"/>
+<text x="775" y="295" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">tlog Anchor</text>
+<text x="775" y="313" font-family="Arial,sans-serif" font-size="13" fill="#ddd" text-anchor="middle">(Merkle + HSM)</text>
+<text x="775" y="331" font-family="Arial,sans-serif" font-size="14" fill="#ffdd88" text-anchor="middle">[Lock]</text>
+
+<!-- Event label on tlog arrow -->
+<text x="667" y="270" font-family="Arial,sans-serif" font-size="10" fill="#9467bd" text-anchor="middle">eel.bundle.</text>
+<text x="667" y="281" font-family="Arial,sans-serif" font-size="10" fill="#9467bd" text-anchor="middle">anchored.v1</text>
+
+<!-- Bundle Store (MinIO) - below tlog -->
+<rect x="700" y="400" width="150" height="70" rx="6" fill="#ff7f0e" stroke="#c05a00" stroke-width="2"/>
+<text x="775" y="428" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Bundle Store</text>
+<text x="775" y="446" font-family="Arial,sans-serif" font-size="13" fill="#fff" text-anchor="middle">(MinIO)</text>
+
+<!-- Arrow: tlog -> Bundle Store -->
+<line x1="775" y1="350" x2="775" y2="395" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- 5-channel publication fan-out from tlog Anchor -->
+<!-- Arrow fan-out lines from tlog (right side) -->
+<line x1="850" y1="295" x2="915" y2="207" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="850" y1="300" x2="915" y2="277" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="850" y1="305" x2="915" y2="347" stroke="#555" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arrow)"/>
+<line x1="850" y1="315" x2="915" y2="417" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="850" y1="320" x2="915" y2="487" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<!-- IEBC Website -->
+<rect x="920" y="180" width="150" height="55" rx="6" fill="#1f77b4" stroke="#155a8a" stroke-width="2"/>
+<text x="995" y="205" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">IEBC Website</text>
+
+<!-- GitHub Release -->
+<rect x="920" y="250" width="150" height="55" rx="6" fill="#1f77b4" stroke="#155a8a" stroke-width="2"/>
+<text x="995" y="275" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">GitHub Release</text>
+
+<!-- IPFS (dashed = planned) -->
+<rect x="920" y="320" width="150" height="55" rx="6" fill="#1f77b4" stroke="#155a8a" stroke-width="2" stroke-dasharray="6 3"/>
+<text x="995" y="345" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">IPFS [planned]</text>
+
+<!-- Gazette Portal -->
+<rect x="920" y="390" width="150" height="55" rx="6" fill="#2ca02c" stroke="#1e7020" stroke-width="2"/>
+<text x="995" y="415" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Gazette Portal</text>
+
+<!-- IAB Dashboard -->
+<rect x="920" y="460" width="150" height="55" rx="6" fill="#2ca02c" stroke="#1e7020" stroke-width="2"/>
+<text x="995" y="485" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">IAB Dashboard</text>
+
+<!-- Human persona -->
+<text x="950" y="570" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#333">* Independent Auditor</text>
+<text x="950" y="588" font-family="Arial,sans-serif" font-size="12" fill="#555">verifies reproducibility</text>
+
+<!-- Legend -->
+<rect x="900" y="635" width="285" height="155" rx="6" fill="#f9f9f9" stroke="#bbb" stroke-width="1"/>
+<text x="915" y="655" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#333">Legend</text>
+<rect x="915" y="663" width="16" height="11" rx="2" fill="#1f77b4"/><text x="937" y="673" font-family="Arial,sans-serif" font-size="12" fill="#333">Kit / Device</text>
+<rect x="915" y="680" width="16" height="11" rx="2" fill="#2ca02c"/><text x="937" y="690" font-family="Arial,sans-serif" font-size="12" fill="#333">Service / Backend</text>
+<rect x="915" y="697" width="16" height="11" rx="2" fill="#ff7f0e"/><text x="937" y="707" font-family="Arial,sans-serif" font-size="12" fill="#333">Database / Store</text>
+<rect x="915" y="714" width="16" height="11" rx="2" fill="#9467bd"/><text x="937" y="724" font-family="Arial,sans-serif" font-size="12" fill="#333">Event / Crypto</text>
+<rect x="915" y="731" width="16" height="11" rx="2" fill="none" stroke="#7f7f7f" stroke-dasharray="4 2" stroke-width="1.5"/><text x="937" y="741" font-family="Arial,sans-serif" font-size="12" fill="#333">External / Planned</text>
+<text x="915" y="760" font-family="Arial,sans-serif" font-size="12" fill="#333">* Human Persona</text>
+<text x="915" y="778" font-family="Arial,sans-serif" font-size="12" fill="#333">Lock = HSM / Crypto Touchpoint</text>
+</svg>

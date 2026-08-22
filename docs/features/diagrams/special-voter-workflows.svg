@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">M25 Special Voter Workflows — Architecture Diagram</title>
+  <desc id="desc">Remand, barracks, refugee, and IDP special voter workflows with dual-biometric open, REFUGEE_VOTING_ENABLED flag, IDP double-cast guard, s.44A four-eyes, and IAB 5% Merkle sample.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+    <marker id="arrow-warn" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#d62728"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#f8f9fa"/>
+  <text x="600" y="36" font-family="Arial,sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#111">M25 Special Voter Workflows</text>
+  <text x="600" y="56" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#555">REMAND · BARRACKS · REFUGEE · IDP — s.44A four-eyes · IAB 5% Merkle sample</text>
+
+  <!-- Personas -->
+  <circle cx="80" cy="110" r="18" fill="#1f77b4"/>
+  <text x="80" y="143" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">REMAND</text>
+  <text x="80" y="158" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Voter</text>
+
+  <circle cx="230" cy="110" r="18" fill="#ff7f0e"/>
+  <text x="230" y="143" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">BARRACKS</text>
+  <text x="230" y="158" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Voter</text>
+
+  <circle cx="380" cy="110" r="18" fill="#2ca02c"/>
+  <text x="380" y="143" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">REFUGEE</text>
+  <text x="380" y="158" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Voter</text>
+
+  <circle cx="530" cy="110" r="18" fill="#d62728"/>
+  <text x="530" y="143" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">IDP</text>
+  <text x="530" y="158" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Voter</text>
+
+  <circle cx="1050" cy="110" r="18" fill="#9467bd"/>
+  <text x="1050" y="143" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">IAB</text>
+  <text x="1050" y="158" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Auditor</text>
+
+  <circle cx="1150" cy="110" r="18" fill="#9467bd"/>
+  <text x="1150" y="143" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Commissioner</text>
+
+  <!-- Dual-biometric open -->
+  <rect x="30" y="190" width="280" height="100" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="170" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f77b4">Dual-Biometric Open</text>
+  <text x="170" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">REMAND + BARRACKS voters</text>
+  <text x="170" y="254" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">two-officer verify (fingerprint + iris)</text>
+  <text x="170" y="272" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">session opened with SVID mTLS</text>
+  <rect x="285" y="190" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="296" y="206" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+
+  <!-- Refugee flag -->
+  <rect x="350" y="190" width="260" height="100" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="480" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">REFUGEE_VOTING_ENABLED</text>
+  <text x="480" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">feature flag per camp code</text>
+  <text x="480" y="254" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">UNHCR roll cross-match</text>
+  <text x="480" y="272" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">provisional ballot + envelope seal</text>
+
+  <!-- IDP double-cast guard -->
+  <rect x="650" y="190" width="280" height="100" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2"/>
+  <text x="790" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">IDP Double-Cast Guard</text>
+  <text x="790" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">check home station + IDP station</text>
+  <text x="790" y="254" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">real-time ABIS biometric hit</text>
+  <text x="790" y="272" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">DOUBLE_CAST_ALERT emitted on match</text>
+
+  <!-- s.44A four-eyes -->
+  <rect x="350" y="340" width="540" height="90" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2.5"/>
+  <text x="620" y="366" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">s.44A Four-Eyes Approval</text>
+  <text x="620" y="386" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">Commissioner A approves → Commissioner B counter-signs → HSM timestamp</text>
+  <text x="620" y="406" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">SpecialVoterApproval entity — data class A — T1-audit</text>
+  <text x="620" y="422" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">special_voter_approval.v1 event emitted (exactly-once)</text>
+  <rect x="865" y="340" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="876" y="356" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+
+  <!-- Arrows from voters to biometric -->
+  <line x1="80" y1="128" x2="110" y2="190" stroke="#1f77b4" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="230" y1="128" x2="200" y2="190" stroke="#ff7f0e" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="380" y1="128" x2="430" y2="190" stroke="#2ca02c" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="530" y1="128" x2="720" y2="190" stroke="#d62728" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Arrows to four-eyes -->
+  <line x1="170" y1="290" x2="420" y2="340" stroke="#1f77b4" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="480" y1="290" x2="510" y2="340" stroke="#2ca02c" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="790" y1="290" x2="740" y2="340" stroke="#d62728" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ABIS back-end -->
+  <rect x="30" y="340" width="280" height="70" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="170" y="366" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f77b4">ABIS (M03)</text>
+  <text x="170" y="386" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">biometric dedupe + soft-hold</text>
+  <text x="170" y="404" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">cross-check: home + special station</text>
+  <line x1="310" y1="375" x2="350" y2="375" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- IAB 5% Merkle sample -->
+  <rect x="350" y="480" width="540" height="100" rx="8" fill="#fce7f3" stroke="#d62728" stroke-width="2"/>
+  <text x="620" y="506" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">IAB 5% Merkle Sample Audit</text>
+  <text x="620" y="526" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">random 5% of SpecialVoterApproval records</text>
+  <text x="620" y="546" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">Merkle inclusion proof per record → IAB dashboard (M22)</text>
+  <text x="620" y="566" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">iab_sample_result.v1 → public IAB report</text>
+  <rect x="865" y="480" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="876" y="496" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="620" y1="430" x2="620" y2="480" stroke="#9467bd" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="1050" y1="128" x2="900" y2="480" stroke="#9467bd" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+
+  <!-- Merkle chain -->
+  <rect x="350" y="630" width="540" height="70" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="620" y="656" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">Merkle Chain (P05) + HSM (P06)</text>
+  <text x="620" y="676" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">all SpecialVoterApproval nodes anchored — tamper-evident log</text>
+  <text x="620" y="692" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">tlog: Rekor / Trillian — cosign-verified</text>
+  <rect x="865" y="630" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="876" y="646" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="620" y1="580" x2="620" y2="630" stroke="#9467bd" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Alert box -->
+  <rect x="960" y="340" width="210" height="70" rx="8" fill="#fce7f3" stroke="#d62728" stroke-width="2"/>
+  <text x="1065" y="366" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">DOUBLE_CAST</text>
+  <text x="1065" y="386" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">Alert → ECC console</text>
+  <text x="1065" y="404" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">human adjudication required</text>
+  <line x1="930" y1="240" x2="990" y2="340" stroke="#d62728" stroke-width="1.5" marker-end="url(#arrow-warn)"/>
+
+  <!-- Legend -->
+  <rect x="960" y="480" width="220" height="130" rx="6" fill="#fff" stroke="#ccc" stroke-width="1"/>
+  <text x="1070" y="500" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Legend</text>
+  <rect x="972" y="510" width="20" height="14" rx="2" fill="#dbeafe" stroke="#1f77b4"/>
+  <text x="1000" y="522" font-family="Arial,sans-serif" font-size="12" fill="#333">Internal service</text>
+  <rect x="972" y="530" width="20" height="14" rx="2" fill="#ede9fe" stroke="#9467bd"/>
+  <text x="1000" y="542" font-family="Arial,sans-serif" font-size="12" fill="#333">Approval / audit gate</text>
+  <rect x="972" y="550" width="20" height="14" rx="2" fill="#fce7f3" stroke="#d62728"/>
+  <text x="1000" y="562" font-family="Arial,sans-serif" font-size="12" fill="#333">Alert / guard</text>
+  <rect x="972" y="570" width="14" height="14" rx="2" fill="#9467bd"/>
+  <text x="992" y="582" font-family="Arial,sans-serif" font-size="12" fill="white">🔒</text>
+  <text x="1000" y="582" font-family="Arial,sans-serif" font-size="12" fill="#333">HSM / Merkle anchor</text>
+  <circle cx="982" cy="598" r="7" fill="#9467bd"/>
+  <text x="1000" y="602" font-family="Arial,sans-serif" font-size="12" fill="#333">Human persona</text>
+</svg>

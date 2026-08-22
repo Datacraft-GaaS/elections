@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">M32 Mobile Field Support — Architecture Diagram</title>
+  <desc id="desc">Field support tickets, device diagnostics, HSM-signed safe remote actions, warranty tracking, and escalation workflow.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#f8f9fa"/>
+  <text x="600" y="36" font-family="Arial,sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#111">M32 Mobile Field Support</text>
+  <text x="600" y="56" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#555">Tickets · diagnostics · safe signed remote actions · warranty · escalation</text>
+
+  <!-- Field Tech persona -->
+  <circle cx="110" cy="115" r="22" fill="#7f7f7f"/>
+  <text x="110" y="150" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#333">Field Tech</text>
+
+  <!-- Clerk / Station reporting -->
+  <circle cx="300" cy="115" r="22" fill="#2ca02c"/>
+  <text x="300" y="150" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#333">Poll Clerk</text>
+  <text x="300" y="165" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#555">raises ticket</text>
+
+  <!-- Field Support App -->
+  <rect x="30" y="190" width="240" height="100" rx="8" fill="#f3f4f6" stroke="#7f7f7f" stroke-width="2"/>
+  <text x="150" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">Field Support App</text>
+  <text x="150" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">Flutter — FIELD_TECH role</text>
+  <text x="150" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">ticket list + assignment</text>
+  <text x="150" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">device QR scan for context</text>
+  <text x="150" y="286" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">FieldTicket entity</text>
+  <line x1="110" y1="137" x2="110" y2="190" stroke="#7f7f7f" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="300" y1="137" x2="240" y2="190" stroke="#2ca02c" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Ticket creation -->
+  <rect x="310" y="190" width="280" height="100" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="450" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f77b4">Ticket Management</text>
+  <text x="450" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">POST /v1/support/tickets</text>
+  <text x="450" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">priority: P1/P2/P3 · sla_minutes</text>
+  <text x="450" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">kit_serial, station_code, symptom</text>
+  <text x="450" y="286" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">support_ticket_created.v1</text>
+  <line x1="270" y1="240" x2="310" y2="240" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Diagnostics -->
+  <rect x="310" y="340" width="280" height="100" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2"/>
+  <text x="450" y="366" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">Device Diagnostics</text>
+  <text x="450" y="386" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">GET /v1/support/kits/{serial}/diag</text>
+  <text x="450" y="406" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">battery, storage, network health</text>
+  <text x="450" y="426" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">error log tail (last 1000 lines)</text>
+  <text x="450" y="436" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">DiagnosticReport entity — T2 store</text>
+  <line x1="450" y1="290" x2="450" y2="340" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Safe Remote Actions -->
+  <rect x="630" y="190" width="320" height="140" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="790" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">Safe Signed Remote Actions</text>
+  <text x="790" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">POST /v1/support/kits/{serial}/actions</text>
+  <text x="790" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">allowed: restart_app, clear_cache</text>
+  <text x="790" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">         sync_time, push_config</text>
+  <text x="790" y="296" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">DENIED: modify_results, delete_log</text>
+  <text x="790" y="316" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">action signed by HSM (P06) + audit</text>
+  <text x="790" y="326" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">remote_action_executed.v1 (exactly-once)</text>
+  <rect x="925" y="190" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="936" y="206" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="590" y1="240" x2="630" y2="240" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Warranty tracking -->
+  <rect x="630" y="380" width="320" height="100" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="790" y="406" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">Warranty Tracking</text>
+  <text x="790" y="426" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">KitAsset: serial, vendor, warranty_exp</text>
+  <text x="790" y="446" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">RMA workflow: rma_requested.v1</text>
+  <text x="790" y="466" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">GET /v1/support/assets/{serial}</text>
+  <text x="790" y="476" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">RFID custody chain linked</text>
+
+  <!-- Escalation -->
+  <rect x="310" y="500" width="640" height="100" rx="8" fill="#fce7f3" stroke="#d62728" stroke-width="2"/>
+  <text x="630" y="526" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">Escalation Workflow</text>
+  <text x="630" y="546" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">SLA breach → ticket_escalated.v1 → ECC console + field supervisor</text>
+  <text x="630" y="566" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">P1 SLA: 30 min · P2: 2h · P3: 8h</text>
+  <text x="630" y="586" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">replacement kit dispatch via M33 personnel dispatch</text>
+  <text x="630" y="596" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">ticket_resolved.v1 on close — duration recorded</text>
+  <line x1="450" y1="440" x2="500" y2="500" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="790" y1="480" x2="760" y2="500" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Vendor external -->
+  <rect x="990" y="380" width="180" height="70" rx="8" fill="#fff" stroke="#7f7f7f" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="1080" y="410" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#7f7f7f">Kit Vendor</text>
+  <text x="1080" y="430" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">RMA portal (external)</text>
+  <text x="1080" y="444" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">warranty webhook</text>
+  <line x1="950" y1="420" x2="990" y2="420" stroke="#7f7f7f" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+
+  <!-- M33 link -->
+  <rect x="310" y="660" width="280" height="70" rx="8" fill="#f3f4f6" stroke="#7f7f7f" stroke-width="1.5"/>
+  <text x="450" y="686" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">M33 Personnel Dispatch</text>
+  <text x="450" y="706" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#555">kit replacement dispatch trigger</text>
+  <text x="450" y="720" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">dispatch_requested.v1</text>
+  <line x1="450" y1="600" x2="450" y2="660" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Kafka -->
+  <rect x="630" y="660" width="320" height="50" rx="8" fill="#f3f4f6" stroke="#7f7f7f" stroke-width="1.5"/>
+  <text x="790" y="682" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Kafka: support_ticket.v1 · remote_action.v1 · ticket_escalated.v1</text>
+  <text x="790" y="700" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#555">operational retention — signed — at-least-once idempotent</text>
+  <line x1="790" y1="600" x2="790" y2="660" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Legend -->
+  <rect x="30" y="630" width="250" height="150" rx="6" fill="#fff" stroke="#ccc" stroke-width="1"/>
+  <text x="155" y="650" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Legend</text>
+  <rect x="42" y="660" width="20" height="14" rx="2" fill="#dbeafe" stroke="#1f77b4"/>
+  <text x="70" y="672" font-family="Arial,sans-serif" font-size="12" fill="#333">Ticket management</text>
+  <rect x="42" y="680" width="20" height="14" rx="2" fill="#fef9c3" stroke="#ff7f0e"/>
+  <text x="70" y="692" font-family="Arial,sans-serif" font-size="12" fill="#333">Diagnostics</text>
+  <rect x="42" y="700" width="20" height="14" rx="2" fill="#ede9fe" stroke="#9467bd"/>
+  <text x="70" y="712" font-family="Arial,sans-serif" font-size="12" fill="#333">Signed remote actions</text>
+  <rect x="42" y="720" width="20" height="14" rx="2" fill="#fce7f3" stroke="#d62728"/>
+  <text x="70" y="732" font-family="Arial,sans-serif" font-size="12" fill="#333">Escalation</text>
+  <rect x="42" y="740" width="14" height="14" rx="2" fill="#9467bd"/>
+  <text x="62" y="752" font-family="Arial,sans-serif" font-size="12" fill="white">🔒</text>
+  <text x="70" y="752" font-family="Arial,sans-serif" font-size="12" fill="#333">HSM signature</text>
+  <rect x="42" y="760" width="20" height="14" rx="2" fill="#fff" stroke="#7f7f7f" stroke-dasharray="4,2"/>
+  <text x="70" y="772" font-family="Arial,sans-serif" font-size="12" fill="#333">External vendor</text>
+</svg>

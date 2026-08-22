@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
+<title>Module M11 Public Portal</title>
+<desc>Public election results portal - signed tarballs published via Astro static site, live counts via Phoenix LiveView, WASM-based proof verification, and RSS/Atom feeds.</desc>
+<defs>
+  <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+  </marker>
+</defs>
+<!-- Background -->
+<rect width="1200" height="800" fill="#ffffff"/>
+<!-- Title bar -->
+<rect x="0" y="0" width="1200" height="60" fill="#1a3a5c"/>
+<text x="20" y="38" font-family="Arial,sans-serif" font-size="22" font-weight="bold" fill="white">M11 Public Portal</text>
+
+<!-- Signed Tarballs (from upstream M10) -->
+<rect x="50" y="270" width="140" height="80" rx="6" fill="#9467bd" stroke="#7a4fa0" stroke-width="2"/>
+<text x="120" y="300" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Signed</text>
+<text x="120" y="318" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Tarballs</text>
+<text x="120" y="336" font-family="Arial,sans-serif" font-size="13" fill="#ddd" text-anchor="middle">(RTS M10)</text>
+
+<!-- Arrow: Tarballs -> Astro Builder -->
+<line x1="190" y1="310" x2="255" y2="310" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="222" y="302" font-family="Arial,sans-serif" font-size="11" fill="#555" text-anchor="middle">tarball.tar.gz</text>
+<text x="222" y="314" font-family="Arial,sans-serif" font-size="11" fill="#555" text-anchor="middle">(signed)</text>
+
+<!-- Astro Static Site Builder -->
+<rect x="260" y="270" width="150" height="80" rx="6" fill="#2ca02c" stroke="#1e7020" stroke-width="2"/>
+<text x="335" y="300" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Astro Static</text>
+<text x="335" y="318" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Site Builder</text>
+
+<!-- Arrow: Astro Builder -> CDN -->
+<line x1="410" y1="310" x2="475" y2="310" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="442" y="298" font-family="Arial,sans-serif" font-size="10" fill="#555" text-anchor="middle">eel.portal.</text>
+<text x="442" y="310" font-family="Arial,sans-serif" font-size="10" fill="#555" text-anchor="middle">results_published</text>
+<text x="442" y="322" font-family="Arial,sans-serif" font-size="10" fill="#555" text-anchor="middle">.v1</text>
+
+<!-- Astro CDN (Static HTML) -->
+<rect x="480" y="270" width="150" height="80" rx="6" fill="#1f77b4" stroke="#155a8a" stroke-width="2"/>
+<text x="555" y="300" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Astro CDN</text>
+<text x="555" y="318" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">(Static HTML)</text>
+
+<!-- Arrow: CDN -> LiveView -->
+<line x1="630" y1="295" x2="695" y2="295" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="662" y="285" font-family="Arial,sans-serif" font-size="11" fill="#555" text-anchor="middle">WebSocket</text>
+
+<!-- Arrow: CDN -> RSS -->
+<line x1="555" y1="350" x2="555" y2="400" stroke="#555" stroke-width="2"/>
+<line x1="555" y1="400" x2="695" y2="540" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- Phoenix LiveView -->
+<rect x="700" y="270" width="160" height="80" rx="6" fill="#2ca02c" stroke="#1e7020" stroke-width="2"/>
+<text x="780" y="300" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Phoenix LiveView</text>
+<text x="780" y="318" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Live Counts</text>
+
+<!-- Arrow: LiveView -> WASM -->
+<line x1="780" y1="350" x2="780" y2="385" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="800" y="372" font-family="Arial,sans-serif" font-size="11" fill="#555">Merkle proof</text>
+
+<!-- verifier-rs WASM Proof Viewer (dashed = planned) -->
+<rect x="700" y="390" width="160" height="80" rx="6" fill="#9467bd" stroke="#7a4fa0" stroke-width="2" stroke-dasharray="6 3"/>
+<text x="780" y="420" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">verifier-rs</text>
+<text x="780" y="438" font-family="Arial,sans-serif" font-size="13" fill="#ddd" text-anchor="middle">WASM Proof Viewer</text>
+<text x="780" y="455" font-family="Arial,sans-serif" font-size="11" fill="#ffdd88" text-anchor="middle">[planned]</text>
+
+<!-- RSS/Atom Feed -->
+<rect x="700" y="510" width="160" height="60" rx="6" fill="#ff7f0e" stroke="#c05a00" stroke-width="2"/>
+<text x="780" y="535" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">RSS/Atom</text>
+<text x="780" y="553" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Feed</text>
+
+<!-- Arrow: CDN -> portal-svc DB (downward) -->
+<line x1="555" y1="350" x2="555" y2="395" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- portal-svc Postgres DB -->
+<rect x="480" y="400" width="150" height="70" rx="6" fill="#ff7f0e" stroke="#c05a00" stroke-width="2"/>
+<text x="555" y="428" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">portal-svc</text>
+<text x="555" y="446" font-family="Arial,sans-serif" font-size="13" fill="#fff" text-anchor="middle">Postgres DB</text>
+
+<!-- Human Personas -->
+<text x="50" y="510" font-family="Arial,sans-serif" font-size="15" font-weight="bold" fill="#333">* Public Citizen</text>
+<text x="50" y="530" font-family="Arial,sans-serif" font-size="13" fill="#555">views portal / verifies</text>
+<line x1="120" y1="540" x2="555" y2="430" stroke="#aaa" stroke-width="1" stroke-dasharray="4 3"/>
+
+<text x="950" y="280" font-family="Arial,sans-serif" font-size="15" font-weight="bold" fill="#333">* Observer</text>
+<text x="950" y="298" font-family="Arial,sans-serif" font-size="13" fill="#555">monitors feeds</text>
+<line x1="950" y1="300" x2="865" y2="540" stroke="#aaa" stroke-width="1" stroke-dasharray="4 3"/>
+
+<!-- Section label -->
+<text x="20" y="100" font-family="Arial,sans-serif" font-size="16" font-weight="bold" fill="#1a3a5c">Pipeline: Signed Tarballs to Multi-Channel Publication</text>
+
+<!-- Legend -->
+<rect x="900" y="635" width="285" height="155" rx="6" fill="#f9f9f9" stroke="#bbb" stroke-width="1"/>
+<text x="915" y="655" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#333">Legend</text>
+<rect x="915" y="663" width="16" height="11" rx="2" fill="#1f77b4"/><text x="937" y="673" font-family="Arial,sans-serif" font-size="12" fill="#333">Kit / Device</text>
+<rect x="915" y="680" width="16" height="11" rx="2" fill="#2ca02c"/><text x="937" y="690" font-family="Arial,sans-serif" font-size="12" fill="#333">Service / Backend</text>
+<rect x="915" y="697" width="16" height="11" rx="2" fill="#ff7f0e"/><text x="937" y="707" font-family="Arial,sans-serif" font-size="12" fill="#333">Database / Store</text>
+<rect x="915" y="714" width="16" height="11" rx="2" fill="#9467bd"/><text x="937" y="724" font-family="Arial,sans-serif" font-size="12" fill="#333">Event / Crypto</text>
+<rect x="915" y="731" width="16" height="11" rx="2" fill="none" stroke="#7f7f7f" stroke-dasharray="4 2" stroke-width="1.5"/><text x="937" y="741" font-family="Arial,sans-serif" font-size="12" fill="#333">External / Planned</text>
+<text x="915" y="760" font-family="Arial,sans-serif" font-size="12" fill="#333">* Human Persona</text>
+<text x="915" y="778" font-family="Arial,sans-serif" font-size="12" fill="#333">Lock = HSM / Crypto Touchpoint</text>
+</svg>

@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="Arial, sans-serif">
+  <title>Module M06 BVI Backend</title>
+  <desc>Biometric Voter Identification backend - 64-partition identification ingest, materialised turnout view, kit cert revoke API, LiveView and Astro dashboard.</desc>
+
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="800" fill="white"/>
+
+  <!-- Title bar -->
+  <rect x="0" y="0" width="1200" height="52" fill="#1a3a5c"/>
+  <text x="20" y="34" font-size="20" font-weight="bold" fill="white">M06 BVI Backend — Identification Ingest, Turnout View, and Dashboards (bvi-svc)</text>
+
+  <!-- Service label -->
+  <text x="600" y="90" font-size="13" text-anchor="middle" fill="#7f7f7f">Owner: bvi-svc | Kafka 64-partition ingest | Phoenix LiveView turnout | kit cert revoke API</text>
+
+  <!-- === Main pipeline row (y~300) === -->
+
+  <!-- Event label above first arrow -->
+  <text x="165" y="185" font-size="11" text-anchor="middle" fill="#9467bd">eel.bvi.identification_completed.v1</text>
+  <line x1="30" y1="195" x2="140" y2="280" stroke="#9467bd" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="60" y="245" font-size="11" fill="#9467bd">from M05</text>
+
+  <!-- 1. Kit Ingest (Kafka) -->
+  <rect x="140" y="280" width="185" height="95" rx="6" fill="#2ca02c" stroke="#1e7b1e" stroke-width="2"/>
+  <text x="232" y="308" font-size="14" text-anchor="middle" fill="white" font-weight="bold">64-partition</text>
+  <text x="232" y="328" font-size="13" text-anchor="middle" fill="white">Identification</text>
+  <text x="232" y="348" font-size="13" text-anchor="middle" fill="white">Ingest (Kafka)</text>
+  <text x="232" y="366" font-size="11" text-anchor="middle" fill="#c8ffc8">consumer groups</text>
+
+  <!-- Kit Cert Revoke API branching upward from ingest -->
+  <line x1="232" y1="280" x2="232" y2="190" stroke="#2ca02c" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="140" y="120" width="185" height="70" rx="6" fill="#2ca02c" stroke="#1e7b1e" stroke-width="2"/>
+  <text x="232" y="148" font-size="13" text-anchor="middle" fill="white" font-weight="bold">Kit Cert</text>
+  <text x="232" y="168" font-size="13" text-anchor="middle" fill="white">Revoke API</text>
+  <text x="232" y="184" font-size="11" text-anchor="middle" fill="#c8ffc8">POST /bvi/v1/kits/{id}/revoke</text>
+
+  <!-- Arrow 1 to 2 -->
+  <line x1="325" y1="327" x2="390" y2="327" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 2. Identification Events DB (64 partitions) -->
+  <rect x="390" y="285" width="195" height="84" rx="0" fill="#ff7f0e" stroke="#c55a00" stroke-width="2"/>
+  <ellipse cx="487" cy="285" rx="97" ry="16" fill="#ff9a3c" stroke="#c55a00" stroke-width="2"/>
+  <ellipse cx="487" cy="369" rx="97" ry="16" fill="#ff7f0e" stroke="#c55a00" stroke-width="2"/>
+  <text x="487" y="315" font-size="13" text-anchor="middle" fill="white" font-weight="bold">identification_events</text>
+  <text x="487" y="335" font-size="12" text-anchor="middle" fill="white">(64 partitions)</text>
+  <text x="487" y="353" font-size="11" text-anchor="middle" fill="#ffe0c0">append-only, keyed by station</text>
+
+  <!-- Arrow 2 to 3 -->
+  <line x1="584" y1="327" x2="650" y2="327" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 3. Materialised Turnout View -->
+  <rect x="650" y="285" width="185" height="84" rx="6" fill="#2ca02c" stroke="#1e7b1e" stroke-width="2"/>
+  <text x="742" y="313" font-size="13" text-anchor="middle" fill="white" font-weight="bold">Materialised</text>
+  <text x="742" y="331" font-size="13" text-anchor="middle" fill="white">Turnout View</text>
+  <text x="742" y="353" font-size="11" text-anchor="middle" fill="#c8ffc8">incremental refresh</text>
+
+  <!-- turnout event label -->
+  <text x="742" y="272" font-size="10" text-anchor="middle" fill="#9467bd">eel.bvi.turnout_snapshot.v1</text>
+
+  <!-- Arrow 3 to 4 -->
+  <line x1="835" y1="327" x2="900" y2="327" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 4. Turnout DB -->
+  <rect x="900" y="285" width="185" height="84" rx="0" fill="#ff7f0e" stroke="#c55a00" stroke-width="2"/>
+  <ellipse cx="992" cy="285" rx="92" ry="16" fill="#ff9a3c" stroke="#c55a00" stroke-width="2"/>
+  <ellipse cx="992" cy="369" rx="92" ry="16" fill="#ff7f0e" stroke="#c55a00" stroke-width="2"/>
+  <text x="992" y="315" font-size="13" text-anchor="middle" fill="white" font-weight="bold">turnout_snapshot</text>
+  <text x="992" y="335" font-size="13" text-anchor="middle" fill="white">(materialized)</text>
+  <text x="992" y="353" font-size="11" text-anchor="middle" fill="#ffe0c0">per-station + county rollup</text>
+
+  <!-- Arrows down to dashboards -->
+  <!-- LiveView -->
+  <line x1="942" y1="385" x2="800" y2="480" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Astro -->
+  <line x1="1042" y1="385" x2="1100" y2="480" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 5. Phoenix LiveView Dashboard -->
+  <rect x="660" y="480" width="230" height="85" rx="6" fill="#1f77b4" stroke="#1a5f8a" stroke-width="2"/>
+  <text x="775" y="508" font-size="13" text-anchor="middle" fill="white" font-weight="bold">Phoenix LiveView</text>
+  <text x="775" y="528" font-size="13" text-anchor="middle" fill="white">Turnout Dashboard</text>
+  <text x="775" y="548" font-size="11" text-anchor="middle" fill="#cce5ff">real-time, authenticated</text>
+
+  <!-- 6. Astro Public Portal -->
+  <rect x="970" y="480" width="200" height="85" rx="6" fill="#1f77b4" stroke="#1a5f8a" stroke-width="2"/>
+  <text x="1070" y="508" font-size="14" text-anchor="middle" fill="white" font-weight="bold">Astro</text>
+  <text x="1070" y="528" font-size="13" text-anchor="middle" fill="white">Public Portal</text>
+  <text x="1070" y="548" font-size="11" text-anchor="middle" fill="#cce5ff">public turnout, static SSR</text>
+
+  <!-- Returning Officer persona -->
+  <circle cx="740" cy="610" r="14" fill="none" stroke="#333" stroke-width="2"/>
+  <line x1="740" y1="624" x2="740" y2="660" stroke="#333" stroke-width="2"/>
+  <line x1="740" y1="635" x2="720" y2="650" stroke="#333" stroke-width="2"/>
+  <line x1="740" y1="635" x2="760" y2="650" stroke="#333" stroke-width="2"/>
+  <line x1="740" y1="660" x2="722" y2="678" stroke="#333" stroke-width="2"/>
+  <line x1="740" y1="660" x2="758" y2="678" stroke="#333" stroke-width="2"/>
+  <text x="740" y="695" font-size="12" text-anchor="middle" fill="#333">Returning</text>
+  <text x="740" y="709" font-size="12" text-anchor="middle" fill="#333">Officer</text>
+  <line x1="740" y1="598" x2="760" y2="565" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="4,2"/>
+
+  <!-- Election Observer persona -->
+  <circle cx="1070" cy="610" r="14" fill="none" stroke="#333" stroke-width="2"/>
+  <line x1="1070" y1="624" x2="1070" y2="660" stroke="#333" stroke-width="2"/>
+  <line x1="1070" y1="635" x2="1050" y2="650" stroke="#333" stroke-width="2"/>
+  <line x1="1070" y1="635" x2="1090" y2="650" stroke="#333" stroke-width="2"/>
+  <line x1="1070" y1="660" x2="1052" y2="678" stroke="#333" stroke-width="2"/>
+  <line x1="1070" y1="660" x2="1088" y2="678" stroke="#333" stroke-width="2"/>
+  <text x="1070" y="695" font-size="12" text-anchor="middle" fill="#333">Election</text>
+  <text x="1070" y="709" font-size="12" text-anchor="middle" fill="#333">Observer</text>
+  <line x1="1070" y1="598" x2="1070" y2="565" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="4,2"/>
+
+  <!-- Pipeline flow label -->
+  <text x="600" y="240" font-size="14" text-anchor="middle" fill="#1a3a5c" font-weight="bold">Backend Processing Pipeline (Election Day Real-Time)</text>
+
+  <!-- Legend -->
+  <rect x="30" y="600" width="280" height="165" rx="6" fill="#f8f8f8" stroke="#ccc" stroke-width="1"/>
+  <text x="40" y="622" font-size="13" font-weight="bold" fill="#333">Legend</text>
+  <rect x="40" y="630" width="18" height="12" rx="2" fill="#1f77b4"/>
+  <text x="64" y="641" font-size="12" fill="#333">Kit / Device</text>
+  <rect x="40" y="648" width="18" height="12" rx="2" fill="#2ca02c"/>
+  <text x="64" y="659" font-size="12" fill="#333">Service / Backend</text>
+  <rect x="40" y="666" width="18" height="12" rx="2" fill="#ff7f0e"/>
+  <text x="64" y="677" font-size="12" fill="#333">Database / Store</text>
+  <rect x="40" y="684" width="18" height="12" rx="2" fill="#9467bd"/>
+  <text x="64" y="695" font-size="12" fill="#333">Event / Message</text>
+  <rect x="40" y="702" width="18" height="12" rx="2" fill="none" stroke="#7f7f7f" stroke-dasharray="4"/>
+  <text x="64" y="713" font-size="12" fill="#333">External / Integration</text>
+  <text x="40" y="750" font-size="12" fill="#333">&#x1F464; Human Persona</text>
+
+</svg>

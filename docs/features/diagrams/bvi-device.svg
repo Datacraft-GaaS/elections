@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="Arial, sans-serif">
+  <title>Module M05 BVI Device</title>
+  <desc>Biometric Voter Identification device pipeline - kit performs 1:1 multi-modal auth with spoof checks, time fence, HSM-signed identification, and sync.</desc>
+
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="800" fill="white"/>
+
+  <!-- Title bar -->
+  <rect x="0" y="0" width="1200" height="52" fill="#1a3a5c"/>
+  <text x="20" y="34" font-size="20" font-weight="bold" fill="white">M05 BVI Device — Biometric Voter Identification Kit Pipeline</text>
+
+  <!-- Service label -->
+  <text x="600" y="90" font-size="13" text-anchor="middle" fill="#7f7f7f">KIEMS Kit in BVI mode | 1:1 multi-modal auth | HSM-signed identification events | offline-first Isar sync</text>
+
+  <!-- Voter persona (left) -->
+  <circle cx="60" cy="290" r="16" fill="none" stroke="#333" stroke-width="2"/>
+  <line x1="60" y1="306" x2="60" y2="350" stroke="#333" stroke-width="2"/>
+  <line x1="60" y1="318" x2="38" y2="333" stroke="#333" stroke-width="2"/>
+  <line x1="60" y1="318" x2="82" y2="333" stroke="#333" stroke-width="2"/>
+  <line x1="60" y1="350" x2="40" y2="372" stroke="#333" stroke-width="2"/>
+  <line x1="60" y1="350" x2="80" y2="372" stroke="#333" stroke-width="2"/>
+  <text x="60" y="390" font-size="12" text-anchor="middle" fill="#333">Voter</text>
+
+  <!-- Arrow Voter to KIEMS Kit -->
+  <line x1="78" y1="320" x2="120" y2="320" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 1. KIEMS Kit -->
+  <rect x="120" y="280" width="155" height="90" rx="6" fill="#1f77b4" stroke="#1a5f8a" stroke-width="2"/>
+  <text x="197" y="308" font-size="14" text-anchor="middle" fill="white" font-weight="bold">KIEMS Kit</text>
+  <text x="197" y="328" font-size="13" text-anchor="middle" fill="white">(BVI mode)</text>
+
+  <!-- Kit Attestation daemon below kit -->
+  <rect x="120" y="420" width="155" height="60" rx="6" fill="#1f77b4" stroke="#1a5f8a" stroke-width="2"/>
+  <text x="197" y="445" font-size="12" text-anchor="middle" fill="white" font-weight="bold">Kit Attestation</text>
+  <text x="197" y="462" font-size="12" text-anchor="middle" fill="white">Daemon</text>
+  <line x1="197" y1="370" x2="197" y2="420" stroke="#333" stroke-width="1.5" stroke-dasharray="4,2"/>
+
+  <!-- Health event from attestation -->
+  <text x="230" y="502" font-size="10" fill="#9467bd">eel.bve.kit_health_reported.v1</text>
+  <line x1="275" y1="450" x2="390" y2="450" stroke="#9467bd" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="4,2"/>
+
+  <!-- Arrow 1 to 2 -->
+  <line x1="275" y1="325" x2="335" y2="325" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="305" y="315" font-size="11" text-anchor="middle" fill="#555">biometrics</text>
+
+  <!-- 2. Multi-modal Auth -->
+  <rect x="335" y="280" width="175" height="90" rx="6" fill="#2ca02c" stroke="#1e7b1e" stroke-width="2"/>
+  <text x="422" y="308" font-size="13" text-anchor="middle" fill="white" font-weight="bold">1:1 Fingerprint</text>
+  <text x="422" y="326" font-size="13" text-anchor="middle" fill="white">+ Face Auth</text>
+  <text x="422" y="348" font-size="11" text-anchor="middle" fill="#c8ffc8">multi-modal fusion</text>
+
+  <!-- Arrow 2 to 3 -->
+  <line x1="510" y1="325" x2="568" y2="325" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 3. GNSS+IMU Spoof Check -->
+  <rect x="568" y="280" width="175" height="90" rx="6" fill="#2ca02c" stroke="#1e7b1e" stroke-width="2"/>
+  <text x="655" y="308" font-size="13" text-anchor="middle" fill="white" font-weight="bold">GNSS+IMU</text>
+  <text x="655" y="326" font-size="13" text-anchor="middle" fill="white">Spoof Check</text>
+  <text x="655" y="348" font-size="11" text-anchor="middle" fill="#c8ffc8">location + motion</text>
+
+  <!-- Arrow 3 to 4 -->
+  <line x1="743" y1="325" x2="800" y2="325" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 4. Time Fence -->
+  <rect x="800" y="280" width="145" height="90" rx="6" fill="#9467bd" stroke="#6a4a9c" stroke-width="2"/>
+  <text x="872" y="308" font-size="13" text-anchor="middle" fill="white" font-weight="bold">Time Fence</text>
+  <text x="872" y="326" font-size="13" text-anchor="middle" fill="white">Validation</text>
+  <text x="872" y="348" font-size="11" text-anchor="middle" fill="#e0d0ff">polls open window</text>
+
+  <!-- Arrow 4 to 5 -->
+  <line x1="945" y1="325" x2="998" y2="325" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 5. HSM Sign -->
+  <rect x="998" y="280" width="155" height="90" rx="6" fill="#9467bd" stroke="#6a4a9c" stroke-width="2"/>
+  <text x="1075" y="303" font-size="18" text-anchor="middle" fill="white">🔒</text>
+  <text x="1075" y="325" font-size="13" text-anchor="middle" fill="white" font-weight="bold">HSM Sign</text>
+  <text x="1075" y="343" font-size="13" text-anchor="middle" fill="white">Identification</text>
+  <text x="1075" y="361" font-size="12" text-anchor="middle" fill="#e0d0ff">(Ed25519)</text>
+
+  <!-- Arrow from HSM Sign down to Isar Queue -->
+  <line x1="1075" y1="370" x2="1075" y2="430" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="1130" y="395" font-size="10" fill="#9467bd">eel.bvi.</text>
+  <text x="1130" y="407" font-size="10" fill="#9467bd">identification_</text>
+  <text x="1130" y="419" font-size="10" fill="#9467bd">completed.v1</text>
+
+  <!-- 6. Offline Queue -->
+  <rect x="985" y="430" width="180" height="70" rx="6" fill="#ff7f0e" stroke="#c55a00" stroke-width="2"/>
+  <text x="1075" y="458" font-size="13" text-anchor="middle" fill="white" font-weight="bold">Isar Sync</text>
+  <text x="1075" y="476" font-size="13" text-anchor="middle" fill="white">Queue</text>
+
+  <!-- Arrow to bvi-svc -->
+  <line x1="1075" y1="500" x2="1075" y2="560" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="1120" y="533" font-size="11" fill="#555">sync on connect</text>
+
+  <!-- 7. bvi-svc (dashed target) -->
+  <rect x="995" y="560" width="160" height="70" rx="6" fill="#2ca02c" stroke="#7f7f7f" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="1075" y="588" font-size="14" text-anchor="middle" fill="white" font-weight="bold">bvi-svc</text>
+  <text x="1075" y="608" font-size="13" text-anchor="middle" fill="white">(M06)</text>
+  <text x="1075" y="622" font-size="11" text-anchor="middle" fill="#c8ffc8">target</text>
+
+  <!-- Polling Clerk persona (right) -->
+  <circle cx="1155" cy="290" r="14" fill="none" stroke="#333" stroke-width="2"/>
+  <line x1="1155" y1="304" x2="1155" y2="345" stroke="#333" stroke-width="2"/>
+  <line x1="1155" y1="315" x2="1135" y2="330" stroke="#333" stroke-width="2"/>
+  <line x1="1155" y1="315" x2="1175" y2="330" stroke="#333" stroke-width="2"/>
+  <line x1="1155" y1="345" x2="1137" y2="365" stroke="#333" stroke-width="2"/>
+  <line x1="1155" y1="345" x2="1173" y2="365" stroke="#333" stroke-width="2"/>
+  <text x="1155" y="382" font-size="12" text-anchor="middle" fill="#333">Polling</text>
+  <text x="1155" y="396" font-size="12" text-anchor="middle" fill="#333">Clerk</text>
+
+  <!-- Pipeline flow label -->
+  <text x="600" y="145" font-size="14" text-anchor="middle" fill="#1a3a5c" font-weight="bold">Identification Device Pipeline Flow (Election Day)</text>
+  <line x1="120" y1="160" x2="1000" y2="160" stroke="#ccc" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- Step numbers -->
+  <circle cx="197" cy="258" r="12" fill="#1a3a5c"/>
+  <text x="197" y="263" font-size="12" text-anchor="middle" fill="white">1</text>
+  <circle cx="422" cy="258" r="12" fill="#1a3a5c"/>
+  <text x="422" y="263" font-size="12" text-anchor="middle" fill="white">2</text>
+  <circle cx="655" cy="258" r="12" fill="#1a3a5c"/>
+  <text x="655" y="263" font-size="12" text-anchor="middle" fill="white">3</text>
+  <circle cx="872" cy="258" r="12" fill="#1a3a5c"/>
+  <text x="872" y="263" font-size="12" text-anchor="middle" fill="white">4</text>
+  <circle cx="1075" cy="258" r="12" fill="#1a3a5c"/>
+  <text x="1075" y="263" font-size="12" text-anchor="middle" fill="white">5</text>
+
+  <!-- Legend -->
+  <rect x="30" y="600" width="280" height="165" rx="6" fill="#f8f8f8" stroke="#ccc" stroke-width="1"/>
+  <text x="40" y="622" font-size="13" font-weight="bold" fill="#333">Legend</text>
+  <rect x="40" y="630" width="18" height="12" rx="2" fill="#1f77b4"/>
+  <text x="64" y="641" font-size="12" fill="#333">Kit / Device</text>
+  <rect x="40" y="648" width="18" height="12" rx="2" fill="#2ca02c"/>
+  <text x="64" y="659" font-size="12" fill="#333">Service / Backend</text>
+  <rect x="40" y="666" width="18" height="12" rx="2" fill="#ff7f0e"/>
+  <text x="64" y="677" font-size="12" fill="#333">Database / Store</text>
+  <rect x="40" y="684" width="18" height="12" rx="2" fill="#9467bd"/>
+  <text x="64" y="695" font-size="12" fill="#333">Event / Message</text>
+  <rect x="40" y="702" width="18" height="12" rx="2" fill="none" stroke="#7f7f7f" stroke-dasharray="4"/>
+  <text x="64" y="713" font-size="12" fill="#333">External / Integration</text>
+  <text x="40" y="750" font-size="12" fill="#333">&#x1F464; Human Persona</text>
+
+</svg>

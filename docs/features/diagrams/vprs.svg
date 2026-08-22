@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="Arial, sans-serif">
+  <title>Module M04 VPRS</title>
+  <desc>Voter Pre-Registration System - PWA captures citizen intent, validates via IPRS circuit breaker, creates pre-registration record, generates QR handoff to BVR kit.</desc>
+
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="800" fill="white"/>
+
+  <!-- Title bar -->
+  <rect x="0" y="0" width="1200" height="52" fill="#1a3a5c"/>
+  <text x="20" y="34" font-size="20" font-weight="bold" fill="white">M04 VPRS — Voter Pre-Registration System (vprs-svc)</text>
+
+  <!-- Service owner label -->
+  <text x="600" y="90" font-size="13" text-anchor="middle" fill="#7f7f7f">Owner: vprs-svc | PWA captures citizen intent, IPRS validation, QR handoff to BVR kit</text>
+
+  <!-- Citizen persona (left) -->
+  <circle cx="65" cy="310" r="16" fill="none" stroke="#333" stroke-width="2"/>
+  <line x1="65" y1="326" x2="65" y2="370" stroke="#333" stroke-width="2"/>
+  <line x1="65" y1="338" x2="43" y2="353" stroke="#333" stroke-width="2"/>
+  <line x1="65" y1="338" x2="87" y2="353" stroke="#333" stroke-width="2"/>
+  <line x1="65" y1="370" x2="45" y2="392" stroke="#333" stroke-width="2"/>
+  <line x1="65" y1="370" x2="85" y2="392" stroke="#333" stroke-width="2"/>
+  <text x="65" y="410" font-size="12" text-anchor="middle" fill="#333">Citizen</text>
+
+  <!-- Arrow Citizen to PWA -->
+  <line x1="83" y1="340" x2="130" y2="340" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 1. Citizen PWA -->
+  <rect x="130" y="295" width="175" height="90" rx="6" fill="#1f77b4" stroke="#1a5f8a" stroke-width="2"/>
+  <text x="217" y="323" font-size="14" text-anchor="middle" fill="white" font-weight="bold">VPRS PWA</text>
+  <text x="217" y="343" font-size="13" text-anchor="middle" fill="white">Progressive</text>
+  <text x="217" y="361" font-size="13" text-anchor="middle" fill="white">Web App</text>
+
+  <!-- Arrow 1 to 2 -->
+  <line x1="305" y1="340" x2="365" y2="340" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="335" y="330" font-size="11" text-anchor="middle" fill="#555">ID details</text>
+
+  <!-- 2. IPRS Circuit Breaker -->
+  <rect x="365" y="295" width="180" height="90" rx="6" fill="#2ca02c" stroke="#1e7b1e" stroke-width="2"/>
+  <text x="455" y="323" font-size="13" text-anchor="middle" fill="white" font-weight="bold">IPRS Integration</text>
+  <text x="455" y="341" font-size="13" text-anchor="middle" fill="white">Circuit Breaker</text>
+  <text x="455" y="362" font-size="11" text-anchor="middle" fill="#c8ffc8">resilience4j pattern</text>
+
+  <!-- Arrow up to IPRS external -->
+  <line x1="455" y1="295" x2="455" y2="195" stroke="#7f7f7f" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="5,3"/>
+  <text x="510" y="245" font-size="10" fill="#7f7f7f">verify NID</text>
+
+  <!-- IPRS external (gray, dashed) -->
+  <rect x="340" y="130" width="230" height="65" rx="6" fill="none" stroke="#7f7f7f" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="455" y="155" font-size="14" text-anchor="middle" fill="#555" font-weight="bold">IPRS</text>
+  <text x="455" y="175" font-size="12" text-anchor="middle" fill="#555">National ID Registry</text>
+
+  <!-- Arrow IPRS back to circuit breaker -->
+  <line x1="565" y1="163" x2="610" y2="310" stroke="#7f7f7f" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="5,3"/>
+  <text x="618" y="240" font-size="10" fill="#7f7f7f">verified / error</text>
+
+  <!-- Arrow 2 to 3 -->
+  <line x1="545" y1="340" x2="610" y2="340" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="577" y="330" font-size="11" text-anchor="middle" fill="#9467bd">eel.vprs.</text>
+  <text x="577" y="342" font-size="10" text-anchor="middle" fill="#9467bd">pre_registration_</text>
+  <text x="577" y="354" font-size="10" text-anchor="middle" fill="#9467bd">created.v1</text>
+
+  <!-- 3. Pre-Registration Record -->
+  <rect x="610" y="295" width="180" height="90" rx="6" fill="#ff7f0e" stroke="#c55a00" stroke-width="2"/>
+  <ellipse cx="700" cy="295" rx="90" ry="14" fill="#ff9a3c" stroke="#c55a00" stroke-width="2"/>
+  <ellipse cx="700" cy="385" rx="90" ry="14" fill="#ff7f0e" stroke="#c55a00" stroke-width="2"/>
+  <text x="700" y="322" font-size="13" text-anchor="middle" fill="white" font-weight="bold">pre_registration</text>
+  <text x="700" y="342" font-size="13" text-anchor="middle" fill="white">record</text>
+  <text x="700" y="362" font-size="11" text-anchor="middle" fill="#ffe0c0">vprs-svc DB</text>
+
+  <!-- Arrow 3 to 4 -->
+  <line x1="790" y1="340" x2="855" y2="340" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 4. QR Handoff Token -->
+  <!-- Diamond shape for QR token (event-like) -->
+  <polygon points="930,300 990,340 930,380 870,340" fill="#9467bd" stroke="#6a4a9c" stroke-width="2"/>
+  <text x="930" y="334" font-size="12" text-anchor="middle" fill="white" font-weight="bold">QR Code</text>
+  <text x="930" y="352" font-size="12" text-anchor="middle" fill="white">Handoff Token</text>
+
+  <!-- Arrow 4 to BVR Kit -->
+  <line x1="990" y1="340" x2="1055" y2="340" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="1022" y="327" font-size="10" text-anchor="middle" fill="#555">GET /bvr/v1/</text>
+  <text x="1022" y="339" font-size="10" text-anchor="middle" fill="#555">handoff/{token}</text>
+
+  <!-- 5. BVR Kit -->
+  <rect x="1055" y="295" width="130" height="90" rx="6" fill="#1f77b4" stroke="#1a5f8a" stroke-width="2"/>
+  <text x="1120" y="323" font-size="13" text-anchor="middle" fill="white" font-weight="bold">BVR Kit</text>
+  <text x="1120" y="341" font-size="13" text-anchor="middle" fill="white">(M01</text>
+  <text x="1120" y="359" font-size="13" text-anchor="middle" fill="white">completes)</text>
+
+  <!-- Registration Officer persona at BVR Kit -->
+  <circle cx="1120" cy="430" r="14" fill="none" stroke="#333" stroke-width="2"/>
+  <line x1="1120" y1="444" x2="1120" y2="480" stroke="#333" stroke-width="2"/>
+  <line x1="1120" y1="455" x2="1100" y2="468" stroke="#333" stroke-width="2"/>
+  <line x1="1120" y1="455" x2="1140" y2="468" stroke="#333" stroke-width="2"/>
+  <line x1="1120" y1="480" x2="1102" y2="498" stroke="#333" stroke-width="2"/>
+  <line x1="1120" y1="480" x2="1138" y2="498" stroke="#333" stroke-width="2"/>
+  <text x="1120" y="515" font-size="12" text-anchor="middle" fill="#333">Registration</text>
+  <text x="1120" y="529" font-size="12" text-anchor="middle" fill="#333">Officer</text>
+
+  <!-- Flow arrows showing full citizen journey -->
+  <text x="600" y="145" font-size="14" text-anchor="middle" fill="#1a3a5c" font-weight="bold">Pre-Registration Flow</text>
+  <line x1="130" y1="160" x2="1055" y2="160" stroke="#ccc" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- Process step numbers -->
+  <circle cx="217" cy="270" r="12" fill="#1a3a5c"/>
+  <text x="217" y="275" font-size="12" text-anchor="middle" fill="white">1</text>
+  <circle cx="455" cy="270" r="12" fill="#1a3a5c"/>
+  <text x="455" y="275" font-size="12" text-anchor="middle" fill="white">2</text>
+  <circle cx="700" cy="270" r="12" fill="#1a3a5c"/>
+  <text x="700" y="275" font-size="12" text-anchor="middle" fill="white">3</text>
+  <circle cx="930" cy="270" r="12" fill="#1a3a5c"/>
+  <text x="930" y="275" font-size="12" text-anchor="middle" fill="white">4</text>
+  <circle cx="1120" cy="270" r="12" fill="#1a3a5c"/>
+  <text x="1120" y="275" font-size="12" text-anchor="middle" fill="white">5</text>
+
+  <!-- Legend -->
+  <rect x="900" y="580" width="280" height="165" rx="6" fill="#f8f8f8" stroke="#ccc" stroke-width="1"/>
+  <text x="910" y="602" font-size="13" font-weight="bold" fill="#333">Legend</text>
+  <rect x="910" y="610" width="18" height="12" rx="2" fill="#1f77b4"/>
+  <text x="934" y="621" font-size="12" fill="#333">Kit / Device</text>
+  <rect x="910" y="628" width="18" height="12" rx="2" fill="#2ca02c"/>
+  <text x="934" y="639" font-size="12" fill="#333">Service / Backend</text>
+  <rect x="910" y="646" width="18" height="12" rx="2" fill="#ff7f0e"/>
+  <text x="934" y="657" font-size="12" fill="#333">Database / Store</text>
+  <rect x="910" y="664" width="18" height="12" rx="2" fill="#9467bd"/>
+  <text x="934" y="675" font-size="12" fill="#333">Event / Message</text>
+  <rect x="910" y="682" width="18" height="12" rx="2" fill="none" stroke="#7f7f7f" stroke-dasharray="4"/>
+  <text x="934" y="693" font-size="12" fill="#333">External / Integration</text>
+  <text x="910" y="730" font-size="12" fill="#333">&#x1F464; Human Persona</text>
+
+</svg>

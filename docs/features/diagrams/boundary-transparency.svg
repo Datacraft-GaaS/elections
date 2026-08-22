@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
+<title>Module M18 Boundary Transparency</title>
+<desc>Boundary transparency portal with PostGIS ray-cast constituency validation, Polsby-Popper gerrymandering fairness score, HSM-signed polygon updates, and Astro public portal.</desc>
+<defs>
+  <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+  </marker>
+</defs>
+<rect width="1200" height="800" fill="#ffffff"/>
+<rect x="0" y="0" width="1200" height="60" fill="#1a3a5c"/>
+<text x="20" y="38" font-family="Arial,sans-serif" font-size="22" font-weight="bold" fill="white">M18 Boundary Transparency</text>
+
+<!-- Human persona: Boundary Officer -->
+<text x="30" y="178" font-family="Arial,sans-serif" font-size="14" fill="#333">* Boundary Officer</text>
+<line x1="110" y1="185" x2="110" y2="270" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- Human persona: Public Citizen -->
+<text x="1020" y="178" font-family="Arial,sans-serif" font-size="14" fill="#333">* Public Citizen</text>
+<line x1="1060" y1="185" x2="1060" y2="270" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- Node 1: Polygon Ingestion -->
+<rect x="50" y="270" width="160" height="90" rx="6" fill="#1f77b4" stroke="#1a5c8a" stroke-width="2"/>
+<text x="130" y="305" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Polygon</text>
+<text x="130" y="323" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Ingestion</text>
+<text x="130" y="341" font-family="Arial,sans-serif" font-size="13" fill="#cde" text-anchor="middle">(shapefile/GeoJSON)</text>
+
+<!-- Arrow 1 to 2 -->
+<line x1="210" y1="315" x2="278" y2="315" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- Node 2: PostGIS Ray-Cast Validation -->
+<rect x="280" y="270" width="160" height="90" rx="6" fill="#2ca02c" stroke="#1e7a1e" stroke-width="2"/>
+<text x="360" y="305" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">PostGIS</text>
+<text x="360" y="323" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Ray-Cast</text>
+<text x="360" y="341" font-family="Arial,sans-serif" font-size="13" fill="#cec" text-anchor="middle">Validation</text>
+
+<!-- Arrow 2 to 3 -->
+<line x1="440" y1="315" x2="478" y2="315" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- Node 3: Polsby-Popper -->
+<rect x="480" y="270" width="170" height="90" rx="6" fill="#9467bd" stroke="#6e4e8e" stroke-width="2"/>
+<text x="565" y="300" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Polsby-Popper</text>
+<text x="565" y="318" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Fairness Score</text>
+<text x="565" y="338" font-family="Arial,sans-serif" font-size="13" fill="#dce" text-anchor="middle">(gerrymandering)</text>
+
+<!-- Arrow 3 to 4 -->
+<line x1="650" y1="315" x2="718" y2="315" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<!-- Event label -->
+<text x="640" y="253" font-family="Arial,sans-serif" font-size="12" fill="#9467bd" text-anchor="middle">eel.boundary.polygon_updated.v1</text>
+<line x1="640" y1="258" x2="760" y2="270" stroke="#9467bd" stroke-width="1" stroke-dasharray="3 2"/>
+
+<!-- Node 4: HSM Sign -->
+<rect x="720" y="270" width="160" height="90" rx="6" fill="#9467bd" stroke="#6e4e8e" stroke-width="2"/>
+<text x="800" y="305" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">HSM Sign</text>
+<text x="800" y="323" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Polygon Update</text>
+<text x="800" y="343" font-family="Arial,sans-serif" font-size="14" fill="white" text-anchor="middle">[Lock]</text>
+
+<!-- Arrow 4 to 5 -->
+<line x1="880" y1="315" x2="958" y2="315" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<!-- Event label -->
+<text x="919" y="255" font-family="Arial,sans-serif" font-size="12" fill="#9467bd" text-anchor="middle">eel.boundary.boundary_published.v1</text>
+<line x1="919" y1="260" x2="1020" y2="270" stroke="#9467bd" stroke-width="1" stroke-dasharray="3 2"/>
+
+<!-- Node 5: Astro Public Portal -->
+<rect x="960" y="270" width="160" height="90" rx="6" fill="#2ca02c" stroke="#1e7a1e" stroke-width="2"/>
+<text x="1040" y="305" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Astro</text>
+<text x="1040" y="323" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Public Portal</text>
+
+<!-- Arrow from Node 2 down to DB -->
+<line x1="360" y1="360" x2="360" y2="428" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- Node 6: boundary-svc PostGIS DB -->
+<rect x="280" y="430" width="160" height="70" rx="6" fill="#ff7f0e" stroke="#c46000" stroke-width="2"/>
+<text x="360" y="460" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">boundary-svc</text>
+<text x="360" y="480" font-family="Arial,sans-serif" font-size="13" fill="white" text-anchor="middle">PostGIS DB</text>
+
+<!-- Arrow from Node 4 down to archive -->
+<line x1="800" y1="360" x2="800" y2="428" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- Node 7: Polygon Archive MinIO -->
+<rect x="720" y="430" width="160" height="70" rx="6" fill="#ff7f0e" stroke="#c46000" stroke-width="2"/>
+<text x="800" y="460" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Polygon Archive</text>
+<text x="800" y="480" font-family="Arial,sans-serif" font-size="13" fill="white" text-anchor="middle">(MinIO)</text>
+
+<!-- External: KNBS -->
+<rect x="50" y="430" width="160" height="70" rx="6" fill="none" stroke="#7f7f7f" stroke-dasharray="6 3" stroke-width="2"/>
+<text x="130" y="460" font-family="Arial,sans-serif" font-size="14" fill="#555" text-anchor="middle">KNBS</text>
+<text x="130" y="480" font-family="Arial,sans-serif" font-size="13" fill="#555" text-anchor="middle">(population data)</text>
+<line x1="210" y1="465" x2="278" y2="465" stroke="#555" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arrow)"/>
+
+<!-- Public Citizen arrow to portal -->
+<line x1="1040" y1="360" x2="1040" y2="430" stroke="#555" stroke-width="1.5"/>
+<text x="1060" y="430" font-family="Arial,sans-serif" font-size="14" fill="#333">* Public Citizen</text>
+
+<!-- Legend -->
+<rect x="900" y="580" width="285" height="185" rx="6" fill="#f9f9f9" stroke="#bbb" stroke-width="1"/>
+<text x="915" y="600" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#333">Legend</text>
+<rect x="915" y="608" width="16" height="11" rx="2" fill="#1f77b4"/>
+<text x="937" y="618" font-family="Arial,sans-serif" font-size="12" fill="#333">Kit / Device</text>
+<rect x="915" y="625" width="16" height="11" rx="2" fill="#2ca02c"/>
+<text x="937" y="635" font-family="Arial,sans-serif" font-size="12" fill="#333">Service / Backend</text>
+<rect x="915" y="642" width="16" height="11" rx="2" fill="#ff7f0e"/>
+<text x="937" y="652" font-family="Arial,sans-serif" font-size="12" fill="#333">Database / Store</text>
+<rect x="915" y="659" width="16" height="11" rx="2" fill="#9467bd"/>
+<text x="937" y="669" font-family="Arial,sans-serif" font-size="12" fill="#333">Event / Crypto</text>
+<rect x="915" y="676" width="16" height="11" rx="2" fill="none" stroke="#7f7f7f" stroke-dasharray="4 2" stroke-width="1.5"/>
+<text x="937" y="686" font-family="Arial,sans-serif" font-size="12" fill="#333">External / Planned</text>
+<text x="915" y="705" font-family="Arial,sans-serif" font-size="12" fill="#333">* Human Persona</text>
+<text x="915" y="723" font-family="Arial,sans-serif" font-size="12" fill="#333">Lock = HSM Touchpoint</text>
+</svg>

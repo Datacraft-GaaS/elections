@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
+<title>Module M12 CRMS - Candidate Registration</title>
+<desc>Candidate Registration and Management System - candidate FSM lifecycle, multi-agency clearance checks, quota engine for gender/regional requirements, gazette and ballot proof publication.</desc>
+<defs>
+  <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+  </marker>
+</defs>
+<!-- Background -->
+<rect width="1200" height="800" fill="#ffffff"/>
+<!-- Title bar -->
+<rect x="0" y="0" width="1200" height="60" fill="#1a3a5c"/>
+<text x="20" y="38" font-family="Arial,sans-serif" font-size="22" font-weight="bold" fill="white">M12 CRMS - Candidate Registration</text>
+
+<!-- Section label -->
+<text x="20" y="100" font-family="Arial,sans-serif" font-size="16" font-weight="bold" fill="#1a3a5c">Pipeline: Candidate Lifecycle FSM with Multi-Agency Clearance</text>
+
+<!-- Human: Candidate -->
+<text x="30" y="215" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#333">* Candidate / Nominee</text>
+
+<!-- Candidate Application -->
+<rect x="30" y="230" width="150" height="80" rx="6" fill="#1f77b4" stroke="#155a8a" stroke-width="2"/>
+<text x="105" y="260" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Candidate</text>
+<text x="105" y="278" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Application</text>
+<text x="105" y="296" font-family="Arial,sans-serif" font-size="13" fill="#ddd" text-anchor="middle">(web form)</text>
+
+<!-- Arrow 1 -->
+<line x1="180" y1="270" x2="245" y2="270" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="212" y="258" font-family="Arial,sans-serif" font-size="10" fill="#555" text-anchor="middle">eel.crms.</text>
+<text x="212" y="269" font-family="Arial,sans-serif" font-size="10" fill="#555" text-anchor="middle">candidate_</text>
+<text x="212" y="280" font-family="Arial,sans-serif" font-size="10" fill="#555" text-anchor="middle">submitted.v1</text>
+
+<!-- Candidate FSM -->
+<rect x="250" y="230" width="150" height="80" rx="6" fill="#2ca02c" stroke="#1e7020" stroke-width="2"/>
+<text x="325" y="260" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Candidate FSM</text>
+<text x="325" y="278" font-family="Arial,sans-serif" font-size="14" fill="white" text-anchor="middle">(state machine)</text>
+
+<!-- Arrow 2 -->
+<line x1="400" y1="270" x2="445" y2="270" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- Human: IEBC Officer above clearance -->
+<text x="455" y="218" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#333">* IEBC Officer</text>
+
+<!-- Clearance Double Check -->
+<rect x="450" y="230" width="150" height="80" rx="6" fill="#9467bd" stroke="#7a4fa0" stroke-width="2"/>
+<text x="525" y="260" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Clearance</text>
+<text x="525" y="278" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Double Check</text>
+
+<!-- Arrow 3 -->
+<line x1="600" y1="270" x2="645" y2="270" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="622" y="258" font-family="Arial,sans-serif" font-size="10" fill="#555" text-anchor="middle">eel.crms.</text>
+<text x="622" y="269" font-family="Arial,sans-serif" font-size="10" fill="#555" text-anchor="middle">clearance_</text>
+<text x="622" y="280" font-family="Arial,sans-serif" font-size="10" fill="#555" text-anchor="middle">approved.v1</text>
+
+<!-- Quota Engine -->
+<rect x="650" y="230" width="150" height="80" rx="6" fill="#2ca02c" stroke="#1e7020" stroke-width="2"/>
+<text x="725" y="260" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Quota Engine</text>
+<text x="725" y="278" font-family="Arial,sans-serif" font-size="13" fill="#ddd" text-anchor="middle">(gender / region)</text>
+
+<!-- Arrow 4 -->
+<line x1="800" y1="270" x2="845" y2="270" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- Human: Commissioner above gazette -->
+<text x="852" y="218" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#333">* Commissioner</text>
+
+<!-- Gazette Publication -->
+<rect x="850" y="230" width="150" height="80" rx="6" fill="#2ca02c" stroke="#1e7020" stroke-width="2"/>
+<text x="925" y="260" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Gazette</text>
+<text x="925" y="278" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Publication</text>
+
+<!-- Arrow 5 -->
+<line x1="1000" y1="270" x2="1045" y2="270" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="1022" y="258" font-family="Arial,sans-serif" font-size="10" fill="#555" text-anchor="middle">eel.crms.</text>
+<text x="1022" y="269" font-family="Arial,sans-serif" font-size="10" fill="#555" text-anchor="middle">ballot_proof_</text>
+<text x="1022" y="280" font-family="Arial,sans-serif" font-size="10" fill="#555" text-anchor="middle">issued.v1</text>
+
+<!-- Ballot Proof (HSM sign) -->
+<rect x="1050" y="230" width="130" height="80" rx="6" fill="#9467bd" stroke="#7a4fa0" stroke-width="2"/>
+<text x="1115" y="258" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Ballot Proof</text>
+<text x="1115" y="276" font-family="Arial,sans-serif" font-size="13" fill="#ddd" text-anchor="middle">(HSM sign)</text>
+<text x="1115" y="294" font-family="Arial,sans-serif" font-size="14" fill="#ffdd88" text-anchor="middle">[Lock]</text>
+
+<!-- External Agencies (dashed) -->
+<text x="400" y="375" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#7f7f7f">External Clearance Agencies</text>
+
+<!-- KRA -->
+<rect x="370" y="390" width="100" height="60" rx="6" fill="none" stroke="#7f7f7f" stroke-dasharray="4 2" stroke-width="2"/>
+<text x="420" y="416" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#7f7f7f" text-anchor="middle">KRA</text>
+<text x="420" y="434" font-family="Arial,sans-serif" font-size="12" fill="#7f7f7f" text-anchor="middle">(tax)</text>
+
+<!-- EACC -->
+<rect x="490" y="390" width="100" height="60" rx="6" fill="none" stroke="#7f7f7f" stroke-dasharray="4 2" stroke-width="2"/>
+<text x="540" y="416" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#7f7f7f" text-anchor="middle">EACC</text>
+<text x="540" y="434" font-family="Arial,sans-serif" font-size="12" fill="#7f7f7f" text-anchor="middle">(ethics)</text>
+
+<!-- DCI -->
+<rect x="610" y="390" width="100" height="60" rx="6" fill="none" stroke="#7f7f7f" stroke-dasharray="4 2" stroke-width="2"/>
+<text x="660" y="416" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#7f7f7f" text-anchor="middle">DCI</text>
+<text x="660" y="434" font-family="Arial,sans-serif" font-size="12" fill="#7f7f7f" text-anchor="middle">(criminal)</text>
+
+<!-- Arrows from Clearance to agencies -->
+<line x1="525" y1="310" x2="420" y2="385" stroke="#aaa" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arrow)"/>
+<line x1="525" y1="310" x2="540" y2="385" stroke="#aaa" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arrow)"/>
+<line x1="525" y1="310" x2="660" y2="385" stroke="#aaa" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arrow)"/>
+
+<!-- Candidates DB -->
+<rect x="450" y="510" width="150" height="70" rx="6" fill="#ff7f0e" stroke="#c05a00" stroke-width="2"/>
+<text x="525" y="540" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">candidates</text>
+<text x="525" y="558" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">DB</text>
+
+<!-- Arrows to DB -->
+<line x1="325" y1="310" x2="500" y2="505" stroke="#555" stroke-width="1.5" stroke-dasharray="3 2" marker-end="url(#arrow)"/>
+<line x1="525" y1="310" x2="525" y2="505" stroke="#555" stroke-width="1.5" stroke-dasharray="3 2" marker-end="url(#arrow)"/>
+<line x1="725" y1="310" x2="560" y2="505" stroke="#555" stroke-width="1.5" stroke-dasharray="3 2" marker-end="url(#arrow)"/>
+
+<!-- Legend -->
+<rect x="900" y="635" width="285" height="155" rx="6" fill="#f9f9f9" stroke="#bbb" stroke-width="1"/>
+<text x="915" y="655" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#333">Legend</text>
+<rect x="915" y="663" width="16" height="11" rx="2" fill="#1f77b4"/><text x="937" y="673" font-family="Arial,sans-serif" font-size="12" fill="#333">Kit / Device</text>
+<rect x="915" y="680" width="16" height="11" rx="2" fill="#2ca02c"/><text x="937" y="690" font-family="Arial,sans-serif" font-size="12" fill="#333">Service / Backend</text>
+<rect x="915" y="697" width="16" height="11" rx="2" fill="#ff7f0e"/><text x="937" y="707" font-family="Arial,sans-serif" font-size="12" fill="#333">Database / Store</text>
+<rect x="915" y="714" width="16" height="11" rx="2" fill="#9467bd"/><text x="937" y="724" font-family="Arial,sans-serif" font-size="12" fill="#333">Event / Crypto</text>
+<rect x="915" y="731" width="16" height="11" rx="2" fill="none" stroke="#7f7f7f" stroke-dasharray="4 2" stroke-width="1.5"/><text x="937" y="741" font-family="Arial,sans-serif" font-size="12" fill="#333">External / Planned</text>
+<text x="915" y="760" font-family="Arial,sans-serif" font-size="12" fill="#333">* Human Persona</text>
+<text x="915" y="778" font-family="Arial,sans-serif" font-size="12" fill="#333">Lock = HSM / Crypto Touchpoint</text>
+</svg>

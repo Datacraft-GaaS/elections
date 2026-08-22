@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">M30 Mobile Party Agent — Architecture Diagram</title>
+  <desc id="desc">Party agent check-in via QR code, HSM-anchored counter-signature, dispute workflow, and duress silent alert.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+    <marker id="arrow-red" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#d62728"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#f8f9fa"/>
+  <text x="600" y="36" font-family="Arial,sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#111">M30 Mobile Party Agent</text>
+  <text x="600" y="56" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#555">QR check-in · HSM counter-signature · dispute · duress silent alert</text>
+
+  <!-- Party Agent persona -->
+  <circle cx="120" cy="120" r="22" fill="#ff7f0e"/>
+  <text x="120" y="155" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#333">Party Agent</text>
+
+  <!-- Agent App -->
+  <rect x="30" y="180" width="220" height="100" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2"/>
+  <text x="140" y="206" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">Party Agent App</text>
+  <text x="140" y="226" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">Flutter — offline-first</text>
+  <text x="140" y="246" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">credential: SVID mTLS agent cert</text>
+  <text x="140" y="264" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">station_code scoped JWT</text>
+  <text x="140" y="272" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">PartyAgentSession entity</text>
+  <line x1="120" y1="142" x2="120" y2="180" stroke="#ff7f0e" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- QR check-in -->
+  <rect x="280" y="180" width="260" height="100" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="410" y="206" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f77b4">QR Check-In</text>
+  <text x="410" y="226" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">station QR code scan</text>
+  <text x="410" y="246" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">verify: party_id, accreditation</text>
+  <text x="410" y="264" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">POST /v1/agent/checkin</text>
+  <text x="410" y="272" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">agent_checkin.v1 emitted</text>
+  <line x1="250" y1="230" x2="280" y2="230" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- HSM counter-signature -->
+  <rect x="580" y="180" width="280" height="100" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="720" y="206" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">HSM Counter-Signature</text>
+  <text x="720" y="226" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">RSASSA-PSS + HSM (P06)</text>
+  <text x="720" y="246" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">agent_signature + station_stamp</text>
+  <text x="720" y="264" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">tlog anchor: Merkle node</text>
+  <text x="720" y="272" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">form34a_countersigned.v1 (exactly-once)</text>
+  <rect x="835" y="180" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="846" y="196" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="540" y1="230" x2="580" y2="230" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Tally view -->
+  <rect x="280" y="330" width="260" height="90" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="410" y="356" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">Tally View</text>
+  <text x="410" y="376" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">real-time station tally display</text>
+  <text x="410" y="396" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">party_agent can annotate</text>
+  <text x="410" y="412" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">offline-capable cached data</text>
+  <line x1="410" y1="280" x2="410" y2="330" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Dispute workflow -->
+  <rect x="580" y="330" width="280" height="120" rx="8" fill="#fce7f3" stroke="#d62728" stroke-width="2"/>
+  <text x="720" y="356" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">Dispute Workflow</text>
+  <text x="720" y="376" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">POST /v1/agent/disputes</text>
+  <text x="720" y="396" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">AgentDispute: station, contest</text>
+  <text x="720" y="416" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">evidence_image (signed)</text>
+  <text x="720" y="436" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">routes to ECC + party HQ</text>
+  <text x="720" y="446" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">agent_dispute.v1 emitted</text>
+  <line x1="720" y1="280" x2="720" y2="330" stroke="#d62728" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+  <line x1="540" y1="375" x2="580" y2="375" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Duress silent alert -->
+  <rect x="280" y="500" width="580" height="100" rx="8" fill="#fce7f3" stroke="#d62728" stroke-width="2.5"/>
+  <text x="570" y="526" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">Duress Silent Alert</text>
+  <text x="570" y="546" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">hidden gesture / PIN: agent under coercion</text>
+  <text x="570" y="566" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">POST /v1/agent/duress — encrypted payload to ECC only</text>
+  <text x="570" y="586" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">app continues normal appearance — silent to coercer</text>
+  <text x="570" y="596" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">agent_duress_alert.v1 — exactly-once — ECC_ANALYST + POLICE_LIAISON</text>
+  <line x1="140" y1="280" x2="320" y2="500" stroke="#d62728" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow-red)"/>
+  <line x1="720" y1="450" x2="660" y2="500" stroke="#d62728" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+
+  <!-- ECC Console -->
+  <rect x="280" y="650" width="260" height="70" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="410" y="676" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">ECC Console</text>
+  <text x="410" y="696" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">dispute + duress alert triage</text>
+  <text x="410" y="710" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">ECC_ANALYST role required</text>
+  <line x1="410" y1="600" x2="410" y2="650" stroke="#9467bd" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Party HQ (external) -->
+  <rect x="900" y="330" width="200" height="70" rx="8" fill="#fff" stroke="#7f7f7f" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="1000" y="360" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#7f7f7f">Party HQ</text>
+  <text x="1000" y="380" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">webhook: dispute notification</text>
+  <line x1="860" y1="390" x2="900" y2="365" stroke="#7f7f7f" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+
+  <!-- Merkle / tlog -->
+  <rect x="580" y="650" width="260" height="70" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="710" y="676" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">Merkle Chain (P05)</text>
+  <text x="710" y="696" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">countersign + dispute anchored</text>
+  <text x="710" y="710" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">tamper-evident — HSM timestamps</text>
+  <rect x="815" y="650" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="826" y="666" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="720" y1="280" x2="720" y2="640" stroke="#9467bd" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+
+  <!-- Legend -->
+  <rect x="900" y="450" width="260" height="180" rx="6" fill="#fff" stroke="#ccc" stroke-width="1"/>
+  <text x="1030" y="470" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Legend</text>
+  <rect x="912" y="480" width="20" height="14" rx="2" fill="#fef9c3" stroke="#ff7f0e"/>
+  <text x="940" y="492" font-family="Arial,sans-serif" font-size="12" fill="#333">Agent app / session</text>
+  <rect x="912" y="500" width="20" height="14" rx="2" fill="#dbeafe" stroke="#1f77b4"/>
+  <text x="940" y="512" font-family="Arial,sans-serif" font-size="12" fill="#333">Check-in / tally</text>
+  <rect x="912" y="520" width="20" height="14" rx="2" fill="#ede9fe" stroke="#9467bd"/>
+  <text x="940" y="532" font-family="Arial,sans-serif" font-size="12" fill="#333">HSM / Merkle anchor</text>
+  <rect x="912" y="540" width="20" height="14" rx="2" fill="#fce7f3" stroke="#d62728"/>
+  <text x="940" y="552" font-family="Arial,sans-serif" font-size="12" fill="#333">Dispute / duress alert</text>
+  <rect x="912" y="560" width="20" height="14" rx="2" fill="#fff" stroke="#7f7f7f" stroke-dasharray="4,2"/>
+  <text x="940" y="572" font-family="Arial,sans-serif" font-size="12" fill="#333">External: Party HQ</text>
+  <rect x="912" y="580" width="14" height="14" rx="2" fill="#9467bd"/>
+  <text x="932" y="592" font-family="Arial,sans-serif" font-size="12" fill="white">🔒</text>
+  <text x="940" y="592" font-family="Arial,sans-serif" font-size="12" fill="#333">HSM signature / tlog</text>
+  <circle cx="922" cy="612" r="7" fill="#ff7f0e"/>
+  <text x="940" y="616" font-family="Arial,sans-serif" font-size="12" fill="#333">Party agent persona</text>
+</svg>

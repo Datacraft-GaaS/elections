@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+<title>Module M10 RTS Backend</title>
+<desc>Results Transmission System backend - event-sourced Form34 streams, TLA+ verified tally engine, ICR ONNX validation, HSM-countersigned result publication.</desc>
+<defs>
+  <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+  </marker>
+  <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+    <feDropShadow dx="2" dy="2" stdDeviation="2" flood-opacity="0.15"/>
+  </filter>
+</defs>
+
+<!-- Background -->
+<rect width="1200" height="800" fill="white"/>
+
+<!-- Title bar -->
+<rect x="0" y="0" width="1200" height="60" fill="#1a3a5c"/>
+<text x="600" y="38" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="white" text-anchor="middle">Module M10 RTS Backend</text>
+
+<!-- Box 1: Form34* Ingest -->
+<rect x="40" y="280" width="160" height="80" rx="6" fill="#2ca02c" stroke="#1e8a1e" stroke-width="2" filter="url(#shadow)"/>
+<text x="120" y="305" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Form34* Ingest</text>
+<text x="120" y="323" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle">(event-sourced</text>
+<text x="120" y="341" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle">Kafka streams)</text>
+
+<!-- Event label on first arrow -->
+<text x="230" y="273" font-family="Arial, sans-serif" font-size="11" fill="#555" text-anchor="middle">eel.rts.form34a_signed.v1</text>
+
+<!-- Arrow Box1 to Box2 -->
+<line x1="200" y1="320" x2="255" y2="320" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- Box 2: Form34A/B/C Event Store -->
+<rect x="260" y="280" width="160" height="80" rx="6" fill="#ff7f0e" stroke="#c96000" stroke-width="2" filter="url(#shadow)"/>
+<text x="340" y="305" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Form34A/B/C</text>
+<text x="340" y="325" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Event Store</text>
+
+<!-- Arrow Box2 down to Tally Results DB -->
+<line x1="340" y1="360" x2="340" y2="410" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- Box 6: Tally Results DB (bottom row) -->
+<rect x="260" y="415" width="160" height="70" rx="6" fill="#ff7f0e" stroke="#c96000" stroke-width="2" filter="url(#shadow)"/>
+<text x="340" y="443" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Tally Results</text>
+<text x="340" y="463" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">DB</text>
+
+<!-- Arrow Box2 to Box3 -->
+<line x1="420" y1="320" x2="475" y2="320" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- Box 3: TLA+ Tally Engine -->
+<rect x="480" y="280" width="160" height="80" rx="6" fill="#2ca02c" stroke="#1e8a1e" stroke-width="2" filter="url(#shadow)"/>
+<text x="560" y="308" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">TLA+ Tally</text>
+<text x="560" y="328" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Engine</text>
+
+<!-- Arrow TLA to Tally Results DB -->
+<line x1="560" y1="360" x2="430" y2="430" stroke="#555" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arrow)"/>
+
+<!-- Arrow Box3 to Box4 -->
+<line x1="640" y1="320" x2="695" y2="320" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- Box 4: ICR ONNX Validator (dashed = planned/AI) -->
+<rect x="700" y="280" width="160" height="80" rx="6" fill="#9467bd" stroke="#7f7f7f" stroke-width="2" stroke-dasharray="8 4" filter="url(#shadow)"/>
+<text x="780" y="308" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">ICR ONNX</text>
+<text x="780" y="328" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Validator</text>
+<text x="780" y="348" font-family="Arial, sans-serif" font-size="11" fill="#d0c0f0" text-anchor="middle">(planned/AI)</text>
+
+<!-- Arrow Box4 to Box5 -->
+<line x1="860" y1="320" x2="915" y2="320" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- Box 5: HSM Countersign Publication -->
+<rect x="920" y="280" width="160" height="80" rx="6" fill="#9467bd" stroke="#7a50a8" stroke-width="2" filter="url(#shadow)"/>
+<text x="1000" y="305" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">HSM Counter-</text>
+<text x="1000" y="325" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">sign Publication</text>
+<text x="1000" y="345" font-family="Arial, sans-serif" font-size="13" fill="white" text-anchor="middle">&#128274;</text>
+
+<!-- Event label on last arrow -->
+<text x="1000" y="275" font-family="Arial, sans-serif" font-size="11" fill="#555" text-anchor="middle">eel.rts.tally_published.v1</text>
+
+<!-- Arrow Box5 down to Public Portal -->
+<line x1="1000" y1="360" x2="1000" y2="410" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+<!-- Box 7: Public Portal (M11), dashed = downstream -->
+<rect x="920" y="415" width="160" height="70" rx="6" fill="#2ca02c" stroke="#7f7f7f" stroke-width="2" stroke-dasharray="8 4" filter="url(#shadow)"/>
+<text x="1000" y="443" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Public Portal</text>
+<text x="1000" y="463" font-family="Arial, sans-serif" font-size="13" fill="white" text-anchor="middle">(M11)</text>
+
+<!-- Arrow from Tally Results DB to Public Portal (horizontal) -->
+<line x1="420" y1="450" x2="918" y2="450" stroke="#555" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arrow)"/>
+<text x="670" y="443" font-family="Arial, sans-serif" font-size="11" fill="#7f7f7f" text-anchor="middle">published tallies</text>
+
+<!-- Flow label -->
+<text x="550" y="560" font-family="Arial, sans-serif" font-size="13" fill="#7f7f7f" text-anchor="middle">Signed form events ingested to event store, verified by TLA+ tally, ONNX-validated, HSM countersigned, published</text>
+
+<!-- Legend -->
+<rect x="900" y="635" width="285" height="155" rx="6" fill="#f9f9f9" stroke="#bbb" stroke-width="1"/>
+<text x="915" y="655" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#333">Legend</text>
+<rect x="915" y="663" width="16" height="11" rx="2" fill="#1f77b4"/><text x="937" y="673" font-family="Arial,sans-serif" font-size="12" fill="#333">Kit / Device</text>
+<rect x="915" y="680" width="16" height="11" rx="2" fill="#2ca02c"/><text x="937" y="690" font-family="Arial,sans-serif" font-size="12" fill="#333">Service / Backend</text>
+<rect x="915" y="697" width="16" height="11" rx="2" fill="#ff7f0e"/><text x="937" y="707" font-family="Arial,sans-serif" font-size="12" fill="#333">Database / Store</text>
+<rect x="915" y="714" width="16" height="11" rx="2" fill="#9467bd"/><text x="937" y="724" font-family="Arial,sans-serif" font-size="12" fill="#333">Event / Crypto</text>
+<rect x="915" y="731" width="16" height="11" rx="2" fill="none" stroke="#7f7f7f" stroke-dasharray="4 2" stroke-width="1.5"/><text x="937" y="741" font-family="Arial,sans-serif" font-size="12" fill="#333">External / Planned</text>
+<text x="915" y="762" font-family="Arial,sans-serif" font-size="12" fill="#333">&#9900; Human Persona</text>
+<text x="915" y="779" font-family="Arial,sans-serif" font-size="12" fill="#333">&#128274; Crypto / HSM Touchpoint</text>
+</svg>

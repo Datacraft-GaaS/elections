@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">M29 Mobile Citizen Verify — Architecture Diagram</title>
+  <desc id="desc">Android, iOS, and PWA citizen verification app with offline caches, station finder, VPRS integration, push and SMS fallback, and KES-10k device profile.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#f8f9fa"/>
+  <text x="600" y="36" font-family="Arial,sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#111">M29 Mobile Citizen Verify</text>
+  <text x="600" y="56" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#555">Android · iOS · PWA — offline caches · station finder · VPRS · push + SMS fallback · KES-10k device profile</text>
+
+  <!-- Citizen persona -->
+  <circle cx="100" cy="120" r="22" fill="#1f77b4"/>
+  <text x="100" y="155" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#333">Citizen</text>
+  <text x="100" y="170" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#555">any device</text>
+
+  <!-- App platforms -->
+  <rect x="30" y="200" width="160" height="80" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="110" y="226" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f77b4">Android App</text>
+  <text x="110" y="246" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">Flutter — offline-first</text>
+  <text x="110" y="264" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">KES-10k device profile</text>
+  <text x="110" y="276" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">ARM Cortex-A53 / 2GB RAM</text>
+  <line x1="100" y1="142" x2="100" y2="200" stroke="#1f77b4" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="210" y="200" width="160" height="80" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="290" y="226" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f77b4">iOS App</text>
+  <text x="290" y="246" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">Flutter — offline-first</text>
+  <text x="290" y="264" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">biometric FaceID/TouchID</text>
+  <text x="290" y="276" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">iPhone SE min target</text>
+
+  <rect x="390" y="200" width="160" height="80" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="470" y="226" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f77b4">PWA</text>
+  <text x="470" y="246" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">service worker cache</text>
+  <text x="470" y="264" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">works offline</text>
+  <text x="470" y="276" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">Astro + Workbox</text>
+
+  <!-- Offline cache -->
+  <rect x="30" y="340" width="520" height="90" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="290" y="366" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">Offline Cache (SQLite / service worker)</text>
+  <text x="290" y="386" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">voter_roll_excerpt · station_list · polling_schedule · candidate_list</text>
+  <text x="290" y="406" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">TTL sync: 6h pre-election, 30min election day · delta patches via VPRS</text>
+  <text x="290" y="422" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">encrypted at rest (SQLCipher) · Merkle hash verification on sync</text>
+  <line x1="110" y1="280" x2="180" y2="340" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="290" y1="280" x2="290" y2="340" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="470" y1="280" x2="400" y2="340" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Station Finder -->
+  <rect x="30" y="490" width="240" height="80" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2"/>
+  <text x="150" y="516" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">Station Finder</text>
+  <text x="150" y="536" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">GPS + cell-ID + Wi-Fi</text>
+  <text x="150" y="554" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">nearest station polygon</text>
+  <text x="150" y="566" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">GET /v1/citizen/stations/nearest</text>
+  <line x1="150" y1="430" x2="150" y2="490" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- VPRS integration -->
+  <rect x="580" y="200" width="260" height="120" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="710" y="226" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f77b4">VPRS (M?)</text>
+  <text x="710" y="246" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">Voter Polling-Station Register</text>
+  <text x="710" y="266" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">GET /v1/vprs/assignment/{id_hash}</text>
+  <text x="710" y="286" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">station_code, directions, geo</text>
+  <text x="710" y="306" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">rate: 30/hr per national_id_hash</text>
+  <text x="710" y="316" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">public tier + rate limit</text>
+  <line x1="550" y1="380" x2="580" y2="300" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Push notification -->
+  <rect x="580" y="370" width="260" height="90" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="710" y="396" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">Push Notifications</text>
+  <text x="710" y="416" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">FCM (Android) / APNS (iOS)</text>
+  <text x="710" y="436" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">election day reminders</text>
+  <text x="710" y="454" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">result publication alert</text>
+  <line x1="550" y1="430" x2="580" y2="420" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- SMS fallback -->
+  <rect x="580" y="500" width="260" height="90" rx="8" fill="#fce7f3" stroke="#d62728" stroke-width="2"/>
+  <text x="710" y="526" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">SMS Fallback</text>
+  <text x="710" y="546" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">AT / Twilio gateway</text>
+  <text x="710" y="566" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">USSD *400# integration</text>
+  <text x="710" y="580" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">fallback when app unreachable</text>
+  <line x1="710" y1="460" x2="710" y2="500" stroke="#d62728" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- External: FCM/APNS -->
+  <rect x="880" y="370" width="180" height="60" rx="8" fill="#fff" stroke="#7f7f7f" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="970" y="396" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#7f7f7f">FCM / APNS</text>
+  <text x="970" y="414" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">Google / Apple (external)</text>
+  <line x1="840" y1="400" x2="880" y2="400" stroke="#7f7f7f" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+
+  <!-- External: SMS gateway -->
+  <rect x="880" y="500" width="180" height="60" rx="8" fill="#fff" stroke="#7f7f7f" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="970" y="526" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#7f7f7f">Africa's Talking</text>
+  <text x="970" y="544" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">SMS gateway (external)</text>
+  <line x1="840" y1="540" x2="880" y2="540" stroke="#7f7f7f" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+
+  <!-- API Gateway -->
+  <rect x="580" y="640" width="260" height="80" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="710" y="666" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">Citizen API Gateway</text>
+  <text x="710" y="686" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">Rust axum — rate limiting</text>
+  <text x="710" y="706" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">JWT + SpiceDB — public tier</text>
+  <text x="710" y="716" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">GET /v1/citizen/verify/{id_hash}</text>
+  <line x1="290" y1="430" x2="600" y2="640" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="710" y1="590" x2="710" y2="640" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- KES-10k device constraints -->
+  <rect x="30" y="630" width="520" height="90" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="1.5"/>
+  <text x="290" y="656" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">KES-10k Device Profile Constraints</text>
+  <text x="290" y="676" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">Android Go — 2GB RAM min — 16GB storage — 480px screen</text>
+  <text x="290" y="696" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">bundle: &lt; 8 MB · first paint: &lt; 3s on 3G · offline-capable</text>
+  <text x="290" y="712" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">Swahili UI default · accessibility: WCAG AA · font scale support</text>
+  <line x1="290" y1="430" x2="290" y2="630" stroke="#ff7f0e" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+
+  <!-- Legend -->
+  <rect x="880" y="610" width="280" height="160" rx="6" fill="#fff" stroke="#ccc" stroke-width="1"/>
+  <text x="1020" y="630" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Legend</text>
+  <rect x="892" y="640" width="20" height="14" rx="2" fill="#dbeafe" stroke="#1f77b4"/>
+  <text x="920" y="652" font-family="Arial,sans-serif" font-size="12" fill="#333">App platform (Android/iOS/PWA)</text>
+  <rect x="892" y="660" width="20" height="14" rx="2" fill="#dcfce7" stroke="#2ca02c"/>
+  <text x="920" y="672" font-family="Arial,sans-serif" font-size="12" fill="#333">Offline cache / push</text>
+  <rect x="892" y="680" width="20" height="14" rx="2" fill="#fef9c3" stroke="#ff7f0e"/>
+  <text x="920" y="692" font-family="Arial,sans-serif" font-size="12" fill="#333">Station finder / device limits</text>
+  <rect x="892" y="700" width="20" height="14" rx="2" fill="#fce7f3" stroke="#d62728"/>
+  <text x="920" y="712" font-family="Arial,sans-serif" font-size="12" fill="#333">SMS fallback</text>
+  <rect x="892" y="720" width="20" height="14" rx="2" fill="#fff" stroke="#7f7f7f" stroke-dasharray="4,2"/>
+  <text x="920" y="732" font-family="Arial,sans-serif" font-size="12" fill="#333">External gateway</text>
+  <circle cx="902" cy="752" r="7" fill="#1f77b4"/>
+  <text x="920" y="756" font-family="Arial,sans-serif" font-size="12" fill="#333">Citizen persona</text>
+</svg>
