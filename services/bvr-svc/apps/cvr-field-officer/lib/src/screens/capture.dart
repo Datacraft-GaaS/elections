@@ -14,7 +14,6 @@ import '../models/capture.dart';
 import '../services/attestation.dart';
 import '../services/geo_stamp.dart';
 import '../services/ocr_client.dart';
-import '../services/offline_queue.dart';
 import 'review.dart';
 
 class CaptureScreen extends ConsumerStatefulWidget {

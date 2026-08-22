@@ -3236,6 +3236,7 @@ dependencies = [
  "blake3",
  "chrono",
  "eel-crypto-rs",
+ "eel-trace-rs",
  "rts-domain",
  "rts-projections",
  "serde",

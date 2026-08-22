@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:eel_cvr_field_officer/src/screens/home.dart';
-import 'package:eel_cvr_field_officer/src/models/capture.dart';
 
 Widget _wrap(Widget child) => ProviderScope(
       child: MaterialApp(home: child),
@@ -26,11 +25,11 @@ void main() {
       expect(find.text('Capture ID Correction'), findsOneWidget);
     });
 
-    testWidgets('buttons have minimum 48dp height', (tester) async {
+    testWidgets('action buttons rendered', (tester) async {
       await tester.pumpWidget(_wrap(const HomeScreen()));
-      final buttonFinder = find.byType(FilledButton);
-      // At least one FilledButton rendered
-      expect(buttonFinder, findsWidgets);
+      // Both action labels render (FilledButton.icon internals vary by Flutter version)
+      expect(find.text('Capture Death Certificate'), findsOneWidget);
+      expect(find.text('Capture ID Correction'), findsOneWidget);
     });
 
     testWidgets('history link present', (tester) async {

@@ -1,3 +1,5 @@
+library;
+
 /// Sync status model for SyncScreen and SyncService.
 
 enum SyncState { idle, syncing, conflict, error }

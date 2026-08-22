@@ -1,3 +1,5 @@
+library;
+
 /// Data models for CVR field-officer captures.
 
 enum CaptureModality { deathCertificate, idCorrection }

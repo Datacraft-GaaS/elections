@@ -64,7 +64,7 @@ class HomeScreen extends ConsumerWidget {
                         children: [
                           const Icon(Icons.pending_actions, size: 16),
                           const SizedBox(width: 4),
-                          Text('$queueDepth pending'),
+                          Text('${queueDepth.toString()} pending'),
                           const SizedBox(width: 16),
                           const Icon(Icons.update, size: 16),
                           const SizedBox(width: 4),

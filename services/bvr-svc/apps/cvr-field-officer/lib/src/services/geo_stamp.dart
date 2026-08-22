@@ -17,18 +17,18 @@ class GeoStamp {
   static Future<GeoStampResult> stamp() async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      throw GeoStampException('Location services are disabled.');
+      throw const GeoStampException('Location services are disabled.');
     }
 
     var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        throw GeoStampException('Location permission denied.');
+        throw const GeoStampException('Location permission denied.');
       }
     }
     if (permission == LocationPermission.deniedForever) {
-      throw GeoStampException('Location permission permanently denied.');
+      throw const GeoStampException('Location permission permanently denied.');
     }
 
     final pos = await Geolocator.getCurrentPosition(

@@ -3,7 +3,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'screens/home.dart';
-import 'l10n/l10n.dart';
 
 class CvrFieldOfficerApp extends ConsumerWidget {
   const CvrFieldOfficerApp({super.key});
@@ -19,7 +18,6 @@ class CvrFieldOfficerApp extends ConsumerWidget {
           brightness: Brightness.light,
         ),
         useMaterial3: true,
-        // WCAG AA: minimum touch targets enforced at widget level (48 dp min).
       ),
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
@@ -29,12 +27,22 @@ class CvrFieldOfficerApp extends ConsumerWidget {
         useMaterial3: true,
       ),
       localizationsDelegates: const [
-        AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: AppLocalizations.supportedLocales,
+      supportedLocales: const [
+        Locale('en'),
+        Locale('sw'),
+        Locale('ki'),
+        Locale('luo'),
+        Locale('kal'),
+        Locale('kam'),
+        Locale('guj'),
+        Locale('mer'),
+        Locale('mas'),
+        Locale('som'),
+      ],
       home: const HomeScreen(),
     );
   }
