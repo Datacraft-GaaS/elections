@@ -1,0 +1,8 @@
+{
+  "files": [
+    {"path": "tally.json",    "sha256": "abc123"},
+    {"path": "events.ndjson", "sha256": "def456"}
+  ],
+  "day":     "2024-08-01",
+  "team_id": "eel-test-team"
+}

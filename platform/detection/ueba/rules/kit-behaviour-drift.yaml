@@ -1,0 +1,19 @@
+- rule: eel_kit_behaviour_drift
+  desc: >
+    Detects an election kit (tablet or scanner) sending data volumes more
+    than 3 standard deviations above its baseline bytes_egressed. May
+    indicate data exfiltration or a compromised device.
+  condition: >
+    evt.type in (write, sendto, sendmsg)
+    and eel.entity_type = "kit"
+    and eel.ueba.zscore[bytes_egressed] > 3.0
+  output: >
+    Kit egress anomaly detected
+    (kit_id=%eel.entity_id bytes=%eel.ueba.feature[bytes_egressed]
+     zscore=%eel.ueba.zscore[bytes_egressed]
+     baseline_mean=%eel.ueba.baseline_mean[bytes_egressed]
+     baseline_std=%eel.ueba.baseline_std[bytes_egressed]
+     fd=%fd.name time=%evt.time)
+  priority: CRITICAL
+  tags: [eel, ueba, kit, egress-anomaly]
+  source: syscall

@@ -1,0 +1,16 @@
+- rule: eel_after_hours_access
+  desc: >
+    Detects any user login or API call between 22:00 and 06:00 EAT
+    (UTC+3). Access outside core hours requires investigation.
+  condition: >
+    (evt.type in (open, execve, connect) or falco.rule startswith "eel_api_call")
+    and (fd.typechar = 4 or fd.typechar = 6)
+    and (hour(evt.time, "Africa/Nairobi") < 6 or hour(evt.time, "Africa/Nairobi") >= 22)
+    and user.name != "<NA>"
+  output: >
+    After-hours access detected
+    (user=%user.name command=%proc.cmdline connection=%fd.name
+     hour_eat=%hour(evt.time,"Africa/Nairobi") time=%evt.time)
+  priority: WARNING
+  tags: [eel, ueba, access-control, after-hours]
+  source: syscall

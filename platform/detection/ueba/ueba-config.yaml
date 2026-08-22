@@ -1,0 +1,18 @@
+eel_ueba:
+  baseline_window_days: 14
+  zscore_threshold: 3.0
+  entity_types: [user, service_account, kit, pod]
+  loki:
+    url: "${EEL_LOKI_URL}"
+    query_interval_seconds: 30
+  postgres:
+    dsn: "${EEL_UEBA_PG_DSN}"
+  ecc_pubsub:
+    channel: "eel.ecc.ueba_alert.v1"
+  alert_cooldown_seconds: 300
+  features:
+    login_hour_of_day: true
+    query_rate_per_minute: true
+    syscall_entropy: true
+    bytes_egressed: true
+    distinct_tables_accessed: true

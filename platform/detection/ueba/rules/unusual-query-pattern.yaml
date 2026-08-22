@@ -1,0 +1,19 @@
+- rule: eel_unusual_query_pattern
+  desc: >
+    Detects a service account issuing database queries at a rate more than
+    3 standard deviations above its learned baseline. Indicates credential
+    abuse, data exfiltration prep, or runaway automation.
+  condition: >
+    evt.type = query
+    and user.type = "service_account"
+    and eel.ueba.zscore[query_rate_per_minute] > 3.0
+  output: >
+    Unusual query rate for service account
+    (sa=%user.name rate_per_min=%eel.ueba.feature[query_rate_per_minute]
+     zscore=%eel.ueba.zscore[query_rate_per_minute]
+     baseline_mean=%eel.ueba.baseline_mean[query_rate_per_minute]
+     baseline_std=%eel.ueba.baseline_std[query_rate_per_minute]
+     time=%evt.time)
+  priority: CRITICAL
+  tags: [eel, ueba, query-anomaly, service-account]
+  source: syscall

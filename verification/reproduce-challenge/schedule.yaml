@@ -1,0 +1,150 @@
+name: eel-reproduce-challenge-fanout
+
+on:
+  schedule:
+    # 23:00 UTC = 02:00 EAT (Africa/Nairobi, UTC+3)
+    - cron: "0 23 * * *"
+
+  workflow_dispatch:
+    inputs:
+      day:
+        description: "Override day (YYYY-MM-DD). Defaults to today."
+        required: false
+
+env:
+  S3_REFERENCE_BUCKET: s3://eel-verification-bundles
+  SUBMISSION_WINDOW_HOURS: "8"
+  RESULTS_BUCKET: s3://eel-reproduce-results
+  ASTRO_DEPLOY_HOOK: ${{ secrets.ASTRO_DEPLOY_HOOK }}
+
+jobs:
+  fanout:
+    name: Fanout - pull reference and notify teams
+    runs-on: ubuntu-latest
+    outputs:
+      day: ${{ steps.set-day.outputs.day }}
+      reference_sha256: ${{ steps.pull-reference.outputs.sha256 }}
+
+    steps:
+      - name: Set verification day
+        id: set-day
+        run: |
+          DAY="${{ github.event.inputs.day }}"
+          if [ -z "$DAY" ]; then
+            DAY=$(date -u +%Y-%m-%d)
+          fi
+          echo "day=$DAY" >> "$GITHUB_OUTPUT"
+
+      - name: Pull reference bundle from S3
+        id: pull-reference
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.EEL_S3_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.EEL_S3_SECRET }}
+          AWS_DEFAULT_REGION: eu-central-1
+        run: |
+          DAY="${{ steps.set-day.outputs.day }}"
+          aws s3 cp \
+            "${S3_REFERENCE_BUCKET}/bundles/${DAY}/reference.tar.gz" \
+            reference.tar.gz
+          SHA256=$(sha256sum reference.tar.gz | awk '{print $1}')
+          echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
+          echo "Reference bundle SHA-256: $SHA256"
+
+      - name: Notify registered teams via webhook
+        env:
+          TEAMS_WEBHOOK_LIST: ${{ secrets.EEL_TEAMS_WEBHOOK_LIST }}
+        run: |
+          DAY="${{ steps.set-day.outputs.day }}"
+          REF_SHA="${{ steps.pull-reference.outputs.sha256 }}"
+          DEADLINE=$(date -u -d "+${SUBMISSION_WINDOW_HOURS} hours" +%Y-%m-%dT%H:%M:%SZ)
+          PAYLOAD=$(jq -n \
+            --arg day "$DAY" \
+            --arg ref_sha "$REF_SHA" \
+            --arg deadline "$DEADLINE" \
+            '{event:"reproduce-challenge.start", day:$day, reference_sha256:$ref_sha, submission_deadline:$deadline}')
+          echo "$TEAMS_WEBHOOK_LIST" | tr ',' '\n' | while read -r URL; do
+            [ -z "$URL" ] && continue
+            curl -sSf -X POST "$URL" \
+              -H "Content-Type: application/json" \
+              -d "$PAYLOAD" || echo "WARN: webhook $URL failed"
+          done
+
+  collect:
+    name: Collect - wait for submission window
+    needs: fanout
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Wait for submission window to close
+        run: |
+          echo "Submission window: ${SUBMISSION_WINDOW_HOURS} hours"
+          sleep $(( SUBMISSION_WINDOW_HOURS * 3600 ))
+
+  verify:
+    name: Verify - run verify-submission.sh per submission
+    needs: [fanout, collect]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download reference bundle
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.EEL_S3_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.EEL_S3_SECRET }}
+          AWS_DEFAULT_REGION: eu-central-1
+        run: |
+          DAY="${{ needs.fanout.outputs.day }}"
+          aws s3 cp \
+            "${S3_REFERENCE_BUCKET}/bundles/${DAY}/reference.tar.gz" \
+            reference.tar.gz
+
+      - name: Download all submissions for the day
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.EEL_S3_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.EEL_S3_SECRET }}
+          AWS_DEFAULT_REGION: eu-central-1
+        run: |
+          DAY="${{ needs.fanout.outputs.day }}"
+          mkdir -p submissions
+          aws s3 sync \
+            "${S3_REFERENCE_BUCKET}/submissions/${DAY}/" \
+            submissions/
+
+      - name: Verify each submission
+        run: |
+          DAY="${{ needs.fanout.outputs.day }}"
+          mkdir -p results
+          for SUBMISSION in submissions/*.tar.gz; do
+            [ -f "$SUBMISSION" ] || continue
+            TEAM_ID=$(basename "$SUBMISSION" .tar.gz)
+            OUT_DIR="results/${TEAM_ID}"
+            mkdir -p "$OUT_DIR"
+            bash verification/reproduce-challenge/verify-submission.sh \
+              "$SUBMISSION" \
+              reference.tar.gz \
+              "$OUT_DIR" \
+              || true
+          done
+
+      - name: Upload results to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.EEL_S3_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.EEL_S3_SECRET }}
+          AWS_DEFAULT_REGION: eu-central-1
+        run: |
+          DAY="${{ needs.fanout.outputs.day }}"
+          aws s3 sync results/ "${RESULTS_BUCKET}/${DAY}/"
+
+  publish:
+    name: Publish - deploy results to Astro static page
+    needs: [fanout, verify]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Astro deploy hook
+        run: |
+          curl -sSf -X POST "${ASTRO_DEPLOY_HOOK}" \
+            -H "Content-Type: application/json" \
+            -d '{"reason":"reproduce-challenge-results","day":"${{ needs.fanout.outputs.day }}"}'
+          echo "Astro deploy triggered for day ${{ needs.fanout.outputs.day }}"

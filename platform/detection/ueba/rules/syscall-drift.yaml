@@ -1,0 +1,40 @@
+# Tetragon TracingPolicy: raise an alert when a pod calls a syscall
+# that does not appear in its learned syscall profile.
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+  name: eel-syscall-drift
+  namespace: eel-system
+  labels:
+    app.kubernetes.io/part-of: eel-ueba
+spec:
+  description: >
+    Detect system calls not present in the learned per-pod profile.
+    Indicates container escape attempts, injected payloads, or
+    unexpected workload behaviour.
+  podSelector:
+    matchLabels:
+      eel.io/ueba-monitored: "true"
+  kprobes:
+    - call: "__x64_sys_execve"
+      syscall: true
+      args:
+        - index: 0
+          type: string
+      selectors:
+        - matchPIDs:
+            - operator: NotIn
+              isNamespacePID: true
+              values: [1]
+          matchActions:
+            - action: Sigkill
+          matchBinaries:
+            - operator: NotIn
+              values: []   # populated at runtime from learned profile
+      # Tetragon exports matched events as JSON to stdout; the Loki
+      # agent scrapes them under {job="tetragon"}.
+      tags: [eel, ueba, syscall-drift, pod]
+  # priority expressed as Kubernetes event severity annotation
+  annotations:
+    eel.io/severity: WARNING
+    eel.io/rule: eel_syscall_drift

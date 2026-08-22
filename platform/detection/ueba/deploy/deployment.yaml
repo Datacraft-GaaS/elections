@@ -1,0 +1,104 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: eel-ueba-sa
+  namespace: eel-system
+  labels:
+    app.kubernetes.io/name: eel-ueba
+    app.kubernetes.io/part-of: eel-platform
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eel-ueba-worker
+  namespace: eel-system
+  labels:
+    app.kubernetes.io/name: eel-ueba
+spec:
+  selector:
+    app.kubernetes.io/name: eel-ueba
+  ports:
+    - name: health
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eel-ueba-worker
+  namespace: eel-system
+  labels:
+    app.kubernetes.io/name: eel-ueba
+    app.kubernetes.io/part-of: eel-platform
+    app.kubernetes.io/component: ueba-worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: eel-ueba
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: eel-ueba
+        eel.io/ueba-monitored: "true"
+    spec:
+      serviceAccountName: eel-ueba-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: ueba-worker
+          image: registry.internal/eel/ueba-worker:latest
+          imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: eel-ueba-secrets
+          env:
+            - name: EEL_UEBA_CONFIG
+              value: /etc/eel/ueba-config.yaml
+          volumeMounts:
+            - name: config
+              mountPath: /etc/eel
+              readOnly: true
+          ports:
+            - name: health
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+      volumes:
+        - name: config
+          configMap:
+            name: eel-ueba-config
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30

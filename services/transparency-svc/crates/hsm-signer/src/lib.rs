@@ -7,6 +7,7 @@
 //! Trust domain: `spiffe://eel.local/service/hsm-signer`.
 
 pub mod ceremony;
+pub mod keg_rotation_4of7;
 pub mod metrics;
 pub mod pool;
 pub mod rate;

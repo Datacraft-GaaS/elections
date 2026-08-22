@@ -1,0 +1,56 @@
+# Reproduce-Challenge Verification Report
+
+## Summary
+
+{{RESULT}}
+
+Result: **{{RESULT}}**
+
+Verified at: `{{TIMESTAMP}}`
+
+---
+
+## Submission Metadata
+
+| Field | Value |
+|---|---|
+| Team ID | `{{TEAM_ID}}` |
+| Verification day | `{{DAY}}` |
+| Submission SHA-256 | `{{SUBMISSION_SHA256}}` |
+| Verified at | `{{TIMESTAMP}}` |
+
+---
+
+## SHA-256 Comparison
+
+| Bundle | SHA-256 |
+|---|---|
+| Submission tarball | `{{SUBMISSION_SHA256}}` |
+| Reference bundle | `{{REFERENCE_SHA256}}` |
+
+---
+
+## Diff Output
+
+```diff
+{{DIFF_OUTPUT}}
+```
+
+---
+
+## Verification Methodology
+
+1. The submission tarball is extracted to an isolated working directory.
+2. `manifest.json` is required at the tarball root; absence causes immediate rejection (exit 2).
+3. Each file listed in `manifest.json` is hashed with SHA-256 and compared against the declared value; mismatch causes rejection (exit 3).
+4. A recursive `diff -rq` is run between the extracted submission directory and the extracted reference bundle directory.
+5. Any diff output causes a FAIL result (exit 1). An empty diff causes a PASS result (exit 0).
+6. This report is rendered from `diff-report-template.md.tmpl` via sed substitution and written to the output directory.
+
+The verification script (`verify-submission.sh`) is open source and reproducible. Its own SHA-256 is recorded in the pipeline audit log.
+
+---
+
+## Contact
+
+To dispute a result or report a verification bug, open a GitHub issue tagged `reproduce-challenge` in the eel repository. Include your `submission_id` and the content of this report.

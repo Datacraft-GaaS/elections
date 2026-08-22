@@ -1,0 +1,21 @@
+- rule: eel_mass_download_alert
+  desc: >
+    Detects any principal that downloads more than 10,000 records in a
+    single query or in a series of queries within a 5-minute sliding
+    window. This threshold covers bulk export attacks and credential
+    harvesting at scale.
+  condition: >
+    evt.type = query
+    and (
+      eel.query.row_count > 10000
+      or eel.ueba.window_row_count[5m] > 10000
+    )
+    and user.name != "<NA>"
+  output: >
+    Mass download detected
+    (user=%user.name row_count=%eel.query.row_count
+     window_row_count_5m=%eel.ueba.window_row_count[5m]
+     query_digest=%eel.query.digest fd=%fd.name time=%evt.time)
+  priority: CRITICAL
+  tags: [eel, ueba, mass-download, data-exfiltration]
+  source: syscall
