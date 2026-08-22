@@ -45,8 +45,16 @@ The harnesses are complete and dry-run green. Actual live executions require inf
 
 Every harness runs identically once the CI runners provide those environments; no code changes needed.
 
+## Re-baselined 2026-08-22
+
+The prior closing line overstated verified coverage. Harness delivery is real and dry-run green, but the live completeness audit now actually runs against the real TRACEABILITY (the trace harness was fixed 2026-08-22 to parse the `rows:`/`requirements:` schemas) and reports the true, measured state:
+
+- `eel-completeness trace` on docs/plans/TRACEABILITY.yaml: 4,444 requirement rows, of which only a handful have a real tagged test at re-baseline time; the rest are genuine gaps, each needing a test to be written or an existing test to be grounded-tagged. The prior "118/118 edge-case rows" figure was dry-run fixture coverage, not verified test coverage.
+- The 363 `openapi_unbound_path` warnings are honest contract-first specs; bindings are added only where a real handler exists (20 for ecc/IAB/grievance now bound), never fabricated to stub handlers.
+- Verified coverage is climbing via evidence-grounded tagging, but closing all 4,4xx gaps is a continuing program requiring tests to be written for uncovered requirements, not a one-session state.
+
 ## Signed off
 
-opus (coordinator), 2026-08-21.
+opus (coordinator), 2026-08-21. Re-baselined 2026-08-22 against the now-working completeness audit.
 
-All 7 waves (0-6) complete. 69/69 modules built, 118/118 edge-case rows have harnessed coverage, and the final tlog attestation flow is wired end-to-end via verification/completeness/steps/9.9-report.py. Ready for IEBC OIT + IAB + legal review during pre-prod stand-up.
+All 7 waves (0-6) delivered their harnesses and are dry-run green; the final tlog attestation flow is wired via verification/completeness/steps/9.9-report.py. Verified module coverage is partial and tracked by `docs/audit/traceability-report.md`; live execution and full traceability closure are scheduled for CI/pre-prod and the ongoing coverage program.
