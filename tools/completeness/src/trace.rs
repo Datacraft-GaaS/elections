@@ -41,6 +41,11 @@ const SKIP_DIRS: &[&str] = &[
     ".elixir_ls",
     "deps",
     ".dart_tool",
+    // Tooling and the verification harness carry the annotation syntax in
+    // comments/docs and dry-run fixtures; they are not service test suites, so
+    // scanning them pollutes the coverage map with false orphaned IDs.
+    "tools",
+    "verification",
 ];
 
 pub fn run(root: &Path, traceability_path: &Path, fail_on_gap: bool) -> Result<i32> {
