@@ -8,6 +8,7 @@ import io
 import json
 import os
 import tarfile
+from collections.abc import Callable
 from datetime import datetime, timezone
 
 import httpx
@@ -25,22 +26,41 @@ except ImportError:
     pass
 
 
-def _pgp_sign_stub(data: bytes) -> bytes:
-    """Stub PGP signature: returns a clearly-marked placeholder."""
+def _pgp_sign(data: bytes) -> bytes:
+    """Detached PGP signature over `data` using the configured GnuPG key.
+
+    Requires `python-gnupg` and a keyring with a signing key. Raises a clear
+    error when signing is unavailable: a placeholder signature would look
+    signed while being worthless, so the bundle must not be built without a
+    real signature.
+    """
     if not _gnupg_available[0]:
-        # Return a placeholder signature block so the tar.gz can always be built.
-        return (
-            b"-----BEGIN PGP SIGNATURE-----\n"
-            b"(stub: gnupg not installed; install python-gnupg for real signatures)\n"
-            b"-----END PGP SIGNATURE-----\n"
+        raise RuntimeError(
+            "PGP signing unavailable: install python-gnupg and configure a keyring"
         )
-    raise NotImplementedError(
-        "full PGP sign not yet wired; install python-gnupg and configure key"
-    )
+    import gnupg  # type: ignore[import-untyped]
+
+    gpg = gnupg.GPG()
+    key_id = os.environ.get("EEL_KBC_PGP_KEY_ID", "")
+    if not key_id:
+        raise RuntimeError("EEL_KBC_PGP_KEY_ID not set; cannot select signing key")
+    signed = gpg.sign(data, keyid=key_id, detach=True, armor=True)
+    if not signed or not signed.data:
+        raise RuntimeError(
+            f"PGP signing failed: {signed.stderr or 'no signature produced'}"
+        )
+    return signed.data
 
 
-def build_bundle(req: DeliveryRequest, artifact_bytes: bytes) -> tuple[bytes, str]:
+def build_bundle(
+    req: DeliveryRequest,
+    artifact_bytes: bytes,
+    signer: Callable[[bytes], bytes] = _pgp_sign,
+) -> tuple[bytes, str]:
     """Bundle artifact + manifest + PGP sig into a gzipped tar archive.
+
+    `signer` is injectable for hermetic tests; production uses real PGP
+    signing via `_pgp_sign`.
 
     Returns (bundle_bytes, bundle_sha256_hex).
     """
@@ -53,7 +73,7 @@ def build_bundle(req: DeliveryRequest, artifact_bytes: bytes) -> tuple[bytes, st
         "system": "eel-abis",
     }
     manifest_bytes = json.dumps(manifest, indent=2).encode()
-    sig_bytes = _pgp_sign_stub(artifact_bytes)
+    sig_bytes = signer(artifact_bytes)
 
     buf = io.BytesIO()
     with tarfile.open(fileobj=buf, mode="w:gz") as tar:

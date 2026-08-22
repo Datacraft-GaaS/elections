@@ -8,7 +8,7 @@ import tarfile
 
 import pytest
 
-from eel_report_deliverers.kbc_sftp import _build_filename, _pgp_sign_stub, build_bundle
+from eel_report_deliverers.kbc_sftp import _build_filename, _pgp_sign, build_bundle
 from eel_report_deliverers.models import DeliveryRequest
 
 
@@ -22,10 +22,14 @@ def make_req() -> DeliveryRequest:
     )
 
 
+def _fake_signer(data: bytes) -> bytes:
+    return b"-----BEGIN PGP SIGNATURE-----\nFAKE-SIG\n-----END PGP SIGNATURE-----\n"
+
+
 def test_build_bundle_roundtrip() -> None:
     req = make_req()
     artifact_bytes = b"fake pdf content for testing"
-    bundle_bytes, sha256_hex = build_bundle(req, artifact_bytes)
+    bundle_bytes, sha256_hex = build_bundle(req, artifact_bytes, signer=_fake_signer)
 
     # Verify the bundle is a valid gzipped tar.
     buf = io.BytesIO(bundle_bytes)
@@ -40,7 +44,7 @@ def test_build_bundle_roundtrip() -> None:
 def test_build_bundle_sha256_matches() -> None:
     req = make_req()
     artifact_bytes = b"report bytes"
-    bundle_bytes, sha256_hex = build_bundle(req, artifact_bytes)
+    bundle_bytes, sha256_hex = build_bundle(req, artifact_bytes, signer=_fake_signer)
     expected = hashlib.sha256(bundle_bytes).hexdigest()
     assert sha256_hex == expected
 
@@ -50,7 +54,7 @@ def test_build_bundle_manifest_contains_artifact_id() -> None:
 
     req = make_req()
     artifact_bytes = b"content"
-    bundle_bytes, _ = build_bundle(req, artifact_bytes)
+    bundle_bytes, _ = build_bundle(req, artifact_bytes, signer=_fake_signer)
 
     buf = io.BytesIO(bundle_bytes)
     with tarfile.open(fileobj=buf, mode="r:gz") as tar:
@@ -62,9 +66,11 @@ def test_build_bundle_manifest_contains_artifact_id() -> None:
     assert manifest["format"] == req.format
 
 
-def test_pgp_sign_stub_returns_placeholder() -> None:
-    sig = _pgp_sign_stub(b"data")
-    assert b"PGP SIGNATURE" in sig
+def test_pgp_sign_requires_gnupg() -> None:
+    # Without python-gnupg installed (or a configured key), signing must fail
+    # loudly rather than emit a worthless placeholder signature.
+    with pytest.raises(RuntimeError):
+        _pgp_sign(b"data")
 
 
 def test_build_filename_convention() -> None:

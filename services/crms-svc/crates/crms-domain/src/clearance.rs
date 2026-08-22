@@ -78,3 +78,46 @@ pub async fn eacc_advisory_check(id_number_hash: &str) -> Result<ClearanceVerdic
     let _ = id_number_hash;
     Ok(ClearanceVerdict::Cleared)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use eel_trace_rs::trace;
+
+    fn decision(verdict: ClearanceVerdict, reason: Option<String>) -> ClearanceDecision {
+        ClearanceDecision::new(
+            Uuid::new_v4(),
+            ClearanceSource::Ro,
+            verdict,
+            None,
+            "officer-1".into(),
+            reason,
+        )
+    }
+
+    #[trace("FR-M12-005")]
+    #[test]
+    fn manual_override_without_reason_is_rejected() {
+        let d = decision(ClearanceVerdict::ManualOverride, None);
+        assert!(d.validate().is_err());
+    }
+
+    #[trace("FR-M12-005")]
+    #[test]
+    fn manual_override_with_reason_is_accepted() {
+        let d = decision(
+            ClearanceVerdict::ManualOverride,
+            Some("KRA unavailable; verified via gazette".into()),
+        );
+        assert!(d.validate().is_ok());
+    }
+
+    #[trace("FR-M12-006")]
+    #[test]
+    fn cleared_and_rejected_need_no_reason() {
+        for verdict in [ClearanceVerdict::Cleared, ClearanceVerdict::Rejected] {
+            let d = decision(verdict, None);
+            assert!(d.validate().is_ok());
+        }
+    }
+}
