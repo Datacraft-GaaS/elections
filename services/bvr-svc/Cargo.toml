@@ -45,6 +45,9 @@ serde_json      = { version = "1" }
 # IDs
 uuid            = { version = "1", features = ["v4", "v7", "serde"] }
 
+# Text normalization (BVR NFC name/ID normalization)
+unicode-normalization = { version = "0.1" }
+
 # Error handling
 thiserror       = { version = "2" }
 anyhow          = { version = "1" }

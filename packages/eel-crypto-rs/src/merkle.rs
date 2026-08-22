@@ -196,6 +196,65 @@ impl MerkleTree {
         }
     }
 
+    /// Verify an inclusion proof against a known root hash, without holding
+    /// the full tree. Used by verifiers that only possess a signed tree head.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CryptoError::InvalidMerkleProof`] if the proof does not
+    /// recompute to `root`.
+    pub fn verify_inclusion_against_root(
+        root: &Hash,
+        index: usize,
+        tree_size: usize,
+        data: &[u8],
+        proof: &[Hash],
+    ) -> Result<(), CryptoError> {
+        if index >= tree_size {
+            return Err(CryptoError::InvalidMerkleProof(format!(
+                "index {index} out of range"
+            )));
+        }
+        let computed = recompute_root(index, tree_size, data, proof)?;
+        if crate::constant_time::ct_eq(&computed, root) {
+            Ok(())
+        } else {
+            Err(CryptoError::InvalidMerkleProof(
+                "root hash mismatch".to_owned(),
+            ))
+        }
+    }
+
+    /// Verify an inclusion proof against a known root hash, starting from a
+    /// pre-computed leaf hash. Used by verifiers that hold the leaf hash
+    /// (e.g. a transparency-log inclusion proof) rather than the raw data.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CryptoError::InvalidMerkleProof`] if the proof does not
+    /// recompute to `root`.
+    pub fn verify_inclusion_against_root_leaf(
+        root: &Hash,
+        index: usize,
+        tree_size: usize,
+        leaf: &Hash,
+        proof: &[Hash],
+    ) -> Result<(), CryptoError> {
+        if index >= tree_size {
+            return Err(CryptoError::InvalidMerkleProof(format!(
+                "index {index} out of range"
+            )));
+        }
+        let computed = recompute_root_from_leaf(index, tree_size, *leaf, proof)?;
+        if crate::constant_time::ct_eq(&computed, root) {
+            Ok(())
+        } else {
+            Err(CryptoError::InvalidMerkleProof(
+                "root hash mismatch".to_owned(),
+            ))
+        }
+    }
+
     /// Generate a consistency proof between a tree of `old_size` leaves and
     /// this tree.
     ///
@@ -329,7 +388,18 @@ fn recompute_root(
     data: &[u8],
     proof: &[Hash],
 ) -> Result<Hash, CryptoError> {
-    let mut current = leaf_hash(data);
+    recompute_root_from_leaf(index, tree_size, leaf_hash(data), proof)
+}
+
+/// Recompute the root from an inclusion proof, starting from a pre-computed
+/// leaf hash (used by verifiers that hold the leaf hash, not the raw data).
+fn recompute_root_from_leaf(
+    index: usize,
+    tree_size: usize,
+    leaf: Hash,
+    proof: &[Hash],
+) -> Result<Hash, CryptoError> {
+    let mut current = leaf;
 
     // Build the sequence of (subtree_size, is_right_child) from root down to leaf.
     // is_right_child == true means the target sits in the RIGHT subtree at that level.

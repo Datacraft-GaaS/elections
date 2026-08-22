@@ -33,6 +33,7 @@ tracing-subscriber = { workspace = true }
 utoipa            = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
 reqwest           = { workspace = true }
+unicode-normalization = { workspace = true }
 
 [dev-dependencies]
 rstest        = { workspace = true }
