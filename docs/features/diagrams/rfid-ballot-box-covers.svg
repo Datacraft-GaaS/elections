@@ -1,0 +1,275 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="rfid-title rfid-desc">
+  <title id="rfid-title">RFID Ballot Box Cover Tags — Architecture Diagram</title>
+  <desc id="rfid-desc">Full lifecycle from Manufacturer through Printer (M39), Warehouse Gate, Transit Gate, Station Kit, RO Desktop (M09), Archive Gate to DESTROYED after 15 years. Shows HSM lock icons at issuance, pairing, and every state transition. Shows Merkle anchor to P05 transparency log. Shows tamper detection path to ECC dispatch (M16) and LiveView alert. Legend bottom-right with shape vocabulary.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#444"/>
+    </marker>
+    <marker id="arrow-red" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#c0392b"/>
+    </marker>
+    <marker id="arrow-purple" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#8e44ad"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="800" fill="#f8f9fa"/>
+
+  <!-- Title -->
+  <text x="600" y="30" font-family="Arial,sans-serif" font-size="20" font-weight="bold" text-anchor="middle" fill="#111">RFID Ballot Box Cover Tags</text>
+  <text x="600" y="50" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#555">Lifecycle pipeline, HSM anchoring, tamper detection, and ECC dispatch</text>
+
+  <!-- ========== PIPELINE ROW (y=90 to y=170) ========== -->
+
+  <!-- Manufacturer persona -->
+  <circle cx="55" cy="110" r="16" fill="#8e44ad"/>
+  <text x="55" y="136" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#333">Manufacturer</text>
+
+  <!-- Printer (M39) gate box -->
+  <rect x="90" y="88" width="110" height="50" rx="6" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="145" y="108" font-family="Arial,sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#1f77b4">Printer (M39)</text>
+  <text x="145" y="124" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">Tag print + pair</text>
+  <text x="145" y="136" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="#555">warehouse_gate</text>
+  <!-- HSM icon -->
+  <rect x="186" y="88" width="14" height="14" rx="2" fill="#8e44ad"/>
+  <text x="193" y="99" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="white">H</text>
+
+  <line x1="71" y1="110" x2="90" y2="110" stroke="#444" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Warehouse Gate -->
+  <rect x="218" y="88" width="110" height="50" rx="6" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="273" y="108" font-family="Arial,sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#2ca02c">Warehouse Gate</text>
+  <text x="273" y="124" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">MANUFACTURED</text>
+  <text x="273" y="136" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="#555">Impinj Speedway R700</text>
+  <rect x="314" y="88" width="14" height="14" rx="2" fill="#8e44ad"/>
+  <text x="321" y="99" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="white">H</text>
+  <line x1="200" y1="113" x2="218" y2="113" stroke="#444" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Transit Gate -->
+  <rect x="346" y="88" width="110" height="50" rx="6" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2"/>
+  <text x="401" y="108" font-family="Arial,sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#ff7f0e">Transit Gate</text>
+  <text x="401" y="124" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">DISPATCHED/IN_TRANSIT</text>
+  <text x="401" y="136" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="#555">transit_checkpoint</text>
+  <rect x="442" y="88" width="14" height="14" rx="2" fill="#8e44ad"/>
+  <text x="449" y="99" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="white">H</text>
+  <line x1="328" y1="113" x2="346" y2="113" stroke="#444" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Station Kit handheld -->
+  <rect x="474" y="88" width="110" height="50" rx="6" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="529" y="108" font-family="Arial,sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#9467bd">Station Kit</text>
+  <text x="529" y="124" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">STATION_RECEIVED</text>
+  <text x="529" y="136" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="#555">kit_handheld + dual-officer</text>
+  <rect x="570" y="88" width="14" height="14" rx="2" fill="#8e44ad"/>
+  <text x="577" y="99" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="white">H</text>
+  <line x1="456" y1="113" x2="474" y2="113" stroke="#444" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- RO Desktop (M09) -->
+  <rect x="602" y="88" width="110" height="50" rx="6" fill="#fce7f3" stroke="#d63384" stroke-width="2"/>
+  <text x="657" y="108" font-family="Arial,sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#d63384">RO Desktop (M09)</text>
+  <text x="657" y="124" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">COUNT_COMPLETE</text>
+  <text x="657" y="136" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="#555">ro_desktop, 34C compile</text>
+  <rect x="698" y="88" width="14" height="14" rx="2" fill="#8e44ad"/>
+  <text x="705" y="99" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="white">H</text>
+  <line x1="584" y1="113" x2="602" y2="113" stroke="#444" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Archive Gate -->
+  <rect x="730" y="88" width="110" height="50" rx="6" fill="#e8f8e8" stroke="#2ca02c" stroke-width="2"/>
+  <text x="785" y="108" font-family="Arial,sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#2ca02c">Archive Gate</text>
+  <text x="785" y="124" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">STORAGE_ARCHIVE</text>
+  <text x="785" y="136" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="#555">archive_gate</text>
+  <rect x="826" y="88" width="14" height="14" rx="2" fill="#8e44ad"/>
+  <text x="833" y="99" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="white">H</text>
+  <line x1="712" y1="113" x2="730" y2="113" stroke="#444" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- DESTROYED -->
+  <rect x="858" y="88" width="100" height="50" rx="6" fill="#fde8e8" stroke="#c0392b" stroke-width="2"/>
+  <text x="908" y="110" font-family="Arial,sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#c0392b">DESTROYED</text>
+  <text x="908" y="126" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="#555">After 15y retention</text>
+  <text x="908" y="136" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="#555">Commissioner + HSM</text>
+  <line x1="840" y1="113" x2="858" y2="113" stroke="#c0392b" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+
+  <!-- ========== DATA PLANE ROW (y=200 to y=290) ========== -->
+  <text x="50" y="195" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#333">Data plane (V051)</text>
+
+  <!-- eel_rfid_cover_tags DB -->
+  <rect x="50" y="205" width="170" height="65" rx="6" fill="#f0f0f0" stroke="#555" stroke-width="1.5"/>
+  <text x="135" y="223" font-family="Arial,sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#333">eel_rfid_cover_tags</text>
+  <text x="135" y="239" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#555">EPC + chip_family + tamper_state</text>
+  <text x="135" y="253" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#555">paired_with_box + hsm_key_ref</text>
+  <text x="135" y="266" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="#777">Rust migration V051 (managed=False)</text>
+
+  <!-- eel_rfid_cover_reads DB -->
+  <rect x="235" y="205" width="170" height="65" rx="6" fill="#f0f0f0" stroke="#555" stroke-width="1.5"/>
+  <text x="320" y="223" font-family="Arial,sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#333">eel_rfid_cover_reads</text>
+  <text x="320" y="239" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#555">challenge_nonce + response</text>
+  <text x="320" y="253" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#555">challenge_valid + tamper_indicator</text>
+  <text x="320" y="266" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="#777">reader_signature (SVID)</text>
+
+  <!-- eel_cover_state_transitions DB -->
+  <rect x="420" y="205" width="185" height="65" rx="6" fill="#f0f0f0" stroke="#555" stroke-width="1.5"/>
+  <text x="512" y="223" font-family="Arial,sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#333">eel_cover_state_transitions</text>
+  <text x="512" y="239" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#555">from_state + to_state + officer_id</text>
+  <text x="512" y="253" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#555">prev_hash + this_hash (chain)</text>
+  <text x="512" y="266" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="#777">append-only PG trigger + HSM sig</text>
+
+  <!-- eel_cover_tamper_alerts DB -->
+  <rect x="620" y="205" width="170" height="65" rx="6" fill="#f0f0f0" stroke="#555" stroke-width="1.5"/>
+  <text x="705" y="223" font-family="Arial,sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#333">eel_cover_tamper_alerts</text>
+  <text x="705" y="239" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#555">severity + detected_at + geo</text>
+  <text x="705" y="253" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#555">ecc_dispatched + resolved_at</text>
+  <text x="705" y="266" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="#777">append-only trigger</text>
+
+  <!-- DB arrows from pipeline -->
+  <line x1="145" y1="138" x2="135" y2="205" stroke="#999" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arrow)"/>
+  <line x1="273" y1="138" x2="320" y2="205" stroke="#999" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arrow)"/>
+  <line x1="529" y1="138" x2="512" y2="205" stroke="#999" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arrow)"/>
+  <line x1="657" y1="138" x2="705" y2="205" stroke="#999" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arrow)"/>
+
+  <!-- ========== INTEGRITY LAYER (y=315 to y=405) ========== -->
+  <text x="50" y="310" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#333">Integrity + anchoring</text>
+
+  <!-- HSM issuance box -->
+  <rect x="50" y="320" width="150" height="70" rx="6" fill="#f3e8ff" stroke="#8e44ad" stroke-width="2"/>
+  <rect x="178" y="320" width="22" height="22" rx="3" fill="#8e44ad"/>
+  <text x="189" y="335" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="white">HSM</text>
+  <text x="120" y="340" font-family="Arial,sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#8e44ad">HSM</text>
+  <text x="120" y="356" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">Per-tag HMAC secret</text>
+  <text x="120" y="370" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">Officer transition sig</text>
+  <text x="120" y="384" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="#555">Reader SVID sig</text>
+
+  <!-- HMAC challenge flow -->
+  <rect x="220" y="320" width="165" height="70" rx="6" fill="#fff8e1" stroke="#ff7f0e" stroke-width="2"/>
+  <text x="303" y="340" font-family="Arial,sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#ff7f0e">HMAC Challenge</text>
+  <text x="303" y="356" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">Reader sends 16-byte nonce</text>
+  <text x="303" y="370" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">Tag responds HMAC-SHA256</text>
+  <text x="303" y="384" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="#555">Anti-clone, anti-replay (5 min)</text>
+  <line x1="200" y1="355" x2="220" y2="355" stroke="#ff7f0e" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Merkle anchor -->
+  <rect x="405" y="320" width="165" height="70" rx="6" fill="#e8f8e8" stroke="#2ca02c" stroke-width="2"/>
+  <text x="488" y="340" font-family="Arial,sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#2ca02c">Merkle Anchor (P05)</text>
+  <text x="488" y="356" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">eel_cover_state_transitions</text>
+  <text x="488" y="370" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">batched to transparency log</text>
+  <text x="488" y="384" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="#555">Inclusion proof via M40</text>
+  <line x1="512" y1="270" x2="488" y2="320" stroke="#2ca02c" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+
+  <!-- Anti-lift physical -->
+  <rect x="590" y="320" width="165" height="70" rx="6" fill="#fde8e8" stroke="#c0392b" stroke-width="2"/>
+  <text x="673" y="340" font-family="Arial,sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#c0392b">Anti-lift Tag</text>
+  <text x="673" y="356" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">Antenna breaks on cover lift</text>
+  <text x="673" y="370" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">tamper_indicator=true</text>
+  <text x="673" y="384" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="#555">Cover-swap: EPC mismatch</text>
+
+  <!-- ========== TAMPER PATH (y=430 to y=530) ========== -->
+  <text x="50" y="425" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#c0392b">Tamper detection path</text>
+
+  <!-- rfid-cover-custody crate -->
+  <rect x="50" y="435" width="160" height="60" rx="6" fill="#ffe8e8" stroke="#c0392b" stroke-width="2"/>
+  <text x="130" y="455" font-family="Arial,sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#c0392b">rfid-cover-custody</text>
+  <text x="130" y="470" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">Rust crate: tamper_alert.rs</text>
+  <text x="130" y="484" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="#555">cover_lift detected at read</text>
+  <line x1="673" y1="390" x2="340" y2="455" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow-red)"/>
+  <line x1="210" y1="465" x2="230" y2="465" stroke="#c0392b" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+
+  <!-- eel_cover_tamper_alerts event -->
+  <rect x="230" y="435" width="155" height="60" rx="6" fill="#fff0f0" stroke="#c0392b" stroke-width="1.5"/>
+  <text x="308" y="455" font-family="Arial,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#c0392b">cover_tamper_alert.v1</text>
+  <text x="308" y="470" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">Kafka topic: eel.inventory</text>
+  <text x="308" y="484" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="#555">severity + geo + expected/observed</text>
+  <line x1="385" y1="465" x2="405" y2="465" stroke="#c0392b" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+
+  <!-- ECC dispatch (M16) -->
+  <rect x="405" y="435" width="155" height="60" rx="6" fill="#ffe8e8" stroke="#c0392b" stroke-width="2"/>
+  <text x="483" y="455" font-family="Arial,sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#c0392b">ECC Dispatch (M16)</text>
+  <text x="483" y="470" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">PubSub: eel:inventory:cover_tamper</text>
+  <text x="483" y="484" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="#555">officer + geo + severity</text>
+  <line x1="560" y1="465" x2="580" y2="465" stroke="#c0392b" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+
+  <!-- LiveView alert panel -->
+  <rect x="580" y="435" width="165" height="60" rx="6" fill="#fce7f3" stroke="#d63384" stroke-width="2"/>
+  <text x="663" y="455" font-family="Arial,sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#d63384">ECC LiveView</text>
+  <text x="663" y="470" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">cover_tamper_live.ex</text>
+  <text x="663" y="484" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="#555">Real-time alert + resolve + history</text>
+
+  <!-- ========== HUMAN SURFACES (y=555 to y=640) ========== -->
+  <text x="50" y="550" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#333">Human surfaces</text>
+
+  <!-- Django admin -->
+  <rect x="50" y="558" width="165" height="65" rx="6" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="133" y="576" font-family="Arial,sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#1f77b4">Django Admin</text>
+  <text x="133" y="592" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">rfid_covers app</text>
+  <text x="133" y="606" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">box_chain + tamper_triage</text>
+  <text x="133" y="618" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="#555">reader_health (HTMX)</text>
+
+  <!-- Flutter custody-mobile -->
+  <rect x="235" y="558" width="165" height="65" rx="6" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="318" y="576" font-family="Arial,sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#2ca02c">custody-mobile</text>
+  <text x="318" y="592" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">rfid_scan.dart (Flutter)</text>
+  <text x="318" y="606" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">BLE reader + offline queue</text>
+  <text x="318" y="618" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="#555">Duress long-press + officer sig</text>
+
+  <!-- ECC LiveView surface (repeated reference) -->
+  <rect x="420" y="558" width="165" height="65" rx="6" fill="#fce7f3" stroke="#d63384" stroke-width="2"/>
+  <text x="503" y="576" font-family="Arial,sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#d63384">ECC LiveView</text>
+  <text x="503" y="592" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">/cover-tamper (Phoenix LV)</text>
+  <text x="503" y="606" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">Real-time 15s auto-refresh</text>
+  <text x="503" y="618" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="#555">WCAG AA/AAA severity badges</text>
+
+  <!-- Court posture box -->
+  <rect x="605" y="558" width="165" height="65" rx="6" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="688" y="576" font-family="Arial,sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#9467bd">Court posture (SCoK)</text>
+  <text x="688" y="592" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">Full chain HSM-signed</text>
+  <text x="688" y="606" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="#333">Merkle inclusion proof M40</text>
+  <text x="688" y="618" font-family="Arial,sans-serif" font-size="9" text-anchor="middle" fill="#555">Reg 17 custody chain req.</text>
+
+  <!-- ========== LEGEND (bottom-right) ========== -->
+  <rect x="800" y="400" width="380" height="370" rx="6" fill="#fff" stroke="#aaa" stroke-width="1"/>
+  <text x="990" y="422" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Legend</text>
+
+  <!-- Reader gate -->
+  <rect x="820" y="435" width="40" height="22" rx="3" fill="#dcfce7" stroke="#2ca02c" stroke-width="1.5"/>
+  <text x="870" y="450" font-family="Arial,sans-serif" font-size="11" fill="#333">Reader gate (fixed, Impinj)</text>
+
+  <!-- Handheld -->
+  <rect x="820" y="465" width="40" height="22" rx="3" fill="#ede9fe" stroke="#9467bd" stroke-width="1.5"/>
+  <text x="870" y="480" font-family="Arial,sans-serif" font-size="11" fill="#333">Handheld / Kit (BLE/USB-OTG)</text>
+
+  <!-- Kit/service -->
+  <rect x="820" y="495" width="40" height="22" rx="3" fill="#fce7f3" stroke="#d63384" stroke-width="1.5"/>
+  <text x="870" y="510" font-family="Arial,sans-serif" font-size="11" fill="#333">Service / LiveView</text>
+
+  <!-- DB -->
+  <rect x="820" y="525" width="40" height="22" rx="3" fill="#f0f0f0" stroke="#555" stroke-width="1.5"/>
+  <text x="870" y="540" font-family="Arial,sans-serif" font-size="11" fill="#333">Database table</text>
+
+  <!-- Event -->
+  <rect x="820" y="555" width="40" height="22" rx="3" fill="#fff0f0" stroke="#c0392b" stroke-width="1.5"/>
+  <text x="870" y="570" font-family="Arial,sans-serif" font-size="11" fill="#333">Event / Kafka topic</text>
+
+  <!-- HSM -->
+  <rect x="820" y="585" width="22" height="22" rx="3" fill="#8e44ad"/>
+  <text x="831" y="600" font-family="Arial,sans-serif" font-size="10" text-anchor="middle" fill="white">H</text>
+  <text x="870" y="600" font-family="Arial,sans-serif" font-size="11" fill="#333">HSM signature anchor</text>
+
+  <!-- Human persona -->
+  <circle cx="840" cy="626" r="10" fill="#8e44ad"/>
+  <text x="870" y="630" font-family="Arial,sans-serif" font-size="11" fill="#333">Human persona</text>
+
+  <!-- Solid arrow -->
+  <line x1="820" y1="656" x2="858" y2="656" stroke="#444" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="870" y="660" font-family="Arial,sans-serif" font-size="11" fill="#333">Mandatory transition</text>
+
+  <!-- Dashed arrow -->
+  <line x1="820" y1="680" x2="858" y2="680" stroke="#999" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+  <text x="870" y="684" font-family="Arial,sans-serif" font-size="11" fill="#333">Data feed (async)</text>
+
+  <!-- Red arrow -->
+  <line x1="820" y1="704" x2="858" y2="704" stroke="#c0392b" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+  <text x="870" y="708" font-family="Arial,sans-serif" font-size="11" fill="#333">Tamper alert path</text>
+
+  <!-- Colour palette note (colour-blind safe) -->
+  <text x="820" y="735" font-family="Arial,sans-serif" font-size="9" fill="#555">Palette: blue (reader), orange (transit),</text>
+  <text x="820" y="748" font-family="Arial,sans-serif" font-size="9" fill="#555">green (store/verify), red (tamper/destroy),</text>
+  <text x="820" y="761" font-family="Arial,sans-serif" font-size="9" fill="#555">purple (HSM/persona), gray (DB)</text>
+</svg>

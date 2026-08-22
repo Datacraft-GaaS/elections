@@ -1,0 +1,48 @@
+{% extends "admin/base_site.html" %}
+{% block title %}Reader Health — RFID Cover Tags{% endblock %}
+
+{% block content %}
+<div class="rfid-reader-health" role="main">
+  <h1>RFID reader health</h1>
+  <p>Last updated: <time datetime="{{ now|date:'c' }}">{{ now }}</time></p>
+
+  {% if reader_stats %}
+    <table role="grid" aria-label="Reader health table" style="width:100%;border-collapse:collapse">
+      <thead>
+        <tr>
+          <th scope="col">Reader serial</th>
+          <th scope="col">Type</th>
+          <th scope="col">Tag reads (total)</th>
+          <th scope="col">Last read</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in reader_stats %}
+        <tr>
+          <td>{{ r.reader_serial }}</td>
+          <td>{{ r.reader_type }}</td>
+          <td>{{ r.tag_count }}</td>
+          <td>
+            {% if r.last_read %}
+              <time datetime="{{ r.last_read|date:'c' }}">{{ r.last_read }}</time>
+            {% else %}
+              <span style="color:#888">Never</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if r.last_read %}
+              <span style="color:#27ae60" aria-label="Online">&#10003; Online</span>
+            {% else %}
+              <span style="color:#c0392b" aria-label="No reads">&#9888; No reads</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No reader data available.</p>
+  {% endif %}
+</div>
+{% endblock %}

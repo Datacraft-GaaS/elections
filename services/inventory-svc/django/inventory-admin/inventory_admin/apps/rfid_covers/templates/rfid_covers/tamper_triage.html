@@ -1,0 +1,66 @@
+{% extends "admin/base_site.html" %}
+{% block title %}Tamper Triage — RFID Cover Tags{% endblock %}
+
+{% block content %}
+<div class="rfid-triage" role="main">
+  <h1>Cover tamper triage</h1>
+
+  <form method="get" action="" aria-label="Filter alerts">
+    <label for="id_severity">Severity</label>
+    <select id="id_severity" name="severity">
+      <option value="">All</option>
+      {% for val, label in severity_choices %}
+        <option value="{{ val }}" {% if val == selected_severity %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">Filter</button>
+  </form>
+
+  <p role="status" aria-live="polite">
+    {{ alerts|length }} pending alert{{ alerts|length|pluralize }}.
+  </p>
+
+  {% if alerts %}
+    {% for alert in alerts %}
+    <article
+      class="alert-card severity-{{ alert.severity }}"
+      aria-labelledby="alert-{{ alert.alert_id }}-heading"
+      style="border-left: 6px solid {% if alert.severity == 'critical' %}#c0392b{% elif alert.severity == 'high' %}#e67e22{% elif alert.severity == 'medium' %}#f1c40f{% else %}#2980b9{% endif %};padding:12px;margin-bottom:12px"
+    >
+      <h2 id="alert-{{ alert.alert_id }}-heading" style="font-size:1.1em;margin:0 0 6px">
+        <span
+          aria-label="Severity {{ alert.get_severity_display }}"
+          title="{{ alert.get_severity_display }}"
+          style="font-weight:bold;text-transform:uppercase">
+          {% if alert.severity == 'critical' %}&#9632;{% elif alert.severity == 'high' %}&#9650;{% elif alert.severity == 'medium' %}&#9679;{% else %}&#9670;{% endif %}
+          {{ alert.get_severity_display }}
+        </span>
+        &mdash; Tag {{ alert.tag.epc }}
+      </h2>
+      <dl style="font-size:0.9em">
+        <dt>Box</dt><dd>{{ alert.tag.paired_with_box|default:"(unbound)" }}</dd>
+        <dt>Detected</dt><dd><time datetime="{{ alert.detected_at|date:'c' }}">{{ alert.detected_at }}</time></dd>
+        <dt>Expected state</dt><dd>{{ alert.expected_state }}</dd>
+        <dt>Observed state</dt><dd>{{ alert.observed_state }}</dd>
+        <dt>ECC dispatched</dt><dd>{% if alert.ecc_dispatched %}Yes — {{ alert.dispatch_officer_id }}{% else %}No{% endif %}</dd>
+        {% if alert.geo_lat %}
+          <dt>Geo</dt><dd>{{ alert.geo_lat }}, {{ alert.geo_lon }}</dd>
+        {% endif %}
+        <dt>Description</dt><dd>{{ alert.description }}</dd>
+      </dl>
+      <form method="post" action="" hx-post="" hx-swap="outerHTML" hx-target="closest article" aria-label="Resolve alert">
+        {% csrf_token %}
+        <input type="hidden" name="alert_id" value="{{ alert.alert_id }}">
+        <label for="note-{{ alert.alert_id }}">Resolution note</label>
+        <input id="note-{{ alert.alert_id }}" type="text" name="resolution_note" placeholder="Enter resolution reason" style="min-width:260px">
+        <button type="submit" style="background:#27ae60;color:#fff;border:0;padding:6px 14px;cursor:pointer">
+          Resolve
+        </button>
+      </form>
+    </article>
+    {% endfor %}
+  {% else %}
+    <p>No pending tamper alerts{% if selected_severity %} for severity "{{ selected_severity }}"{% endif %}.</p>
+  {% endif %}
+</div>
+{% endblock %}

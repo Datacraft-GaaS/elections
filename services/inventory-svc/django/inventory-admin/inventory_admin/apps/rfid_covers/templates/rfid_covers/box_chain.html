@@ -1,0 +1,91 @@
+{% extends "admin/base_site.html" %}
+{% block title %}Box Chain — RFID Cover Tags{% endblock %}
+
+{% block content %}
+<div class="rfid-box-chain" role="main">
+  <h1>Cover tag chain of custody</h1>
+
+  <form method="get" action="" aria-label="Search by ballot box">
+    <label for="id_ballot_box_id">Ballot box ID or tag EPC</label>
+    <input
+      id="id_ballot_box_id"
+      type="search"
+      name="ballot_box_id"
+      value="{{ ballot_box_id }}"
+      placeholder="Box serial or EPC hex"
+      aria-describedby="id_ballot_box_id_hint"
+      style="min-width:320px"
+    >
+    <span id="id_ballot_box_id_hint" class="help">96-bit EPC or box body serial number.</span>
+    <button type="submit">Search</button>
+  </form>
+
+  {% if ballot_box_id and not tag %}
+    <p role="alert" aria-live="polite" style="color:#c0392b">No tag found for "{{ ballot_box_id }}".</p>
+  {% endif %}
+
+  {% if tag %}
+    <section aria-labelledby="tag-summary-heading">
+      <h2 id="tag-summary-heading">Tag {{ tag.epc }}</h2>
+      <dl>
+        <dt>Tag ID</dt><dd>{{ tag.tag_id }}</dd>
+        <dt>Chip family</dt><dd>{{ tag.get_chip_family_display }}</dd>
+        <dt>Paired with box</dt><dd>{{ tag.paired_with_box|default:"(not paired)" }}</dd>
+        <dt>Cover state</dt><dd>{{ tag.cover_state }}</dd>
+        <dt>Tamper state</dt><dd>
+          <span class="badge badge-{% if tag.tamper_state == 'intact' %}ok{% elif tag.tamper_state == 'quarantine' %}critical{% else %}warn{% endif %}"
+                aria-label="Tamper state: {{ tag.get_tamper_state_display }}">
+            {{ tag.get_tamper_state_display }}
+          </span>
+        </dd>
+        <dt>Manufacturer</dt><dd>{{ tag.manufacturer }}</dd>
+        <dt>Issued</dt><dd><time datetime="{{ tag.issued_at|date:'c' }}">{{ tag.issued_at }}</time></dd>
+      </dl>
+    </section>
+
+    <section aria-labelledby="transitions-heading">
+      <h2 id="transitions-heading">State transitions ({{ transitions|length }})</h2>
+      {% if transitions %}
+        <table role="grid" aria-label="State transition timeline" style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr>
+              <th scope="col">From</th>
+              <th scope="col">To</th>
+              <th scope="col">Officer</th>
+              <th scope="col">When</th>
+              <th scope="col">Hash chain</th>
+              <th scope="col">Merkle anchor</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in transitions %}
+            <tr>
+              <td>{{ row.transition.from_state }}</td>
+              <td>{{ row.transition.to_state }}</td>
+              <td>{{ row.transition.officer_id }}</td>
+              <td><time datetime="{{ row.transition.transitioned_at|date:'c' }}">{{ row.transition.transitioned_at }}</time></td>
+              <td>
+                {% if row.chain_valid %}
+                  <span aria-label="Chain valid" title="prev_hash verified" style="color:#27ae60">&#10003; valid</span>
+                {% else %}
+                  <span aria-label="Chain BROKEN" title="prev_hash mismatch" style="color:#c0392b;font-weight:bold">&#9888; BROKEN</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if row.transition.merkle_anchor_id %}
+                  <code title="{{ row.transition.merkle_anchor_id }}">{{ row.transition.merkle_anchor_id|truncatechars:20 }}</code>
+                {% else %}
+                  <span style="color:#888">pending</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p>No transitions recorded for this tag yet.</p>
+      {% endif %}
+    </section>
+  {% endif %}
+</div>
+{% endblock %}

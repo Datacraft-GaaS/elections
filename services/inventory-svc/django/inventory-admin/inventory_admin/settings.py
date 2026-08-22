@@ -18,6 +18,7 @@ INSTALLED_APPS = [
     "inventory_admin.apps.reserve_pool",
     "inventory_admin.apps.ballot_lots",
     "inventory_admin.apps.diaspora_shipments",
+    "inventory_admin.apps.rfid_covers",
 ]
 
 MIDDLEWARE = [
