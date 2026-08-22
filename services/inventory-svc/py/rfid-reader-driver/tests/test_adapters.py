@@ -97,36 +97,34 @@ async def test_synthetic_multiple_epcs_isolated() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Vendor ImportError guard tests (no SDK installed in CI)
+# OSS adapter availability tests (no commercial SDK needed)
 # ---------------------------------------------------------------------------
 
 
-def test_impinj_import_error_when_llrpyc_absent() -> None:
-    """ImpinjLlrpAdapter raises ImportError with a helpful message when llrpyc absent."""
-    from eel_rfid_reader.adapters.impinj_llrp import _LLRP_AVAILABLE
+def test_impinj_adapter_uses_llrp_common() -> None:
+    """ImpinjLlrpAdapter instantiates without any commercial SDK."""
+    from eel_rfid_reader.adapters.impinj_llrp import ImpinjLlrpAdapter
+    from eel_rfid_reader.adapters.llrp_common import LlrpCommonClient
 
-    if not _LLRP_AVAILABLE:
-        from eel_rfid_reader.adapters.impinj_llrp import ImpinjLlrpAdapter
-
-        with pytest.raises(ImportError, match="llrpyc"):
-            ImpinjLlrpAdapter(host="localhost")
-
-
-def test_zebra_import_error_when_sdk_absent() -> None:
-    from eel_rfid_reader.adapters.zebra_link import _ZL_AVAILABLE
-
-    if not _ZL_AVAILABLE:
-        from eel_rfid_reader.adapters.zebra_link import ZebraLinkAdapter
-
-        with pytest.raises(ImportError, match="zebralink"):
-            ZebraLinkAdapter(host="localhost")
+    adapter = ImpinjLlrpAdapter(host="127.0.0.1", port=5084)
+    assert isinstance(adapter._llrp, LlrpCommonClient)
+    assert adapter._llrp.host == "127.0.0.1"
 
 
-def test_cipherlab_import_error_when_sdk_absent() -> None:
-    from eel_rfid_reader.adapters.cipherlab_rs36 import _CL_AVAILABLE
+def test_zebra_llrp_adapter_instantiates() -> None:
+    """ZebraLlrpAdapter instantiates without any commercial SDK."""
+    from eel_rfid_reader.adapters.llrp_common import LlrpCommonClient
+    from eel_rfid_reader.adapters.zebra_llrp import ZebraLlrpAdapter
 
-    if not _CL_AVAILABLE:
-        from eel_rfid_reader.adapters.cipherlab_rs36 import CipherLabRS36Adapter
+    adapter = ZebraLlrpAdapter(host="10.0.0.1", port=5084)
+    assert isinstance(adapter._llrp, LlrpCommonClient)
+    assert adapter._llrp.host == "10.0.0.1"
 
-        with pytest.raises(ImportError, match="cipherlab_sdk"):
-            CipherLabRS36Adapter(device_address="00:00:00:00:00:00")
+
+def test_cipherlab_ble_adapter_instantiates() -> None:
+    """CipherLabRS36Adapter instantiates without any commercial SDK."""
+    from eel_rfid_reader.adapters.cipherlab_rs36 import CipherLabRS36Adapter
+
+    adapter = CipherLabRS36Adapter(device_address="AA:BB:CC:DD:EE:FF")
+    assert adapter._device_address == "AA:BB:CC:DD:EE:FF"
+    assert adapter._transport == "ble"

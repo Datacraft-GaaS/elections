@@ -1,0 +1,105 @@
+{
+  "consumer": { "name": "eel-inventory-rfid-cover-custody" },
+  "provider": { "name": "eel-rfid-cipherlab-ble" },
+  "interactions": [
+    {
+      "description": "register a CipherLab BLE handheld reader",
+      "request": {
+        "method": "POST",
+        "path": "/reader/register",
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "reader_id": "cl-handheld-001",
+          "svid": "spiffe://eel.local/reader/cl-handheld-001",
+          "location": "polling-station-001",
+          "reader_type": "cipherlab",
+          "firmware_version": "3.0.0"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "reader_id": "cl-handheld-001", "status": "registered" }
+      }
+    },
+    {
+      "description": "submit a single tag read (CipherLab BLE handheld)",
+      "request": {
+        "method": "POST",
+        "path": "/reader/cl-handheld-001/read",
+        "headers": { "Content-Type": "application/json" },
+        "body": { "tag_epc": "eeff000000000001", "tamper_indicator": false }
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "tag_epc": "eeff000000000001",
+          "accepted": true,
+          "tag_state": "ready"
+        }
+      }
+    },
+    {
+      "description": "submit a batch of reads (CipherLab BLE)",
+      "request": {
+        "method": "POST",
+        "path": "/reader/cl-handheld-001/batch-read",
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "reads": [
+            { "tag_epc": "1122000000000001", "tamper_indicator": false },
+            { "tag_epc": "1122000000000002", "tamper_indicator": false }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": [
+          { "tag_epc": "1122000000000001", "accepted": true },
+          { "tag_epc": "1122000000000002", "accepted": true }
+        ]
+      }
+    },
+    {
+      "description": "issue a Gen2v2 challenge (CipherLab BLE handheld)",
+      "request": {
+        "method": "POST",
+        "path": "/reader/cl-handheld-001/challenge",
+        "headers": { "Content-Type": "application/json" },
+        "body": { "tag_epc": "eeff000000000001" }
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "tag_epc": "eeff000000000001",
+          "nonce_hex": "cccccccccccccccccccccccccccccccc",
+          "challenge_hex": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        }
+      }
+    },
+    {
+      "description": "query CipherLab BLE handheld status",
+      "request": {
+        "method": "GET",
+        "path": "/reader/cl-handheld-001/status"
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "reader_id": "cl-handheld-001",
+          "healthy": true,
+          "battery_ok": true,
+          "tag_count": 0,
+          "adapter_type": "cipherlab"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": { "version": "2.0.0" }
+  }
+}

@@ -56,13 +56,13 @@ def build_adapter() -> RfidReaderAdapter:
 
         host = os.environ.get("EEL_IMPINJ_HOST", "localhost")
         return ImpinjLlrpAdapter(host=host)
-    if adapter_type == "zebra":
-        from .adapters.zebra_link import ZebraLinkAdapter
+    if adapter_type in ("zebra", "zebra-llrp"):
+        from .adapters.zebra_llrp import ZebraLlrpAdapter
 
         import os
 
         host = os.environ.get("EEL_ZEBRA_HOST", "localhost")
-        return ZebraLinkAdapter(host=host)
+        return ZebraLlrpAdapter(host=host)
     if adapter_type == "cipherlab":
         from .adapters.cipherlab_rs36 import CipherLabRS36Adapter
 

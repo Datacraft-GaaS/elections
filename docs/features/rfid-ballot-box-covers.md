@@ -55,7 +55,7 @@ Append-only triggers on `eel_cover_state_transitions` and `eel_cover_tamper_aler
 - `src/tamper_alert.rs` — cover-lift detection, ECC dispatch, tlog anchor.
 - `src/api.rs` — REST + gRPC surface: POST /v1/rfid/tags (issuance), POST /v1/rfid/tags/{id}/pair, POST /v1/rfid/reads, POST /v1/rfid/tags/{id}/transition, GET /v1/rfid/tags/{id}/history, GET /v1/rfid/tamper-alerts.
 
-`services/inventory-svc/py/rfid-reader-driver` — Python worker exposing a stable HTTP+MQTT interface over vendor SDKs (LLRP for Impinj, ZebraLink for Zebra, CipherLab RS36 SDK). Adapter interface + per-vendor concrete adapter + hash-based synthetic adapter for CI + tests.
+`services/inventory-svc/py/rfid-reader-driver` — Python worker exposing a stable HTTP+MQTT interface over open-source libraries (sllurp LLRP for Impinj + Zebra; bleak BLE for CipherLab RS36). No commercial SDKs required. Adapter interface + per-vendor concrete adapter + hash-based synthetic adapter for CI + tests. See ADR-0025.
 
 `integrations/rfid-vendors/{impinj, zebra, cipherlab}/` — 3 vendor adapter directories each with adapter + double + Pact contract-tests + README.
 
@@ -127,7 +127,7 @@ For SCoK petition evidence:
 - **Reader procurement** — approx. 60 fixed gates (warehouses + tally centres + archive) + 250 handhelds (~30M KES capex). Vendor selection to be validated against 46,229-station scale.
 - **Kenya UHF band clearance** — 865 to 868 MHz allocation by Communications Authority of Kenya; already open for EPC Gen2 per CAK 2022 band plan.
 - **Reader firmware attestation** — SPIRE-issued SVID at boot requires signed firmware; vendor cooperation for a signed image needed for Impinj + Zebra + CipherLab.
-- **Vendor SDK licensing** — LLRP is open + royalty-free; ZebraLink + CipherLab SDKs are commercial licensed.
+- **Open RFID stack** — LLRP 1.1 (EPCglobal, royalty-free) for Zebra + Impinj fixed readers; BLE GATT + EPC Gen2 profile (open) for CipherLab RS36 handheld. No commercial SDK licences required. See ADR-0025.
 - **Physical tag application** — cover tags applied at the ballot printer (M39) at time of cover manufacture; requires the printer MES to be updated to include the tag-application step + pairing to box body serial.
 - **Airline + MFA cargo readers** — depends on partner cooperation (Kenya Airways cargo terminal + MFA customs terminal); interfaces already scaffolded in `integrations/airline-cargo` + `integrations/kra-eclearance`.
 
@@ -170,14 +170,15 @@ Zero `unwrap()` in library src. Zero `iebc` identifiers. `cargo build --release`
 | `services/inventory-svc/py/rfid-reader-driver/src/eel_rfid_reader/adapter.py` | RfidReaderAdapter ABC (issue_challenge + submit_response) | — |
 | `services/inventory-svc/py/rfid-reader-driver/src/eel_rfid_reader/adapters/synthetic.py` | Deterministic hash-based adapter with configurable tamper_prob (for tests + CI) | — |
 | `services/inventory-svc/py/rfid-reader-driver/src/eel_rfid_reader/adapters/impinj_llrp.py` | Impinj Speedway R700 via LLRP (guarded import) | — |
-| `services/inventory-svc/py/rfid-reader-driver/src/eel_rfid_reader/adapters/zebra_link.py` | Zebra FX9600 via ZebraLink (guarded import) | — |
-| `services/inventory-svc/py/rfid-reader-driver/src/eel_rfid_reader/adapters/cipherlab_rs36.py` | CipherLab RS36 handheld via BLE + serial | — |
+| `services/inventory-svc/py/rfid-reader-driver/src/eel_rfid_reader/adapters/zebra_llrp.py` | Zebra FX9600 via LLRP 1.1 (sllurp, MIT); no commercial SDK | — |
+| `services/inventory-svc/py/rfid-reader-driver/src/eel_rfid_reader/adapters/cipherlab_rs36.py` | CipherLab RS36 handheld via BLE GATT + SPP (bleak, MIT); no commercial SDK | — |
+| `services/inventory-svc/py/rfid-reader-driver/src/eel_rfid_reader/adapters/llrp_common.py` | Shared LLRP-1.1 client (sllurp) with circuit breaker; used by Zebra + Impinj | — |
 | `services/inventory-svc/py/rfid-reader-driver/src/eel_rfid_reader/hmac_gen2v2.py` | HMAC-SHA256 challenge/response per EPC Gen2v2 + 5-min nonce dedup via LRU OrderedDict | — |
 | `services/inventory-svc/py/rfid-reader-driver/src/eel_rfid_reader/upstream.py` | Async httpx client forwarding to cover-custody REST with Idempotency-Key per UUID7 | — |
 | `services/inventory-svc/py/rfid-reader-driver/tests/*` | 36 pytest (adapters + hmac + main + upstream); pyright clean | 36 |
 | `integrations/rfid-vendors/impinj/{adapter,double,contract-tests,README}` | Rust adapter + tamper-injection double + Pact v2 + hardware notes (Speedway R700, 865-868 MHz, LLRP 1.1) | 5 |
-| `integrations/rfid-vendors/zebra/{adapter,double,contract-tests,README}` | Rust adapter + tamper-injection double + Pact v2 + hardware notes (FX9600, ZebraLink) | 5 |
-| `integrations/rfid-vendors/cipherlab/{adapter,double,contract-tests,README}` | Rust adapter + tamper-injection double (with battery_low knob) + Pact v2 + hardware notes (RS36 handheld) | 5 |
+| `integrations/rfid-vendors/zebra-llrp/{adapter,double,contract-tests,README}` | Rust adapter (EEL_ZEBRA_LLRP_ADAPTER_URL) + tamper-injection double + Pact v2 + hardware notes (FX9600, LLRP, sllurp) | 5 |
+| `integrations/rfid-vendors/cipherlab-ble/{adapter,double,contract-tests,README}` | Rust adapter (EEL_CIPHERLAB_BLE_ADAPTER_URL) + tamper-injection double (battery_low knob) + Pact v2 + hardware notes (RS36 handheld, BLE, bleak) | 6 |
 
 Each vendor crate is standalone (`[workspace]` opt-out) with path dep to `eel-resilience-rs` (CircuitBreaker 5 failures / 60 s window / 30 s cooldown).
 
@@ -220,6 +221,6 @@ Each vendor crate is standalone (`[workspace]` opt-out) with path dep to `eel-re
 - Reader procurement (~60 fixed gates + 250 handhelds ≈ 30M KES capex).
 - Kenya UHF band clearance (CAK 2022 band plan already allocates 865-868 MHz for EPC Gen2 — administrative, not blocking).
 - Signed firmware images from Impinj + Zebra + CipherLab for SPIRE-attested reader boot.
-- Commercial SDK licences for ZebraLink + CipherLab (LLRP is open + royalty-free).
+- No commercial SDK licences required: LLRP (EPCglobal, royalty-free) for Zebra + Impinj; BLE GATT (open) for CipherLab. See ADR-0025.
 - Printer MES update to include cover-tag application + pairing step in the M39 print run.
 - Airline + MFA cargo terminal reader integration (existing adapters at `integrations/airline-cargo` + `integrations/kra-eclearance` are wired).

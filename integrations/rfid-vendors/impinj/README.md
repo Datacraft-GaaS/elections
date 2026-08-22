@@ -19,6 +19,18 @@ Impinj Speedway R700 fixed reader adapter for ballot-box cover custody.
 | Transit checkpoint | 250 | Constituency tally relay points |
 | Archive gate | 6 | National archive facility |
 
+## Open-Source Stack
+
+| Library | Role | Licence |
+|---------|------|---------|
+| sllurp >= 3.0 | Python LLRP client (Simple LLRP) | MIT |
+| LTKC (LLRP Toolkit C) | C reference implementation of LLRP message codec | Apache 2.0 |
+| Android BLE API (AOSP) | On-device BLE host stack (used by CipherLab RS36 adapter) | Apache 2.0 |
+| EPCglobal LLRP 1.1 spec | Protocol definition | Royalty-free |
+
+No commercial SDK required. The Python driver uses `llrp_common.LlrpCommonClient`
+(wrapping sllurp) shared with the Zebra FX9600 adapter.
+
 ## Integration
 
 This adapter wraps `services/inventory-svc/py/rfid-reader-driver` via HTTP.
