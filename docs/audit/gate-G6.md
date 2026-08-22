@@ -50,6 +50,7 @@ Every harness runs identically once the CI runners provide those environments; n
 The prior closing line overstated verified coverage. Harness delivery is real and dry-run green, but the live completeness audit now actually runs against the real TRACEABILITY (the trace harness was fixed 2026-08-22 to parse the `rows:`/`requirements:` schemas) and reports the true, measured state:
 
 - `eel-completeness trace` on docs/plans/TRACEABILITY.yaml: 4,444 requirement rows, of which only a handful have a real tagged test at re-baseline time; the rest are genuine gaps, each needing a test to be written or an existing test to be grounded-tagged. The prior "118/118 edge-case rows" figure was dry-run fixture coverage, not verified test coverage.
+- The audit harness itself was incomplete: Rust `#[trace(...)]` never compiled (no attribute existed, every Rust annotation was commented out) and the ID regex could not match module requirement IDs like FR-M12-008 (only edge-case IDs like EC-DAT-01). Both are now fixed (a real `eel-trace-rs` proc-macro + a unified ID pattern), so FR/AC coverage is finally measurable and the true gap count is 4,419.
 - The 363 `openapi_unbound_path` warnings are honest contract-first specs; bindings are added only where a real handler exists (20 for ecc/IAB/grievance now bound), never fabricated to stub handlers.
 - Verified coverage is climbing via evidence-grounded tagging, but closing all 4,4xx gaps is a continuing program requiring tests to be written for uncovered requirements, not a one-session state.
 
