@@ -1,0 +1,15 @@
+---
+# HARD-24: PII-in-events lint pipeline
+# Runs on every PR and push to catch Tier-A/B PII fields in event schemas.
+
+when:
+  - event: [push, pull_request]
+
+steps:
+  - name: pii-lint
+    image: eel/build-image:latest
+    commands:
+      - |
+        cd tools/pii-in-events
+        uv pip install -e . --quiet
+        uv run eel-pii-lint --root ../..

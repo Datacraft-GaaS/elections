@@ -30,11 +30,33 @@ pub enum CanaryState {
 /// Reason for a rollback.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum RollbackReason {
-    FmrBreach { observed: f64, limit: f64 },
-    FnmrBreach { observed: f64, limit: f64 },
-    LatencyBreach { p99_ms: f64, limit_ms: f64 },
-    ErrorRateBreach { rate: f64, limit: f64 },
-    Manual { operator: String, reason: String },
+    FmrBreach {
+        observed: f64,
+        limit: f64,
+    },
+    FnmrBreach {
+        observed: f64,
+        limit: f64,
+    },
+    LatencyBreach {
+        p99_ms: f64,
+        limit_ms: f64,
+    },
+    ErrorRateBreach {
+        rate: f64,
+        limit: f64,
+    },
+    Manual {
+        operator: String,
+        reason: String,
+    },
+    /// HARD-23: canary deviated beyond fairness tolerance on a demographic slice.
+    FairnessSliceBreach {
+        slice: String,
+        metric: String,
+        deviation: f64,
+        tolerance: f64,
+    },
 }
 
 /// A canary deployment record.

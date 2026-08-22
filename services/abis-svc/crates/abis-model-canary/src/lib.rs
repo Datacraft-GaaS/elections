@@ -7,6 +7,7 @@ pub mod canary;
 pub mod dispatcher;
 pub mod domain;
 pub mod error;
+pub mod fairness_rollback;
 pub mod monitor;
 pub mod promote;
 pub mod rollback;

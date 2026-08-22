@@ -1,0 +1,126 @@
+---
+# HARD-18: TLA+/TLC nightly invariant-checking pipeline
+#
+# Trigger: nightly cron at 02:00 UTC (low-traffic window) and on any push
+# to the tla/ directories so that spec changes are validated immediately.
+#
+# Cadence: nightly is intentional rather than per-PR because TLC model
+# checking can take several minutes for larger state spaces.  Any invariant
+# violation fails the build and triggers a Slack alert so the on-call
+# engineer can investigate before the morning.
+#
+# Specs checked:
+#   - services/rts-svc/docs/tla/Tally.tla     (ballot-tally state machine)
+#   - services/rts-svc/docs/tla/Declaration.tla (declaration quorum)
+#   - services/governance-svc/docs/tla/Referendum.tla (county-referendum)
+#
+# Remediation steps on failure:
+#   1. Read the TLC output in the Woodpecker artefact (tlc-results.txt).
+#   2. Identify which invariant was violated and in which state.
+#   3. Fix the spec or the implementation before the next release gate.
+#   4. Re-run manually: trigger this pipeline from the Woodpecker UI.
+
+when:
+  - event: cron
+    cron: nightly-tlc
+  - event: push
+    path:
+      include:
+        - services/rts-svc/docs/tla/**
+        - services/governance-svc/docs/tla/**
+
+variables:
+  - &tlc_image "ghcr.io/informalsystems/apalache:latest"
+  - &tla_tools_image "openjdk:21-slim"
+  # TLA+ toolbox jar bundled in the build image.
+  - &tla_jar "/opt/tla2tools.jar"
+
+steps:
+  # ---- 1. Install TLA+ tools ----
+  # The eel build image ships with Java 21 and tla2tools.jar pre-installed
+  # under /opt/tla2tools.jar.  If your build image does not include it,
+  # uncomment the download step below.
+  #
+  # - name: download-tla-tools
+  #   image: eel/build-image:latest
+  #   commands:
+  #     - curl -fsSL -o /opt/tla2tools.jar
+  #         https://github.com/tlaplus/tlaplus/releases/latest/download/tla2tools.jar
+
+  # ---- 2. Check Tally.tla ----
+  - name: tlc-tally
+    image: eel/build-image:latest
+    commands:
+      - |
+        echo "=== TLC: Tally.tla ===" | tee -a tlc-results.txt
+        java -jar "${TLA_JAR:-/opt/tla2tools.jar}" \
+          -workers auto \
+          -config services/rts-svc/docs/tla/Tally.cfg \
+          services/rts-svc/docs/tla/Tally.tla \
+          2>&1 | tee -a tlc-results.txt
+        if grep -qE "Error:|Invariant .* is violated|Property .* is violated" tlc-results.txt; then
+          echo "FAIL: Tally invariant violation" >&2
+          exit 1
+        fi
+        echo "OK: Tally.tla"
+
+  # ---- 3. Check Declaration.tla ----
+  - name: tlc-declaration
+    image: eel/build-image:latest
+    commands:
+      - |
+        echo "=== TLC: Declaration.tla ===" | tee -a tlc-results.txt
+        java -jar "${TLA_JAR:-/opt/tla2tools.jar}" \
+          -workers auto \
+          -config services/rts-svc/docs/tla/Declaration.cfg \
+          services/rts-svc/docs/tla/Declaration.tla \
+          2>&1 | tee -a tlc-results.txt
+        if grep -qE "Error:|Invariant .* is violated|Property .* is violated" tlc-results.txt; then
+          echo "FAIL: Declaration invariant violation" >&2
+          exit 1
+        fi
+        echo "OK: Declaration.tla"
+
+  # ---- 4. Check Referendum.tla ----
+  - name: tlc-referendum
+    image: eel/build-image:latest
+    commands:
+      - |
+        echo "=== TLC: Referendum.tla ===" | tee -a tlc-results.txt
+        java -jar "${TLA_JAR:-/opt/tla2tools.jar}" \
+          -workers auto \
+          -config services/governance-svc/docs/tla/Referendum.cfg \
+          services/governance-svc/docs/tla/Referendum.tla \
+          2>&1 | tee -a tlc-results.txt
+        if grep -qE "Error:|Invariant .* is violated|Property .* is violated" tlc-results.txt; then
+          echo "FAIL: Referendum invariant violation" >&2
+          exit 1
+        fi
+        echo "OK: Referendum.tla"
+
+  # ---- 5. Publish results as Woodpecker artefact ----
+  - name: publish-results
+    image: eel/build-image:latest
+    when:
+      - status: [success, failure]
+    commands:
+      - cat tlc-results.txt
+
+  # ---- 6. Slack notification on failure ----
+  - name: notify-slack-on-failure
+    image: plugins/slack
+    when:
+      - status: failure
+    settings:
+      webhook:
+        from_secret: SLACK_WEBHOOK_URL
+      channel: "#eel-alerts"
+      template: >
+        *TLC nightly check FAILED* on {{ repo.name }} build {{ build.number }}.
+        Branch: {{ build.branch }}.
+        Commit: {{ build.commit }}.
+        Author: {{ build.author }}.
+        See build: {{ build.link }}.
+        Remediation: open tlc-results.txt artefact, fix violated invariant in
+        services/rts-svc/docs/tla or services/governance-svc/docs/tla, then
+        re-run from the Woodpecker UI.

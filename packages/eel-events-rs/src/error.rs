@@ -31,4 +31,7 @@ pub enum EventError {
 
     #[error("concurrency error: {0}")]
     Concurrency(String),
+
+    #[error("cryptographic error: {0}")]
+    Crypto(String),
 }

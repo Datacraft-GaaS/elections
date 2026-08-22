@@ -1,0 +1,75 @@
+# Semgrep rules: detect Tier-A and Tier-B PII field names in event schemas.
+# Language targets: Rust structs (serde), Python Pydantic, Elixir Ecto.
+#
+# These rules flag field names that are strong signals for raw PII.
+# The Python linter (lint.py) applies the allowlist before reporting.
+
+rules:
+
+  # ---- Rust: serde-annotated struct fields ----
+
+  - id: eel-no-tier-a-pii-rust-national-id
+    languages: [rust]
+    severity: ERROR
+    message: |
+      Tier-A PII field '$FIELD' detected in Rust struct. Raw national/voter IDs
+      must not appear in event schemas. Use a one-way hash (voter_id_hashed)
+      and add an allowlist entry if genuinely required.
+    pattern-either:
+      - pattern: |
+          pub $FIELD: $T
+      - pattern: |
+          $FIELD: $T,
+    focus-metavariable: $FIELD
+    pattern-regex: "(national_id|voter_id|id_number|passport_number|fingerprint_raw|iris_raw|face_image|dob_exact|full_name_dob|phone_number_raw|email_address_raw)"
+    metadata:
+      pii_tier: A
+      references: ["HARD-24", "V024"]
+
+  - id: eel-no-tier-b-pii-rust
+    languages: [rust]
+    severity: WARNING
+    message: |
+      Tier-B quasi-identifier '$FIELD' in Rust struct. Verify this field is
+      covered by the allowlist in tools/pii-in-events/src/eel_pii_in_events/allowlist.yaml.
+    pattern-either:
+      - pattern: |
+          pub $FIELD: $T
+      - pattern: |
+          $FIELD: $T,
+    focus-metavariable: $FIELD
+    pattern-regex: "(voter_id_hashed|ward_code|constituency_code|age_bracket|county_code)"
+    metadata:
+      pii_tier: B
+      references: ["HARD-24"]
+
+  # ---- Python: Pydantic field definitions ----
+
+  - id: eel-no-tier-a-pii-python-pydantic
+    languages: [python]
+    severity: ERROR
+    message: |
+      Tier-A PII field '$FIELD' detected in Python (Pydantic) model. Use a
+      hashed or redacted equivalent and add an allowlist entry if required.
+    pattern-either:
+      - pattern: $FIELD = Field(...)
+      - pattern: $FIELD: $TYPE
+      - pattern: $FIELD: $TYPE = ...
+    focus-metavariable: $FIELD
+    pattern-regex: "(national_id|voter_id|id_number|passport_number|fingerprint_raw|iris_raw|face_image|dob_exact|full_name_dob|phone_number_raw|email_address_raw)"
+    metadata:
+      pii_tier: A
+      references: ["HARD-24"]
+
+  # ---- Elixir: Ecto schema field definitions ----
+
+  - id: eel-no-tier-a-pii-elixir-ecto
+    languages: [generic]
+    severity: ERROR
+    message: |
+      Tier-A PII field '$1' in Ecto schema. Raw identifiers must not appear
+      in event schemas.
+    pattern-regex: "field\\s+:(national_id|voter_id|id_number|passport_number|fingerprint_raw|iris_raw|face_image|dob_exact|phone_number_raw|email_address_raw)"
+    metadata:
+      pii_tier: A
+      references: ["HARD-24"]

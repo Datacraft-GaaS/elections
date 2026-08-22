@@ -23,11 +23,13 @@
 //! # }
 //! ```
 
+pub mod audit_chain;
 pub mod builder;
 pub mod consumer;
 pub mod envelope;
 pub mod error;
 pub mod karapace;
+pub mod pq_leaf;
 pub mod spiffe;
 
 #[cfg(feature = "test-utils")]

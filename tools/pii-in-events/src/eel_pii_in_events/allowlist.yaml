@@ -1,0 +1,36 @@
+# PII allowlist for eel-pii-in-events (HARD-24).
+#
+# Each entry permits a specific (event_type, field) combination to carry
+# Tier-A or Tier-B PII.  Fields not listed here that match a Tier-A/B
+# pattern are treated as violations.
+#
+# Tier-A: direct identifiers (national ID, passport, biometric raw data,
+#          full name + DOB combination, precise GPS trace).
+# Tier-B: quasi-identifiers (hashed voter ID, station code + ward combined,
+#          age bracket, county code).
+
+allowlist:
+  - event_type: "eel.abis.voter_registered.v1"
+    fields:
+      - voter_id_hashed       # Tier-B: one-way hash, no reversal
+      - enrolment_station_code  # Tier-B: public station identifier
+
+  - event_type: "eel.abis.deduplication_completed.v1"
+    fields:
+      - candidate_voter_id_hashed
+
+  - event_type: "eel.bvi.biometric_verified.v1"
+    fields:
+      - voter_id_hashed
+
+  - event_type: "eel.rts.form34a_captured.v1"
+    fields:
+      - station_code          # Tier-B: public, no PII linkage in isolation
+
+  - event_type: "eel.audit.access_granted.v1"
+    fields:
+      - operator_id           # Tier-B: staff identifier, not voter
+
+  - event_type: "eel.custody.seal_bound.v1"
+    fields:
+      - officer_id            # Tier-B: staff identifier
