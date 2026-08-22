@@ -134,9 +134,71 @@ fn load_traceability(root: &Path, rel: &Path) -> Result<TraceabilityFile> {
     }
     let content =
         std::fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
-    let tf: TraceabilityFile =
+    let v: serde_yaml::Value =
         serde_yaml::from_str(&content).with_context(|| format!("parsing {}", path.display()))?;
-    Ok(tf)
+    Ok(TraceabilityFile {
+        entries: normalize_traceability(&v),
+    })
+}
+
+/// Normalize any of the three traceability shapes the repo actually uses into
+/// the `entries` list the audit consumes:
+///   - `entries: [{id, description, requirement}]`   (tool's native shape)
+///   - `rows: {id: {module, wp, tests}}`             (docs/plans/TRACEABILITY.yaml)
+///   - `requirements: {id: {description, ...}}`      (per-service TRACEABILITY.yaml)
+/// A bare map of `id: {...}` is also accepted (some services omit the wrapper).
+fn normalize_traceability(v: &serde_yaml::Value) -> Vec<TraceabilityRow> {
+    use serde_yaml::Value;
+    let mapping = match v {
+        Value::Mapping(m) => m,
+        _ => return Vec::new(),
+    };
+    // Shape 1: top-level `entries:` sequence.
+    if let Some(Value::Sequence(seq)) = mapping.get(Value::String("entries".into())) {
+        return seq
+            .iter()
+            .filter_map(|row| {
+                let id = row.get("id")?.as_str()?.to_string();
+                let description = row
+                    .get("description")
+                    .and_then(|d| d.as_str())
+                    .map(String::from);
+                let requirement = row
+                    .get("requirement")
+                    .and_then(|d| d.as_str())
+                    .map(String::from);
+                Some(TraceabilityRow {
+                    id,
+                    description,
+                    requirement,
+                })
+            })
+            .collect();
+    }
+    // Shape 2/3: `rows:` / `requirements:` wrapper, else the bare mapping itself.
+    let body = mapping
+        .get(Value::String("rows".into()))
+        .or_else(|| mapping.get(Value::String("requirements".into())))
+        .unwrap_or(v);
+    if let Value::Mapping(rows) = body {
+        return rows
+            .iter()
+            .filter_map(|(k, val)| {
+                let id = k.as_str()?.to_string();
+                let description = val
+                    .get("description")
+                    .and_then(|d| d.as_str())
+                    .map(String::from)
+                    .or_else(|| val.get("module").and_then(|m| m.as_str()).map(String::from));
+                Some(TraceabilityRow {
+                    id,
+                    description,
+                    requirement: None,
+                })
+            })
+            .collect();
+    }
+    Vec::new()
 }
 
 fn collect_coverage(root: &Path) -> Result<CoverageMap> {
