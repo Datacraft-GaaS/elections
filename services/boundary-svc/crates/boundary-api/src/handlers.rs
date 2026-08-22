@@ -1,8 +1,9 @@
-//! Axum handler stubs, one per OpenAPI operation.
+//! Axum handlers, one per OpenAPI operation.
 //!
 //! Every path from packages/openapi-contracts/boundary/transparency.yaml is
-//! bound here. Real DB calls are TODO; stubs return 200/201 with empty
-//! collections so the completeness scan passes (zero openapi_unbound_path).
+//! bound here. Read endpoints return empty collections until the PostGIS
+//! register store is wired; the simulator computes real compactness from the
+//! proposed geometry. The completeness scan passes (zero openapi_unbound_path).
 
 use axum::{
     extract::{Path, Query},
@@ -287,13 +288,78 @@ pub async fn get_geofence_station(
 pub async fn simulator_compute(
     Query(body): Query<serde_json::Value>,
 ) -> Json<SimulatorComputeResult> {
-    let _ = body;
+    let compactness = body
+        .get("proposed_geometry")
+        .and_then(|g| g.get("coordinates"))
+        .map(compute_compactness)
+        .unwrap_or(0.0);
     Json(SimulatorComputeResult {
-        compactness: 0.0,
+        compactness,
+        // population_equality and vra_analog require voter/population data
+        // from the register DB; they are 0 until that store is wired.
         population_equality: 0.0,
         vra_analog: 0.0,
         methodology_version: "0.1.0".to_owned(),
     })
+}
+
+/// Polsby-Popper compactness of a GeoJSON Polygon, in [0, 1].
+///
+/// Area and perimeter are computed in metres via an equirectangular projection
+/// around the ring centroid so the score is unit-consistent. Returns 0.0 for
+/// malformed or non-polygon input.
+fn compute_compactness(coords: &serde_json::Value) -> f64 {
+    use boundary_geofence::geo_check::haversine;
+    use boundary_worker::fairness::polsby_popper;
+    const R: f64 = 6_371_000.0; // Earth radius in metres
+
+    let rings = match coords.as_array() {
+        Some(r) => r,
+        None => return 0.0,
+    };
+    let mut area_m2 = 0.0;
+    let mut perimeter_m = 0.0;
+    for ring in rings {
+        let pts: Vec<(f64, f64)> = ring
+            .as_array()
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|p| {
+                        let a = p.as_array()?;
+                        let lon = a.first()?.as_f64()?;
+                        let lat = a.get(1)?.as_f64()?;
+                        Some((lon, lat))
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+        if pts.len() < 3 {
+            continue;
+        }
+        let n = pts.len() as f64;
+        let clon = pts.iter().map(|p| p.0).sum::<f64>() / n;
+        let clat = pts.iter().map(|p| p.1).sum::<f64>() / n;
+        let cos_lat = clat.to_radians().cos();
+        let proj = |lon: f64, lat: f64| {
+            (
+                (lon - clon).to_radians() * R * cos_lat,
+                (lat - clat).to_radians() * R,
+            )
+        };
+        let mut ring_area = 0.0;
+        for i in 0..pts.len() {
+            let (x1, y1) = proj(pts[i].0, pts[i].1);
+            let (x2, y2) = proj(pts[(i + 1) % pts.len()].0, pts[(i + 1) % pts.len()].1);
+            ring_area += x1 * y2 - x2 * y1;
+        }
+        area_m2 += ring_area.abs() / 2.0;
+        for i in 0..pts.len() {
+            let (lon1, lat1) = pts[i];
+            let (lon2, lat2) = pts[(i + 1) % pts.len()];
+            perimeter_m += haversine(lat1, lon1, lat2, lon2);
+        }
+    }
+    polsby_popper(area_m2, perimeter_m)
 }
 
 /// GET /api/v1/metrics/fairness
@@ -379,4 +445,40 @@ pub async fn import_shapefile(
         StatusCode::ACCEPTED,
         Json(serde_json::json!({ "status": "queued", "file_ref": file_ref })),
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn square_coords(side_deg: f64) -> serde_json::Value {
+        serde_json::json!([[
+            [36.8, -1.3],
+            [36.8 + side_deg, -1.3],
+            [36.8 + side_deg, -1.3 + side_deg],
+            [36.8, -1.3 + side_deg],
+            [36.8, -1.3],
+        ]])
+    }
+
+    #[test]
+    fn compactness_of_square_is_high() {
+        // A square is near-maximally compact; score should be well above 0.5.
+        let c = compute_compactness(&square_coords(0.1));
+        assert!(c > 0.5, "square compactness was {c}");
+        assert!(c <= 1.0);
+    }
+
+    #[test]
+    fn compactness_of_degenerate_ring_is_zero() {
+        // A collapsed ring (all points identical) has zero area -> score 0.
+        let coords = serde_json::json!([[[36.8, -1.3], [36.8, -1.3], [36.8, -1.3]]]);
+        assert_eq!(compute_compactness(&coords), 0.0);
+    }
+
+    #[test]
+    fn compactness_of_non_polygon_is_zero() {
+        assert_eq!(compute_compactness(&serde_json::json!({"type": "Point"})), 0.0);
+        assert_eq!(compute_compactness(&serde_json::Value::Null), 0.0);
+    }
 }

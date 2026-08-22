@@ -54,7 +54,7 @@ fn nearest_edge_distance_m(polygon: &Polygon, lat: f64, lon: f64) -> f64 {
         .fold(f64::MAX, f64::min)
 }
 
-fn haversine(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
+pub fn haversine(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
     const R: f64 = 6_371_000.0; // Earth radius in metres
     let dlat = (lat2 - lat1).to_radians();
     let dlon = (lon2 - lon1).to_radians();
