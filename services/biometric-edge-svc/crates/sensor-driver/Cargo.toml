@@ -1,0 +1,22 @@
+[package]
+name = "sensor-driver"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Vendor-agnostic biometric sensor driver abstraction (WP-3.8)"
+
+[lib]
+name = "sensor_driver"
+path = "src/lib.rs"
+
+[dependencies]
+serde       = { workspace = true }
+thiserror   = { workspace = true }
+uuid        = { workspace = true }
+chrono      = { workspace = true }
+tracing     = { workspace = true }
+
+[dev-dependencies]
+rstest = { workspace = true }
