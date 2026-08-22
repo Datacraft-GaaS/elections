@@ -1,39 +1,52 @@
 # Completeness scanner allowlist.
-# Every entry needs a reason and an expiry (YYYY-MM-DD). CI blocks past expiry.
-# See docs/plans/11-completeness-audit.md §9.1 for allowlist policy.
+# Schema: top-level `entries`, each with an exact finding id "file:line:kind",
+# a reason, an optional adr/reference, and an expiry (YYYY-MM-DD). The scanner
+# matches findings by id; CI blocks any entry past its expiry. See
+# docs/plans/11-completeness-audit.md section 9.1 for the policy and
+# tools/completeness/src/allowlist.rs for the parser contract.
 
-allowlist:
+entries:
   # The completeness scanner itself contains the very regex patterns it hunts
-  # for, plus intentional test fixtures. These are self-references, not stubs.
-  - path: "tools/completeness/src/scan.rs"
-    reason: "regex patterns and message strings match themselves"
-    reference: "adr/0006-build-supply-chain.md"
+  # for (its own "unimplemented!"/501 message strings), plus intentional test
+  # fixtures under fixtures/should-trigger that must keep triggering. These are
+  # self-references, not shipped stubs.
+  - id: "tools/completeness/src/scan.rs:4:unimplemented_macro"
+    reason: "scanner regex pattern matches itself"
+    adr: "adr/0006-build-supply-chain.md"
     expires: "2099-12-31"
-  - path: "tools/completeness/tests/"
-    reason: "test fixtures deliberately contain stub patterns"
-    reference: "adr/0006-build-supply-chain.md"
+  - id: "tools/completeness/src/scan.rs:61:unimplemented_macro"
+    reason: "scanner regex pattern matches itself"
+    adr: "adr/0006-build-supply-chain.md"
     expires: "2099-12-31"
-  - path: "tools/completeness/fixtures/"
-    reason: "positive-case fixtures for the scanner"
-    reference: "adr/0006-build-supply-chain.md"
+  - id: "tools/completeness/src/scan.rs:66:unimplemented_macro"
+    reason: "scanner regex pattern matches itself"
+    adr: "adr/0006-build-supply-chain.md"
     expires: "2099-12-31"
-
-  # Hello service exists only to prove the toolchain compiles.
-  - path: "services/hello-svc/"
-    reason: "smoke-test service, not a real module; removed by G6"
-    reference: "docs/plans/01-wave-0-toolchain.md"
+  - id: "tools/completeness/src/scan.rs:152:http_501"
+    reason: "scanner regex pattern matches itself"
+    adr: "adr/0006-build-supply-chain.md"
     expires: "2099-12-31"
-
-  # ClickHouse is the sole ADR-sanctioned deferral until Phase 2.
-  # Any code that stubs ClickHouse integration is allowed until then.
-  - path: "packages/eel-observability-rs/src/clickhouse.rs"
-    reason: "ClickHouse deferred to Phase 2"
-    reference: "adr/0003-data-infrastructure.md"
+  - id: "tools/completeness/src/scan.rs:155:http_501"
+    reason: "scanner regex pattern matches itself"
+    adr: "adr/0006-build-supply-chain.md"
     expires: "2099-12-31"
-
-  # Python virtualenvs created by uv sync in each package during dev.
-  # Never committed (gitignored) but present on developer checkouts.
-  - path: '**/.venv/'
-    reason: 'third-party dep source, gitignored'
-    reference: 'wave-1'
-    expires: '2099-12-31'
+  - id: "tools/completeness/src/scan.rs:157:http_501"
+    reason: "scanner regex pattern matches itself"
+    adr: "adr/0006-build-supply-chain.md"
+    expires: "2099-12-31"
+  - id: "tools/completeness/tests/integration.rs:35:unimplemented_macro"
+    reason: "scanner integration test asserts on stub fixtures"
+    adr: "adr/0006-build-supply-chain.md"
+    expires: "2099-12-31"
+  - id: "tools/completeness/tests/integration.rs:120:http_501"
+    reason: "scanner integration test asserts on stub fixtures"
+    adr: "adr/0006-build-supply-chain.md"
+    expires: "2099-12-31"
+  - id: "tools/completeness/fixtures/should-trigger/rust_todo.rs:7:unimplemented_macro"
+    reason: "positive-case fixture for the scanner"
+    adr: "adr/0006-build-supply-chain.md"
+    expires: "2099-12-31"
+  - id: "tools/completeness/fixtures/should-trigger/python_stubs.py:7:not_implemented_error"
+    reason: "positive-case fixture for the scanner"
+    adr: "adr/0006-build-supply-chain.md"
+    expires: "2099-12-31"

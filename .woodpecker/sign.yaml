@@ -83,18 +83,25 @@ steps:
           }
         }
         PROV
-        # Attach provenance to each image
-        find services/*/deploy/nix -maxdepth 2 -name flake.nix 2>/dev/null | while read flake; do
+        # Attach provenance to each image. Any attestation failure fails the
+        # job: a missing or unsigned image is never silently swallowed.
+        rc=0
+        for image in $(find services/*/deploy/nix -maxdepth 2 -name flake.nix 2>/dev/null | while read flake; do
           svcname=$(basename "$(echo "$flake" | cut -d/ -f1-2)")
-          image=harbor.internal/eel/${svcname}:${SHORT_SHA}
-          cosign attest \
-            --predicate /tmp/provenance.json \
-            --type slsaprovenance \
-            --oidc-issuer=https://spire.internal \
-            --identity-token="$OIDC_TOKEN" \
-            --yes \
-            "$image"
-        done || true
+          printf 'harbor.internal/eel/%s:%s\n' "$svcname" "$SHORT_SHA"
+        done); do
+          if ! cosign attest \
+              --predicate /tmp/provenance.json \
+              --type slsaprovenance \
+              --oidc-issuer=https://spire.internal \
+              --identity-token="$OIDC_TOKEN" \
+              --yes \
+              "$image"; then
+            echo "attestation failed for $image"
+            rc=1
+          fi
+        done
+        exit $rc
 
   - name: rfc3161-timestamp
     image: eel/build-image:latest

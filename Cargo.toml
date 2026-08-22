@@ -24,12 +24,12 @@ exclude = [
   "services/biometric-edge-svc/crates/edge-api",
   # WP-4.7 in-flight: mobile-bff references axum-extra which fails to resolve at workspace parse time
   "services/field-mobile-svc/crates/mobile-bff",
-  # vprs-api, finance-transparency: directories exist but Cargo.toml is missing (in-flight)
-  "services/vprs-svc/crates/vprs-api",
-  "services/transparency-svc/crates/finance-transparency",
   # dr-failover: directory exists but Cargo.toml is missing (in-flight)
   "tools/dr-failover",
-  # custody: uuid6 not on crates.io (in-flight)
+  # vprs-api: sqlx::query! macros without offline prepare cache or live DATABASE_URL (in-flight)
+  "services/vprs-svc/crates/vprs-api",
+  # custody: depends on uuid6 which is not on crates.io (in-flight; root [workspace.dependencies]
+  # also carries a phantom uuid6 entry that only exists as an unpublished reference)
   "services/inventory-svc/crates/custody",
   # abis-fp-vendor-peak, bft-tally, fhe-tally: implemented in HARD-B
   # diaspora: WP-5.8 in-flight, pending workspace deps

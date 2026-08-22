@@ -68,13 +68,19 @@ steps:
     commands:
       - |
         SHORT_SHA=$(git rev-parse --short HEAD)
-        find services/*/deploy/nix -maxdepth 2 -name flake.nix 2>/dev/null | while read flake; do
+        # Any HIGH/CRITICAL finding (trivy --exit-code 1) or missing image fails
+        # the job; a vulnerable image is never silently swallowed.
+        rc=0
+        for image in $(find services/*/deploy/nix -maxdepth 2 -name flake.nix 2>/dev/null | while read flake; do
           svcname=$(basename "$(echo "$flake" | cut -d/ -f1-2)")
-          trivy image \
-            --exit-code 1 \
-            --severity HIGH,CRITICAL \
-            harbor.internal/eel/${svcname}:${SHORT_SHA}
-        done || true
+          printf 'harbor.internal/eel/%s:%s\n' "$svcname" "$SHORT_SHA"
+        done); do
+          if ! trivy image --exit-code 1 --severity HIGH,CRITICAL "$image"; then
+            echo "sbom scan failed for $image"
+            rc=1
+          fi
+        done
+        exit $rc
 
   artifacts:
     - air-gapped-build/sbom-cache/**

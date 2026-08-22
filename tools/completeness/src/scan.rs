@@ -29,6 +29,15 @@ const SKIP_DIRS: &[&str] = &[
     ".elixir_ls",
     "deps",
     ".dart_tool",
+    ".venv",
+    "venv",
+    "vendor",
+    "dist",
+    "build",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".pyright",
 ];
 
 struct Pattern {
