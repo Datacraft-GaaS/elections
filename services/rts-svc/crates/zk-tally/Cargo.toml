@@ -1,0 +1,36 @@
+[package]
+name = "zk-tally"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Groth16 zero-knowledge proof of correct tally aggregation (HARD-2)"
+
+[lib]
+name = "zk_tally"
+path = "src/lib.rs"
+
+[dependencies]
+ark-groth16          = { workspace = true }
+ark-bls12-381        = { workspace = true }
+ark-ff               = { workspace = true }
+ark-ec               = { workspace = true }
+ark-serialize        = { workspace = true }
+ark-relations        = { workspace = true }
+ark-r1cs-std         = { workspace = true }
+ark-crypto-primitives = { version = "0.4" }
+
+serde         = { workspace = true }
+thiserror     = { workspace = true }
+tracing       = { workspace = true }
+chrono        = { workspace = true }
+
+# Trusted setup / ceremony
+rand          = "0.8"
+
+# Proof hex encoding
+hex           = "0.4"
+
+[dev-dependencies]
+rand          = "0.8"

@@ -31,6 +31,7 @@ exclude = [
   "tools/dr-failover",
   # custody: uuid6 not on crates.io (in-flight)
   "services/inventory-svc/crates/custody",
+  # abis-fp-vendor-peak, bft-tally, fhe-tally: implemented in HARD-B
   # diaspora: WP-5.8 in-flight, pending workspace deps
   "services/biometric-edge-svc/crates/diaspora",
   # abis-fp-consensus and abis-fp-tps-warp: now implemented, excluded entries removed
@@ -104,8 +105,8 @@ opensearch      = { version = "2" }
 # Crypto / HSM
 cryptoki        = { version = "0.7" }
 sigstore        = { version = "0.10", features = ["bundle", "rekor"] }
-ed25519-dalek   = { version = "2",    features = ["serde"] }
-oqs             = { version = "0.9",  features = ["mlkem768", "mldsa65"] }
+ed25519-dalek   = { version = "2",    features = ["serde", "rand_core"] }
+oqs             = { version = "0.11", features = ["ml_kem", "ml_dsa", "dilithium", "kyber"] }
 
 # IDs
 uuid            = { version = "1",    features = ["v4", "v7", "serde"] }
@@ -114,6 +115,15 @@ uuid6           = { version = "0.7" }
 
 # ONNX Runtime (deep-learning fingerprint matcher)
 ort             = { version = "2.0.0-rc.13" }
+
+# ZK proof (HARD-2: Groth16 over BLS12-381)
+ark-groth16     = { version = "0.4" }
+ark-bls12-381   = { version = "0.4" }
+ark-ff          = { version = "0.4" }
+ark-ec          = { version = "0.4" }
+ark-serialize   = { version = "0.4" }
+ark-relations   = { version = "0.4" }
+ark-r1cs-std    = { version = "0.4" }
 
 # Error handling
 thiserror       = { version = "2" }
