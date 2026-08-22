@@ -1,0 +1,104 @@
+{
+  "consumer": { "name": "eel-inventory-rfid-cover-custody" },
+  "provider": { "name": "eel-rfid-impinj-adapter" },
+  "interactions": [
+    {
+      "description": "register a reader",
+      "request": {
+        "method": "POST",
+        "path": "/reader/register",
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "reader_id": "impinj-gate-001",
+          "svid": "spiffe://eel.local/reader/impinj-gate-001",
+          "location": "warehouse-a",
+          "reader_type": "impinj",
+          "firmware_version": "1.0.0"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "reader_id": "impinj-gate-001", "status": "registered" }
+      }
+    },
+    {
+      "description": "submit a single tag read",
+      "request": {
+        "method": "POST",
+        "path": "/reader/impinj-gate-001/read",
+        "headers": { "Content-Type": "application/json" },
+        "body": { "tag_epc": "deadbeef00000001", "tamper_indicator": false }
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "tag_epc": "deadbeef00000001",
+          "accepted": true,
+          "tag_state": "ready"
+        }
+      }
+    },
+    {
+      "description": "submit a batch of reads",
+      "request": {
+        "method": "POST",
+        "path": "/reader/impinj-gate-001/batch-read",
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "reads": [
+            { "tag_epc": "aabb000000000001", "tamper_indicator": false },
+            { "tag_epc": "aabb000000000002", "tamper_indicator": false }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": [
+          { "tag_epc": "aabb000000000001", "accepted": true },
+          { "tag_epc": "aabb000000000002", "accepted": true }
+        ]
+      }
+    },
+    {
+      "description": "issue a Gen2v2 challenge",
+      "request": {
+        "method": "POST",
+        "path": "/reader/impinj-gate-001/challenge",
+        "headers": { "Content-Type": "application/json" },
+        "body": { "tag_epc": "deadbeef00000001" }
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "tag_epc": "deadbeef00000001",
+          "nonce_hex": "00000000000000000000000000000000",
+          "challenge_hex": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "description": "query reader status",
+      "request": {
+        "method": "GET",
+        "path": "/reader/impinj-gate-001/status"
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "reader_id": "impinj-gate-001",
+          "healthy": true,
+          "tag_count": 0,
+          "adapter_type": "impinj"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": { "version": "2.0.0" }
+  }
+}

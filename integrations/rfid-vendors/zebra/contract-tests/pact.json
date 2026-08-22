@@ -1,0 +1,104 @@
+{
+  "consumer": { "name": "eel-inventory-rfid-cover-custody" },
+  "provider": { "name": "eel-rfid-zebra-adapter" },
+  "interactions": [
+    {
+      "description": "register a Zebra reader",
+      "request": {
+        "method": "POST",
+        "path": "/reader/register",
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "reader_id": "zebra-gate-001",
+          "svid": "spiffe://eel.local/reader/zebra-gate-001",
+          "location": "transit-checkpoint-a",
+          "reader_type": "zebra",
+          "firmware_version": "2.0.0"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "reader_id": "zebra-gate-001", "status": "registered" }
+      }
+    },
+    {
+      "description": "submit a single tag read (Zebra)",
+      "request": {
+        "method": "POST",
+        "path": "/reader/zebra-gate-001/read",
+        "headers": { "Content-Type": "application/json" },
+        "body": { "tag_epc": "cafebabe00000001", "tamper_indicator": false }
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "tag_epc": "cafebabe00000001",
+          "accepted": true,
+          "tag_state": "ready"
+        }
+      }
+    },
+    {
+      "description": "submit a batch of reads (Zebra)",
+      "request": {
+        "method": "POST",
+        "path": "/reader/zebra-gate-001/batch-read",
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "reads": [
+            { "tag_epc": "ccdd000000000001", "tamper_indicator": false },
+            { "tag_epc": "ccdd000000000002", "tamper_indicator": true }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": [
+          { "tag_epc": "ccdd000000000001", "accepted": true },
+          { "tag_epc": "ccdd000000000002", "accepted": true, "tag_state": "tampered" }
+        ]
+      }
+    },
+    {
+      "description": "issue a Gen2v2 challenge (Zebra)",
+      "request": {
+        "method": "POST",
+        "path": "/reader/zebra-gate-001/challenge",
+        "headers": { "Content-Type": "application/json" },
+        "body": { "tag_epc": "cafebabe00000001" }
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "tag_epc": "cafebabe00000001",
+          "nonce_hex": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "challenge_hex": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        }
+      }
+    },
+    {
+      "description": "query Zebra reader status",
+      "request": {
+        "method": "GET",
+        "path": "/reader/zebra-gate-001/status"
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "reader_id": "zebra-gate-001",
+          "healthy": true,
+          "tag_count": 0,
+          "adapter_type": "zebra"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": { "version": "2.0.0" }
+  }
+}
