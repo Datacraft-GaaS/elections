@@ -29,3 +29,6 @@ tracing-subscriber = { workspace = true }
 chrono           = { workspace = true }
 blake3           = "1"
 rts-domain       = { path = "../rts-domain" }
+
+[dev-dependencies]
+eel-trace-rs = { workspace = true }
