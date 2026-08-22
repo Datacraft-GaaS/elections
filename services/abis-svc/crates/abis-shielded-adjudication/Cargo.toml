@@ -1,0 +1,35 @@
+[package]
+name            = "eel-abis-shielded-adjudication"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description     = "Encrypted-inputs adjudication for low-tier cases (HARD-11)"
+
+[lib]
+name = "eel_abis_shielded_adjudication"
+path = "src/lib.rs"
+
+[features]
+test-utils = []
+
+[dependencies]
+serde           = { workspace = true }
+serde_json      = { workspace = true }
+thiserror       = { workspace = true }
+tracing         = { workspace = true }
+sha2            = { workspace = true }
+blake3          = { workspace = true }
+hex             = { workspace = true }
+chrono          = { workspace = true }
+uuid            = { workspace = true }
+ed25519-dalek   = { workspace = true }
+
+eel-abis-shielding    = { path = "../abis-shielding" }
+eel-abis-cancelable   = { path = "../abis-cancelable" }
+eel-abis-adjudication = { path = "../abis-adjudication", features = ["test-utils"] }
+eel-crypto-rs         = { path = "../../../../packages/eel-crypto-rs", default-features = false }
+
+[dev-dependencies]
+rstest          = { workspace = true }
+regex           = "1"

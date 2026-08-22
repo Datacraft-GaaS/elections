@@ -1,0 +1,45 @@
+[project]
+name = "eel-cross-platform-cib"
+version = "0.1.0"
+description = "Cross-platform Coordinated Inauthentic Behaviour (CIB) detection with GNN (HARD-10)"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [{ name = "eel contributors" }]
+
+dependencies = [
+	"fastapi>=0.115",
+	"uvicorn[standard]>=0.32",
+	"torch>=2.3; platform_machine != 'arm64' or sys_platform != 'darwin'",
+	"torch>=2.3; platform_machine == 'arm64' and sys_platform == 'darwin'",
+	"torch-geometric>=2.5",
+	"networkx>=3.3",
+	"pandas>=2.2",
+	"numpy>=1.26",
+	"pyarrow>=16",
+	"pydantic>=2.7",
+	"httpx>=0.27",
+]
+
+[project.optional-dependencies]
+dev = [
+	"pytest>=8",
+	"pytest-asyncio>=0.23",
+	"pyright>=1.1",
+	"anyio>=4",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "standard"
+include = ["src"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/eel_cross_platform_cib"]
