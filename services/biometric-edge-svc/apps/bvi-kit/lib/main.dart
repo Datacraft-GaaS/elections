@@ -13,9 +13,15 @@
 /// 11-language UI + a11y.
 
 import 'package:flutter/material.dart';
+import 'package:eel_kit_sdk/telemetry.dart';
 
 import 'src/app.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await TelemetryService.init(
+    appId: 'bvi-kit',
+    personaRole: 'identification_officer',
+  );
   runApp(const BviKitApp());
 }

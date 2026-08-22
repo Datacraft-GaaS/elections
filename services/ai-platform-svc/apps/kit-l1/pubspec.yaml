@@ -7,6 +7,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  eel_kit_sdk:
+    path: ../../../../packages/kit-sdk-flutter
 dev_dependencies:
   flutter_test:
     sdk: flutter

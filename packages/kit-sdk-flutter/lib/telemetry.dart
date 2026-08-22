@@ -1,0 +1,24 @@
+/// Public barrel for the eel telemetry sub-module.
+///
+/// Apps import this single file:
+///   import 'package:eel_kit_sdk/telemetry.dart';
+library eel_kit_sdk_telemetry;
+
+export 'src/telemetry/signal_sink.dart';
+export 'src/telemetry/signal_types.dart';
+export 'src/telemetry/adaptive_sampling.dart';
+export 'src/telemetry/activity_tracker.dart';
+export 'src/telemetry/attestation_pulse.dart';
+export 'src/telemetry/battery_monitor.dart';
+export 'src/telemetry/drop_detector.dart';
+export 'src/telemetry/hash_chain.dart';
+export 'src/telemetry/location_service.dart';
+export 'src/telemetry/network_watcher.dart';
+export 'src/telemetry/offline_queue.dart';
+export 'src/telemetry/redactor.dart';
+export 'src/telemetry/rfid_proximity_service.dart';
+export 'src/telemetry/sensors_service.dart';
+export 'src/telemetry/session_recorder.dart';
+export 'src/telemetry/signer.dart';
+export 'src/telemetry/sink_dispatcher.dart';
+export 'src/telemetry/telemetry_service.dart';

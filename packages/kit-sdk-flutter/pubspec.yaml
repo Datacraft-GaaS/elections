@@ -18,6 +18,14 @@ dependencies:
   isar_flutter_libs: ^3.1.0
   flutter_secure_storage: ^9.0.0
 
+  # Telemetry sensor stack
+  sensors_plus: ^4.0.2
+  battery_plus: ^6.1.1
+  geolocator: ^13.0.1
+  connectivity_plus: ^6.1.1
+  crypto: ^3.0.3
+  uuid: ^4.5.1
+
   # HTTP
   dio: ^5.4.0
   # dio_certificate_pinning not published on pub.dev; SPKI pinning implemented

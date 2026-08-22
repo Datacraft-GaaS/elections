@@ -14,9 +14,15 @@
 /// 11-language UI via packages/i18n.
 
 import 'package:flutter/material.dart';
+import 'package:eel_kit_sdk/telemetry.dart';
 
 import 'src/app.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await TelemetryService.init(
+    appId: 'bvr-kit',
+    personaRole: 'enrolment_officer',
+  );
   runApp(const BvrKitApp());
 }

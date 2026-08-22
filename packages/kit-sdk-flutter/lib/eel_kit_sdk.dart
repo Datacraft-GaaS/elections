@@ -11,3 +11,4 @@ export 'src/time_fence.dart';
 export 'src/duress.dart';
 export 'src/a11y.dart';
 export 'src/verifier_ffi.dart';
+export 'telemetry.dart';

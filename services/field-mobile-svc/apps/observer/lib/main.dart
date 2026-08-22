@@ -1,10 +1,16 @@
+import 'package:eel_kit_sdk/telemetry.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
 import 'src/app_router.dart';
 
-void main() {
+void main() async {
+	WidgetsFlutterBinding.ensureInitialized();
+	await TelemetryService.init(
+		appId: 'observer',
+		personaRole: 'election_observer',
+	);
 	runApp(const ProviderScope(child: EelObserverApp()));
 }
 

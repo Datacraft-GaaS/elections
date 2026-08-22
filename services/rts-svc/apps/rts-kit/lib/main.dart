@@ -9,6 +9,10 @@ import 'src/app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await TelemetryService.init(
+    appId: 'rts-kit',
+    personaRole: 'results_transmission_officer',
+  );
 
   Logger.root.level = Level.INFO;
   Logger.root.onRecord.listen((rec) {
