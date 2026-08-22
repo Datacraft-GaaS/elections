@@ -213,6 +213,39 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+    get:
+      tags: [investigator]
+      operationId: listComplaintUpdates
+      x-handler-bound: ecc-svc.ecc-api.list_complaint_updates
+      summary: List investigator updates on a complaint
+      description: >
+        Returns the list of status updates appended to a complaint. Used by
+        caseworkers and investigators to review the action history on a case.
+        Requires JWT.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ComplaintIdParam'
+      responses:
+        '200':
+          description: Complaint update history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplaintUpdateResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /grievance/ussd/session:
     post:
       tags: [ussd]

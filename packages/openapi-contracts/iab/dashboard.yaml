@@ -297,6 +297,34 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+    get:
+      tags: [flags]
+      operationId: listIabFlags
+      x-handler-bound: ecc-svc.ecc-api.list_iab_flags
+      summary: List anomaly flags for IAB review
+      description: >
+        Returns the anomaly flags awaiting IAB review. SpiceDB policy controls
+        which flags the authenticated principal may read.
+      x-eel-sla:
+        p95_ms: 300
+        p99_ms: 800
+        availability: "99.5%"
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Paginated list of anomaly flags
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnomalyFlagResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
 components:
   securitySchemes:
     bearerAuth:
