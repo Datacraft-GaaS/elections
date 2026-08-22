@@ -135,5 +135,91 @@ Related documents:
 - `docs/features/anti-fraud-and-rigging-detection.md` — full 24-item hardening catalogue.
 - `docs/features/SC-defensibility.md` — court-facing evidence surface.
 - `services/inventory-svc/docs/CAPABILITIES.md` — M20 + M39 + M65 catalogue.
-- `docs/runbooks/rfid-tamper-response.md` (built with the crate) — ECC dispatch runbook.
+- `docs/runbooks/rfid-tamper-response.md` — ECC dispatch runbook.
 - `docs/features/diagrams/rfid-ballot-box-covers.svg` — architecture diagram.
+
+## 11. As-built status
+
+All 12 planned deliverables are shipped across 3 commits.
+
+### RFID-A — Rust crate + migration (commit `fd6e7f3`)
+
+| Path | Purpose | Tests |
+|---|---|---|
+| `services/inventory-svc/migrations/V051__rfid_ballot_covers.sql` | 4 tables + append-only triggers on transitions + tamper_alerts + ADR-0016 data-class COMMENTs | schema |
+| `services/inventory-svc/crates/rfid-cover-custody/src/domain.rs` | CoverState (15 variants) + ReaderType (8) + TamperState (5) + Severity (3) | — |
+| `services/inventory-svc/crates/rfid-cover-custody/src/tag.rs` | UUID7 + 96-bit SGTIN-96 EPC issuance + pair-to-box invariants | — |
+| `services/inventory-svc/crates/rfid-cover-custody/src/reader.rs` | Reader trait + HmacChallenger (Gen2v2 HMAC-SHA256) + ReaderRegistry SVID | — |
+| `services/inventory-svc/crates/rfid-cover-custody/src/state_machine.rs` | 13-transition table + QUARANTINE absorbing + four-eyes validator | — |
+| `services/inventory-svc/crates/rfid-cover-custody/src/hash_chain.rs` | BLAKE3 prev/this hash chain + verify_chain reconstruction | — |
+| `services/inventory-svc/crates/rfid-cover-custody/src/replay_defence.rs` | NonceStore trait + InMemoryNonceStore with 5-min window auto-prune | — |
+| `services/inventory-svc/crates/rfid-cover-custody/src/tamper_alert.rs` | classify_severity + build_alert + async ECC dispatch via reqwest | — |
+| `services/inventory-svc/crates/rfid-cover-custody/src/read_ingest.rs` | Pure pipeline: SVID check → replay defence → HMAC verify → CoverRead → alert | — |
+| `services/inventory-svc/crates/rfid-cover-custody/src/api.rs` | Axum 0.8 with 7 routes (issuance, pair, reads, transition, history, tamper-alerts triage) | — |
+| `services/inventory-svc/crates/rfid-cover-custody/src/events.rs` | 5 CloudEvent type constants + envelope builders | — |
+| `services/inventory-svc/crates/rfid-cover-custody/src/metrics.rs` | 4 prometheus CounterVec (reads + tamper + transitions + hmac failures) | — |
+| `services/inventory-svc/crates/rfid-cover-custody/tests/rfid_test.rs` | 47 tests | 47 |
+
+Zero `unwrap()` in library src. Zero `iebc` identifiers. `cargo build --release` clean.
+
+### RFID-B — Python reader driver + 3 vendor adapters (commit `3e8eed8`)
+
+| Path | Purpose | Tests |
+|---|---|---|
+| `services/inventory-svc/py/rfid-reader-driver/src/eel_rfid_reader/main.py` | FastAPI with 6 endpoints (register + read + batch-read + challenge + status + health) | — |
+| `services/inventory-svc/py/rfid-reader-driver/src/eel_rfid_reader/adapter.py` | RfidReaderAdapter ABC (issue_challenge + submit_response) | — |
+| `services/inventory-svc/py/rfid-reader-driver/src/eel_rfid_reader/adapters/synthetic.py` | Deterministic hash-based adapter with configurable tamper_prob (for tests + CI) | — |
+| `services/inventory-svc/py/rfid-reader-driver/src/eel_rfid_reader/adapters/impinj_llrp.py` | Impinj Speedway R700 via LLRP (guarded import) | — |
+| `services/inventory-svc/py/rfid-reader-driver/src/eel_rfid_reader/adapters/zebra_link.py` | Zebra FX9600 via ZebraLink (guarded import) | — |
+| `services/inventory-svc/py/rfid-reader-driver/src/eel_rfid_reader/adapters/cipherlab_rs36.py` | CipherLab RS36 handheld via BLE + serial | — |
+| `services/inventory-svc/py/rfid-reader-driver/src/eel_rfid_reader/hmac_gen2v2.py` | HMAC-SHA256 challenge/response per EPC Gen2v2 + 5-min nonce dedup via LRU OrderedDict | — |
+| `services/inventory-svc/py/rfid-reader-driver/src/eel_rfid_reader/upstream.py` | Async httpx client forwarding to cover-custody REST with Idempotency-Key per UUID7 | — |
+| `services/inventory-svc/py/rfid-reader-driver/tests/*` | 36 pytest (adapters + hmac + main + upstream); pyright clean | 36 |
+| `integrations/rfid-vendors/impinj/{adapter,double,contract-tests,README}` | Rust adapter + tamper-injection double + Pact v2 + hardware notes (Speedway R700, 865-868 MHz, LLRP 1.1) | 5 |
+| `integrations/rfid-vendors/zebra/{adapter,double,contract-tests,README}` | Rust adapter + tamper-injection double + Pact v2 + hardware notes (FX9600, ZebraLink) | 5 |
+| `integrations/rfid-vendors/cipherlab/{adapter,double,contract-tests,README}` | Rust adapter + tamper-injection double (with battery_low knob) + Pact v2 + hardware notes (RS36 handheld) | 5 |
+
+Each vendor crate is standalone (`[workspace]` opt-out) with path dep to `eel-resilience-rs` (CircuitBreaker 5 failures / 60 s window / 30 s cooldown).
+
+### RFID-C — Human surfaces + diagram + runbook (commit `5f11d52`)
+
+| Path | Purpose | Tests |
+|---|---|---|
+| `services/inventory-svc/django/inventory-admin/apps/rfid_covers/models.py` | 4 Django models mirroring V051 (managed=False) | — |
+| `services/inventory-svc/django/inventory-admin/apps/rfid_covers/admin.py` | 4 ModelAdmin + ResolvedStatusFilter + mark_retired + bulk_resolve_with_note | — |
+| `services/inventory-svc/django/inventory-admin/apps/rfid_covers/views.py` | HTMX views: box_chain (with prev_hash verification) + tamper_triage (inline resolve) + reader_health | — |
+| `services/inventory-svc/django/inventory-admin/apps/rfid_covers/tests/*` | 23 pytest (admin + views + permission-aware queryset) | 23 |
+| `services/ecc-svc/ex/ecc_live/lib/ecc_live_web/live/cover_tamper_live.ex` | LiveView on PubSub `eel:inventory:cover_tamper`; 15s auto-refresh; severity-triple-encoded badges (colour + shape + text) | — |
+| `services/ecc-svc/ex/ecc_live/lib/ecc_live_web/live/cover_history_live.ex` | Per-tag state-transition timeline with in-memory chain verification | — |
+| `services/ecc-svc/ex/ecc_live/test/ecc_live_web/live/{cover_tamper,cover_history}_test.exs` | 18 ExUnit tests | 18 |
+| `services/inventory-svc/apps/custody-mobile/lib/src/services/rfid_reader_service.dart` | RfidReaderService trait + SyntheticReaderService + factory (Zebra + CipherLab + synthetic) | — |
+| `services/inventory-svc/apps/custody-mobile/lib/src/screens/rfid_scan.dart` | BLE pairing + scan-result card + officer confirmation + state transition submit + offline queue + duress long-press | — |
+| `services/inventory-svc/apps/custody-mobile/test/*` | 18 Flutter tests (widget + unit) | 18 |
+| `docs/features/diagrams/rfid-ballot-box-covers.svg` | 1200x800 valid XML + colour-blind-safe + HSM lock icons at every transition + Merkle anchor + tamper → ECC path | — |
+| `docs/runbooks/rfid-tamper-response.md` | 10 sections; ECC + Commissioner + Legal + ODPP escalation; Elections (Technology) Regulations 2017 Reg 17 citation | manual verify |
+
+### Cross-language test totals
+
+- **Rust**: 47 (cover-custody) + 15 (3 vendors) = 62 tests
+- **Python**: 36
+- **Django**: 23
+- **Elixir**: 18
+- **Flutter**: 18
+- **Grand total: 157 tests across 6 languages**
+
+### Deviations tracked
+
+- `lot_id` FK to `eel_printing_lots` deferred: table not yet migrated (M39 in flight); UUID column stored without REFERENCES constraint with an inline COMMENT flagging the pending FK.
+- `services/inventory-svc/Cargo.toml` not created: no nested workspace; root glob `services/*/crates/*` picks up the new crate automatically.
+- Vendor adapter crates are standalone (`[workspace]` opt-out) to avoid touching root Cargo.toml.
+- pyright mode is `standard` not `strict` to match existing codebase; TestClient's partial stubs from starlette trip strict mode.
+
+### External prerequisites remaining
+
+- Tag procurement (100 k tags × ~15-20 KES ≈ 2M KES) via competitive tender.
+- Reader procurement (~60 fixed gates + 250 handhelds ≈ 30M KES capex).
+- Kenya UHF band clearance (CAK 2022 band plan already allocates 865-868 MHz for EPC Gen2 — administrative, not blocking).
+- Signed firmware images from Impinj + Zebra + CipherLab for SPIRE-attested reader boot.
+- Commercial SDK licences for ZebraLink + CipherLab (LLRP is open + royalty-free).
+- Printer MES update to include cover-tag application + pairing step in the M39 print run.
+- Airline + MFA cargo terminal reader integration (existing adapters at `integrations/airline-cargo` + `integrations/kra-eclearance` are wired).
