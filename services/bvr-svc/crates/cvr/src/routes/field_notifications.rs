@@ -203,17 +203,9 @@ fn validate_kenya_geo(lat: f64, lon: f64) -> Result<(), ApiError> {
 // ---------------------------------------------------------------------------
 
 fn sha256_hex(data: &[u8]) -> String {
-    use std::fmt::Write;
-    // Simple SHA-256 without pulling in ring/sha2 (workspace doesn't declare
-    // sha2 yet). In production, add sha2 = "0.10" to workspace deps and
-    // replace with sha2::Sha256::digest(data).
-    // For now: produce a deterministic placeholder hash for the stub.
-    // TODO: replace with sha2::Sha256::digest(data) after adding workspace dep.
-    let mut out = String::with_capacity(64);
-    for b in data {
-        write!(out, "{:02x}", b).unwrap();
-    }
-    out
+    use sha2::{Digest, Sha256};
+    let digest = Sha256::digest(data);
+    digest.iter().map(|b| format!("{b:02x}")).collect()
 }
 
 fn verify_cert_sha256(cert_bytes: &[u8], client_hex: &str) -> Result<(), ApiError> {
@@ -449,4 +441,38 @@ pub fn router() -> Router {
             "/v1/cvr/field-notifications/{capture_id}/reviewer-decision",
             patch(reviewer_decision),
         )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sha256_hex_matches_known_vector() {
+        // SHA-256("abc") = ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+        assert_eq!(
+            sha256_hex(b"abc"),
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        );
+    }
+
+    #[test]
+    fn sha256_hex_is_64_hex_chars() {
+        let h = sha256_hex(b"field-notification-cert");
+        assert_eq!(h.len(), 64);
+        assert!(h.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn verify_cert_sha256_accepts_matching_hash() {
+        let cert = b"certificate-bytes";
+        let hex = sha256_hex(cert);
+        assert!(verify_cert_sha256(cert, &hex).is_ok());
+    }
+
+    #[test]
+    fn verify_cert_sha256_rejects_mismatch() {
+        let cert = b"certificate-bytes";
+        assert!(verify_cert_sha256(cert, "deadbeef").is_err());
+    }
 }
