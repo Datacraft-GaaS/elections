@@ -54,3 +54,34 @@ impl CoalitionRegistration {
         self.dissolved_at = Some(Utc::now());
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use eel_trace_rs::trace;
+
+    #[trace("FR-M45-015")]
+    #[test]
+    fn coalition_activates_only_after_all_members_confirm() {
+        let a = Uuid::new_v4();
+        let b = Uuid::new_v4();
+        let mut c = CoalitionRegistration::new(Uuid::new_v4(), "Grand Alliance".into(), vec![a, b]);
+        assert_eq!(c.status, CoalitionStatus::Forming);
+        c.confirm_member(a);
+        assert_eq!(c.status, CoalitionStatus::Forming);
+        c.confirm_member(b);
+        assert_eq!(c.status, CoalitionStatus::Active);
+    }
+
+    #[trace("FR-M45-015")]
+    #[test]
+    fn duplicate_confirmation_does_not_double_count() {
+        let a = Uuid::new_v4();
+        let b = Uuid::new_v4();
+        let mut c = CoalitionRegistration::new(Uuid::new_v4(), "Alliance".into(), vec![a, b]);
+        c.confirm_member(a);
+        c.confirm_member(a);
+        assert_eq!(c.confirmed_party_ids.len(), 1);
+        assert_eq!(c.status, CoalitionStatus::Forming);
+    }
+}

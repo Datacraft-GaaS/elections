@@ -80,3 +80,62 @@ impl Gazette {
         out
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use eel_trace_rs::trace;
+
+    fn entry(name: &str, party: Option<String>) -> GazetteEntry {
+        GazetteEntry {
+            candidate_id: Uuid::new_v4(),
+            name: name.into(),
+            position: "MP".into(),
+            constituency_code: "019".into(),
+            party_name: party,
+            status: "CLEARED".into(),
+        }
+    }
+
+    #[trace("FR-M12-016")]
+    #[test]
+    fn to_csv_emits_header_and_rows_with_independent_default() {
+        let g = Gazette::build(
+            "E2027".into(),
+            "MP".into(),
+            vec![entry("A", Some("Party X".into())), entry("B", None)],
+            "officer-a".into(),
+            "officer-b".into(),
+        );
+        let csv = g.to_csv();
+        let lines: Vec<&str> = csv.trim_end().split('\n').collect();
+        assert_eq!(
+            lines[0],
+            "candidate_id,name,position,constituency,party,status"
+        );
+        assert_eq!(lines.len(), 3);
+        assert!(lines[1].contains("Party X"));
+        assert!(lines[2].contains("INDEPENDENT"));
+    }
+
+    #[trace("FR-M12-016")]
+    #[test]
+    fn content_hash_is_64_hex_and_sensitive_to_entries() {
+        let g1 = Gazette::build(
+            "E2027".into(),
+            "MP".into(),
+            vec![entry("A", None)],
+            "a".into(),
+            "b".into(),
+        );
+        let g2 = Gazette::build(
+            "E2027".into(),
+            "MP".into(),
+            vec![entry("A2", None)],
+            "a".into(),
+            "b".into(),
+        );
+        assert_eq!(g1.content_hash.len(), 64);
+        assert_ne!(g1.content_hash, g2.content_hash);
+    }
+}

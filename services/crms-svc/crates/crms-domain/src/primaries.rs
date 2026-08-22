@@ -128,3 +128,75 @@ impl PrimaryDispute {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use eel_trace_rs::trace;
+
+    fn tallies() -> Vec<CandidateTally> {
+        vec![
+            CandidateTally {
+                candidate_name: "A".into(),
+                votes: 100,
+            },
+            CandidateTally {
+                candidate_name: "B".into(),
+                votes: 90,
+            },
+        ]
+    }
+
+    #[trace("FR-M46-011")]
+    #[test]
+    fn result_hash_is_deterministic_and_sensitive_to_tallies() {
+        let r1 = PrimaryResult::build(
+            Uuid::new_v4(),
+            "019".into(),
+            "MP".into(),
+            "agent".into(),
+            tallies(),
+            2,
+            200,
+        );
+        let r2 = PrimaryResult::build(
+            Uuid::new_v4(),
+            "019".into(),
+            "MP".into(),
+            "agent".into(),
+            tallies(),
+            2,
+            200,
+        );
+        assert_eq!(r1.result_hash, r2.result_hash);
+        assert_eq!(r1.result_hash.len(), 64);
+        let mut changed = tallies();
+        changed[0].votes = 101;
+        let r3 = PrimaryResult::build(
+            Uuid::new_v4(),
+            "019".into(),
+            "MP".into(),
+            "agent".into(),
+            changed,
+            2,
+            200,
+        );
+        assert_ne!(r1.result_hash, r3.result_hash);
+    }
+
+    #[trace("FR-M46-011")]
+    #[test]
+    fn fresh_result_has_no_merkle_leaf_and_not_amended() {
+        let r = PrimaryResult::build(
+            Uuid::new_v4(),
+            "019".into(),
+            "MP".into(),
+            "agent".into(),
+            tallies(),
+            0,
+            190,
+        );
+        assert!(r.merkle_leaf_id.is_none());
+        assert!(!r.amended);
+    }
+}
