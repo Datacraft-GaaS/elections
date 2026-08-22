@@ -235,4 +235,40 @@ mod tests {
         c.gazette().unwrap();
         assert!(matches!(c.withdraw(), Err(CandidateError::AlreadyGazetted)));
     }
+
+    #[trace("FR-M12-012")]
+    #[test]
+    fn illegal_status_jumps_are_rejected() {
+        let mut c = make_candidate();
+        c.payment_confirmed = true;
+        c.submit().unwrap();
+        // SUBMITTED -> GAZETTED skips DOCS_UPLOADED/RO_REVIEWING/CLEARED.
+        assert!(matches!(
+            c.gazette(),
+            Err(CandidateError::InvalidTransition { .. })
+        ));
+        // SUBMITTED -> RO_REVIEWING skips DOCS_UPLOADED.
+        assert!(matches!(
+            c.begin_ro_review(),
+            Err(CandidateError::InvalidTransition { .. })
+        ));
+    }
+
+    #[trace("FR-M12-012")]
+    #[test]
+    fn rejected_candidate_may_resubmit() {
+        let mut c = make_candidate();
+        c.payment_confirmed = true;
+        c.submit().unwrap();
+        c.mark_docs_uploaded().unwrap();
+        c.begin_ro_review().unwrap();
+        c.reject().unwrap();
+        // REJECTED -> CLEARED is not a legal edge; only REJECTED -> SUBMITTED is.
+        assert!(matches!(
+            c.clear(),
+            Err(CandidateError::InvalidTransition { .. })
+        ));
+        c.submit().unwrap();
+        assert_eq!(c.status, CandidateStatus::Submitted);
+    }
 }

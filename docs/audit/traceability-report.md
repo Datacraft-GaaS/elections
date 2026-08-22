@@ -1054,7 +1054,7 @@
 | FR-M12-009 | crms | services/crms-svc/crates/crms-domain/src/quota.rs:147 | OK |
 | FR-M12-010 | crms |  | GAP |
 | FR-M12-011 | crms |  | GAP |
-| FR-M12-012 | crms | services/crms-svc/crates/crms-domain/src/candidate.rs:213 | OK |
+| FR-M12-012 | crms | services/crms-svc/crates/crms-domain/src/candidate.rs:213, services/crms-svc/crates/crms-domain/src/candidate.rs:239, services/crms-svc/crates/crms-domain/src/candidate.rs:257 | OK |
 | FR-M12-013 | crms |  | GAP |
 | FR-M12-014 | crms | services/crms-svc/crates/crms-domain/src/candidate.rs:226 | OK |
 | FR-M12-015 | crms |  | GAP |
