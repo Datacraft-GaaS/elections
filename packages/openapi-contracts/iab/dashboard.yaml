@@ -30,6 +30,7 @@ paths:
     get:
       tags: [audit-reports]
       operationId: listAuditReports
+      x-handler-bound: ecc-svc.ecc-api.list_audit_reports
       summary: List audit reports
       description: >
         Returns a paginated list of audit reports visible to the authenticated
@@ -90,6 +91,7 @@ paths:
     post:
       tags: [audit-reports]
       operationId: submitAuditReport
+      x-handler-bound: ecc-svc.ecc-api.create_audit_report
       summary: Submit audit report
       description: >
         Submits a new audit report. Idempotent on Idempotency-Key; a duplicate
@@ -133,6 +135,7 @@ paths:
     get:
       tags: [audit-reports]
       operationId: getAuditReport
+      x-handler-bound: ecc-svc.ecc-api.get_audit_report
       summary: Get audit report detail
       description: >
         Retrieves the full detail of a single audit report by its UUIDv7
@@ -165,6 +168,7 @@ paths:
     get:
       tags: [dashboard]
       operationId: getDashboardSummary
+      x-handler-bound: ecc-svc.ecc-api.get_iab_summary
       summary: Dashboard summary stats
       description: >
         Returns aggregate dashboard statistics for the IAB oversight view.
@@ -193,6 +197,7 @@ paths:
     get:
       tags: [audit-trails]
       operationId: getAuditTrail
+      x-handler-bound: ecc-svc.ecc-api.get_audit_trails
       summary: Fetch audit trail for a module
       description: >
         Returns a paginated, time-ordered audit trail for the specified module
@@ -252,6 +257,7 @@ paths:
     post:
       tags: [flags]
       operationId: flagAnomaly
+      x-handler-bound: ecc-svc.ecc-api.create_iab_flag
       summary: Flag an anomaly for IAB review
       description: >
         Submits an anomaly flag to the IAB review queue. Idempotent on

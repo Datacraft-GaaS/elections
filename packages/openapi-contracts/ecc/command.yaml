@@ -31,6 +31,7 @@ paths:
     get:
       tags: [situational-awareness]
       operationId: getSituationalAwareness
+      x-handler-bound: ecc-svc.ecc-api.get_situational_awareness
       summary: Real-time election day status
       description: >
         Returns a live snapshot of election day operations: stations reporting,
@@ -60,6 +61,7 @@ paths:
     get:
       tags: [stations]
       operationId: listStations
+      x-handler-bound: ecc-svc.ecc-api.list_stations
       summary: Station status list
       description: >
         Returns a paginated list of all polling station operational statuses
@@ -107,6 +109,7 @@ paths:
     get:
       tags: [stations]
       operationId: getStation
+      x-handler-bound: ecc-svc.ecc-api.get_station
       summary: Station detail
       description: >
         Returns full operational detail for a single polling station including
@@ -139,6 +142,7 @@ paths:
     post:
       tags: [escalations]
       operationId: createEscalation
+      x-handler-bound: ecc-svc.ecc-api.create_escalation
       summary: Escalate incident to command chain
       description: >
         Creates a new escalation record and routes it to the appropriate
@@ -180,6 +184,7 @@ paths:
     get:
       tags: [escalations]
       operationId: listEscalations
+      x-handler-bound: ecc-svc.ecc-api.list_escalations
       summary: List escalations
       description: >
         Returns a paginated list of escalations. SpiceDB policy restricts
@@ -227,6 +232,7 @@ paths:
     patch:
       tags: [escalations]
       operationId: updateEscalation
+      x-handler-bound: ecc-svc.ecc-api.patch_escalation
       summary: Update escalation status
       description: >
         Partially updates an escalation record. Used by command chain roles to
@@ -273,6 +279,7 @@ paths:
     get:
       tags: [heatmap]
       operationId: getTurnoutHeatmap
+      x-handler-bound: ecc-svc.ecc-api.get_turnout_heatmap
       summary: County-level turnout heatmap data
       description: >
         Returns a GeoJSON FeatureCollection where each feature is a county
@@ -302,6 +309,7 @@ paths:
     get:
       tags: [audit-log]
       operationId: getEccAuditLog
+      x-handler-bound: ecc-svc.ecc-api.get_audit_log
       summary: ECC command audit log
       description: >
         Returns a paginated audit log of all actions performed within the ECC

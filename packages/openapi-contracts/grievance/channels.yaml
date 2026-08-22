@@ -27,6 +27,7 @@ paths:
     post:
       tags: [complaints]
       operationId: fileComplaint
+      x-handler-bound: ecc-svc.ecc-api.create_complaint
       summary: File a complaint
       description: >
         Files a new election complaint. Accepts both authenticated submissions
@@ -69,6 +70,7 @@ paths:
     get:
       tags: [investigator]
       operationId: listComplaints
+      x-handler-bound: ecc-svc.ecc-api.list_complaints
       summary: Caseworker complaint list
       description: >
         Returns a paginated list of complaints for caseworker and investigator
@@ -131,6 +133,7 @@ paths:
     get:
       tags: [complaints]
       operationId: getComplaintStatus
+      x-handler-bound: ecc-svc.ecc-api.get_complaint
       summary: Complaint status by reference code
       description: >
         Returns the current status and public timeline of a complaint. No
@@ -168,6 +171,7 @@ paths:
     post:
       tags: [investigator]
       operationId: addComplaintUpdate
+      x-handler-bound: ecc-svc.ecc-api.add_complaint_update
       summary: Add investigator update to complaint
       description: >
         Appends a status update to a complaint record. Used by caseworkers and
@@ -213,6 +217,7 @@ paths:
     post:
       tags: [ussd]
       operationId: handleUssdSession
+      x-handler-bound: ecc-svc.ecc-api.ussd_session
       summary: USSD session hook for complaint intake
       description: >
         Processes a USSD session step for the grievance intake flow. The
@@ -254,6 +259,7 @@ paths:
     post:
       tags: [whatsapp]
       operationId: handleWhatsAppWebhook
+      x-handler-bound: ecc-svc.ecc-api.whatsapp_webhook
       summary: WhatsApp webhook for grievance intake
       description: >
         Receives WhatsApp Cloud API event payloads and routes them to the
