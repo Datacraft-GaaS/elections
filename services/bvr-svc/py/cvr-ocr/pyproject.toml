@@ -1,0 +1,48 @@
+[project]
+name = "eel-cvr-ocr"
+version = "0.1.0"
+description = "CVR field-officer OCR worker for death certificate and ID-correction form recognition (M35)"
+requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "pydantic>=2.7",
+    "pillow>=10.4",
+    "opencv-python-headless>=4.10",
+    "numpy>=1.26",
+    # pytesseract is optional: install only when tesseract-ocr is available on the host.
+    # The extract module falls back to a deterministic stub when pytesseract is absent.
+    "pytesseract>=0.3.13; extra == 'ocr'",
+]
+
+[project.optional-dependencies]
+ocr = ["pytesseract>=0.3.13"]
+
+[project.scripts]
+eel-cvr-ocr = "eel_cvr_ocr.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/eel_cvr_ocr"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.pyright]
+include = ["src", "tests"]
+pythonVersion = "3.12"
+typeCheckingMode = "strict"
+reportMissingModuleSource = false
+
+[dependency-groups]
+dev = [
+    "pytest>=8.2",
+    "pytest-asyncio>=0.23",
+    "httpx>=0.27",
+    "pyright>=1.1",
+]

@@ -39,6 +39,8 @@ pub enum EventSource {
     Kra,
     FamilyShortcode,
     OfficerManual,
+    /// M35 field-officer mobile capture (V050 migration, FIELD_OFFICER source).
+    FieldOfficer,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,6 +1,7 @@
 pub mod batches;
 pub mod events;
 pub mod family_notify;
+pub mod field_notifications;
 pub mod health;
 pub mod snapshots;
 
@@ -13,4 +14,5 @@ pub fn router() -> Router {
         .merge(events::router())
         .merge(snapshots::router())
         .merge(family_notify::router())
+        .merge(field_notifications::router())
 }

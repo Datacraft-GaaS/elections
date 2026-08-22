@@ -1,0 +1,53 @@
+name: eel_cvr_field_officer
+description: CVR field-officer mobile app for continuous voter registration (M35).
+version: 1.0.0+1
+publish_to: none
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.22.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # kit-sdk-flutter provides: offline queue, attestation, SPKI-pinned HTTP,
+  # HLC clock, duress detection, accessibility widgets, Isar encrypted store.
+  eel_kit_sdk:
+    path: ../../../../packages/kit-sdk-flutter
+
+  # State management
+  flutter_riverpod: ^2.5.1
+
+  # Local persistence (offline queue)
+  isar: ^3.1.0
+  isar_flutter_libs: ^3.1.0
+
+  # Networking
+  http: ^1.2.1
+
+  # Camera + image picker
+  image_picker: ^1.1.2
+  camera: ^0.11.0
+
+  # Location
+  geolocator: ^13.0.0
+
+  # i18n
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.0
+
+  # Time zones
+  timezone: ^0.9.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  generate: true
+  uses-material-design: true
+  assets:
+    - lib/l10n/

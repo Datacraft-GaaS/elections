@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">M34 Mobile Observer — Architecture Diagram</title>
+  <desc id="desc">Observer station visits, signed incident attachments, sampling verification, mission PDF, AG mirror, and USSD chief-signal fallback.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#f8f9fa"/>
+  <text x="600" y="36" font-family="Arial,sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#111">M34 Mobile Observer</text>
+  <text x="600" y="56" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#555">Station visits · signed incidents · sampling verification · mission PDF · AG mirror · USSD fallback</text>
+
+  <!-- Observer persona -->
+  <circle cx="110" cy="115" r="22" fill="#2ca02c"/>
+  <text x="110" y="150" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#333">Observer</text>
+
+  <!-- Observer App -->
+  <rect x="30" y="185" width="240" height="100" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="150" y="211" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">Observer App</text>
+  <text x="150" y="231" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">Flutter — OBSERVER role</text>
+  <text x="150" y="251" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">accreditation QR scan</text>
+  <text x="150" y="271" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">station visit log + GPS</text>
+  <text x="150" y="281" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">ObserverVisit entity</text>
+  <line x1="110" y1="137" x2="110" y2="185" stroke="#2ca02c" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Station Visit log -->
+  <rect x="310" y="185" width="280" height="100" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="450" y="211" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f77b4">Station Visit Log</text>
+  <text x="450" y="231" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">POST /v1/observer/visits</text>
+  <text x="450" y="251" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">station_code, arrived_at, departed_at</text>
+  <text x="450" y="271" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">observation_notes, lat/lon</text>
+  <text x="450" y="281" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">observer_visit.v1 emitted</text>
+  <line x1="270" y1="235" x2="310" y2="235" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Signed incident attachments -->
+  <rect x="630" y="185" width="320" height="100" rx="8" fill="#fce7f3" stroke="#d62728" stroke-width="2"/>
+  <text x="790" y="211" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">Signed Incident Attachments</text>
+  <text x="790" y="231" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">photo + video signed on-device</text>
+  <text x="790" y="251" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">SHA-256 + agent SVID cert</text>
+  <text x="790" y="271" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">ObserverIncident entity — T1-audit</text>
+  <text x="790" y="281" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">observer_incident.v1 (exactly-once)</text>
+  <rect x="925" y="185" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="936" y="201" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="590" y1="235" x2="630" y2="235" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Sampling verification -->
+  <rect x="310" y="335" width="280" height="110" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2"/>
+  <text x="450" y="361" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">Sampling Verification</text>
+  <text x="450" y="381" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">random station assignment</text>
+  <text x="450" y="401" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">Merkle proof check per tally</text>
+  <text x="450" y="421" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">pvt_observation.v1 cross-match</text>
+  <text x="450" y="437" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">sampling_result.v1 emitted</text>
+  <rect x="565" y="335" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="576" y="351" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="450" y1="285" x2="450" y2="335" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Mission PDF -->
+  <rect x="630" y="335" width="320" height="110" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="790" y="361" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">Mission PDF Report</text>
+  <text x="790" y="381" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">EOD: all visits + incidents</text>
+  <text x="790" y="401" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">PDF/A-3 signed with P06 HSM</text>
+  <text x="790" y="421" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">mission_report_pdf.v1 emitted</text>
+  <text x="790" y="437" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">OBSERVER_ORG + AG mirror target</text>
+  <rect x="925" y="335" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="936" y="351" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="790" y1="285" x2="790" y2="335" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- AG Mirror -->
+  <rect x="310" y="500" width="280" height="90" rx="8" fill="#f3f4f6" stroke="#7f7f7f" stroke-width="1.5"/>
+  <text x="450" y="526" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">AG Mirror</text>
+  <text x="450" y="546" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#555">Auditor General replica</text>
+  <text x="450" y="566" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#555">read-only SFTP push of PDFs</text>
+  <text x="450" y="582" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">nightly batch — signed payload</text>
+  <line x1="450" y1="445" x2="450" y2="500" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="790" y1="445" x2="590" y2="500" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- USSD fallback -->
+  <rect x="630" y="500" width="320" height="90" rx="8" fill="#fce7f3" stroke="#d62728" stroke-width="2"/>
+  <text x="790" y="526" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">USSD Chief-Signal Fallback</text>
+  <text x="790" y="546" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">*400# shortcode (no data network)</text>
+  <text x="790" y="566" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">terse incident code: type + station</text>
+  <text x="790" y="582" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">observer confirmed by PIN code</text>
+  <line x1="790" y1="445" x2="790" y2="500" stroke="#d62728" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Observer org (external) -->
+  <rect x="990" y="185" width="180" height="70" rx="8" fill="#fff" stroke="#7f7f7f" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="1080" y="211" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#7f7f7f">Observer Org</text>
+  <text x="1080" y="231" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#7f7f7f">M43 accreditation portal</text>
+  <text x="1080" y="249" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">webhook: report delivery</text>
+  <line x1="950" y1="235" x2="990" y2="221" stroke="#7f7f7f" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+
+  <!-- Telco (external) -->
+  <rect x="990" y="500" width="180" height="70" rx="8" fill="#fff" stroke="#7f7f7f" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="1080" y="526" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#7f7f7f">MNO / USSD</text>
+  <text x="1080" y="546" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">Safaricom / Airtel *400#</text>
+  <text x="1080" y="560" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">USSD gateway (external)</text>
+  <line x1="950" y1="545" x2="990" y2="545" stroke="#7f7f7f" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+
+  <!-- Merkle chain -->
+  <rect x="310" y="650" width="280" height="70" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="450" y="676" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">Merkle Chain (P05)</text>
+  <text x="450" y="696" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">visits + incidents + sampling anchored</text>
+  <text x="450" y="710" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">tlog: tamper-evident observer record</text>
+  <rect x="565" y="650" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="576" y="666" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="450" y1="590" x2="450" y2="650" stroke="#9467bd" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Legend -->
+  <rect x="630" y="650" width="330" height="130" rx="6" fill="#fff" stroke="#ccc" stroke-width="1"/>
+  <text x="795" y="670" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Legend</text>
+  <rect x="642" y="680" width="20" height="14" rx="2" fill="#dcfce7" stroke="#2ca02c"/>
+  <text x="670" y="692" font-family="Arial,sans-serif" font-size="12" fill="#333">Observer app / visits</text>
+  <rect x="642" y="700" width="20" height="14" rx="2" fill="#fce7f3" stroke="#d62728"/>
+  <text x="670" y="712" font-family="Arial,sans-serif" font-size="12" fill="#333">Signed incidents / USSD</text>
+  <rect x="642" y="720" width="20" height="14" rx="2" fill="#ede9fe" stroke="#9467bd"/>
+  <text x="670" y="732" font-family="Arial,sans-serif" font-size="12" fill="#333">Mission PDF / Merkle</text>
+  <rect x="642" y="740" width="14" height="14" rx="2" fill="#9467bd"/>
+  <text x="662" y="752" font-family="Arial,sans-serif" font-size="12" fill="white">🔒</text>
+  <text x="670" y="752" font-family="Arial,sans-serif" font-size="12" fill="#333">HSM / tlog anchor</text>
+  <rect x="642" y="760" width="20" height="14" rx="2" fill="#fff" stroke="#7f7f7f" stroke-dasharray="4,2"/>
+  <text x="670" y="772" font-family="Arial,sans-serif" font-size="12" fill="#333">External: org / MNO</text>
+</svg>
