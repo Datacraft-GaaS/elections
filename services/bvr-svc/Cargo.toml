@@ -28,6 +28,7 @@ eel-resilience-rs = { path = "../../packages/eel-resilience-rs" }
 eel-outbox-rs     = { path = "../../packages/eel-outbox-rs" }
 eel-crypto-rs     = { path = "../../packages/eel-crypto-rs" }
 eel-events-rs     = { path = "../../packages/eel-events-rs" }
+eel-trace-rs      = { path = "../../packages/eel-trace-rs" }
 
 # HTTP
 axum            = { version = "0.8", features = ["macros", "tokio"] }

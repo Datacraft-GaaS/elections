@@ -33,5 +33,6 @@ tracing           = { workspace = true }
 tracing-subscriber = { workspace = true }
 
 [dev-dependencies]
-rstest  = { workspace = true }
-tokio   = { workspace = true }
+rstest        = { workspace = true }
+tokio         = { workspace = true }
+eel-trace-rs  = { workspace = true }

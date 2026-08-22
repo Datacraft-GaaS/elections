@@ -35,5 +35,6 @@ utoipa-swagger-ui = { workspace = true }
 reqwest           = { workspace = true }
 
 [dev-dependencies]
-rstest = { workspace = true }
-tower  = { version = "0.5", features = ["util"] }
+rstest        = { workspace = true }
+tower         = { version = "0.5", features = ["util"] }
+eel-trace-rs  = { workspace = true }

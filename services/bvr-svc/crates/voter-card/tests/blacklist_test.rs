@@ -1,8 +1,10 @@
 use chrono::Utc;
+use eel_trace_rs::trace;
 use uuid::Uuid;
 use voter_card::blacklist::BlacklistService;
 use voter_card::models::{BlacklistEntry, BlacklistSource};
 
+#[trace("FR-M53-026")]
 #[tokio::test]
 async fn add_entry_succeeds() {
     let svc = BlacklistService::new();

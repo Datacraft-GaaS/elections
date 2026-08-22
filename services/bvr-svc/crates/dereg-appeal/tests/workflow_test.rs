@@ -1,6 +1,7 @@
 use chrono::{Duration, Utc};
 use dereg_appeal::models::{CaseStatus, DeregistrationCase};
 use dereg_appeal::workflow::advance;
+use eel_trace_rs::trace;
 use uuid::Uuid;
 
 fn noticed_case(deadline_offset_days: i64) -> DeregistrationCase {
@@ -24,6 +25,7 @@ fn noticed_case(deadline_offset_days: i64) -> DeregistrationCase {
     }
 }
 
+#[trace("FR-M36-030")]
 #[test]
 fn noticed_with_future_deadline_stays_noticed() {
     let mut case = noticed_case(30);
@@ -31,6 +33,7 @@ fn noticed_with_future_deadline_stays_noticed() {
     assert_eq!(case.status, CaseStatus::Noticed);
 }
 
+#[trace("FR-M36-030")]
 #[test]
 fn noticed_past_deadline_no_appeal_expires() {
     let mut case = noticed_case(-1);
@@ -38,6 +41,7 @@ fn noticed_past_deadline_no_appeal_expires() {
     assert_eq!(case.status, CaseStatus::ExpiredNoAppeal);
 }
 
+#[trace("FR-M36-030")]
 #[test]
 fn noticed_past_deadline_with_appeal_stays_noticed() {
     let mut case = noticed_case(-1);

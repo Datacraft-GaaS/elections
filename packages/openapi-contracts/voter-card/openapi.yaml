@@ -8,6 +8,7 @@ paths:
     get:
       summary: Health check
       operationId: healthz
+      x-handler-bound: bvr-svc.voter-card.healthz
       responses:
         "200":
           description: OK
@@ -15,6 +16,7 @@ paths:
     get:
       summary: Query voter card status
       operationId: getCardStatus
+      x-handler-bound: bvr-svc.voter-card.card_status
       parameters:
         - name: voter_id
           in: query
@@ -38,6 +40,7 @@ paths:
     post:
       summary: Create a card print batch
       operationId: createBatch
+      x-handler-bound: bvr-svc.voter-card.create_batch
       requestBody:
         required: true
         content:
@@ -57,6 +60,7 @@ paths:
     get:
       summary: Get batch details
       operationId: getBatch
+      x-handler-bound: bvr-svc.voter-card.get_batch
       parameters:
         - name: id
           in: path
@@ -77,6 +81,7 @@ paths:
     post:
       summary: Blacklist a voter card
       operationId: blacklistCard
+      x-handler-bound: bvr-svc.voter-card.add_blacklist
       description: Publishes to eel.bvr.card_blacklisted.v1; target propagation <=30 min.
       requestBody:
         required: true

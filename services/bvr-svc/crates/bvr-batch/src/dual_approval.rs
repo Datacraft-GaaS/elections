@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
-use chrono::{DateTime, Utc};
 use crate::error::BatchError;
 use bvr_domain::ids::uuid7str;
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
@@ -64,7 +64,9 @@ impl DualApprovalWorkflow {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use eel_trace_rs::trace;
 
+    #[trace("FR-M02-024")]
     #[test]
     fn two_person_rule_enforced() {
         let mut wf = DualApprovalWorkflow::new("export/2027-general");
@@ -76,6 +78,7 @@ mod tests {
         assert!(wf.is_approved());
     }
 
+    #[trace("FR-M02-024")]
     #[test]
     fn third_approval_on_approved_workflow_errors() {
         let mut wf = DualApprovalWorkflow::new("export/2027-general");

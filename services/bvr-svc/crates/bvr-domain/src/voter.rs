@@ -111,6 +111,7 @@ impl Voter {
 mod tests {
     use super::*;
     use eel_pii_rs::{NoopAuditSink, Purpose};
+    use eel_trace_rs::trace;
 
     #[test]
     fn new_voter_has_pending_status() {
@@ -127,6 +128,7 @@ mod tests {
         assert_eq!(v.version, 0);
     }
 
+    #[trace("FR-M02-004")]
     #[test]
     fn status_change_increments_version() {
         let mut v = Voter::new(
@@ -142,6 +144,7 @@ mod tests {
         assert_eq!(v.version, 1);
     }
 
+    #[trace("FR-M02-050")]
     #[test]
     fn national_id_is_restricted() {
         let v = Voter::new(

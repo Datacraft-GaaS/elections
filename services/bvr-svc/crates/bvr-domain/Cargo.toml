@@ -20,3 +20,6 @@ serde         = { workspace = true }
 serde_json    = { workspace = true }
 chrono        = { workspace = true }
 thiserror     = { workspace = true }
+
+[dev-dependencies]
+eel-trace-rs = { workspace = true }

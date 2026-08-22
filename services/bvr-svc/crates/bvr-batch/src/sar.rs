@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
-use chrono::{DateTime, Utc};
-use bvr_domain::ids::uuid7str;
 use crate::error::BatchError;
+use bvr_domain::ids::uuid7str;
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
@@ -65,7 +65,9 @@ pub fn validate_sar(req: &SarRequest) -> Result<(), BatchError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use eel_trace_rs::trace;
 
+    #[trace("FR-M02-040")]
     #[test]
     fn sar_lifecycle() {
         let mut req = SarRequest::new("voter-1".into(), "KE12345678".into());
@@ -75,6 +77,7 @@ mod tests {
         assert!(req.resolved_at.is_some());
     }
 
+    #[trace("FR-M02-040")]
     #[test]
     fn sar_reject_sets_status() {
         let mut req = SarRequest::new("voter-2".into(), "KE87654321".into());

@@ -65,7 +65,9 @@ mod tests {
         http::{Request, StatusCode as Sc},
     };
     use tower::util::ServiceExt;
+    use eel_trace_rs::trace;
 
+    #[trace("FR-M02-001")]
     #[tokio::test]
     async fn create_enrolment_returns_202_for_valid_request() {
         let app = router();

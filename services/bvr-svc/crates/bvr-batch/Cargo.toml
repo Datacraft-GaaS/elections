@@ -29,3 +29,6 @@ anyhow        = { workspace = true }
 tokio         = { workspace = true }
 sqlx          = { workspace = true }
 tracing       = { workspace = true }
+
+[dev-dependencies]
+eel-trace-rs = { workspace = true }

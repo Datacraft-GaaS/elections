@@ -43,6 +43,7 @@ paths:
   /api/v1/bvr/enrolments:
     post:
       operationId: createEnrolment
+      x-handler-bound: bvr-svc.bvr-api.create_enrolment
       summary: "Ingest voter enrolment record from biometric device"
       description: |
         Internal SVID mTLS endpoint. Accepts biometric enrolment data from
@@ -105,6 +106,7 @@ paths:
   /api/v1/bvr/voters/{voter_id}/status:
     patch:
       operationId: updateVoterStatus
+      x-handler-bound: bvr-svc.bvr-api.update_voter_status
       summary: "Update voter registration status"
       description: |
         Updates a voter's registration status (e.g., active, suspended,
@@ -168,6 +170,7 @@ paths:
   /api/v1/bvr/transfers:
     post:
       operationId: createTransfer
+      x-handler-bound: bvr-svc.bvr-api.create_transfer
       summary: "Request voter transfer between polling stations"
       description: |
         Initiates a voter transfer request. The voter is moved from their
@@ -230,6 +233,7 @@ paths:
   /api/v1/bvr/registers/{scope}:
     get:
       operationId: getRegisterByScope
+      x-handler-bound: bvr-svc.bvr-api.get_register
       summary: "Download voter register for a given administrative scope"
       description: |
         Returns the voter register (full or incremental) for the given
@@ -313,6 +317,7 @@ paths:
   /api/v1/bvr/voters/{voter_id}:
     get:
       operationId: getVoter
+      x-handler-bound: bvr-svc.bvr-api.get_voter
       summary: "Retrieve voter record by ID"
       description: |
         Returns the complete voter record for the given voter_id.
@@ -357,6 +362,7 @@ paths:
   /api/v1/bvr/sar:
     post:
       operationId: createSar
+      x-handler-bound: bvr-svc.bvr-api.create_sar
       summary: "Submit subject access request"
       description: |
         Accepts a data subject access request (Kenya Data Protection Act 2019,
@@ -407,6 +413,7 @@ paths:
   /api/v1/bvr/handoff/{token}:
     post:
       operationId: processHandoff
+      x-handler-bound: bvr-svc.bvr-api.process_handoff
       summary: "Process voter self-service portal handoff token"
       description: |
         Validates and exchanges a short-lived handoff token (issued by the
@@ -463,6 +470,7 @@ paths:
   /api/v1/bvr/merkle-root/latest:
     get:
       operationId: getLatestMerkleRoot
+      x-handler-bound: bvr-svc.bvr-api.get_latest_merkle_root
       summary: "Get the latest BVR Merkle tree root (public)"
       description: |
         Returns the latest signed Merkle root of the BVR transparency log.
@@ -504,6 +512,7 @@ paths:
   /api/v1/bvr/voters/{voter_id}/qr:
     get:
       operationId: getVoterQr
+      x-handler-bound: bvr-svc.bvr-api.get_voter_qr
       summary: "Generate voter ID QR code payload"
       description: |
         Returns a signed QR code payload for the voter card (M53 voter-id-card).
@@ -548,6 +557,7 @@ paths:
   /api/v1/bvr/adjudication/{case_id}/resolve:
     post:
       operationId: resolveAdjudicationCase
+      x-handler-bound: bvr-svc.bvr-api.resolve_adjudication
       summary: "Resolve a BVR adjudication case"
       description: |
         Resolves a pending adjudication case (e.g., duplicate identity,
