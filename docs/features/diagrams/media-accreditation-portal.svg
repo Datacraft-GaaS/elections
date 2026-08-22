@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">M42 Media Accreditation Portal — Architecture Diagram</title>
+  <desc id="desc">MediaAccreditation, MediaOrganisation, MCK integration, QR badge issuance, and CRL refresh every 5 minutes.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#f8f9fa"/>
+  <text x="600" y="36" font-family="Arial,sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#111">M42 Media Accreditation Portal</text>
+  <text x="600" y="56" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#555">MediaAccreditation · MediaOrganisation · MCK integration · QR badge · CRL every 5 min</text>
+
+  <!-- Personas -->
+  <circle cx="100" cy="115" r="18" fill="#ff7f0e"/>
+  <text x="100" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Journalist</text>
+
+  <circle cx="280" cy="115" r="18" fill="#1f77b4"/>
+  <text x="280" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">IEBC Media</text>
+  <text x="280" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Officer</text>
+
+  <!-- MediaOrganisation -->
+  <rect x="30" y="190" width="280" height="110" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="170" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f77b4">MediaOrganisation</text>
+  <text x="170" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">id, name, mck_licence_no</text>
+  <text x="170" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">type: PRINT/TV/RADIO/ONLINE</text>
+  <text x="170" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">max_accreditations, contact</text>
+  <text x="170" y="290" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">org_registered.v1 emitted</text>
+
+  <!-- MCK integration -->
+  <rect x="350" y="190" width="280" height="110" rx="8" fill="#fff" stroke="#7f7f7f" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="490" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#7f7f7f">MCK Integration (external)</text>
+  <text x="490" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#7f7f7f">Media Council of Kenya</text>
+  <text x="490" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#7f7f7f">licence validity check (SFTP/API)</text>
+  <text x="490" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#7f7f7f">mck_verified.v1 consumed</text>
+  <text x="490" y="290" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">non-blocking: manual override if API down</text>
+  <line x1="310" y1="245" x2="350" y2="245" stroke="#7f7f7f" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+
+  <!-- MediaAccreditation entity -->
+  <rect x="670" y="190" width="480" height="110" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="910" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">MediaAccreditation</text>
+  <text x="910" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">id, journalist_id, org_id, mck_licence_no</text>
+  <text x="910" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">zones_permitted[], valid_from, valid_until</text>
+  <text x="910" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">status: PENDING/APPROVED/SUSPENDED/REVOKED</text>
+  <text x="910" y="290" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">media_accreditation_approved.v1 (exactly-once)</text>
+  <line x1="630" y1="245" x2="670" y2="245" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="100" y1="133" x2="150" y2="190" stroke="#ff7f0e" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="280" y1="133" x2="220" y2="190" stroke="#1f77b4" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Application flow -->
+  <rect x="30" y="360" width="280" height="100" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2"/>
+  <text x="170" y="386" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">Application Flow</text>
+  <text x="170" y="406" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">POST /v1/media/applications</text>
+  <text x="170" y="426" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">documents: press card, NID scan</text>
+  <text x="170" y="446" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">officer review (MEDIA_OFFICER)</text>
+  <text x="170" y="456" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">PATCH /v1/media/applications/{id}/decide</text>
+  <line x1="170" y1="300" x2="170" y2="360" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- QR Badge -->
+  <rect x="350" y="360" width="300" height="130" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="500" y="386" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">QR Badge</text>
+  <text x="500" y="406" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">QR: accreditation_id + HSM signature</text>
+  <text x="500" y="426" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">zones_permitted encoded</text>
+  <text x="500" y="446" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">scan: verify HSM sig → real-time CRL check</text>
+  <text x="500" y="466" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">badge_issued.v1 emitted</text>
+  <text x="500" y="482" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">physical laminate + digital QR</text>
+  <rect x="625" y="360" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="636" y="376" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="910" y1="300" x2="600" y2="360" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="310" y1="410" x2="350" y2="410" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- CRL refresh -->
+  <rect x="690" y="360" width="460" height="130" rx="8" fill="#fce7f3" stroke="#d62728" stroke-width="2.5"/>
+  <text x="920" y="386" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">CRL — Certificate Revocation List</text>
+  <text x="920" y="406" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">refresh every 5 minutes (cron + push)</text>
+  <text x="920" y="426" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">revoke on: SUSPENDED or REVOKED status</text>
+  <text x="920" y="446" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">signed CRL: HSM P06 — RFC 5280 format</text>
+  <text x="920" y="466" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">GET /v1/media/crl — public · max-age=300</text>
+  <text x="920" y="482" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">crl_refreshed.v1 emitted — badge_scanner must pull within 10min</text>
+  <rect x="1125" y="360" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="1136" y="376" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="650" y1="420" x2="690" y2="420" stroke="#d62728" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Station badge scanner (downstream consumer) -->
+  <rect x="30" y="560" width="380" height="80" rx="8" fill="#f3f4f6" stroke="#7f7f7f" stroke-width="1.5"/>
+  <text x="220" y="586" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Station Badge Scanner</text>
+  <text x="220" y="606" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#555">GET /v1/media/badges/{id}/verify — real-time CRL check</text>
+  <text x="220" y="622" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">poll_clerk scan · zone enforcement</text>
+  <line x1="500" y1="490" x2="280" y2="560" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="920" y1="490" x2="400" y2="560" stroke="#d62728" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Kafka -->
+  <rect x="450" y="560" width="720" height="60" rx="8" fill="#f3f4f6" stroke="#7f7f7f" stroke-width="1.5"/>
+  <text x="810" y="586" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Kafka: media_accreditation.v1 · badge_issued.v1 · crl_refreshed.v1</text>
+  <text x="810" y="604" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#555">operational retention — signed — at-least-once</text>
+  <line x1="810" y1="490" x2="810" y2="560" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Legend -->
+  <rect x="30" y="680" width="540" height="100" rx="6" fill="#fff" stroke="#ccc" stroke-width="1"/>
+  <text x="300" y="700" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Legend</text>
+  <rect x="42" y="710" width="20" height="14" rx="2" fill="#dbeafe" stroke="#1f77b4"/>
+  <text x="70" y="722" font-family="Arial,sans-serif" font-size="12" fill="#333">MediaOrganisation</text>
+  <rect x="42" y="730" width="20" height="14" rx="2" fill="#dcfce7" stroke="#2ca02c"/>
+  <text x="70" y="742" font-family="Arial,sans-serif" font-size="12" fill="#333">MediaAccreditation</text>
+  <rect x="42" y="750" width="20" height="14" rx="2" fill="#ede9fe" stroke="#9467bd"/>
+  <text x="70" y="762" font-family="Arial,sans-serif" font-size="12" fill="#333">QR badge (HSM-signed)</text>
+  <rect x="220" y="710" width="20" height="14" rx="2" fill="#fce7f3" stroke="#d62728"/>
+  <text x="248" y="722" font-family="Arial,sans-serif" font-size="12" fill="#333">CRL (5-min refresh)</text>
+  <rect x="220" y="730" width="20" height="14" rx="2" fill="#fff" stroke="#7f7f7f" stroke-dasharray="4,2"/>
+  <text x="248" y="742" font-family="Arial,sans-serif" font-size="12" fill="#333">MCK (external)</text>
+  <rect x="220" y="750" width="14" height="14" rx="2" fill="#9467bd"/>
+  <text x="240" y="762" font-family="Arial,sans-serif" font-size="12" fill="white">🔒</text>
+  <text x="248" y="762" font-family="Arial,sans-serif" font-size="12" fill="#333">HSM / tlog anchor</text>
+</svg>

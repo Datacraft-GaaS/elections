@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">M38 Poll Worker Training LMS — Architecture Diagram</title>
+  <desc id="desc">CourseModule, WorkerEnrollment, assessment, HSM-signed WorkerCertificate, credential topic, and M33 dispatch gate.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#f8f9fa"/>
+  <text x="600" y="36" font-family="Arial,sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#111">M38 Poll Worker Training LMS</text>
+  <text x="600" y="56" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#555">CourseModule · WorkerEnrollment · assessment · HSM-signed WorkerCertificate · M33 dispatch gate</text>
+
+  <!-- Personas -->
+  <circle cx="100" cy="115" r="18" fill="#2ca02c"/>
+  <text x="100" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Poll Worker</text>
+
+  <circle cx="280" cy="115" r="18" fill="#1f77b4"/>
+  <text x="280" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Training</text>
+  <text x="280" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Officer</text>
+
+  <!-- CourseModule -->
+  <rect x="30" y="190" width="280" height="120" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="170" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f77b4">CourseModule</text>
+  <text x="170" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">id, title, content_type</text>
+  <text x="170" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">SCORM/xAPI content</text>
+  <text x="170" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">prerequisite_module_ids[]</text>
+  <text x="170" y="296" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">passing_score, attempts_allowed</text>
+  <text x="170" y="306" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">data class C — T2 — Django admin</text>
+  <line x1="280" y1="133" x2="200" y2="190" stroke="#1f77b4" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- WorkerEnrollment -->
+  <rect x="350" y="190" width="280" height="120" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="490" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">WorkerEnrollment</text>
+  <text x="490" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">worker_id, module_id</text>
+  <text x="490" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">status: ENROLLED/IN_PROGRESS/PASSED/FAILED</text>
+  <text x="490" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">score, attempts, completed_at</text>
+  <text x="490" y="296" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">POST /v1/lms/enrollments</text>
+  <text x="490" y="306" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">enrollment.v1 event emitted</text>
+  <line x1="100" y1="133" x2="400" y2="190" stroke="#2ca02c" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="310" y1="250" x2="350" y2="250" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Assessment engine -->
+  <rect x="670" y="190" width="280" height="120" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2"/>
+  <text x="810" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">Assessment Engine</text>
+  <text x="810" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">QuizAttempt entity</text>
+  <text x="810" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">randomised question bank</text>
+  <text x="810" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">score + answer_hash stored</text>
+  <text x="810" y="296" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">pass threshold: 80%</text>
+  <text x="810" y="306" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">quiz_submitted.v1 emitted</text>
+  <line x1="630" y1="250" x2="670" y2="250" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- WorkerCertificate -->
+  <rect x="350" y="380" width="600" height="120" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2.5"/>
+  <text x="650" y="406" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">WorkerCertificate (HSM-signed)</text>
+  <text x="650" y="426" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">id, worker_id, modules_passed[], issued_at, expires_at</text>
+  <text x="650" y="446" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">signature: HSM P06 RSASSA-PSS · cert_hash in tlog</text>
+  <text x="650" y="466" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">QR-verifiable credential URL</text>
+  <text x="650" y="486" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">data class A — T1-audit — Merkle node</text>
+  <text x="650" y="496" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">worker_certified.v1 emitted (exactly-once)</text>
+  <rect x="925" y="380" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="936" y="396" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="490" y1="310" x2="540" y2="380" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="810" y1="310" x2="760" y2="380" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Credential topic / Kafka -->
+  <rect x="350" y="560" width="600" height="70" rx="8" fill="#f3f4f6" stroke="#7f7f7f" stroke-width="1.5"/>
+  <text x="650" y="586" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Kafka credential topic: eel.lms.worker_certified.v1</text>
+  <text x="650" y="606" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#555">consumers: M33 dispatch gate · HR/Payroll · Accreditation (M43)</text>
+  <line x1="650" y1="500" x2="650" y2="560" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- M33 Dispatch Gate -->
+  <rect x="350" y="690" width="380" height="80" rx="8" fill="#fce7f3" stroke="#d62728" stroke-width="2"/>
+  <text x="540" y="716" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">M33 Dispatch Gate</text>
+  <text x="540" y="736" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">worker_certified.v1 required for deployment</text>
+  <text x="540" y="752" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">uncertified worker → deployment BLOCKED</text>
+  <text x="540" y="764" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">dispatch_eligibility_check.v1</text>
+  <line x1="540" y1="630" x2="540" y2="690" stroke="#d62728" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Public verifier -->
+  <rect x="770" y="690" width="380" height="80" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="960" y="716" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">Public Certificate Verifier</text>
+  <text x="960" y="736" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">GET /v1/lms/certificates/{id}/verify</text>
+  <text x="960" y="752" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">QR scan → HSM sig check</text>
+  <text x="960" y="764" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">public tier — Astro</text>
+  <line x1="760" y1="630" x2="960" y2="690" stroke="#2ca02c" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Legend -->
+  <rect x="30" y="460" width="290" height="180" rx="6" fill="#fff" stroke="#ccc" stroke-width="1"/>
+  <text x="175" y="480" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Legend</text>
+  <rect x="42" y="490" width="20" height="14" rx="2" fill="#dbeafe" stroke="#1f77b4"/>
+  <text x="70" y="502" font-family="Arial,sans-serif" font-size="12" fill="#333">CourseModule</text>
+  <rect x="42" y="510" width="20" height="14" rx="2" fill="#dcfce7" stroke="#2ca02c"/>
+  <text x="70" y="522" font-family="Arial,sans-serif" font-size="12" fill="#333">WorkerEnrollment</text>
+  <rect x="42" y="530" width="20" height="14" rx="2" fill="#fef9c3" stroke="#ff7f0e"/>
+  <text x="70" y="542" font-family="Arial,sans-serif" font-size="12" fill="#333">Assessment engine</text>
+  <rect x="42" y="550" width="20" height="14" rx="2" fill="#ede9fe" stroke="#9467bd"/>
+  <text x="70" y="562" font-family="Arial,sans-serif" font-size="12" fill="#333">HSM-signed certificate</text>
+  <rect x="42" y="570" width="20" height="14" rx="2" fill="#fce7f3" stroke="#d62728"/>
+  <text x="70" y="582" font-family="Arial,sans-serif" font-size="12" fill="#333">M33 dispatch gate</text>
+  <rect x="42" y="590" width="14" height="14" rx="2" fill="#9467bd"/>
+  <text x="62" y="602" font-family="Arial,sans-serif" font-size="12" fill="white">🔒</text>
+  <text x="70" y="602" font-family="Arial,sans-serif" font-size="12" fill="#333">HSM / tlog anchor</text>
+  <circle cx="52" cy="622" r="7" fill="#2ca02c"/>
+  <text x="70" y="626" font-family="Arial,sans-serif" font-size="12" fill="#333">Worker / officer persona</text>
+</svg>

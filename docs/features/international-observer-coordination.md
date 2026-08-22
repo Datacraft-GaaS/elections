@@ -126,3 +126,30 @@ Runbooks under `docs/runbooks/`:
 - `credible-irregularity-escalation.md` -- what happens when an escalation fails to reach ECC.
 
 Related documents: full spec at `docs/plans/modules/international-observer-coordination.md`; service capability catalogue at `services/governance-svc/docs/CAPABILITIES.md`; M43 at `docs/features/observer-accreditation-portal.md`.
+
+### Observation report severity matrix
+
+| Flag | Meaning | IEBC action | ECC escalation |
+|---|---|---|---|
+| COMMENDATION | Positive observation | No action required | No |
+| SYSTEMIC_CONCERN | Pattern across multiple stations | Coordination officer review | No |
+| CREDIBLE_IRREGULARITY | Single high-confidence irregularity | Coordination officer review + incident log | Yes, within 120 s |
+
+The `CREDIBLE_IRREGULARITY` event carries `constituency_code`, `station_codes` (if known), and `findings_md` summary. ECC renders this on the map as a flag icon; the coordination officer is the designated first responder.
+
+### Mission lifecycle states
+
+```
+PENDING -> ACTIVE -> REPORTING -> CLOSED
+```
+
+Workspace read access remains available to the coordination officer in `CLOSED` state for up to 90 days (post-election review window). After 90 days, the workspace is archived to read-only MinIO storage and Postgres rows are soft-deleted (logical deletion, not physical, to preserve the audit shadow).
+
+### Key metrics and SLOs
+
+| Metric | Target | Alert threshold |
+|---|---|---|
+| CREDIBLE_IRREGULARITY ECC delivery | <= 120 s | > 180 s: alert |
+| Briefing material upload availability | >= 99.9% | MinIO error: immediate alert |
+| Joint statement approval turnaround | <= 5 days after draft | Configurable per election cycle |
+| Observer report embargo lift time after polls closed event | <= 60 s | > 120 s: alert |

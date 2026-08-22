@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">M36 Voter Deregistration Appeal — Architecture Diagram</title>
+  <desc id="desc">DeregistrationCase workflow with 30 plus 14 day statutory window, AppealRecord, data minimisation, and quarterly gazette publication.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#f8f9fa"/>
+  <text x="600" y="36" font-family="Arial,sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#111">M36 Voter Deregistration Appeal</text>
+  <text x="600" y="56" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#555">DeregistrationCase · 30+14-day workflow · AppealRecord · data minimisation · quarterly gazette</text>
+
+  <!-- Voter persona -->
+  <circle cx="100" cy="115" r="22" fill="#1f77b4"/>
+  <text x="100" y="150" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#333">Voter</text>
+  <text x="100" y="165" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#555">(affected)</text>
+
+  <!-- Officer persona -->
+  <circle cx="250" cy="115" r="18" fill="#2ca02c"/>
+  <text x="250" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Officer</text>
+
+  <!-- Commissioner persona -->
+  <circle cx="1100" cy="115" r="18" fill="#9467bd"/>
+  <text x="1100" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Commissioner</text>
+
+  <!-- DeregistrationCase -->
+  <rect x="30" y="190" width="340" height="110" rx="8" fill="#fce7f3" stroke="#d62728" stroke-width="2"/>
+  <text x="200" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">DeregistrationCase</text>
+  <text x="200" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">voter_id, source (M35 removal_approved.v1)</text>
+  <text x="200" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">case_type: DEATH / ID_CORRECTION / DORMANCY</text>
+  <text x="200" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">notice_sent_at, notice_channel (SMS/mail)</text>
+  <text x="200" y="290" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">status: PENDING_NOTICE → NOTICE_SENT → APPEALING → CLOSED</text>
+  <line x1="100" y1="137" x2="150" y2="190" stroke="#1f77b4" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 30-day notice window -->
+  <rect x="410" y="190" width="280" height="110" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2.5"/>
+  <text x="550" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">30-Day Notice Window</text>
+  <text x="550" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">statutory notice to voter</text>
+  <text x="550" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">channels: SMS + postal + USSD</text>
+  <text x="550" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">deregistration_notice.v1 event</text>
+  <text x="550" y="296" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">re-sent every 7 days if not acknowledged</text>
+  <line x1="370" y1="245" x2="410" y2="245" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 14-day appeal window -->
+  <rect x="730" y="190" width="280" height="110" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2.5"/>
+  <text x="870" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">14-Day Appeal Window</text>
+  <text x="870" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">voter submits challenge</text>
+  <text x="870" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">POST /v1/appeals/{case_id}/challenge</text>
+  <text x="870" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">appeal_submitted.v1 emitted</text>
+  <text x="870" y="296" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">evidence upload (signed attachment)</text>
+  <line x1="690" y1="245" x2="730" y2="245" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="700" y="237" font-family="Arial,sans-serif" font-size="11" fill="#333">notice expires →</text>
+
+  <!-- AppealRecord -->
+  <rect x="410" y="360" width="600" height="100" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="710" y="386" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f77b4">AppealRecord</text>
+  <text x="710" y="406" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">appeal_id, case_id, appellant_id_hash, evidence_hash</text>
+  <text x="710" y="426" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">submission_at, decision (UPHELD/DISMISSED), decided_at, officer_id</text>
+  <text x="710" y="444" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">data class A — T1-audit — Merkle node anchored</text>
+  <rect x="985" y="360" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="996" y="376" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="550" y1="300" x2="590" y2="360" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="870" y1="300" x2="830" y2="360" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Officer triage -->
+  <rect x="410" y="520" width="280" height="90" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="550" y="546" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">Officer Triage</text>
+  <text x="550" y="566" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">PATCH /v1/appeals/{id}/decide</text>
+  <text x="550" y="586" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">UPHELD → reinstate voter</text>
+  <text x="550" y="600" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">COMMISSION_OFFICER role</text>
+  <line x1="550" y1="460" x2="550" y2="520" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="250" y1="133" x2="490" y2="520" stroke="#2ca02c" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+
+  <!-- Data minimisation -->
+  <rect x="730" y="520" width="280" height="90" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2"/>
+  <text x="870" y="546" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">Data Minimisation</text>
+  <text x="870" y="566" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">PII purge after 7 years</text>
+  <text x="870" y="586" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">retain: id_hash + decision only</text>
+  <text x="870" y="600" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">Kenya DPA s.25 compliance</text>
+  <line x1="870" y1="460" x2="870" y2="520" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Commissioner approval -->
+  <rect x="410" y="670" width="600" height="90" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2.5"/>
+  <text x="710" y="696" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">Quarterly Gazette (Merkle-anchored)</text>
+  <text x="710" y="716" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">list of deregistered voters — RegisterSnapshot signed by Commissioner + HSM</text>
+  <text x="710" y="736" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">gazette_published.v1 → Public Portal M11 · BVR de-activate M02</text>
+  <text x="710" y="750" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">GET /v1/cvr/snapshots/{id} — Merkle proof for courts</text>
+  <rect x="985" y="670" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="996" y="686" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="550" y1="610" x2="600" y2="670" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="870" y1="610" x2="820" y2="670" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="1100" y1="133" x2="960" y2="670" stroke="#9467bd" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+
+  <!-- Legend -->
+  <rect x="30" y="500" width="360" height="160" rx="6" fill="#fff" stroke="#ccc" stroke-width="1"/>
+  <text x="210" y="520" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Legend</text>
+  <rect x="42" y="530" width="20" height="14" rx="2" fill="#fce7f3" stroke="#d62728"/>
+  <text x="70" y="542" font-family="Arial,sans-serif" font-size="12" fill="#333">Deregistration case</text>
+  <rect x="42" y="550" width="20" height="14" rx="2" fill="#fef9c3" stroke="#ff7f0e"/>
+  <text x="70" y="562" font-family="Arial,sans-serif" font-size="12" fill="#333">Statutory time window</text>
+  <rect x="42" y="570" width="20" height="14" rx="2" fill="#dbeafe" stroke="#1f77b4"/>
+  <text x="70" y="582" font-family="Arial,sans-serif" font-size="12" fill="#333">AppealRecord (audit)</text>
+  <rect x="42" y="590" width="20" height="14" rx="2" fill="#dcfce7" stroke="#2ca02c"/>
+  <text x="70" y="602" font-family="Arial,sans-serif" font-size="12" fill="#333">Officer triage</text>
+  <rect x="42" y="610" width="20" height="14" rx="2" fill="#ede9fe" stroke="#9467bd"/>
+  <text x="70" y="622" font-family="Arial,sans-serif" font-size="12" fill="#333">Gazette / Commissioner</text>
+  <rect x="42" y="630" width="14" height="14" rx="2" fill="#9467bd"/>
+  <text x="62" y="642" font-family="Arial,sans-serif" font-size="12" fill="white">🔒</text>
+  <text x="70" y="642" font-family="Arial,sans-serif" font-size="12" fill="#333">HSM / Merkle anchor</text>
+  <circle cx="52" cy="662" r="7" fill="#1f77b4"/>
+  <text x="70" y="666" font-family="Arial,sans-serif" font-size="12" fill="#333">Voter / officer persona</text>
+</svg>

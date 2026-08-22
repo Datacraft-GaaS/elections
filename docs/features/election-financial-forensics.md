@@ -134,3 +134,21 @@ Runbooks under `docs/runbooks/`:
 - `knbs-data-unavailable.md` -- manual census data upload procedure.
 
 Related documents: full spec at `docs/plans/modules/election-financial-forensics.md`; service capability catalogue at `services/governance-svc/docs/CAPABILITIES.md`; M22 at `docs/features/campaign-finance-transparency.md`.
+
+### Estimator input and output summary
+
+| Estimator | Unit of analysis | Key input | Key output |
+|---|---|---|---|
+| RD (Calonico et al., Econometrica 2014) | Candidate at threshold | Spending near margin cutoff, vote share near cutoff | Local average treatment effect at cutoff; optimal bandwidth |
+| IV 2SLS (Angrist and Pischke, 2009) | Constituency | KNBS census cell as instrument, declared spending | Exogenous spending effect on vote share |
+| DiD (Bertrand, Duflo, Mullainathan, QJE 2004) | Constituency pair | Pre/post campaign event, treated/untreated split | Differential spending-to-vote change; clustered SEs |
+
+All three estimators are run per `AnalysisCycle`; a candidate is flagged (`anomaly_flag = true`) only when at least two of the three estimators independently show `p_value < 0.05` and the magnitude condition. This reduces false positives relative to single-estimator flagging.
+
+### Key forensics SLOs
+
+| Metric | Target |
+|---|---|
+| Analysis cycle completion time (250 candidates) | <= 4 h |
+| Replication package generation time | <= 30 min |
+| FRC referral packet submission lead time | >= 7 days before FRC deadline |

@@ -1,10 +1,10 @@
 # Mobile personnel dispatch (M33)
 
-Module M33 (`mobile-personnel-dispatch`) owned by `field-mobile-svc`. Manages check-in and real-time tracking for ~250,000 election workers. Uses write-behind Kafka + Valkey to absorb 250k check-ins within 90 minutes of station opening. GPS + cell + Wi-Fi triangulation detects spoof attempts (>1 km delta flagged). 15-minute status pings confirm presence throughout the day. Payroll trigger fires exactly once on authenticated check-out. USSD path for feature phones and voice-guided workflow for low-literacy users. PWA fallback.
+Module M33 (`mobile-personnel-dispatch`) owned by `field-mobile-svc`. Manages the deployment, check-in, and tracking of 250 000+ polling day personnel. A write-behind Kafka + Valkey cache absorbs 250k check-ins in 90 minutes. GPS + cell + Wi-Fi triangulation with anti-spoofing guards prevents ghost check-ins. Fifteen-minute pings maintain real-time presence. Payroll triggers are exactly-once. A voice-guided low-literacy workflow serves officers who cannot read.
 
 ## Contents
 
-1. What mobile personnel dispatch does (vs M32 field support)
+1. What mobile personnel dispatch does (vs related modules)
 2. Data plane (schema)
 3. Ingest sources
 4. Pipeline
@@ -17,142 +17,134 @@ Module M33 (`mobile-personnel-dispatch`) owned by `field-mobile-svc`. Manages ch
 
 ---
 
-## 1. What mobile personnel dispatch does (vs M32 field support)
+## 1. What mobile personnel dispatch does (vs related modules)
 
-- **M32** = field support engineers managing equipment faults and spares.
-- **M33** = the broader election-worker workforce: clerks, presiding officers, security personnel, queue controllers. Check-in confirms physical presence; check-out triggers payroll. M32 is a subset of the M33 workforce.
+- **M16 HR / payroll** = authoritative officer roster; M33 reads assignments from M16 and writes attendance events back for payroll computation.
+- **M33** = real-time deployment tracking: check-in at assigned station, 15-min presence pings, GPS anti-spoof, and payroll trigger at station close.
+- **M32 Field support** = fault resolution; M33 co-location data can be referenced in M32 diagnostics but M33 does not write to M32.
 
-M33 is the source of truth for worker deployment status consumed by ECC and HR/payroll.
+M33 does not record votes or modify the voter roll. All officer personal data is encrypted at rest and never exposed to non-authorised consumers.
 
 ## 2. Data plane
 
-Four aggregates (per `services/field-mobile-svc/crates/dispatch-api/src/models.rs`):
+Five aggregates (server-side PostgreSQL + Valkey write-behind):
 
-| Aggregate | Purpose | Data class |
+| Aggregate | Purpose | Data class (ADR-0016) |
 |---|---|---|
-| **WorkerCheckIn** | check_in_id, worker_id, station_code, gps_lat, gps_lon, cell_id, wifi_bssid, spoofed (bool), channel (APP/USSD/PWA), checked_in_at | D |
-| **PresencePing** | ping_id, worker_id, station_code, pinged_at, channel, response_within_15_min (bool) | D |
-| **WorkerCheckOut** | check_out_id, worker_id, station_code, checked_out_at, supervisor_sig, payroll_trigger_id, payroll_idempotency_key | D |
-| **PayrollTrigger** | trigger_id, worker_id, station_code, hours_worked, triggered_at, payroll_system_ref, exactly_once_key | D |
-
-GPS coordinates stored only at check-in and check-out; not retained from 15-minute pings.
+| **OfficerAssignment** | Pre-election assignment: officer_id, station_id, role, shift, expected_checkin_ts. | B |
+| **CheckInEvent** | GPS-verified check-in: event_id (UUID7), officer_id, station_id, gps_lat, gps_lon, cell_lat, cell_lon, wifi_lat, wifi_lon, triangulated_lat, triangulated_lon, accuracy_m, spoof_flag (bool), ts_hlc. | A |
+| **PresencePing** | 15-min heartbeat: ping_id, officer_id, station_id, ts_hlc, method (GPS/CELL/WIFI/MANUAL). | B |
+| **AbsenceAlert** | No ping for >20 min: alert_id, officer_id, station_id, last_seen_ts, status (OPEN/RESOLVED). | B |
+| **PayrollTrigger** | Exactly-once payroll event: trigger_id (UUID7), officer_id, station_id, hours_worked, role, ts_hlc, sent_to_m16 (bool). | A |
 
 ## 3. Ingest sources
 
-| Source | Cadence | Adapter | Auth | Failure semantics |
+| Source | Cadence | Format | Auth | Failure semantics |
 |---|---|---|---|---|
-| **App check-in** (Flutter) | Election morning (90-min window) | REST + Valkey write-behind | JWT + device cert | Write-behind absorbs burst; Kafka flush within 60 s |
-| **USSD check-in** (`*xxx#`) | Same window | `integrations/ussd-gateway/adapter` | Gateway HMAC | Rate 10,000/min; offline queue if gateway drops |
-| **15-min status ping** | Throughout polling day | App push response / USSD | JWT or gateway HMAC | Missed ping within 15 min logged as `ABSENCE_SIGNAL`; supervisor alerted |
-| **Check-out** | Station close | App + supervisor confirmation | JWT + supervisor JWT | Payroll trigger idempotent; duplicate check-out rejected |
-| **GPS/cell/Wi-Fi** | At check-in | Device location API | n/a | Delta > 1 km between GPS + cell_id triangulation: spoofed = true |
+| Officer device GPS | At check-in + every 15 min | OS location API | Device cert | Fallback to cell + Wi-Fi; manual if all fail |
+| Cell tower position | At check-in + every 15 min | Network API (device) | Device cert | Fused with GPS + Wi-Fi |
+| Wi-Fi positioning | At check-in + every 15 min | OS location API | Device cert | Fused; indoor stations use Wi-Fi primary |
+| M16 assignment feed | Pre-election | Kafka event | SVID mTLS | Assignment cache refreshed; stale if >24 h before election |
+| Manual check-in (county coordinator) | On demand | Django form | JWT + SpiceDB | Logged as MANUAL; used when officer has no smartphone |
 
 ## 4. Pipeline
 
-Files under `services/field-mobile-svc/mobile/personnel-dispatch/` and `crates/dispatch-api/src/`:
-
 ```
-Election day morning: 250k workers check in over 90 min
-      -> write-behind pattern:
-            POST /dispatch/v1/checkin -> Valkey queue (instant ACK to client)
-            background worker flushes to PG via Kafka within 60 s
-            Debezium to eel.dispatch.v1 topic
-      -> GPS + cell + Wi-Fi triangulation:
-            delta = distance(gps_point, cell_id_centroid)
-            if delta > 1 km: spoofed = true; supervisor alert fired
-            WorkerCheckIn.spoofed persisted; ECC heatmap updated
+250k check-ins in 90-minute window (07:00-08:30):
+  officer opens dispatch app -> station QR scan
+  -> device collects: GPS, cell tower position, Wi-Fi position
+  -> triangulated_lat / triangulated_lon computed:
+       weighted mean of 3 sources (GPS > cell > Wi-Fi by accuracy)
+       accuracy_m = std of three readings
+  -> anti-spoof check:
+       if GPS vs cell distance > 500 m: spoof_flag = true; alert to coordinator
+       if GPS vs Wi-Fi distance > 200 m (indoor threshold): spoof_flag = true
+  -> CheckInEvent published to Kafka (write-behind via eel-outbox-rs)
+  -> Valkey write-behind: officer_id -> station_id (TTL 12 h)
+  -> Kafka consumer flushes to PostgreSQL in micro-batches (500 events)
+  -> 250k events absorbed in <90 min at 3 000 events/s peak
 
-Every 15 minutes throughout polling day:
-      -> app sends ping (background push token acknowledgement)
-      -> USSD path: automated IVR prompt for feature-phone workers
-      -> PresencePing recorded
-      -> if no response within 15 min: ABSENCE_SIGNAL event emitted
-            supervisor + ECC console notified
-            if 2 consecutive misses: automated escalation to polling officer
+15-min presence pings:
+  app wakes (background service) every 15 min
+  -> PresencePing published; Valkey TTL refreshed
+  -> if no ping for >20 min: AbsenceAlert created;
+       county coordinator notified; M32 ticket if kit also offline
 
-Station close: worker checks out
-      -> supervisor confirms check-out (dual action)
-      -> hours_worked computed from check_in to check_out
-      -> PayrollTrigger created with exactly_once_key = worker_id + station_code + date
-         (server rejects duplicate within 24 h window)
-      -> payroll system integration: POST to HR/payroll REST (M-Pesa or Pesalink path)
-      -> PayrollTrigger.payroll_system_ref recorded
+voice-guided workflow (low-literacy):
+  officer selects "Voice guide" on main screen
+  -> TTS (NLLB SW / local SW TTS) reads each step aloud
+  -> officer confirms each step with large tap target
+  -> fallback: county coordinator calls and enters on officer's behalf (MANUAL)
 
-Voice-guided workflow (low-literacy path):
-      -> USSD IVR: audio prompts in EN + SW + top 3 regional languages
-      -> keypad input only; no literacy required
-      -> check-in confirmed via SMS receipt
-
-Events emitted via packages/eel-outbox-rs:
-      eel.dispatch.worker_checked_in.v1
-      eel.dispatch.absence_signal.v1
-      eel.dispatch.worker_checked_out.v1
-      eel.dispatch.payroll_triggered.v1
+payroll trigger at station close:
+  presiding officer confirms station close via M31 EOD
+  -> M33 receives eel.pollclerk.eod_submitted.v1 event
+  -> hours_worked computed from CheckInEvent ts to EOD ts
+  -> PayrollTrigger(trigger_id = UUID7) created
+  -> exactly-once: idempotency key = officer_id + station_id + polling_date
+  -> eel.dispatch.payroll_triggered.v1 emitted to M16
 ```
-
-Debezium to `eel.dispatch.v1`.
 
 ## 5. API surface
 
-Contract: `packages/openapi-contracts/field-mobile/dispatch.yaml`. All writes enforce `Idempotency-Key`.
+Contract: `packages/openapi-contracts/field-mobile/dispatch.yaml`. All write endpoints enforce `Idempotency-Key`.
 
 | Method + path | Persona | Purpose |
 |---|---|---|
-| `POST /dispatch/v1/checkin` | Worker (JWT) | Check in to station (write-behind, instant ACK) |
-| `POST /dispatch/v1/ping` | Worker (JWT / push) | 15-minute presence ping |
-| `POST /dispatch/v1/checkout` | Worker + supervisor (JWT dual) | Check out + payroll trigger |
-| `GET /dispatch/v1/workers` | ECC / commission admin | Worker status board by station |
-| `GET /dispatch/v1/workers/{id}/history` | Commission admin | Check-in history and pings |
-| `GET /dispatch/v1/spoof-alerts` | ECC operator | Active GPS spoof alerts |
-| `GET /dispatch/v1/absence-signals` | ECC / supervisor | Active absence signals |
-| `GET /dispatch/v1/payroll/{id}` | HR admin | Payroll trigger status |
+| `POST /dispatch/v1/checkins` | Officer device (cert) | Submit GPS check-in |
+| `POST /dispatch/v1/pings` | Officer device (cert) | Submit 15-min presence ping |
+| `GET /dispatch/v1/officers/{id}/status` | County coordinator (JWT) | Officer presence status |
+| `GET /dispatch/v1/stations/{id}/roster` | County coordinator / IAB (JWT) | Station attendance roster |
+| `GET /dispatch/v1/absence-alerts` | County coordinator (JWT + SpiceDB) | Open absence alerts |
+| `PATCH /dispatch/v1/absence-alerts/{id}` | County coordinator | Resolve absence alert |
+| `POST /dispatch/v1/payroll` | M16 (SVID mTLS) | Receive payroll trigger (idempotent) |
 
 ## 6. Human surfaces
 
 | Surface | Path | Purpose |
 |---|---|---|
-| Flutter app (worker) | `services/field-mobile-svc/mobile/personnel-dispatch/` | Android 8+ / iOS 14+; voice-guided; USSD deep link; PWA fallback |
-| PWA fallback | Same codebase (Flutter Web) | For workers without smartphones |
-| USSD IVR | `integrations/ussd-gateway/dispatch-ivr/` | Feature-phone workers; audio-guided; EN + SW + 3 regional languages |
-| ECC dispatch console (Phoenix LiveView) | `services/field-mobile-svc/ex/dispatch_web/` | Real-time worker status, spoof alerts, absence signals, station coverage map |
-| HR admin (Django) | `services/field-mobile-svc/django/dispatch-admin/` | Payroll trigger audit, worker roster management |
+| Officer dispatch Flutter app (Android) | `services/field-mobile-svc/flutter/dispatch/` | Check-in; ping; voice guide; assignment view |
+| County coordinator dashboard (Phoenix LiveView) | `services/field-mobile-svc/ex/dispatch_web/` | Real-time station roster; absence alerts; spoof flags |
+| National ops dashboard (Grafana) | `platform/observability/field-mobile-svc/grafana-dispatch.json` | 250k check-in progress; peak throughput; spoof alert rate |
+
+Voice guide language: SW (primary); EN (secondary). Large tap targets (72dp minimum). WCAG 2.2 AA on all web surfaces. Android only for dispatch app (iOS not required for officer devices).
 
 ## 7. Integrity + anti-tamper
 
-- **Write-behind Kafka + Valkey** -- 250k simultaneous check-ins are absorbed by Valkey; background Kafka flush to PG ensures no check-in is lost even under PG write contention.
-- **GPS spoof triangulation** -- delta between GPS point and cell_id centroid (from carrier cell-to-location table) flagged at >1 km; Wi-Fi BSSID provides a third reference; spoof flag stored immutably.
-- **Exactly-once payroll trigger** -- `exactly_once_key = worker_id + station_code + date`; server rejects duplicate within 24-hour window via idempotency table; prevents double-payment.
-- **Presence-ping immutability** -- `PresencePing` rows append-only; no ping can be inserted retroactively to cover an absence; timestamp is server-assigned from HLC.
-- **Dual-action check-out** -- check-out requires both worker JWT and supervisor JWT; single-actor check-out rejected; prevents ghost check-out without physical confirmation.
-- **No persistent GPS tracking** -- GPS stored only at check-in and check-out; 15-minute pings record only presence boolean, not location; minimises surveillance risk.
+- **Write-behind Kafka + Valkey** -- check-in events are published to Kafka first; the Valkey cache serves real-time presence queries during the ingestion peak; PostgreSQL is the durable store; a Kafka broker failure causes in-flight events to queue on the producer until the broker recovers (no loss).
+- **GPS + cell + Wi-Fi triangulation anti-spoof** -- three independent location sources are required for a non-flagged check-in; an officer who presents only a GPS reading that is >500 m from the cell position is flagged as SPOOF; the check-in is still recorded (to avoid blocking legitimate officers with poor GPS) but the county coordinator is alerted.
+- **Exactly-once payroll trigger** -- the idempotency key `officer_id + station_id + polling_date` prevents duplicate payroll events from M31 EOD retries; a second event with the same key returns the cached ack.
+- **Absence alert append-only** -- AbsenceAlerts cannot be deleted; a coordinator can RESOLVE an alert but the original open timestamp is preserved.
+- **Manual check-in audit** -- every MANUAL check-in is logged with the coordinator's JWT identity; bulk MANUAL check-ins (>10 per coordinator per hour) trigger an anomaly flag to the national ops dashboard.
 
 ## 8. Kenya statute alignment
 
-- **Elections Act s.14A (polling staff)** -- check-in record is the statutory attendance register for polling staff; P05-anchored for audit.
-- **Kenya Data Protection Act s.26 (minimisation)** -- GPS coordinates stored only at check-in/check-out; ping records store only presence flag; no continuous location tracking.
-- **Kenya Data Protection Act s.40 (automated decisions)** -- payroll trigger is automated but supervisor-confirmed; absence escalation is automated but officer-adjudicated.
-- **Employment Act 2007 (wages)** -- PayrollTrigger exactly-once mechanism prevents both non-payment (lost check-out) and double-payment (duplicate check-out); hours_worked is the statutory basis for daily rate calculation.
+- **Elections Act s.37 (officer deployment)** -- check-in records provide the statutory evidence of officer presence at the assigned station.
+- **DPA 2019 s.26 (minimisation)** -- GPS coordinates stored only for check-in and pings; no continuous tracking; coordinates purged 90 days after election.
+- **Elections Act s.98 (payroll accuracy)** -- exactly-once PayrollTrigger with hours_worked derived from verified check-in timestamp provides an auditable payroll basis.
+- **Labour Relations Act 2007** -- hours_worked in PayrollTrigger is the input to overtime computation in M16; M33 is responsible for accurate time data only.
 
 ## 9. Honest caveats + external prerequisites
 
-- Cell-ID triangulation accuracy depends on carrier cell-to-location data. IEBC must procure a cell-ID dataset from Safaricom, Airtel, Telkom before go-live; without this, spoof triangulation degrades to GPS-only.
-- Write-behind Valkey assumes Valkey is persistent (AOF or RDB). If Valkey restarts without persistence, in-flight check-ins in the 60-second flush window are lost. Valkey must be configured with AOF persistence in production.
-- Payroll integration path (M-Pesa or Pesalink) is not specified in the M33 plan; the HR/payroll REST adapter endpoint must be confirmed by IEBC HR. The adapter is written to a templated interface; the live endpoint is a deployment configuration item.
-- Voice-guided IVR is budgeted for EN + SW + 3 regional languages. Determining the 3 regional languages requires a distribution analysis of the worker roster; IEBC HR must provide the language profile before recording sessions.
+- GPS accuracy in urban high-rise environments may be insufficient (<100 m) for the anti-spoof threshold; the triangulation algorithm weights Wi-Fi higher indoors but Wi-Fi positioning depends on an up-to-date Wi-Fi fingerprint map at each station, which must be collected during pre-election site visits.
+- Valkey write-behind achieves the 250k/90-min throughput target only if the Kafka broker cluster is sized to at least 6 partitions on the check-in topic; the infrastructure team must confirm partition count before election day.
+- The voice guide quality depends on the NLLB SW TTS model; NLLB's spoken Swahili quality for procedural instruction has not been independently evaluated; a human voice recording is the recommended fallback for critical instructions.
+- MANUAL check-in by county coordinator is a fallback for officers without smartphones; it introduces coordinator-level authority risk; the bulk MANUAL alert is the detection mechanism but not a prevention mechanism.
+- M16 payroll processing depends on the exactly-once PayrollTrigger being received; a Kafka partition failure after EOD could delay trigger delivery; M16 must have a reconciliation process to detect missing triggers within 24 h.
 
 ## 10. Test coverage + operational runbooks
 
-Coverage under `services/field-mobile-svc/crates/dispatch-api/tests/` and `mobile/personnel-dispatch/integration_test/`:
-- Unit: write-behind flush, GPS spoof delta, exactly-once payroll key, dual-action check-out, ping immutability.
-- Property (`proptest`): no duplicate payroll trigger; spoof flag immutable; ping timestamp server-assigned.
-- Load: 250,000 concurrent POST /checkin within 90 min; p99 < 2 s; Valkey write-behind flush within 60 s.
-- Contract (Pact): M32 engineer check-in consumer; ECC absence-signal consumer; HR payroll trigger consumer.
-- Integration: USSD gateway stub; write-behind Valkey + PG; GPS spoof detection.
-- Security: GPS spoof bypass; payroll duplicate; supervisor JWT forgery; OWASP ZAP.
+Coverage under `services/field-mobile-svc/crates/dispatch-api/tests/` and the Flutter app tests: unit tests for triangulation algorithm, anti-spoof checker, absence alert timer, payroll trigger idempotency; property-based tests asserting spoof flag always set when GPS-cell distance >500 m; load tests (k6) for 3 000 check-ins/s for 90 min (250k total); contract tests (Pact) for M16 payroll trigger, M31 EOD event; integration tests with Valkey write-behind, Kafka producer, SoftHSM, and GPS/cell/Wi-Fi stub; e2e Flutter integration test covering check-in, 15-min ping, absence alert, and payroll trigger; chaos test for Valkey unavailable during peak (verifies Kafka durability).
 
 Runbooks under `docs/runbooks/`:
-- `dispatch-surge-response.md` -- Valkey capacity, Kafka lag, PG write bottleneck on election morning.
-- `spoof-alert-triage.md` -- ECC review, supervisor notification, station investigation.
-- `payroll-trigger-audit.md` -- exactly-once key review, duplicate detection, HR reconciliation.
 
-Related: full spec at `docs/plans/modules/mobile-personnel-dispatch.md`; capability catalogue at `services/field-mobile-svc/docs/CAPABILITIES.md`.
+- `dispatch-degradation.md` (create): Valkey unavailable; Kafka broker partition failure; GPS spoof spike; payroll trigger delay.
+- `check-in-peak-runbook.md` (create): pre-election capacity check; Kafka partition sizing; Valkey memory allocation.
+
+Dashboards: `platform/observability/field-mobile-svc/grafana-dispatch.json` (check-in rate, spoof alert rate, Valkey write-behind lag, absence alert count, payroll trigger delivery lag). SLO: 250k check-ins in 90 min; payroll trigger delivery within 2 h of EOD; absence alert response <30 min.
+
+Manual check-in abuse detection: bulk MANUAL check-ins above 10 per coordinator per hour trigger an anomaly flag to the national operations dashboard and the IAB; the anomaly flag is immutable and cannot be cleared by the same coordinator; it requires an IAB officer to review and resolve.
+
+Write-behind durability guarantee: Valkey is configured with AOF persistence (fsync=always in production) to ensure in-flight check-ins survive a Valkey restart within the 90-minute peak window; the Kafka consumer monitors the Valkey queue depth and alerts if it exceeds 50 000 entries (indicating PG write lag).
+
+Related: `docs/plans/modules/mobile-personnel-dispatch.md`; `services/field-mobile-svc/docs/CAPABILITIES.md`.

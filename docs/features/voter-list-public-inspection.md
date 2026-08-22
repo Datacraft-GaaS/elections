@@ -128,3 +128,27 @@ Runbooks under `docs/runbooks/`:
 - `objection-volume-spike.md` -- auto-scaling and rate-limit adjustment during high-volume periods.
 
 Related documents: full spec at `docs/plans/modules/voter-list-public-inspection.md`; service capability catalogue at `services/portal-svc/docs/CAPABILITIES.md`; M35 CVR at `docs/features/continuous-voter-registration.md`; M52 at `docs/features/election-calendar-gazette.md`.
+
+### Inspection window timeline
+
+```
+T-60: RollSnapshot published; public portal opens; objections/corrections accepted
+T-45: Midpoint review; IEBC officer triage queue status report to commissioner
+T-30: Inspection window closes; no new objections or corrections accepted
+T-30 to T-14: IEBC officers make Determinations on all pending submissions
+T-14: AutoReferralPackets submitted to court/registrar for REFERRED cases
+T-7: All determinations communicated to objectors via SMS
+```
+
+These dates are relative to election day and are derived from the Elections Act §6A + §8 statutory windows. The T-30 window close is enforced by a Postgres constraint: `submitted_at <= (SELECT inspection_window_end FROM roll_snapshots WHERE id = $1)`.
+
+### Objection grounds taxonomy
+
+| Ground | Definition | Evidence required |
+|---|---|---|
+| DUPLICATE | Voter appears twice in the register | Second entry national ID hash |
+| DECEASED | Voter is deceased | CRS death notification reference or certificate |
+| NON_CITIZEN | Voter is not a Kenyan citizen | Supporting documentation |
+| INELIGIBLE | Voter is otherwise ineligible (e.g., under 18) | Documentary proof |
+
+Evidence is uploaded to MinIO at submission time; the officer reviews during triage. Frivolous objections (no evidence uploaded) are fast-tracked to DISMISSED with a one-sentence reasoning note.

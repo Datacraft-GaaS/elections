@@ -130,3 +130,24 @@ Runbooks under `docs/runbooks/`:
 - `manifest-mismatch-quarantine.md` -- quarantine procedure when manufacturer delivery fails hash check.
 
 Related documents: full spec at `docs/plans/modules/voter-id-card.md`; service capability catalogue at `services/bvr-svc/docs/CAPABILITIES.md`; edge-case matrix rows tagged EC-VIC-* in `docs/plans/08-edge-case-matrix.md`.
+
+### Key metrics and SLOs
+
+| Metric | Target | Alert threshold |
+|---|---|---|
+| Blacklist propagation latency | <= 30 min end-to-end | > 25 min: warning; > 30 min: PagerDuty |
+| Manifest hash mismatch rate | 0% | Any mismatch: immediate quarantine |
+| Collection biometric success rate | >= 95% | < 90%: alert to constituency manager |
+| API p99 latency (collection endpoint) | <= 500 ms | > 1 s: alert |
+
+### Dependency map
+
+```
+M02 BVR backend  --(voter verified?)--> M53 VoterCard creation
+M03 ABIS         --(biometric check)-->  M53 CollectionRecord
+M53 Blacklist    --(propagate via Kafka)--> All BVI nodes (M06)
+M39 Ballot Chain --(serial awareness)--> (no direct link; card serial != ballot serial)
+NRB manufacturer --(SFTP manifest)----> M53 CardBatch delivery
+```
+
+M53 is feature-flagged: the entire module activates only when `feature_flags.voter_id_card_enabled = true` in `services/bvr-svc/config/features.toml`. All API endpoints return HTTP 503 with `FEATURE_DISABLED` when the flag is off.

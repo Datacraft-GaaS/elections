@@ -125,3 +125,29 @@ Runbooks under `docs/runbooks/`:
 - `oag-package-download-failure.md` -- MinIO presigned URL failure and re-issuance.
 
 Related documents: full spec at `docs/plans/modules/oag-interface.md`; service capability catalogue at `services/governance-svc/docs/CAPABILITIES.md`; M54 at `docs/features/budget-expenditure.md`.
+
+### Scope boundary example
+
+For a typical annual audit engagement of election financial records:
+
+| Field | Value |
+|---|---|
+| `included_modules` | `[M54, M63]` |
+| `included_aggregates` | `["payment_vouchers", "procurement_records", "cob_reports", "serial_assignments"]` |
+| `date_range_start` | `2027-01-01` |
+| `date_range_end` | `2027-12-31` |
+| `column_exclusions` | `["payment_vouchers.payee_bank_account", "staff_contracts.m_pesa_number"]` |
+
+The assembler constructs:
+
+```sql
+SELECT
+  id, procurement_id, payee_name, amount,
+  NULL AS payee_bank_account,  -- excluded
+  ifmis_transaction_id, recommended_by, approved_by, authorized_by
+FROM payment_vouchers
+WHERE created_at BETWEEN '2027-01-01' AND '2027-12-31'
+-- Executed as oag_read_role; no access to tables outside scope
+```
+
+The OAG receives a Parquet file with the excluded column absent from the schema entirely, not as a NULL column, so the auditor cannot infer the number of values or their length.

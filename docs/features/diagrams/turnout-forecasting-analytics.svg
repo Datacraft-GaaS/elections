@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">M44 Turnout Forecasting Analytics — Architecture Diagram</title>
+  <desc id="desc">HourlyTurnoutReport ingestion, Gradient Boosted Trees model, ForecastRelease, variance alerts, and KMD Kenya Meteorological Department double.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#f8f9fa"/>
+  <text x="600" y="36" font-family="Arial,sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#111">M44 Turnout Forecasting Analytics</text>
+  <text x="600" y="56" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#555">HourlyTurnoutReport · GBT model · ForecastRelease · variance alerts · KMD double</text>
+
+  <!-- Data sources row -->
+  <!-- BVI Auth stream -->
+  <rect x="20" y="100" width="200" height="70" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="120" y="126" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#1f77b4">BVI Auth Stream</text>
+  <text x="120" y="146" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">kit telemetry (M26)</text>
+  <text x="120" y="162" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">auth_count / auth_rate</text>
+
+  <!-- Historical turnout -->
+  <rect x="240" y="100" width="200" height="70" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="340" y="126" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#2ca02c">Historical Turnout</text>
+  <text x="340" y="146" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">2007–2022 elections</text>
+  <text x="340" y="162" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">station-level features</text>
+
+  <!-- KMD weather double -->
+  <rect x="460" y="100" width="200" height="70" rx="8" fill="#fff" stroke="#7f7f7f" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="560" y="122" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#7f7f7f">KMD Double</text>
+  <text x="560" y="142" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#7f7f7f">Kenya Met Dept</text>
+  <text x="560" y="160" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#7f7f7f">weather forecast feed</text>
+  <text x="560" y="172" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">(stub in dev)</text>
+
+  <!-- VPRS registered voter count -->
+  <rect x="680" y="100" width="200" height="70" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="780" y="122" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#1f77b4">VPRS Roll</text>
+  <text x="780" y="142" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">registered_voters</text>
+  <text x="780" y="160" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">per station / ward</text>
+  <text x="780" y="172" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">denominator for rate</text>
+
+  <!-- Socioeconomic data -->
+  <rect x="900" y="100" width="200" height="70" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="1000" y="122" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#2ca02c">Socioeconomic</text>
+  <text x="1000" y="142" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">census, distance-to-station</text>
+  <text x="1000" y="160" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">road infrastructure index</text>
+  <text x="1000" y="172" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">KNBS / WorldPop (ext)</text>
+
+  <!-- HourlyTurnoutReport -->
+  <rect x="200" y="240" width="800" height="100" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2"/>
+  <text x="600" y="266" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">HourlyTurnoutReport</text>
+  <text x="600" y="286" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">station_code, hour, voters_authenticated, cumulative_rate</text>
+  <text x="600" y="306" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">weather_condition, queue_depth_est, kit_operational</text>
+  <text x="600" y="326" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">data class C — T2 — POST /v1/analytics/turnout-reports (internal, 1/station/hour)</text>
+  <text x="600" y="336" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">hourly_turnout_report.v1 emitted</text>
+  <!-- Arrows from sources -->
+  <line x1="120" y1="170" x2="350" y2="240" stroke="#1f77b4" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="340" y1="170" x2="450" y2="240" stroke="#2ca02c" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="560" y1="170" x2="560" y2="240" stroke="#7f7f7f" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+  <line x1="780" y1="170" x2="700" y2="240" stroke="#1f77b4" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="1000" y1="170" x2="850" y2="240" stroke="#2ca02c" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- GBT Model -->
+  <rect x="200" y="400" width="380" height="120" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="390" y="426" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">Gradient Boosted Trees (GBT)</text>
+  <text x="390" y="446" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">XGBoost / LightGBM model (M28 registry)</text>
+  <text x="390" y="466" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">features: hour, hist_rate, weather, socio</text>
+  <text x="390" y="486" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">prediction: final_turnout_pct [95% CI]</text>
+  <text x="390" y="506" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">cosign-signed model artefact (P05 tlog)</text>
+  <rect x="555" y="400" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="566" y="416" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="600" y1="340" x2="450" y2="400" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ForecastRelease -->
+  <rect x="620" y="400" width="560" height="120" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2.5"/>
+  <text x="900" y="426" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">ForecastRelease</text>
+  <text x="900" y="446" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">release_at, forecast_horizon: 2h / EOD</text>
+  <text x="900" y="466" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">national_turnout_pct, CI_low, CI_high</text>
+  <text x="900" y="486" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">constituency_breakdown[], anomalous_stations[]</text>
+  <text x="900" y="506" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">forecast_released.v1 (exactly-once) — internal only until polls close</text>
+  <line x1="580" y1="460" x2="620" y2="460" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Variance alert -->
+  <rect x="200" y="580" width="380" height="100" rx="8" fill="#fce7f3" stroke="#d62728" stroke-width="2"/>
+  <text x="390" y="606" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">Variance Alert</text>
+  <text x="390" y="626" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">actual vs forecast delta &gt; 15%</text>
+  <text x="390" y="646" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">turnout_variance_alert.v1 emitted</text>
+  <text x="390" y="666" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">ECC console + IAB dashboard</text>
+  <text x="390" y="676" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">human adjudication: suppress or escalate</text>
+  <line x1="390" y1="520" x2="390" y2="580" stroke="#d62728" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Public dashboard -->
+  <rect x="620" y="580" width="560" height="100" rx="8" fill="#f3f4f6" stroke="#7f7f7f" stroke-width="1.5"/>
+  <text x="900" y="606" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">Public Turnout Dashboard (Astro)</text>
+  <text x="900" y="626" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#555">GET /v1/analytics/forecasts/latest — embargoed until polls close (18:00)</text>
+  <text x="900" y="646" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#555">GET /v1/analytics/turnout-reports — public historical rates</text>
+  <text x="900" y="662" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">Kafka: eel.analytics.turnout_report.v1 · forecast_released.v1 · variance_alert.v1</text>
+  <line x1="900" y1="520" x2="900" y2="580" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="570" y1="640" x2="620" y2="640" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Legend -->
+  <rect x="30" y="580" width="150" height="190" rx="6" fill="#fff" stroke="#ccc" stroke-width="1"/>
+  <text x="105" y="600" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Legend</text>
+  <rect x="42" y="610" width="20" height="14" rx="2" fill="#dbeafe" stroke="#1f77b4"/>
+  <text x="70" y="622" font-family="Arial,sans-serif" font-size="12" fill="#333">Input data</text>
+  <rect x="42" y="630" width="20" height="14" rx="2" fill="#fef9c3" stroke="#ff7f0e"/>
+  <text x="70" y="642" font-family="Arial,sans-serif" font-size="12" fill="#333">Hourly report</text>
+  <rect x="42" y="650" width="20" height="14" rx="2" fill="#ede9fe" stroke="#9467bd"/>
+  <text x="70" y="662" font-family="Arial,sans-serif" font-size="12" fill="#333">GBT model</text>
+  <rect x="42" y="670" width="20" height="14" rx="2" fill="#dcfce7" stroke="#2ca02c"/>
+  <text x="70" y="682" font-family="Arial,sans-serif" font-size="12" fill="#333">ForecastRelease</text>
+  <rect x="42" y="690" width="20" height="14" rx="2" fill="#fce7f3" stroke="#d62728"/>
+  <text x="70" y="702" font-family="Arial,sans-serif" font-size="12" fill="#333">Variance alert</text>
+  <rect x="42" y="710" width="20" height="14" rx="2" fill="#fff" stroke="#7f7f7f" stroke-dasharray="4,2"/>
+  <text x="70" y="722" font-family="Arial,sans-serif" font-size="12" fill="#333">External (KMD)</text>
+  <rect x="42" y="730" width="14" height="14" rx="2" fill="#9467bd"/>
+  <text x="62" y="742" font-family="Arial,sans-serif" font-size="12" fill="white">🔒</text>
+  <text x="70" y="742" font-family="Arial,sans-serif" font-size="12" fill="#333">cosign / tlog</text>
+</svg>

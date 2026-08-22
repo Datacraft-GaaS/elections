@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">M45 Party Registration Management — Architecture Diagram</title>
+  <desc id="desc">PoliticalParty, CoalitionRegistration, FactionDispute, PPDT integration, and compliance scoring.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#f8f9fa"/>
+  <text x="600" y="36" font-family="Arial,sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#111">M45 Party Registration Management</text>
+  <text x="600" y="56" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#555">PoliticalParty · CoalitionRegistration · FactionDispute · PPDT · compliance scoring</text>
+
+  <!-- Personas -->
+  <circle cx="100" cy="115" r="18" fill="#ff7f0e"/>
+  <text x="100" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Party</text>
+  <text x="100" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Secretary</text>
+
+  <circle cx="280" cy="115" r="18" fill="#1f77b4"/>
+  <text x="280" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">IEBC</text>
+  <text x="280" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Registrar</text>
+
+  <circle cx="450" cy="115" r="18" fill="#9467bd"/>
+  <text x="450" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">PPDT</text>
+  <text x="450" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Tribunal</text>
+
+  <!-- PoliticalParty entity -->
+  <rect x="30" y="190" width="340" height="150" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="200" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f77b4">PoliticalParty</text>
+  <text x="200" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">id, name, abbreviation</text>
+  <text x="200" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">national_officers[], constitution_hash</text>
+  <text x="200" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">symbol_id (M?), colours_hex[]</text>
+  <text x="200" y="296" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">member_count_verified, cdf_fund_eligible</text>
+  <text x="200" y="316" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">status: PENDING/REGISTERED/SUSPENDED/DEREGISTERED</text>
+  <text x="200" y="330" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">party_registered.v1 emitted (exactly-once)</text>
+  <line x1="100" y1="133" x2="150" y2="190" stroke="#ff7f0e" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="280" y1="133" x2="250" y2="190" stroke="#1f77b4" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- CoalitionRegistration -->
+  <rect x="410" y="190" width="340" height="150" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="580" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">CoalitionRegistration</text>
+  <text x="580" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">id, coalition_name, lead_party_id</text>
+  <text x="580" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">member_party_ids[], mou_hash</text>
+  <text x="580" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">valid_from, valid_until</text>
+  <text x="580" y="296" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">status: PROPOSED/REGISTERED/DISSOLVED</text>
+  <text x="580" y="316" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">POST /v1/parties/coalitions</text>
+  <text x="580" y="330" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">coalition_registered.v1 emitted</text>
+  <line x1="370" y1="265" x2="410" y2="265" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- FactionDispute -->
+  <rect x="790" y="190" width="380" height="150" rx="8" fill="#fce7f3" stroke="#d62728" stroke-width="2"/>
+  <text x="980" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">FactionDispute</text>
+  <text x="980" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">id, party_id, complainant_id_hash</text>
+  <text x="980" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">dispute_type: LEADERSHIP/EXPULSION/PRIMARIES</text>
+  <text x="980" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">status: FILED → ADMITTED → HEARING → DECIDED</text>
+  <text x="980" y="296" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">ppdt_ref (PPDT case reference)</text>
+  <text x="980" y="316" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">POST /v1/parties/{id}/disputes</text>
+  <text x="980" y="330" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">faction_dispute.v1 emitted</text>
+  <line x1="750" y1="265" x2="790" y2="265" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Compliance Scoring -->
+  <rect x="30" y="400" width="700" height="120" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2"/>
+  <text x="380" y="426" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">Compliance Scoring</text>
+  <text x="380" y="446" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">ComplianceScore: party_id, score (0–100)</text>
+  <text x="380" y="466" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">dimensions: gender_quota, youth_quota, AGM_held, returns_filed, audit_submitted</text>
+  <text x="380" y="486" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">score &lt; 60 → compliance_warning.v1 · score &lt; 30 → suspension_trigger.v1</text>
+  <text x="380" y="502" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">computed quarterly; GET /v1/parties/{id}/compliance — IEBC_REGISTRAR role</text>
+  <line x1="200" y1="340" x2="250" y2="400" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="580" y1="340" x2="500" y2="400" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- PPDT integration -->
+  <rect x="790" y="400" width="380" height="120" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="980" y="426" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">PPDT Integration</text>
+  <text x="980" y="446" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">Political Parties Disputes Tribunal</text>
+  <text x="980" y="466" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">case bundle: evidence + party docs</text>
+  <text x="980" y="486" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">SFTP push: faction_dispute docs</text>
+  <text x="980" y="502" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">ppdt_ruling.v1 consumed → party status update</text>
+  <line x1="450" y1="133" x2="960" y2="400" stroke="#9467bd" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+  <line x1="980" y1="340" x2="980" y2="400" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Fund eligibility downstream -->
+  <rect x="30" y="590" width="340" height="90" rx="8" fill="#f3f4f6" stroke="#7f7f7f" stroke-width="1.5"/>
+  <text x="200" y="616" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">CDF / Party Fund Eligibility</text>
+  <text x="200" y="636" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#555">compliance_score + election_results → fund_share</text>
+  <text x="200" y="652" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#555">fund_eligibility.v1 → Treasury (external)</text>
+  <text x="200" y="666" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">quarterly disbursement trigger</text>
+  <line x1="300" y1="520" x2="250" y2="590" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Public party register -->
+  <rect x="410" y="590" width="760" height="90" rx="8" fill="#f3f4f6" stroke="#7f7f7f" stroke-width="1.5"/>
+  <text x="790" y="616" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Public Party Register (Astro)</text>
+  <text x="790" y="636" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#555">GET /v1/parties — public · paginated · status + compliance_score</text>
+  <text x="790" y="652" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#555">GET /v1/parties/{id} — full details + coalition memberships</text>
+  <text x="790" y="666" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">Kafka: party_registered.v1 · coalition.v1 · faction_dispute.v1 · compliance_warning.v1</text>
+  <line x1="500" y1="520" x2="650" y2="590" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="980" y1="520" x2="900" y2="590" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Legend -->
+  <rect x="30" y="720" width="360" height="60" rx="6" fill="#fff" stroke="#ccc" stroke-width="1"/>
+  <rect x="42" y="730" width="20" height="14" rx="2" fill="#dbeafe" stroke="#1f77b4"/>
+  <text x="70" y="742" font-family="Arial,sans-serif" font-size="12" fill="#333">PoliticalParty</text>
+  <rect x="42" y="750" width="20" height="14" rx="2" fill="#dcfce7" stroke="#2ca02c"/>
+  <text x="70" y="762" font-family="Arial,sans-serif" font-size="12" fill="#333">Coalition</text>
+  <rect x="180" y="730" width="20" height="14" rx="2" fill="#fce7f3" stroke="#d62728"/>
+  <text x="208" y="742" font-family="Arial,sans-serif" font-size="12" fill="#333">FactionDispute</text>
+  <rect x="180" y="750" width="20" height="14" rx="2" fill="#fef9c3" stroke="#ff7f0e"/>
+  <text x="208" y="762" font-family="Arial,sans-serif" font-size="12" fill="#333">Compliance score</text>
+</svg>

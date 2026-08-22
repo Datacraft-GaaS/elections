@@ -143,4 +143,8 @@ Runbooks under `docs/runbooks/`:
 - `election-day-surge-response.md` -- CRIT alert triage, resource dispatch, queue-svc scale-out.
 - `station-closure-confirmation.md` -- marking station CLOSED, evidence anchoring in P05.
 
+Observability targets: `platform/observability/queue-svc/grafana-queue.json` covers queue_length_est p95, service_rate_pph distribution, overload_alert_rate, USSD query latency, and Kafka consumer lag. SLOs: 99.9% metric write success; station metric staleness < 120 s; USSD response < 5 s at p99; P05 daily anchor lag < 60 min.
+
+Chaos scenarios under `chaos/scenarios/eel-queue-*.yaml`: Kafka partition leader election during metric burst; USSD gateway brownout under peak SMS load; Kalman filter divergence injection (artificial jitter spike).
+
 Related: full spec at `docs/plans/modules/queue-transparency.md`; capability catalogue at `services/queue-svc/docs/CAPABILITIES.md`.

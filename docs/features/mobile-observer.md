@@ -1,13 +1,11 @@
 # Mobile observer (M34)
 
-Module M34 (`field-mobile-svc`) is the accredited-observer phone tool for ~500 civil-society, international, academic, and media observers. It mirrors Public Portal read views, logs GPS-verified station visits, guides structured incident reporting (with systemic-incident escalation), runs cryptographic result verification against the Merkle chain via the shared `libeel-verifier` Rust FFI, provides optional countersignature for eligible categories, and produces a signed end-of-mission PDF fed to the Auditor-General escrow mirror.
-
-Contrast with M30 (Mobile Party Agent), which is restricted to political party agents with statutory Form 34A countersignature rights, and M29 (Mobile Citizen Verify), which is a public read-only tool with no incident or countersignature path.
+Module M34 (`mobile-observer`) owned by `field-mobile-svc`. A Flutter Android/iOS app for accredited domestic and international election observers. Supports signed station visit records, incident report attachments, a sampling verification checklist, mission PDF generation, AG mirror within 24 hours, and a USSD/SMS signal path for systemic incidents when data connectivity is unavailable.
 
 ## Contents
 
-1. What the observer app does (vs related mobile modules)
-2. Data plane
+1. What mobile observer does (vs related modules)
+2. Data plane (schema)
 3. Ingest sources
 4. Pipeline
 5. API surface
@@ -19,155 +17,143 @@ Contrast with M30 (Mobile Party Agent), which is restricted to political party a
 
 ---
 
-## 1. What the observer app does (vs related mobile modules)
+## 1. What mobile observer does (vs related modules)
 
-- **M29** = public citizen verification of their own registration record; no incident reporting, no countersignature.
-- **M30** = political party agents: Form 34A countersignature, dispute escalation; single-station scope.
-- **M34** = accredited observers: GPS-verified multi-station visit logs, guided verification sampling (cryptographic seed), signed incident reports (systemic-incident flag available to OBSERVER_CHIEF role), category-gated countersignature, end-of-mission PDF, Auditor-General mirror within 24 h.
+- **M12 CRMS** = accredits observers; M34 verifies observer credential at app login.
+- **M34** = election-day observer tooling: visit logs, incident reports, sampling checklists, and the AG mirror pathway.
+- **M23 Grievance channels** = public complaint intake; observers who observe systemic incidents can initiate an M23 CONDUCT referral from within M34.
 
-M34 shares the `libeel-verifier` Rust FFI binary with M29 and M30 for client-side Merkle proof validation. It is the only module producing `eel.field.observer_visit_logged.v1` and `eel.field.systemic_incident_flagged.v1`.
+M34 does not modify any voter, result, or custody record. All writes are append-only observer logs that feed the AG mirror and the IAB systemic incident dashboard.
 
 ## 2. Data plane
 
-Five aggregates (under `services/field-mobile-svc/crates/field-mobile-api/src/models.rs`):
+Five local aggregates in the Flutter Isar+SQLCipher store:
 
-| Aggregate | Purpose | Data class |
+| Aggregate | Purpose | Sync cadence |
 |---|---|---|
-| **ObserverAccreditation** | Category and rights: observer_id, category (CIVIL_SOCIETY/INTERNATIONAL/ACADEMIC/MEDIA), issuing_body, accreditation_code, valid_from, valid_to, countersign_rights bool. | D |
-| **StationVisitLog** | Signed station visit: observer_id, station_code, check_in_at, check_out_at, gps_lat, gps_lon, observation_note, signed_at, Ed25519 signature. | A |
-| **ObserverIncidentReport** | Structured incident: observer_id, station_code, category (PROCEDURAL/SECURITY/LEGAL/OPERATIONAL/TAMPERING/TRANSPARENCY/OTHER), description, evidence_blob_ids, gps_lat, gps_lon, is_systemic_flag, submitted_at, Ed25519 signature. | B |
-| **ObserverVerificationRecord** | Merkle verification result: observer_id, station_code, form_id, form_hash, proof_verified bool, countersign_at, countersignature, audit_trail_id. | A |
-| **EndOfMissionReport** | Compiled mission summary: observer_id, mission_id, stations_visited, verifications_completed, incidents_reported, generated_at, pdf_blob_id (MinIO). | B |
-
-Local store: Isar + SQLCipher (AES-256-GCM), key in device secure enclave.
+| **VisitRecord** | Signed station visit: visit_id (UUID7), observer_id, station_id, arrival_ts, departure_ts, observer_sig. | Immediate sync |
+| **IncidentReport** | Incident with attachments: incident_id (UUID7), visit_id, category, description, attachment_hashes (P05 tlog refs), observer_sig, ts_hlc. | Immediate sync |
+| **SamplingChecklist** | Standardised verification checklist per visit: checklist_id, visit_id, items (array of checked/unchecked), observer_sig. | Immediate sync |
+| **MissionPDF** | Observer mission summary: pdf_id, observer_id, election_cycle, visit_count, incident_count, generated_at, pdf_hash. | On-demand generation |
+| **SystemicIncident** | High-severity pattern: incident_ids (array), constituency_id, severity, ag_mirror_sent (bool), m23_ref. | On escalation |
 
 ## 3. Ingest sources
 
-| Source | Cadence | Adapter | Auth | Failure semantics |
+| Source | Cadence | Format | Auth | Failure semantics |
 |---|---|---|---|---|
-| **Accreditation service** (SpiceDB) | On launch and on reconnect | `integrations/spicedb-client/` | SVID mTLS | Incident and countersign features blocked if accreditation absent/expired; stale-since timestamp displayed |
-| **RTS back-end (M10)** | On verification request or periodic sync | `packages/openapi-contracts/field/observer.yaml` | JWT + SpiceDB `OBSERVER` role | Cached Form 34A images + Merkle root used for offline verification |
-| **Public Portal (M11)** | Snapshot on launch | Internal API | JWT | Snapshot cached in Isar; stale-since timestamp displayed |
-| **P05 transparency log** | On Merkle root refresh | `integrations/tlog-client/` | SVID mTLS | Stale root displayed with stale-since timestamp; offline verification runs against cached root |
-| **USSD gateway (I08)** | On systemic incident via OBSERVER_CHIEF with no network | `integrations/ussd-gateway/adapter` | Gateway secret | IVR ack within 2 min; SMS delivery receipt |
+| CRMS observer credential (M12) | At app login | REST | JWT (observer device cert) | Login blocked if CRMS unreachable and no cached credential |
+| Photo/video attachments (observer device) | Per incident | Camera / gallery | Device cert | Stored in Isar+SQLCipher offline; hashed and anchored on sync |
+| Checklist templates | Pre-election bulk | Signed JSON | Device cert | Cached; stale if >14 days |
+| AG mirror endpoint | At EOD and on systemic incident | REST (HTTPS) | JWT + SpiceDB AG_MIRROR | Retry until acked; MissionPDF generated from local data if AG endpoint unavailable |
+| M23 referral path | On observer escalation | REST | Device cert | Exactly-once referral_id |
 
 ## 4. Pipeline
 
 ```
-observer launches app
-  -> accreditation check via SpiceDB (category, countersign_rights, valid_to)
-  -> Public Portal snapshot cached in Isar
-  -> Merkle root cached from P05
+observer arrives at station:
+  opens M34 app; station QR scan
+  -> CRMS credential verified (or cached)
+  -> VisitRecord created (arrival_ts); observer_sig applied
+  -> eel.observer.visit_started.v1 emitted
 
-  [Station visit]
-  -> GPS check-in; distance validated against station polygon
-  -> check-in timestamp signed with observer biometric Ed25519 key
-  -> StationVisitLog submitted (UUID7 Idempotency-Key); queued if offline
-  -> eel.field.observer_visit_logged.v1
+checklist completion:
+  observer works through SamplingChecklist items:
+       ballot box seals intact?
+       voter roll accessible to agents?
+       observers present from multiple parties?
+       Form 34A displayed publicly?
+       accessibility accommodations in place?
+  -> SamplingChecklist persisted; observer_sig applied
+  -> eel.observer.checklist_completed.v1 emitted
 
-  [Guided verification sampling]
-  -> n stations per constituency selected by SHANGRLA-compatible cryptographic seed
-  -> structured checklist per sampled station:
-       form_hash matches transmitted value (Boolean)
-       party-agent countersignatures present (Boolean)
-       geofence polygon intact (Boolean)
-       physical seals intact (Boolean + notes field)
-  -> libeel-verifier (Rust FFI, shared with M29 + M30): validate Merkle inclusion proof offline
-  -> ObserverVerificationRecord created; countersignature appended if rights permit
-  -> eel.field.observer_verification.v1
+incident report:
+  observer taps "Report incident" -> category -> description -> attachments
+  -> IncidentReport(incident_id = UUID7) created
+  -> attachments stored offline; hashes anchored in P05 tlog on sync
+  -> observer_sig applied
+  -> eel.observer.incident_reported.v1 emitted
+  -> if category = SYSTEMIC:
+       SystemicIncident created
+       ag_mirror_sent initiated within 1 h
+       M23 CONDUCT referral option presented to observer
 
-  [Incident reporting]
-  -> ObserverIncidentReport AES-256-GCM encrypted locally in Isar + SQLCipher
-  -> signed by observer biometric; queued with UUID7 idempotency key
-  -> verification hash mismatch auto-generates TAMPERING category incident;
-     station marked "Unverifiable" locally
-  -> submitted to observer coordination + war-room Kafka topic + AG mirror on reconnect
-  -> eel.field.observer_incident.v1
+departure:
+  observer taps "Leave station"
+  -> VisitRecord(departure_ts) updated
+  -> MissionPDF generated on-device from visit + checklist + incidents
 
-  [Systemic incident -- OBSERVER_CHIEF role only]
-  -> is_systemic_flag set; escalated to OBSERVER_CHIEF in app
-  -> if no connectivity: USSD fallback via I08 short-code (reserved pre-election)
-  -> IVR ack within 2 min
-  -> eel.field.systemic_incident_flagged.v1 (exactly-once via eel-outbox-rs)
+AG mirror (within 24 h):
+  field-mobile-svc batch job aggregates all VisitRecord, IncidentReport,
+  SamplingChecklist for the polling day
+  -> signed aggregate submitted to AG mirror endpoint (REST)
+  -> SystemicIncident.ag_mirror_sent = true on ack
+  -> eel.observer.ag_mirror_sent.v1 emitted
 
-  [Check-out + end-of-mission]
-  -> observer signs off at station with biometric
-  -> StationVisitLog.check_out_at recorded
-
-  [End-of-mission PDF]
-  -> EndOfMissionReport auto-compiled from local records
-  -> exported to PDF via server-side render
-  -> PDF hash anchored in ObserverVerificationRecord
-  -> AG escrow mirror: all records with signed provenance within 24 h
-     via integrations/ag-mirror/ adapter; delivery confirmed by audit-trace query
+USSD/SMS signal for systemic incident (no data):
+  observer sends USSD `*400*9#` or SMS keyword to IEBC number
+  -> field-mobile-svc ecc adapter creates SystemicIncident from USSD/SMS
+  -> IAB systemic incident dashboard notified within 5 min
 ```
-
-**Offline verification**: Merkle proof validation executable against cached root; stale-since timestamp displayed. Full verification cycle target: <= 60 s on LTE.
 
 ## 5. API surface
 
-Contract: `packages/openapi-contracts/field/observer.yaml`. All writes enforce `Idempotency-Key` header.
+Contract: `packages/openapi-contracts/field-mobile/observer.yaml`. All write endpoints enforce `Idempotency-Key`.
 
 | Method + path | Persona | Purpose |
 |---|---|---|
-| `POST /v1/observer/visits` | `OBSERVER` (JWT + SpiceDB) | Log GPS-verified station visit |
-| `PATCH /v1/observer/visits/{id}/checkout` | `OBSERVER` | Record check-out time |
-| `GET /v1/observer/forms/{id}` | `OBSERVER` | Fetch Form 34A + Merkle proof |
-| `POST /v1/observer/verifications` | `OBSERVER` | Submit verification record |
-| `POST /v1/observer/incidents` | `OBSERVER` | File incident report |
-| `POST /v1/observer/systemic-incidents` | `OBSERVER_CHIEF` | File systemic incident (exactly-once) |
-| `POST /v1/observer/countersignatures` | `OBSERVER` (SpiceDB countersign_rights check) | Submit countersignature where rights permit |
-| `GET /v1/observer/end-of-mission` | `OBSERVER` | Download signed end-of-mission PDF |
-
-SpiceDB enforces `countersign_rights` at the API layer. A `403` is returned for countersignature attempts by observers without the right; all attempts are logged.
+| `POST /observer/v1/visits` | Observer device (cert) | Start station visit |
+| `PATCH /observer/v1/visits/{id}` | Observer device (cert) | Close visit (departure_ts) |
+| `POST /observer/v1/incidents` | Observer device (cert) | Report incident with attachment hashes |
+| `POST /observer/v1/checklists` | Observer device (cert) | Submit sampling checklist |
+| `POST /observer/v1/mission-pdf` | Observer device (cert) | Generate mission PDF |
+| `GET /observer/v1/incidents` | IAB / AG (JWT + SpiceDB) | Incident feed |
+| `GET /observer/v1/systemic` | IAB / AG (JWT) | Systemic incident feed |
+| `POST /observer/v1/ag-mirror` | field-mobile-svc batch (SVID) | Submit AG mirror batch |
 
 ## 6. Human surfaces
 
 | Surface | Path | Purpose |
 |---|---|---|
-| Observer Flutter app (Android 10+/iOS 15+) | `services/field-mobile-svc/apps/observer/` | All observer-facing workflows |
-| Observer coordination dashboard (Phoenix LiveView) | `services/field-mobile-svc/ex/dispatch_web/` | IEBC observer coordinators; incident feed, coverage map |
-| Auditor-General escrow (external stub) | `integrations/ag-mirror/` | AG receives observer records within 24 h |
+| Observer Flutter app (Android/iOS) | `services/field-mobile-svc/flutter/observer/` | Visit log; checklist; incident; mission PDF |
+| IAB systemic incident dashboard (Phoenix LiveView) | `services/field-mobile-svc/ex/observer_web/` | Real-time systemic incident map; AG mirror status |
+| AG mirror portal (read-only, Astro) | `services/field-mobile-svc/astro/ag-mirror/` | AG views visit, checklist, and incident data within 24 h of polling day |
 
-Distribution via private IEBC MDM. Languages: EN + SW. Accreditation category badge displayed in app header.
+Languages: EN + SW + French (for international observers). WCAG 2.2 AA on all web surfaces; Flutter app follows Material You guidelines.
 
 ## 7. Integrity + anti-tamper
 
-- **Merkle proof on device**: `libeel-verifier` Rust FFI crate (shared with M29 and M30) validates Merkle inclusion proofs client-side against cached root. No server trust required for proof validity. Hash mismatch auto-escalates as TAMPERING incident.
-- **GPS-verified visits**: station visit check-in rejected if GPS places observer outside station polygon. Signed with observer biometric Ed25519 key.
-- **Countersignature rights via SpiceDB**: `countersign_rights` flag is evaluated at the API layer for every countersignature request. Attempts without the right return 403 and are permanently logged. Feature availability is enforced at runtime from the accreditation record; the app renders the countersignature UI only when SpiceDB grants the right.
-- **Systemic incident exactly-once**: `eel.field.systemic_incident_flagged.v1` carried by `eel-outbox-rs` transactional outbox with UUID7 idempotency key. Delivered exactly-once to war-room and observer coordination Kafka topics.
-- **AG mirror provenance**: all observer records submitted to the AG escrow mirror include signed provenance (observer_id, submission_at, Ed25519 signature). Delivery confirmed by audit-trace query via `integrations/ag-mirror/`. Target: within 24 h of original submission.
-- **Local store encryption**: AES-256-GCM Isar + SQLCipher; key in device secure enclave. Offline queue survives phone reboot.
+- **Observer Ed25519 signature** -- every VisitRecord, IncidentReport, and SamplingChecklist is signed by the observer's device cert; unsigned records are rejected by the sync endpoint; the observer cannot repudiate a signed report.
+- **Attachment P05 anchor** -- attachment hashes are anchored in the P05 transparency log within 60 s of sync; the AG or a court can verify the attachment has not been altered since the observer submitted it.
+- **AG mirror within 24 h** -- the batch job has a 24-hour SLA measured from polling day close; a breach triggers an alert to the IEBC AG liaison; the batch is retried until acked.
+- **USSD/SMS systemic signal** -- the USSD/SMS path is independent of the Flutter app and the data network; an observer without data connectivity can still trigger the systemic incident detection pipeline.
+- **Exactly-once incident events** -- `IncidentReport.incident_id` is a UUID7 generated on the device at the moment of report creation; duplicate incident_ids on sync return the cached ack; network retries cannot create duplicate incidents.
+- **MissionPDF on-device generation** -- the PDF is generated locally from the signed local Isar records; it cannot be post-hoc modified; the pdf_hash is stored and anchored independently.
 
 ## 8. Kenya statute alignment
 
-- **Elections Act s.6A (public inspection)**: observers are entitled to inspect the voter register and results records. M34 provides this access via the Public Portal mirror and Form 34A verification. The app surfaces no voter-level PII beyond what is publicly visible.
-- **Evidence Act Cap 80, s.93 (electronic records)**: countersignatures produced under the `countersign_rights` path are signed by an HSM-backed Ed25519 key (P06) and anchored in P05. Paired with the Merkle inclusion proof, they satisfy the admissibility requirements for electronically signed records.
-- **Kenya Data Protection Act 2019 s.26 (minimisation)**: observer ID is never combined with GPS coordinates in persistent log records. Station visit logs store GPS at polygon-centroid precision (not exact device coordinates). Log-scanner CI gate enforces this at build time.
-- **Whistleblower Protection Act 2022**: systemic incident reports filed via M34 are treated as protected disclosures. Observer identity is separated from the incident record in the war-room view by default; IEBC Privacy Officer approval required to join the fields.
+- **EOA 2016 ss.34-36 (observer rights)** -- M34 implements the statutory observer toolset; VisitRecord and IncidentReport are the digital equivalents of the paper observation forms prescribed by EOA.
+- **EOA 2016 s.11 (AG access)** -- AG mirror within 24 h satisfies the statutory access obligation; the AG read-only portal provides county-scoped access.
+- **Elections Act s.44 (observer accreditation)** -- M34 verifies CRMS-issued accreditation at login; non-accredited devices are rejected.
+- **DPA 2019 s.26 (minimisation)** -- incident attachments store hashes only on the server; raw media stored only on the observer's device and purged 90 days after election; USSD/SMS signals contain no voter PII.
+- **CRPD Article 33** -- observer monitoring function includes accessibility compliance verification items in the SamplingChecklist; M34 collects data that contributes to the IEBC's CRPD reporting obligation.
 
 ## 9. Honest caveats + external prerequisites
 
-- The AG escrow mirror endpoint (`integrations/ag-mirror/`) is an external stub requiring the Auditor-General's office to provision the endpoint and credential before the election. The 24-hour delivery SLA cannot be met until the live endpoint is available.
-- The USSD systemic-incident path requires a pre-election short-code reservation with Safaricom / Africa's Talking via I08. If the short-code is not reserved, OBSERVER_CHIEF escalation falls back to voice call only; no digital audit trail.
-- Verification sampling using a cryptographic seed assumes observers follow the guided protocol. An observer who selects stations arbitrarily instead of following the seed-derived sample produces a non-probabilistic sample, reducing the statistical validity of their verification report. The app guides but cannot enforce.
-- The countersignature rights flag is set at accreditation time by the IEBC accreditation officer and cannot be changed by the observer. If an observer category is granted rights incorrectly, correction requires re-issuing the accreditation record before election day.
-- End-of-mission PDF generation is server-side. If field-mobile-svc is unreachable at end of mission, the observer receives the PDF once connectivity is restored. The local records are the source of truth; the PDF is a rendered view.
+- Observer CRMS accreditation must be issued before election day; late accreditations that are not in the CRMS cache at election time block the observer from logging in until connectivity is restored.
+- The AG mirror REST endpoint must be provisioned and authenticated before election day; the endpoint URL and mutual TLS certificate are pending AG office confirmation.
+- Attachment storage on the observer's device is bounded by device storage; high-resolution video attachments can fill a low-end device; the app recommends photo over video and warns when storage is low.
+- The USSD `*400*9#` systemic incident path shares the short-code with M23 and M29; the CCK allocation must cover all three use cases under a single commercial agreement.
+- French localisation for international observers requires a professional translation review before each election cycle; machine translation is not adequate for legal and electoral terminology.
+- MissionPDF generation on-device requires offline PDF rendering; the app uses a bundled PDF library; any PDF specification change requires an app release.
 
 ## 10. Test coverage + operational runbooks
 
-Tests under `services/field-mobile-svc/crates/field-mobile-api/tests/`:
-- `observer_visit_tests.rs` -- GPS polygon boundary, signed visit log, offline queue drain.
-- `verification_sampling_tests.rs` -- cryptographic seed determinism, checklist submission, hash-mismatch auto-escalation.
-- `incident_observer_tests.rs` -- systemic incident exactly-once semantics, USSD fallback path.
-- `countersignature_rights_tests.rs` -- SpiceDB enforcement, 403 on rights-absent attempt, attempt logging.
-- `ag_mirror_tests.rs` -- 24-hour delivery SLA, signed provenance, audit-trace confirmation.
-
-Integration tests use `testcontainers` for Postgres + Kafka + AG mirror stub. Chaos scenarios: `chaos/scenarios/eel-observer-*.yaml` (P05 stale root, AG mirror unavailable, USSD gateway timeout).
+Coverage under `services/field-mobile-svc/flutter/observer/test/` and `services/field-mobile-svc/crates/observer-api/tests/`: unit tests for visit record builder, incident exactly-once guard, checklist serialiser, MissionPDF generator, AG mirror batch assembler, USSD/SMS systemic signal parser; widget tests for all screens; integration tests with CRMS stub, P05 tlog stub, AG mirror stub, M23 referral stub; e2e Flutter integration test covering visit, checklist, incident with attachment, USSD systemic signal, and AG mirror; chaos test for AG mirror endpoint unavailable (verifies retry).
 
 Runbooks under `docs/runbooks/`:
-- `field-mobile-svc.md` -- deploy, rollback, MDM re-provisioning.
-- `observer-accreditation-ops.md` -- countersign rights correction; re-issue procedure.
-- `ag-mirror-delivery.md` -- monitoring delivery lag; manual re-drain procedure if mirror falls behind.
-- `systemic-incident-response.md` -- war-room triage of OBSERVER_CHIEF systemic flags; escalation to RO and legal team.
+
+- `observer-degradation.md` (create): CRMS credential cache miss; AG mirror endpoint unavailable; USSD systemic signal delivery failure; attachment sync failure.
+
+Dashboards: `platform/observability/field-mobile-svc/grafana-observer.json` (visit count, incident count, systemic incident count, AG mirror status, USSD signal count). SLO: AG mirror within 24 h of polling day close; incident sync <60 s; USSD systemic signal delivery <5 min.
+
+Related: `docs/plans/modules/mobile-observer.md`; `services/field-mobile-svc/docs/CAPABILITIES.md`.

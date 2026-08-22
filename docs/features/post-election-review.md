@@ -134,3 +134,18 @@ Runbooks under `docs/runbooks/`:
 - `referral-letter-generation.md` - manual letter generation if templating fails.
 
 Related documents: spec at `docs/plans/modules/post-election-review.md`; capability catalogue at `services/governance-svc/docs/CAPABILITIES.md`; M40 at `docs/features/election-court-it-interface.md`.
+
+## Edge cases and known gaps
+
+- Anonymous public submissions that later turn out to be coordinated spam: the review coordinator can bulk-mark submissions as `ABANDONED` with an `SPAM` category tag. The raw submission hashes are retained; the public tracker count is unchanged (submitted != reviewed).
+- A `LongDripAlert` for a permanently mitigated attack pattern: the coordinator can set `status = RESOLVED` with a detailed `resolution_note_hash` after uploading the mitigation evidence. The scheduler no longer generates silence alerts for resolved entries.
+- Findings that surface classified security vulnerabilities: `severity = CRITICAL` findings with a `category = SECURITY` tag are restricted to `COMMISSION_SECURITY` role in SpiceDB; they do not appear in the public tracker aggregate. The public tracker shows the count as `RESTRICTED` rather than omitting it.
+- Parliament response tracking: `ParliamentReferral.outcome` is a free-text hash of the parliamentary response. A future integration with the Kenya National Assembly Hansard API is noted as a gap for auto-ingesting parliamentary responses.
+
+---
+
+*Module documentation version: 1.0. Last updated: 2026-08-22. Review before each election cycle to verify crate paths, OpenAPI contract versions, integration endpoint URLs, and statutory rule offsets remain current.*
+
+**Performance targets**: All read endpoints respond within 200ms at p95 under 100 concurrent users. Write endpoints (including HSM-signing paths) respond within 1,000ms at p95. Bulk operations (roster upload, CSV import) are async with a job status poll endpoint.
+
+**SLA targets**: All API reads respond within 200ms p95. Event processing latency from trigger to state update is under 5 seconds under normal load. HSM-signing operations complete within 3 seconds.

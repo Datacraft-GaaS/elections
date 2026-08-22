@@ -137,3 +137,14 @@ Runbooks under `docs/runbooks/`:
 - `s3-object-lock-admin.md` - dual-admin deletion protocol for WORM-locked content.
 
 Related documents: spec at `docs/plans/modules/voter-education-cms.md` (if present); capability catalogue at `services/training-svc/docs/CAPABILITIES.md`; M13 distribution spec at `docs/plans/modules/`.
+
+## Edge cases and known gaps
+
+- A `ContentItem` whose canonical `sw` variant fails fact-check while minority-language variants have already passed: the item stays in `FACT_CHECK` state and all passing variants are held. Passing variants cannot be partially released; the entire item must pass before any variant is published.
+- A language variant whose TTS render fails: the `IVR_AUDIO` format is omitted from `rendered_formats[]` and M13 distributes the available formats only. An ops alert is raised for the failed language-format combination.
+- Content imported from a previous election cycle: a `ContentVersion` from cycle N can be copied (new `version_id`, new `item_id`, same body S3 key) and re-submitted for fact-check in cycle N+1. The S3 object-lock countdown is reset from the new `created_at`.
+- ODPC data-map note: `ContentItem` and `ContentVersion` rows contain no personal data; they are excluded from the ODPC Article 31 data-map. The `FactCheckReview.reviewer_id` is a Commission officer UUID linked to the HR system; it is in-scope for the staff data-map.
+
+---
+
+*Module documentation version: 1.0. Last updated: 2026-08-22. Review before each election cycle to verify crate paths, OpenAPI contract versions, integration endpoint URLs, and statutory rule offsets remain current.*

@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">M46 Party Primaries Oversight — Architecture Diagram</title>
+  <desc id="desc">PrimaryOptIn, PrimaryResult, PrimaryDispute, kit-lite mode, and observer accreditation for party primaries.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+    <marker id="arrow-red" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#d62728"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#f8f9fa"/>
+  <text x="600" y="36" font-family="Arial,sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#111">M46 Party Primaries Oversight</text>
+  <text x="600" y="56" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#555">PrimaryOptIn · PrimaryResult · PrimaryDispute · kit-lite mode · observer accreditation</text>
+
+  <!-- Personas -->
+  <circle cx="100" cy="115" r="18" fill="#ff7f0e"/>
+  <text x="100" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Party</text>
+  <text x="100" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">HQ</text>
+
+  <circle cx="280" cy="115" r="18" fill="#d62728"/>
+  <text x="280" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Primary</text>
+  <text x="280" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Candidate</text>
+
+  <circle cx="450" cy="115" r="18" fill="#2ca02c"/>
+  <text x="450" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Observer</text>
+  <text x="450" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">(M43)</text>
+
+  <circle cx="620" cy="115" r="18" fill="#1f77b4"/>
+  <text x="620" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">IEBC</text>
+  <text x="620" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Supervisor</text>
+
+  <!-- PrimaryOptIn -->
+  <rect x="30" y="190" width="300" height="130" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2"/>
+  <text x="180" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">PrimaryOptIn</text>
+  <text x="180" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">party_id, contest_ids[], mode</text>
+  <text x="180" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">mode: IEBC_SUPERVISED / SELF_CONDUCTED</text>
+  <text x="180" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">deadline: T-90d before general election</text>
+  <text x="180" y="296" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">POST /v1/primaries/opt-in</text>
+  <text x="180" y="310" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">primary_opted_in.v1 emitted</text>
+  <line x1="100" y1="133" x2="130" y2="190" stroke="#ff7f0e" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Kit-Lite Mode -->
+  <rect x="370" y="190" width="360" height="130" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="550" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f77b4">Kit-Lite Mode</text>
+  <text x="550" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">IEBC-supervised primaries only</text>
+  <text x="550" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">BVI device (M05) — reduced feature set</text>
+  <text x="550" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">biometric auth + ballot image capture</text>
+  <text x="550" y="296" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">offline queue → sync when connected</text>
+  <text x="550" y="310" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">primary_kit_session.v1 emitted</text>
+  <line x1="330" y1="255" x2="370" y2="255" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="620" y1="133" x2="620" y2="190" stroke="#1f77b4" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Observer accreditation link -->
+  <rect x="770" y="190" width="400" height="130" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="970" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">Observer Accreditation (M43)</text>
+  <text x="970" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">observer_approved.v1 consumed</text>
+  <text x="970" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">primary-specific badge zone: PRIMARY_OBS</text>
+  <text x="970" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">QR badge valid for primary dates only</text>
+  <text x="970" y="296" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">primary_observer_accredited.v1 emitted</text>
+  <text x="970" y="310" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">CRL refresh: 5 min (same as M43)</text>
+  <line x1="450" y1="133" x2="900" y2="190" stroke="#2ca02c" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+
+  <!-- PrimaryResult -->
+  <rect x="30" y="390" width="700" height="130" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2.5"/>
+  <text x="380" y="416" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">PrimaryResult</text>
+  <text x="380" y="436" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">id, primary_id, station_code, candidate_tallies[]</text>
+  <text x="380" y="456" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">form_hash (SHA-256), merkle_node_id</text>
+  <text x="380" y="476" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">submitted_by: party_agent | IEBC_clerk, signed_at (HSM P06)</text>
+  <text x="380" y="496" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">POST /v1/primaries/{id}/results — SVID mTLS</text>
+  <text x="380" y="512" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">primary_result.v1 emitted (exactly-once) — data class A — T1-audit</text>
+  <rect x="705" y="390" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="716" y="406" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="180" y1="320" x2="250" y2="390" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="550" y1="320" x2="450" y2="390" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- PrimaryDispute -->
+  <rect x="770" y="390" width="400" height="130" rx="8" fill="#fce7f3" stroke="#d62728" stroke-width="2"/>
+  <text x="970" y="416" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">PrimaryDispute</text>
+  <text x="970" y="436" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">id, primary_id, complainant_hash</text>
+  <text x="970" y="456" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">dispute_type: TALLY_DISCREPANCY/EXCLUSION</text>
+  <text x="970" y="476" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">status: FILED → REVIEWED → DECIDED</text>
+  <text x="970" y="496" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">routes to: PPDT or IEBC Disputes</text>
+  <text x="970" y="512" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">primary_dispute.v1 emitted — 14-day SLA</text>
+  <line x1="280" y1="133" x2="900" y2="390" stroke="#d62728" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow-red)"/>
+
+  <!-- Nomination gate -->
+  <rect x="30" y="590" width="700" height="90" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="380" y="616" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">Nomination Gate</text>
+  <text x="380" y="636" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">primary_result.v1 (winner declared) → candidate_nomination_eligible.v1</text>
+  <text x="380" y="656" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">links to M? Candidate Nomination — dispute_open blocks nomination</text>
+  <text x="380" y="670" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">HSM-signed nomination eligibility record — Merkle anchored</text>
+  <rect x="705" y="590" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="716" y="606" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="380" y1="520" x2="380" y2="590" stroke="#9467bd" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- PPDT external -->
+  <rect x="770" y="570" width="400" height="90" rx="8" fill="#fff" stroke="#7f7f7f" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="970" y="596" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#7f7f7f">PPDT / IEBC Disputes (external)</text>
+  <text x="970" y="616" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#7f7f7f">ruling delivered → ppdt_ruling.v1 consumed</text>
+  <text x="970" y="636" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#7f7f7f">UPHELD: redo primary or override tally</text>
+  <text x="970" y="650" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">DISMISSED: nomination gate unblocked</text>
+  <line x1="970" y1="520" x2="970" y2="570" stroke="#7f7f7f" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+
+  <!-- Kafka -->
+  <rect x="30" y="720" width="1140" height="50" rx="8" fill="#f3f4f6" stroke="#7f7f7f" stroke-width="1.5"/>
+  <text x="600" y="744" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Kafka: primary_opted_in.v1 · primary_result.v1 · primary_dispute.v1 · nomination_eligible.v1</text>
+  <text x="600" y="762" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#555">event-source retention — signed — exactly-once for results/nomination</text>
+  <line x1="380" y1="680" x2="380" y2="720" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="970" y1="660" x2="900" y2="720" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Legend: compact bottom-right -->
+  <rect x="30" y="660" width="130" height="50" rx="6" fill="#fff" stroke="#ccc" stroke-width="1"/>
+  <rect x="42" y="670" width="14" height="14" rx="2" fill="#9467bd"/>
+  <text x="62" y="682" font-family="Arial,sans-serif" font-size="12" fill="white">🔒</text>
+  <text x="70" y="682" font-family="Arial,sans-serif" font-size="12" fill="#333">HSM/Merkle</text>
+  <rect x="42" y="690" width="20" height="14" rx="2" fill="#fff" stroke="#7f7f7f" stroke-dasharray="4,2"/>
+  <text x="70" y="702" font-family="Arial,sans-serif" font-size="12" fill="#333">External</text>
+</svg>

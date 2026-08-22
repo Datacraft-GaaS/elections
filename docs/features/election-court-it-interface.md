@@ -146,3 +146,7 @@ Runbooks under `docs/runbooks/`:
 - `petitioner-access-revocation.md` - revoking access on court order withdrawal.
 
 Related documents: spec at `docs/plans/modules/election-court-it-interface.md`; M39 at `docs/features/ballot-printing-chain.md`; M51 at `docs/features/result-declaration-certification.md`.
+
+---
+
+*Module documentation version: 1.0. Last updated: 2026-08-22. Review before each election cycle to verify crate paths, OpenAPI contract versions, integration endpoint URLs, and statutory rule offsets remain current.*

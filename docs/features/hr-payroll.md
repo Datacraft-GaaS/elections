@@ -138,3 +138,26 @@ Runbooks under `docs/runbooks/`:
 - `kra-return-deadline-escalation.md` -- escalation path when iTax submission fails before deadline.
 
 Related documents: full spec at `docs/plans/modules/hr-payroll.md`; service capability catalogue at `services/support-admin-svc/docs/CAPABILITIES.md`; M38 interface at `docs/features/poll-worker-training-lms.md`.
+
+### Payroll computation summary
+
+A `PayrollLine` for a poll worker is computed as:
+
+```
+gross_kes        = StaffContract.gross_pay_kes
+paye_kes         = f(gross_kes, kra_paye_table)   # KRA graduated table v2024-07
+nssf_kes         = min(gross_kes * 0.06, 2160)    # Tier I + II cap per NSSF Act 2013
+nhif_kes         = g(gross_kes, nhif_schedule)     # NHIF schedule per gazette
+net_kes          = gross_kes - paye_kes - nssf_kes - nhif_kes
+```
+
+All deduction tables are versioned TOML files under `services/support-admin-svc/config/`; updating a table creates a new semantic version and all existing `PayrollRun` records retain a reference to the table version used.
+
+### Key metrics and SLOs
+
+| Metric | Target | Alert threshold |
+|---|---|---|
+| Payroll disbursement completion rate | 100% within 4 h | < 95% at 3.5 h: PagerDuty |
+| M-Pesa B2C failure rate | < 0.5% | > 1%: manual reconciliation alert |
+| M38 gate violation rate | 0% | Any: immediate build failure |
+| KRA return on-time submission | 100% | Late: escalate to tax officer |

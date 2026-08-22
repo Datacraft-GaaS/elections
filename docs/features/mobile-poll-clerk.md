@@ -1,10 +1,10 @@
 # Mobile poll clerk (M31)
 
-Module M31 (`mobile-poll-clerk`) owned by `field-mobile-svc`. A companion Flutter app for poll clerks (~92,000 users). Provides a read-only mirror of the kit status dashboard from M06 (BVI), a voter-lookup fallback that requires DPO biometric attestation logged permanently, an embedded paper-backup workflow for kit failure, a kiosk mode for public register inspection, and an end-of-day report dual-signed by PO + DPO. M31 does not perform voter authentication.
+Module M31 (`mobile-poll-clerk`) owned by `field-mobile-svc`. A Flutter Android/iOS companion app for Presiding Officers (DPOs) and Deputy Presiding Officers. Mirrors the M20 kit dashboard at station level, surfaces M25 special-workflow prompts, provides offline reference materials and voter-lookup fallback, guides paper-backup workflows when electronic systems fail, supports kiosk mode for shared-device use, and produces a dual-signed EOD report submitted to M09.
 
 ## Contents
 
-1. What mobile poll clerk does (vs M05 voter identification)
+1. What mobile poll clerk does (vs related modules)
 2. Data plane (schema)
 3. Ingest sources
 4. Pipeline
@@ -17,134 +17,135 @@ Module M31 (`mobile-poll-clerk`) owned by `field-mobile-svc`. A companion Flutte
 
 ---
 
-## 1. What mobile poll clerk does (vs M05 voter identification)
+## 1. What mobile poll clerk does (vs related modules)
 
-- **M05** = authenticates voters biometrically on the BVI kit.
-- **M31** = the clerk's companion: shows kit status, provides a DPO-gated fallback voter lookup for kit failure, embeds the paper-backup workflow, and generates the end-of-day report. It never authenticates voters directly.
+- **M20 Inventory management** = authoritative kit custody chain; M31 mirrors kit status for the DPO but does not write custody events directly (it calls M20 via API).
+- **M25 Special voter workflows** = defines category-specific workflow rules; M31 renders the prompts and collects officer signatures.
+- **M31** = the DPO's operational hub for polling day: kit status, voter check-in assist, special workflows, paper backup guidance, and EOD sign-off.
 
-The separation is intentional: M31 cannot be used to bypass M05 biometric authentication without a permanently logged DPO attestation.
+M31 writes to M09 (EOD report), M20 (kit arrival event via REST), and M25 (assisted vote signatures). All writes are offline-queued and synced on connectivity.
 
 ## 2. Data plane
 
-Four aggregates (per `services/field-mobile-svc/crates/poll-clerk-api/src/models.rs`):
+Five local aggregates in the Flutter Isar+SQLCipher store:
 
-| Aggregate | Purpose | Data class |
+| Aggregate | Purpose | Sync cadence |
 |---|---|---|
-| **KitStatusMirror** | station_id, kit_serial, battery_pct, abis_connected, voter_count_today, last_sync_at (read-only from M06) | D |
-| **FallbackLookupLog** | lookup_id, station_id, dpo_officer_id, dpo_biometric_ref_hash, national_id_hash, reason_code, lookup_at | A |
-| **PaperBackupEvent** | event_id, station_id, reason (KIT_FAILURE/POWER_OUTAGE/OTHER), started_at, ended_at, ballot_count_fallback, po_sig, dpo_sig | A |
-| **EndOfDayReport** | report_id, station_id, date, total_voters_identified, spoilt_ballots, rejected_ballots, closing_time, po_sig, dpo_sig, anchored_in_p05 | A |
+| **KitStatusMirror** | M20 kit status for this station: unit_id, type, status, last_synced_at. | Pull every 5 min; push on M20 event |
+| **VoterLookupLog** | Fallback voter lookup: voter_ref_hash, outcome (FOUND/NOT_FOUND), fallback_used (bool), ts_hlc. | Sync on reconnect |
+| **SpecialWorkflowLog** | M25 workflow event: category, voter_ref_hash, outcome, officer_sig, ts_hlc. | Immediate sync |
+| **PaperBackupGuidance** | Offline reference: procedure_id, title, content_markdown, version. | Pre-election bulk; delta push |
+| **EODReport** | End-of-day report: station_id, total_voters, total_ballots_issued, discrepancies (JSON), dpo_sig, deputy_sig, ts_hlc. | One-time sync at EOD |
 
 ## 3. Ingest sources
 
-| Source | Cadence | Adapter | Auth | Failure semantics |
+| Source | Cadence | Format | Auth | Failure semantics |
 |---|---|---|---|---|
-| **M06 kit dashboard** (read-only) | Real-time gRPC stream | `integrations/bvi-dashboard/adapter` | SVID mTLS | Stale mirror served; staleness shown; no write path |
-| **BVR back-end M02** (fallback lookup) | On demand (DPO-gated only) | Internal gRPC | JWT + SpiceDB `DPO` role + live biometric | Blocked if DPO biometric unavailable |
-| **M20 inventory** (paper ballot stock) | At station setup | gRPC read | SVID mTLS | Cached; discrepancy alert if count mismatch |
-| **HSM P06** (end-of-day report signing) | Once per day | `integrations/hsm/adapter` | PO + DPO JWT + HSM | Report blocked until dual-sign complete |
+| M20 kit status push | Every 5 min + on event | Kafka event -> push | Device cert | Cached KitStatusMirror served offline with staleness badge |
+| BVR voter lookup (M02) | On demand | REST | Device cert | FALLBACK if offline: DPO uses paper roll; VoterLookupLog(fallback_used=true) |
+| M25 special workflow definitions | Pre-election bulk | Signed JSON | Device cert | Cached; stale if >7 days |
+| Paper backup guidance | Pre-election bulk | Signed Markdown | Device cert | Bundled in app binary for hard-offline scenario |
+| M09 EOD submission | At station close | REST | Device cert | Retry until received; EOD blocked until M09 acks |
 
 ## 4. Pipeline
 
-Files under `services/field-mobile-svc/mobile/poll-clerk/` and `crates/poll-clerk-api/src/`:
-
 ```
-Poll clerk opens app at station setup (T-1 / election day)
-      -> login: clerk JWT + device cert (issued at training, valid for election week)
-      -> kit status mirror loaded from M06 (read-only gRPC stream)
-      -> KitStatusMirror displayed: battery, ABIS status, voter count
+station open:
+  DPO logs in (device cert + PIN)
+  -> KitStatusMirror pulled from M20
+  -> special workflow definitions confirmed current
+  -> kiosk mode activated (locks app to poll clerk screen)
 
-Voter-lookup fallback (kit failure only):
-      -> PO declares kit failure; triggers fallback mode
-      -> DPO must provide biometric attestation:
-            live biometric captured on DPO device
-            biometric_ref_hash logged permanently in FallbackLookupLog
-      -> clerk enters national_id (never stored raw; hash derived on device)
-      -> GET BVR register via M02 gRPC read (audit-logged against DPO ID)
-      -> national_id_hash + lookup_at + dpo_officer_id stored immutably
-      -> fallback lookup usage triggers automatic M06 kit-failure report
+voter check-in assist:
+  DPO searches voter by name or national ID
+  -> BVR lookup via REST (or paper roll fallback)
+  -> VoterLookupLog created; fallback_used flagged if offline
 
-Paper-backup workflow (kit failure):
-      -> PaperBackupEvent created with reason code
-      -> embedded procedure guide displayed (offline, bundled)
-      -> ballot_count_fallback entered manually; signed by PO at end
+special workflow:
+  DPO selects category (REMAND / REFUGEE / IDP / DISABILITY / HOSPITAL)
+  -> M25 workflow prompts rendered:
+       DISABILITY: four-eyes prompt -> assistant selection -> officer_sig
+       IDP: double-cast guard check via M25 API
+       REMAND: dual-biometric unlock prompt (two officer PINs)
+  -> SpecialWorkflowLog persisted; synced to M25
 
-Kiosk mode (register inspection):
-      -> device locked to register inspection screen
-      -> voter self-checks registration (national_id hash, no biometric)
-      -> no write access in kiosk mode; back-button disabled
+kit event (arrival / discrepancy):
+  DPO confirms kit arrival or logs discrepancy
+  -> M20 REST call: POST /inventory/v1/events
+  -> KitStatusMirror updated
 
-End-of-day report:
-      -> clerk fills EoD form (totals from kit + manual counts)
-      -> PO signs with JWT + PIN
-      -> DPO countersigns with JWT + biometric
-      -> EndOfDayReport persisted; eel.clerk.eod_report.v1 emitted
-      -> anchored in P05 tlog within 60 s of dual-sign
-      -> eel.inventory.stock_confirmed.v1 emitted to M20 (ballot-paper reconciliation)
+paper backup guidance:
+  network failure triggers guidance banner
+  -> DPO selects failure type (BVR offline / biometric failure / power loss)
+  -> PaperBackupGuidance rendered from local Isar store
+
+EOD:
+  DPO enters final counts; reviews discrepancies
+  -> EODReport drafted; DPO signs (dpo_sig)
+  -> Deputy Presiding Officer countersigns (deputy_sig) on same device
+  -> EODReport submitted to M09 via REST
+  -> eel.pollclerk.eod_submitted.v1 emitted; P05 Merkle anchor within 60 s
 ```
-
-Transactional outbox via `packages/eel-outbox-rs`. Debezium to `eel.clerk.v1`.
 
 ## 5. API surface
 
-Contract: `packages/openapi-contracts/field-mobile/poll-clerk.yaml`. All writes enforce `Idempotency-Key`.
+Contract: `packages/openapi-contracts/field-mobile/poll-clerk.yaml`. All write endpoints enforce `Idempotency-Key`.
 
 | Method + path | Persona | Purpose |
 |---|---|---|
-| `GET /clerk/v1/kit/status` | Clerk (JWT) | Kit status mirror from M06 |
-| `POST /clerk/v1/fallback/lookup` | DPO (JWT + biometric) | Voter fallback lookup (permanently logged) |
-| `POST /clerk/v1/paper-backup/start` | PO (JWT) | Start paper backup workflow |
-| `POST /clerk/v1/paper-backup/end` | PO + DPO (JWT + biometric) | End paper backup; log ballot count |
-| `POST /clerk/v1/eod-report` | PO + DPO (JWT + HSM) | Submit dual-signed EoD report |
-| `GET /clerk/v1/eod-report/{id}/proof` | Commission admin | P05 inclusion proof |
-| `GET /clerk/v1/kiosk/register` | Public (kiosk mode) | Station register inspection (hash lookup only) |
+| `POST /pollclerk/v1/voter-lookup` | DPO device (cert) | BVR voter lookup (logged) |
+| `POST /pollclerk/v1/workflow-events` | DPO device (cert) | Log special workflow event |
+| `POST /pollclerk/v1/eod-reports` | DPO device (cert, dual-sig) | Submit EOD report to M09 |
+| `GET /pollclerk/v1/kit-status/{station_id}` | DPO device (cert) | Kit status mirror from M20 |
+| `GET /pollclerk/v1/guidance/{type}` | DPO device (cert) | Paper backup guidance content |
 
 ## 6. Human surfaces
 
 | Surface | Path | Purpose |
 |---|---|---|
-| Flutter app (clerk) | `services/field-mobile-svc/mobile/poll-clerk/` | Android 8+ / iOS 14+; offline-capable; kiosk mode; EN + SW |
-| ECC console (M23 integration) | `services/ecc-svc/ex/ecc_web/` | Kit failure and fallback-lookup alerts visible to ECC |
-| Commission admin (Django) | `services/field-mobile-svc/django/clerk-admin/` | EoD report archive, fallback-lookup audit |
+| Poll clerk Flutter app (Android/iOS) | `services/field-mobile-svc/flutter/poll-clerk/` | All DPO functions; kiosk mode; offline-first |
+| EOD review screen (within Flutter app) | Same app | Final count entry; dual-sig capture |
 
-Languages: EN + SW. Large-text mode for accessibility. Kiosk mode tested with no back-navigation path.
+Languages: EN + SW. Material You accessibility; minimum touch target 48dp; high-contrast mode. WCAG 2.2 AA on all screens. Kiosk mode prevents app-switching during polling hours.
 
 ## 7. Integrity + anti-tamper
 
-- **DPO biometric gate on fallback lookup** -- every fallback lookup requires a live DPO biometric; the `biometric_ref_hash` is stored permanently and immutably; no fallback lookup can be erased from the audit log.
-- **No voter authentication in M31** -- M31 has no path to mark a voter as having voted; it can only read registration data in fallback mode. Authentication remains exclusively in M05.
-- **Read-only kit mirror** -- `KitStatusMirror` is a read-only gRPC subscription to M06; M31 cannot write to the BVI kit.
-- **Dual-sign EoD report** -- PO + DPO signatures required; single-signer submission rejected server-side; HSM-signed report anchored in P05.
-- **Paper-backup immutability** -- `PaperBackupEvent` rows append-only; reason code and timestamps immutable after creation.
-- **national_id_hash in fallback** -- raw national_id never stored or transmitted; SHA-256 hash derived on device; hash logged alongside DPO ID for audit.
-- **Kiosk mode isolation** -- kiosk screen launched in Android Single App Mode / iOS Guided Access; no access to other app functions.
+- **Dual-signed EOD report** -- both DPO and Deputy sign before the EODReport is submitted; a single-signer submission returns HTTP 403; the server verifies both signatures against the station officer roster.
+- **Offline VoterLookupLog** -- every lookup is logged whether online or offline; fallback paper roll use is logged as fallback_used=true and is visible to the IAB audit dashboard; the IAB can compare paper roll usage rates across stations.
+- **Kiosk mode** -- once activated, the app cannot be closed or switched without a supervisor PIN; this prevents the DPO's device from being used for non-election activities during polling.
+- **Guidance content integrity** -- paper backup guidance is signed at the time of the pre-election bulk push; the app verifies the signature before rendering; unsigned guidance is not displayed.
+- **EOD P05 anchor** -- the EOD report hash is anchored in the P05 transparency log within 60 s of M09 ack; courts can verify the report has not been altered since submission.
 
 ## 8. Kenya statute alignment
 
-- **Elections Act s.44A (four-eyes)** -- EoD report dual-sign by PO + DPO satisfies four-eyes obligation for station closing record.
-- **Elections Act s.72 (secrecy)** -- fallback lookup returns registration status only; no ballot or vote data; national_id_hash ensures no linkage to voting record.
-- **Kenya Data Protection Act s.26 (minimisation)** -- national_id_hash only in FallbackLookupLog; DPO biometric_ref_hash (not raw biometric) stored.
-- **Elections Act s.80 (closing procedures)** -- EndOfDayReport with dual-sign and P05 anchoring satisfies the statutory station-closing certification.
+- **Elections (General) Regulations 2012 r.55 (DPO duties)** -- M31 implements the statutory DPO toolset: voter check-in assist, special workflows, and EOD report.
+- **Elections Act s.44A (assisted voting)** -- four-eyes SpecialWorkflowLog with officer_sig satisfies the statutory requirement for assisted vote documentation.
+- **DPA 2019 s.26 (minimisation)** -- VoterLookupLog stores voter_ref_hash only; raw national IDs are not persisted; EODReport stores aggregate counts, not individual voter records.
+- **Elections (Technology) Regulations 2017** -- dual-signed EOD report retained for 7 years; offline fallback logging retained for audit.
 
 ## 9. Honest caveats + external prerequisites
 
-- The fallback lookup requires M02 read-replica connectivity. If M02 is unreachable and the kit is also down, the clerk has no electronic voter lookup. The paper register (printed pre-election from M02) is the offline fallback; M31 must display its location and usage instructions.
-- DPO biometric device must be on the same local network as the clerk app or have internet access at fallback-lookup time. A DPO whose device has no connectivity cannot unblock the fallback. The station must have at least one device with connectivity for this path.
-- End-of-day dual-sign requires both PO and DPO to have their devices powered and connected. Battery planning is an operational responsibility; M31 shows a low-battery warning below 20%.
-- Kiosk mode depends on Android MDM or iOS Supervised Device enrolment for production hardening. Testing on unmanaged devices shows the back button remains active; MDM enrolment must be confirmed in the device procurement contract.
+- Kiosk mode effectiveness depends on the device's Android/iOS kiosk API; some Android device manufacturers override kiosk mode through proprietary system apps; device procurement must verify kiosk API compliance before deployment.
+- The BVR offline fallback requires a pre-loaded encrypted voter roll subset on the device; the roll subset size is bounded by the station's expected voter count; large stations (>2 000 voters) may exceed the KES-10k device storage budget.
+- The dual-sig EOD flow requires both DPO and Deputy to be physically present with the device; if the Deputy is absent, the EOD report cannot be submitted; the IEBC field operations must define the escalation path for this scenario.
+- Paper backup guidance content must be reviewed and approved by IEBC legal and operations before each election cycle; outdated guidance creates a compliance risk.
 
 ## 10. Test coverage + operational runbooks
 
-Coverage under `services/field-mobile-svc/crates/poll-clerk-api/tests/` and `mobile/poll-clerk/integration_test/`:
-- Unit: DPO biometric gate, national_id_hash, EoD dual-sign enforcement, kiosk mode isolation, paper-backup event immutability.
-- Property (`proptest`): fallback lookup log append-only; EoD report rejects single-signer; no raw national_id in any log.
-- Contract (Pact): M06 kit status consumer; M02 voter lookup consumer; M20 stock reconciliation producer.
-- Device: kiosk mode back-button test; low-battery warning; offline paper-backup guide availability.
-- Security: fallback lookup without DPO biometric; EoD single-signer bypass; kiosk escape; OWASP ZAP.
+Coverage under `services/field-mobile-svc/flutter/poll-clerk/test/` and `services/field-mobile-svc/crates/poll-clerk-api/tests/`: unit tests for kit mirror, voter lookup fallback logger, special workflow renderer, dual-sig EOD builder; widget tests for all screens including kiosk mode; integration tests with M20 stub, M25 workflow stub, M09 EOD ack stub, SoftHSM dual-sig; e2e Flutter integration test covering full polling day flow from station open through special workflows, paper fallback, and EOD dual-sig; chaos test for BVR offline during voter lookup.
 
 Runbooks under `docs/runbooks/`:
-- `kit-failure-fallback.md` -- fallback mode activation, DPO attestation, ECC notification, paper-register use.
-- `eod-report-dual-sign.md` -- PO/DPO ceremony, connectivity requirements, P05 anchoring, late submission.
-- `kiosk-mode-setup.md` -- MDM enrolment, Single App Mode, reset procedure.
 
-Related: full spec at `docs/plans/modules/mobile-poll-clerk.md`; capability catalogue at `services/field-mobile-svc/docs/CAPABILITIES.md`.
+- `poll-clerk-degradation.md` (create): BVR offline; M20 kit sync fail; biometric failure; EOD submission retry.
+
+Dashboards: `platform/observability/field-mobile-svc/grafana-pollclerk.json` (voter lookup rate, fallback rate, special workflow count, EOD submission status). SLO: 99.9% EOD report submitted within 30 min of station close; kit mirror sync lag <10 min.
+
+Kiosk mode recovery: if the kiosk mode PIN is lost, recovery requires a county coordinator to physically present their JWT-enrolled device and enter a time-limited recovery code; there is no remote recovery path; the PIN recovery process is part of the pre-election officer training.
+
+Special workflow double-cast guard for IDP (M25): when M31 triggers an IDP workflow, the double-cast guard query goes to M25 API; if M25 is unreachable, the IDP workflow is blocked with a logged `GUARD_UNAVAILABLE` event; the DPO cannot bypass the guard without a commissioner emergency override (HSM-signed).
+
+EOD report retention: EndOfDayReport and its dual-signature are retained for 7 years per Elections (Technology) Regulations 2017; the P05 anchor provides court-admissible proof of submission time independent of the governance-svc database.
+
+VoterLookupLog IAB visibility: the fallback paper-roll usage rate per station is visible in the IAB audit dashboard; stations with fallback usage > 20% of total lookups are automatically flagged for post-election inquiry; the flag does not affect same-day results.
+
+Related: `docs/plans/modules/mobile-poll-clerk.md`; `services/field-mobile-svc/docs/CAPABILITIES.md`.

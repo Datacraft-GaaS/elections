@@ -138,3 +138,13 @@ Runbooks under `docs/runbooks/`:
 - `certificate-revocation.md` - emergency revocation procedure + M33 cache invalidation.
 
 Related documents: spec at `docs/plans/modules/poll-worker-training-lms.md`; M37 docs at `docs/features/voter-education-cms.md`; M33 docs at `docs/features/`; capability catalogue at `services/training-svc/docs/CAPABILITIES.md`.
+
+## Edge cases and known gaps
+
+- A worker who passes on attempt 2 but the offline sync delivers attempt 1 (failed) first: CRDT last-write-wins keyed by `attempt_id` UUID7 monotonic ordering ensures the later passing attempt wins on sync. The `attempts_used` count is reconciled from the attempt log, not from the sync order.
+- A worker whose certificate is revoked mid-deployment (after M33 dispatch): M33 re-checks the SpiceDB `dispatch_eligible` relation at each shift boundary (6-hour intervals on election day). A revocation that lands between checks is surfaced at the next check; the field supervisor is notified.
+- Facilitator-led paper delivery: the officer who marks a paper completion must upload a scan of the signed attendance sheet. The scan is stored in S3 (eel-training-attendance/); it is the audit evidence for the paper-delivery path and is verified during any post-election training audit.
+
+---
+
+*Module documentation version: 1.0. Last updated: 2026-08-22. Review before each election cycle to verify crate paths, OpenAPI contract versions, integration endpoint URLs, and statutory rule offsets remain current.*

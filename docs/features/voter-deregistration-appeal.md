@@ -137,3 +137,14 @@ Runbooks under `docs/runbooks/`:
 - `election-day-mode-toggle.md` - appeal intake stays open during election freeze; only gazette publish is deferred.
 
 Related documents: spec at `docs/plans/modules/cvr-continuous-voter-register.md`; service capability catalogue at `services/bvr-svc/docs/CAPABILITIES.md`.
+
+## Edge cases and known gaps
+
+- A citizen who dies during the appeal window: the appeal is automatically abandoned on the next `appeal_deadline_sweep` run; no human action is needed because the case was opened on behalf of a now-deceased person.
+- A citizen who is reinstated and then dies in the same quarter: M35 receives the reinstatement event and re-adds the voter, then processes the CRS death notification in the normal CVR pipeline.
+- Multiple simultaneous appeals for the same voter (e.g., two family members both file): only the first `DeregistrationCase` is created; the second `POST /v1/appeals/cases` call for the same `voter_id_hash` returns a conflict response pointing to the existing open case.
+- ODPC audit: the quarterly gazette entry list and the minimisation timestamps are exported for the annual ODPC compliance report via `GET /v1/appeals/gazettes?format=odpc-report`.
+
+---
+
+*Module documentation version: 1.0. Last updated: 2026-08-22. Review before each election cycle to verify crate paths, OpenAPI contract versions, integration endpoint URLs, and statutory rule offsets remain current.*

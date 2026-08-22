@@ -137,4 +137,14 @@ Runbooks under `docs/runbooks/`:
 
 Dashboards: `platform/observability/inventory-svc/grafana-inventory.json` (custody event rate, Merkle root lag, discrepancy queue depth, AG access count, RFID error rate). SLO alerts: 99.9% event write success; Merkle root lag >12 min; discrepancy unresolved >2 h.
 
+Chaos scenarios under `chaos/scenarios/eel-inventory-*.yaml`: RFID gate failure during batch receive; dual-officer HSM card loss during seal event; Merkle root fan-out failure (2 of 5 channels unavailable); GPS beacon gap injection during transit.
+
+Performance targets: 5 000 concurrent custody scans on receive day at p99 < 500 ms; Merkle root fan-out < 5 min per cycle; discrepancy alert < 60 s of detection.
+
+Custody event throughput tests: 5 000 barcode scans/s during port-of-entry receive day; RFID gate 120 units/min sustained; p99 scan acknowledgement < 500 ms. Dual-HSM seal latency < 3 s per seal event. Merkle root fan-out to 5 channels < 5 min per cycle.
+
+AG access geographic RBAC evaluated per-request against the `boundary-svc` boundary cache (refreshed every 5 min); cross-county access rejected HTTP 403 with audit entry.
+
+Dual-HSM seal event: two distinct officers hold separate HSM token slots; the seal-break API validates that both signers have distinct officer IDs and distinct key material; a single officer presenting two tokens is rejected as a single-signer attempt.
+
 Related: `docs/plans/modules/inventory-management.md`; `services/inventory-svc/docs/CAPABILITIES.md`; edge-case matrix EC-INV-* in `docs/plans/08-edge-case-matrix.md`.

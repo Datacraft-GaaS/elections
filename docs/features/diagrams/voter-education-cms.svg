@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">M37 Voter Education CMS — Architecture Diagram</title>
+  <desc id="desc">ContentItem versioning, FactCheckReview, 11-language catalogue, content expiry, and M13 distribution pipeline.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#f8f9fa"/>
+  <text x="600" y="36" font-family="Arial,sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#111">M37 Voter Education CMS</text>
+  <text x="600" y="56" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#555">ContentItem versioning · FactCheckReview · 11-language catalogue · expiry · M13 distribution</text>
+
+  <!-- Personas -->
+  <circle cx="100" cy="115" r="18" fill="#1f77b4"/>
+  <text x="100" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Content</text>
+  <text x="100" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Author</text>
+
+  <circle cx="280" cy="115" r="18" fill="#ff7f0e"/>
+  <text x="280" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Fact-Check</text>
+  <text x="280" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Reviewer</text>
+
+  <circle cx="450" cy="115" r="18" fill="#2ca02c"/>
+  <text x="450" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Translator</text>
+
+  <!-- ContentItem entity -->
+  <rect x="30" y="190" width="300" height="130" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="180" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f77b4">ContentItem</text>
+  <text x="180" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">id, slug, title, body_md</text>
+  <text x="180" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">language_code (11 supported)</text>
+  <text x="180" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">content_type: ARTICLE/VIDEO/INFOGRAPHIC</text>
+  <text x="180" y="296" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">version, published_at, expires_at</text>
+  <text x="180" y="310" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">data class C — T2 store — Django admin</text>
+  <line x1="100" y1="133" x2="130" y2="190" stroke="#1f77b4" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Version control -->
+  <rect x="30" y="380" width="300" height="90" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="1.5"/>
+  <text x="180" y="406" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f77b4">Version Control</text>
+  <text x="180" y="426" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">ContentVersion: version, diff_hash</text>
+  <text x="180" y="446" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">rollback support · changelog</text>
+  <text x="180" y="462" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">content_updated.v1 emitted on publish</text>
+  <line x1="180" y1="320" x2="180" y2="380" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- FactCheckReview -->
+  <rect x="370" y="190" width="300" height="130" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2"/>
+  <text x="520" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">FactCheckReview</text>
+  <text x="520" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">content_id, reviewer_id</text>
+  <text x="520" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">verdict: APPROVED/FLAGGED/RETRACTED</text>
+  <text x="520" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">sources_cited[], notes</text>
+  <text x="520" y="296" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">review workflow: CONTENT_EDITOR → FACT_CHECKER</text>
+  <text x="520" y="310" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">content_fact_checked.v1 event</text>
+  <line x1="280" y1="133" x2="450" y2="190" stroke="#ff7f0e" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="330" y1="255" x2="370" y2="255" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 11-language catalogue -->
+  <rect x="710" y="190" width="440" height="130" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="930" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">11-Language Catalogue</text>
+  <text x="930" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">EN · SW · Kikuyu · Luo · Kamba · Kalenjin</text>
+  <text x="930" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">Luhya · Meru · Somali · Turkana · Maasai</text>
+  <text x="930" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">ContentTranslation entity: language_code, status</text>
+  <text x="930" y="296" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">NLLB-assisted (M28) + human review gate</text>
+  <text x="930" y="310" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">translation_approved.v1 per language</text>
+  <line x1="450" y1="133" x2="800" y2="190" stroke="#2ca02c" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="670" y1="255" x2="710" y2="255" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Expiry -->
+  <rect x="370" y="380" width="300" height="90" rx="8" fill="#fce7f3" stroke="#d62728" stroke-width="2"/>
+  <text x="520" y="406" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">Content Expiry</text>
+  <text x="520" y="426" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">cron: scan expires_at &lt; now()</text>
+  <text x="520" y="446" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">content_expired.v1 → unpublish</text>
+  <text x="520" y="462" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">outdated civic info removed automatically</text>
+  <line x1="520" y1="320" x2="520" y2="380" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- CMS API -->
+  <rect x="370" y="530" width="640" height="90" rx="8" fill="#f3f4f6" stroke="#7f7f7f" stroke-width="1.5"/>
+  <text x="690" y="556" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">CMS API (Django REST + Astro public site)</text>
+  <text x="690" y="576" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#555">GET /v1/education/content — public tier — paginated by language</text>
+  <text x="690" y="596" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#555">GET /v1/education/content/{id} — includes translations + fact-check status</text>
+  <text x="690" y="610" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">cache-control: max-age=3600 · CDN served</text>
+  <line x1="520" y1="470" x2="580" y2="530" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="930" y1="320" x2="800" y2="530" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- M13 distribution -->
+  <rect x="370" y="680" width="640" height="90" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="690" y="706" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">M13 Distribution (Public Portal)</text>
+  <text x="690" y="726" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">content_updated.v1 consumed → portal refresh</text>
+  <text x="690" y="746" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">SMS broadcast for USSD-only citizens · TV/radio push via M37 API</text>
+  <text x="690" y="762" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">Kafka: eel.education.content.v1 · eel.education.content_expired.v1</text>
+  <line x1="690" y1="620" x2="690" y2="680" stroke="#9467bd" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Legend -->
+  <rect x="30" y="530" width="320" height="150" rx="6" fill="#fff" stroke="#ccc" stroke-width="1"/>
+  <text x="190" y="550" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Legend</text>
+  <rect x="42" y="560" width="20" height="14" rx="2" fill="#dbeafe" stroke="#1f77b4"/>
+  <text x="70" y="572" font-family="Arial,sans-serif" font-size="12" fill="#333">ContentItem / versioning</text>
+  <rect x="42" y="580" width="20" height="14" rx="2" fill="#fef9c3" stroke="#ff7f0e"/>
+  <text x="70" y="592" font-family="Arial,sans-serif" font-size="12" fill="#333">FactCheckReview</text>
+  <rect x="42" y="600" width="20" height="14" rx="2" fill="#dcfce7" stroke="#2ca02c"/>
+  <text x="70" y="612" font-family="Arial,sans-serif" font-size="12" fill="#333">11-language catalogue</text>
+  <rect x="42" y="620" width="20" height="14" rx="2" fill="#fce7f3" stroke="#d62728"/>
+  <text x="70" y="632" font-family="Arial,sans-serif" font-size="12" fill="#333">Content expiry</text>
+  <rect x="42" y="640" width="20" height="14" rx="2" fill="#ede9fe" stroke="#9467bd"/>
+  <text x="70" y="652" font-family="Arial,sans-serif" font-size="12" fill="#333">M13 distribution</text>
+  <circle cx="52" cy="672" r="7" fill="#1f77b4"/>
+  <text x="70" y="676" font-family="Arial,sans-serif" font-size="12" fill="#333">Author / reviewer persona</text>
+</svg>

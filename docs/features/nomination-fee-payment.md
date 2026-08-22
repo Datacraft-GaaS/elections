@@ -138,3 +138,13 @@ Runbooks under `docs/runbooks/`:
 - `daraja-down.md` - payment intake degraded mode (manual entry fallback).
 
 Related documents: spec at `docs/plans/modules/nomination-fee-payment.md`; M12 at `docs/features/`; capability catalogue at `services/crms-svc/docs/CAPABILITIES.md`.
+
+---
+
+*Module documentation version: 1.0. Last updated: 2026-08-22. Review before each election cycle to verify crate paths, OpenAPI contract versions, integration endpoint URLs, and statutory rule offsets remain current.*
+
+**Performance targets**: All read endpoints respond within 200ms at p95 under 100 concurrent users. Write endpoints (including HSM-signing paths) respond within 1,000ms at p95. Bulk operations (roster upload, CSV import) are async with a job status poll endpoint.
+
+**SLA targets**: All API reads respond within 200ms p95. Event processing latency from trigger to state update is under 5 seconds under normal load. HSM-signing operations complete within 3 seconds.
+
+**Availability target**: Routine 99.5% outside election windows; election-day window 99.9%. Managed via `packages/eel-resilience-rs` circuit breakers on all external integrations.

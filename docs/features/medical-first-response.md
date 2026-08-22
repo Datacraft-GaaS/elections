@@ -128,3 +128,25 @@ Runbooks under `docs/runbooks/`:
 - `sms-gateway-outage.md` -- fallback to officer phone call when SMS gateway is unreachable.
 
 Related documents: full spec at `docs/plans/modules/medical-first-response.md`; service capability catalogue at `services/training-svc/docs/CAPABILITIES.md`; M16 ECC at `docs/features/election-command-centre.md`; M32 field mobile at `docs/features/mobile-field-support.md`.
+
+### DBSCAN cluster parameters
+
+```
+epsilon (eps)  = 5 km          (geographic radius)
+min_samples    = 3             (minimum incidents to form a cluster)
+time_window    = 30 min        (rolling window for incident inclusion)
+scan_interval  = 5 min         (cron cadence)
+```
+
+Station GPS coordinates are sourced from M18 boundary registry at the start of each polling day and cached in `services/training-svc/caches/station_coords.json`; the cache is refreshed every 24 hours. DBSCAN uses the Haversine distance metric (Sinnott, Sky and Telescope 1984) for geographic distance calculation.
+
+### Dispatch agency priority
+
+When multiple agencies are available, the dispatch coordinator selects based on:
+
+1. St John's Ambulance -- preferred for polling station medical emergencies (nationwide presence).
+2. Kenya Red Cross Society (KRCS) -- secondary; activated when St John's is unavailable in the constituency.
+3. County health facility -- tertiary; always available as last resort but not mobile-dispatched.
+4. Police -- only for incidents with a security component (e.g., violent altercation with injury).
+
+The priority is a guideline, not enforced by the system; the dispatch coordinator has full discretion.

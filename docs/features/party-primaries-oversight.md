@@ -130,3 +130,21 @@ Runbooks under `docs/runbooks/`:
 - `late-result-override.md` - officer override procedure for late result submissions.
 
 Related documents: spec at `docs/plans/modules/party-primaries-oversight.md`; M45 at `docs/features/party-registration-management.md`; M12 at `docs/features/`; capability catalogue at `services/crms-svc/docs/CAPABILITIES.md`.
+
+## Edge cases and known gaps
+
+- A party that opts in for kit-lite but then changes its primary date: M46 requires an updated `PrimaryOptIn` with the new date; the M20 kit dispatch is re-coordinated via a new `eel.crms.primaries.kit_required.v1` event. If kits have already been dispatched, M20 coordinates physical retrieval and redeployment.
+- A party that submits results for a constituency that was not in its opt-in scope: the submission is rejected; `PrimaryResult.constituency_code` must match a constituency in the party's ACTIVE coverage area (derived from M12 candidate registrations).
+- A result that is disputed and then the dispute determination upholds a different winner: M46 creates a replacement `PrimaryResult` with `supersedes_result_id` referencing the original. M12 is notified via `eel.crms.primaries.primary_result_published.v1` (with `replacement = true`) and updates `nominated_candidate_id` accordingly. Both results are Merkle-anchored.
+- Observer reports from M43-accredited observers at a primary: M43 observers file their reports via the M43 observer app (not M34); those reports are ingested into M46 via `eel.training.observer_report.v1` and attached to the relevant `PrimaryOptIn` for the oversight dashboard.
+- A party that submits a primary result with `total_votes_cast = 0`: this is a valid submission for an uncontested contest (single candidate). M46 accepts it; M12 creates an uncontested nomination record.
+
+---
+
+*Module documentation version: 1.0. Last updated: 2026-08-22. Review before each election cycle to verify crate paths, OpenAPI contract versions, integration endpoint URLs, and statutory rule offsets remain current.*
+
+**Performance targets**: All read endpoints respond within 200ms at p95 under 100 concurrent users. Write endpoints (including HSM-signing paths) respond within 1,000ms at p95. Bulk operations (roster upload, CSV import) are async with a job status poll endpoint.
+
+**SLA targets**: All API reads respond within 200ms p95. Event processing latency from trigger to state update is under 5 seconds under normal load. HSM-signing operations complete within 3 seconds.
+
+**Availability target**: Routine 99.5% outside election windows; election-day window 99.9%. Managed via `packages/eel-resilience-rs` circuit breakers on all external integrations.

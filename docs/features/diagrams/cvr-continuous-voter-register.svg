@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">M35 CVR Continuous Voter Register — Architecture Diagram</title>
+  <desc id="desc">Five intake sources (CRS SFTP, NRB, KRA, *400# USSD, officer manual, FIELD_OFFICER app), classify, ABIS soft-hold, officer triage LiveView, commissioner plus HSM approval, Merkle-anchored quarterly gazette.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#f8f9fa"/>
+  <text x="600" y="36" font-family="Arial,sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#111">M35 CVR — Continuous Voter Register</text>
+  <text x="600" y="56" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#555">5 sources → classify → ABIS soft-hold → officer triage → commissioner + HSM approve → Merkle quarterly gazette</text>
+
+  <!-- Sources: 5 intake boxes -->
+  <!-- CRS -->
+  <rect x="20" y="100" width="160" height="80" rx="8" fill="#fff" stroke="#7f7f7f" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="100" y="128" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#7f7f7f">CRS SFTP</text>
+  <text x="100" y="148" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#7f7f7f">death notifications</text>
+  <text x="100" y="166" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">batch 5/day</text>
+
+  <!-- NRB -->
+  <rect x="200" y="100" width="160" height="80" rx="8" fill="#fff" stroke="#7f7f7f" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="280" y="128" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#7f7f7f">NRB</text>
+  <text x="280" y="148" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#7f7f7f">ID corrections</text>
+  <text x="280" y="166" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">batch 5/day</text>
+
+  <!-- KRA -->
+  <rect x="380" y="100" width="160" height="80" rx="8" fill="#fff" stroke="#7f7f7f" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="460" y="128" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#7f7f7f">KRA</text>
+  <text x="460" y="148" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#7f7f7f">PIN dormancy flags</text>
+  <text x="460" y="166" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">5/quarter</text>
+
+  <!-- USSD *400# -->
+  <rect x="560" y="100" width="180" height="80" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="650" y="122" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#2ca02c">*400# USSD</text>
+  <text x="650" y="142" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">family death report</text>
+  <text x="650" y="162" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">1000/hr · CRS confirm</text>
+  <text x="650" y="174" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">within 90 days</text>
+
+  <!-- Officer Manual / FIELD_OFFICER app -->
+  <rect x="760" y="100" width="200" height="80" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="860" y="122" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#1f77b4">Officer Manual</text>
+  <text x="860" y="142" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">FIELD_OFFICER app</text>
+  <text x="860" y="162" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">manual entry + evidence</text>
+  <text x="860" y="174" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">COMMISSION_OFFICER role</text>
+
+  <!-- Arrows from sources to classifier -->
+  <line x1="100" y1="180" x2="400" y2="260" stroke="#7f7f7f" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+  <line x1="280" y1="180" x2="430" y2="260" stroke="#7f7f7f" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+  <line x1="460" y1="180" x2="500" y2="260" stroke="#7f7f7f" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+  <line x1="650" y1="180" x2="590" y2="260" stroke="#2ca02c" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="860" y1="180" x2="700" y2="260" stroke="#1f77b4" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Classifier / Ingestion -->
+  <rect x="280" y="260" width="540" height="90" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="550" y="286" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f77b4">Batch Ingestion + Classify</text>
+  <text x="550" y="306" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">VoterRegisterEvent: source · event_type · confidence_score</text>
+  <text x="550" y="326" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">classify: DEATH_PROPOSED / ID_CORRECTION / DORMANCY_FLAG / FAMILY_NOTIFICATION</text>
+  <text x="550" y="342" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">BatchIngestionReport: matched / unmatched / flagged — T2 store</text>
+
+  <!-- ABIS soft-hold -->
+  <rect x="280" y="400" width="240" height="90" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2"/>
+  <text x="400" y="426" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">ABIS Soft-Hold</text>
+  <text x="400" y="446" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">biometric deactivation hold</text>
+  <text x="400" y="466" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">pending officer decision</text>
+  <text x="400" y="482" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">ABIS M03 — delayed-batch</text>
+  <line x1="400" y1="350" x2="400" y2="400" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Officer Triage LiveView -->
+  <rect x="560" y="400" width="280" height="90" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="700" y="426" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">Officer Triage (LiveView)</text>
+  <text x="700" y="446" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">PATCH /v1/cvr/events/{id}</text>
+  <text x="700" y="466" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">approve / reject / hold</text>
+  <text x="700" y="482" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">Phoenix LiveView — real-time queue</text>
+  <line x1="700" y1="350" x2="700" y2="400" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Personas: Officer + Commissioner -->
+  <circle cx="1070" cy="115" r="18" fill="#2ca02c"/>
+  <text x="1070" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Officer</text>
+  <circle cx="1140" cy="115" r="18" fill="#9467bd"/>
+  <text x="1140" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Commissioner</text>
+
+  <!-- Commissioner + HSM approve -->
+  <rect x="900" y="260" width="280" height="100" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2.5"/>
+  <text x="1040" y="286" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">Commissioner + HSM Approve</text>
+  <text x="1040" y="306" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">POST /v1/cvr/snapshots</text>
+  <text x="1040" y="326" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">COMMISSION_COMMISSIONER role</text>
+  <text x="1040" y="346" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">HSM P06 sign: RegisterSnapshot</text>
+  <text x="1040" y="356" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">2 snapshots/day max</text>
+  <rect x="1155" y="260" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="1166" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="840" y1="305" x2="900" y2="305" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="1070" y1="133" x2="1040" y2="260" stroke="#2ca02c" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+  <line x1="1140" y1="133" x2="1100" y2="260" stroke="#9467bd" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+
+  <!-- Removal approved event flow -->
+  <line x1="700" y1="490" x2="900" y2="490" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="900" y="460" width="280" height="70" rx="8" fill="#fce7f3" stroke="#d62728" stroke-width="2"/>
+  <text x="1040" y="486" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">Removal Decision</text>
+  <text x="1040" y="506" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">removal_approved.v1 / removal_rejected.v1</text>
+  <text x="1040" y="524" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">exactly-once delivery</text>
+
+  <!-- Merkle quarterly gazette -->
+  <rect x="280" y="560" width="880" height="100" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2.5"/>
+  <text x="720" y="586" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">Merkle-Anchored Quarterly Gazette</text>
+  <text x="720" y="606" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">RegisterSnapshot: root_hash (SHA-256 sorted voter IDs) · merkle_root · gazette_notice_id</text>
+  <text x="720" y="626" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">signed_by (HSM P06) · P05 tlog anchor · public gazette notice published</text>
+  <text x="720" y="646" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">Astro public site: GET /v1/cvr/snapshots — Court-accessible Merkle proof endpoint</text>
+  <rect x="1135" y="560" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="1146" y="576" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="550" y1="490" x2="600" y2="560" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="1040" y1="360" x2="900" y2="560" stroke="#9467bd" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Public self-check -->
+  <rect x="280" y="710" width="400" height="60" rx="8" fill="#f3f4f6" stroke="#7f7f7f" stroke-width="1.5"/>
+  <text x="480" y="736" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Citizen Self-Check (Astro)</text>
+  <text x="480" y="756" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#555">GET /v1/cvr/status/{national_id_hash} — public · 30/hr rate · no internal flags</text>
+  <line x1="480" y1="660" x2="480" y2="710" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Legend -->
+  <rect x="720" y="700" width="460" height="80" rx="6" fill="#fff" stroke="#ccc" stroke-width="1"/>
+  <text x="950" y="720" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Legend</text>
+  <rect x="732" y="730" width="20" height="14" rx="2" fill="#fff" stroke="#7f7f7f" stroke-dasharray="4,2"/>
+  <text x="760" y="742" font-family="Arial,sans-serif" font-size="12" fill="#333">External source (CRS/NRB/KRA)</text>
+  <rect x="732" y="750" width="20" height="14" rx="2" fill="#dbeafe" stroke="#1f77b4"/>
+  <text x="760" y="762" font-family="Arial,sans-serif" font-size="12" fill="#333">Ingestion / officer triage</text>
+  <rect x="960" y="730" width="20" height="14" rx="2" fill="#ede9fe" stroke="#9467bd"/>
+  <text x="988" y="742" font-family="Arial,sans-serif" font-size="12" fill="#333">Commissioner / gazette</text>
+  <rect x="960" y="750" width="14" height="14" rx="2" fill="#9467bd"/>
+  <text x="980" y="762" font-family="Arial,sans-serif" font-size="12" fill="white">🔒</text>
+  <text x="988" y="762" font-family="Arial,sans-serif" font-size="12" fill="#333">HSM / Merkle tlog</text>
+</svg>

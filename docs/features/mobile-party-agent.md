@@ -1,10 +1,10 @@
 # Mobile party agent (M30)
 
-Module M30 (`mobile-party-agent`) owned by `field-mobile-svc`. A Flutter app for accredited political party agents at polling stations. Supports GPS-gated check-in (<=200 m), QR verification of Form 34A results, HSM-anchored countersignature on results, exactly-once dispute escalation, RASP protection, and a silent duress alert path (`eel.field.agent_incident.v1` DURESS). Screen-capture protection enforced on all sensitive views.
+Module M30 (`mobile-party-agent`) owned by `field-mobile-svc`. A Flutter Android/iOS app for accredited party agents at polling stations. Supports GPS-verified check-in, QR-scan Form 34A countersignature, exactly-once dispute recording, duress silent alert, and chief agent rollup view across the party's assigned stations. HSM-anchored countersignatures feed M09 tabulation.
 
 ## Contents
 
-1. What mobile party agent does (vs M34 observer app)
+1. What mobile party agent does (vs related modules)
 2. Data plane (schema)
 3. Ingest sources
 4. Pipeline
@@ -17,136 +17,134 @@ Module M30 (`mobile-party-agent`) owned by `field-mobile-svc`. A Flutter app for
 
 ---
 
-## 1. What mobile party agent does (vs M34 observer app)
+## 1. What mobile party agent does (vs related modules)
 
-- **M34** = accredited observers (domestic + international); incident reporting; read-only sampling verification; end-of-mission PDF.
-- **M30** = political party agents with statutory countersignature rights on Form 34A; their signature is part of the results chain, not merely advisory.
+- **M12 CRMS** = accredits party agents; M30 reads the agent credential from CRMS at check-in to verify entitlement.
+- **M30** = election-day party agent tooling: check-in at station, countersign Form 34A, record disputes, and send duress alerts.
+- **M09 Results tabulation** = receives HSM-anchored party agent countersignatures as part of the Form 34A certification chain.
 
-M30 has narrower scope than M34: party agents have no access to cross-station aggregates and cannot file systemic incident signals. They act on a single station.
+M30 does not tally votes or modify the voter roll. It is a read-heavy, write-sparse app that must function in offline-first mode throughout polling day.
 
 ## 2. Data plane
 
-Five aggregates (per `services/field-mobile-svc/crates/party-agent-api/src/models.rs`):
+Five local aggregates in the Flutter Isar+SQLCipher store:
 
-| Aggregate | Purpose | Data class |
+| Aggregate | Purpose | Sync cadence |
 |---|---|---|
-| **AgentCheckIn** | check_in_id, agent_id, party_code, station_code, gps_lat, gps_lon, gps_accuracy_m, checked_in_at, biometric_ref_hash | D |
-| **Form34AVerification** | verification_id, agent_id, station_code, qr_payload_hash, verified_at, signature (Ed25519 + biometric + PIN) | A |
-| **DisputeEscalation** | dispute_id, agent_id, station_code, contest_id, reason_code, evidence_uri (encrypted AES-256-GCM), escalated_at, idempotency_key | A |
-| **DuressAlert** | alert_id, agent_id, station_code, fired_at, resolved_at | A |
-| **AccreditationRecord** | accreditation_id, agent_id, party_code, station_code, valid_from, valid_until, SpiceDB_role | D |
+| **AgentCheckIn** | GPS-verified arrival: agent_id, station_id, gps_lat, gps_lon, gps_accuracy_m, ts_hlc, agent_sig. | Immediate sync on connectivity |
+| **Form34AScan** | QR-scanned Form 34A image and extracted totals: scan_id, station_id, form_image_hash, totals_json, countersig (HSM-anchored), ts_hlc. | Immediate sync |
+| **DisputeRecord** | Exactly-once dispute event: dispute_id (UUID7), station_id, category, description, evidence_hashes (array), agent_sig, ts_hlc. | Immediate sync; duplicate dispute_id rejected |
+| **DuressAlert** | Silent alert: alert_id, station_id, agent_id, ts_hlc. Content: none (minimised). | Immediate send via SMS fallback if no data |
+| **StationRollup** | Chief agent aggregate: station_id, checkin_status, form34a_status, dispute_count, ts. | Push from field-mobile-svc on any station event |
 
 ## 3. Ingest sources
 
-| Source | Cadence | Adapter | Auth | Failure semantics |
+| Source | Cadence | Format | Auth | Failure semantics |
 |---|---|---|---|---|
-| **M08 signed Form 34A results** | Post-declaration push | Internal Kafka consumer | SVID mTLS | App shows pending until results received |
-| **GPS / cell / Wi-Fi** | Check-in | Device location API | n/a | Falls back to cell; if accuracy > 200 m, check-in blocked with explanation |
-| **HSM P06 countersignature** | Per Form 34A sign | `integrations/hsm/adapter` | SVID mTLS + PIN + biometric | Sign blocked if HSM unavailable; party agent notified |
-| **Accreditation registry** (SpiceDB) | At login + hourly refresh | gRPC | JWT | Login blocked if accreditation expired; offline token valid 4 h |
+| CRMS credential (M12) | At check-in | REST | JWT (agent device cert) | Check-in blocked if CRMS unreachable and no cached credential; agent retries |
+| GPS (device) | At check-in and every 30 min | OS location API | N/A (device) | Low accuracy (<100 m) blocks check-in; fallback to station QR code check-in |
+| Form 34A QR code | At station close | Camera scan | N/A | Manual entry fallback logged as MANUAL_ENTRY |
+| Chief agent push | Real-time | Push + Kafka | JWT (chief agent device cert) | Queued offline; synced on connectivity |
 
 ## 4. Pipeline
 
-Files under `services/field-mobile-svc/mobile/party-agent/` and `crates/party-agent-api/src/`:
-
 ```
-Party agent opens app; authenticates (biometric + PIN)
-      -> RASP check: root detection, debugger, emulator, hook detection
-         (fail-closed: app exits if RASP detects compromise)
-      -> accreditation verified via SpiceDB (offline token valid 4 h)
-      -> GPS check-in:
-            gps_accuracy_m <= 200 m required
-            station_code confirmed against boundary-svc (M18) polygon
-            AgentCheckIn persisted + eel.field.agent_checked_in.v1 emitted
-      -> screen-capture protection enabled on all views with Form 34A data
+agent check-in:
+  agent opens M30 app; scans station QR code
+  -> CRMS credential verified (or cached)
+  -> GPS reading: accuracy must be < 100 m AND station geofence match
+       (PostGIS point-in-polygon via field-mobile-svc REST)
+  -> AgentCheckIn persisted; agent_sig applied
+  -> eel.party.agent_checkin.v1 emitted
 
-Form 34A QR verification + countersignature:
-      -> agent scans QR on posted results sheet
-      -> libeel-verifier (Rust FFI) verifies Ed25519 sig on QR payload on-device
-      -> if valid: display contest results
-      -> agent reviews and countersigns:
-            signature = Ed25519 keyed by HSM party-agent KEK
-            requires biometric confirmation + PIN (dual-factor)
-            Form34AVerification persisted
-            eel.field.form34a_countersigned.v1 emitted
-            anchored in P05 tlog within 60 s
+Form 34A countersignature:
+  presiding officer presents Form 34A QR code
+  -> agent scans; totals extracted and displayed for review
+  -> agent confirms or rejects totals
+  -> if confirmed: HSM-anchored countersig (field-mobile-svc HSM signs on behalf of agent,
+                   agent approves via PIN; final sig includes agent public key)
+  -> Form34AScan persisted; eel.party.form34a_countersig.v1 emitted
+  -> M09 receives countersig event as part of Form 34A certification chain
 
-Dispute escalation (exactly-once):
-      -> agent selects dispute reason (code from SpiceDB-gated codelist)
-      -> evidence captured (photo / audio, AES-256-GCM encrypted, UUID7 attachment_id)
-      -> POST /agent/v1/disputes with Idempotency-Key = UUID7
-         (server rejects duplicate within 24 h window)
-      -> DisputeEscalation persisted
-      -> eel.field.dispute_escalated.v1 emitted to ECC console (M23 integration)
-      -> ECC acknowledges within SLA (P0 <= 2 min)
+dispute recording:
+  agent taps "Record dispute" -> category selection -> description -> evidence photo
+  -> DisputeRecord(dispute_id = UUID7) persisted
+  -> exactly-once: duplicate dispute_id on sync returns cached ack
+  -> eel.party.dispute.v1 emitted
 
-Duress alert (silent):
-      -> triple-press volume button OR specific gesture
-      -> DuressAlert created
-      -> eel.field.agent_incident.v1 (type=DURESS) emitted silently
-      -> no visual confirmation on device (prevents coercion detection)
-      -> ECC and security coordinator notified immediately
+duress alert:
+  agent holds power button for 5 s (configurable)
+  -> DuressAlert sent via: (1) app API (2) SMS to IEBC Security Coordinator
+  -> alert logged; no visible UI change on device (silent)
+
+chief agent rollup:
+  chief agent sees live StationRollup for all party-assigned stations
+  -> check-in count, Form 34A status, dispute count
+  -> drill-down per station
 ```
 
 ## 5. API surface
 
-Contract: `packages/openapi-contracts/field-mobile/party-agent.yaml`. All writes enforce `Idempotency-Key`.
+Contract: `packages/openapi-contracts/field-mobile/party-agent.yaml`. All write endpoints enforce `Idempotency-Key`.
 
 | Method + path | Persona | Purpose |
 |---|---|---|
-| `POST /agent/v1/checkin` | Party agent (JWT + biometric) | GPS-gated station check-in |
-| `POST /agent/v1/verify` | Party agent | QR Form 34A verification |
-| `POST /agent/v1/sign` | Party agent (JWT + HSM + biometric + PIN) | Countersign Form 34A |
-| `POST /agent/v1/disputes` | Party agent | Escalate dispute (exactly-once) |
-| `GET /agent/v1/disputes/{id}` | Party agent | Dispute status |
-| `POST /agent/v1/duress` | App (silent, no UI confirmation) | File duress alert |
-| `GET /agent/v1/accreditation` | Party agent | Current accreditation status |
+| `POST /party/v1/checkins` | Agent device (cert) | Submit GPS check-in |
+| `POST /party/v1/form34a` | Agent device (cert) | Submit Form 34A countersignature |
+| `POST /party/v1/disputes` | Agent device (cert) | Record dispute (exactly-once) |
+| `POST /party/v1/duress` | Agent device (cert) | Send duress alert |
+| `GET /party/v1/stations/{agent_id}/rollup` | Chief agent (JWT) | Station rollup for all assigned stations |
+| `GET /party/v1/disputes/{station_id}` | Chief agent / IAB (JWT) | Dispute list for a station |
 
 ## 6. Human surfaces
 
 | Surface | Path | Purpose |
 |---|---|---|
-| Flutter app | `services/field-mobile-svc/mobile/party-agent/` | Android 8+ / iOS 14+; RASP; screen-capture protection; EN + SW |
-| ECC console (Phoenix LiveView) | `services/ecc-svc/ex/ecc_web/` | Receives duress alerts + dispute escalations (M23 integration) |
+| Party agent Flutter app (Android/iOS) | `services/field-mobile-svc/flutter/party-agent/` | Check-in; Form 34A scan; dispute; duress |
+| Chief agent rollup screen (within Flutter app) | Same app, chief_agent role | Aggregated station view |
 
-Languages: EN + SW. KSL video guide for deaf party agents linked from app help screen.
+Material You accessibility; EN + SW. WCAG 2.2 AA on all screens. Offline-first: all actions available without connectivity; synced on reconnect.
 
 ## 7. Integrity + anti-tamper
 
-- **RASP (Runtime Application Self-Protection)** -- root, debugger, emulator, and hook detection at app start; fail-closed; RASP events logged and transmitted to ai-platform-svc M28 (E1-E2 internal model).
-- **GPS <=200 m gating** -- check-in rejected if GPS accuracy > 200 m; cell-only check-in allowed at degraded-accuracy threshold with warning; spoof triangulation via cell + Wi-Fi delta checked (>1 km delta flagged by M33 pattern).
-- **HSM-anchored countersignature** -- party-agent KEK stored in HSM (P06); signature requires both biometric confirmation and PIN; dual-factor prevents coercion-only signing.
-- **Exactly-once dispute** -- Idempotency-Key (UUID7) enforced server-side with 24-hour dedup window; prevents accidental or adversarial duplicate escalations.
-- **Duress silent alert** -- `eel.field.agent_incident.v1` type=DURESS emitted without any on-device UI confirmation; protects agent from visible tell.
-- **Screen-capture protection** -- `FLAG_SECURE` (Android) + iOS screenshot notification suppressed on all Form 34A and countersignature views; prevents covert capture by adversary.
-- **Offline token validity 4 h** -- accreditation token cached; if SpiceDB unreachable, agent can operate for 4 hours; after expiry, countersignature blocked until connectivity restored.
+- **GPS geofence check-in** -- check-in is accepted only if the GPS reading places the agent within the station geofence (PostGIS polygon from M18 boundary-svc); spoof-resistant because the geofence polygon is not transmitted to the app before check-in.
+- **HSM-anchored countersignature** -- the Form 34A countersig is computed by the field-mobile-svc HSM using the agent's registered public key; the agent's PIN authorises the signing operation but the private key never leaves the HSM; M09 verifies the sig against the CRMS-registered agent public key.
+- **Exactly-once dispute** -- `DisputeRecord.dispute_id` is a UUID7 generated on the device at the moment the agent taps "Record dispute"; the server rejects any second event with the same dispute_id; network retries are idempotent.
+- **Silent duress** -- the duress code path has no visible UI feedback to prevent coercion detection; the SMS fallback uses a one-time pre-loaded message that does not require connectivity.
+- **Offline Isar+SQLCipher** -- all local data is encrypted at rest using SQLCipher with a key derived from the agent's device cert and PIN; a wiped device has no recoverable data.
 
 ## 8. Kenya statute alignment
 
-- **Elections Act s.54 (party agent rights)** -- Form 34A countersignature feature implements the statutory right; countersignature stored in P05 log alongside RO signature.
-- **Elections Act s.72 (secrecy)** -- party agent cannot retrieve individual voter identification records; they see only declared totals and their own check-in history.
-- **Whistleblower Protection Act 2022** -- duress alert path provides a protected disclosure mechanism; alert processed under whistleblower confidentiality provisions.
-- **Elections (Technology) Regulations 2017** -- RASP and device security measures must be certified by KEBS before deployment.
+- **Elections Act s.62 (party agent rights)** -- M30 implements the statutory right to be present and to countersign Form 34A; the countersig is part of the certification chain for M09.
+- **Elections (General) Regulations 2012 r.68** -- Form 34A agent signature required; M30 digital countersig satisfies this when presented alongside the physical Form 34A.
+- **DPA 2019 s.26 (minimisation)** -- duress alert contains no descriptive content; check-in GPS stored per-agent; no voter data accessible in M30.
+- **Elections Act s.78 (dispute right)** -- dispute recording provides the statutory mechanism for agents to register objections; disputes are timestamped and exactly-once for auditability.
 
 ## 9. Honest caveats + external prerequisites
 
-- HSM countersignature depends on network connectivity at the moment of signing. If the station is offline, the party agent cannot countersign in real time; the offline token allows form review but not signing. The paper Form 34A countersignature remains the legal original; digital signature is a supplement.
-- GPS accuracy <=200 m is not guaranteed in all station environments (thick-walled buildings, underground rooms). The 200 m threshold may need to be relaxed in specific stations; IEBC must enumerate exceptions before deployment.
-- RASP false positives on certain OEM Android ROMs (Transsion, Infinix) have been observed in field testing; the RASP library must be tested on the top 10 Kenyan device models before go-live.
-- Duress alert routing depends on ECC having 24/7 staffing during polling day. An unacknowledged duress alert within 10 minutes should escalate to the national security coordinator automatically; this escalation path requires integration with a communication system not yet specified.
+- GPS accuracy in urban high-rise environments or rural areas with poor satellite visibility may fall below the 100 m threshold; the QR code station check-in fallback is less secure (no location verification) and is logged as FALLBACK_QR.
+- The HSM-anchored countersig requires the field-mobile-svc HSM to be reachable at Form 34A time; if the HSM is unreachable, the countersig is queued and applied when connectivity is restored; M09 does not accept an unsigned Form 34A.
+- The duress SMS fallback requires a pre-loaded message on the device SIM; if the SIM is removed, the SMS path fails silently; the app logs a `DURESS_SMS_FAIL` event on reconnect.
+- Party agent accreditation data from CRMS is cached for 24 hours; an agent accreditation revoked after cache refresh may still be able to check in; the CRMS real-time revocation feed must be confirmed as operational before election day.
 
 ## 10. Test coverage + operational runbooks
 
-Coverage under `services/field-mobile-svc/crates/party-agent-api/tests/` and `mobile/party-agent/integration_test/`:
-- Unit: GPS accuracy check, RASP detection stubs, Idempotency-Key dedup, duress alert emission, screen-capture flag.
-- Property (`proptest`): countersignature requires dual-factor; exactly-once dispute within window; no PII in push payloads.
-- Contract (Pact): M08 Form 34A consumer; M23 ECC escalation producer; P05 tlog anchor.
-- Device: RASP on emulator (expected block); GPS spoof detection; cold start <=3 s.
-- Security: countersignature replay; dispute duplicate; RASP bypass; OWASP ZAP.
+Coverage under `services/field-mobile-svc/flutter/party-agent/test/` and `services/field-mobile-svc/crates/party-api/tests/`: unit tests for GPS geofence, Form 34A QR parser, exactly-once dispute guard, duress alert, chief agent rollup aggregator; widget tests for all screens; integration tests with CRMS stub, M18 boundary stub, SoftHSM countersig, M09 countersig consumer; e2e Flutter integration test covering full polling day flow (check-in, Form 34A, dispute, duress); chaos test for HSM unavailable during countersig.
 
 Runbooks under `docs/runbooks/`:
-- `party-agent-duress.md` -- ECC alert receipt, security coordinator escalation, station security response.
-- `hsm-sign-offline.md` -- offline period, paper fallback, post-connectivity sync.
-- `dispute-escalation-sla.md` -- P0 2-min ECC acknowledgement, overflow handling.
 
-Related: full spec at `docs/plans/modules/mobile-party-agent.md`; capability catalogue at `services/field-mobile-svc/docs/CAPABILITIES.md`.
+- `party-agent-degradation.md` (create): GPS accuracy failure; HSM unavailable; CRMS credential cache miss; duress SMS fail.
+
+Dashboards: `platform/observability/field-mobile-svc/grafana-party.json` (check-in rate, countersig rate, dispute count, duress alert count). SLO: check-in sync <30 s; countersig sync <60 s; duress alert delivery <10 s.
+
+Chaos scenarios under `chaos/scenarios/eel-party-agent-*.yaml`: GPS accuracy degradation (urban canyon); HSM unavailable during countersig window; CRMS credential cache miss; duress SMS delivery failure.
+
+Performance targets: check-in sync < 30 s on 3G; Form34A countersig sync < 60 s; duress alert delivery (app + SMS) < 10 s; StationRollup push < 5 s from station event.
+
+SLOs: 100% of check-in events reach server before polls close; 0 duplicate dispute records per station; duress alert unacknowledged > 10 min triggers auto-escalation.
+
+Chief agent rollup security: the StationRollup contains only aggregate counts (check-in status, dispute count, Form34A status), not individual voter data; a chief agent cannot drill into a specific voter record through M30.
+
+CRMS credential offline window: the cached CRMS credential allows operation for up to 4 hours without connectivity; beyond 4 hours the agent cannot countersign new Form34A records until connectivity is restored and CRMS re-validates; paper-countersignature on the physical Form34A remains valid regardless.
+
+Related: `docs/plans/modules/mobile-party-agent.md`; `services/field-mobile-svc/docs/CAPABILITIES.md`.

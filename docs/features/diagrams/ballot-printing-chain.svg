@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">M39 Ballot Printing Chain — Architecture Diagram</title>
+  <desc id="desc">PrintOrder, LotData, RFID CustodyEvent, MES double verification, StationReconciliation, and KRA e-clearance.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#f8f9fa"/>
+  <text x="600" y="36" font-family="Arial,sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#111">M39 Ballot Printing Chain</text>
+  <text x="600" y="56" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#555">PrintOrder · LotData · RFID CustodyEvent · MES double · StationReconciliation · KRA e-clearance</text>
+
+  <!-- Personas -->
+  <circle cx="100" cy="115" r="18" fill="#9467bd"/>
+  <text x="100" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Commission</text>
+  <text x="100" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Officer</text>
+
+  <circle cx="280" cy="115" r="18" fill="#7f7f7f"/>
+  <text x="280" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Printer</text>
+  <text x="280" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Vendor</text>
+
+  <!-- PrintOrder -->
+  <rect x="30" y="190" width="280" height="120" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="170" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">PrintOrder</text>
+  <text x="170" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">id, election_id, contest_ids[]</text>
+  <text x="170" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">quantity_per_station, printer_vendor</text>
+  <text x="170" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">security_features: watermark, UV ink</text>
+  <text x="170" y="296" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">authorised by: COMMISSIONER + HSM</text>
+  <text x="170" y="306" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">print_order_authorised.v1 (exactly-once)</text>
+  <rect x="285" y="190" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="296" y="206" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="100" y1="133" x2="130" y2="190" stroke="#9467bd" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- LotData -->
+  <rect x="350" y="190" width="280" height="120" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="490" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f77b4">LotData</text>
+  <text x="490" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">lot_id, print_order_id</text>
+  <text x="490" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">ballot_serial_start…end</text>
+  <text x="490" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">lot_hash: SHA-256(serials)</text>
+  <text x="490" y="296" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">printed_count, spoilt_count</text>
+  <text x="490" y="306" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">lot_printed.v1 emitted per lot</text>
+  <line x1="310" y1="250" x2="350" y2="250" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- MES Double -->
+  <rect x="670" y="190" width="280" height="120" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="810" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">MES Double</text>
+  <text x="810" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">Manufacturing Execution System</text>
+  <text x="810" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">vendor MES stub + IEBC shadow</text>
+  <text x="810" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">cross-verify: lot_hash match</text>
+  <text x="810" y="296" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">mes_verified.v1 on match</text>
+  <text x="810" y="306" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">mes_discrepancy.v1 on divergence → alert</text>
+  <line x1="630" y1="250" x2="670" y2="250" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="280" y1="133" x2="750" y2="190" stroke="#7f7f7f" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+
+  <!-- RFID CustodyEvent -->
+  <rect x="350" y="370" width="600" height="120" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2"/>
+  <text x="650" y="396" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">RFID CustodyEvent chain</text>
+  <text x="650" y="416" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">lot_rfid, event_type: PACKED / DISPATCHED / RECEIVED / DISTRIBUTED / RECONCILED</text>
+  <text x="650" y="436" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">custodian_id, lat/lon, event_at, lot_id</text>
+  <text x="650" y="456" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">merkle_node_id — T1-audit — exactly-once delivery</text>
+  <text x="650" y="476" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">POST /v1/printing/custody-events — gRPC SVID mTLS</text>
+  <text x="650" y="488" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">gap_alert.v1 on missing scan within 2h of expected</text>
+  <rect x="925" y="370" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="936" y="386" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="490" y1="310" x2="550" y2="370" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="810" y1="310" x2="750" y2="370" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- StationReconciliation -->
+  <rect x="350" y="550" width="380" height="100" rx="8" fill="#fce7f3" stroke="#d62728" stroke-width="2"/>
+  <text x="540" y="576" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">Station Reconciliation</text>
+  <text x="540" y="596" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">StationBallotReceipt: received, issued, spoilt</text>
+  <text x="540" y="616" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">surplus = received - issued - spoilt</text>
+  <text x="540" y="636" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">reconciliation_discrepancy.v1 if surplus != 0</text>
+  <text x="540" y="646" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">clerk_signed + returning_officer_signed</text>
+  <line x1="540" y1="490" x2="540" y2="550" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- KRA e-clearance -->
+  <rect x="770" y="550" width="380" height="100" rx="8" fill="#fff" stroke="#7f7f7f" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="960" y="576" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#7f7f7f">KRA e-Clearance (external)</text>
+  <text x="960" y="596" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#7f7f7f">import duty waiver for ballot paper</text>
+  <text x="960" y="616" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#7f7f7f">kra_clearance.v1 consumed → unblock lot dispatch</text>
+  <text x="960" y="636" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#7f7f7f">non-blocking: manual path if API unavailable</text>
+  <text x="960" y="646" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">SFTP data exchange: KRA KESRA portal</text>
+  <line x1="760" y1="490" x2="900" y2="550" stroke="#7f7f7f" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+
+  <!-- Merkle + public audit -->
+  <rect x="350" y="710" width="780" height="60" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="740" y="736" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#9467bd">Merkle Chain (P05) + HSM (P06) — lot_hash + custody_chain anchored per dispatch</text>
+  <text x="740" y="756" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">public audit: GET /v1/printing/lots/{id}/proof — Merkle inclusion proof downloadable</text>
+  <rect x="1105" y="710" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="1116" y="726" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="540" y1="650" x2="600" y2="710" stroke="#9467bd" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Legend -->
+  <rect x="30" y="450" width="290" height="180" rx="6" fill="#fff" stroke="#ccc" stroke-width="1"/>
+  <text x="175" y="470" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Legend</text>
+  <rect x="42" y="480" width="20" height="14" rx="2" fill="#ede9fe" stroke="#9467bd"/>
+  <text x="70" y="492" font-family="Arial,sans-serif" font-size="12" fill="#333">PrintOrder / HSM auth</text>
+  <rect x="42" y="500" width="20" height="14" rx="2" fill="#dbeafe" stroke="#1f77b4"/>
+  <text x="70" y="512" font-family="Arial,sans-serif" font-size="12" fill="#333">LotData / serial range</text>
+  <rect x="42" y="520" width="20" height="14" rx="2" fill="#dcfce7" stroke="#2ca02c"/>
+  <text x="70" y="532" font-family="Arial,sans-serif" font-size="12" fill="#333">MES double verify</text>
+  <rect x="42" y="540" width="20" height="14" rx="2" fill="#fef9c3" stroke="#ff7f0e"/>
+  <text x="70" y="552" font-family="Arial,sans-serif" font-size="12" fill="#333">RFID custody chain</text>
+  <rect x="42" y="560" width="20" height="14" rx="2" fill="#fce7f3" stroke="#d62728"/>
+  <text x="70" y="572" font-family="Arial,sans-serif" font-size="12" fill="#333">Reconciliation / alert</text>
+  <rect x="42" y="580" width="20" height="14" rx="2" fill="#fff" stroke="#7f7f7f" stroke-dasharray="4,2"/>
+  <text x="70" y="592" font-family="Arial,sans-serif" font-size="12" fill="#333">KRA external</text>
+  <rect x="42" y="600" width="14" height="14" rx="2" fill="#9467bd"/>
+  <text x="62" y="612" font-family="Arial,sans-serif" font-size="12" fill="white">🔒</text>
+  <text x="70" y="612" font-family="Arial,sans-serif" font-size="12" fill="#333">HSM / Merkle anchor</text>
+</svg>

@@ -138,4 +138,14 @@ Runbooks under `docs/runbooks/`:
 
 Dashboards: `platform/observability/ecc-svc/grafana-ecc.json` (grievance intake rate by channel, SLA breach rate by tier, referral count, category distribution). SLO: 99.9% intake success; P0 breach rate <1%; evidence hash anchor lag <90 s.
 
+Chaos scenarios under `chaos/scenarios/eel-ecc-*.yaml`: SMS gateway brownout during election-day peak; WhatsApp webhook timeout; P05 tlog anchor unavailable; M28 AI category classifier PII circuit-breaker trip during batch intake.
+
+Performance targets: intake endpoint p99 < 200 ms under 5 000 concurrent submissions; P0 SLA notification < 2 min from submission; evidence anchor lag < 90 s.
+
+Six-channel parity test: every CI run exercises all six intake paths (web, SMS, USSD, WhatsApp, call-centre, walk-in) with a synthetic grievance; any channel returning a non-200 status blocks deploy. USSD session timeout simulation included (Safaricom `*400#` has a 90-second inactivity timeout that requires graceful re-entry).
+
+Referral package format: DCI/ODPP referral is a PGP-encrypted ZIP containing grievance_id, evidence hashes, timeline, and the IEBC Chair HSM-signed transmittal letter; the ZIP is also registered in M22 if the grievance concerns campaign finance.
+
+Walk-in officer data-collection obligation: the walk-in intake form includes a mandatory DPA 2019 s.26 notice read aloud by the officer before any details are entered; the officer records that the notice was given as a checkbox; this is audited in quarterly compliance reports.
+
 Related: `docs/plans/modules/grievance-channels.md`; `services/ecc-svc/docs/CAPABILITIES.md`; edge-case matrix EC-ECC-* in `docs/plans/08-edge-case-matrix.md`.

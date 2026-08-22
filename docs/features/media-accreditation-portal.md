@@ -135,3 +135,16 @@ Runbooks under `docs/runbooks/`:
 - `crl-staleness.md` - response if CRL endpoint is unreachable for >5 minutes.
 
 Related documents: spec at `docs/plans/modules/media-accreditation-portal.md`; M43 at `docs/features/observer-accreditation-portal.md`; capability catalogue at `services/training-svc/docs/CAPABILITIES.md`.
+
+## Edge cases and known gaps
+
+- A journalist who changes employer between accreditation and election day: the accreditation is org-linked. The journalist must apply under the new org; the old badge is revoked on org transfer. Dual accreditation (journalist under two orgs simultaneously) is not permitted.
+- A broadcast crew (multiple individuals under one unit): each crew member requires a separate `MediaAccreditation` record. The org registers all crew members; the quota is per-org, not per-journalist.
+- MCK API downtime during the accreditation window: applications are queued in `PENDING` state. Once MCK API recovers, the accreditation officer runs the `mck_verification_retry` admin action to batch-verify pending orgs. Individual manually verified organisations can be fast-tracked by the officer with a manual `mck_verified_at` override and a documented justification.
+- Accreditation for digital-only media (online news, podcasts): `org_type = ONLINE` is supported. MCK membership requirements for online media are determined by the MCK Act; if an online outlet is not MCK-registered, accreditation follows the manual verification path.
+
+---
+
+*Module documentation version: 1.0. Last updated: 2026-08-22. Review before each election cycle to verify crate paths, OpenAPI contract versions, integration endpoint URLs, and statutory rule offsets remain current.*
+
+**Performance targets**: All read endpoints respond within 200ms at p95 under 100 concurrent users. Write endpoints (including HSM-signing paths) respond within 1,000ms at p95. Bulk operations (roster upload, CSV import) are async with a job status poll endpoint.

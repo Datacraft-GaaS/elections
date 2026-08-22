@@ -146,4 +146,6 @@ Runbooks under `docs/runbooks/`:
 
 Dashboards: `platform/observability/support-admin-svc/grafana-intent.json` (validation rate, ambiguous queue depth, rejection rate per station, z-score outlier count). SLO: 99.9% validation event before delete; ambiguous review SLA breach rate <1%; z-score outlier anchor lag <90 s.
 
+Human-in-the-loop guarantee: the A4 vision model is advisory only; a human officer must confirm every reason code before it is finalised and before M09 accepts the ballot in the tally. No fully-automated void decision is accepted under any operating mode.
+
 Related: `docs/plans/modules/intent-preservation.md`; `services/support-admin-svc/docs/CAPABILITIES.md`; edge-case matrix EC-INT-* in `docs/plans/08-edge-case-matrix.md`.

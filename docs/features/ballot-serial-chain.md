@@ -134,3 +134,32 @@ Runbooks under `docs/runbooks/`:
 - `reconciliation-failure-adjudication.md` -- Returning Officer steps when balance check fails.
 
 Related documents: full spec at `docs/plans/modules/ballot-serial-chain.md`; service capability catalogue at `services/rts-svc/docs/CAPABILITIES.md`; M39 at `docs/features/ballot-printing-chain.md`; M10 at `docs/features/rts-backend.md`.
+
+### Reconciliation balance formula
+
+```
+PASS condition: issued_count == votes_cast + spoilt_count + unused_returned_count
+
+Where:
+  issued_count          = IssuanceReceipt.issued_count
+  votes_cast            = count of BVI check-in events for station (from M06)
+  spoilt_count          = count of SpoiltBallotEvent rows for assignment
+  unused_returned_count = presiding officer count of unused ballots returned
+```
+
+M06 feeds `votes_cast` to M63 via a gRPC call at reconciliation time. If M06 is unavailable, reconciliation is blocked until M06 recovers; this is a deliberate design choice to prevent a presiding officer from self-reporting `votes_cast` which would remove the cross-check.
+
+### Result-hold state machine
+
+```
+assignment created -> result_hold = true
+      -> IssuanceReceipt recorded (no hold change)
+      -> SpoiltBallotEvent recorded (no hold change)
+      -> Reconciliation submitted:
+            -> balance_check PASS -> result_hold = false
+            -> balance_check FAIL -> result_hold = true (remains blocked)
+      -> Override (exceptional) -> result_hold = false
+         (requires RO JWT + Commissioner HSM; override event logged)
+```
+
+A station with `result_hold = true` appears in the Returning Officer dashboard as a red flag. The RO cannot proceed to Form 34B county tally until all stations in the constituency have `result_hold = false`.

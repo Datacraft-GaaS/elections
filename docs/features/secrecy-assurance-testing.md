@@ -125,3 +125,32 @@ Runbooks under `docs/runbooks/`:
 - `critical-finding-response.md` -- escalation path and readiness gate impact when a CRITICAL finding is raised.
 
 Related documents: full spec at `docs/plans/modules/secrecy-assurance-testing.md`; service capability catalogue at `services/ai-platform-svc/docs/CAPABILITIES.md`; M15 IAB dashboard at `docs/features/iab-dashboard.md`; M26 at `docs/features/anomaly-fraud-detection.md`.
+
+### Engagement type to attack surface mapping
+
+| Engagement type | Attack surfaces in scope | Key threat model |
+|---|---|---|
+| BALLOT_SECRECY | BVI kit, ABIS result, polling booth data flow | Vote traceability; linking voter identity to ballot |
+| COERCION_RESISTANCE | `*400#` USSD, BVI fallback PIN mode | Coercer observing or recording voter's choice |
+| VOTE_BUYING | M47 nomination fee flow, M22 finance disclosure | Cash-for-vote coordination channels |
+| INSIDER_THREAT | Admin panels, commissioner HSM access, staff M55 records | Privileged user manipulating results or voter records |
+| SOCIAL_ENGINEERING | Staff training (M38), email/phone phishing simulations | Credential compromise via non-technical attack |
+
+### Pre-election readiness gate
+
+M61 findings gate the overall election readiness assessment. The readiness checklist item `SEC_ASSURANCE_ATTESTED` is checked by the IAB liaison only when:
+
+- All `RedTeamEngagement` records for the current election cycle have `status = ATTESTED`.
+- No `Finding` with `severity = CRITICAL` has `status = OPEN`.
+- No `Finding` with `severity = HIGH` has `status = OPEN` for more than 30 days.
+
+The readiness dashboard (M15 IAB Dashboard) surfaces this gate status in real time.
+
+### Key metrics and SLOs
+
+| Metric | Target | Alert threshold |
+|---|---|---|
+| Engagement-to-attestation cycle time | <= 45 days | > 60 days: escalate to IAB chair |
+| CRITICAL finding mean time to remediation | <= 14 days | > 21 days: readiness gate blocked |
+| Clone destruction time after engagement close | <= 24 h | > 48 h: alert to security lead |
+| IAB attestation per finding turnaround | <= 7 days | > 10 days: escalate |

@@ -138,3 +138,22 @@ Runbooks under `docs/runbooks/`:
 - `seal-tamper-quarantine.md` -- investigation procedure for a seal tamper alert.
 
 Related documents: full spec at `docs/plans/modules/diaspora-ballot-physical-logistics.md`; service capability catalogue at `services/inventory-svc/docs/CAPABILITIES.md`; M24 diaspora voting at `docs/features/diaspora-voting.md`; M39 ballot printing at `docs/features/ballot-printing-chain.md`.
+
+### Container state machine
+
+```
+PACKED -> PRE_CLEARED -> DISPATCHED -> IN_TRANSIT -> ARRIVED -> OPENED -> RETURNED
+                                                             -> HOLD_IN_COUNTRY (suppresses return overdue alert)
+```
+
+Any transition that fails MFA reverts to the previous state and raises a `ContainerAlert: MFA_FAILURE`. Three consecutive MFA failures on the same container trigger an automatic `SEAL_TAMPER` alert even if the seal is reported intact, because repeated authentication failure is itself an anomaly signal.
+
+### Embassy readiness gate
+
+M65 feeds an embassy readiness status to M24 via the `eel.inventory.container_arrived.v1` event. M24's embassy polling station will not open (status `NOT_READY`) until:
+
+1. At least one `BallotContainer` for the embassy has `state = ARRIVED`.
+2. The `contents_manifest_hash` has been verified by the embassy officer.
+3. The presiding officer has acknowledged receipt via M63 `IssuanceReceipt`.
+
+All three conditions must hold. This prevents polling from starting at an embassy where ballot materials are still in transit.

@@ -137,3 +137,23 @@ Runbooks under `docs/runbooks/`:
 - `testimony-recording-minio-failure.md` -- fallback for recording upload failure.
 
 Related documents: full spec at `docs/plans/modules/parliamentary-judiciary-reporting.md`; service capability catalogue at `services/governance-svc/docs/CAPABILITIES.md`; M40 at `docs/features/election-court-it-interface.md`; M51 at `docs/features/result-declaration-certification.md`.
+
+### Statutory deadlines
+
+| Report or action | Deadline | Alert threshold |
+|---|---|---|
+| Annual report to Parliament | 90 days after financial year end | T-14 days: warning; T-7: escalation |
+| SC pre-registration (presidential election) | T+7 days after result declaration | T+5: warning; T+6: escalation |
+| Testimony preparation (officer notice) | 14 days before scheduled date | < 7 days notice: immediate escalation |
+| Petition evidence handover | Per court order deadline | T-2 days: warning |
+
+### JudiciaryHandover content types
+
+| Content type | Source module | Typical size |
+|---|---|---|
+| CERTIFIED_RESULTS | M51 | ~ 500 MB per election cycle |
+| MERKLE_PROOF | P05 transparency log | ~ 50 MB |
+| TRANSMISSION_LOG | M10 | ~ 2 GB |
+| AUDIT_TRAIL | `eel_bvr_audit_shadow`, `eel_rts_audit_shadow` | ~ 5 GB |
+
+Packages are compressed (zstd, Facebook 2015) before hashing; the hash covers the compressed archive, not the uncompressed content.

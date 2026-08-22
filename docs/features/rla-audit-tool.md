@@ -137,4 +137,14 @@ Runbooks under `docs/runbooks/`:
 
 Dashboards: `platform/observability/governance-svc/grafana-rla.json` (T-statistic per contest, sample completion rate, entropy source health, recount count). SLO alerts: T-statistic computation lag >60 s; entropy source count <3; recount order unsigned >30 min.
 
+Chaos scenarios under `chaos/scenarios/eel-rla-*.yaml`: NIST beacon unavailable (triggers HSM TRNG fallback); auditor Tauri desktop offline sync failure; T-statistic computation lag under high tally-report volume.
+
+Performance targets: T-statistic update < 2 s per TallyReport submission; sample list generation < 10 s for 100 000 ballots at p99; P05 round anchor lag < 60 s.
+
+Seed verification: the published seed (five XOR sources) and ballot manifest are sufficient for any third party to independently recompute the sample list and verify that M21's sample was not cherry-picked. The Tauri desktop app ships with the sample-generation algorithm and the signed manifest for exactly this purpose.
+
+SHANGRLA risk limit default 5% per Elections Act s.83. Any change to the risk limit requires IEBC Commissioner resolution and a new HSM-signed AuditRound configuration record before the next round opens.
+
+Auditor training requirement: each auditor must complete the RLA simulation in the Tauri desktop app against a synthetic election before being assigned to a live round; completion is recorded in the `AuditRound.auditor_roster` and the IAB chair must countersign the roster before the round opens.
+
 Related: `docs/plans/modules/rla-audit-tool.md`; `services/governance-svc/docs/CAPABILITIES.md`; edge-case matrix EC-RLA-* in `docs/plans/08-edge-case-matrix.md`.

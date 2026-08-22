@@ -141,4 +141,10 @@ Runbooks under `docs/runbooks/`:
 
 Dashboards: `platform/observability/biometric-edge-svc/grafana-diaspora.json` (station status by country, batch transmission lag, biometric event rate, pouch custody gap count). SLO: 100% roll freeze before kit dispatch; batch received within 7 days for all stations.
 
+Chaos scenarios under `chaos/scenarios/eel-diaspora-*.yaml`: embassy satellite link brownout during batch transmission; RFID pouch-custody gap injection; dual-clock skew > 30 s; HSM roll-freeze attempted after deadline.
+
+Performance targets: biometric match < 3 s on embassy kit at p99; batch transmission completion < 24 h from station close for all embassies; Form34A-D public publish < 30 min of digital transmission.
+
+Dual-timestamp display: all embassy kit UIs show both local time (station timezone) and EAT simultaneously; clerks must confirm EAT timestamp before finalising each Form34A-D record to prevent timezone-related ordering disputes.
+
 Related: `docs/plans/modules/diaspora-voting.md`; `services/biometric-edge-svc/docs/CAPABILITIES.md`; edge-case matrix EC-DIA-* in `docs/plans/08-edge-case-matrix.md`.

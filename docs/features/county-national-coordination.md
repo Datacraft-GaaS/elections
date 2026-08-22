@@ -128,3 +128,30 @@ Runbooks under `docs/runbooks/`:
 - `critical-incident-ecc-sla-breach.md` -- manual ECC escalation procedure.
 
 Related documents: full spec at `docs/plans/modules/county-national-coordination.md`; service capability catalogue at `services/governance-svc/docs/CAPABILITIES.md`; M16 ECC at `docs/features/election-command-centre.md`.
+
+### Incident severity and escalation matrix
+
+| Severity | Response SLA | ECC escalation | NCIC notification |
+|---|---|---|---|
+| LOW | 48 h acknowledgement | No | No |
+| MEDIUM | 8 h acknowledgement | No | No |
+| HIGH | 2 h acknowledgement | No (advisory feed) | No |
+| CRITICAL | 15 min acknowledgement; 60 s ECC event | Yes (hard) | If category = ELECTORAL |
+
+### MoU lifecycle states
+
+```
+DRAFT -> UNDER_REVIEW -> SIGNED -> ACTIVE -> EXPIRED / TERMINATED
+```
+
+A signed MoU transitions to `ACTIVE` when the SAML metadata exchange is confirmed. An `EXPIRED` MoU blocks further `CountyDataset` uploads from that county until renewal; the county officer sees a clear error message explaining the MoU status.
+
+County governments that have not completed SAML metadata exchange by T-120 days are escalated to the coordination officer for a ministerial intervention via `CoordinationIncident` category `INTER-AGENCY`.
+
+### Key metrics and SLOs
+
+| Metric | Target | Alert threshold |
+|---|---|---|
+| CRITICAL incident ECC delivery | <= 60 s | > 120 s: PagerDuty |
+| MoU active coverage | 47/47 counties by T-120 | < 47: escalation report to commissioner |
+| County dataset approval turnaround | <= 5 business days | > 10 days: alert to coordination officer |

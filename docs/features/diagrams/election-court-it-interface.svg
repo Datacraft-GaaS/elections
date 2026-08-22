@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">M40 Election Court IT Interface — Architecture Diagram</title>
+  <desc id="desc">Fifteen-item evidence bundles, petitioner access, supplementary requests, technical witnesses, and eCourt integration.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#f8f9fa"/>
+  <text x="600" y="36" font-family="Arial,sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#111">M40 Election Court IT Interface</text>
+  <text x="600" y="56" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#555">15-item evidence bundles · petitioner access · supplementary requests · technical witnesses · eCourt</text>
+
+  <!-- Personas -->
+  <circle cx="100" cy="115" r="18" fill="#d62728"/>
+  <text x="100" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Petitioner</text>
+  <text x="100" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">/ Lawyer</text>
+
+  <circle cx="280" cy="115" r="18" fill="#9467bd"/>
+  <text x="280" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">IEBC</text>
+  <text x="280" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Tech Witness</text>
+
+  <circle cx="450" cy="115" r="18" fill="#7f7f7f"/>
+  <text x="450" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Registrar</text>
+  <text x="450" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">(eCourt)</text>
+
+  <!-- Election Petition -->
+  <rect x="30" y="190" width="280" height="110" rx="8" fill="#fce7f3" stroke="#d62728" stroke-width="2"/>
+  <text x="170" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">ElectionPetition</text>
+  <text x="170" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">id, contest_id, petitioner_id_hash</text>
+  <text x="170" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">grounds[], filed_at, eCourt_ref</text>
+  <text x="170" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">status: FILED → ADMITTED → HEARD → DECIDED</text>
+  <text x="170" y="290" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">petition_filed.v1 emitted</text>
+  <line x1="100" y1="133" x2="130" y2="190" stroke="#d62728" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 15-item evidence bundle -->
+  <rect x="350" y="190" width="500" height="180" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="600" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f77b4">EvidenceBundle (15 items)</text>
+  <text x="600" y="238" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">1. Form 34A scans + Merkle proof</text>
+  <text x="600" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">2. KIEMS transmission log (signed)</text>
+  <text x="600" y="274" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">3. BVI audit log (HSM-signed)</text>
+  <text x="600" y="292" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">4. ABIS access log  5. Candidate register  6. Station map</text>
+  <text x="600" y="310" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">7. Tally chain  8. RLA report  9. Anomaly detection report</text>
+  <text x="600" y="328" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">10. Ballot serial chain  11. Pouch RFID custody  12. Kit telemetry</text>
+  <text x="600" y="346" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">13. Observer reports  14. Agent disputes  15. Canary log</text>
+  <text x="600" y="362" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">bundle_hash: SHA-256(all items) — HSM signed — T1-audit</text>
+  <rect x="825" y="190" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="836" y="206" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="310" y1="245" x2="350" y2="245" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Petitioner access portal -->
+  <rect x="30" y="420" width="280" height="110" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="170" y="446" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">Petitioner Access Portal</text>
+  <text x="170" y="466" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">time-limited JWT (72h)</text>
+  <text x="170" y="486" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">read-only scoped to petition</text>
+  <text x="170" y="506" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">GET /v1/court/petitions/{id}/bundle</text>
+  <text x="170" y="520" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">download: ZIP of evidence items</text>
+  <line x1="100" y1="133" x2="100" y2="420" stroke="#d62728" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+  <line x1="600" y1="370" x2="250" y2="420" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Supplementary requests -->
+  <rect x="350" y="420" width="300" height="110" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2"/>
+  <text x="500" y="446" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">Supplementary Requests</text>
+  <text x="500" y="466" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">POST /v1/court/petitions/{id}/supp</text>
+  <text x="500" y="486" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">court_order_ref required</text>
+  <text x="500" y="506" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">48h SLA for document production</text>
+  <text x="500" y="520" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">supplementary_request.v1</text>
+  <line x1="500" y1="370" x2="500" y2="420" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Technical witness -->
+  <rect x="690" y="420" width="280" height="110" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="830" y="446" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">Technical Witness Portal</text>
+  <text x="830" y="466" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">IEBC IT staff: prepare statement</text>
+  <text x="830" y="486" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">statement_hash signed by HSM</text>
+  <text x="830" y="506" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">tech_witness_statement.v1</text>
+  <text x="830" y="520" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">IEBC_LEGAL_OFFICER role</text>
+  <rect x="945" y="420" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="956" y="436" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="280" y1="133" x2="790" y2="420" stroke="#9467bd" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+  <line x1="700" y1="370" x2="760" y2="420" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- eCourt integration -->
+  <rect x="350" y="600" width="620" height="100" rx="8" fill="#fff" stroke="#7f7f7f" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="660" y="626" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#7f7f7f">eCourt (Judiciary — external)</text>
+  <text x="660" y="646" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#7f7f7f">SFTP push: evidence bundle + statements</text>
+  <text x="660" y="666" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#7f7f7f">signed manifest: bundle_hash + HSM cert</text>
+  <text x="660" y="682" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">court_document_submitted.v1 — non-blocking; manual path if API down</text>
+  <line x1="450" y1="133" x2="660" y2="600" stroke="#7f7f7f" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+  <line x1="500" y1="530" x2="580" y2="600" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="830" y1="530" x2="740" y2="600" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Kafka -->
+  <rect x="350" y="740" width="620" height="40" rx="8" fill="#f3f4f6" stroke="#7f7f7f" stroke-width="1.5"/>
+  <text x="660" y="758" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Kafka: petition_filed.v1 · bundle_assembled.v1 · court_document_submitted.v1</text>
+  <text x="660" y="774" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#555">event-source retention — signed — exactly-once</text>
+  <line x1="660" y1="700" x2="660" y2="740" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Legend -->
+  <rect x="30" y="580" width="290" height="180" rx="6" fill="#fff" stroke="#ccc" stroke-width="1"/>
+  <text x="175" y="600" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Legend</text>
+  <rect x="42" y="610" width="20" height="14" rx="2" fill="#fce7f3" stroke="#d62728"/>
+  <text x="70" y="622" font-family="Arial,sans-serif" font-size="12" fill="#333">ElectionPetition</text>
+  <rect x="42" y="630" width="20" height="14" rx="2" fill="#dbeafe" stroke="#1f77b4"/>
+  <text x="70" y="642" font-family="Arial,sans-serif" font-size="12" fill="#333">Evidence bundle (15 items)</text>
+  <rect x="42" y="650" width="20" height="14" rx="2" fill="#dcfce7" stroke="#2ca02c"/>
+  <text x="70" y="662" font-family="Arial,sans-serif" font-size="12" fill="#333">Petitioner access portal</text>
+  <rect x="42" y="670" width="20" height="14" rx="2" fill="#ede9fe" stroke="#9467bd"/>
+  <text x="70" y="682" font-family="Arial,sans-serif" font-size="12" fill="#333">Tech witness / HSM stmt</text>
+  <rect x="42" y="690" width="20" height="14" rx="2" fill="#fff" stroke="#7f7f7f" stroke-dasharray="4,2"/>
+  <text x="70" y="702" font-family="Arial,sans-serif" font-size="12" fill="#333">eCourt (external)</text>
+  <rect x="42" y="710" width="14" height="14" rx="2" fill="#9467bd"/>
+  <text x="62" y="722" font-family="Arial,sans-serif" font-size="12" fill="white">🔒</text>
+  <text x="70" y="722" font-family="Arial,sans-serif" font-size="12" fill="#333">HSM / Merkle anchor</text>
+  <circle cx="52" cy="742" r="7" fill="#d62728"/>
+  <text x="70" y="746" font-family="Arial,sans-serif" font-size="12" fill="#333">Petitioner / registrar</text>
+</svg>

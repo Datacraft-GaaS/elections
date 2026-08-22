@@ -136,3 +136,24 @@ Runbooks under `docs/runbooks/`:
 - `ifmis-sync-failure.md` -- manual IFMIS reconciliation when automated sync fails.
 
 Related documents: full spec at `docs/plans/modules/budget-expenditure.md`; service capability catalogue at `services/support-admin-svc/docs/CAPABILITIES.md`.
+
+### Key metrics and SLOs
+
+| Metric | Target | Alert threshold |
+|---|---|---|
+| IFMIS sync success rate | >= 99% | < 99%: alert to payable officer |
+| CoB report submission lead time | >= 5 days before deadline | < 3 days: warning |
+| SoD violation attempt rate | 0 per quarter | Any attempt: immediate audit alert |
+| Payment voucher end-to-end approval time | <= 5 business days | > 7 days: escalate to CFO |
+
+### SoD role matrix
+
+The three-officer approval chain maps to distinct Postgres-level roles and SpiceDB permissions:
+
+| Step | SpiceDB role | Postgres role | Cannot overlap with |
+|---|---|---|---|
+| Recommend | `ACCOUNTS_OFFICER` | `accounts_writer` | approved_by, authorized_by |
+| Approve | `BUDGET_APPROVER` | `budget_approver` | recommended_by, authorized_by |
+| Authorize | `CFO` | `cfo_authorizer` | recommended_by, approved_by |
+
+The constraint is enforced both at the application layer (SpiceDB) and at the database layer (Postgres `CHECK` constraint). Breaking one layer still fails at the other.

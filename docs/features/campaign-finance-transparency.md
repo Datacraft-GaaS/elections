@@ -146,4 +146,6 @@ Runbooks under `docs/runbooks/`:
 
 Dashboards: `platform/observability/transparency-svc/grafana-finance.json` (disclosure rate, ceiling breach count, CBK cross-ref lag, anomaly flag queue depth). SLO alerts: `platform/observability/transparency-svc/slo-alerts.yaml` (99.9% burn rate; CBK lag >48 h; ceiling breach unacknowledged >4 h).
 
+POCAMLA 2009 pattern detection in M22 applies to transactions > KES 1 million that involve multiple entities with overlapping beneficial ownership; the detection model (M28 B-family) flags structuring patterns (smurfing below the reporting threshold) for SAR review. PPADA 2015 procurement records are cross-referenced to identify dual-use vendor payments.
+
 Related documents: full spec at `docs/plans/modules/campaign-finance-transparency.md`; service capability catalogue at `services/transparency-svc/docs/CAPABILITIES.md`; edge-case matrix rows tagged EC-FIN-* in `docs/plans/08-edge-case-matrix.md`.

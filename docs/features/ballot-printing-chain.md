@@ -143,3 +143,9 @@ Runbooks under `docs/runbooks/`:
 - `station-recon-mismatch.md` - resolution protocol for reconciliation discrepancies.
 
 Related documents: spec at `docs/plans/modules/ballot-printing-chain.md`; capability catalogue at `services/inventory-svc/docs/CAPABILITIES.md`; M40 evidence bundle at `docs/features/election-court-it-interface.md`.
+
+---
+
+*Module documentation version: 1.0. Last updated: 2026-08-22. Review before each election cycle to verify crate paths, OpenAPI contract versions, integration endpoint URLs, and statutory rule offsets remain current.*
+
+**Performance targets**: All read endpoints respond within 200ms at p95 under 100 concurrent users. Write endpoints (including HSM-signing paths) respond within 1,000ms at p95. Bulk operations (roster upload, CSV import) are async with a job status poll endpoint.

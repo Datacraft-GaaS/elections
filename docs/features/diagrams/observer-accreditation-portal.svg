@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">M43 Observer Accreditation Portal — Architecture Diagram</title>
+  <desc id="desc">ObserverOrganisation, IndividualObserver, late-roster handling, QR badge issuance and sync.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#f8f9fa"/>
+  <text x="600" y="36" font-family="Arial,sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#111">M43 Observer Accreditation Portal</text>
+  <text x="600" y="56" font-family="Arial,sans-serif" font-size="14" text-anchor="middle" fill="#555">ObserverOrganisation · IndividualObserver · late-roster handling · QR badge sync</text>
+
+  <!-- Personas -->
+  <circle cx="100" cy="115" r="18" fill="#2ca02c"/>
+  <text x="100" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Observer</text>
+
+  <circle cx="280" cy="115" r="18" fill="#ff7f0e"/>
+  <text x="280" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Org Focal</text>
+  <text x="280" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Point</text>
+
+  <circle cx="450" cy="115" r="18" fill="#1f77b4"/>
+  <text x="450" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">IEBC</text>
+  <text x="450" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Accreditation</text>
+
+  <!-- ObserverOrganisation -->
+  <rect x="30" y="190" width="300" height="120" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="180" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">ObserverOrganisation</text>
+  <text x="180" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">id, name, type: LOCAL/INTERNATIONAL</text>
+  <text x="180" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">mandate_letter_hash (HSM-signed)</text>
+  <text x="180" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">accreditation_status, max_observers</text>
+  <text x="180" y="296" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">focal_point_contact</text>
+  <text x="180" y="306" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">org_accredited.v1 emitted</text>
+  <line x1="280" y1="133" x2="220" y2="190" stroke="#ff7f0e" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="450" y1="133" x2="270" y2="190" stroke="#1f77b4" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- IndividualObserver -->
+  <rect x="370" y="190" width="380" height="120" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
+  <text x="560" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f77b4">IndividualObserver</text>
+  <text x="560" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">id, org_id, name_hash, nationality</text>
+  <text x="560" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">passport_hash, station_assignments[]</text>
+  <text x="560" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">status: PENDING/APPROVED/REVOKED</text>
+  <text x="560" y="296" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">POST /v1/observers/individuals</text>
+  <text x="560" y="306" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">observer_approved.v1 emitted</text>
+  <line x1="100" y1="133" x2="400" y2="190" stroke="#2ca02c" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="330" y1="250" x2="370" y2="250" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Late-roster handling -->
+  <rect x="790" y="190" width="380" height="120" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2"/>
+  <text x="980" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">Late-Roster Handling</text>
+  <text x="980" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">after standard deadline (T-48h)</text>
+  <text x="980" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">late_roster_waiver required (Commissioner)</text>
+  <text x="980" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">expedited 4h review SLA</text>
+  <text x="980" y="296" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">late_accreditation.v1 emitted</text>
+  <text x="980" y="306" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">max 10% of org quota</text>
+  <line x1="750" y1="250" x2="790" y2="250" stroke="#ff7f0e" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- IEBC Review Flow -->
+  <rect x="30" y="380" width="300" height="110" rx="8" fill="#fce7f3" stroke="#d62728" stroke-width="2"/>
+  <text x="180" y="406" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">IEBC Review Flow</text>
+  <text x="180" y="426" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">background check integration</text>
+  <text x="180" y="446" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">DCI / Interpol stub (external)</text>
+  <text x="180" y="466" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">PATCH /v1/observers/{id}/decide</text>
+  <text x="180" y="480" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">ACCREDITATION_OFFICER role</text>
+  <line x1="180" y1="310" x2="180" y2="380" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- QR Badge -->
+  <rect x="370" y="380" width="380" height="130" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
+  <text x="560" y="406" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">QR Badge (HSM-signed)</text>
+  <text x="560" y="426" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">observer_id + org_id + zones + HSM sig</text>
+  <text x="560" y="446" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">badge_issued.v1 on APPROVED</text>
+  <text x="560" y="466" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">physical laminate + digital QR (PDF)</text>
+  <text x="560" y="486" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">verify: GET /v1/observers/{id}/badge/verify</text>
+  <text x="560" y="500" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">CRL check on each scan — RFC 5280</text>
+  <rect x="725" y="380" width="22" height="22" rx="3" fill="#9467bd"/>
+  <text x="736" y="396" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
+  <line x1="330" y1="430" x2="370" y2="430" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="560" y1="310" x2="560" y2="380" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Badge Sync -->
+  <rect x="790" y="380" width="380" height="130" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
+  <text x="980" y="406" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">Badge Sync</text>
+  <text x="980" y="426" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">offline-capable station scanner app</text>
+  <text x="980" y="446" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">badge cache sync every 10 min</text>
+  <text x="980" y="466" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">revoked set pushed via SSE</text>
+  <text x="980" y="486" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">M34 observer app reads badge status</text>
+  <text x="980" y="500" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">badge_sync.v1 emitted every 10 min</text>
+  <line x1="980" y1="310" x2="980" y2="380" stroke="#2ca02c" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="750" y1="445" x2="790" y2="445" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- DCI external -->
+  <rect x="30" y="560" width="300" height="70" rx="8" fill="#fff" stroke="#7f7f7f" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="180" y="586" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#7f7f7f">DCI / Interpol (external)</text>
+  <text x="180" y="606" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#7f7f7f">background check stub</text>
+  <text x="180" y="620" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">non-blocking; manual path</text>
+  <line x1="180" y1="490" x2="180" y2="560" stroke="#7f7f7f" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+
+  <!-- Kafka -->
+  <rect x="370" y="570" width="800" height="60" rx="8" fill="#f3f4f6" stroke="#7f7f7f" stroke-width="1.5"/>
+  <text x="770" y="596" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Kafka: org_accredited.v1 · observer_approved.v1 · badge_issued.v1 · badge_sync.v1 · late_accreditation.v1</text>
+  <text x="770" y="614" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#555">operational retention — signed — at-least-once</text>
+  <line x1="770" y1="510" x2="770" y2="570" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Legend -->
+  <rect x="30" y="680" width="540" height="100" rx="6" fill="#fff" stroke="#ccc" stroke-width="1"/>
+  <text x="300" y="700" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">Legend</text>
+  <rect x="42" y="710" width="20" height="14" rx="2" fill="#dcfce7" stroke="#2ca02c"/>
+  <text x="70" y="722" font-family="Arial,sans-serif" font-size="12" fill="#333">ObserverOrganisation</text>
+  <rect x="42" y="730" width="20" height="14" rx="2" fill="#dbeafe" stroke="#1f77b4"/>
+  <text x="70" y="742" font-family="Arial,sans-serif" font-size="12" fill="#333">IndividualObserver</text>
+  <rect x="42" y="750" width="20" height="14" rx="2" fill="#fef9c3" stroke="#ff7f0e"/>
+  <text x="70" y="762" font-family="Arial,sans-serif" font-size="12" fill="#333">Late-roster handling</text>
+  <rect x="220" y="710" width="20" height="14" rx="2" fill="#ede9fe" stroke="#9467bd"/>
+  <text x="248" y="722" font-family="Arial,sans-serif" font-size="12" fill="#333">QR badge / HSM</text>
+  <rect x="220" y="730" width="20" height="14" rx="2" fill="#dcfce7" stroke="#2ca02c"/>
+  <text x="248" y="742" font-family="Arial,sans-serif" font-size="12" fill="#333">Badge sync</text>
+  <rect x="220" y="750" width="20" height="14" rx="2" fill="#fff" stroke="#7f7f7f" stroke-dasharray="4,2"/>
+  <text x="248" y="762" font-family="Arial,sans-serif" font-size="12" fill="#333">External: DCI / Interpol</text>
+  <rect x="400" y="710" width="14" height="14" rx="2" fill="#9467bd"/>
+  <text x="420" y="722" font-family="Arial,sans-serif" font-size="12" fill="white">🔒</text>
+  <text x="428" y="722" font-family="Arial,sans-serif" font-size="12" fill="#333">HSM / CRL anchor</text>
+</svg>

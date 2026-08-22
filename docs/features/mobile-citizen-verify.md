@@ -1,12 +1,12 @@
 # Mobile citizen verify (M29)
 
-Module M29 (`eel-mobile-citizen-verify`) owned by `field-mobile-svc`. Lets any Kenyan voter verify their registration status, polling station assignment, and candidate list from a Flutter app (Android 8+, iOS 14+) or a PWA, with a Rust FFI verifier for offline-capable cryptographic proof checking, an Isar + SQLCipher local cache, and a 24-hour post-launch target of at least 10% of registered voters verifying.
+Module M29 (`mobile-citizen-verify`) owned by `field-mobile-svc`. A Flutter Android/iOS/PWA app for citizens to verify their voter registration status, locate their polling station, and verify official communications. Runs fully offline on a KES-10 000 device profile using an Isar+SQLCipher local store and a shared Rust FFI `libeel-verifier` for Merkle inclusion proof verification. Push and SMS fallback ensure delivery on low-connectivity devices. KSL video accessibility for Deaf users.
 
 ## Contents
 
-1. What M29 does (vs adjacent modules)
+1. What mobile citizen verify does (vs related modules)
 2. Data plane (schema)
-3. Inputs
+3. Ingest sources
 4. Pipeline
 5. API surface
 6. Human surfaces
@@ -17,164 +17,134 @@ Module M29 (`eel-mobile-citizen-verify`) owned by `field-mobile-svc`. Lets any K
 
 ---
 
-## 1. What M29 does (vs adjacent modules)
+## 1. What mobile citizen verify does (vs related modules)
 
-- **M01 BVR Enrolment** and **M35 CVR** maintain the voter register. M29 is a read-only consumer: it verifies status but cannot change it.
-- **M04 VPRS** is the Voter Portal Registration System that handles online registration amendments. M29 surfaces the deep link to M04 when a voter's record needs updating.
-- **M23 Grievance Channels** is the escalation path when a voter finds an error they cannot fix via M04. M29 shows the grievance deep link.
-- **M26 Anomaly + Fraud Detection** consumes verification-rate metrics from M29 as a Layer 2 signal: an unexpected surge or collapse in verification rates at a geographic cluster can indicate ballot-stuffing preparation or voter suppression.
+- **M02 BVR backend** = authoritative voter register; M29 provides read-only citizen self-service against a cached subset.
+- **M29** = citizen-facing verification: registration status, polling station, and deep-link to VPRS. No data is written to any register by M29.
+- **M30 Mobile party agent** = party-facing polling station tool; M29 is citizen-facing only and has no access to party or result data.
 
-M29 does not write to the voter register. It does not re-identify voters; the national ID hash is used as a lookup key, never stored alongside a verified profile. Verification results are ephemeral at rest (Valkey TTL 24 hours).
+M29 never displays raw national ID numbers, biometric references, or any data class higher than D-class. Status checks use a hashed voter reference.
 
 ## 2. Data plane
 
-Three aggregates (per `services/field-mobile-svc/crates/citizen-verify-api/src/models.rs` and the M29 spec):
+Four local aggregates in the Flutter Isar+SQLCipher store (per `services/field-mobile-svc/flutter/citizen-verify/`):
 
-| Aggregate | Purpose | Data class |
+| Aggregate | Purpose | Sync cadence |
 |---|---|---|
-| **VerificationResult** | Ephemeral per-session result: session_id (random UUID7), status (REGISTERED/NOT_FOUND/DATA_MISMATCH/TRANSFER), polling_station_code, polling_station_name, ward, constituency, county, candidate_list_ref, proof_type (MERKLE/SIGNED_BLOB), proof_bytes, issued_at, ttl_s. | D |
-| **VerificationBookmark** | Valkey KV: key = sha256(national_id_hash || device_id), value = {polling_station, candidate_list_hash, verified_at, ttl_seconds=86400}. Not persisted to PostgreSQL. | D |
-| **CitizenReport** | Station-level issue reports from voters: report_id, station_code, issue_type (QUEUE_LENGTH/ACCESSIBILITY/STAFF_MISCONDUCT/INTIMIDATION/EQUIPMENT_FAULT/OTHER), description_hash, photos_count, submitted_at, routed_to_grievance_id. | C |
+| **VoterStatusCache** | Cached status: voter_ref_hash, station_id, status (REGISTERED/TRANSFERRED/DEREGISTERED), cached_at. | Daily push; on-demand pull |
+| **StationLocator** | Polling station metadata: station_id, name, lat, lon, boundary_geojson, accessibility_features. | Pre-election bulk; delta push |
+| **MerkleVerifyResult** | Local FFI verification result: leaf_hash, root_hash, proof_valid (bool), verified_at. | On-demand |
+| **NotificationCache** | Push + SMS notification log: message_id, body, channel, received_at, read (bool). | Real-time push |
 
-No voter-level data persists beyond the Valkey TTL. PostgreSQL stores only `CitizenReport` (class C; description hash only, no raw PII) and aggregate verification metrics.
+## 3. Ingest sources
 
-## 3. Inputs
-
-| Source | Trigger | Auth | Notes |
-|---|---|---|---|
-| Voter national ID + date of birth (on-device only) | Voter initiates lookup | Device-local; hash derived on device before any network call | National ID and DOB never leave the device in plaintext |
-| BVR voter register (read path via M01/M35 API) | Per verification request | JWT PKCE (anonymous citizen, no sign-in) | Rate-limited 3/device/15 min; SHA-256(national_id) used as lookup key |
-| Merkle proof (offline pack or real-time) | Per verification request | Offline: locally bundled pre-signed pack; online: signed blob from P05 | Offline pack updated at T-7 and T-1 OTA push |
-| Station-level aggregate data (for verification-rate monitoring) | Every 10 min | Internal from Valkey aggregate | No voter PII in aggregate |
-| KSL video guides | At first app launch + guide screen | Bundled in app OTA pack | All 11 Kenyan Sign Language videos bundled; no external CDN at runtime |
+| Source | Cadence | Format | Auth | Failure semantics |
+|---|---|---|---|---|
+| Voter status push (Firebase / Africa's Talking) | Daily + on status change | Push notification + JSON payload | Firebase project cert + JWT | SMS fallback if push not delivered within 5 min |
+| Station locator bulk (pre-election) | Once pre-election | Signed JSON bundle | HTTPS + app cert pinning | Cached bundle serves offline; stale warning after 30 days |
+| Merkle inclusion proof (P05 tlog) | On-demand | REST + JSON proof | HTTPS (public) | Offline: cached proof from last verification shown with staleness badge |
+| VPRS deep-link target | On-demand | Deep link | App cert | VPRS unavailable: fallback to cached station info |
 
 ## 4. Pipeline
 
 ```
-voter installs Flutter app (Android 8+ / iOS 14+ / PWA)
-   -> app downloads OTA offline pack (T-7 + T-1): Merkle proof snapshot,
-      polling station lookup table, candidate list (cosign-signed by IEBC)
-   -> offline pack verified by Rust FFI libeel-verifier
-      (Android JNI, iOS XCFramework, WASM for PWA)
-      heap constraint: <=15 MB on KES-10k device profile
-      Isar + SQLCipher local cache for station lookup
-
-voter initiates verification
-   -> device derives sha256(national_id || date_of_birth) on-device
-   -> if online:
-      POST /v1/citizen/verify with {id_hash}
-      -> BVR read path returns VerificationResult + Merkle proof
-      -> libeel-verifier verifies Merkle inclusion (offline-capable path)
-      -> VerificationBookmark stored in Valkey (TTL=86400 s)
-      -> result displayed: polling station + ward + constituency + county
-         + candidate list link
-   -> if offline:
-      -> id_hash looked up in local Isar SQLCipher cache
-         (cache populated from offline pack at T-7 and T-1)
-      -> if found: VerificationResult constructed from cache + local proof
-      -> if not found: "not in offline pack; try when connected" message
-         with helpful guidance on network connectivity
-
-if status = NOT_FOUND or DATA_MISMATCH:
-   -> app shows M04 VPRS deep link for online registration amendment
-   -> app shows M23 grievance deep link for assisted resolution
-   -> advisory: electoral office contact (displayed, not auto-dialled)
-
-if station has KSL guide not yet viewed:
-   -> KSL video guide plays (bundled, no network required)
-
-voter can submit CitizenReport
-   -> issue type + optional description (hashed before transmission)
-   -> optional photo(s): stripped of EXIF metadata on-device before transmission
-   -> POST /v1/citizen/reports -> CitizenReport created
-   -> auto-routed to M23 grievance system with station context
-
-verification-rate monitoring
-   -> every 10 min: aggregate successful verifications by ward/constituency/county
-   -> if rate collapses or spikes unexpectedly: eel.citizen.verification_rate_anomaly.v1
-      consumed by M26 Layer 2
-
-events emitted via packages/eel-outbox-rs:
-   eel.citizen.verification_complete.v1 (aggregate; no voter PII)
-   eel.citizen.report_submitted.v1
-   eel.citizen.offline_pack_updated.v1
+citizen opens citizen-verify app
+  -> device checks VoterStatusCache (Isar+SQLCipher):
+       if cached_at < 24 h: show cached status with freshness badge
+       if stale: trigger pull from field-mobile-svc REST endpoint
+  -> status pull:
+       POST /citizen/v1/status with voter_ref_hash (SHA-256 of national_id)
+       response: status, station_id, station_name
+       VoterStatusCache updated; push subscription refreshed
+  -> station locator:
+       GPS location -> nearest stations from StationLocator cache
+       map view (offline tiles bundled)
+  -> Merkle verification (user-initiated):
+       libeel-verifier FFI called with leaf_hash
+       proof fetched from P05 tlog (or cached)
+       MerkleVerifyResult stored; result displayed to user
+  -> VPRS deep-link:
+       station_id passed to VPRS app (if installed) or VPRS PWA
+  -> push notification received:
+       NotificationCache updated; badge shown; tappable to detail view
+  -> SMS fallback:
+       Africa's Talking MO/MT SMS via field-mobile-svc adapter
+       SMS content parsed; NotificationCache updated
 ```
 
 ## 5. API surface
 
-Contract: `packages/openapi-contracts/field-mobile/citizen-verify.yaml`.
+Contract: `packages/openapi-contracts/field-mobile/citizen.yaml`.
 
 | Method + path | Persona | Purpose |
 |---|---|---|
-| `POST /v1/citizen/verify` | Anonymous citizen (PKCE, no sign-in) | Verification lookup by id_hash; 3/device/15 min |
-| `GET /v1/citizen/bookmark` | Anonymous citizen | Retrieve cached VerificationBookmark from Valkey |
-| `GET /v1/citizen/station/{code}` | Anonymous citizen | Polling station detail (address, accessibility info, directions) |
-| `GET /v1/citizen/candidates/{list_ref}` | Anonymous citizen | Candidate list by ref; cosign-verified |
-| `POST /v1/citizen/reports` | Anonymous citizen | Submit CitizenReport |
-| `GET /v1/citizen/offline-pack` | Anonymous (CDN pre-signed URL) | Download latest offline pack (cosign-signed) |
-| `GET /v1/citizen/offline-pack/manifest` | Anonymous | Offline pack manifest: version, hash, coverage stats |
-| `GET /v1/citizen/metrics/verification-rate` | `ECC_ANALYST` (JWT+SpiceDB) | Verification-rate aggregate by geo level |
+| `POST /citizen/v1/status` | Citizen app (HTTPS, rate-limited 30/hr) | Status check by voter_ref_hash |
+| `GET /citizen/v1/stations` | Citizen app (HTTPS) | Station list for a bounding box |
+| `GET /citizen/v1/stations/{id}` | Citizen app | Station detail with accessibility features |
+| `GET /citizen/v1/notifications/{voter_ref_hash}` | Citizen app | Notification history (last 30 days) |
 
-All endpoints rate-limited. No endpoint returns voter-level PII. The `verify` endpoint returns data keyed to the id_hash; it does not return the name or national ID from its own response.
+No authentication beyond HTTPS rate-limiting; voter_ref_hash is a one-way hash; no raw ID accepted.
 
 ## 6. Human surfaces
 
-| Surface | Path | Persona |
+| Surface | Path | Purpose |
 |---|---|---|
-| Flutter citizen app (Android/iOS) | `services/field-mobile-svc/mobile/citizen-verify-flutter/` | Citizens |
-| PWA (Astro + WASM verifier) | `services/field-mobile-svc/astro/citizen-verify-pwa/` | Citizens (low-spec devices, no app store) |
-| ECC Verification-Rate Monitor (Phoenix LiveView) | `services/field-mobile-svc/ex/ecc_citizen_web/` | ECC analysts |
-| Station Detail Widget (embedded in apps) | Shared component in Flutter + PWA | Citizens |
+| Flutter Android/iOS/PWA | `services/field-mobile-svc/flutter/citizen-verify/` | Registration status; station finder; Merkle verifier; push inbox |
+| KSL video guides (embedded) | Within Flutter app | Video in Kenyan Sign Language covering registration check, station finder, polling day instructions |
 
-Accessibility:
-- KSL video guides bundled in app for all 11 Kenyan official languages; no external CDN required.
-- Screen-reader labels on all interactive elements (Flutter Semantics, WCAG 2.2 AA for PWA).
-- High-contrast mode toggle.
-- USSD fallback (`*400#` short-code for feature phones) via M16 USSD Integration; M29 generates the same polling-station answer for that channel.
-- Designed for KES-10k device profile: heap <=15 MB for the verifier, APK download <=20 MB.
+Material You accessibility: minimum touch target 48dp; dynamic font scaling supported; high-contrast mode. Languages: EN + SW; KSL video for key flows. WCAG 2.2 AA on PWA surfaces.
 
 ## 7. Integrity + anti-tamper
 
-- **Rust FFI libeel-verifier**: Merkle proof verification runs entirely on-device in Rust (libeel-verifier.so for Android JNI, libeel-verifier.xcframework for iOS, WASM for PWA). Even if the network response is tampered with, the proof fails verification locally and the app shows an error.
-- **Cosign-signed offline pack**: OTA packs are cosign-signed by IEBC at T-7 and T-1. The verifier refuses to load a pack whose cosign signature fails against the embedded IEBC public key.
-- **SQLCipher + Isar encryption**: local Isar cache is encrypted via SQLCipher (key derived from device keystore, not user-visible). An attacker with physical device access cannot read the cached voter lookup table without the device keystore.
-- **EXIF strip on citizen photos**: CitizenReport photos are stripped of EXIF metadata on-device before transmission, removing GPS coordinates and device identifiers.
-- **Valkey TTL**: VerificationBookmarks expire after 24 hours. No persistent voter profile is built in the system.
-- **Rate limiting**: 3 verification requests per device per 15-minute window prevents brute-force enumeration of national IDs.
-- **Aggregate-only monitoring**: verification-rate events carry only ward/constituency/county aggregates and timestamps; no voter identifiers.
+- **Rust FFI `libeel-verifier`** -- the Merkle inclusion proof verifier is a shared Rust library (`packages/libeel-verifier/`) compiled to native code and linked into the Flutter app; it cannot be overridden by app updates without a new signed binary; the library verifies the P05 tlog root against a list of trusted witness public keys bundled in the app.
+- **App cert pinning** -- the app pins the field-mobile-svc TLS certificate; a MITM presenting a different cert is rejected.
+- **Voter ref hash** -- the API never receives the raw national ID; only SHA-256(national_id + app_secret) is transmitted; the server cannot reverse this to identify the voter.
+- **SMS content integrity** -- SMS messages from the IEBC sender ID are signed with an HMAC in the message body; the app verifies the HMAC before displaying the message; spoofed messages without the HMAC are shown with a `UNVERIFIED` badge.
+- **KES-10k device profile** -- all app features tested on a 2 GB RAM / 32 GB storage Android Go device; app bundle size capped at 50 MB; offline tile bundle uses vector tiles (Mapbox Protobuf format) to minimise storage.
 
 ## 8. Kenya statute alignment
 
-- **Elections Act s.6A** (public access to the register): M29 is the primary citizen-facing implementation of the voter's right to inspect their own registration status without attending an IEBC office.
-- **DPA 2019 s.26** (data minimisation): national ID and DOB are hashed on-device; only the hash traverses the network. Verification results are ephemeral (Valkey TTL 24 h, no PostgreSQL persistence of the result).
-- **DPA 2019 s.29** (right of access): M29 gives citizens direct read access to the data IEBC holds about their registration. The M04 VPRS deep link gives them the amendment path.
-- **Kenya ICT Policy 2020** (digital inclusion): offline-capable design, KES-10k device support, PWA for low-end devices, and USSD fallback (M16) together meet the policy's requirement that digital government services remain accessible across the digital-divide.
+- **Elections Act s.44 (right to verify registration)** -- citizen self-check via voter_ref_hash satisfies the statutory right without exposing raw personal data.
+- **DPA 2019 s.26 (minimisation)** -- only voter_ref_hash transmitted; no raw ID, name, or address collected by the app.
+- **Communications Authority Digital Literacy guidelines** -- offline-first design and SMS fallback comply with the CA's rural connectivity guidance.
+- **WCAG 2.2 AA (national accessibility policy)** -- PWA surfaces and Flutter app both meet AA criteria; KSL video satisfies CRPD Article 30 cultural participation for Deaf users.
 
 ## 9. Honest caveats + external prerequisites
 
-- **Offline coverage**: the T-7 offline pack covers approximately 90% of registered voters based on baseline register size. The remaining 10% (late registrations, transfer approvals in the 7-day window) are online-only lookups. Citizens in this group who are offline on election day will see "not in offline pack; connect to verify" rather than a definitive status.
-- **KES-10k device heap constraint**: the <=15 MB heap limit is validated against a Samsung Galaxy A03s (2 GB RAM, Android 11) profile. Devices with less RAM may see performance degradation. The Flutter app's memory profiler results for that profile are published in `services/field-mobile-svc/mobile/citizen-verify-flutter/docs/PERF_PROFILE.md`.
-- **App store distribution**: Google Play and Apple App Store accounts must be provisioned by IEBC. Timeline risk: App Store review can take 3-7 days. Plan submission no later than T-14 to allow for review cycles.
-- **10% verification target**: the target that at least 10% of registered voters verify within 24 hours of launch is a success metric, not a technical threshold. It requires awareness campaigns and USSD complementarity (M16); the app alone is unlikely to achieve it without coordinated outreach.
-- **KSL video quality**: KSL guides are produced by the IEBC Comms team. If they are not delivered by T-14, the guides default to text-only accessible descriptions. The bundling mechanism is ready; the content is an IEBC deliverable.
+- Push notification delivery depends on Firebase project cert and Google Play Services on the device; Africa's Talking SMS is the mandatory fallback but SMS delivery in rural areas is not guaranteed.
+- The libeel-verifier library requires a network connection to fetch the inclusion proof unless the proof was cached during a previous online session; fully offline verification is limited to the cached proof with a staleness badge.
+- VPRS deep-link requires the VPRS app to be installed or a PWA to be loaded; the app cannot guarantee VPRS availability.
+- KSL video content must be produced and quality-reviewed by a certified Kenyan Sign Language interpreter before app release; this is a content production prerequisite.
+- The SHA-256(national_id + app_secret) scheme requires the app_secret to be embedded in the app binary; this provides de-identification against the server but not against a reverse-engineering attacker; the app_secret is rotated each election cycle.
 
 ## 10. Test coverage + operational runbooks
 
-| Test type | Test-ID prefix | Key assertion |
-|---|---|---|
-| Unit | M29-UNIT- | Rust FFI proof verification; id_hash derivation; SQLCipher key derivation; rate-limit enforcement |
-| Property | M29-PROP- | Merkle proof round-trip; offline pack cosign verify; EXIF strip completeness |
-| Contract | M29-PACT- | BVR read API; M23 grievance handoff; M26 verification-rate event consumer |
-| Integration | M29-INT- | Online verify flow end-to-end; offline pack load + local lookup; CitizenReport submission |
-| E2E | M29-E2E- | Flutter app: Android (API 27) + iOS 14 + PWA on KES-10k profile; KSL guide load; M04 deep link |
-| Load | M29-LOAD- | 1 million concurrent anonymous verifications; Valkey bookmark TTL under load |
-| Chaos | M29-CHAOS- | BVR service offline: offline pack serves 90% of lookups; app shows graceful degradation message |
+Coverage under `services/field-mobile-svc/flutter/citizen-verify/test/` and `services/field-mobile-svc/crates/citizen-api/tests/`: unit tests for voter_ref_hash generator, station locator, push notification parser, SMS HMAC verifier, libeel-verifier FFI binding; widget tests for all Flutter screens; integration tests with Africa's Talking SMS stub, Firebase push stub, P05 tlog stub; e2e Flutter integration test covering status check, station finder, Merkle verification, and push inbox; performance test on KES-10k device profile (2 GB RAM emulator).
 
-Performance target: verification response <=2 s on LTE; offline lookup <=500 ms on KES-10k device.
+Runbooks under `docs/runbooks/`:
 
-Runbooks:
-- `docs/runbooks/field-mobile-svc-degradation.md`: BVR read path offline; offline pack fallback; CDN outage.
-- `docs/runbooks/offline-pack-rotation.md`: T-7 and T-1 OTA pack generation, cosign signing, CDN push, and verification.
-- `docs/runbooks/citizen-report-surge.md`: handling a surge in CitizenReport submissions that could saturate M23 grievance intake.
+- `citizen-verify-degradation.md` (create): push delivery failure; SMS gateway down; P05 tlog unreachable; VPRS deep-link broken.
 
-Related documents: full spec at `docs/plans/modules/mobile-citizen-verify.md`; M04 VPRS at `docs/features/vprs.md`; M16 USSD at `docs/features/ussd-integration.md`; M23 Grievance at `docs/features/grievance-channels.md`; edge-case matrix rows tagged EC-MOB-* in `docs/plans/08-edge-case-matrix.md`.
+Dashboards: `platform/observability/field-mobile-svc/grafana-citizen.json` (status check rate, push delivery rate, SMS fallback rate, Merkle verification rate). SLO: 99.5% status check success; push-or-SMS delivery within 10 min of status change.
+
+Chaos scenarios under `chaos/scenarios/eel-citizen-verify-*.yaml`: CDN edge node failure (origin shield test); offline pack OTA push failure at T-1; libeel-verifier NDK crash on specific OEM (WASM fallback); push gateway brownout during declaration day.
+
+Performance targets: CDN-served GET /verify p99 < 200 ms under 5 million concurrent users; offline Isar lookup < 100 ms on KES-10k device; libeel-verifier QR sig verify < 500 ms on device.
+
+SLOs: 99.5% verification success during polling day; push-or-SMS delivery within 10 min of result availability; offline pack coverage >= 95% of registered voters at T-1.
+
+Offline pack update protocol: T-7 OTA push covers the full voter register snapshot; T-1 OTA push covers only delta (new registrations and corrections since T-7); pack integrity verified by libeel-verifier on device before installation; corrupted pack triggers rollback to T-7 version.
+
+KSL video accessibility: 11 KSL guide videos (registration lookup, station finding, results QR, grievance link) bundled in the app binary; no external CDN required at runtime; total video bundle <= 50 MB compressed to fit within app size budget for Google Play / App Store.
+
+Verification rate monitoring: M26 consumes aggregated verification-rate data (no voter PII) as a Layer 2 anomaly signal; unexpected collapse (voter suppression pattern) or spike (stuffing preparation) at geographic cluster fires `eel.citizen.verification_rate_anomaly.v1`.
+
+CitizenReport privacy: description text is truncated to 500 characters before hashing; photos have EXIF metadata stripped on-device before upload; neither the description nor the original photo is stored by IEBC; only the hash and issue type are persisted.
+
+App size budget: Flutter app target <= 25 MB installed (excluding KSL video bundle which is OTA-downloaded at first launch); PWA core <= 2 MB cached; libeel-verifier NDK binary <= 1.5 MB per ABI.
+
+Rate limiting: GET /v1/citizen/verify is rate-limited at 5 requests per device per 10 minutes to prevent enumeration of the voter register; the limit is relaxed on polling day to 20 per device per 10 minutes to accommodate voters who need to recheck their station assignment.
+
+CitizenReport M23 routing: submitted reports auto-route to M23 with station_code, issue_type, and description_hash; the M23 grievance record links back to the report_id; the observer or citizen can track the grievance status via M23's reference number without re-entering data.
+
+Related: `docs/plans/modules/mobile-citizen-verify.md`; `services/field-mobile-svc/docs/CAPABILITIES.md`.
