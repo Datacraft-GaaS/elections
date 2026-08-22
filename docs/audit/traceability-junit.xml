@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="eel-traceability" tests="4444" failures="4419" errors="0">
-    <testsuite name="eel-traceability" tests="4444" disabled="0" errors="0" failures="4419">
+<testsuites name="eel-traceability" tests="4444" failures="4416" errors="0">
+    <testsuite name="eel-traceability" tests="4444" disabled="0" errors="0" failures="4416">
         <testcase name="AC-M03-01">
             <failure message="AC-M03-01: no tests found"/>
         </testcase>
@@ -3155,13 +3155,11 @@
             <failure message="FR-M12-011: no tests found"/>
         </testcase>
         <testcase name="FR-M12-012">
-            <failure message="FR-M12-012: no tests found"/>
         </testcase>
         <testcase name="FR-M12-013">
             <failure message="FR-M12-013: no tests found"/>
         </testcase>
         <testcase name="FR-M12-014">
-            <failure message="FR-M12-014: no tests found"/>
         </testcase>
         <testcase name="FR-M12-015">
             <failure message="FR-M12-015: no tests found"/>
@@ -7490,7 +7488,6 @@
             <failure message="FR-M47-005: no tests found"/>
         </testcase>
         <testcase name="FR-M47-006">
-            <failure message="FR-M47-006: no tests found"/>
         </testcase>
         <testcase name="FR-M47-007">
             <failure message="FR-M47-007: no tests found"/>

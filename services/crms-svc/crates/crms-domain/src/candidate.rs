@@ -184,6 +184,7 @@ impl Candidate {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use eel_trace_rs::trace;
 
     fn make_candidate() -> Candidate {
         Candidate::new(
@@ -199,6 +200,7 @@ mod tests {
         )
     }
 
+    #[trace("FR-M47-006")]
     #[test]
     fn submit_requires_payment() {
         let mut c = make_candidate();
@@ -208,6 +210,7 @@ mod tests {
         assert_eq!(c.status, CandidateStatus::Submitted);
     }
 
+    #[trace("FR-M12-012")]
     #[test]
     fn full_clearance_lifecycle() {
         let mut c = make_candidate();
@@ -220,6 +223,7 @@ mod tests {
         assert_eq!(c.status, CandidateStatus::Gazetted);
     }
 
+    #[trace("FR-M12-014")]
     #[test]
     fn cannot_withdraw_after_gazette() {
         let mut c = make_candidate();
