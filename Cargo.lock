@@ -2173,6 +2173,7 @@ name = "crms-domain"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "eel-trace-rs",
  "hex",
  "serde",
  "serde_json",
@@ -4850,6 +4851,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "eel-trace-rs"
+version = "0.1.0"
+
+[[package]]
 name = "eel-wcag-audit"
 version = "0.1.0"
 dependencies = [
@@ -5083,6 +5088,10 @@ dependencies = [
  "cfg-if",
  "libc",
 ]
+
+[[package]]
+name = "finance-transparency"
+version = "0.1.0"
 
 [[package]]
 name = "find-msvc-tools"
@@ -11555,6 +11564,7 @@ dependencies = [
  "anyhow",
  "axum 0.8.9",
  "chrono",
+ "eel-crypto-rs",
  "hex",
  "prost 0.13.5",
  "serde",
