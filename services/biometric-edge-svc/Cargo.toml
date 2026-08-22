@@ -7,6 +7,7 @@ members = [
     "crates/edge-api",
     "crates/kit-attest",
     "crates/diaspora",
+    "crates/sensor-driver",
 ]
 
 [workspace.package]
