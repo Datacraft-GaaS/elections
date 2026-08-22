@@ -36,3 +36,4 @@ eel-outbox-rs     = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true }
+eel-trace-rs = { workspace = true }

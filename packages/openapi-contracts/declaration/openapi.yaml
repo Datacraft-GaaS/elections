@@ -39,6 +39,7 @@ paths:
   /api/v1/declarations:
     post:
       operationId: createDeclaration
+      x-handler-bound: rts-svc.declaration.initiate_declaration
       summary: "Create a new result declaration"
       description: |
         Initialises a declaration record for a given election position scope.
@@ -110,6 +111,7 @@ paths:
   /api/v1/declarations/{id}:
     get:
       operationId: getDeclaration
+      x-handler-bound: rts-svc.declaration.get_declaration
       summary: "Retrieve a declaration by ID"
       description: |
         Returns the full declaration record. Responds with both
@@ -165,6 +167,7 @@ paths:
   /api/v1/declarations/{id}/declare:
     put:
       operationId: commitDeclaration
+      x-handler-bound: rts-svc.declaration.declare_result
       summary: "Commit a result declaration (declare winner)"
       description: |
         Transitions declaration status from PENDING to DECLARED. Records
@@ -244,6 +247,7 @@ paths:
   /api/v1/declarations/{id}/runoff:
     put:
       operationId: declareRunoff
+      x-handler-bound: rts-svc.declaration.set_runoff
       summary: "Mark declaration as requiring a runoff election"
       description: |
         Transitions declaration status to RUNOFF_REQUIRED when no candidate
@@ -321,6 +325,7 @@ paths:
   /api/v1/declarations/{id}/tie:
     put:
       operationId: declareTie
+      x-handler-bound: rts-svc.declaration.set_tie
       summary: "Mark declaration as a tied result"
       description: |
         Transitions declaration status to TIE when two or more candidates
@@ -399,6 +404,7 @@ paths:
   /api/v1/declarations/{id}/amend:
     post:
       operationId: amendDeclaration
+      x-handler-bound: rts-svc.declaration.amend_declaration
       summary: "Amend a declared result (post-declaration correction)"
       description: |
         Submits a post-declaration amendment with corrected counts and
@@ -479,6 +485,7 @@ paths:
   /api/v1/declarations/{id}/certificate:
     get:
       operationId: getDeclarationCertificate
+      x-handler-bound: rts-svc.declaration.get_certificate
       summary: "Retrieve the HSM-signed winner certificate"
       description: |
         Returns the winner certificate for a DECLARED declaration. The
@@ -546,6 +553,7 @@ paths:
   /api/v1/declarations/{id}/petition-window:
     get:
       operationId: getPetitionWindow
+      x-handler-bound: rts-svc.declaration.get_petition_window
       summary: "Query the post-declaration petition filing window"
       description: |
         Public endpoint returning the petition window open/close timestamps,
@@ -592,6 +600,7 @@ paths:
   /api/v1/declarations/{id}/judiciary-ack:
     put:
       operationId: recordJudiciaryAck
+      x-handler-bound: rts-svc.declaration.judiciary_ack
       summary: "Record judiciary acknowledgement of a declaration"
       description: |
         Records that the relevant court or tribunal has acknowledged receipt

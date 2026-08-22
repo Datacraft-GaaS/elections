@@ -785,6 +785,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0881ea181b1df73ff77ffaaf9c7544ecc11e82fba9b5f27b262a3c73a332555"
 
 [[package]]
+name = "eel-trace-rs"
+version = "0.1.0"
+
+[[package]]
 name = "either"
 version = "1.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2941,6 +2945,7 @@ name = "ro-desktop"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "eel-trace-rs",
  "serde",
  "serde_json",
  "sqlx",

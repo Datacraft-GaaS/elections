@@ -38,7 +38,7 @@ Uint8List _makeTestJpeg({int width = 400, int height = 300, bool blurry = false}
 
 void main() {
   group('assessQuality', () {
-    test('passes for a sharp high-contrast image', () {
+    test('passes for a sharp high-contrast image [FR-M08-003] [FR-M08-050]', () {
       final jpeg = _makeTestJpeg();
       final decoded = img.decodeImage(jpeg)!;
       final result = assessQuality(decoded);
@@ -49,7 +49,7 @@ void main() {
       expect(result.contrastScore, greaterThan(0));
     });
 
-    test('fails for a uniformly gray (blurry) image', () {
+    test('fails for a uniformly gray (blurry) image [FR-M08-003] [FR-M08-050]', () {
       final jpeg = _makeTestJpeg(blurry: true);
       final decoded = img.decodeImage(jpeg)!;
       final result = assessQuality(decoded);
@@ -60,7 +60,7 @@ void main() {
   });
 
   group('applyPerspectiveCorrection', () {
-    test('returns non-empty JPEG bytes', () {
+    test('returns non-empty JPEG bytes [FR-M08-001]', () {
       final jpeg = _makeTestJpeg();
       final corrected = applyPerspectiveCorrection(jpeg);
       expect(corrected, isNotEmpty);
@@ -69,7 +69,7 @@ void main() {
       expect(decoded, isNotNull);
     });
 
-    test('result is smaller than 5 MB', () {
+    test('result is smaller than 5 MB [FR-M08-001]', () {
       final jpeg = _makeTestJpeg(width: 1200, height: 1600);
       final corrected = applyPerspectiveCorrection(jpeg);
       expect(corrected.lengthInBytes, lessThan(5 * 1024 * 1024));
@@ -77,7 +77,7 @@ void main() {
   });
 
   group('scan+sign+transmit SLA', () {
-    test('fake-adapter path completes in under 90 s', () async {
+    test('fake-adapter path completes in under 90 s [AC-M08-01] [FR-M08-015]', () async {
       // This is a structural check: time the non-IO portions of the pipeline
       // using in-memory stubs. Hardware camera and real network are excluded.
       final stopwatch = Stopwatch()..start();

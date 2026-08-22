@@ -9,6 +9,7 @@ mod props {
     use crate::rules::{
         evaluate, CandidateDistribution, CountyVotes, DeclarationOutcome, PresidentialTally,
     };
+    use eel_trace_rs::trace;
     use proptest::prelude::*;
 
     /// Generate a valid vote distribution for N candidates across 47 counties.
@@ -67,6 +68,7 @@ mod props {
         #![proptest_config(ProptestConfig::with_cases(100))]
 
         /// When no candidate has strict majority: outcome must not be Declared.
+        #[trace("FR-M51-010", "AC-M51-02")]
         #[test]
         fn no_majority_no_declaration(tally in arb_presidential_tally(3)) {
             if tally.total_valid_votes == 0 { return Ok(()); }
@@ -84,6 +86,7 @@ mod props {
         }
 
         /// Tie (two candidates with equal votes, both leading) must yield TiePending.
+        #[trace("FR-M51-013", "AC-M51-02")]
         #[test]
         fn equal_top_two_yields_tie(county_total in 100u64..1_000u64) {
             // Two candidates with identical distributions across all 47 counties.
@@ -113,6 +116,7 @@ mod props {
         }
 
         /// TiePending must never produce a Declared outcome; certificate blocked.
+        #[trace("FR-M51-013", "EC-LEG-06")]
         #[test]
         fn tie_pending_blocks_certificate(county_total in 1u64..1_000u64) {
             use crate::aggregate::{Declaration, DeclarationStatus};
@@ -124,6 +128,7 @@ mod props {
         }
 
         /// Runoff correctly triggers when the leading candidate has < 24 counties.
+        #[trace("FR-M51-011", "AC-M51-02")]
         #[test]
         fn county_threshold_missing_triggers_runoff(
             majority_votes in 501u64..900u64,

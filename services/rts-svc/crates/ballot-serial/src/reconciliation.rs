@@ -93,6 +93,7 @@ pub fn reconcile(counts: &StationCounts) -> ReconciliationResult {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use eel_trace_rs::trace;
 
     fn counts(low: u64, high: u64, deposited: u64, spoilt: u64) -> StationCounts {
         StationCounts {
@@ -104,6 +105,7 @@ mod tests {
         }
     }
 
+    #[trace("FR-M63-032")]
     #[test]
     fn zero_spoilt_clears() {
         // All ballots cast, none spoilt.
@@ -114,6 +116,7 @@ mod tests {
         assert_eq!(r.spoilt_count, 0);
     }
 
+    #[trace("FR-M63-032")]
     #[test]
     fn all_spoilt_zero_deposited() {
         let c = counts(1, 50, 0, 50);
@@ -122,6 +125,7 @@ mod tests {
         assert_eq!(r.unused_count, 0);
     }
 
+    #[trace("FR-M63-032")]
     #[test]
     fn all_unused() {
         let c = counts(1, 100, 0, 0);
@@ -130,6 +134,7 @@ mod tests {
         assert_eq!(r.unused_count, 100);
     }
 
+    #[trace("FR-M63-024", "EC-DAT-11")]
     #[test]
     fn over_assigned_triggers_hold() {
         // 101 deposited from a 100-ballot assignment.
@@ -142,6 +147,7 @@ mod tests {
         );
     }
 
+    #[trace("FR-M63-023")]
     #[test]
     fn partial_discrepancy_held() {
         // 100 assigned; 60 deposited + 30 spoilt = 90 accounted; 10 unused; balanced.
@@ -151,6 +157,7 @@ mod tests {
         assert_eq!(r.unused_count, 10);
     }
 
+    #[trace("FR-M63-024", "EC-DAT-11")]
     #[test]
     fn both_exceed_assigned_held() {
         let c = counts(1, 100, 80, 30); // 110 > 100

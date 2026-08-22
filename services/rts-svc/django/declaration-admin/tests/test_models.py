@@ -30,6 +30,7 @@ def test_reconciliation_hold_str():
     assert "True" in str(h)
 
 
+@pytest.mark.trace("AC-M51-17")
 def test_no_delete_on_amendment_admin():
     from declaration_admin.admin import DeclarationAmendmentAdmin
     from django.contrib.admin import site

@@ -32,3 +32,4 @@ blake3            = "1"
 serde_json = { workspace = true }
 uuid       = { workspace = true }
 chrono     = { workspace = true }
+eel-trace-rs = { workspace = true }

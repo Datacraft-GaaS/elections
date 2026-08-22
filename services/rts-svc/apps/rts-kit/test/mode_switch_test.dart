@@ -10,14 +10,14 @@ import 'package:eel_rts_kit/src/rts_workflow/mode_switch.dart';
 
 void main() {
   group('RtsModeBundle', () {
-    test('loadCurrent returns general election by default', () async {
+    test('loadCurrent returns general election by default [FR-M08-042] [FR-M08-002] [EC-KIT-04]', () async {
       final bundle = await RtsModeBundle.loadCurrent();
       expect(bundle.electionType, ElectionType.general);
       expect(bundle.formType, FormType.form34a);
       expect(bundle.bundleId, 'default-general');
     });
 
-    test('applyBundle parses referendum bundle correctly', () async {
+    test('applyBundle parses referendum bundle correctly [FR-M08-002] [FR-M08-042] [EC-KIT-04]', () async {
       final raw = <String, Object?>{
         'election_type': 'referendum',
         'form_type': 'referendumResultsForm',
@@ -33,7 +33,7 @@ void main() {
       expect(bundle.verified, isTrue);
     });
 
-    test('applyBundle parses by-election bundle', () async {
+    test('applyBundle parses by-election bundle [FR-M08-002] [FR-M08-042]', () async {
       final raw = <String, Object?>{
         'election_type': 'byElection',
         'form_type': 'byElection34a',
@@ -47,7 +47,7 @@ void main() {
       expect(bundle.formType, FormType.byElection34a);
     });
 
-    test('isActive returns false for expired bundle', () {
+    test('isActive returns false for expired bundle [FR-M08-042]', () {
       final expired = RtsModeBundle(
         electionType: ElectionType.general,
         formType: FormType.form34a,
@@ -59,7 +59,7 @@ void main() {
       expect(expired.isActive, isFalse);
     });
 
-    test('isActive returns true for current bundle', () {
+    test('isActive returns true for current bundle [FR-M08-042]', () {
       final active = RtsModeBundle(
         electionType: ElectionType.general,
         formType: FormType.form34a,
@@ -73,7 +73,7 @@ void main() {
   });
 
   group('ModeBundleNotifier', () {
-    test('applyRaw updates state and reflects in provider', () async {
+    test('applyRaw updates state and reflects in provider [FR-M08-042] [EC-KIT-04]', () async {
       final initial = await RtsModeBundle.loadCurrent();
       final notifier = ModeBundleNotifier(initial);
 
@@ -92,7 +92,7 @@ void main() {
       expect(notifier.state.bundleId, 'ref-test');
     });
 
-    test('applyRaw mid-session replaces active mode', () async {
+    test('applyRaw mid-session replaces active mode [FR-M08-042] [EC-KIT-04]', () async {
       final initial = await RtsModeBundle.loadCurrent();
       final notifier = ModeBundleNotifier(initial);
 

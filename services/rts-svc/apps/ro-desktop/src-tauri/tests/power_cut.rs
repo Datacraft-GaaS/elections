@@ -11,6 +11,7 @@
 use ro_desktop_lib::db::{commit_action, enqueue_action, open_db, pending_actions, record_form34b};
 use ro_desktop_lib::error::AppError;
 use uuid::Uuid;
+use eel_trace_rs::trace;
 
 async fn tmp_db() -> (sqlx::SqlitePool, tempfile::TempDir) {
     let dir = tempfile::tempdir().expect("tempdir");
@@ -19,6 +20,7 @@ async fn tmp_db() -> (sqlx::SqlitePool, tempfile::TempDir) {
     (pool, dir)
 }
 
+#[trace("EC-OPS-05", "EC-OPS-01")]
 #[tokio::test]
 async fn pending_action_survives_simulated_power_cut() {
     let (pool, _dir) = tmp_db().await;
@@ -58,6 +60,7 @@ async fn pending_action_survives_simulated_power_cut() {
     assert!(after_commit.is_empty(), "no pending actions after commit");
 }
 
+#[trace("EC-DAT-01", "EC-OPS-05")]
 #[tokio::test]
 async fn no_duplicate_34b_on_resume() {
     let (pool, _dir) = tmp_db().await;
@@ -76,6 +79,7 @@ async fn no_duplicate_34b_on_resume() {
     }
 }
 
+#[trace("FR-M09-013")]
 #[tokio::test]
 async fn different_positions_not_duplicate() {
     let (pool, _dir) = tmp_db().await;
@@ -87,6 +91,7 @@ async fn different_positions_not_duplicate() {
     assert!(r2.is_ok(), "GOV 34B must not conflict with PRES: {:?}", r2);
 }
 
+#[trace("EC-DAT-02")]
 #[tokio::test]
 async fn idempotency_key_uniqueness_enforced() {
     let (pool, _dir) = tmp_db().await;

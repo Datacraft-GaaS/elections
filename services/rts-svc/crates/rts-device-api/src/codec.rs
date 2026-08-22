@@ -81,6 +81,7 @@ fn cbor_deserialise(bytes: &[u8]) -> Result<SmsFallbackForm, CodecError> {
 mod tests {
     use super::*;
     use crate::models::CandidateTotal;
+    use eel_trace_rs::trace;
 
     fn sample_form() -> SmsFallbackForm {
         SmsFallbackForm {
@@ -108,6 +109,7 @@ mod tests {
         }
     }
 
+    #[trace("FR-M08-018")]
     #[test]
     fn round_trip_cbor_zstd() {
         let form = sample_form();
@@ -118,6 +120,7 @@ mod tests {
         assert_eq!(decoded.candidate_totals.len(), form.candidate_totals.len());
     }
 
+    #[trace("FR-M08-018", "FR-M08-005")]
     #[test]
     fn signing_scope_clears_signature() {
         let form = sample_form();
@@ -128,6 +131,7 @@ mod tests {
         assert_eq!(decoded_scope.votes_cast, form.votes_cast);
     }
 
+    #[trace("FR-M08-018")]
     #[test]
     fn deterministic_encoding() {
         let form = sample_form();

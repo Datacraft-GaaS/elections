@@ -36,6 +36,7 @@ paths:
   /api/v1/ballot-serial/assignments:
     get:
       operationId: listBallotAssignments
+      x-handler-bound: rts-svc.ballot-serial.list_assignments
       summary: "List ballot assignments (audit view)"
       description: |
         Returns all ballot pack assignments. Tier 4 audit-level endpoint
@@ -113,6 +114,7 @@ paths:
 
     post:
       operationId: createBallotAssignment
+      x-handler-bound: rts-svc.ballot-serial.assign_serial
       summary: "Assign a serial range of ballot papers to a polling station"
       description: |
         Records the assignment of a contiguous serial number range to a
@@ -184,6 +186,7 @@ paths:
   /api/v1/ballot-serial/receipts:
     post:
       operationId: createBallotReceipt
+      x-handler-bound: rts-svc.ballot-serial.confirm_receipt
       summary: "Record receipt of ballot papers at a polling station"
       description: |
         Confirms that the presiding officer at a polling station has
@@ -262,6 +265,7 @@ paths:
   /api/v1/ballot-serial/spoilt:
     post:
       operationId: recordSpoiltBallot
+      x-handler-bound: rts-svc.ballot-serial.record_spoilt
       summary: "Record a spoilt ballot paper"
       description: |
         Records a single spoilt ballot paper with its serial number and
@@ -340,6 +344,7 @@ paths:
   /api/v1/ballot-serial/reconcile:
     post:
       operationId: submitReconcileReport
+      x-handler-bound: rts-svc.ballot-serial.trigger_reconciliation
       summary: "Submit a ballot reconciliation report for a polling station"
       description: |
         Submits end-of-poll ballot reconciliation figures for a station.
@@ -417,6 +422,7 @@ paths:
   /api/v1/ballot-serial/reconcile/{station_id}:
     get:
       operationId: getReconcileReport
+      x-handler-bound: rts-svc.ballot-serial.get_reconciliation
       summary: "Retrieve the reconciliation report for a polling station"
       description: |
         Returns the current reconciliation report for the specified
@@ -477,6 +483,7 @@ paths:
   /api/v1/ballot-serial/reconcile/{id}/resolve:
     put:
       operationId: resolveReconcileDiscrepancy
+      x-handler-bound: rts-svc.ballot-serial.resolve_hold
       summary: "Resolve a reconciliation discrepancy"
       description: |
         Marks a reconciliation discrepancy as resolved with an explanation

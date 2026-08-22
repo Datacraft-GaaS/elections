@@ -42,6 +42,7 @@ paths:
   /api/v1/rts/forms:
     post:
       operationId: submitForm
+      x-handler-bound: rts-svc.rts-api.submit_form
       summary: "Ingest Form 34A from polling kit"
       description: |
         Primary ingest endpoint for Form 34A (Presidential tally sheet) from
@@ -107,6 +108,7 @@ paths:
   /api/v1/rts/forms/sms-fallback:
     post:
       operationId: submitFormSmsFallback
+      x-handler-bound: rts-svc.rts-api.sms_fallback
       summary: "Ingest Form 34A via SMS fallback channel"
       description: |
         Fallback ingest for low-connectivity areas where the primary kit
@@ -165,6 +167,7 @@ paths:
   /api/v1/rts/tokens:
     post:
       operationId: provisionToken
+      x-handler-bound: rts-svc.rts-api.provision_token
       summary: "Provision device authentication token"
       description: |
         Issues a short-lived device token (SPIFFE-backed, 8h TTL) to an
@@ -229,6 +232,7 @@ paths:
   /api/v1/rts/events:
     post:
       operationId: ingestEvent
+      x-handler-bound: rts-svc.rts-api.ingest_event
       summary: "Ingest RTS domain event from a polling kit"
       description: |
         Accepts a CloudEvents-wrapped RTS domain event (e.g., scanner_online,
@@ -281,6 +285,7 @@ paths:
   /api/v1/rts/acks/{scan_id}:
     get:
       operationId: getAck
+      x-handler-bound: rts-svc.rts-api.get_ack
       summary: "Get acknowledgement status for a scan submission"
       description: |
         Returns the current processing status for a submitted Form 34A scan.
@@ -318,6 +323,7 @@ paths:
   /api/v1/rts/snapshots:
     get:
       operationId: getSnapshotIndex
+      x-handler-bound: rts-svc.rts-api.list_snapshots
       summary: "Get index of public result snapshots (Tier 1)"
       description: |
         Returns the index of all available signed result snapshots.
@@ -356,6 +362,7 @@ paths:
   /api/v1/rts/snapshots/{scope}/{code}:
     get:
       operationId: getSnapshot
+      x-handler-bound: rts-svc.rts-api.get_snapshot
       summary: "Get public result snapshot for a scope and code (Tier 1)"
       description: |
         Returns the signed result snapshot for a specific scope (e.g., presidential)
@@ -415,6 +422,7 @@ paths:
   /api/v1/rts/forms/{form_id}/proof:
     get:
       operationId: getFormProof
+      x-handler-bound: rts-svc.rts-api.get_form_proof
       summary: "Get Merkle inclusion proof for a form"
       description: |
         Returns the Merkle inclusion proof for a Form 34A in the results
@@ -460,6 +468,7 @@ paths:
   /api/v1/rts/forms/34b:
     post:
       operationId: submitForm34B
+      x-handler-bound: rts-svc.rts-api.compile_form34b
       summary: "Ingest Form 34B (constituency tally) from RO kit"
       description: |
         Accepts Form 34B (constituency-level tally) from the Returning Officer
@@ -512,6 +521,7 @@ paths:
   /api/v1/rts/forms/34c:
     post:
       operationId: submitForm34C
+      x-handler-bound: rts-svc.rts-api.compile_form34c
       summary: "Ingest Form 34C (national tally) from national tally centre"
       description: |
         Accepts Form 34C (national presidential tally) from the national
@@ -564,6 +574,7 @@ paths:
   /api/v1/rts/icr/{form_id}:
     post:
       operationId: submitIcrJob
+      x-handler-bound: rts-svc.rts-api.get_icr_job
       summary: "Submit form image for ICR processing"
       description: |
         Submits a form scan image reference to the ICR (Intelligent Character
@@ -621,6 +632,7 @@ paths:
   /api/v1/rts/icr/{job_id}/result:
     get:
       operationId: getIcrResult
+      x-handler-bound: rts-svc.rts-api.get_icr_result
       summary: "Get ICR job result"
       description: |
         Returns the result of a completed ICR job. Status may be pending,
@@ -659,6 +671,7 @@ paths:
   /api/v1/rts/audit/{form_id}:
     get:
       operationId: getFormAudit
+      x-handler-bound: rts-svc.rts-api.get_audit
       summary: "Get audit trail for a form"
       description: |
         Returns the complete audit chain for a Form 34A: all events,
@@ -707,6 +720,7 @@ paths:
   /api/v1/rts/ro/disputes:
     post:
       operationId: createRoDispute
+      x-handler-bound: rts-svc.rts-api.create_dispute
       summary: "File a Returning Officer dispute"
       description: |
         Allows an RO to file a dispute against a Form 34A or 34B tally.
@@ -763,6 +777,7 @@ paths:
   /api/v1/rts/ro/disputes/{id}/resolve:
     patch:
       operationId: resolveRoDispute
+      x-handler-bound: rts-svc.rts-api.resolve_dispute
       summary: "Resolve a Returning Officer dispute"
       description: |
         Records the resolution of an RO dispute. Outcomes may trigger

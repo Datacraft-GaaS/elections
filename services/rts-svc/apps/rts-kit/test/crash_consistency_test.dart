@@ -49,7 +49,7 @@ class CrashAfterFirstSaveStorage implements OutboxStorage {
 
 void main() {
   group('EelOfflineQueue crash-consistency', () {
-    test('partial write (stepCommitted=false) is purged on reinit', () async {
+    test('partial write (stepCommitted=false) is purged on reinit [FR-M08-016] [EC-OPS-01] [EC-CON-01] [AC-M08-04]', () async {
       final crashStorage = CrashAfterFirstSaveStorage();
       final queue = EelOfflineQueue(storage: crashStorage);
       await queue.init();
@@ -79,7 +79,7 @@ void main() {
       expect(afterReinit, isEmpty);
     });
 
-    test('committed entry survives reinit and appears in pending', () async {
+    test('committed entry survives reinit and appears in pending [FR-M08-016] [EC-CON-01] [AC-M08-04]', () async {
       final storage = InMemoryOutboxStorage();
       final queue = EelOfflineQueue(storage: storage);
       await queue.init();
@@ -101,7 +101,7 @@ void main() {
       expect(queue2.pending.first.stepCommitted, isTrue);
     });
 
-    test('expired entries are removed on reinit', () async {
+    test('expired entries are removed on reinit [EC-CON-01] [FR-M08-031]', () async {
       final storage = InMemoryOutboxStorage();
 
       // Manually insert an entry with createdAt > 7 days ago.
@@ -123,7 +123,7 @@ void main() {
       expect(rows, isEmpty);
     });
 
-    test('markState transitions are reflected in pending list', () async {
+    test('markState transitions are reflected in pending list [FR-M08-016] [EC-CON-01]', () async {
       final storage = InMemoryOutboxStorage();
       final queue = EelOfflineQueue(storage: storage);
       await queue.init();

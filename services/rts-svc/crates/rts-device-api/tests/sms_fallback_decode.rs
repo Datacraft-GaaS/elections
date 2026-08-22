@@ -10,6 +10,7 @@
 //! fits within the 5-segment limit. This test asserts that a representative
 //! Form 34A summary (8 candidates, all fields populated) still fits.
 
+use eel_trace_rs::trace;
 use rts_device_api::codec::{decode_sms, encode_sms, signing_scope, SMS_BUDGET_BYTES};
 use rts_device_api::models::{CandidateTotal, SmsFallbackForm};
 
@@ -63,6 +64,7 @@ fn full_form() -> SmsFallbackForm {
     }
 }
 
+#[trace("FR-M08-019", "EC-CON-03")]
 #[test]
 fn sms_payload_fits_3g_budget() {
     let form = full_form();
@@ -80,6 +82,7 @@ fn sms_payload_fits_3g_budget() {
     );
 }
 
+#[trace("FR-M08-018")]
 #[test]
 fn decode_round_trip_all_fields() {
     let form = full_form();
@@ -124,6 +127,7 @@ fn arithmetic_invariant_votes_cast_equals_sum() {
     );
 }
 
+#[trace("FR-M08-018", "FR-M08-005")]
 #[test]
 fn signing_scope_excludes_signature_field() {
     let form = full_form();
@@ -138,6 +142,7 @@ fn signing_scope_excludes_signature_field() {
     assert_eq!(decoded.votes_cast, form.votes_cast);
 }
 
+#[trace("FR-M08-018")]
 #[test]
 fn deterministic_encode_same_bytes() {
     let form = full_form();

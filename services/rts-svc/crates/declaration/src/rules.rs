@@ -161,6 +161,7 @@ pub fn evaluate(tally: &PresidentialTally) -> DeclarationOutcome {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use eel_trace_rs::trace;
 
     fn county_votes(votes: u64, total: u64) -> CountyVotes {
         CountyVotes {
@@ -188,6 +189,7 @@ mod tests {
         }
     }
 
+    #[trace("FR-M51-009", "FR-M51-010", "FR-M51-011")]
     #[test]
     fn outright_winner_declared() {
         // 60% of 100 votes, spread across all 47 counties.
@@ -218,6 +220,7 @@ mod tests {
         );
     }
 
+    #[trace("FR-M51-010", "FR-M51-012")]
     #[test]
     fn below_majority_triggers_runoff() {
         let total = 100u64;
@@ -233,6 +236,7 @@ mod tests {
         assert!(matches!(outcome, DeclarationOutcome::RunoffRequired { .. }));
     }
 
+    #[trace("FR-M51-011", "EC-LEG-07")]
     #[test]
     fn county_threshold_not_met_triggers_runoff() {
         // Alice wins 51% nationally but only in 23 counties above 25%.
@@ -273,6 +277,7 @@ mod tests {
         assert!(matches!(outcome, DeclarationOutcome::RunoffRequired { .. }));
     }
 
+    #[trace("FR-M51-013", "EC-LEG-06")]
     #[test]
     fn exact_tie_yields_tie_pending() {
         let total = 100u64;
@@ -286,6 +291,7 @@ mod tests {
         assert!(matches!(outcome, DeclarationOutcome::TiePending { .. }));
     }
 
+    #[trace("FR-M51-011", "EC-LEG-07")]
     #[test]
     fn boundary_24_counties_declares() {
         // Exactly 24 counties at >= 25%.
@@ -310,6 +316,7 @@ mod tests {
         assert_eq!(count, 24);
     }
 
+    #[trace("FR-M51-011", "EC-LEG-07")]
     #[test]
     fn boundary_23_counties_not_enough() {
         let county_total = 100u64;
@@ -329,6 +336,7 @@ mod tests {
         assert_eq!(count, 23);
     }
 
+    #[trace("FR-M51-011", "EC-LEG-07")]
     #[test]
     fn exact_25_percent_county_counts() {
         // Exactly 25%: 25 out of 100. Must count (>= semantics per EC-LEG-07).
@@ -336,6 +344,7 @@ mod tests {
         assert!(reaches_county_threshold(&cv));
     }
 
+    #[trace("FR-M51-011", "EC-LEG-07")]
     #[test]
     fn just_below_25_percent_does_not_count() {
         // 24/100 = 24%; must not count.
