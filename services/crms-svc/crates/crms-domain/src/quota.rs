@@ -40,8 +40,9 @@ pub fn check_two_thirds_rule(
     if total_cleared == 0 {
         return Ok(());
     }
-    // Neither gender may exceed 2/3 of total.
-    let threshold = (total_cleared * 2).div_ceil(3);
+    // Neither gender may exceed 2/3 of total. Integer rounding floors: 4 of 5
+    // (80%) already breaches 2/3, so the allowed max is floor(2*total/3).
+    let threshold = (total_cleared * 2) / 3;
     if female_count > threshold || male_count > threshold {
         let dominant = if female_count > male_count {
             "female"
