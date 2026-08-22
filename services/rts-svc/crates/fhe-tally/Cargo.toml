@@ -1,0 +1,29 @@
+[package]
+name        = "eel-rts-fhe-tally"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "CKKS homomorphic tally over encrypted Form34A leaves (HARD-B item 9)."
+
+[lib]
+name = "eel_rts_fhe_tally"
+path = "src/lib.rs"
+
+[[test]]
+name = "fhe_tally_test"
+path = "tests/fhe_tally_test.rs"
+
+[dependencies]
+serde            = { workspace = true }
+serde_json       = { workspace = true }
+thiserror        = { workspace = true }
+tracing          = { workspace = true }
+uuid             = { workspace = true }
+
+blake3           = { workspace = true }
+
+eel-abis-fhe-match = { path = "../../../abis-svc/crates/abis-fhe-match" }
+
+[dev-dependencies]
+rstest           = { workspace = true }

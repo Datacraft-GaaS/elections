@@ -1,0 +1,33 @@
+[package]
+name        = "eel-abis-fp-vendor-peak"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+description = "Cross-vendor 2-of-3 ABIS consensus during election-freeze peak window (T-1..T+7). HARD-B item 3."
+
+[lib]
+name = "eel_abis_fp_vendor_peak"
+path = "src/lib.rs"
+
+[[test]]
+name = "peak_test"
+path = "tests/peak_test.rs"
+
+[dependencies]
+serde            = { workspace = true }
+serde_json       = { workspace = true }
+thiserror        = { workspace = true }
+tracing          = { workspace = true }
+tokio            = { workspace = true }
+axum             = { workspace = true }
+chrono           = { workspace = true }
+uuid             = { workspace = true }
+async-trait      = "0.1"
+
+eel-abis-fp-consensus = { path = "../abis-fp-consensus" }
+eel-abis-vendor       = { path = "../abis-vendor" }
+
+[dev-dependencies]
+rstest           = { workspace = true }
+tokio            = { workspace = true }
