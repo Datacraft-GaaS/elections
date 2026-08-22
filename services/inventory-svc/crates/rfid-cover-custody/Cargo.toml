@@ -1,0 +1,63 @@
+[package]
+name        = "eel-inventory-rfid-cover-custody"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+publish     = false
+description = "RFID cover-custody crate: tamper-evident RFID tagging for ballot-box covers (M20 extension)"
+
+[lib]
+name = "eel_inventory_rfid_cover_custody"
+path = "src/lib.rs"
+
+[[test]]
+name    = "rfid_test"
+path    = "tests/rfid_test.rs"
+
+[dependencies]
+# HTTP / async
+axum            = { workspace = true }
+tokio           = { workspace = true }
+
+# Database (runtime queries only; no compile-time DATABASE_URL)
+sqlx            = { workspace = true }
+
+# Serialization
+serde           = { workspace = true }
+serde_json      = { workspace = true }
+
+# Errors + tracing
+thiserror       = { workspace = true }
+tracing         = { workspace = true }
+
+# IDs
+uuid            = { workspace = true }
+
+# Time
+chrono          = { workspace = true }
+
+# Crypto
+sha2            = { workspace = true }
+hex             = { workspace = true }
+base64          = { workspace = true }
+blake3          = { workspace = true }
+hmac            = "0.12"
+
+# HTTP client (ECC dispatch)
+reqwest         = { workspace = true }
+
+# Metrics
+prometheus      = { workspace = true }
+
+# Resilience
+eel-resilience-rs = { workspace = true }
+
+# eel platform packages
+eel-crypto-rs  = { path = "../../../../packages/eel-crypto-rs" }
+eel-events-rs  = { path = "../../../../packages/eel-events-rs" }
+eel-outbox-rs  = { path = "../../../../packages/eel-outbox-rs" }
+eel-auth-rs    = { path = "../../../../packages/eel-auth-rs", default-features = false }
+
+[dev-dependencies]
+tokio           = { workspace = true }

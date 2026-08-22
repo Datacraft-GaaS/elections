@@ -4463,6 +4463,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "eel-inventory-rfid-cover-custody"
+version = "0.1.0"
+dependencies = [
+ "axum 0.8.9",
+ "base64 0.22.1",
+ "blake3",
+ "chrono",
+ "eel-auth-rs",
+ "eel-crypto-rs",
+ "eel-events-rs",
+ "eel-outbox-rs",
+ "eel-resilience-rs",
+ "hex",
+ "hmac",
+ "prometheus",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "sqlx",
+ "thiserror 2.0.20",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "eel-kit-cert-transparency"
 version = "0.1.0"
 dependencies = [
