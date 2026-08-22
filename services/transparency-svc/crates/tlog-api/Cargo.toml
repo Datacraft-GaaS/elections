@@ -20,6 +20,7 @@ tonic-build = { workspace = true }
 [dependencies]
 tlog-domain = { path = "../tlog-domain" }
 tlog-sequencer = { path = "../tlog-sequencer" }
+eel-crypto-rs = { path = "../../../../packages/eel-crypto-rs" }
 
 axum = { workspace = true }
 tonic = { workspace = true }

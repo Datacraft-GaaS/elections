@@ -9,11 +9,24 @@ use uuid::Uuid;
 use crate::state::AppState;
 
 pub async fn get_assignments(
-	_state: State<AppState>,
-	Path(_worker_id): Path<Uuid>,
+	state: State<AppState>,
+	Path(worker_id): Path<Uuid>,
 ) -> (StatusCode, Json<Value>) {
+	let Ok(store) = state.assignments.lock() else {
+		return (
+			StatusCode::INTERNAL_SERVER_ERROR,
+			Json(serde_json::json!({ "error": "store unavailable" })),
+		);
+	};
+
+	let assignments: Vec<_> = store
+		.iter()
+		.filter(|a| a.worker_id == worker_id)
+		.cloned()
+		.collect();
+
 	(
-		StatusCode::NOT_IMPLEMENTED,
-		Json(serde_json::json!({"message": "not implemented"})),
+		StatusCode::OK,
+		Json(serde_json::to_value(assignments).unwrap_or_default()),
 	)
 }

@@ -1,36 +1,96 @@
 use axum::{
-	extract::{Path, State},
-	http::StatusCode,
-	Json,
+    extract::{Path, State},
+    http::StatusCode,
+    Json,
 };
+use chrono::{Duration, Utc};
 use serde_json::Value;
 use uuid::Uuid;
 
+use crate::models::{CreateTicketRequest, SupportTicket, TicketSeverity, TicketStatus};
 use crate::state::AppState;
 
-pub async fn list_tickets(_state: State<AppState>) -> (StatusCode, Json<Value>) {
-	(
-		StatusCode::NOT_IMPLEMENTED,
-		Json(serde_json::json!({"message": "not implemented"})),
-	)
+pub async fn list_tickets(state: State<AppState>) -> (StatusCode, Json<Value>) {
+    let Ok(store) = state.tickets.lock() else {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": "store unavailable" })),
+        );
+    };
+    (
+        StatusCode::OK,
+        Json(serde_json::to_value(&*store).unwrap_or_default()),
+    )
 }
 
 pub async fn create_ticket(
-	_state: State<AppState>,
-	Json(_body): Json<Value>,
+    state: State<AppState>,
+    Json(body): Json<Value>,
 ) -> (StatusCode, Json<Value>) {
-	(
-		StatusCode::NOT_IMPLEMENTED,
-		Json(serde_json::json!({"message": "not implemented"})),
-	)
+    let req: CreateTicketRequest = match serde_json::from_value(body) {
+        Ok(r) => r,
+        Err(_) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({ "error": "invalid ticket request" })),
+            )
+        }
+    };
+
+    // SLA target scales with severity: Sev1 within 1h, Sev2 within 4h, Sev3 by next business day.
+    let sla_hours = match req.severity {
+        TicketSeverity::Sev1 => 1,
+        TicketSeverity::Sev2 => 4,
+        TicketSeverity::Sev3 => 24,
+    };
+    let ticket = SupportTicket {
+        id: Uuid::new_v4(),
+        station_code: req.station_code,
+        kit_serial: req.kit_serial,
+        reporter_role: String::from("FIELD_OFFICER"),
+        severity: req.severity,
+        title: req.title,
+        description: req.description,
+        status: TicketStatus::Open,
+        assigned_engineer_id: None,
+        sla_target_at: Utc::now() + Duration::hours(sla_hours),
+        resolved_at: None,
+        escalation_level: 1,
+    };
+
+    let Ok(mut store) = state.tickets.lock() else {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": "store unavailable" })),
+        );
+    };
+    store.push(ticket.clone());
+
+    (
+        StatusCode::CREATED,
+        Json(serde_json::to_value(ticket).unwrap_or_default()),
+    )
 }
 
 pub async fn get_ticket(
-	_state: State<AppState>,
-	Path(_id): Path<Uuid>,
+    state: State<AppState>,
+    Path(id): Path<Uuid>,
 ) -> (StatusCode, Json<Value>) {
-	(
-		StatusCode::NOT_IMPLEMENTED,
-		Json(serde_json::json!({"message": "not implemented"})),
-	)
+    let Ok(store) = state.tickets.lock() else {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": "store unavailable" })),
+        );
+    };
+
+    match store.iter().find(|t| t.id == id) {
+        Some(ticket) => (
+            StatusCode::OK,
+            Json(serde_json::to_value(ticket).unwrap_or_default()),
+        ),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({ "error": "ticket not found" })),
+        ),
+    }
 }
