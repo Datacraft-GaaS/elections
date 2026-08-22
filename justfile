@@ -12,6 +12,13 @@ set positional-arguments
 # mod python "services/hello-svc/py/justfile"        # enabled once py apps exist
 # mod elixir "services/hello-svc/ex/justfile"        # enabled once ex apps exist
 
+# List Rust workspace roots to build/test/lint: the root workspace plus each
+# service-level nested workspace (services/*/Cargo.toml). Fuzz, template, and
+# integration-adapter crates are excluded; they are built by their own tooling.
+_rust-workspaces:
+    @echo ./Cargo.toml
+    @find services -maxdepth 2 -name Cargo.toml -exec grep -l '^\[workspace\]' {} \; 2>/dev/null
+
 # ---------------------------------------------------------------------------
 # Default: list recipes
 # ---------------------------------------------------------------------------
@@ -50,23 +57,30 @@ test: test-unit test-integration
 # Unit tests across all Rust crates
 test-unit:
     @echo "[test-unit] running Rust unit tests..."
-    @if cargo metadata --no-deps --quiet 2>/dev/null | python3 -c \
-        "import sys,json; w=json.load(sys.stdin); exit(0 if w['workspace_members'] else 1)" 2>/dev/null; then \
-      cargo nextest run --lib --bins -q; \
-    else \
-      echo "[test-unit] no Rust workspace members yet, skipping"; \
-    fi
+    @for ws in $$(just _rust-workspaces); do \
+      if cargo metadata --no-deps --quiet --manifest-path "$$ws" 2>/dev/null | python3 -c \
+          "import sys,json; w=json.load(sys.stdin); exit(0 if w['workspace_members'] else 1)" 2>/dev/null; then \
+        echo "[test-unit] workspace: $$ws"; \
+        if command -v cargo-nextest >/dev/null 2>&1; then \
+          cargo nextest run --lib --bins --manifest-path "$$ws" -q || exit 1; \
+        else \
+          cargo test --lib --bins --manifest-path "$$ws" -q || exit 1; \
+        fi; \
+      else \
+        echo "[test-unit] workspace $$ws has no members, skipping"; \
+      fi; \
+    done
     @echo "[test-unit] running Python tests..."
     @if find services -name "pyproject.toml" -maxdepth 5 | grep -q .; then \
       find services -name "pyproject.toml" -maxdepth 5 -exec dirname {} \; | \
-        xargs -I{} sh -c 'cd {} && uv run pytest -q tests/ci 2>/dev/null || true'; \
+        xargs -I{} sh -c 'cd {} && if [ -d tests/ci ]; then uv run pytest -q tests/ci --suppress-no-test-exit-code 2>/dev/null; fi'; \
     else \
       echo "[test-unit] no Python projects yet, skipping"; \
     fi
     @echo "[test-unit] running Elixir tests..."
     @if find services -name "mix.exs" -maxdepth 6 | grep -q .; then \
       find services -name "mix.exs" -maxdepth 6 -exec dirname {} \; | \
-        xargs -I{} sh -c 'cd {} && mix test --no-color 2>/dev/null || true'; \
+        xargs -I{} sh -c 'cd {} && mix test --no-color 2>/dev/null || exit 1'; \
     else \
       echo "[test-unit] no Elixir projects yet, skipping"; \
     fi
@@ -74,12 +88,19 @@ test-unit:
 # Integration tests (require cluster up)
 test-integration:
     @echo "[test-integration] running integration tests..."
-    @if cargo metadata --no-deps --quiet 2>/dev/null | python3 -c \
-        "import sys,json; w=json.load(sys.stdin); exit(0 if w['workspace_members'] else 1)" 2>/dev/null; then \
-      cargo nextest run --test '*' -q 2>/dev/null || echo "[test-integration] no integration tests yet"; \
-    else \
-      echo "[test-integration] no workspace members yet, skipping"; \
-    fi
+    @for ws in $$(just _rust-workspaces); do \
+      if cargo metadata --no-deps --quiet --manifest-path "$$ws" 2>/dev/null | python3 -c \
+          "import sys,json; w=json.load(sys.stdin); exit(0 if w['workspace_members'] else 1)" 2>/dev/null; then \
+        echo "[test-integration] workspace: $$ws"; \
+        if command -v cargo-nextest >/dev/null 2>&1; then \
+          cargo nextest run --test '*' --manifest-path "$$ws" -q 2>/dev/null || echo "[test-integration] no integration tests in $$ws"; \
+        else \
+          cargo test --test '*' --manifest-path "$$ws" -q 2>/dev/null || echo "[test-integration] no integration tests in $$ws"; \
+        fi; \
+      else \
+        echo "[test-integration] workspace $$ws has no members, skipping"; \
+      fi; \
+    done
 
 # ---------------------------------------------------------------------------
 # Quality
@@ -90,12 +111,16 @@ lint: _lint-rust _lint-python _lint-elixir _lint-contracts
 
 _lint-rust:
     @echo "[lint] Rust..."
-    @if find . -name "Cargo.toml" -not -path "*/target/*" | xargs grep -l '^\[package\]' 2>/dev/null | grep -q .; then \
-      cargo clippy --all-targets --all-features -- -D warnings -q; \
-      cargo fmt --all --check; \
-    else \
-      echo "[lint] no Rust crates yet, skipping"; \
-    fi
+    @for ws in $$(just _rust-workspaces); do \
+      if cargo metadata --no-deps --quiet --manifest-path "$$ws" 2>/dev/null | python3 -c \
+          "import sys,json; w=json.load(sys.stdin); exit(0 if w['workspace_members'] else 1)" 2>/dev/null; then \
+        echo "[lint] workspace: $$ws"; \
+        cargo clippy --all-targets --all-features --manifest-path "$$ws" -- -D warnings -q || exit 1; \
+        cargo fmt --all --check --manifest-path "$$ws" || exit 1; \
+      else \
+        echo "[lint] workspace $$ws has no members, skipping"; \
+      fi; \
+    done
 
 _lint-python:
     @echo "[lint] Python..."
@@ -117,7 +142,11 @@ _lint-elixir:
 _lint-contracts:
     @echo "[lint] OpenAPI contracts..."
     @if find packages/openapi-contracts -name "*.yaml" 2>/dev/null | grep -q .; then \
-      spectral lint "packages/openapi-contracts/**/*.yaml" --fail-severity=warn; \
+      if command -v spectral >/dev/null 2>&1; then \
+        spectral lint "packages/openapi-contracts/**/*.yaml" --fail-severity=warn; \
+      else \
+        echo "[lint] spectral not found, skipping contract lint"; \
+      fi; \
     else \
       echo "[lint] no OpenAPI contracts yet, skipping"; \
     fi
@@ -125,9 +154,9 @@ _lint-contracts:
 # Format everything
 fmt:
     @echo "[fmt] formatting..."
-    @if find . -name "Cargo.toml" -not -path "*/target/*" | xargs grep -l '^\[package\]' 2>/dev/null | grep -q .; then \
-      cargo fmt --all; \
-    fi
+    @for ws in $$(just _rust-workspaces); do \
+      cargo fmt --all --manifest-path "$$ws" 2>/dev/null || true; \
+    done
     @if find services packages -name "*.py" -maxdepth 8 2>/dev/null | grep -q .; then \
       ruff format .; \
     fi
@@ -143,11 +172,15 @@ fmt:
 # Build all services (release mode for Rust)
 build:
     @echo "[build] building..."
-    @if find . -name "Cargo.toml" -not -path "*/target/*" | xargs grep -l '^\[package\]' 2>/dev/null | grep -q .; then \
-      cargo build --release --workspace -q; \
-    else \
-      echo "[build] no Rust crates yet, skipping"; \
-    fi
+    @for ws in $$(just _rust-workspaces); do \
+      if cargo metadata --no-deps --quiet --manifest-path "$$ws" 2>/dev/null | python3 -c \
+          "import sys,json; w=json.load(sys.stdin); exit(0 if w['workspace_members'] else 1)" 2>/dev/null; then \
+        echo "[build] workspace: $$ws"; \
+        cargo build --release --workspace --manifest-path "$$ws" -q || exit 1; \
+      else \
+        echo "[build] workspace $$ws has no members, skipping"; \
+      fi; \
+    done
     @if find services -name "pyproject.toml" -maxdepth 5 2>/dev/null | grep -q .; then \
       find services -name "pyproject.toml" -maxdepth 5 -exec dirname {} \; | \
         xargs -I{} sh -c 'cd {} && uv build 2>/dev/null || true'; \
@@ -189,8 +222,11 @@ contracts: _lint-contracts
     @echo "[contracts] placeholder, wire Karapace in WP-0.4a"
     @echo "[contracts] SpiceDB schema validation..."
     @if find packages/authz-schema -name "*.zed" 2>/dev/null | grep -q .; then \
-      find packages/authz-schema -name "*.zed" -exec ./tools/spicedb/zed validate {} \; 2>/dev/null || \
+      if [ -x ./tools/spicedb/zed ]; then \
+        find packages/authz-schema -name "*.zed" -exec ./tools/spicedb/zed validate {} \; || exit 1; \
+      else \
         echo "[contracts] SpiceDB zed CLI not found (see tools/spicedb/zed for install hints), skipping"; \
+      fi; \
     else \
       echo "[contracts] no .zed schemas yet, skipping"; \
     fi
@@ -199,11 +235,15 @@ contracts: _lint-contracts
 gen-clients:
     @echo "[gen-clients] regenerating clients..."
     @if find packages/openapi-contracts -name "*.yaml" 2>/dev/null | grep -q .; then \
-      find packages/openapi-contracts -name "*.yaml" | while read spec; do \
-        ctx=$(basename "$(dirname "$spec")"); \
-        echo "  generating client for $ctx"; \
-        openapi-generator-cli generate -i "$spec" -g rust -o "packages/eel-client-$ctx" 2>/dev/null || true; \
-      done; \
+      if command -v openapi-generator-cli >/dev/null 2>&1; then \
+        find packages/openapi-contracts -name "*.yaml" | while read spec; do \
+          ctx=$(basename "$(dirname "$spec")"); \
+          echo "  generating client for $ctx"; \
+          openapi-generator-cli generate -i "$spec" -g rust -o "packages/eel-client-$ctx" || exit 1; \
+        done; \
+      else \
+        echo "[gen-clients] openapi-generator-cli not found, skipping"; \
+      fi; \
     else \
       echo "[gen-clients] no OpenAPI contracts yet, skipping"; \
     fi
@@ -226,7 +266,7 @@ seed: synth
     @echo "[seed] seeding database..."
     @if command -v sqlx >/dev/null 2>&1 && [ -n "${DATABASE_URL:-}" ]; then \
       echo "[seed] running sqlx migrations..."; \
-      find services -name "migrations" -type d -maxdepth 4 | \
+      find services -name "migrations" -type d -maxdepth 8 | \
         xargs -I{} sh -c 'sqlx migrate run --source {} 2>/dev/null || true'; \
     else \
       echo "[seed] DATABASE_URL not set or sqlx missing, skipping"; \
