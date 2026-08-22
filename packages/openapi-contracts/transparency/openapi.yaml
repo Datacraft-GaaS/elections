@@ -43,6 +43,7 @@ paths:
   /api/v1/log/sth/latest:
     get:
       operationId: getLatestSTH
+      x-handler-bound: transparency-svc.tlog-api.sth.get_latest_sth
       summary: "Retrieve the latest Signed Tree Head"
       description: |
         Returns the most recent Signed Tree Head for the transparency log.
@@ -99,6 +100,7 @@ paths:
   /api/v1/log/sth/{tree_size}:
     get:
       operationId: getSTHByTreeSize
+      x-handler-bound: transparency-svc.tlog-api.sth.get_sth_by_size
       summary: "Retrieve a Signed Tree Head for a specific tree size"
       description: |
         Returns the STH that was published when the tree reached tree_size leaves.
@@ -169,6 +171,7 @@ paths:
   /api/v1/log/inclusion/{leaf_hash}:
     get:
       operationId: getInclusionProof
+      x-handler-bound: transparency-svc.tlog-api.proofs.get_inclusion_proof
       summary: "Retrieve an inclusion proof for a leaf hash"
       description: |
         Returns a Merkle inclusion proof proving that the leaf identified by
@@ -240,6 +243,7 @@ paths:
   /api/v1/log/consistency/{from_size}/{to_size}:
     get:
       operationId: getConsistencyProof
+      x-handler-bound: transparency-svc.tlog-api.proofs.get_consistency_proof
       summary: "Retrieve a consistency proof between two tree sizes"
       description: |
         Returns a Merkle consistency proof showing that the tree of size to_size
