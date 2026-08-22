@@ -1033,7 +1033,7 @@
 | FR-M56-035 | county-national-coordination |  | GAP |
 | AC-M12-01 | crms |  | GAP |
 | AC-M12-02 | crms |  | GAP |
-| AC-M12-03 | crms |  | GAP |
+| AC-M12-03 | crms | services/crms-svc/crates/crms-domain/src/quota.rs:134, services/crms-svc/crates/crms-domain/src/quota.rs:154 | OK |
 | AC-M12-04 | crms |  | GAP |
 | AC-M12-05 | crms |  | GAP |
 | AC-M12-06 | crms |  | GAP |
@@ -1050,8 +1050,8 @@
 | FR-M12-005 | crms |  | GAP |
 | FR-M12-006 | crms |  | GAP |
 | FR-M12-007 | crms |  | GAP |
-| FR-M12-008 | crms |  | GAP |
-| FR-M12-009 | crms |  | GAP |
+| FR-M12-008 | crms | services/crms-svc/crates/crms-domain/src/quota.rs:121, services/crms-svc/crates/crms-domain/src/quota.rs:127, services/crms-svc/crates/crms-domain/src/quota.rs:134, services/crms-svc/crates/crms-domain/src/quota.rs:141, services/crms-svc/crates/crms-domain/src/quota.rs:154 | OK |
+| FR-M12-009 | crms | services/crms-svc/crates/crms-domain/src/quota.rs:147 | OK |
 | FR-M12-010 | crms |  | GAP |
 | FR-M12-011 | crms |  | GAP |
 | FR-M12-012 | crms |  | GAP |
@@ -1858,8 +1858,8 @@
 | AC-M57-14 | international-observer-coordination |  | GAP |
 | FR-M57-001 | international-observer-coordination |  | GAP |
 | FR-M57-002 | international-observer-coordination |  | GAP |
-| FR-M57-003 | international-observer-coordination |  | GAP |
-| FR-M57-004 | international-observer-coordination |  | GAP |
+| FR-M57-003 | international-observer-coordination | services/governance-svc/ex/observer_workspace/test/observer_workspace/missions_test.exs:6, services/governance-svc/ex/observer_workspace/test/observer_workspace/missions_test.exs:11 | OK |
+| FR-M57-004 | international-observer-coordination | services/governance-svc/ex/observer_workspace/test/observer_workspace/missions_test.exs:6, services/governance-svc/ex/observer_workspace/test/observer_workspace/missions_test.exs:16 | OK |
 | FR-M57-005 | international-observer-coordination |  | GAP |
 | FR-M57-006 | international-observer-coordination |  | GAP |
 | FR-M57-007 | international-observer-coordination |  | GAP |
@@ -2052,7 +2052,7 @@
 | AC-M42-06 | media-accreditation-portal |  | GAP |
 | AC-M42-07 | media-accreditation-portal |  | GAP |
 | AC-M42-08 | media-accreditation-portal |  | GAP |
-| AC-M42-09 | media-accreditation-portal |  | GAP |
+| AC-M42-09 | media-accreditation-portal | services/training-svc/apps/accred-scanner/test/crl_test.dart:6 | OK |
 | AC-M42-10 | media-accreditation-portal |  | GAP |
 | AC-M42-11 | media-accreditation-portal |  | GAP |
 | AC-M42-12 | media-accreditation-portal |  | GAP |
@@ -2832,7 +2832,7 @@
 | FR-M67-035 | party-symbol-colour-registry |  | GAP |
 | FR-M67-036 | party-symbol-colour-registry |  | GAP |
 | AC-M38-01 | poll-worker-training-lms |  | GAP |
-| AC-M38-02 | poll-worker-training-lms |  | GAP |
+| AC-M38-02 | poll-worker-training-lms | services/training-svc/django/lms/tests/test_lms.py:52, services/training-svc/django/lms/tests/test_lms.py:94, services/training-svc/django/lms/tests/test_lms.py:109, services/training-svc/django/lms/tests/test_lms.py:123, services/training-svc/django/lms/tests/test_lms.py:146, services/training-svc/django/lms/tests/test_lms.py:165 | OK |
 | AC-M38-03 | poll-worker-training-lms |  | GAP |
 | AC-M38-04 | poll-worker-training-lms |  | GAP |
 | AC-M38-05 | poll-worker-training-lms |  | GAP |
@@ -2848,7 +2848,7 @@
 | FR-M38-003 | poll-worker-training-lms |  | GAP |
 | FR-M38-004 | poll-worker-training-lms |  | GAP |
 | FR-M38-005 | poll-worker-training-lms |  | GAP |
-| FR-M38-006 | poll-worker-training-lms |  | GAP |
+| FR-M38-006 | poll-worker-training-lms | services/training-svc/django/lms/tests/test_lms.py:52, services/training-svc/django/lms/tests/test_lms.py:94, services/training-svc/django/lms/tests/test_lms.py:109, services/training-svc/django/lms/tests/test_lms.py:123, services/training-svc/django/lms/tests/test_lms.py:146, services/training-svc/django/lms/tests/test_lms.py:165 | OK |
 | FR-M38-007 | poll-worker-training-lms |  | GAP |
 | FR-M38-008 | poll-worker-training-lms |  | GAP |
 | FR-M38-009 | poll-worker-training-lms |  | GAP |
@@ -3001,12 +3001,12 @@
 | FR-M11-048 | public-portal |  | GAP |
 | FR-M11-049 | public-portal |  | GAP |
 | FR-M11-050 | public-portal |  | GAP |
-| AC-M13-01 | public-verifier-app |  | GAP |
+| AC-M13-01 | public-verifier-app | services/field-mobile-svc/crates/mobile-bff/tests/verify_test.rs:12 | OK |
 | AC-M13-02 | public-verifier-app |  | GAP |
-| AC-M13-03 | public-verifier-app |  | GAP |
+| AC-M13-03 | public-verifier-app | services/field-mobile-svc/py/ussd-menu/tests/ci/test_fsm.py:22, services/field-mobile-svc/py/ussd-menu/tests/ci/test_fsm.py:49, services/field-mobile-svc/crates/mobile-bff/tests/verify_test.rs:24 | OK |
 | AC-M13-04 | public-verifier-app |  | GAP |
-| AC-M13-05 | public-verifier-app |  | GAP |
-| AC-M13-06 | public-verifier-app |  | GAP |
+| AC-M13-05 | public-verifier-app | services/field-mobile-svc/crates/mobile-bff/tests/verify_test.rs:36, services/field-mobile-svc/crates/mobile-bff/tests/verify_test.rs:78 | OK |
+| AC-M13-06 | public-verifier-app | services/field-mobile-svc/crates/mobile-bff/tests/verify_test.rs:48 | OK |
 | AC-M13-07 | public-verifier-app |  | GAP |
 | AC-M13-08 | public-verifier-app |  | GAP |
 | AC-M13-09 | public-verifier-app |  | GAP |
@@ -3015,7 +3015,7 @@
 | AC-M13-12 | public-verifier-app |  | GAP |
 | AC-M13-13 | public-verifier-app |  | GAP |
 | AC-M13-14 | public-verifier-app |  | GAP |
-| FR-M13-001 | public-verifier-app |  | GAP |
+| FR-M13-001 | public-verifier-app | services/field-mobile-svc/crates/mobile-bff/tests/verify_test.rs:12, services/field-mobile-svc/crates/mobile-bff/tests/verify_test.rs:68 | OK |
 | FR-M13-002 | public-verifier-app |  | GAP |
 | FR-M13-003 | public-verifier-app |  | GAP |
 | FR-M13-004 | public-verifier-app |  | GAP |
@@ -3036,17 +3036,17 @@
 | FR-M13-019 | public-verifier-app |  | GAP |
 | FR-M13-020 | public-verifier-app |  | GAP |
 | FR-M13-021 | public-verifier-app |  | GAP |
-| FR-M13-022 | public-verifier-app |  | GAP |
+| FR-M13-022 | public-verifier-app | services/field-mobile-svc/crates/mobile-bff/tests/verify_test.rs:48 | OK |
 | FR-M13-023 | public-verifier-app |  | GAP |
-| FR-M13-024 | public-verifier-app |  | GAP |
-| FR-M13-025 | public-verifier-app |  | GAP |
+| FR-M13-024 | public-verifier-app | services/field-mobile-svc/py/ussd-menu/tests/ci/test_fsm.py:40, services/field-mobile-svc/py/ussd-menu/tests/ci/test_fsm.py:49, services/field-mobile-svc/py/ussd-menu/tests/ci/test_fsm.py:66 | OK |
+| FR-M13-025 | public-verifier-app | services/field-mobile-svc/crates/mobile-bff/tests/verify_test.rs:24 | OK |
 | FR-M13-026 | public-verifier-app |  | GAP |
-| FR-M13-027 | public-verifier-app |  | GAP |
+| FR-M13-027 | public-verifier-app | services/field-mobile-svc/py/ussd-menu/tests/ci/test_fsm.py:40 | OK |
 | FR-M13-028 | public-verifier-app |  | GAP |
-| FR-M13-029 | public-verifier-app |  | GAP |
-| FR-M13-030 | public-verifier-app |  | GAP |
+| FR-M13-029 | public-verifier-app | services/field-mobile-svc/py/ussd-menu/tests/ci/test_fsm.py:22 | OK |
+| FR-M13-030 | public-verifier-app | services/field-mobile-svc/crates/mobile-bff/tests/verify_test.rs:36 | OK |
 | FR-M13-031 | public-verifier-app |  | GAP |
-| FR-M13-032 | public-verifier-app |  | GAP |
+| FR-M13-032 | public-verifier-app | services/field-mobile-svc/crates/mobile-bff/tests/verify_test.rs:78 | OK |
 | FR-M13-033 | public-verifier-app |  | GAP |
 | FR-M13-034 | public-verifier-app |  | GAP |
 | FR-M13-035 | public-verifier-app |  | GAP |
@@ -4084,7 +4084,7 @@
 | AC-M37-02 | voter-education-cms |  | GAP |
 | AC-M37-03 | voter-education-cms |  | GAP |
 | AC-M37-04 | voter-education-cms |  | GAP |
-| AC-M37-05 | voter-education-cms |  | GAP |
+| AC-M37-05 | voter-education-cms | services/training-svc/django/cms/tests/test_cms.py:34, services/training-svc/django/cms/tests/test_cms.py:66, services/training-svc/django/cms/tests/test_cms.py:112, services/training-svc/django/cms/tests/test_cms.py:149, services/training-svc/django/cms/tests/test_cms.py:173 | OK |
 | AC-M37-06 | voter-education-cms |  | GAP |
 | AC-M37-07 | voter-education-cms |  | GAP |
 | AC-M37-08 | voter-education-cms |  | GAP |
@@ -4096,7 +4096,7 @@
 | FR-M37-002 | voter-education-cms |  | GAP |
 | FR-M37-003 | voter-education-cms |  | GAP |
 | FR-M37-004 | voter-education-cms |  | GAP |
-| FR-M37-005 | voter-education-cms |  | GAP |
+| FR-M37-005 | voter-education-cms | services/training-svc/django/cms/tests/test_cms.py:34, services/training-svc/django/cms/tests/test_cms.py:66, services/training-svc/django/cms/tests/test_cms.py:112, services/training-svc/django/cms/tests/test_cms.py:149, services/training-svc/django/cms/tests/test_cms.py:173 | OK |
 | FR-M37-006 | voter-education-cms |  | GAP |
 | FR-M37-007 | voter-education-cms |  | GAP |
 | FR-M37-008 | voter-education-cms |  | GAP |
@@ -4447,4 +4447,4 @@
 | EC-TIM-08 | cross-cutting |  | GAP |
 | EC-TIM-09 | cross-cutting |  | GAP |
 
-*Generated by eel-completeness trace, 4444 entries, 4441 gaps, 0 orphaned.*
+*Generated by eel-completeness trace, 4444 entries, 4419 gaps, 0 orphaned.*

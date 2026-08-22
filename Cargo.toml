@@ -176,6 +176,10 @@ kit-attest      = { path = "services/biometric-edge-svc/crates/kit-attest" }
 # Intra-workspace packages (added by WP-4.3 to fix missing workspace deps)
 eel-resilience-rs = { path = "packages/eel-resilience-rs" }
 
+# Test-trace marker (WP-0.5 completeness): no-op #[trace(...)] attribute so the
+# trace audit can map tests to requirements without altering behavior.
+eel-trace-rs = { path = "packages/eel-trace-rs" }
+
 # CLI tooling
 clap            = { version = "4",    features = ["derive", "env"] }
 indicatif       = { version = "0.17" }

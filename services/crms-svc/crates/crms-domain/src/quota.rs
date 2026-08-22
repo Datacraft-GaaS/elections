@@ -116,35 +116,42 @@ pub fn evaluate_quota(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use eel_trace_rs::trace;
 
+    #[trace("FR-M12-008")]
     #[test]
     fn two_thirds_balanced_passes() {
         assert!(check_two_thirds_rule(6, 3, 3).is_ok());
     }
 
+    #[trace("FR-M12-008")]
     #[test]
     fn two_thirds_exact_threshold_passes() {
         // 4 of 6 = 2/3 exactly — permitted.
         assert!(check_two_thirds_rule(6, 4, 2).is_ok());
     }
 
+    #[trace("FR-M12-008", "AC-M12-03")]
     #[test]
     fn two_thirds_violation_detected() {
         // 5 of 6 > 2/3 — violation.
         assert!(check_two_thirds_rule(6, 5, 1).is_err());
     }
 
+    #[trace("FR-M12-008")]
     #[test]
     fn zero_cleared_passes() {
         assert!(check_two_thirds_rule(0, 0, 0).is_ok());
     }
 
+    #[trace("FR-M12-009")]
     #[test]
     fn youth_check() {
         assert!(is_youth("1990-01-01", "2024-01-01")); // 34 — youth
         assert!(!is_youth("1985-01-01", "2024-01-01")); // 39 — not youth
     }
 
+    #[trace("FR-M12-008", "AC-M12-03")]
     #[test]
     fn evaluate_quota_violation() {
         let candidates = vec![

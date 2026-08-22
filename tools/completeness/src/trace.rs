@@ -43,9 +43,12 @@ const SKIP_DIRS: &[&str] = &[
     ".dart_tool",
     // Tooling and the verification harness carry the annotation syntax in
     // comments/docs and dry-run fixtures; they are not service test suites, so
-    // scanning them pollutes the coverage map with false orphaned IDs.
+    // scanning them pollutes the coverage map with false orphaned IDs. The
+    // eel-trace-rs marker crate likewise only carries the syntax in its own doc
+    // example, so it is excluded rather than counted as a test location.
     "tools",
     "verification",
+    "eel-trace-rs",
 ];
 
 pub fn run(root: &Path, traceability_path: &Path, fail_on_gap: bool) -> Result<i32> {
@@ -215,12 +218,18 @@ fn collect_coverage(root: &Path) -> Result<CoverageMap> {
     let py_re = Regex::new(r#"@pytest\.mark\.trace\s*\(([^)]+)\)"#).unwrap();
     // Elixir: @tag trace: ["EC-XXX-01", ...]
     let ex_re = Regex::new(r#"@tag\s+trace:\s*\[([^\]]+)\]"#).unwrap();
+    // Requirement IDs come in two shapes: module features/ACs such as
+    // FR-M12-008 or AC-M12-03 (letter+digits module code) and cross-cutting
+    // edge cases such as EC-DAT-01 (all-letter module code). One pattern
+    // matches both. Without the module shape the audit misses every FR/AC row,
+    // which is the bulk of TRACEABILITY.yaml.
+    const ID_BODY: &str = r#"[A-Z]{2}-[A-Z]{1,3}\d{0,3}-\d{2,4}"#;
     // Flutter: testWidgets('... [EC-MOB-01]')
-    let flutter_re = Regex::new(r#"\[([A-Z]{2}-[A-Z]{2,6}-\d{2,4})\]"#).unwrap();
+    let flutter_re = Regex::new(&format!(r#"\[({ID_BODY})\]"#)).unwrap();
     // Playwright/Vitest: test('... @EC-SCL-01')
-    let js_re = Regex::new(r#"@([A-Z]{2}-[A-Z]{2,6}-\d{2,4})"#).unwrap();
+    let js_re = Regex::new(&format!(r#"@({ID_BODY})"#)).unwrap();
     // EC-ID bare string extractor
-    let id_re = Regex::new(r#"["\']([A-Z]{2}-[A-Z]{2,6}-\d{2,4})["\']"#).unwrap();
+    let id_re = Regex::new(&format!(r#"["\']({ID_BODY})["\']"#)).unwrap();
 
     let walker = WalkDir::new(root)
         .follow_links(false)

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="eel-traceability" tests="4444" failures="4441" errors="0">
-    <testsuite name="eel-traceability" tests="4444" disabled="0" errors="0" failures="4441">
+<testsuites name="eel-traceability" tests="4444" failures="4419" errors="0">
+    <testsuite name="eel-traceability" tests="4444" disabled="0" errors="0" failures="4419">
         <testcase name="AC-M03-01">
             <failure message="AC-M03-01: no tests found"/>
         </testcase>
@@ -3095,7 +3095,6 @@
             <failure message="AC-M12-02: no tests found"/>
         </testcase>
         <testcase name="AC-M12-03">
-            <failure message="AC-M12-03: no tests found"/>
         </testcase>
         <testcase name="AC-M12-04">
             <failure message="AC-M12-04: no tests found"/>
@@ -3146,10 +3145,8 @@
             <failure message="FR-M12-007: no tests found"/>
         </testcase>
         <testcase name="FR-M12-008">
-            <failure message="FR-M12-008: no tests found"/>
         </testcase>
         <testcase name="FR-M12-009">
-            <failure message="FR-M12-009: no tests found"/>
         </testcase>
         <testcase name="FR-M12-010">
             <failure message="FR-M12-010: no tests found"/>
@@ -5570,10 +5567,8 @@
             <failure message="FR-M57-002: no tests found"/>
         </testcase>
         <testcase name="FR-M57-003">
-            <failure message="FR-M57-003: no tests found"/>
         </testcase>
         <testcase name="FR-M57-004">
-            <failure message="FR-M57-004: no tests found"/>
         </testcase>
         <testcase name="FR-M57-005">
             <failure message="FR-M57-005: no tests found"/>
@@ -6152,7 +6147,6 @@
             <failure message="AC-M42-08: no tests found"/>
         </testcase>
         <testcase name="AC-M42-09">
-            <failure message="AC-M42-09: no tests found"/>
         </testcase>
         <testcase name="AC-M42-10">
             <failure message="AC-M42-10: no tests found"/>
@@ -8492,7 +8486,6 @@
             <failure message="AC-M38-01: no tests found"/>
         </testcase>
         <testcase name="AC-M38-02">
-            <failure message="AC-M38-02: no tests found"/>
         </testcase>
         <testcase name="AC-M38-03">
             <failure message="AC-M38-03: no tests found"/>
@@ -8540,7 +8533,6 @@
             <failure message="FR-M38-005: no tests found"/>
         </testcase>
         <testcase name="FR-M38-006">
-            <failure message="FR-M38-006: no tests found"/>
         </testcase>
         <testcase name="FR-M38-007">
             <failure message="FR-M38-007: no tests found"/>
@@ -8999,22 +8991,18 @@
             <failure message="FR-M11-050: no tests found"/>
         </testcase>
         <testcase name="AC-M13-01">
-            <failure message="AC-M13-01: no tests found"/>
         </testcase>
         <testcase name="AC-M13-02">
             <failure message="AC-M13-02: no tests found"/>
         </testcase>
         <testcase name="AC-M13-03">
-            <failure message="AC-M13-03: no tests found"/>
         </testcase>
         <testcase name="AC-M13-04">
             <failure message="AC-M13-04: no tests found"/>
         </testcase>
         <testcase name="AC-M13-05">
-            <failure message="AC-M13-05: no tests found"/>
         </testcase>
         <testcase name="AC-M13-06">
-            <failure message="AC-M13-06: no tests found"/>
         </testcase>
         <testcase name="AC-M13-07">
             <failure message="AC-M13-07: no tests found"/>
@@ -9041,7 +9029,6 @@
             <failure message="AC-M13-14: no tests found"/>
         </testcase>
         <testcase name="FR-M13-001">
-            <failure message="FR-M13-001: no tests found"/>
         </testcase>
         <testcase name="FR-M13-002">
             <failure message="FR-M13-002: no tests found"/>
@@ -9104,37 +9091,30 @@
             <failure message="FR-M13-021: no tests found"/>
         </testcase>
         <testcase name="FR-M13-022">
-            <failure message="FR-M13-022: no tests found"/>
         </testcase>
         <testcase name="FR-M13-023">
             <failure message="FR-M13-023: no tests found"/>
         </testcase>
         <testcase name="FR-M13-024">
-            <failure message="FR-M13-024: no tests found"/>
         </testcase>
         <testcase name="FR-M13-025">
-            <failure message="FR-M13-025: no tests found"/>
         </testcase>
         <testcase name="FR-M13-026">
             <failure message="FR-M13-026: no tests found"/>
         </testcase>
         <testcase name="FR-M13-027">
-            <failure message="FR-M13-027: no tests found"/>
         </testcase>
         <testcase name="FR-M13-028">
             <failure message="FR-M13-028: no tests found"/>
         </testcase>
         <testcase name="FR-M13-029">
-            <failure message="FR-M13-029: no tests found"/>
         </testcase>
         <testcase name="FR-M13-030">
-            <failure message="FR-M13-030: no tests found"/>
         </testcase>
         <testcase name="FR-M13-031">
             <failure message="FR-M13-031: no tests found"/>
         </testcase>
         <testcase name="FR-M13-032">
-            <failure message="FR-M13-032: no tests found"/>
         </testcase>
         <testcase name="FR-M13-033">
             <failure message="FR-M13-033: no tests found"/>
@@ -12248,7 +12228,6 @@
             <failure message="AC-M37-04: no tests found"/>
         </testcase>
         <testcase name="AC-M37-05">
-            <failure message="AC-M37-05: no tests found"/>
         </testcase>
         <testcase name="AC-M37-06">
             <failure message="AC-M37-06: no tests found"/>
@@ -12284,7 +12263,6 @@
             <failure message="FR-M37-004: no tests found"/>
         </testcase>
         <testcase name="FR-M37-005">
-            <failure message="FR-M37-005: no tests found"/>
         </testcase>
         <testcase name="FR-M37-006">
             <failure message="FR-M37-006: no tests found"/>
