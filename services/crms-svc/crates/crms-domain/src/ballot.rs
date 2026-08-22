@@ -88,7 +88,26 @@ impl BallotProof {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use eel_trace_rs::trace;
 
+    fn build_proof() -> BallotProof {
+        BallotProof::build(
+            "E2027".into(),
+            "MP".into(),
+            "019".into(),
+            vec![BallotPosition {
+                ballot_order: 1,
+                candidate_id: Uuid::new_v4(),
+                candidate_name: "A".into(),
+                party_name: None,
+                party_colour_hex: None,
+                symbol_url: None,
+                portrait_url: None,
+            }],
+        )
+    }
+
+    #[trace("FR-M12-018")]
     #[test]
     fn positions_sorted_deterministically() {
         let positions = vec![
@@ -115,5 +134,41 @@ mod tests {
         assert_eq!(proof.positions[0].ballot_order, 1);
         assert_eq!(proof.positions[1].ballot_order, 2);
         assert!(!proof.ballot_hash.is_empty());
+    }
+
+    #[trace("FR-M12-019")]
+    #[test]
+    fn party_sign_off_precedes_printer_approval() {
+        let mut p = build_proof();
+        assert!(p.party_sign_off_at.is_none());
+        p.record_party_sign_off();
+        assert!(p.party_sign_off_at.is_some());
+        p.approve("printer-1".into());
+        assert_eq!(p.printer_sig.as_deref(), Some("printer-1"));
+        assert!(p.approved_at.is_some());
+    }
+
+    #[trace("FR-M12-020")]
+    #[test]
+    fn hsm_signature_carries_into_published_package() {
+        let mut p = build_proof();
+        assert!(p.hsm_signature.is_none());
+        p.set_hsm_signature("sig-hex".into());
+        assert_eq!(p.hsm_signature.as_deref(), Some("sig-hex"));
+        // Signature and ballot hash travel with the published package.
+        let published: BallotProof = serde_json::from_str(&p.to_printer_package()).unwrap();
+        assert_eq!(published.hsm_signature.as_deref(), Some("sig-hex"));
+        assert_eq!(published.ballot_hash, p.ballot_hash);
+    }
+
+    #[trace("FR-M12-021")]
+    #[test]
+    fn printer_package_round_trips() {
+        let p = build_proof();
+        let pkg: BallotProof = serde_json::from_str(&p.to_printer_package()).unwrap();
+        assert_eq!(pkg.election_id, p.election_id);
+        assert_eq!(pkg.position_code, "MP");
+        assert_eq!(pkg.positions.len(), p.positions.len());
+        assert_eq!(pkg.ballot_hash, p.ballot_hash);
     }
 }

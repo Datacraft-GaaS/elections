@@ -85,4 +85,13 @@ mod tests {
         assert_eq!(req.status, SarStatus::Rejected);
         assert!(req.resolution_notes.is_some());
     }
+
+    #[trace("FR-M02-040")]
+    #[test]
+    fn validate_sar_rejects_already_resolved() {
+        let mut req = SarRequest::new("voter-3".into(), "KE11112222".into());
+        assert!(validate_sar(&req).is_ok());
+        req.fulfill("data exported");
+        assert!(validate_sar(&req).is_err());
+    }
 }
