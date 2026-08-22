@@ -22,7 +22,7 @@ pub async fn get_situational_awareness() -> impl IntoResponse {
 }
 
 pub async fn list_stations() -> impl IntoResponse {
-    Json(serde_json::json!({ "stations": [] as Vec<Station> }))
+    Json(serde_json::json!({ "stations": [] }))
 }
 
 pub async fn get_station(Path(station_code): Path<String>) -> impl IntoResponse {
@@ -38,7 +38,7 @@ pub async fn get_station(Path(station_code): Path<String>) -> impl IntoResponse 
 }
 
 pub async fn list_escalations() -> impl IntoResponse {
-    Json(serde_json::json!({ "escalations": [] as Vec<Escalation> }))
+    Json(serde_json::json!({ "escalations": [] }))
 }
 
 pub async fn create_escalation(Json(req): Json<EscalationRequest>) -> impl IntoResponse {
@@ -68,17 +68,17 @@ pub async fn patch_escalation(Path(id): Path<Uuid>, Json(req): Json<EscalationPa
 }
 
 pub async fn get_turnout_heatmap() -> impl IntoResponse {
-    Json(serde_json::json!({ "entries": [] as Vec<TurnoutHeatmapEntry> }))
+    Json(serde_json::json!({ "entries": [] }))
 }
 
 pub async fn get_audit_log() -> impl IntoResponse {
-    Json(serde_json::json!({ "entries": [] as Vec<AuditLogEntry> }))
+    Json(serde_json::json!({ "entries": [] }))
 }
 
 // IAB handlers
 
 pub async fn list_audit_reports() -> impl IntoResponse {
-    Json(serde_json::json!({ "reports": [] as Vec<AuditReport> }))
+    Json(serde_json::json!({ "reports": [] }))
 }
 
 pub async fn create_audit_report(Json(req): Json<AuditReportRequest>) -> impl IntoResponse {
@@ -110,11 +110,11 @@ pub async fn get_iab_summary() -> impl IntoResponse {
 
 pub async fn get_audit_trails(Path(module_code): Path<String>) -> impl IntoResponse {
     info!(module_code, "get_audit_trails");
-    Json(serde_json::json!({ "module_code": module_code, "entries": [] as Vec<AuditTrailEntry> }))
+    Json(serde_json::json!({ "module_code": module_code, "entries": [] }))
 }
 
 pub async fn list_iab_flags() -> impl IntoResponse {
-    Json(serde_json::json!({ "flags": [] as Vec<IabFlag> }))
+    Json(serde_json::json!({ "flags": [] }))
 }
 
 pub async fn create_iab_flag(Json(req): Json<IabFlagRequest>) -> impl IntoResponse {
@@ -128,7 +128,7 @@ pub async fn create_iab_flag(Json(req): Json<IabFlagRequest>) -> impl IntoRespon
 // Grievance handlers
 
 pub async fn list_complaints() -> impl IntoResponse {
-    Json(serde_json::json!({ "complaints": [] as Vec<GrievanceComplaint> }))
+    Json(serde_json::json!({ "complaints": [] }))
 }
 
 pub async fn create_complaint(Json(req): Json<GrievanceComplaintRequest>) -> impl IntoResponse {
@@ -154,7 +154,7 @@ pub async fn get_complaint(Path(reference_code): Path<String>) -> impl IntoRespo
 }
 
 pub async fn list_complaint_updates(Path(complaint_id): Path<Uuid>) -> impl IntoResponse {
-    Json(serde_json::json!({ "complaint_id": complaint_id, "updates": [] as Vec<ComplaintUpdate> }))
+    Json(serde_json::json!({ "complaint_id": complaint_id, "updates": [] }))
 }
 
 pub async fn add_complaint_update(Path(complaint_id): Path<Uuid>, Json(req): Json<ComplaintUpdateRequest>) -> impl IntoResponse {

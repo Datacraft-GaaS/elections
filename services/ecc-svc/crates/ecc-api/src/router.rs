@@ -1,6 +1,6 @@
 use crate::handlers::*;
 use axum::{
-    routing::{get, patch, post},
+    routing::{get, post},
     Router,
 };
 
