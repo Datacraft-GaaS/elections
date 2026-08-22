@@ -1,0 +1,45 @@
+{% extends "telemetry/base.html" %}
+{% block content %}
+<h1 id="page-heading">{{ page_title }}</h1>
+<p>Select a preset query, fill in the required parameters, and click Run.</p>
+
+{% for preset in presets %}
+<div class="card" role="region" aria-labelledby="preset-{{ preset.name }}-heading">
+  <h2 id="preset-{{ preset.name }}-heading">{{ preset.name|title }}</h2>
+  <p>{{ preset.description }}</p>
+
+  <form
+    hx-post="{% url 'telemetry:run_preset' preset.name %}"
+    hx-target="#result-{{ preset.name }}"
+    hx-swap="innerHTML"
+    aria-label="Run preset {{ preset.name }}"
+  >
+    {% csrf_token %}
+    <div class="form-row">
+      {% for param in preset.required_params %}
+        <div>
+          <label for="param-{{ preset.name }}-{{ param }}">{{ param }}</label>
+          <input
+            type="text"
+            id="param-{{ preset.name }}-{{ param }}"
+            name="{{ param }}"
+            placeholder="{{ param }}"
+            required
+          >
+        </div>
+      {% endfor %}
+      <div>
+        <button type="submit" class="btn btn-primary">
+          Run
+          <span class="htmx-indicator" aria-hidden="true">...</span>
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <div id="result-{{ preset.name }}" role="status" aria-live="polite" style="margin-top:12px"></div>
+</div>
+{% empty %}
+<p>No presets available. Check the telemetry query API connection.</p>
+{% endfor %}
+{% endblock %}

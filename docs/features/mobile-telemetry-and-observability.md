@@ -213,3 +213,49 @@ New service crate `services/ecc-svc/crates/telemetry-query` + Django + LiveView 
 | TELE-D | ai-platform-svc/crates/telemetry-analytics + 9 anomaly detectors + UEBA integration + alert routing to ECC |
 
 Total: 4 new crates + 1 SDK sub-module + 1 migration + 1 Django app + 1 LiveView + extensions to all 13 Flutter apps. Cross-references M16 (ECC) + M28 (AI monitoring) + HARD-6 (UEBA) + HARD-14 (behavioural biometrics) + HARD-16 (physical seal) + HARD-21 (audit chain).
+
+## 13. As-built status
+
+All 4 work packages are shipped across 4 commits.
+
+### TELE-A — kit-sdk telemetry SDK + 13-app instrumentation (commit `1264126`)
+
+| Path | Purpose | Tests |
+|---|---|---|
+| `packages/kit-sdk-flutter/lib/src/telemetry/` (18 files) | Signal taxonomy (13 classes), sensors_service, location_service, activity_tracker, rfid_proximity_service, session_recorder, battery_monitor, drop_detector, network_watcher, attestation_pulse, offline_queue, hash_chain (SHA-256), signer, redactor, sink_dispatcher, signal_sink, signal_types | — |
+| 13 Flutter apps | `TelemetryService.init(appId, personaRole)` on boot; auto-instrumentation | — |
+
+### TELE-B — ingest + V052 + Merkle anchoring (commit `147e18e`)
+
+| Path | Purpose | Tests |
+|---|---|---|
+| `services/field-mobile-svc/migrations/V052__mobile_telemetry.sql` | 8 tables (devices, sessions, signals, activity_frames, geo_dwells, alerts, queries, snapshots) + monthly partitions + append-only triggers + prev_hash chain | schema |
+| `services/field-mobile-svc/crates/telemetry-ingest/` | POST /v1/telemetry/ingest: SVID verify + HMAC + prev_hash chain + replay defence + classify + CloudEvent emit + alert routing | Rust tests |
+
+### TELE-C — admin query console (commit `4e1bdcd`, after relaunch)
+
+| Path | Purpose | Tests |
+|---|---|---|
+| `services/ecc-svc/crates/telemetry-query/src/{dsl,validator,planner,executor,preset,nl_bridge,evidence_bundle,audit,permission,metrics,api}.rs` | TelemetryQuery DSL, validator + diagnostics, planner, executor, preset "hard question" library, opt-in NL bridge (LiteLLM), evidence-bundle exporter (PDF/CSV/Parquet + HSM signature + manifest SHA-256), query audit log, SpiceDB permission gate, 7 REST routes | 34 Rust |
+| `services/ecc-svc/django/ecc-admin/apps/telemetry/` | 6 unmanaged models mirroring V052, ModelAdmin, hard-questions + query-builder + evidence-export views, NL-proposed partial, tests | 310-line pytest |
+| `services/ecc-svc/ex/ecc_live/lib/ecc_live_web/live/{telemetry_live,telemetry_query_live}.ex` | Real-time timeline LiveView + structured-query LiveView with column filter + evidence-bundle export | 2 ExUnit files |
+| `services/ecc-svc/ex/ecc_live/lib/ecc_live/router.ex` | `live /telemetry` + `live /telemetry/query` routes | — |
+
+### TELE-D — analytics + 9 detectors (commit `063d1a7`)
+
+| Path | Purpose | Tests |
+|---|---|---|
+| `services/ai-platform-svc/crates/telemetry-analytics/` | 9 anomaly detectors (drop, geo-fence breach, session-hijack, battery starvation, RFID absence, login-time, read-heavy, coordinated-device) + UEBA integration + alert routing | Rust tests |
+
+### Cross-language test totals (TELE-C)
+
+- **Rust**: 34 (telemetry-query)
+- **Elixir**: telemetry_query_test + telemetry_test ExUnit
+- **Django**: test_admin.py (system check 0 issues)
+
+### Deviations tracked
+
+- Elixir base compile was fixed by pinning `phoenix_html ~> 3.3` in `mix.exs` (Phoenix 1.7's `use Phoenix.HTML` was removed in phoenix_html 4.0).
+- HEEx cannot leak an `if`-condition binding into its block; the telemetry_query result-table `rows` is hoisted into a `<% %>` assignment.
+- Hash chain uses SHA-256 (no BLAKE3 Dart package exists).
+- Evidence bundle uses additive hash-based manifest signature rather than full HSM countersign, pending HSM-wiring in the local profile.

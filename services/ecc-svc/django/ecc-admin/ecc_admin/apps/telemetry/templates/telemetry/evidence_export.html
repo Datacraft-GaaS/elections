@@ -1,0 +1,58 @@
+{% extends "telemetry/base.html" %}
+{% block content %}
+<h1 id="page-heading">{{ page_title }}</h1>
+<p>Select a past query and export a court-admissible evidence bundle (PDF + CSV + Parquet + Merkle proof).</p>
+
+<div class="card">
+  <h2>Recent queries</h2>
+  {% if recent_queries %}
+    <table role="grid" aria-label="Recent telemetry queries">
+      <thead>
+        <tr>
+          <th scope="col">Query ID</th>
+          <th scope="col">Actor</th>
+          <th scope="col">Executed at</th>
+          <th scope="col">Rows</th>
+          <th scope="col">Preset</th>
+          <th scope="col">Evidence</th>
+          <th scope="col">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for q in recent_queries %}
+        <tr>
+          <td><code>{{ q.query_id }}</code></td>
+          <td>{{ q.actor_svid }}</td>
+          <td><time datetime="{{ q.executed_at|date:'c' }}">{{ q.executed_at }}</time></td>
+          <td>{{ q.row_count }}</td>
+          <td>{{ q.preset_name|default:"-" }}</td>
+          <td>
+            {% if q.evidence_exported %}
+              <span class="badge badge-low">Exported</span>
+            {% else %}
+              <span style="color:#6b7280">No</span>
+            {% endif %}
+          </td>
+          <td>
+            <button
+              class="btn btn-primary"
+              style="padding:4px 12px;min-height:36px;font-size:0.85rem"
+              hx-post="{% url 'telemetry:trigger_export' q.query_id %}"
+              hx-target="#export-result-{{ q.query_id }}"
+              hx-swap="innerHTML"
+              hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+              aria-label="Export evidence bundle for query {{ q.query_id }}"
+            >
+              Export bundle
+            </button>
+            <div id="export-result-{{ q.query_id }}" role="status" aria-live="polite" style="margin-top:6px;font-size:0.85rem"></div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No queries found. Run a query from the Preset Queries or Query Builder pages first.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% if result.error %}
+  <p role="alert" style="color:#dc2626">Translation error: {{ result.error }}</p>
+{% else %}
+  <div style="border:1px solid #d1d5db;border-radius:6px;padding:14px;background:#f9fafb">
+    <p><strong>Proposed DSL</strong> (confidence: {{ result.proposed.confidence|floatformat:2 }})</p>
+    <p style="font-size:0.85rem;color:#6b7280">{{ result.proposed.explanation }}</p>
+    <pre style="font-size:0.82rem;background:#1e1e1e;color:#d4d4d4;padding:12px;border-radius:4px;overflow-x:auto"><code>{{ result.proposed.query|pprint }}</code></pre>
+    <p style="margin-top:10px;font-size:0.85rem;color:#b45309">
+      Review the proposed DSL above, then confirm and run it from the Query Builder.
+    </p>
+  </div>
+{% endif %}

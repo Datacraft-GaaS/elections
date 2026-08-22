@@ -4142,6 +4142,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "eel-ecc-telemetry-query"
+version = "0.1.0"
+dependencies = [
+ "arrow-array",
+ "arrow-schema",
+ "axum 0.8.9",
+ "blake3",
+ "chrono",
+ "csv",
+ "eel-auth-rs",
+ "eel-crypto-rs",
+ "eel-events-rs",
+ "eel-outbox-rs",
+ "eel-resilience-rs",
+ "hex",
+ "parquet",
+ "printpdf",
+ "prometheus",
+ "reqwest 0.12.28",
+ "rust_xlsxwriter",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "sqlx",
+ "tempfile",
+ "thiserror 2.0.20",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "eel-ecc-threat-intel"
 version = "0.1.0"
 dependencies = [
@@ -4200,6 +4233,35 @@ dependencies = [
  "testcontainers-modules",
  "thiserror 2.0.20",
  "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "eel-field-mobile-telemetry-ingest"
+version = "0.1.0"
+dependencies = [
+ "axum 0.8.9",
+ "base64 0.22.1",
+ "blake3",
+ "chrono",
+ "eel-auth-rs",
+ "eel-crypto-rs",
+ "eel-events-rs",
+ "eel-outbox-rs",
+ "eel-resilience-rs",
+ "hex",
+ "hmac",
+ "prometheus",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "sqlx",
+ "tempfile",
+ "thiserror 2.0.20",
+ "tokio",
+ "tokio-util",
  "tracing",
  "uuid",
 ]
@@ -10165,6 +10227,18 @@ name = "semver"
 version = "1.0.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a7852d02fc848982e0c167ef163aaff9cd91dc640ba85e263cb1ce46fae51cd"
+
+[[package]]
+name = "sensor-driver"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "rstest",
+ "serde",
+ "thiserror 2.0.20",
+ "tracing",
+ "uuid",
+]
 
 [[package]]
 name = "seq-macro"

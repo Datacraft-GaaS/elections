@@ -1,0 +1,4 @@
+
+# Django dev artifacts
+db.sqlite3
+*.sqlite3

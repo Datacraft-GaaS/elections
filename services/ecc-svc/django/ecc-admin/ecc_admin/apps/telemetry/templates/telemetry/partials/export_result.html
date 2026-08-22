@@ -1,0 +1,6 @@
+{% if result.error %}
+  <p role="alert" style="color:#dc2626">Export failed: {{ result.error }}</p>
+{% else %}
+  <p style="color:#16a34a">Bundle generated. Manifest SHA-256: <code>{{ result.manifest.manifest_sha256 }}</code></p>
+  <p style="font-size:0.85rem;color:#6b7280">HSM signature: <code>{{ result.manifest.hsm_signature }}</code></p>
+{% endif %}

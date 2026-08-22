@@ -1,0 +1,129 @@
+{% extends "telemetry/base.html" %}
+{% block content %}
+<h1 id="page-heading">{{ page_title }}</h1>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+
+  <!-- Left: DSL builder -->
+  <section aria-labelledby="dsl-heading">
+    <h2 id="dsl-heading">Structured DSL builder</h2>
+    <div class="card">
+      <form id="dsl-form" aria-label="Build a structured telemetry query">
+        {% csrf_token %}
+
+        <fieldset style="border:0;padding:0;margin-bottom:14px">
+          <legend style="font-weight:600;margin-bottom:8px">Signal classes</legend>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            {% for value, label in signal_classes %}
+              <label style="display:flex;align-items:center;gap:4px;font-size:0.9rem">
+                <input type="checkbox" name="signal_classes" value="{{ value }}"> {{ label }}
+              </label>
+            {% endfor %}
+          </div>
+        </fieldset>
+
+        <div class="form-row">
+          <div>
+            <label for="from-dt">From</label>
+            <input type="datetime-local" id="from-dt" name="from" required>
+          </div>
+          <div>
+            <label for="to-dt">To</label>
+            <input type="datetime-local" id="to-dt" name="to" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div>
+            <label for="limit">Row limit</label>
+            <input type="number" id="limit" name="limit" value="1000" min="1" max="100000" style="width:120px">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="run-dsl-btn">
+          Run query
+          <span class="htmx-indicator" aria-hidden="true">...</span>
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Right: NL bridge -->
+  <section aria-labelledby="nl-heading">
+    <h2 id="nl-heading">Natural-language query</h2>
+    <div class="card">
+      <form
+        hx-post="{% url 'telemetry:nl_translate' %}"
+        hx-target="#nl-result"
+        hx-swap="innerHTML"
+        aria-label="Translate natural language to DSL"
+      >
+        {% csrf_token %}
+        <label for="nl-text" style="font-weight:600;display:block;margin-bottom:6px">
+          Describe your question in plain English
+        </label>
+        <textarea
+          id="nl-text"
+          name="text"
+          rows="4"
+          style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:0.9rem;resize:vertical"
+          placeholder="Which kits at station 12345 came within 2 metres of a ballot box between 17:00 and 19:00?"
+          required
+        ></textarea>
+        <button type="submit" class="btn btn-secondary" style="margin-top:10px">
+          Translate
+          <span class="htmx-indicator" aria-hidden="true">...</span>
+        </button>
+      </form>
+      <div id="nl-result" role="status" aria-live="polite" style="margin-top:14px"></div>
+    </div>
+  </section>
+</div>
+
+<!-- Result area -->
+<section aria-labelledby="result-heading">
+  <h2 id="result-heading" style="margin-top:24px">Query results</h2>
+  <div id="result-area" role="status" aria-live="polite">
+    <p style="color:#6b7280">Run a query above to see results here.</p>
+  </div>
+</section>
+
+<script>
+document.getElementById('dsl-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const fd = new FormData(this);
+  const classes = fd.getAll('signal_classes');
+  const fromVal = fd.get('from');
+  const toVal = fd.get('to');
+  const limit = parseInt(fd.get('limit') || '1000', 10);
+
+  const body = {
+    time_range: {
+      from: fromVal ? new Date(fromVal).toISOString() : null,
+      to: toVal ? new Date(toVal).toISOString() : null,
+    },
+    signal_classes: classes,
+    limit,
+  };
+
+  const resultArea = document.getElementById('result-area');
+  resultArea.textContent = 'Running...';
+
+  try {
+    const resp = await fetch('{% url "telemetry:run_structured" %}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token }}',
+        'HX-Request': 'true',
+      },
+      body: JSON.stringify(body),
+    });
+    const html = await resp.text();
+    resultArea.innerHTML = html;
+  } catch (err) {
+    resultArea.textContent = 'Error: ' + err.message;
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% if result.error %}
+  <p role="alert" style="color:#dc2626">Error: {{ result.error }}</p>
+{% else %}
+  <p><strong>{{ result.count }}</strong> row(s) returned{% if preset_name %} for preset <em>{{ preset_name }}</em>{% endif %}.</p>
+  {% if result.rows %}
+    <div style="overflow-x:auto">
+      <table role="grid" style="font-size:0.85rem">
+        <thead>
+          <tr>
+            {% for key in result.rows.0.keys %}
+              <th scope="col">{{ key }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in result.rows|slice:":200" %}
+            <tr>
+              {% for val in row.values %}
+                <td>{{ val }}</td>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% if result.count > 200 %}
+        <p style="font-size:0.85rem;color:#6b7280">Showing first 200 of {{ result.count }} rows. Use evidence export for the full set.</p>
+      {% endif %}
+    </div>
+  {% endif %}
+{% endif %}

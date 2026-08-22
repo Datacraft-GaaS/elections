@@ -24,6 +24,8 @@ defmodule EccLive.Router do
     live "/kits", Live.KitsLive, :index
     live "/cover-tamper", Live.CoverTamperLive, :index
     live "/cover-tamper/history", Live.CoverHistoryLive, :index
+    live "/telemetry", Live.TelemetryLive, :index
+    live "/telemetry/query", Live.TelemetryQueryLive, :index
   end
 
   scope "/health", EccLive do

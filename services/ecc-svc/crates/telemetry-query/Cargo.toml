@@ -1,0 +1,69 @@
+[package]
+name        = "eel-ecc-telemetry-query"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+rust-version.workspace = true
+publish     = false
+description = "Telemetry query API: REST, DSL, NL bridge, evidence export (TELE-C)"
+
+[lib]
+name = "eel_ecc_telemetry_query"
+path = "src/lib.rs"
+
+[[test]]
+name    = "query_test"
+path    = "tests/query_test.rs"
+
+[dependencies]
+# HTTP / async
+axum            = { workspace = true }
+tokio           = { workspace = true }
+tokio-util      = { workspace = true }
+
+# Database
+sqlx            = { workspace = true }
+
+# Serialization
+serde           = { workspace = true }
+serde_json      = { workspace = true }
+
+# Errors + tracing
+thiserror       = { workspace = true }
+tracing         = { workspace = true }
+
+# IDs
+uuid            = { workspace = true }
+
+# Time
+chrono          = { workspace = true }
+
+# Crypto
+sha2            = { workspace = true }
+hex             = { workspace = true }
+blake3          = { workspace = true }
+
+# HTTP client (NL bridge, SpiceDB)
+reqwest         = { workspace = true }
+
+# Evidence export
+tempfile        = { workspace = true }
+printpdf        = { workspace = true }
+rust_xlsxwriter = { workspace = true }
+parquet         = { workspace = true }
+arrow-array     = { workspace = true }
+arrow-schema    = { workspace = true }
+csv             = { workspace = true }
+
+# Metrics
+prometheus      = { workspace = true }
+
+# eel platform
+eel-crypto-rs   = { path = "../../../../packages/eel-crypto-rs" }
+eel-auth-rs     = { path = "../../../../packages/eel-auth-rs", default-features = false }
+eel-events-rs   = { path = "../../../../packages/eel-events-rs" }
+eel-outbox-rs   = { path = "../../../../packages/eel-outbox-rs" }
+eel-resilience-rs = { workspace = true }
+
+[dev-dependencies]
+tokio           = { workspace = true }
