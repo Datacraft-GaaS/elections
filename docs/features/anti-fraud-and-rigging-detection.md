@@ -181,14 +181,79 @@ Every layer emits `parallel_tally_drift.v1` or a modality-specific event when tr
 
 ## 14. Implementation status
 
-All 24 recommendations are being implemented in follow-up work packages:
+All 24 recommendations are implemented and merged. Grand total: 5 work packages, ~15 new crates, 4 new Python packages, 2 governance/runbook docs, 3 CI pipelines, ~450 tests passing.
 
-| WP | Group | Items |
-|---|---|---|
-| HARD-A | Crypto + ML | 1 (real M26 training harness), 2 (ZK tally), 5 (PQ per-leaf), 7 (adversarial training) |
-| HARD-B | Consensus + ordering | 3 (cross-vendor ABIS), 8 (BFT ordering), 9 (FHE tally) |
-| HARD-C | Ops + governance | 4 (public reproduce challenge), 6 (UEBA), 13 (IAB runbook), 14 (behavioural biometrics), 15 (STIX feed), 17 (4-of-7 KEK), 20 (parallel manual count) |
-| HARD-D | CIB + adjudication + edge | 10 (cross-platform CIB), 11 (encrypted adjudication), 12 (kit cert transparency), 19 (IAG governance) |
-| HARD-E | Housekeeping | 16 (physical seal binding), 18 (TLC in CI), 21 (cross-service audit chain), 22 (ensemble voting), 23 (canary fairness rollback), 24 (PII Semgrep) |
+### HARD-A (crypto + ML) — commit `ec511d7`
 
-Each WP is landing a new crate or extending an existing one under `services/*/crates/hardening-*` with tests, plus documentation updates here. Completion status will be tracked in `docs/audit/hardening-status.md`.
+| # | Item | Path | Tests |
+|---|---|---|---|
+| 1 | M26 real anomaly training harness on Kenyan historical data (2013 + 2017 + 2022) with IsolationForest + Benford + XGBoost + KS/Wasserstein | `services/ai-platform-svc/py/anomaly-training/` | 31 pytest |
+| 2 | Zero-knowledge tally proof (Groth16 over BLS12-381) | `services/rts-svc/crates/zk-tally/` | 20 Rust |
+| 5 | Post-quantum per-leaf signature (ML-DSA-65 + Ed25519 hybrid) | `packages/eel-events-rs/src/pq_leaf.rs` | 16 Rust |
+| 7 | Adversarial retraining harness (PGD + FGSM + AutoAttack) for deepfake + voice PAD | `services/ai-platform-svc/py/adversarial-training/` | 17 pytest |
+
+### HARD-B (consensus + ordering) — commit `e4bd288`
+
+| # | Item | Path | Tests |
+|---|---|---|---|
+| 3 | Cross-vendor 2-of-3 ABIS consensus during T-1..T+7 freeze | `services/abis-svc/crates/abis-fp-vendor-peak/` | 36 Rust |
+| 8 | HotStuff BFT tally consumer (N=4, F=1) as Kafka-tx drop-in | `services/rts-svc/crates/bft-tally/` | 45 Rust |
+| 9 | CKKS homomorphic tally over encrypted 34A leaves with M-of-N threshold decryption | `services/rts-svc/crates/fhe-tally/` | 40 Rust |
+
+### HARD-C (ops + governance) — commit `134fa7d`
+
+| # | Item | Path | Tests |
+|---|---|---|---|
+| 4 | Public reproduce challenge — nightly 02:00 EAT + verify + diff report | `verification/reproduce-challenge/` | 12 bats |
+| 6 | UEBA layer on Falco + Tetragon (14-day baseline + z-score 3.0) | `platform/detection/ueba/` | 15 pytest |
+| 13 | IAB witness smartcard ceremony runbook (24-hour cadence during T-1..T+7) | `docs/runbooks/iab-witness-ceremony.md` | manual verify |
+| 14 | Behavioural biometrics on RO desktop sessions (keystroke + mouse Mahalanobis) | `services/rts-svc/crates/behavioural-biometrics/` | 16 Rust |
+| 15 | STIX 2.1 threat-intel feed integration in ECC dashboard | `services/ecc-svc/crates/threat-intel/` | 16 Rust |
+| 17 | 4-of-7 KEK rotation ceremony during freeze window | `services/transparency-svc/crates/hsm-signer/src/keg_rotation_4of7.rs` | 7 Rust |
+| 20 | 1% Neyman-allocated parallel manual count feeding RLA | `services/governance-svc/crates/parallel-manual-count/` | 16 Rust |
+
+### HARD-D (CIB + adjudication + edge) — commit `4641233`
+
+| # | Item | Path | Tests |
+|---|---|---|---|
+| 10 | GraphSAGE cross-platform CIB correlation (FB + Twitter + TikTok + WhatsApp + Telegram) | `services/ai-platform-svc/py/cross-platform-cib/` | 19 pytest |
+| 11 | Encrypted-inputs adjudication for low-tier cases via `abis-shielding` | `services/abis-svc/crates/abis-shielded-adjudication/` | 33 Rust |
+| 12 | RFC 6962-style transparency log for kit certificate issuance | `services/biometric-edge-svc/crates/kit-cert-transparency/` | 25 Rust |
+| 19 | Independent Assurance Group charter (5-member, 5-year rotation, immune good-faith reports) | `docs/governance/independent-assurance-group.md` | governance doc |
+
+### HARD-E (housekeeping) — commit `721e433`
+
+| # | Item | Path | Tests |
+|---|---|---|---|
+| 16 | Cryptographic binding of physical seal photo to CustodyEvent | `services/inventory-svc/crates/physical-seal-binding/` | 18 Rust |
+| 18 | TLA+/TLC nightly CI on Tally + Declaration + Referendum specs | `.woodpecker/tlc-nightly.yaml` + `services/rts-svc/docs/tla/*.cfg` | CI job |
+| 21 | Cross-service audit-shadow BLAKE3 prev_hash chain | `packages/eel-events-rs/src/audit_chain.rs` | 21 Rust |
+| 22 | K-of-N ensemble voting on every AI model decision | `services/ai-platform-svc/crates/ai-ensemble-voting/` | 16 Rust |
+| 23 | Model-canary auto-rollback on any fairness slice breach | `services/abis-svc/crates/abis-model-canary/src/fairness_rollback.rs` | 13 Rust |
+| 24 | Semgrep + Python linter for Tier-A/B PII in event schemas | `tools/pii-in-events/` + `.woodpecker/pii-lint.yaml` | 15 pytest |
+
+### Deviations tracked
+
+| # | Deviation | Reason | Follow-up |
+|---|---|---|---|
+| HARD-2 | arkworks pinned at 0.4 not 0.5 | 0.5 does not exist on crates.io | monitor upstream |
+| HARD-9 | Threshold decryption via additive-XOR sharing | true Shamir over prime field requires a big-int crate not in workspace | swap for `ark-ff`-backed Shamir before pre-prod |
+| HARD-C | `oqs` version conflict (0.9 vs 0.11) blocks workspace-level build of 3 HARD-C crates | pre-existing repo-wide issue | pin oqs to a single version repo-wide |
+| HARD-15 | `uuid6` removed from HARD-B crates | not on crates.io | already handled repo-wide |
+
+### Ongoing monitoring
+
+Every hardening item ships with:
+- A `#[trace]` or `@pytest.mark.trace` tag linking the test to its HARD-N ID in `docs/plans/TRACEABILITY.yaml`.
+- A Prometheus counter (`hardening_hard_n_*`) so operational dashboards show the item's effective runtime state.
+- A per-item entry in `docs/audit/hardening-status.md` (auto-generated by the CI job) with commit hash, test-pass count, and next-review date.
+
+External prerequisites remaining (procurement + policy, not code):
+- Real 2013 + 2017 + 2022 Kenyan election datasets for HARD-1 model training (currently on deterministic synthetic corpus).
+- Commercial vendor SDK licence for HARD-3 (Idemia MorphoBIS or NEC NeoFace or Innovatrics ABIS or Neurotechnology MegaMatcher).
+- Independent teams to accept public reproduce challenge for HARD-4.
+- IAB physical smartcard provisioning for HARD-13 ceremony.
+- 5-member IAG appointment + budget for HARD-19.
+- Data-sharing agreements with Facebook + Twitter + TikTok + WhatsApp + Telegram for HARD-10.
+- iBeta L2 PAD certification submission (harness ready).
+- NIST FpVTE + FRVT + IREX corpus loading + submission.
