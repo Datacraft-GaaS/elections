@@ -363,8 +363,8 @@
 | FR-M63-020 | ballot-serial-chain |  | GAP |
 | FR-M63-021 | ballot-serial-chain |  | GAP |
 | FR-M63-022 | ballot-serial-chain |  | GAP |
-| FR-M63-023 | ballot-serial-chain |  | GAP |
-| FR-M63-024 | ballot-serial-chain |  | GAP |
+| FR-M63-023 | ballot-serial-chain | services/rts-svc/crates/ballot-serial/src/reconciliation.rs:150 | OK |
+| FR-M63-024 | ballot-serial-chain | services/rts-svc/crates/ballot-serial/src/reconciliation.rs:137, services/rts-svc/crates/ballot-serial/src/reconciliation.rs:160 | OK |
 | FR-M63-025 | ballot-serial-chain |  | GAP |
 | FR-M63-026 | ballot-serial-chain |  | GAP |
 | FR-M63-027 | ballot-serial-chain |  | GAP |
@@ -372,7 +372,7 @@
 | FR-M63-029 | ballot-serial-chain |  | GAP |
 | FR-M63-030 | ballot-serial-chain |  | GAP |
 | FR-M63-031 | ballot-serial-chain |  | GAP |
-| FR-M63-032 | ballot-serial-chain |  | GAP |
+| FR-M63-032 | ballot-serial-chain | services/rts-svc/crates/ballot-serial/src/reconciliation.rs:108, services/rts-svc/crates/ballot-serial/src/reconciliation.rs:119, services/rts-svc/crates/ballot-serial/src/reconciliation.rs:128 | OK |
 | FR-M63-033 | ballot-serial-chain |  | GAP |
 | FR-M63-034 | ballot-serial-chain |  | GAP |
 | FR-M63-035 | ballot-serial-chain |  | GAP |
@@ -666,10 +666,10 @@
 | AC-M02-13 | bvr-backend |  | GAP |
 | AC-M02-14 | bvr-backend |  | GAP |
 | AC-M02-15 | bvr-backend |  | GAP |
-| FR-M02-001 | bvr-backend |  | GAP |
+| FR-M02-001 | bvr-backend | services/bvr-svc/crates/bvr-api/src/routes/enrolments.rs:70 | OK |
 | FR-M02-002 | bvr-backend |  | GAP |
 | FR-M02-003 | bvr-backend |  | GAP |
-| FR-M02-004 | bvr-backend |  | GAP |
+| FR-M02-004 | bvr-backend | services/bvr-svc/crates/bvr-domain/src/voter.rs:131 | OK |
 | FR-M02-005 | bvr-backend |  | GAP |
 | FR-M02-006 | bvr-backend |  | GAP |
 | FR-M02-007 | bvr-backend |  | GAP |
@@ -689,7 +689,7 @@
 | FR-M02-021 | bvr-backend |  | GAP |
 | FR-M02-022 | bvr-backend |  | GAP |
 | FR-M02-023 | bvr-backend |  | GAP |
-| FR-M02-024 | bvr-backend |  | GAP |
+| FR-M02-024 | bvr-backend | services/bvr-svc/crates/bvr-batch/src/dual_approval.rs:69, services/bvr-svc/crates/bvr-batch/src/dual_approval.rs:81 | OK |
 | FR-M02-025 | bvr-backend |  | GAP |
 | FR-M02-026 | bvr-backend |  | GAP |
 | FR-M02-027 | bvr-backend |  | GAP |
@@ -705,7 +705,7 @@
 | FR-M02-037 | bvr-backend |  | GAP |
 | FR-M02-038 | bvr-backend |  | GAP |
 | FR-M02-039 | bvr-backend |  | GAP |
-| FR-M02-040 | bvr-backend |  | GAP |
+| FR-M02-040 | bvr-backend | services/bvr-svc/crates/bvr-batch/src/sar.rs:70, services/bvr-svc/crates/bvr-batch/src/sar.rs:80 | OK |
 | FR-M02-041 | bvr-backend |  | GAP |
 | FR-M02-042 | bvr-backend |  | GAP |
 | FR-M02-043 | bvr-backend |  | GAP |
@@ -715,7 +715,7 @@
 | FR-M02-047 | bvr-backend |  | GAP |
 | FR-M02-048 | bvr-backend |  | GAP |
 | FR-M02-049 | bvr-backend |  | GAP |
-| FR-M02-050 | bvr-backend |  | GAP |
+| FR-M02-050 | bvr-backend | services/bvr-svc/crates/bvr-domain/src/voter.rs:147 | OK |
 | FR-M02-051 | bvr-backend |  | GAP |
 | FR-M02-052 | bvr-backend |  | GAP |
 | FR-M02-053 | bvr-backend |  | GAP |
@@ -3413,7 +3413,7 @@
 | FR-M14-051 | reproducibility-bundle |  | GAP |
 | FR-M14-052 | reproducibility-bundle |  | GAP |
 | AC-M51-01 | result-declaration-certification |  | GAP |
-| AC-M51-02 | result-declaration-certification |  | GAP |
+| AC-M51-02 | result-declaration-certification | services/rts-svc/crates/declaration/src/proptest_rules.rs:71, services/rts-svc/crates/declaration/src/proptest_rules.rs:89, services/rts-svc/crates/declaration/src/proptest_rules.rs:131 | OK |
 | AC-M51-03 | result-declaration-certification |  | GAP |
 | AC-M51-04 | result-declaration-certification |  | GAP |
 | AC-M51-05 | result-declaration-certification |  | GAP |
@@ -3428,7 +3428,7 @@
 | AC-M51-14 | result-declaration-certification |  | GAP |
 | AC-M51-15 | result-declaration-certification |  | GAP |
 | AC-M51-16 | result-declaration-certification |  | GAP |
-| AC-M51-17 | result-declaration-certification |  | GAP |
+| AC-M51-17 | result-declaration-certification | services/rts-svc/django/declaration-admin/tests/test_models.py:33 | OK |
 | AC-M51-18 | result-declaration-certification |  | GAP |
 | AC-M51-19 | result-declaration-certification |  | GAP |
 | AC-M51-20 | result-declaration-certification |  | GAP |
@@ -3440,11 +3440,11 @@
 | FR-M51-006 | result-declaration-certification |  | GAP |
 | FR-M51-007 | result-declaration-certification |  | GAP |
 | FR-M51-008 | result-declaration-certification |  | GAP |
-| FR-M51-009 | result-declaration-certification |  | GAP |
-| FR-M51-010 | result-declaration-certification |  | GAP |
-| FR-M51-011 | result-declaration-certification |  | GAP |
-| FR-M51-012 | result-declaration-certification |  | GAP |
-| FR-M51-013 | result-declaration-certification |  | GAP |
+| FR-M51-009 | result-declaration-certification | services/rts-svc/crates/declaration/src/rules.rs:192 | OK |
+| FR-M51-010 | result-declaration-certification | services/rts-svc/crates/declaration/src/rules.rs:192, services/rts-svc/crates/declaration/src/rules.rs:223, services/rts-svc/crates/declaration/src/proptest_rules.rs:71 | OK |
+| FR-M51-011 | result-declaration-certification | services/rts-svc/crates/declaration/src/rules.rs:192, services/rts-svc/crates/declaration/src/rules.rs:239, services/rts-svc/crates/declaration/src/rules.rs:294, services/rts-svc/crates/declaration/src/rules.rs:319, services/rts-svc/crates/declaration/src/rules.rs:339, services/rts-svc/crates/declaration/src/rules.rs:347, services/rts-svc/crates/declaration/src/proptest_rules.rs:131 | OK |
+| FR-M51-012 | result-declaration-certification | services/rts-svc/crates/declaration/src/rules.rs:223 | OK |
+| FR-M51-013 | result-declaration-certification | services/rts-svc/crates/declaration/src/rules.rs:280, services/rts-svc/crates/declaration/src/proptest_rules.rs:89, services/rts-svc/crates/declaration/src/proptest_rules.rs:119 | OK |
 | FR-M51-014 | result-declaration-certification |  | GAP |
 | FR-M51-015 | result-declaration-certification |  | GAP |
 | FR-M51-016 | result-declaration-certification |  | GAP |
@@ -3571,8 +3571,8 @@
 | FR-M10-017 | rts-backend |  | GAP |
 | FR-M10-018 | rts-backend |  | GAP |
 | FR-M10-019 | rts-backend |  | GAP |
-| FR-M10-020 | rts-backend |  | GAP |
-| FR-M10-021 | rts-backend |  | GAP |
+| FR-M10-020 | rts-backend | services/rts-svc/crates/rts-tally/tests/aggregator_test.rs:26, services/rts-svc/crates/rts-tally/tests/aggregator_test.rs:46 | OK |
+| FR-M10-021 | rts-backend | services/rts-svc/crates/rts-domain/tests/validators_test.rs:23, services/rts-svc/crates/rts-domain/tests/validators_test.rs:28, services/rts-svc/crates/rts-domain/tests/validators_test.rs:33, services/rts-svc/crates/rts-domain/tests/validators_test.rs:38, services/rts-svc/crates/rts-domain/tests/validators_test.rs:43, services/rts-svc/crates/rts-domain/tests/validators_test.rs:48, services/rts-svc/crates/rts-domain/tests/validators_test.rs:53, services/rts-svc/crates/rts-domain/tests/validators_test.rs:58, services/rts-svc/crates/rts-domain/tests/validators_test.rs:63 | OK |
 | FR-M10-022 | rts-backend |  | GAP |
 | FR-M10-023 | rts-backend |  | GAP |
 | FR-M10-024 | rts-backend |  | GAP |
@@ -3622,10 +3622,10 @@
 | FR-M10-068 | rts-backend |  | GAP |
 | FR-M10-069 | rts-backend |  | GAP |
 | FR-M10-070 | rts-backend |  | GAP |
-| AC-M08-01 | rts-device |  | GAP |
+| AC-M08-01 | rts-device | services/rts-svc/apps/rts-kit/test/scan_quality_test.dart:80 | OK |
 | AC-M08-02 | rts-device |  | GAP |
 | AC-M08-03 | rts-device |  | GAP |
-| AC-M08-04 | rts-device |  | GAP |
+| AC-M08-04 | rts-device | services/rts-svc/apps/rts-kit/test/crash_consistency_test.dart:52, services/rts-svc/apps/rts-kit/test/crash_consistency_test.dart:82 | OK |
 | AC-M08-05 | rts-device |  | GAP |
 | AC-M08-06 | rts-device |  | GAP |
 | AC-M08-07 | rts-device |  | GAP |
@@ -3637,11 +3637,11 @@
 | AC-M08-13 | rts-device |  | GAP |
 | AC-M08-14 | rts-device |  | GAP |
 | AC-M08-15 | rts-device |  | GAP |
-| FR-M08-001 | rts-device |  | GAP |
-| FR-M08-002 | rts-device |  | GAP |
-| FR-M08-003 | rts-device |  | GAP |
+| FR-M08-001 | rts-device | services/rts-svc/apps/rts-kit/test/scan_quality_test.dart:63, services/rts-svc/apps/rts-kit/test/scan_quality_test.dart:72 | OK |
+| FR-M08-002 | rts-device | services/rts-svc/apps/rts-kit/test/mode_switch_test.dart:13, services/rts-svc/apps/rts-kit/test/mode_switch_test.dart:20, services/rts-svc/apps/rts-kit/test/mode_switch_test.dart:36 | OK |
+| FR-M08-003 | rts-device | services/rts-svc/apps/rts-kit/test/scan_quality_test.dart:41, services/rts-svc/apps/rts-kit/test/scan_quality_test.dart:52 | OK |
 | FR-M08-004 | rts-device |  | GAP |
-| FR-M08-005 | rts-device |  | GAP |
+| FR-M08-005 | rts-device | services/rts-svc/crates/rts-device-api/tests/sms_fallback_decode.rs:130, services/rts-svc/crates/rts-device-api/src/codec.rs:123 | OK |
 | FR-M08-006 | rts-device |  | GAP |
 | FR-M08-007 | rts-device |  | GAP |
 | FR-M08-008 | rts-device |  | GAP |
@@ -3651,11 +3651,11 @@
 | FR-M08-012 | rts-device |  | GAP |
 | FR-M08-013 | rts-device |  | GAP |
 | FR-M08-014 | rts-device |  | GAP |
-| FR-M08-015 | rts-device |  | GAP |
-| FR-M08-016 | rts-device |  | GAP |
+| FR-M08-015 | rts-device | services/rts-svc/apps/rts-kit/test/scan_quality_test.dart:80 | OK |
+| FR-M08-016 | rts-device | services/rts-svc/apps/rts-kit/test/crash_consistency_test.dart:52, services/rts-svc/apps/rts-kit/test/crash_consistency_test.dart:82, services/rts-svc/apps/rts-kit/test/crash_consistency_test.dart:126 | OK |
 | FR-M08-017 | rts-device |  | GAP |
-| FR-M08-018 | rts-device |  | GAP |
-| FR-M08-019 | rts-device |  | GAP |
+| FR-M08-018 | rts-device | services/rts-svc/crates/rts-device-api/tests/sms_fallback_decode.rs:85, services/rts-svc/crates/rts-device-api/tests/sms_fallback_decode.rs:130, services/rts-svc/crates/rts-device-api/tests/sms_fallback_decode.rs:145, services/rts-svc/crates/rts-device-api/src/codec.rs:112, services/rts-svc/crates/rts-device-api/src/codec.rs:123, services/rts-svc/crates/rts-device-api/src/codec.rs:134 | OK |
+| FR-M08-019 | rts-device | services/rts-svc/crates/rts-device-api/tests/sms_fallback_decode.rs:67 | OK |
 | FR-M08-020 | rts-device |  | GAP |
 | FR-M08-021 | rts-device |  | GAP |
 | FR-M08-022 | rts-device |  | GAP |
@@ -3667,7 +3667,7 @@
 | FR-M08-028 | rts-device |  | GAP |
 | FR-M08-029 | rts-device |  | GAP |
 | FR-M08-030 | rts-device |  | GAP |
-| FR-M08-031 | rts-device |  | GAP |
+| FR-M08-031 | rts-device | services/rts-svc/apps/rts-kit/test/crash_consistency_test.dart:104 | OK |
 | FR-M08-032 | rts-device |  | GAP |
 | FR-M08-033 | rts-device |  | GAP |
 | FR-M08-034 | rts-device |  | GAP |
@@ -3678,7 +3678,7 @@
 | FR-M08-039 | rts-device |  | GAP |
 | FR-M08-040 | rts-device |  | GAP |
 | FR-M08-041 | rts-device |  | GAP |
-| FR-M08-042 | rts-device |  | GAP |
+| FR-M08-042 | rts-device | services/rts-svc/apps/rts-kit/test/mode_switch_test.dart:13, services/rts-svc/apps/rts-kit/test/mode_switch_test.dart:20, services/rts-svc/apps/rts-kit/test/mode_switch_test.dart:36, services/rts-svc/apps/rts-kit/test/mode_switch_test.dart:50, services/rts-svc/apps/rts-kit/test/mode_switch_test.dart:62, services/rts-svc/apps/rts-kit/test/mode_switch_test.dart:76, services/rts-svc/apps/rts-kit/test/mode_switch_test.dart:95 | OK |
 | FR-M08-043 | rts-device |  | GAP |
 | FR-M08-044 | rts-device |  | GAP |
 | FR-M08-045 | rts-device |  | GAP |
@@ -3686,7 +3686,7 @@
 | FR-M08-047 | rts-device |  | GAP |
 | FR-M08-048 | rts-device |  | GAP |
 | FR-M08-049 | rts-device |  | GAP |
-| FR-M08-050 | rts-device |  | GAP |
+| FR-M08-050 | rts-device | services/rts-svc/apps/rts-kit/test/scan_quality_test.dart:41, services/rts-svc/apps/rts-kit/test/scan_quality_test.dart:52 | OK |
 | AC-M09-01 | rts-ro |  | GAP |
 | AC-M09-02 | rts-ro |  | GAP |
 | AC-M09-03 | rts-ro |  | GAP |
@@ -3712,8 +3712,8 @@
 | FR-M09-010 | rts-ro |  | GAP |
 | FR-M09-011 | rts-ro |  | GAP |
 | FR-M09-012 | rts-ro |  | GAP |
-| FR-M09-013 | rts-ro |  | GAP |
-| FR-M09-014 | rts-ro |  | GAP |
+| FR-M09-013 | rts-ro | services/rts-svc/apps/ro-desktop/src-tauri/tests/power_cut.rs:82 | OK |
+| FR-M09-014 | rts-ro | services/rts-svc/crates/rts-domain/tests/validators_test.rs:23, services/rts-svc/crates/rts-domain/tests/validators_test.rs:28, services/rts-svc/crates/rts-domain/tests/validators_test.rs:33, services/rts-svc/crates/rts-domain/tests/validators_test.rs:38, services/rts-svc/crates/rts-domain/tests/validators_test.rs:43, services/rts-svc/crates/rts-domain/tests/validators_test.rs:48, services/rts-svc/crates/rts-domain/tests/validators_test.rs:53, services/rts-svc/crates/rts-domain/tests/validators_test.rs:58, services/rts-svc/crates/rts-domain/tests/validators_test.rs:63 | OK |
 | FR-M09-015 | rts-ro |  | GAP |
 | FR-M09-016 | rts-ro |  | GAP |
 | FR-M09-017 | rts-ro |  | GAP |
@@ -4067,7 +4067,7 @@
 | FR-M36-027 | voter-deregistration-appeal |  | GAP |
 | FR-M36-028 | voter-deregistration-appeal |  | GAP |
 | FR-M36-029 | voter-deregistration-appeal |  | GAP |
-| FR-M36-030 | voter-deregistration-appeal |  | GAP |
+| FR-M36-030 | voter-deregistration-appeal | services/bvr-svc/crates/dereg-appeal/tests/workflow_test.rs:28, services/bvr-svc/crates/dereg-appeal/tests/workflow_test.rs:36, services/bvr-svc/crates/dereg-appeal/tests/workflow_test.rs:44 | OK |
 | FR-M36-031 | voter-deregistration-appeal |  | GAP |
 | FR-M36-032 | voter-deregistration-appeal |  | GAP |
 | FR-M36-033 | voter-deregistration-appeal |  | GAP |
@@ -4167,7 +4167,7 @@
 | FR-M53-023 | voter-id-card |  | GAP |
 | FR-M53-024 | voter-id-card |  | GAP |
 | FR-M53-025 | voter-id-card |  | GAP |
-| FR-M53-026 | voter-id-card |  | GAP |
+| FR-M53-026 | voter-id-card | services/bvr-svc/crates/voter-card/tests/blacklist_test.rs:7 | OK |
 | FR-M53-027 | voter-id-card |  | GAP |
 | FR-M53-028 | voter-id-card |  | GAP |
 | FR-M53-029 | voter-id-card |  | GAP |
@@ -4328,9 +4328,9 @@
 | FR-M04-036 | vprs |  | GAP |
 | FR-M04-037 | vprs |  | GAP |
 | FR-M04-038 | vprs |  | GAP |
-| EC-CON-01 | cross-cutting |  | GAP |
+| EC-CON-01 | cross-cutting | services/rts-svc/apps/rts-kit/test/crash_consistency_test.dart:52, services/rts-svc/apps/rts-kit/test/crash_consistency_test.dart:82, services/rts-svc/apps/rts-kit/test/crash_consistency_test.dart:104, services/rts-svc/apps/rts-kit/test/crash_consistency_test.dart:126 | OK |
 | EC-CON-02 | cross-cutting |  | GAP |
-| EC-CON-03 | cross-cutting |  | GAP |
+| EC-CON-03 | cross-cutting | services/rts-svc/crates/rts-device-api/tests/sms_fallback_decode.rs:67 | OK |
 | EC-CON-04 | cross-cutting |  | GAP |
 | EC-CON-05 | cross-cutting |  | GAP |
 | EC-CON-06 | cross-cutting |  | GAP |
@@ -4339,8 +4339,8 @@
 | EC-CON-09 | cross-cutting |  | GAP |
 | EC-CON-10 | cross-cutting |  | GAP |
 | EC-CON-11 | cross-cutting |  | GAP |
-| EC-DAT-01 | cross-cutting | services/training-svc/apps/lms-offline/test/assessment_test.dart:15 | OK |
-| EC-DAT-02 | cross-cutting |  | GAP |
+| EC-DAT-01 | cross-cutting | services/rts-svc/apps/ro-desktop/src-tauri/tests/power_cut.rs:63, services/training-svc/apps/lms-offline/test/assessment_test.dart:15 | OK |
+| EC-DAT-02 | cross-cutting | services/rts-svc/apps/ro-desktop/src-tauri/tests/power_cut.rs:94 | OK |
 | EC-DAT-03 | cross-cutting |  | GAP |
 | EC-DAT-04 | cross-cutting |  | GAP |
 | EC-DAT-05 | cross-cutting |  | GAP |
@@ -4348,8 +4348,8 @@
 | EC-DAT-07 | cross-cutting |  | GAP |
 | EC-DAT-08 | cross-cutting |  | GAP |
 | EC-DAT-09 | cross-cutting |  | GAP |
-| EC-DAT-10 | cross-cutting |  | GAP |
-| EC-DAT-11 | cross-cutting |  | GAP |
+| EC-DAT-10 | cross-cutting | services/rts-svc/crates/rts-domain/tests/validators_test.rs:23, services/rts-svc/crates/rts-domain/tests/validators_test.rs:28 | OK |
+| EC-DAT-11 | cross-cutting | services/rts-svc/crates/rts-domain/tests/validators_test.rs:43, services/rts-svc/crates/rts-domain/tests/validators_test.rs:48, services/rts-svc/crates/rts-domain/tests/validators_test.rs:53, services/rts-svc/crates/rts-domain/tests/validators_test.rs:58, services/rts-svc/crates/rts-domain/tests/validators_test.rs:63, services/rts-svc/crates/ballot-serial/src/reconciliation.rs:137, services/rts-svc/crates/ballot-serial/src/reconciliation.rs:160 | OK |
 | EC-DAT-12 | cross-cutting |  | GAP |
 | EC-DAT-13 | cross-cutting | services/training-svc/django/cms/tests/test_cms.py:34, services/training-svc/django/cms/tests/test_cms.py:66, services/training-svc/django/cms/tests/test_cms.py:112, services/training-svc/django/cms/tests/test_cms.py:149, services/training-svc/django/cms/tests/test_cms.py:173 | OK |
 | EC-DAT-14 | cross-cutting |  | GAP |
@@ -4381,14 +4381,14 @@
 | EC-KIT-01 | cross-cutting |  | GAP |
 | EC-KIT-02 | cross-cutting |  | GAP |
 | EC-KIT-03 | cross-cutting |  | GAP |
-| EC-KIT-04 | cross-cutting |  | GAP |
+| EC-KIT-04 | cross-cutting | services/rts-svc/apps/rts-kit/test/mode_switch_test.dart:13, services/rts-svc/apps/rts-kit/test/mode_switch_test.dart:20, services/rts-svc/apps/rts-kit/test/mode_switch_test.dart:76, services/rts-svc/apps/rts-kit/test/mode_switch_test.dart:95 | OK |
 | EC-LEG-01 | cross-cutting |  | GAP |
 | EC-LEG-02 | cross-cutting |  | GAP |
 | EC-LEG-03 | cross-cutting |  | GAP |
 | EC-LEG-04 | cross-cutting |  | GAP |
 | EC-LEG-05 | cross-cutting |  | GAP |
-| EC-LEG-06 | cross-cutting |  | GAP |
-| EC-LEG-07 | cross-cutting |  | GAP |
+| EC-LEG-06 | cross-cutting | services/rts-svc/crates/declaration/src/rules.rs:280, services/rts-svc/crates/declaration/src/proptest_rules.rs:119 | OK |
+| EC-LEG-07 | cross-cutting | services/rts-svc/crates/declaration/src/rules.rs:239, services/rts-svc/crates/declaration/src/rules.rs:294, services/rts-svc/crates/declaration/src/rules.rs:319, services/rts-svc/crates/declaration/src/rules.rs:339, services/rts-svc/crates/declaration/src/rules.rs:347 | OK |
 | EC-LEG-08 | cross-cutting |  | GAP |
 | EC-LEG-09 | cross-cutting |  | GAP |
 | EC-LEG-10 | cross-cutting |  | GAP |
@@ -4402,11 +4402,11 @@
 | EC-MOB-07 | cross-cutting |  | GAP |
 | EC-MOB-08 | cross-cutting |  | GAP |
 | EC-MOB-09 | cross-cutting |  | GAP |
-| EC-OPS-01 | cross-cutting |  | GAP |
+| EC-OPS-01 | cross-cutting | services/rts-svc/apps/ro-desktop/src-tauri/tests/power_cut.rs:23, services/rts-svc/apps/rts-kit/test/crash_consistency_test.dart:52 | OK |
 | EC-OPS-02 | cross-cutting |  | GAP |
 | EC-OPS-03 | cross-cutting |  | GAP |
 | EC-OPS-04 | cross-cutting |  | GAP |
-| EC-OPS-05 | cross-cutting |  | GAP |
+| EC-OPS-05 | cross-cutting | services/rts-svc/apps/ro-desktop/src-tauri/tests/power_cut.rs:23, services/rts-svc/apps/ro-desktop/src-tauri/tests/power_cut.rs:63 | OK |
 | EC-OPS-06 | cross-cutting |  | GAP |
 | EC-OPS-07 | cross-cutting |  | GAP |
 | EC-OPS-08 | cross-cutting |  | GAP |
@@ -4447,4 +4447,4 @@
 | EC-TIM-08 | cross-cutting |  | GAP |
 | EC-TIM-09 | cross-cutting |  | GAP |
 
-*Generated by eel-completeness trace, 4444 entries, 4416 gaps, 0 orphaned.*
+*Generated by eel-completeness trace, 4444 entries, 4372 gaps, 0 orphaned.*
