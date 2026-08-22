@@ -1,0 +1,50 @@
+[workspace]
+resolver = "2"
+
+[package]
+name        = "eel-ai-platform-telemetry-analytics"
+version     = "0.1.0"
+edition     = "2021"
+license     = "Apache-2.0"
+rust-version = "1.80"
+publish     = false
+description = "Mobile-telemetry analytics + anomaly detection for the eel AI platform (mobile-observability spec §7)"
+
+[lib]
+name = "eel_ai_platform_telemetry_analytics"
+path = "src/lib.rs"
+
+[[test]]
+name = "analytics_test"
+path = "tests/analytics_test.rs"
+
+[dependencies]
+axum        = { version = "0.8",  features = ["macros", "tokio"] }
+tokio       = { version = "1",    features = ["full"] }
+tokio-stream = { version = "0.1" }
+serde       = { version = "1",    features = ["derive"] }
+serde_json  = { version = "1" }
+thiserror   = { version = "2" }
+tracing     = { version = "0.1" }
+uuid        = { version = "1",    features = ["v4", "v7", "serde"] }
+chrono      = { version = "0.4",  features = ["serde"] }
+blake3      = { version = "1" }
+sha2        = { version = "0.10" }
+geo         = { version = "0.28" }
+geojson     = { version = "0.24", features = ["geo-types"] }
+reqwest     = { version = "0.12", features = ["json"] }
+rdkafka     = { version = "0.37", features = ["cmake-build", "ssl"] }
+prometheus  = { version = "0.13", features = ["process"] }
+futures     = { version = "0.3" }
+
+rayon       = "1"
+ndarray     = "0.16"
+statrs      = "0.17"
+serde_yaml  = "0.9"
+notify      = "6"
+async-trait = "0.1"
+
+[dev-dependencies]
+tokio       = { version = "1", features = ["full"] }
+serde_json  = { version = "1" }
+tower       = { version = "0.5", features = ["util"] }

@@ -1,0 +1,67 @@
+rules:
+  - id: drop_at_scale
+    class: DropAtScaleDetector
+    severity_threshold: 3.0
+    enabled: true
+    params:
+      accel_threshold_g: 3.0
+
+  - id: geo_fence_breach
+    class: GeoFenceBreachDetector
+    severity_threshold: 30.0
+    enabled: true
+    params:
+      breach_threshold_secs: 30
+
+  - id: session_hijack
+    class: SessionHijackDetector
+    severity_threshold: 5.0
+    enabled: true
+    params:
+      score_threshold: 5.0
+
+  - id: battery_starvation_cluster
+    class: BatteryStarvationClusterDetector
+    severity_threshold: 20.0
+    enabled: true
+    params:
+      low_battery_pct: 20.0
+      cluster_min_devices: 3
+      window_minutes: 15
+
+  - id: rfid_absence_anomaly
+    class: RfidAbsenceAnomalyDetector
+    severity_threshold: 15.0
+    enabled: true
+    params:
+      absence_threshold_minutes: 15
+
+  - id: login_time_anomaly
+    class: LoginTimeAnomalyDetector
+    severity_threshold: 2.5
+    enabled: true
+    params:
+      zscore_threshold: 2.5
+
+  - id: read_heavy_anomaly
+    class: ReadHeavyAnomalyDetector
+    severity_threshold: 10.0
+    enabled: true
+    params:
+      min_read_count: 100
+      read_write_ratio_threshold: 10.0
+
+  - id: ueba_anomaly
+    class: UebaDetector
+    severity_threshold: 0.75
+    enabled: true
+    params:
+      score_threshold: 0.75
+
+  - id: coordinated_device_anomaly
+    class: CoordinatedDeviceAnomalyDetector
+    severity_threshold: 3.0
+    enabled: true
+    params:
+      min_devices: 3
+      window_minutes: 10
