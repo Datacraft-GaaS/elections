@@ -40,7 +40,7 @@ ecdsa           = { version = "0.16", optional = true }
 # PQ: ML-DSA (Dilithium) + ML-KEM (Kyber) + SLH-DSA (Sphincs) via liboqs.
 # Use inline (not workspace = true) because the workspace entry has stale
 # feature names from an earlier draft; correct names are dilithium/kyber/sphincs.
-oqs             = { version = "0.9", features = ["dilithium", "kyber", "sphincs"], optional = true }
+oqs             = { version = "0.11", features = ["dilithium", "kyber", "sphincs", "ml_dsa", "ml_kem"], optional = true }
 
 # PKCS#11 session pool (requires PKCS#11 runtime library)
 cryptoki        = { workspace = true, optional = true }
