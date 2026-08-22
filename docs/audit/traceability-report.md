@@ -1033,7 +1033,7 @@
 | FR-M56-035 | county-national-coordination |  | GAP |
 | AC-M12-01 | crms |  | GAP |
 | AC-M12-02 | crms |  | GAP |
-| AC-M12-03 | crms | services/crms-svc/crates/crms-domain/src/quota.rs:134, services/crms-svc/crates/crms-domain/src/quota.rs:154 | OK |
+| AC-M12-03 | crms | services/crms-svc/crates/crms-domain/src/quota.rs:134, services/crms-svc/crates/crms-domain/src/quota.rs:169 | OK |
 | AC-M12-04 | crms |  | GAP |
 | AC-M12-05 | crms |  | GAP |
 | AC-M12-06 | crms |  | GAP |
@@ -1050,8 +1050,8 @@
 | FR-M12-005 | crms |  | GAP |
 | FR-M12-006 | crms |  | GAP |
 | FR-M12-007 | crms |  | GAP |
-| FR-M12-008 | crms | services/crms-svc/crates/crms-domain/src/quota.rs:121, services/crms-svc/crates/crms-domain/src/quota.rs:127, services/crms-svc/crates/crms-domain/src/quota.rs:134, services/crms-svc/crates/crms-domain/src/quota.rs:141, services/crms-svc/crates/crms-domain/src/quota.rs:154 | OK |
-| FR-M12-009 | crms | services/crms-svc/crates/crms-domain/src/quota.rs:147 | OK |
+| FR-M12-008 | crms | services/crms-svc/crates/crms-domain/src/quota.rs:121, services/crms-svc/crates/crms-domain/src/quota.rs:127, services/crms-svc/crates/crms-domain/src/quota.rs:134, services/crms-svc/crates/crms-domain/src/quota.rs:141, services/crms-svc/crates/crms-domain/src/quota.rs:147, services/crms-svc/crates/crms-domain/src/quota.rs:154, services/crms-svc/crates/crms-domain/src/quota.rs:169 | OK |
+| FR-M12-009 | crms | services/crms-svc/crates/crms-domain/src/quota.rs:162 | OK |
 | FR-M12-010 | crms |  | GAP |
 | FR-M12-011 | crms |  | GAP |
 | FR-M12-012 | crms | services/crms-svc/crates/crms-domain/src/candidate.rs:213, services/crms-svc/crates/crms-domain/src/candidate.rs:239, services/crms-svc/crates/crms-domain/src/candidate.rs:257 | OK |

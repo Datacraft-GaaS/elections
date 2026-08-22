@@ -144,6 +144,21 @@ mod tests {
         assert!(check_two_thirds_rule(0, 0, 0).is_ok());
     }
 
+    #[trace("FR-M12-008")]
+    #[test]
+    fn two_thirds_exact_threshold_male_passes() {
+        // 4 of 6 male = 2/3 exactly — permitted on the male side too.
+        assert!(check_two_thirds_rule(6, 2, 4).is_ok());
+    }
+
+    #[trace("FR-M12-008")]
+    #[test]
+    fn two_thirds_male_dominant_violation() {
+        // 5 of 6 male > 2/3 — violation labelled male-dominant.
+        let err = check_two_thirds_rule(6, 1, 5).unwrap_err();
+        assert!(err.to_string().contains("male"));
+    }
+
     #[trace("FR-M12-009")]
     #[test]
     fn youth_check() {
