@@ -130,7 +130,7 @@ defmodule EccLive.Live.CoverTamperLive do
         Last updated: <time datetime={DateTime.to_iso8601(@last_refreshed)}><%= DateTime.to_string(@last_refreshed) %></time>
       </p>
 
-      <%# Filter controls %>
+      <%!-- Filter controls --%>
       <form phx-change="filter" aria-label="Filter alerts">
         <fieldset style="display:flex;gap:12px;flex-wrap:wrap;border:0;padding:0">
           <legend class="sr-only">Alert filters</legend>
@@ -165,12 +165,12 @@ defmodule EccLive.Live.CoverTamperLive do
         <%= length(@alerts) %> pending alert<%= if length(@alerts) != 1, do: "s" %>.
       </p>
 
-      <%# Alert cards for critical severity %>
+      <%!-- Alert cards for critical severity --%>
       <%= for alert <- @alerts, alert["severity"] == "critical" do %>
         <.alert_card alert={alert} />
       <% end %>
 
-      <%# Remaining alerts in table %>
+      <%!-- Remaining alerts in table --%>
       <%= if Enum.any?(@alerts, &(&1["severity"] != "critical")) do %>
         <table role="grid" aria-label="Non-critical cover tamper alerts" style="width:100%;border-collapse:collapse;margin-top:16px">
           <thead>

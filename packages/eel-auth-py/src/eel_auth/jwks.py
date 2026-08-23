@@ -12,7 +12,6 @@ _log = logging.getLogger(__name__)
 class AuthError(Exception):
     """Raised on JWT verification failure."""
 
-    pass
 
 
 class JwksCache:

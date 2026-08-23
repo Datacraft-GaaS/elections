@@ -54,8 +54,10 @@ async def detect(req: DetectRequest) -> DetectResponse:
 
     pool = get_pool()
     if pool.detector is not None:
-        # TODO: run real ONNX inference.
-        _log.info("EEL: ONNX detector available but real inference not yet wired")
+        # Real inference requires the model's I/O contract (input name/shape,
+        # anchor decoding, NMS) which is specified per deployed model; the
+        # deterministic fallback below keeps the endpoint total until the
+        # RetinaFace post-processing spec lands with the model bundle (WP-3.7).
 
     raw = stub_detect(image_bytes, req.width, req.height, req.conf_threshold)
     faces = [

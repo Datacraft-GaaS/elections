@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../services/attestation_service.dart';
+
 enum AuthStatus { unauthenticated, authenticated, loading }
 
 class AuthState {
@@ -25,16 +27,36 @@ class AuthState {
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
-	AuthNotifier() : super(const AuthState());
+	AuthNotifier(this._attestation) : super(const AuthState());
+
+	final AttestationService _attestation;
 
 	Future<void> login(String agentId, String pin) async {
 		state = state.copyWith(status: AuthStatus.loading);
-		// TODO(security): integrate Play Integrity attestation before auth
-		await Future.delayed(const Duration(milliseconds: 300));
-		state = state.copyWith(
-			status: AuthStatus.authenticated,
-			agentId: agentId,
-		);
+
+		// ADR-0021: hard-fail MDM attestation before any auth.
+		final AttestationResult attestation;
+		try {
+			attestation = await _attestation.attest();
+		} catch (e) {
+			state = AuthState(
+				status: AuthStatus.unauthenticated,
+				error: 'Device attestation failed: $e',
+			);
+			return;
+		}
+		if (!attestation.passed) {
+			final reason = attestation.failureReason;
+			state = AuthState(
+				status: AuthStatus.unauthenticated,
+				error: reason == null
+					? 'Device attestation rejected'
+					: 'Device attestation rejected: $reason',
+			);
+			return;
+		}
+
+		state = AuthState(status: AuthStatus.authenticated, agentId: agentId);
 	}
 
 	void logout() {
@@ -42,6 +64,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
 	}
 }
 
+final attestationServiceProvider = Provider<AttestationService>(
+	(ref) => AttestationService(),
+);
+
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(
-	(ref) => AuthNotifier(),
+	(ref) => AuthNotifier(ref.watch(attestationServiceProvider)),
 );

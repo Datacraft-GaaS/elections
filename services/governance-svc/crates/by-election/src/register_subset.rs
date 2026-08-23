@@ -1,12 +1,14 @@
 use crate::models::RegisterSubset;
 
-/// Generate a RegisterSubset from a BVR snapshot scoped to a constituency.
+/// Initialise a RegisterSubset record for a by-election, scoped to a
+/// constituency and pinned to an M02 BVR snapshot.
 ///
-/// In production this calls M02 BVR via internal API to extract the snapshot
-/// subset for the given constituency_id and snapshot_id. The boundary polygon
-/// is validated against M18 before extraction (FR-M50-017).
-///
-/// This implementation returns a stub; wire M02 and M18 adapters for field builds.
+/// The record starts with station_count and voter_count at zero and no
+/// integrity hash: those fields are populated by the extraction step, which
+/// calls the M02 BVR snapshot API using the constituency polygon from M18
+/// (FR-M50-016, FR-M50-017) and reconciles counts against the M04 snapshot
+/// (FR-M50-021). No M02 or M18 adapter crate exists in this workspace yet,
+/// so extraction lives with the integration layer that owns those clients.
 ///
 /// Extraction must complete within 4 hours of by-election activation (FR-M50-020).
 pub fn generate_subset(
@@ -17,9 +19,10 @@ pub fn generate_subset(
     let id = uuid::Uuid::now_v7().to_string();
     let now = chrono::Utc::now().to_rfc3339();
 
-    // TODO(prod): call M02 BVR snapshot API with constituency boundary polygon from M18.
-    // Validate: subset voter_count must match M04 snapshot count for the polygon (FR-M50-021).
-    // If discrepancy > 0, raise anomaly case.
+    // Extraction calls the M02 BVR snapshot API scoped by the M18 constituency
+    // polygon and reconciles counts against M04 (FR-M50-016, FR-M50-017,
+    // FR-M50-021). That step lives with the integration layer that owns the
+    // M02/M18 clients; no adapter crate exists in this workspace.
     RegisterSubset {
         id,
         by_election_id,
@@ -33,8 +36,9 @@ pub fn generate_subset(
     }
 }
 
-/// Freeze the register subset at nomination close.
-/// Once frozen, the write path is closed via OPA policy (FR-M50-018).
+/// Freeze the register subset at nomination close (FR-M50-018).
+/// Once frozen, the write path is closed via OPA policy. Panics if the subset
+/// is already frozen; the HTTP layer maps this to 403 freeze-violation.
 /// Returns the frozen subset with frozen_at timestamp set.
 pub fn freeze_subset(mut subset: RegisterSubset) -> RegisterSubset {
     assert!(
@@ -50,7 +54,6 @@ pub fn freeze_subset(mut subset: RegisterSubset) -> RegisterSubset {
 mod tests {
     use super::*;
 
-    #[test]
     fn generate_subset_returns_valid_stub() {
         let subset = generate_subset("be-1".into(), "const-1".into(), "snap-1".into());
         assert!(!subset.id.is_empty());

@@ -17,31 +17,26 @@ tests/
 
 ## Running
 
+The test sources in this directory are wired as cargo test targets by the
+`abis-integration-tests` harness crate (`crates/abis-integration-tests`,
+WP-3.6); this directory has no manifest of its own.
+
 ### Basic (no Docker required)
 
-Tests without `#[cfg_attr(not(feature = "cross-crate-integration"), ignore)]` run without infrastructure:
+Tests without `#[cfg_attr(not(feature = "cross-crate-integration"), ignore)]`
+run without infrastructure:
 
 ```
-cargo test --test attestation_replay_test
-cargo test --test vendor_failover_test
+cargo test -p abis-integration-tests
 ```
+
 
 ### Full integration (requires Docker + running abis-api)
 
 Start a local `abis-api` first (see `docs/README.md`), then:
 
 ```
-cargo test --test enrolment_dedup_flow_test --features cross-crate-integration
-cargo test --test adjudication_workflow_test --features cross-crate-integration
-cargo test --test fairness_drill_test --features cross-crate-integration
-cargo test --test attestation_replay_test --features cross-crate-integration
-cargo test --test vendor_failover_test --features cross-crate-integration
-```
-
-Or run all at once:
-
-```
-cargo test --features cross-crate-integration -- --include-ignored
+cargo test -p abis-integration-tests --features cross-crate-integration -- --include-ignored
 ```
 
 ### Environment variables
@@ -52,6 +47,5 @@ cargo test --features cross-crate-integration -- --include-ignored
 
 ## Notes
 
-- Tests requiring `abis-enrolment` or `abis-adjudication` crates are gated behind `cross-crate-integration` feature and will be skipped (`#[ignore]`) until those crates exist.
-- Tests print `SKIP:` and exit 0 when Docker is unavailable (no testcontainers).
+- Tests requiring a live stack stay ignored without the feature and fail loudly on connection errors when the feature is enabled without one.
 - Attestation tests use `dev-attest-placeholder` token valid only when `EEL_ABIS_ATTESTATION=software`.

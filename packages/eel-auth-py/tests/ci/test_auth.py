@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from eel_auth.audit import LogAuditSink
+from eel_auth.audit import LogAuditSink, NoopAuditSink
 from eel_auth.jwks import AuthError, JwksCache, verify_token
 from eel_auth.subject import Subject, SubjectExtractor
 
@@ -95,6 +95,19 @@ async def test_log_audit_sink_logs(caplog):
         await sink.record(subject, "read", "doc:123", "allow", {"ip": "1.2.3.4"})
     assert any("u1" in r.message for r in caplog.records)
     assert any("allow" in r.message for r in caplog.records)
+
+
+async def test_noop_audit_sink_discards_events_without_error():
+    sink = NoopAuditSink()
+    subject = Subject(
+        sub="u2",
+        username="bob",
+        email=None,
+        roles=[],
+        realm="test",
+    )
+    result = await sink.record(subject, "read", "doc:123", "allow", {"ip": "1.2.3.4"})
+    assert result is None
 
 
 # -- JwksCache kid-miss triggers fetch --

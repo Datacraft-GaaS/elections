@@ -1,18 +1,21 @@
 //! Integration test: adjudication workflow.
 //!
 //! Flow: case created -> assigned -> decided -> tlog entry present.
-//! Requires testcontainers or live abis-api. Skip cleanly if Docker absent.
+//! Requires a deployed abis-api backed by PostgreSQL and Kafka; without the
+//! cross-crate-integration feature the tests are ignored, never fake-passed.
 //!
 //! Feature-gate: cross-crate-integration (needs abis-adjudication crate).
 
 mod common;
-use common::{idempotency_key, skip_if_no_docker, TestRig};
+use common::TestRig;
 
 /// A newly created adjudication case reaches 'open' status and can be patched.
-#[cfg_attr(not(feature = "cross-crate-integration"), ignore)]
+#[cfg_attr(
+    not(feature = "cross-crate-integration"),
+    ignore = "needs a deployed abis-api backed by PostgreSQL and Kafka; enable cross-crate-integration and run against the docker-compose stack"
+)]
 #[test]
 fn test_adjudication_case_lifecycle() {
-    skip_if_no_docker();
     let rig = TestRig::local();
     let client = reqwest::blocking::Client::new();
 
@@ -36,12 +39,6 @@ fn test_adjudication_case_lifecycle() {
     );
 }
 
-/// Adjudication PATCH updates assignment and records a tlog entry.
-#[cfg_attr(not(feature = "cross-crate-integration"), ignore)]
-#[test]
-fn test_adjudication_patch_assignment() {
-    skip_if_no_docker();
-    // This test requires a pre-existing case ID seeded by the test rig.
-    // Without abis-adjudication crate, skip.
-    eprintln!("SKIP: requires abis-adjudication crate and seeded case. See docs/EDGE-CASES.md.");
-}
+// NOTE: PATCH assignment coverage needs a case ID seeded by the match
+// pipeline (there is no case-creation endpoint); it lands with WP-3.6 once
+// abis-adjudication is wired into the deployed stack.

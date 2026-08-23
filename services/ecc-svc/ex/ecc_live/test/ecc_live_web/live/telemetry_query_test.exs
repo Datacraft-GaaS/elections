@@ -2,8 +2,6 @@ defmodule EccLiveWeb.Live.TelemetryQueryLiveTest do
   @moduledoc "ExUnit unit tests for TelemetryQueryLive."
   use ExUnit.Case, async: true
 
-  alias EccLive.Live.TelemetryQueryLive
-
   # ---------------------------------------------------------------------------
   # Helpers
   # ---------------------------------------------------------------------------

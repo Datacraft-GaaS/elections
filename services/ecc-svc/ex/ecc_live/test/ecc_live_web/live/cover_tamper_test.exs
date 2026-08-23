@@ -37,7 +37,7 @@ defmodule EccLive.Live.CoverTamperLiveTest do
   end
 
   test "module uses live_view" do
-    assert function_exported?(CoverTamperLive, :__live__, 0)
+    assert function_exported?(CoverTamperLive, :render, 1)
   end
 
   # ---------------------------------------------------------------------------

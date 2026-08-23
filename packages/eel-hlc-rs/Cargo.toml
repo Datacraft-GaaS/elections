@@ -12,6 +12,7 @@ name = "eel_hlc_rs"
 path = "src/lib.rs"
 
 [dependencies]
+parking_lot = "0.12"
 serde      = { version = "1", features = ["derive"] }
 thiserror  = { workspace = true }
 sqlx       = { workspace = true, optional = true }

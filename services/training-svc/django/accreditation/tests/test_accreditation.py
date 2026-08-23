@@ -120,6 +120,19 @@ class TestBadgeAndCRL:
         assert "revoked_serials" in crl
         assert isinstance(crl["revoked_serials"], list)
 
+    def test_crl_logs_warning_when_badge_table_missing(self, db, caplog):
+        # BadgeRevocationEntry is unmanaged, so the table is absent in the
+        # test database. The CRL must log the gap and still emit a payload.
+        import logging
+
+        with caplog.at_level(logging.WARNING, logger="accreditation_app.crl"):
+            crl = generate_crl()
+        assert any(
+            "BadgeRevocationEntry unavailable" in record.message
+            for record in caplog.records
+        )
+        assert "generated_at" in crl
+
     def test_duplicate_badge_serial_rejected(self, db, media_org):
         serial = uuid7()
         MediaAccreditation.objects.create(

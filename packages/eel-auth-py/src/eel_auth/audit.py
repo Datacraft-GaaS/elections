@@ -20,7 +20,9 @@ class AuditSink(Protocol):
 
 class NoopAuditSink:
     async def record(self, *args: Any, **kwargs: Any) -> None:
-        pass
+        # Deliberately discards every event: this sink exists for services that
+        # run without an audit backend.
+        return None
 
 
 class LogAuditSink:

@@ -188,7 +188,7 @@ def test_middleware_dedup_skips_duplicate():
             return True
 
         async def mark_processed(self, event_id: str) -> None:
-            pass
+            return None
 
     consumer_handle = AsyncMock()
 
@@ -213,7 +213,7 @@ def test_middleware_marks_processed_after_handle():
 
     class NullConsumer:
         async def handle(self, envelope: Envelope) -> None:
-            pass
+            return None
 
     mw = ConsumerMiddleware(NullConsumer(), FakeDedup())
     env = _make_envelope()

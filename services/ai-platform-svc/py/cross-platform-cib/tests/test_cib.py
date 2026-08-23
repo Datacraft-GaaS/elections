@@ -191,6 +191,28 @@ def test_build_feature_matrix_shape():
 
 
 # ---------------------------------------------------------------------------
+# Test 8b: build_feature_matrix tolerates bad timestamps and is deterministic
+# ---------------------------------------------------------------------------
+
+
+def test_build_feature_matrix_bad_ts_and_stable_platform():
+    posts_data = [
+        {
+            "platform": "facebook",
+            "ts": "not-a-timestamp",
+            "shared_from": None,
+            "engagement_stats": {},
+        },
+    ]
+    mat = build_feature_matrix(posts_data, feature_dim=8)
+    # Unparseable ts must not raise; hour feature stays at 0.
+    assert mat[0, 6].item() == 0.0
+    # Platform hash feature is stable across calls (no PYTHONHASHSEED drift).
+    again = build_feature_matrix(posts_data, feature_dim=8)
+    assert mat[0, 5].item() == again[0, 5].item()
+
+
+# ---------------------------------------------------------------------------
 # Test 9: correlator flags cross-platform mirror within window
 # ---------------------------------------------------------------------------
 

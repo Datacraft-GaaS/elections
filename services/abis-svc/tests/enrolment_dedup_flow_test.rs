@@ -3,20 +3,19 @@
 //! Flow: ingest -> quality -> dedup -> route -> enrol.
 //! Asserts EnrolmentDecision and event emission.
 //!
-//! Requires testcontainers (PostgreSQL + Kafka).
-//! Skip if Docker absent: tests print SKIP and exit 0.
+//! Requires a deployed abis-api backed by PostgreSQL and Kafka. Without the
+//! cross-crate-integration feature the tests are ignored, never fake-passed.
 //!
-//! Run with cross-crate-integration feature once abis-enrolment crate lands:
+//! Run against the deployed stack:
 //!   cargo test --test enrolment_dedup_flow_test --features cross-crate-integration
 
 mod common;
-use common::{idempotency_key, skip_if_no_docker, synthetic_template_blob, TestRig};
+use common::{idempotency_key, synthetic_template_blob, TestRig};
 
 /// Full clean-path enrolment: probe does not match gallery; status = clean.
-#[cfg_attr(not(feature = "cross-crate-integration"), ignore)]
+#[cfg_attr(not(feature = "cross-crate-integration"), ignore = "needs a deployed abis-api backed by PostgreSQL and Kafka; enable cross-crate-integration and run against the docker-compose stack")]
 #[test]
 fn test_enrolment_clean_path() {
-    skip_if_no_docker();
     let rig = TestRig::local();
     let client = reqwest::blocking::Client::new();
 
@@ -45,10 +44,9 @@ fn test_enrolment_clean_path() {
 }
 
 /// Duplicate enrolment: same template twice; second should return existing decision.
-#[cfg_attr(not(feature = "cross-crate-integration"), ignore)]
+#[cfg_attr(not(feature = "cross-crate-integration"), ignore = "needs a deployed abis-api backed by PostgreSQL and Kafka; enable cross-crate-integration and run against the docker-compose stack")]
 #[test]
 fn test_enrolment_idempotent_duplicate_submission() {
-    skip_if_no_docker();
     let rig = TestRig::local();
     let client = reqwest::blocking::Client::new();
 
@@ -90,10 +88,9 @@ fn test_enrolment_idempotent_duplicate_submission() {
 }
 
 /// Same idempotency key, different body: must return 422 idempotency-key-reuse.
-#[cfg_attr(not(feature = "cross-crate-integration"), ignore)]
+#[cfg_attr(not(feature = "cross-crate-integration"), ignore = "needs a deployed abis-api backed by PostgreSQL and Kafka; enable cross-crate-integration and run against the docker-compose stack")]
 #[test]
 fn test_enrolment_idempotency_key_reuse_different_body() {
-    skip_if_no_docker();
     let rig = TestRig::local();
     let client = reqwest::blocking::Client::new();
     let key = idempotency_key();

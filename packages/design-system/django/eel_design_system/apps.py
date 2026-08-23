@@ -6,5 +6,5 @@ class EelDesignSystemConfig(AppConfig):
     label = "eel_design_system"
     verbose_name = "eel Design System"
 
-    def ready(self) -> None:
-        pass
+    # No import-time hooks required; template tags are discovered by Django
+    # automatically because the package ships an ``templatetags`` module.

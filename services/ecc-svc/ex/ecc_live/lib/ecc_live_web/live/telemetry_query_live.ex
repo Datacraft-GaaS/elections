@@ -12,8 +12,6 @@ defmodule EccLive.Live.TelemetryQueryLive do
   """
   use EccLive, :live_view
 
-  require Logger
-
   # ---------------------------------------------------------------------------
   # Mount
   # ---------------------------------------------------------------------------
@@ -67,10 +65,12 @@ defmodule EccLive.Live.TelemetryQueryLive do
   def handle_event("run_dsl", _params, socket) do
     case Jason.decode(socket.assigns.dsl_text) do
       {:ok, parsed} ->
+        current_user = socket.assigns[:current_user]
+
         {:noreply,
          socket
          |> assign(running: true, query_result: nil, query_error: nil)
-         |> start_async(:run_query, fn -> execute_query(parsed, socket) end)}
+         |> start_async(:run_query, fn -> execute_query(parsed, current_user) end)}
 
       {:error, err} ->
         {:noreply, assign(socket, query_error: "Invalid JSON: #{inspect(err)}")}
@@ -84,10 +84,12 @@ defmodule EccLive.Live.TelemetryQueryLive do
     if trimmed == "" do
       {:noreply, assign(socket, query_error: "Query text is required")}
     else
+      current_user = socket.assigns[:current_user]
+
       {:noreply,
        socket
        |> assign(nl_text: trimmed, running: true, proposed_dsl: nil, query_error: nil)
-       |> start_async(:nl_translate, fn -> translate_nl(trimmed, socket) end)}
+       |> start_async(:nl_translate, fn -> translate_nl(trimmed, current_user) end)}
     end
   end
 
@@ -98,10 +100,12 @@ defmodule EccLive.Live.TelemetryQueryLive do
         {:noreply, assign(socket, query_error: "No proposed DSL to confirm")}
 
       proposed ->
+        current_user = socket.assigns[:current_user]
+
         {:noreply,
          socket
          |> assign(running: true, query_result: nil, query_error: nil)
-         |> start_async(:run_query, fn -> execute_query(proposed, socket) end)}
+         |> start_async(:run_query, fn -> execute_query(proposed, current_user) end)}
     end
   end
 
@@ -124,10 +128,12 @@ defmodule EccLive.Live.TelemetryQueryLive do
         {:noreply, assign(socket, export_error: "No query to export")}
 
       query_id ->
+        current_user = socket.assigns[:current_user]
+
         {:noreply,
          socket
          |> assign(exporting: true, export_result: nil, export_error: nil)
-         |> start_async(:export, fn -> trigger_export(query_id, socket) end)}
+         |> start_async(:export, fn -> trigger_export(query_id, current_user) end)}
     end
   end
 
@@ -204,7 +210,7 @@ defmodule EccLive.Live.TelemetryQueryLive do
 
       <div style="display:grid;grid-template-columns:300px 1fr 1fr;gap:16px;align-items:start">
 
-        <%# Left pane: presets + DSL editor %>
+        <%!-- Left pane: presets + DSL editor --%>
         <aside aria-label="Query source" style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px">
           <h2 style="font-size:1rem;margin:0 0 10px">Preset library</h2>
           <select
@@ -242,7 +248,7 @@ defmodule EccLive.Live.TelemetryQueryLive do
           </button>
         </aside>
 
-        <%# Middle pane: NL bridge %>
+        <%!-- Middle pane: NL bridge --%>
         <section aria-labelledby="nl-heading" style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px">
           <h2 id="nl-heading" style="font-size:1rem;margin:0 0 10px">Natural-language query</h2>
 
@@ -285,7 +291,7 @@ defmodule EccLive.Live.TelemetryQueryLive do
           <% end %>
         </section>
 
-        <%# Right pane: results %>
+        <%!-- Right pane: results --%>
         <section aria-labelledby="results-heading" style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px">
           <h2 id="results-heading" style="font-size:1rem;margin:0 0 10px">Results</h2>
 
@@ -294,7 +300,7 @@ defmodule EccLive.Live.TelemetryQueryLive do
               <strong><%= get_in(@query_result, ["count"]) || 0 %></strong> row(s) returned.
             </p>
 
-            <%# Export buttons %>
+            <%!-- Export buttons --%>
             <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
               <button
                 phx-click="export_bundle"
@@ -319,7 +325,7 @@ defmodule EccLive.Live.TelemetryQueryLive do
               <p role="alert" style="color:#dc2626;font-size:0.85rem;margin-bottom:10px"><%= @export_error %></p>
             <% end %>
 
-            <%# Result table with column filter %>
+            <%!-- Result table with column filter --%>
             <% rows = get_in(@query_result, ["rows"]) || [] %>
             <%= if rows != [] do %>
               <.result_table rows={rows} column_filter={@column_filter} />
@@ -418,8 +424,8 @@ defmodule EccLive.Live.TelemetryQueryLive do
     _ -> []
   end
 
-  defp execute_query(dsl, socket) do
-    actor = socket.assigns[:current_user] |> actor_svid()
+  defp execute_query(dsl, current_user) do
+    actor = current_user |> actor_svid()
 
     case Req.post("#{api_base()}/v1/telemetry/query",
            json: dsl,
@@ -438,8 +444,8 @@ defmodule EccLive.Live.TelemetryQueryLive do
     e -> {:error, inspect(e)}
   end
 
-  defp translate_nl(text, socket) do
-    actor = socket.assigns[:current_user] |> actor_svid()
+  defp translate_nl(text, current_user) do
+    actor = current_user |> actor_svid()
 
     case Req.post("#{api_base()}/v1/telemetry/query/nl",
            json: %{"text" => text},
@@ -458,8 +464,8 @@ defmodule EccLive.Live.TelemetryQueryLive do
     e -> {:error, inspect(e)}
   end
 
-  defp trigger_export(query_id, socket) do
-    actor = socket.assigns[:current_user] |> actor_svid()
+  defp trigger_export(query_id, current_user) do
+    actor = current_user |> actor_svid()
 
     case Req.post("#{api_base()}/v1/telemetry/queries/#{query_id}/export",
            json: %{},

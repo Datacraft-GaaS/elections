@@ -111,7 +111,7 @@ defmodule EccLive.Live.TelemetryLive do
         Last updated: <time datetime={DateTime.to_iso8601(@last_refreshed)}><%= DateTime.to_string(@last_refreshed) %></time>
       </p>
 
-      <%# Filter controls %>
+      <%!-- Filter controls --%>
       <form phx-change="filter" aria-label="Dashboard filters" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px">
         <fieldset style="border:0;padding:0">
           <legend class="sr-only">Telemetry filters</legend>
@@ -156,10 +156,10 @@ defmodule EccLive.Live.TelemetryLive do
         </fieldset>
       </form>
 
-      <%# Panels grid %>
+      <%!-- Panels grid --%>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px">
 
-        <%# Signals per minute per class %>
+        <%!-- Signals per minute per class --%>
         <section class="panel" aria-labelledby="panel-spm-heading" style="background:#fff;border-radius:8px;padding:16px;border:1px solid #e5e5e5">
           <h2 id="panel-spm-heading" style="font-size:1rem;margin:0 0 10px">Signals per minute by class</h2>
           <table role="grid" style="width:100%;font-size:0.88rem">
@@ -183,7 +183,7 @@ defmodule EccLive.Live.TelemetryLive do
           </table>
         </section>
 
-        <%# Open alerts by severity %>
+        <%!-- Open alerts by severity --%>
         <section class="panel" aria-labelledby="panel-alerts-heading" style="background:#fff;border-radius:8px;padding:16px;border:1px solid #e5e5e5">
           <h2 id="panel-alerts-heading" style="font-size:1rem;margin:0 0 10px">Open alerts by severity</h2>
           <dl style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
@@ -194,7 +194,7 @@ defmodule EccLive.Live.TelemetryLive do
           </dl>
         </section>
 
-        <%# Top devices by drop count %>
+        <%!-- Top devices by drop count --%>
         <section class="panel" aria-labelledby="panel-drops-heading" style="background:#fff;border-radius:8px;padding:16px;border:1px solid #e5e5e5">
           <h2 id="panel-drops-heading" style="font-size:1rem;margin:0 0 10px">Top devices by drop count</h2>
           <ol style="margin:0;padding-left:20px;font-size:0.88rem">
@@ -207,7 +207,7 @@ defmodule EccLive.Live.TelemetryLive do
           </ol>
         </section>
 
-        <%# Top officers by session duration %>
+        <%!-- Top officers by session duration --%>
         <section class="panel" aria-labelledby="panel-officers-heading" style="background:#fff;border-radius:8px;padding:16px;border:1px solid #e5e5e5">
           <h2 id="panel-officers-heading" style="font-size:1rem;margin:0 0 10px">Top officers by session duration</h2>
           <ol style="margin:0;padding-left:20px;font-size:0.88rem">
@@ -220,7 +220,7 @@ defmodule EccLive.Live.TelemetryLive do
           </ol>
         </section>
 
-        <%# Battery-low fleet %>
+        <%!-- Battery-low fleet --%>
         <section class="panel" aria-labelledby="panel-battery-heading" style="background:#fff;border-radius:8px;padding:16px;border:1px solid #e5e5e5">
           <h2 id="panel-battery-heading" style="font-size:1rem;margin:0 0 10px">Battery low (&lt; 15%)</h2>
           <%= if Enum.empty?(@dashboard[:battery_low] || []) do %>
@@ -238,7 +238,7 @@ defmodule EccLive.Live.TelemetryLive do
           <% end %>
         </section>
 
-        <%# Session-hijack alerts %>
+        <%!-- Session-hijack alerts --%>
         <section class="panel" aria-labelledby="panel-hijack-heading" style="background:#fff;border-radius:8px;padding:16px;border:1px solid #e5e5e5">
           <h2 id="panel-hijack-heading" style="font-size:1rem;margin:0 0 10px">Session-hijack alerts</h2>
           <%= if Enum.empty?(@dashboard[:session_hijack] || []) do %>

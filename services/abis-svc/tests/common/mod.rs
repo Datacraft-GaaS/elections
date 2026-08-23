@@ -1,12 +1,16 @@
 //! Shared test rig for abis-svc integration tests.
 //!
-//! Boots an in-memory configuration wiring abis-api, abis-matcher, and abis-attest
-//! via the `test-rig` feature flag. Tests requiring real Docker containers
-//! (testcontainers PG) are gated by `cross-crate-integration`.
+//! Tests in this directory are feature gated behind `cross-crate-integration`
+//! and target a deployed abis-api backed by PostgreSQL and Kafka (the
+//! docker-compose stack, or testcontainers started by the operator). There is
+//! no silent skip: without the feature the tests are ignored; with the feature
+//! and without the stack they fail loudly on connection errors.
+//!
+//! Tests requiring real Docker containers (testcontainers PG) are gated by
+//! `cross-crate-integration`.
 
 #![allow(dead_code)]
 
-use std::sync::Arc;
 
 /// Minimal in-memory test state used by unit-level integration tests
 /// that do not require real infrastructure.
@@ -58,22 +62,6 @@ pub fn synthetic_template_blob(seed: &str) -> String {
         acc
     });
     hex
-}
-
-/// Skip a test with a documented reason if Docker is unavailable.
-/// Call at the top of any test requiring testcontainers.
-pub fn skip_if_no_docker() {
-    if std::process::Command::new("docker")
-        .args(["info"])
-        .output()
-        .map(|o| !o.status.success())
-        .unwrap_or(true)
-    {
-        eprintln!("SKIP: Docker unavailable. This test requires testcontainers.");
-        // Use std::process::exit to skip cleanly without marking as failed.
-        // In real usage, annotate with #[ignore] and run with --ignored flag.
-        std::process::exit(0);
-    }
 }
 
 /// Generate a random idempotency key.

@@ -1,6 +1,10 @@
 """CRL (Certificate/Badge Revocation List) generation helpers."""
 
+import logging
 from datetime import datetime, timezone
+
+
+_log = logging.getLogger(__name__)
 
 
 def generate_crl() -> dict:
@@ -19,8 +23,8 @@ def generate_crl() -> dict:
             str(s)
             for s in BadgeRevocationEntry.objects.values_list("badge_serial", flat=True)
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        _log.warning("BadgeRevocationEntry unavailable, skipping badge serials: %s", exc)
 
     try:
         from accreditation_app.models import CredentialRevocationEntry
@@ -31,8 +35,11 @@ def generate_crl() -> dict:
                 "credential_serial", flat=True
             )
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        _log.warning(
+            "CredentialRevocationEntry unavailable, skipping credential serials: %s",
+            exc,
+        )
 
     return {
         "generated_at": datetime.now(tz=timezone.utc).isoformat(),

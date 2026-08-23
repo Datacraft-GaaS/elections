@@ -88,8 +88,8 @@ def report_editor(request: HttpRequest, adhoc_id: str) -> HttpResponse:
                     reindent=True,
                     keyword_case="upper",
                 )
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("adhoc source highlight failed for %s: %s", adhoc_id, exc)
 
     return render(
         request,

@@ -19,6 +19,10 @@ fn base_payload(probe_id: &str) -> serde_json::Value {
 }
 
 /// A request with a dev attestation token and fresh nonce is accepted.
+#[cfg_attr(
+    not(feature = "cross-crate-integration"),
+    ignore = "needs a deployed abis-api backed by PostgreSQL and Kafka; enable cross-crate-integration and run against the docker-compose stack"
+)]
 #[test]
 fn test_attestation_fresh_nonce_accepted() {
     let rig = TestRig::local();

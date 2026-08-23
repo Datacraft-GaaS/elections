@@ -162,3 +162,29 @@ def test_admin_registered_models(client):
         AdhocSnippet,
     ]:
         assert model in dj_admin.site._registry, f"{model} not registered with admin"
+
+
+def test_report_editor_highlight_failure_is_logged(client, caplog):
+    import logging
+
+    fake_id = str(uuid.uuid4())
+    fake_version = MagicMock()
+    fake_version.source = "SELECT 1"
+    fake_report = MagicMock()
+    fake_report.versions.order_by.return_value.first.return_value = fake_version
+
+    with (
+        patch("adhoc_editor.apps.authoring.models.AdhocReport") as MockReport,
+        patch(
+            "adhoc_editor.apps.authoring.views.sqlparse.format",
+            side_effect=ValueError("bad sql"),
+        ),
+    ):
+        MockReport.objects.get.return_value = fake_report
+        with caplog.at_level(logging.WARNING):
+            resp = client.get(reverse("report_editor", args=[fake_id]))
+
+    assert resp.status_code == 200
+    assert any(
+        "highlight failed" in record.message for record in caplog.records
+    )

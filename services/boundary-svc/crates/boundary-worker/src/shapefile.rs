@@ -9,9 +9,14 @@ use tracing::info;
 
 /// Single ingest pass. Idempotent: already-imported file_refs are skipped.
 pub async fn run_once() -> Result<()> {
-    // TODO(WP-2.4): connect to MinIO via S3-compatible client, list new
-    // shapefile archives, parse SHP+DBF, upsert boundaries, emit event.
-    info!("shapefile ingest: no-op stub");
+    // Ingest pass prerequisites are not wired in this workspace yet: no
+    // S3-compatible list/download client, no SHP+DBF parser crate, and no
+    // PgPool (the `shapefile_imports` upsert needs one). Once wired, the pass
+    // lists new archives in bucket `eel-shapefiles`, verifies file hashes,
+    // parses geometries, upserts rows idempotently on file_ref, and emits
+    // `eel.boundary.shapefile_imported.v1`. Until then the worker loop stays
+    // healthy with a logged skip.
+    info!("shapefile ingest: skipped, S3 client, shapefile parser and PgPool not wired");
     Ok(())
 }
 

@@ -89,3 +89,52 @@ def test_sftp_path_builds_correctly() -> None:
     remote_path = f"{remote_dir}/{filename}"
     assert remote_path.startswith("/uploads/eel/eel_")
     assert remote_path.endswith(".tar.gz")
+
+
+async def test_deliver_uploads_bundle_and_returns_receipt(monkeypatch) -> None:
+    # build_bundle is patched because its default signer requires a real
+    # GnuPG keyring; deliver() resolves it from module globals at call time.
+    from eel_report_deliverers import kbc_sftp
+
+    async def fake_fetch(ref: str) -> bytes:
+        return b"artifact payload"
+
+    def fake_build_bundle(req: DeliveryRequest, artifact_bytes: bytes) -> tuple[bytes, str]:
+        return b"bundle-bytes", "feedface" * 4
+
+    def fake_upload(
+        host: str,
+        port: int,
+        username: str,
+        key_path: str,
+        remote_dir: str,
+        filename: str,
+        data: bytes,
+    ) -> str:
+        captured["host"] = host
+        captured["filename"] = filename
+        captured["data"] = data
+        return f"{remote_dir}/{filename}"
+
+    req = make_req()
+    captured: dict = {}
+
+    monkeypatch.setattr(kbc_sftp, "_fetch_artifact", fake_fetch)
+    monkeypatch.setattr(kbc_sftp, "build_bundle", fake_build_bundle)
+    monkeypatch.setattr(kbc_sftp, "_sftp_upload", fake_upload)
+
+    receipt = await kbc_sftp.deliver(req)
+
+    assert receipt.remote_path == f"/uploads/eel/{_build_filename(req)}"
+    assert receipt.uploaded_at is not None
+    assert captured["filename"] == _build_filename(req)
+    assert captured["data"] == b"bundle-bytes"
+    assert receipt.sha256 == "feedface" * 4
+def test_pgp_sign_unavailable_flag_matches_runtime() -> None:
+    """The availability flag must reflect the interpreter, not a hardcoded False."""
+    import importlib.util
+
+    from eel_report_deliverers import kbc_sftp
+
+    expected = importlib.util.find_spec("gnupg") is not None
+    assert kbc_sftp._gnupg_available[0] == expected

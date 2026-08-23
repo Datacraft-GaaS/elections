@@ -15,7 +15,9 @@
 //! assert!(t2 >= t1, "HLC is non-decreasing");
 //! ```
 
-use std::{fmt, str::FromStr, sync::Mutex};
+use std::{fmt, str::FromStr};
+
+use parking_lot::Mutex;
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -219,7 +221,7 @@ impl<W: WallClock> HlcClock<W> {
     /// greater than every previously returned value from this clock.
     pub fn now(&self) -> Hlc {
         let wall_ms = self.wall.now_ms();
-        let mut guard = self.state.lock().expect("HlcClock mutex poisoned");
+        let mut guard = self.state.lock();
         let (last_phys, last_ctr) = *guard;
 
         let (new_phys, new_ctr) = if wall_ms > last_phys {
@@ -253,7 +255,7 @@ impl<W: WallClock> HlcClock<W> {
     /// ```
     pub fn merge(&self, incoming: Hlc) -> Hlc {
         let wall_ms = self.wall.now_ms();
-        let mut guard = self.state.lock().expect("HlcClock mutex poisoned");
+        let mut guard = self.state.lock();
         let (last_phys, last_ctr) = *guard;
 
         let max_phys = wall_ms.max(incoming.physical_ms).max(last_phys);

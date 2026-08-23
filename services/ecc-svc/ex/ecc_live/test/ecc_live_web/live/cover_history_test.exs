@@ -47,7 +47,7 @@ defmodule EccLive.Live.CoverHistoryLiveTest do
   end
 
   test "module uses live_view" do
-    assert function_exported?(CoverHistoryLive, :__live__, 0)
+    assert function_exported?(CoverHistoryLive, :render, 1)
   end
 
   # ---------------------------------------------------------------------------

@@ -9,6 +9,7 @@ use axum::{
     Json,
 };
 use serde_json::{json, Value};
+use sqlx::Row;
 use tracing::info;
 
 use crate::{error::ApiError, state::AppState};
@@ -25,22 +26,26 @@ pub async fn get_handoff(
     // Hash the token before lookup so raw token never hits the DB query log.
     let token_hash = sha256_hex(token.as_bytes());
 
-    let row = sqlx::query!(
-        "SELECT app_id, status FROM vprs_applications WHERE qr_token_hash = $1",
-        token_hash
-    )
+    let row = sqlx::query("SELECT app_id, status FROM vprs_applications WHERE qr_token_hash = $1")
+        .bind(&token_hash)
     .fetch_optional(&state.db)
     .await
     .map_err(|_| ApiError::ServiceUnavailable)?;
 
     match row {
-        Some(r) if r.status == "converted" => {
-            // Consumed token: 410 Gone per FR-M04-018 / AC-M04-08.
-            info!(app_id = %r.app_id, "handoff token already consumed");
-            Err(ApiError::Gone)
+        Some(r) => {
+            let app_id: String = r.get("app_id");
+            let status: String = r.get("status");
+            if status == "converted" {
+                // Consumed token: 410 Gone per FR-M04-018 / AC-M04-08.
+                info!(app_id = %app_id, "handoff token already consumed");
+                Err(ApiError::Gone)
+            } else if status == "qr_issued" {
+                Ok(Json(json!({ "app_id": app_id })))
+            } else {
+                Err(ApiError::NotFound)
+            }
         }
-        Some(r) if r.status == "qr_issued" => Ok(Json(json!({ "app_id": r.app_id }))),
-        Some(_) => Err(ApiError::NotFound),
         None => Err(ApiError::NotFound),
     }
 }

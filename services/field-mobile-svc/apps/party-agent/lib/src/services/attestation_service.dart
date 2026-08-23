@@ -1,10 +1,24 @@
-// Play Integrity (Android) and App Attest (iOS) stub.
-// ADR-0021: hard-fail MDM attestation before any auth.
+import 'package:eel_kit_sdk/eel_kit_sdk.dart';
+
+/// MDM device attestation (ADR-0021: hard-fail attestation before any auth).
+///
+/// Delegates to the kit-sdk attestation module (Play Integrity on Android,
+/// App Attest on iOS). Production kits inject a platform-backed
+/// [EelAttestationClient] at bootstrap; the SDK software fallback serves
+/// development builds.
 class AttestationService {
+	AttestationService({EelAttestationClient? client})
+		: _client = client ?? EelAttestationClientStub();
+
+	final EelAttestationClient _client;
+
 	Future<AttestationResult> attest() async {
-		// Stub: real implementation calls platform channel to invoke
-		// Play Integrity API or App Attest, then verifies with backend.
-		return const AttestationResult(passed: true, token: 'stub-token');
+		try {
+			final verdict = await _client.attest();
+			return AttestationResult(passed: true, token: verdict.deviceId);
+		} on Exception catch (e) {
+			return AttestationResult(passed: false, failureReason: e.toString());
+		}
 	}
 }
 

@@ -5,6 +5,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use sqlx::Row;
 use tracing::warn;
 
 use crate::{error::ApiError, state::AppState};
@@ -44,16 +45,16 @@ pub async fn create_application(
 
     let app_id = vprs_domain::uuid7str();
 
-    let _ = sqlx::query!(
+    let _ = sqlx::query(
         r#"
         INSERT INTO vprs_applications (app_id, id_number_hash, status, biographic_fields, consent_tick, expires_at)
         VALUES ($1, $2, 'draft', $3, $4, NOW() + INTERVAL '90 days')
         "#,
-        app_id,
-        payload.id_number_hash,
-        payload.biographic_fields,
-        payload.consent_tick,
     )
+    .bind(&app_id)
+    .bind(&payload.id_number_hash)
+    .bind(&payload.biographic_fields)
+    .bind(payload.consent_tick)
     .execute(&state.db)
     .await
     .map_err(|e| {
@@ -77,13 +78,17 @@ pub async fn get_status(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<Json<Value>, ApiError> {
-    let row = sqlx::query!("SELECT status FROM vprs_applications WHERE app_id = $1", id)
+    let row = sqlx::query("SELECT status FROM vprs_applications WHERE app_id = $1")
+        .bind(&id)
         .fetch_optional(&state.db)
         .await
         .map_err(|_| ApiError::ServiceUnavailable)?;
 
     match row {
-        Some(r) => Ok(Json(json!({ "app_id": id, "status": r.status }))),
+        Some(r) => {
+            let status: String = r.get("status");
+            Ok(Json(json!({ "app_id": id, "status": status })))
+        }
         None => Err(ApiError::NotFound),
     }
 }
@@ -95,10 +100,10 @@ pub async fn cancel_application(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<StatusCode, ApiError> {
-    let result = sqlx::query!(
+    let result = sqlx::query(
         "UPDATE vprs_applications SET status = 'cancelled', updated_at = NOW() WHERE app_id = $1 AND status NOT IN ('cancelled','expired','converted')",
-        id
     )
+    .bind(&id)
     .execute(&state.db)
     .await
     .map_err(|_| ApiError::ServiceUnavailable)?;

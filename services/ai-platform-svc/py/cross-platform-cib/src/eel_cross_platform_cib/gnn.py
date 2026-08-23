@@ -97,7 +97,7 @@ def build_feature_matrix(
       2: log1p(comments)
       3: log1p(views)
       4: has_shared_from (0/1)
-      5: platform_hash_norm (hash(platform) % 1000 / 1000.0)
+      5: platform_hash_norm (crc32(platform) % 1000 / 1000.0, stable across processes)
       6: hour_of_day_norm (0-1)
       7: engagement_ratio (shares / (likes + 1))
 
@@ -109,6 +109,7 @@ def build_feature_matrix(
         Float32 tensor of shape (N, feature_dim).
     """
     import math
+    import zlib
     from datetime import datetime
 
     rows: list[list[float]] = []
@@ -123,13 +124,12 @@ def build_feature_matrix(
         hour = 0.0
         if ts_raw:
             try:
-                dt = datetime.fromisoformat(str(ts_raw))
-                hour = dt.hour / 23.0
-            except ValueError:
-                pass
+                hour = datetime.fromisoformat(str(ts_raw)).hour / 23.0
+            except (TypeError, ValueError):
+                hour = 0.0  # unparseable timestamps contribute no hour signal
 
         platform = pd.get("platform", "")
-        platform_norm = (hash(platform) % 1000) / 1000.0
+        platform_norm = (zlib.crc32(platform.encode("utf-8")) % 1000) / 1000.0
 
         row = [
             math.log1p(likes),

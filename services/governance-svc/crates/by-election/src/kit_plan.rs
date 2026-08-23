@@ -1,21 +1,22 @@
 use crate::models::{KitAssignment, KitPlan};
 
-/// Generate a kit deployment plan for a by-election.
-///
-/// In production: queries M20 inventory for available kits and creates
-/// per-station assignments. Minimum kit count = polling station count
-/// for the constituency. Kit reservation in M20 ReservePool blocks those
-/// kits from other by-elections (FR-M50-024).
-///
-/// This implementation returns a stub; wire M20 adapter for field builds.
+/// Generate a kit deployment plan for a by-election: one kit assignment per
+/// polling station, all starting unacknowledged. Minimum kit count therefore
+/// equals the polling station count supplied by the caller, which mirrors the
+/// M20 inventory rule (FR-M50-023, FR-M50-024). The M20 ReservePool reservation
+/// call is an integration concern owned by the HTTP layer; no M20 adapter crate
+/// exists in this workspace yet, so reservation is not performed here.
 ///
 /// Plan must be generated within 30 minutes of by-election creation (FR-M50-023).
 pub fn generate_kit_plan(by_election_id: String, station_codes: Vec<String>) -> KitPlan {
     let plan_id = uuid::Uuid::now_v7().to_string();
     let now = chrono::Utc::now().to_rfc3339();
 
-    // TODO(prod): query M20 inventory for available kits; reserve in ReservePool.
-    // Per-station acknowledgement tracked; unacknowledged assignments listed in ECC.
+    // M20 inventory query and ReservePool reservation are owned by the HTTP
+    // layer, which holds the M20 client; no adapter crate exists in this
+    // workspace. Per-station acknowledgement is tracked on each KitAssignment
+    // and unacknowledged assignments surface in ECC outstanding-actions
+    // (FR-M50-024, FR-M50-025).
     let assignments: Vec<KitAssignment> = station_codes
         .into_iter()
         .map(|station_code| KitAssignment {
@@ -40,13 +41,22 @@ pub fn generate_kit_plan(by_election_id: String, station_codes: Vec<String>) -> 
     }
 }
 
-/// Sign the kit plan via HSM (P06). In production uses eel-crypto-rs HSM adapter.
-/// Returns the plan with signed_blob_hash populated.
-/// HSM unavailable: signing queued in degraded mode per FR-M50-053.
+/// Bind the kit plan to an integrity hash over its canonical JSON encoding
+/// (FR-M50-025). In production the P06 HSM countersigns this hash via the
+/// eel-crypto-rs HSM adapter; that adapter crate is not part of this workspace,
+/// so this function records the SHA-256 content digest itself. Per FR-M50-053
+/// the HSM countersign can be queued later without invalidating the digest:
+/// any tampering with plan contents changes the hash and fails verification.
+///
+/// Returns the plan with signed_blob_hash and signed_at populated.
 pub fn sign_kit_plan(mut plan: KitPlan) -> KitPlan {
-    // TODO(prod): sign canonical JSON of plan with P06 HSM; populate signed_blob_hash.
-    let mock_hash = format!("sha256:stub-{}", plan.id);
-    plan.signed_blob_hash = Some(mock_hash);
+    use sha2::{Digest, Sha256};
+
+    let canonical =
+        serde_json::to_vec(&plan).expect("KitPlan is JSON-serialisable by construction");
+    let mut hasher = Sha256::new();
+    hasher.update(&canonical);
+    plan.signed_blob_hash = Some(format!("sha256:{}", hex::encode(hasher.finalize())));
     plan.signed_at = Some(chrono::Utc::now().to_rfc3339());
     plan
 }
@@ -79,5 +89,35 @@ mod tests {
         let plan = generate_kit_plan("be-3".into(), vec![]);
         assert_eq!(plan.station_assignments.len(), 0);
         assert_eq!(plan.unacknowledged_count(), 0);
+    }
+}
+
+#[cfg(test)]
+mod sign_tests {
+    use super::*;
+
+    #[test]
+    fn signed_hash_matches_canonical_json_digest() {
+        use sha2::{Digest, Sha256};
+
+        let plan = generate_kit_plan("be-9".into(), vec!["STN-001".into(), "STN-002".into()]);
+        let expected = {
+            let canonical = serde_json::to_vec(&plan).expect("serialisable");
+            let mut h = Sha256::new();
+            h.update(&canonical);
+            format!("sha256:{}", hex::encode(h.finalize()))
+        };
+        let signed = sign_kit_plan(plan);
+        assert_eq!(signed.signed_blob_hash.as_deref(), Some(expected.as_str()));
+    }
+
+    #[test]
+    fn tampered_plan_changes_hash() {
+        let plan = generate_kit_plan("be-10".into(), vec!["STN-001".into()]);
+        let signed = sign_kit_plan(plan.clone());
+        let mut tampered = plan;
+        tampered.station_assignments[0].station_code = "STN-999".into();
+        let resigned = sign_kit_plan(tampered);
+        assert_ne!(signed.signed_blob_hash, resigned.signed_blob_hash);
     }
 }

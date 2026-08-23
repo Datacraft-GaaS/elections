@@ -7,7 +7,6 @@ defmodule EccLive.Live.CoverHistoryLive do
   """
   use EccLive, :live_view
 
-  require Logger
 
   @impl true
   def mount(_params, _session, socket) do

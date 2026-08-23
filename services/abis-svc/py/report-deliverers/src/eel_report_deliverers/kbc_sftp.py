@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import importlib.util
 import io
 import json
 import os
@@ -16,14 +17,8 @@ import paramiko
 
 from .models import DeliveryReceipt, DeliveryRequest
 
-# Use a mutable list-of-one so pyright does not treat it as a redefined constant.
-_gnupg_available: list[bool] = [False]
-try:
-    import gnupg  # type: ignore[import-untyped]  # noqa: F401
-
-    _gnupg_available[0] = True
-except ImportError:
-    pass
+# Mutable list-of-one so pyright does not treat it as a redefined constant.
+_gnupg_available: list[bool] = [importlib.util.find_spec("gnupg") is not None]
 
 
 def _pgp_sign(data: bytes) -> bytes:

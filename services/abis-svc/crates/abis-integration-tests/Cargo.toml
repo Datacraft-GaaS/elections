@@ -1,0 +1,47 @@
+[package]
+name = "abis-integration-tests"
+version.workspace = true
+edition.workspace = true
+publish = false
+
+# Harness for the cross-crate HTTP integration tests that live at
+# services/abis-svc/tests/. Before WP-3.6 harness wiring these files had no
+# Cargo manifest at all, so they never compiled and never ran. They are wired
+# here (same pattern as biometric-edge-integration-tests) so the workspace
+# compiles them and runs everything that does not need infrastructure.
+#
+# Tests that require a deployed abis-api backed by PostgreSQL and Kafka are
+# gated behind the cross-crate-integration feature: ignored by default, and
+# they fail loudly on connection errors when enabled without the stack.
+# Start the stack with `just up`, then:
+#   cargo test -p abis-integration-tests --features cross-crate-integration \
+#     -- --include-ignored
+
+[[test]]
+name = "enrolment_dedup_flow_test"
+path = "../../tests/enrolment_dedup_flow_test.rs"
+
+[[test]]
+name = "adjudication_workflow_test"
+path = "../../tests/adjudication_workflow_test.rs"
+
+[[test]]
+name = "fairness_drill_test"
+path = "../../tests/fairness_drill_test.rs"
+
+[[test]]
+name = "attestation_replay_test"
+path = "../../tests/attestation_replay_test.rs"
+
+[[test]]
+name = "vendor_failover_test"
+path = "../../tests/vendor_failover_test.rs"
+
+[features]
+# Gates every test that needs the docker-compose stack (PostgreSQL + Kafka +
+# running abis-api). No silent skip: gated tests are ignored without it.
+cross-crate-integration = []
+
+[dev-dependencies]
+reqwest    = { workspace = true, features = ["blocking"] }
+serde_json = { workspace = true }

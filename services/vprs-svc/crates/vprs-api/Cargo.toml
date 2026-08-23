@@ -7,10 +7,6 @@ rust-version.workspace = true
 publish = false
 description = "VPRS REST API service (WP-4.10, M04)"
 
-[[bin]]
-name = "vprs-api"
-path = "src/main.rs"
-
 [lib]
 name = "vprs_api"
 path = "src/lib.rs"
