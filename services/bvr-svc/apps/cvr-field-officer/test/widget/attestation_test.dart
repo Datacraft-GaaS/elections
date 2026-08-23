@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:eel_cvr_field_officer/src/services/attestation.dart';
 
 void main() {
-  group('Attestation (stub)', () {
+  group('Attestation', () {
     test('sign returns non-empty hex signature', () async {
       final sig = await Attestation.sign([1, 2, 3, 4, 5]);
       expect(sig.signatureHex.isNotEmpty, isTrue);
@@ -17,13 +17,10 @@ void main() {
       expect(a.signatureHex, equals(b.signatureHex));
     });
 
-    test('sign differs for different data', () async {
-      final a = await Attestation.sign([1, 2, 3]);
-      final b = await Attestation.sign([4, 5, 6]);
-      // XOR stub: may collide for some inputs, but these differ.
-      // Just check it returns a string.
-      expect(a.signatureHex, isA<String>());
-      expect(b.signatureHex, isA<String>());
+    test('sign returns a hex-encoded Ed25519 signature', () async {
+      final sig = await Attestation.sign([1, 2, 3]);
+      // Ed25519 signatures are 64 bytes; hex encoding doubles the length.
+      expect(sig.signatureHex.length, 128);
     });
 
     test('detectTier returns AttestationTier', () async {
@@ -31,9 +28,15 @@ void main() {
       expect(tier, isA<AttestationTier>());
     });
 
-    test('stub tier is AttestationTier.stub', () async {
+    test('stub client tier maps to softwareFallback', () async {
       final tier = await Attestation.detectTier();
-      expect(tier, AttestationTier.stub);
+      expect(tier, AttestationTier.softwareFallback);
+    });
+
+    test('sign tier matches detected tier', () async {
+      final sig = await Attestation.sign([9, 9, 9]);
+      expect(sig.tier, await Attestation.detectTier());
+      expect(sig.keyId, startsWith('eel-kit-'));
     });
   });
 }

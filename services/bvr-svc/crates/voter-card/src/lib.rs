@@ -6,6 +6,7 @@ pub mod state;
 
 use axum::Router;
 
-pub fn app() -> Router {
-    routes::router()
+/// Build the voter-card router bound to the given connection pool.
+pub fn app(pool: sqlx::PgPool) -> Router {
+    routes::router().with_state(state::AppState::new(pool))
 }

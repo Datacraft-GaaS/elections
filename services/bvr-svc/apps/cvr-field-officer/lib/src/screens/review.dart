@@ -7,8 +7,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../config.dart';
 import '../models/capture.dart';
 import '../services/api_client.dart';
+import '../services/app_identity.dart';
 import '../services/offline_queue.dart';
 
 class ReviewScreen extends ConsumerStatefulWidget {
@@ -136,12 +138,15 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
       _errorMessage = null;
     });
 
-    final client = ApiClient(
-      baseUri: Uri.parse('https://cvr.eel.internal'), // TODO: from config
-      svidProvider: () => 'spiffe://eel.internal/stub', // TODO: from kit-sdk
-    );
-
     try {
+      // The capture screen attests before navigation; require the verdict so
+      // the SVID header reflects the real device identity.
+      await AppIdentity.instance.ensureAttested();
+      final client = ApiClient(
+        baseUri: AppConfig.apiBaseUri,
+        svidProvider: () => AppIdentity.instance.spiffeId,
+      );
+
       await client.submitCapture(widget.record);
       if (!mounted) return;
       Navigator.of(context).popUntil((r) => r.isFirst);

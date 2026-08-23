@@ -1,17 +1,23 @@
 /// CaptureScreen: camera capture, OCR, field review, HSM signing, submit.
 ///
 /// Duress signal: long-press on the capture button sends a silent alert to
-/// ECC dispatch via kit-sdk's DuressDetector hook.
+/// ECC dispatch via kit-sdk's EelDuressHook.
 library;
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:crypto/crypto.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:uuid/uuid.dart';
 
 import '../models/capture.dart';
+import '../config.dart';
+import '../services/app_identity.dart';
 import '../services/attestation.dart';
+import '../services/duress_service.dart';
 import '../services/geo_stamp.dart';
 import '../services/ocr_client.dart';
 import 'review.dart';
@@ -127,7 +133,8 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
       final imageFile = File(xfile.path);
       final imageBytes = await imageFile.readAsBytes();
 
-      // SHA-256 of the image bytes (stub)
+      // SHA-256 of the image bytes; recomputed by the offline queue on wake
+      // to detect on-disk corruption.
       final certSha256 = _sha256Hex(imageBytes);
 
       // Geo stamp
@@ -144,15 +151,16 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
       final sig = await Attestation.sign(imageBytes);
 
       // OCR (offline-friendly)
-      final ocrClient = OcrClient(
-        baseUri: Uri.parse('http://localhost:8091'), // TODO: from config
-      );
+      final ocrClient = OcrClient(baseUri: AppConfig.ocrBaseUri);
       final ocrResult = await ocrClient.extract(imageFile, widget.modality);
+
+      // Attest before stamping identity onto the capture.
+      await AppIdentity.instance.ensureAttested();
 
       final captureId = _generateUuid7();
       final record = CaptureRecord(
         captureId: captureId,
-        officerId: 'officer-stub', // TODO: from kit-sdk attestation
+        officerId: AppIdentity.instance.officerId,
         modality: widget.modality,
         capturedAt: DateTime.now().toUtc(),
         geoLat: geo.lat,
@@ -181,8 +189,9 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
 
   void _triggerDuressSignal() {
     // DPA-compliant silent alert: no visible feedback to avoid revealing to
-    // coercer. kit-sdk DuressDetector queues an alert event to ECC dispatch.
-    // TODO: eel_kit_sdk.duress.DuressDetector.triggerAlert(source: 'capture_long_press')
+    // coercer. kit-sdk's EelDuressHook queues a KitDuressAlert event for ECC
+    // dispatch; the sync engine flushes it on reconnect.
+    unawaited(DuressService.instance.triggerLongPressAlert());
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Alert sent.'),
@@ -191,14 +200,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
     );
   }
 
-  String _sha256Hex(List<int> bytes) {
-    // TODO: use crypto package: sha256.convert(bytes).toString()
-    return bytes.fold(0, (acc, b) => acc ^ b).toRadixString(16).padLeft(64, '0');
-  }
+  String _sha256Hex(List<int> bytes) => sha256.convert(bytes).toString();
 
-  String _generateUuid7() {
-    // TODO: use uuid package: const Uuid().v7()
-    final now = DateTime.now().millisecondsSinceEpoch;
-    return '$now-0000-7000-8000-000000000000';
-  }
+  String _generateUuid7() => const Uuid().v7();
 }

@@ -4,8 +4,10 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../config.dart';
 import '../models/sync_status.dart';
 import '../services/api_client.dart';
+import '../services/app_identity.dart';
 import '../services/offline_queue.dart';
 
 class SyncScreen extends ConsumerStatefulWidget {
@@ -108,9 +110,10 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
   Future<void> _sync() async {
     setState(() => _isSyncing = true);
 
+    await AppIdentity.instance.ensureAttested();
     final client = ApiClient(
-      baseUri: Uri.parse('https://cvr.eel.internal'),
-      svidProvider: () => 'spiffe://eel.internal/stub',
+      baseUri: AppConfig.apiBaseUri,
+      svidProvider: () => AppIdentity.instance.spiffeId,
     );
 
     final result = await OfflineQueueManager().drain(

@@ -3,9 +3,10 @@ pub mod cases;
 pub mod health;
 pub mod reports;
 
+use crate::state::AppState;
 use axum::Router;
 
-pub fn router() -> Router {
+pub fn router() -> Router<AppState> {
     Router::new()
         .merge(health::router())
         .merge(cases::router())

@@ -24,6 +24,7 @@ serde             = { workspace = true }
 serde_json        = { workspace = true }
 utoipa            = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
+eel-outbox-rs     = { workspace = true }
 sqlx              = { workspace = true }
 uuid              = { workspace = true }
 chrono            = { workspace = true }
@@ -31,8 +32,11 @@ thiserror         = { workspace = true }
 anyhow            = { workspace = true }
 tracing           = { workspace = true }
 tracing-subscriber = { workspace = true }
-
 [dev-dependencies]
 rstest        = { workspace = true }
 tokio         = { workspace = true }
 eel-trace-rs  = { workspace = true }
+
+[features]
+# Enables the PostgreSQL round-trip test (needs a reachable DATABASE_URL).
+db-tests = []

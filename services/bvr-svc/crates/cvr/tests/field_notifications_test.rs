@@ -1,7 +1,10 @@
-/// Integration-level tests for the field-notifications route module.
-///
-/// These tests exercise the handler logic directly via axum's test utilities.
-/// No network or database is required; state is validated through HTTP semantics.
+//! Integration-level tests for the field-notifications route module.
+//!
+//! Auth, validation, and list tests are hermetic: no network or database is
+//! required. The submit and reviewer-decision success paths write through the
+//! transactional outbox and therefore need PostgreSQL; they are gated behind
+//! the `db-tests` feature (run against the docker-compose stack with
+//! `cargo test -p cvr --features db-tests -- --include-ignored`).
 use axum::{
     body::Body,
     http::{Request, StatusCode},
@@ -10,7 +13,13 @@ use serde_json::{json, Value};
 use tower::util::ServiceExt; // for `oneshot`
 
 fn app() -> axum::Router {
-    cvr::app()
+    // Lazy pool: connections are only attempted when a handler touches the
+    // database, so the hermetic tests below never need a live PostgreSQL.
+    let pool = sqlx::postgres::PgPoolOptions::new()
+        .max_connections(1)
+        .connect_lazy("postgres://localhost/cvr")
+        .expect("lazy pool construction");
+    cvr::app(pool)
 }
 
 fn base_capture_payload() -> Value {
@@ -161,6 +170,10 @@ async fn geo_bounds_outside_kenya_rejected() {
 // ---------------------------------------------------------------------------
 
 #[tokio::test]
+#[cfg_attr(
+    not(feature = "db-tests"),
+    ignore = "requires PostgreSQL; run via docker-compose stack with --features db-tests"
+)]
 async fn geo_bounds_nairobi_accepted() {
     let app = app();
     let mut payload = base_capture_payload();
@@ -185,6 +198,10 @@ async fn geo_bounds_nairobi_accepted() {
 // ---------------------------------------------------------------------------
 
 #[tokio::test]
+#[cfg_attr(
+    not(feature = "db-tests"),
+    ignore = "requires PostgreSQL; run via docker-compose stack with --features db-tests"
+)]
 async fn submit_returns_capture_id_and_pending() {
     let app = app();
     let mut payload = base_capture_payload();
@@ -242,6 +259,10 @@ async fn reviewer_decision_requires_adjudicator_role() {
 // ---------------------------------------------------------------------------
 
 #[tokio::test]
+#[cfg_attr(
+    not(feature = "db-tests"),
+    ignore = "requires PostgreSQL; run via docker-compose stack with --features db-tests"
+)]
 async fn reviewer_accepted_emits_register_event() {
     let app = app();
     let capture_id = uuid::Uuid::now_v7();
@@ -274,6 +295,10 @@ async fn reviewer_accepted_emits_register_event() {
 // ---------------------------------------------------------------------------
 
 #[tokio::test]
+#[cfg_attr(
+    not(feature = "db-tests"),
+    ignore = "requires PostgreSQL; run via docker-compose stack with --features db-tests"
+)]
 async fn reviewer_rejected_does_not_emit_register_event() {
     let app = app();
     let capture_id = uuid::Uuid::now_v7();

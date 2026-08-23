@@ -1,11 +1,54 @@
-use axum::{routing::get, Json, Router};
-use serde_json::json;
+use crate::{error::ApiError, state::AppState};
+use axum::{extract::State, routing::get, Json, Router};
+use chrono::{DateTime, Utc};
+use serde_json::{json, Value};
 
-pub fn router() -> Router {
+pub fn router() -> Router<AppState> {
     Router::new().route("/v1/cvr/snapshots", get(list_snapshots))
 }
 
-async fn list_snapshots() -> Json<serde_json::Value> {
-    // TODO: query DB for register_snapshot records
-    Json(json!({"snapshots": []}))
+/// GET /v1/cvr/snapshots
+///
+/// Most recent register snapshots from the `register_snapshots` table
+/// (created by migration V3), newest first.
+async fn list_snapshots(State(state): State<AppState>) -> Result<Json<Value>, ApiError> {
+    let rows: Vec<(
+        String,
+        String,
+        i32,
+        i64,
+        String,
+        String,
+        Option<String>,
+        DateTime<Utc>,
+    )> = sqlx::query_as(
+        "SELECT snapshot_id, election_scope, station_count, voter_count, merkle_root, \
+         signed_by, checkpoint, created_at \
+         FROM register_snapshots \
+         ORDER BY created_at DESC \
+         LIMIT 100",
+    )
+    .fetch_all(&state.pool)
+    .await
+    .map_err(|e| ApiError::Internal(e.to_string()))?;
+
+    let snapshots: Vec<Value> = rows
+        .into_iter()
+        .map(
+            |(snapshot_id, election_scope, station_count, voter_count, merkle_root, signed_by, checkpoint, created_at)| {
+                json!({
+                    "snapshotId": snapshot_id,
+                    "electionScope": election_scope,
+                    "stationCount": station_count,
+                    "voterCount": voter_count,
+                    "merkleRoot": merkle_root,
+                    "signedBy": signed_by,
+                    "checkpoint": checkpoint,
+                    "createdAt": created_at,
+                })
+            },
+        )
+        .collect();
+
+    Ok(Json(json!({ "snapshots": snapshots })))
 }

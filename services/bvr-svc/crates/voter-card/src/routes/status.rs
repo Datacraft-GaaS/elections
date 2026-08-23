@@ -1,11 +1,53 @@
-use axum::{routing::get, Json, Router};
+use axum::{extract::{Query, State}, routing::get, Json, Router};
+use serde::Deserialize;
 use serde_json::json;
 
-pub fn router() -> Router {
+#[derive(Deserialize)]
+pub struct StatusQuery {
+    pub card_number: Option<String>,
+    #[allow(dead_code)]
+    pub voter_id: Option<uuid::Uuid>,
+}
+
+pub fn router() -> Router<crate::state::AppState> {
     Router::new().route("/v1/voter-cards/status", get(card_status))
 }
 
-async fn card_status() -> Json<serde_json::Value> {
-    // TODO: query card status by card_number or voter_id
-    Json(json!({"status": "ok"}))
+/// Card status lookup against the authoritative `card_blacklist` table.
+///
+/// The full card-registry projection (issued/dispatched/collected states,
+/// voter_id join) is part of M53 issuance and is feature-flagged behind the
+/// printer integration; blacklist state is live today because BVI edge nodes
+/// gate on it during polling-day identification.
+async fn card_status(
+    State(state): State<crate::state::AppState>,
+    Query(q): Query<StatusQuery>,
+) -> Result<Json<serde_json::Value>, crate::error::ApiError> {
+    let Some(card_number) = q.card_number.filter(|c| !c.is_empty()) else {
+        return Err(crate::error::ApiError::Internal(
+            "card_number query parameter is required".into(),
+        ));
+    };
+
+    let row: Option<(String, chrono::DateTime<chrono::Utc>, String)> = sqlx::query_as(
+        "SELECT reason, blacklisted_at, source FROM card_blacklist WHERE card_number = $1",
+    )
+    .bind(&card_number)
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(|e| crate::error::ApiError::Internal(e.to_string()))?;
+
+    match row {
+        Some((reason, blacklisted_at, source)) => Ok(Json(json!({
+            "card_number": card_number,
+            "blacklisted": true,
+            "reason": reason,
+            "source": source,
+            "blacklisted_at": blacklisted_at.to_rfc3339(),
+        }))),
+        None => Ok(Json(json!({
+            "card_number": card_number,
+            "blacklisted": false,
+        }))),
+    }
 }

@@ -6,8 +6,11 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:eel_kit_sdk/eel_kit_sdk.dart' show AttestationVerdict;
 
 import '../models/capture.dart';
+import '../services/app_identity.dart';
+import '../services/offline_queue.dart';
 import 'capture.dart';
 import 'history.dart';
 import 'sync.dart';
@@ -17,10 +20,9 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // TODO: load officer profile from kit-sdk attestation and local store.
-    const officerName = 'Field Officer';
-    const queueDepth = 0;
-    final lastSync = DateTime.now().subtract(const Duration(minutes: 5));
+    final queue = OfflineQueueManager();
+    final queueDepth = queue.pendingCount;
+    final lastSync = queue.lastSyncAt;
 
     return Scaffold(
       appBar: AppBar(
@@ -54,21 +56,20 @@ class HomeScreen extends ConsumerWidget {
                     children: [
                       Semantics(
                         header: true,
-                        child: Text(
-                          officerName,
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
+                        child: _officerName(context),
                       ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
                           const Icon(Icons.pending_actions, size: 16),
                           const SizedBox(width: 4),
-                          Text('${queueDepth.toString()} pending'),
+                          Text('$queueDepth pending'),
                           const SizedBox(width: 16),
                           const Icon(Icons.update, size: 16),
                           const SizedBox(width: 4),
-                          Text('Synced ${_formatRelative(lastSync)}'),
+                          Text(lastSync == null
+                              ? 'Never synced'
+                              : 'Synced ${_formatRelative(lastSync)}'),
                         ],
                       ),
                     ],
@@ -123,6 +124,19 @@ class HomeScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+  /// Officer display name from the kit-sdk attestation verdict. Falls back
+  /// to a generic label until the device attests (or when attestation is
+  /// unavailable on this device).
+  Widget _officerName(BuildContext context) {
+    return FutureBuilder<AttestationVerdict>(
+      future: AppIdentity.instance.ensureAttested(),
+      builder: (context, snap) {
+        final verdict = snap.data;
+        final name = verdict == null ? 'Field Officer' : verdict.deviceId;
+        return Text(name, style: Theme.of(context).textTheme.titleLarge);
+      },
     );
   }
 

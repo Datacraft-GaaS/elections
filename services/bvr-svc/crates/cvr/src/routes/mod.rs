@@ -5,9 +5,10 @@ pub mod field_notifications;
 pub mod health;
 pub mod snapshots;
 
+use crate::state::AppState;
 use axum::Router;
 
-pub fn router() -> Router {
+pub fn router() -> Router<AppState> {
     Router::new()
         .merge(health::router())
         .merge(batches::router())

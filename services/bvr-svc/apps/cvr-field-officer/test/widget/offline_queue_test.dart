@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:crypto/crypto.dart';
 
 import 'package:eel_cvr_field_officer/src/models/capture.dart';
 import 'package:eel_cvr_field_officer/src/models/sync_status.dart';
@@ -64,6 +67,40 @@ void main() {
       // drain should not throw even when file is missing
       final status = await queue.drain(sender: (_) async => true);
       expect(status.state, SyncState.idle);
+    });
+
+    test('drain sends entries whose on-disk hash matches the record', () async {
+      final dir = await Directory.systemTemp.createTemp('eel_queue_test');
+      final file = File('${dir.path}/capture.jpg');
+      const bytes = [0x01, 0x02, 0x03, 0x04, 0xFF];
+      await file.writeAsBytes(bytes);
+      final digest = sha256.convert(bytes).toString();
+
+      final id = 'hash-ok-${DateTime.now().microsecondsSinceEpoch}';
+      await queue.enqueue(CaptureRecord(
+        captureId: id,
+        officerId: 'officer-1',
+        modality: CaptureModality.deathCertificate,
+        capturedAt: DateTime.now().toUtc(),
+        geoLat: -1.286,
+        geoLon: 36.817,
+        geoAccuracyM: 5.0,
+        imagePath: file.path,
+        certSha256: digest,
+        officerHsmSignature: 'sig',
+      ));
+
+      final called = <String>[];
+      await queue.drain(sender: (r) async {
+        called.add(r.captureId);
+        return true;
+      });
+
+      expect(called, contains(id));
+      expect(queue.pendingCount, 0);
+      expect(queue.lastSyncAt, isNotNull);
+
+      await dir.delete(recursive: true);
     });
   });
 }

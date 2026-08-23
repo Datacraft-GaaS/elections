@@ -8,6 +8,8 @@ library;
 import 'dart:collection';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
+
 import '../models/capture.dart';
 import '../models/sync_status.dart';
 
@@ -21,6 +23,11 @@ class OfflineQueueManager {
   final Queue<_QueueEntry> _queue = Queue();
 
   int get pendingCount => _queue.length;
+
+  /// Timestamp of the most recent successful sync of at least one entry.
+  DateTime? get lastSyncAt => _lastSyncAt;
+
+  DateTime? _lastSyncAt;
 
   /// Enqueue [record] for later sync. Marks [capturedAt] as offlineQueuedAt.
   Future<void> enqueue(CaptureRecord record) async {
@@ -52,6 +59,7 @@ class OfflineQueueManager {
       final ok = await sender(entry.record);
       if (ok) {
         synced++;
+        _lastSyncAt = timestamp;
       } else {
         final next = entry.copyWith(attempts: entry.attempts + 1);
         if (next.attempts < 5) {
@@ -85,11 +93,7 @@ class OfflineQueueManager {
     }
   }
 
-  String _sha256Hex(List<int> bytes) {
-    // Stub: real impl uses crypto package's sha256.convert(bytes).toString().
-    // TODO: import 'package:crypto/crypto.dart'; return sha256.convert(bytes).toString();
-    return bytes.fold(0, (acc, b) => acc ^ b).toRadixString(16).padLeft(64, '0');
-  }
+  String _sha256Hex(List<int> bytes) => sha256.convert(bytes).toString();
 }
 
 class _QueueEntry {

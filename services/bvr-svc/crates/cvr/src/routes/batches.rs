@@ -1,12 +1,12 @@
-use axum::{http::StatusCode, routing::post, Json, Router};
-
 use crate::{
     error::ApiError,
     ingest::IngestService,
     models::{BatchIngestionReport, BatchIngestRequest},
+    state::AppState,
 };
+use axum::{http::StatusCode, routing::post, Json, Router};
 
-pub fn router() -> Router {
+pub fn router() -> Router<AppState> {
     Router::new().route("/v1/cvr/batches", post(ingest_batch))
 }
 
