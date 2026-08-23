@@ -9,32 +9,16 @@ members = [
   "tools/*",
 ]
 exclude = [
-  
-    "services/queue-svc/crates/*","tools/softhsm",
+  # softhsm, spectral: placeholder-only tools (src/lib.rs contains no implementation);
+  # their manifests inherit edition from a workspace root, so standalone cargo check fails
+  "tools/softhsm",
   "tools/spectral",
   "services/bvr-svc/crates/bvr-api",
   "services/bvr-svc/crates/bvr-domain",
   "services/bvr-svc/crates/bvr-batch",
   "services/bvr-svc/crates/target",
   "services/rts-svc/crates/rts-integration-tests",
-  # WP-3.2 in-flight: missing workspace deps (ciborium, zstd, eel-api-server-rs, eel-outbox-rs)
-  "services/rts-svc/crates/rts-device-api",
-  "services/rts-svc/crates/rts-ro-api",
-  # WP-3.8 in-flight: missing workspace deps (kit-attest, reqwest) -- kit-attest kept in workspace.dependencies for future use
-  "services/biometric-edge-svc/crates/edge-api",
-  # WP-4.7 in-flight: mobile-bff references axum-extra which fails to resolve at workspace parse time
-  "services/field-mobile-svc/crates/mobile-bff",
-  # dr-failover: directory exists but Cargo.toml is missing (in-flight)
-  "tools/dr-failover",
-  # vprs-api: sqlx::query! macros without offline prepare cache or live DATABASE_URL (in-flight)
-  "services/vprs-svc/crates/vprs-api",
-  # custody: depends on uuid6 which is not on crates.io (in-flight; root [workspace.dependencies]
-  # also carries a phantom uuid6 entry that only exists as an unpublished reference)
-  "services/inventory-svc/crates/custody",
-  # abis-fp-vendor-peak, bft-tally, fhe-tally: implemented in HARD-B
-  # diaspora: WP-5.8 in-flight, pending workspace deps
-  "services/biometric-edge-svc/crates/diaspora",
-  # abis-fp-consensus and abis-fp-tps-warp: now implemented, excluded entries removed
+  # abis-fp-vendor-peak, bft-tally, fhe-tally: implemented in HARD-B, included as members
   # telemetry-analytics: has nested [workspace] declaration (TELE-D in-flight)
   "services/ai-platform-svc/crates/telemetry-analytics",
   # support-admin-svc: nested workspace owns these crates
@@ -60,7 +44,8 @@ repository  = "https://gitea.internal/eel/eel"
 # ---------------------------------------------------------------------------
 [workspace.dependencies]
 # HTTP / gRPC
-axum            = { version = "0.8",  features = ["macros", "tokio"] }
+axum            = { version = "0.8",  features = ["macros", "tokio", "multipart"] }
+axum-extra      = { version = "0.10", features = ["typed-header"] }
 tower           = { version = "0.5",  features = ["full"] }
 tower-http      = { version = "0.6",  features = ["full"] }
 tonic           = { version = "0.12", features = ["tls", "transport"] }
@@ -71,7 +56,7 @@ reqwest         = { version = "0.12", features = ["json"] }
 
 # Async runtime
 tokio           = { version = "1",    features = ["full"] }
-tokio-stream    = { version = "0.1" }
+tokio-stream    = { version = "0.1",  features = ["sync"] }
 
 # Database
 sqlx            = { version = "0.8",  features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "migrate"] }
@@ -113,7 +98,6 @@ oqs             = { version = "0.11", features = ["ml_kem", "ml_dsa", "dilithium
 # IDs
 uuid            = { version = "1",    features = ["v4", "v7", "serde"] }
 blake3          = { version = "1" }
-uuid6           = { version = "0.7" }
 hmac            = { version = "0.12", features = ["std"] }
 
 # Text normalization (BVR NFC name/ID normalization)
@@ -137,6 +121,7 @@ anyhow          = { version = "1" }
 
 # Time
 chrono          = { version = "0.4",  features = ["serde"] }
+chrono-tz       = { version = "0.10" }
 
 # Geo / spatial
 geo             = { version = "0.28" }
@@ -166,6 +151,7 @@ criterion       = { version = "0.5", features = ["html_reports"] }
 testcontainers          = { version = "0.23" }
 testcontainers-modules  = { version = "0.11", features = ["postgres", "kafka", "redis"] }
 rstest                  = { version = "0.23" }
+proptest                = { version = "1" }
 
 # Serialization extras (added by WP-4.3)
 ciborium        = { version = "0.2" }
@@ -176,8 +162,15 @@ zstd            = { version = "0.13" }
 # Intra-workspace crates (added by WP-3.10 to fix missing workspace dep from WP-3.8)
 kit-attest      = { path = "services/biometric-edge-svc/crates/kit-attest" }
 
+# Biometric edge integration tests inherit this from the root workspace.
+edge-api        = { path = "services/biometric-edge-svc/crates/edge-api" }
+
 # Intra-workspace packages (added by WP-4.3 to fix missing workspace deps)
+eel-events-rs     = { path = "packages/eel-events-rs" }
+eel-hlc-rs        = { path = "packages/eel-hlc-rs" }
 eel-resilience-rs = { path = "packages/eel-resilience-rs" }
+eel-api-server-rs = { path = "packages/eel-api-server-rs" }
+eel-outbox-rs     = { path = "packages/eel-outbox-rs" }
 
 # Test-trace marker (WP-0.5 completeness): no-op #[trace(...)] attribute so the
 # trace audit can map tests to requirements without altering behavior.
@@ -202,7 +195,7 @@ tokio-util        = { version = "0.7", features = ["full"] }
 tempfile          = { version = "3" }
 httpmock          = { version = "0.7" }
 
-# Ad-hoc reports (RPT-D) — DOCX + Markdown renderers + SQL AST
+# Ad-hoc reports (RPT-D): DOCX + Markdown renderers + SQL AST
 docx-rs           = { version = "0.4" }
 pulldown-cmark    = { version = "0.12" }
 sqlparser         = { version = "0.53", features = ["visitor"] }
