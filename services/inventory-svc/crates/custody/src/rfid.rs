@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use uuid6::uuid7;
+use uuid::Uuid;
 
 use crate::domain::CustodyEvent;
 
@@ -21,7 +21,7 @@ pub struct KitHeartbeat {
 pub fn process_heartbeat(hb: KitHeartbeat) -> CustodyEvent {
     let location = format!("{},{}", hb.gps_lat, hb.gps_lon);
     CustodyEvent {
-        event_id: uuid7().to_string(),
+        event_id: Uuid::now_v7().to_string(),
         asset_id: hb.kit_id.clone(),
         from_custodian: hb.kit_id.clone(),
         to_custodian: hb.kit_id.clone(),

@@ -25,14 +25,13 @@ class _OfflineRead {
     required this.scannedAt,
     required this.tamperIndicator,
     required this.challengeValid,
-    this.synced = false,
   });
 
   final String epc;
   final DateTime scannedAt;
   final bool tamperIndicator;
   final bool challengeValid;
-  bool synced;
+  bool synced = false;
 }
 
 // ---------------------------------------------------------------------------
@@ -100,7 +99,8 @@ class _RfidScanScreenState extends State<RfidScanScreen> {
     });
 
     if (result.tamperIndicator) {
-      SemanticsService.announce(
+      SemanticsService.sendAnnouncement(
+        View.of(context),
         'Warning: tamper indicator detected on tag ${result.epc}',
         TextDirection.ltr,
       );

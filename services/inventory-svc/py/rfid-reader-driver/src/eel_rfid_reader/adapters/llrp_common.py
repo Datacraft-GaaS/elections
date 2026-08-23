@@ -136,8 +136,8 @@ class LlrpCommonClient:
                 try:
                     loop = asyncio.get_event_loop()
                     await loop.run_in_executor(None, self._client.disconnect)
-                except Exception:
-                    pass
+                except Exception as exc:
+                    _log_.warning("llrp disconnect failed host=%s: %s", self._host, exc)
                 finally:
                     self._client = None
 
@@ -197,7 +197,7 @@ class LlrpCommonClient:
             self._cb_success()
             return response
         except AttributeError:
-            # Tag does not support Gen2v2 — fall back to Gen2v1 Inventory.
+            # Tag does not support Gen2v2: fall back to Gen2v1 Inventory.
             _log_.info("tag %s: Gen2v2 unsupported, falling back to Gen2v1", tag_epc)
             return None
         except Exception as exc:

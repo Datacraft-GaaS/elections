@@ -1,0 +1,17 @@
+[package]
+name = "biometric-edge-integration-tests"
+version.workspace = true
+edition.workspace = true
+publish = false
+
+[[test]]
+name = "kit_simulator"
+path = "../../tests/integration/kit_simulator.rs"
+
+[dev-dependencies]
+axum       = { workspace = true }
+edge-api   = { workspace = true }
+tokio      = { workspace = true }
+reqwest    = { workspace = true }
+serde_json = { workspace = true }
+chrono     = { workspace = true }

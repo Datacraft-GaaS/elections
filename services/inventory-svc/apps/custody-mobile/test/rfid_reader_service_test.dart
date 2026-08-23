@@ -1,10 +1,43 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:eel_custody_mobile/src/services/rfid_reader_service.dart';
 
-import '../lib/src/services/rfid_reader_service.dart';
+/// In-memory [RfidReaderTransport] used to drive vendor services offline.
+class _FakeTransport implements RfidReaderTransport {
+  final controller = StreamController<RfidTransportEvent>.broadcast();
+  final connectedIds = <String>[];
+  var disposeCount = 0;
+
+  void emit(RfidTransportEvent event) => controller.add(event);
+
+  @override
+  Stream<RfidTransportEvent> get events => controller.stream;
+
+  @override
+  Future<void> discover() async {}
+
+  @override
+  Future<void> connect(String deviceId) async {
+    connectedIds.add(deviceId);
+    emit(RfidConnectedEvent(deviceId));
+  }
+
+  @override
+  Future<void> disconnect() async {
+    emit(const RfidDisconnectedEvent());
+  }
+
+  @override
+  Future<void> dispose() async {
+    disposeCount++;
+    await controller.close();
+  }
+}
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('SyntheticReaderService', () {
     late SyntheticReaderService svc;
 
@@ -31,6 +64,7 @@ void main() {
       final states = <ReaderConnectionState>[];
       svc.connectionStateStream.listen(states.add);
       await svc.connectToDevice('dev-001');
+      await Future<void>.delayed(Duration.zero);
       expect(svc.connectionState, ReaderConnectionState.connected);
       expect(states, contains(ReaderConnectionState.connected));
     });
@@ -66,6 +100,101 @@ void main() {
     });
   });
 
+  group('TransportDrivenReaderService', () {
+    late _FakeTransport transport;
+    late ZebraRfd40ReaderService svc;
+
+    setUp(() {
+      transport = _FakeTransport();
+      svc = ZebraRfd40ReaderService(transport: transport);
+    });
+
+    tearDown(() async {
+      await svc.dispose();
+    });
+
+    test('connectToDevice forwards device id and reaches connected', () async {
+      final states = <ReaderConnectionState>[];
+      svc.connectionStateStream.listen(states.add);
+      await svc.connectToDevice('RFD40-001');
+      await Future<void>.delayed(Duration.zero);
+      expect(transport.connectedIds, ['RFD40-001']);
+      expect(svc.connectionState, ReaderConnectionState.connected);
+      expect(states, containsAll(
+          [ReaderConnectionState.connecting, ReaderConnectionState.connected]));
+    });
+
+    test('tag read event maps into RfidScanResult', () async {
+      final completer = Completer<RfidScanResult>();
+      await svc.connectToDevice('RFD40-001');
+      svc.scanResults.listen(completer.complete);
+      transport.emit(const RfidTagReadEvent(
+        epc: 'e28011702000010a02bc3f2a',
+        tamperBit: true,
+        challengeVerified: true,
+        rssi: -48.5,
+      ));
+      final result = await completer.future.timeout(const Duration(seconds: 2));
+      // EPCs are normalized to uppercase hex.
+      expect(result.epc, 'E28011702000010A02BC3F2A');
+      expect(result.tamperIndicator, isTrue);
+      expect(result.challengeValid, isTrue);
+      expect(result.rssi, -48.5);
+    });
+
+    test('empty-EPC tag reads are dropped', () async {
+      var received = false;
+      await svc.connectToDevice('RFD40-001');
+      svc.scanResults.listen((_) => received = true);
+      transport.emit(const RfidTagReadEvent(
+        epc: '',
+        tamperBit: false,
+        challengeVerified: false,
+      ));
+      await Future<void>.delayed(Duration.zero);
+      expect(received, isFalse);
+    });
+
+    test('transport error event moves state to error', () async {
+      await svc.connectToDevice('RFD40-001');
+      transport.emit(const RfidTransportErrorEvent('link lost'));
+      await Future<void>.delayed(Duration.zero);
+      expect(svc.connectionState, ReaderConnectionState.error);
+    });
+
+    test('disconnect event from hardware moves state to disconnected',
+        () async {
+      await svc.connectToDevice('RFD40-001');
+      transport.emit(const RfidDisconnectedEvent());
+      await Future<void>.delayed(Duration.zero);
+      expect(svc.connectionState, ReaderConnectionState.disconnected);
+    });
+
+    test('dispose releases the transport exactly once', () async {
+      await svc.dispose();
+      expect(transport.disposeCount, 1);
+      expect(() => svc.startScan(), throwsStateError);
+    });
+  });
+
+  group('PlatformChannelReaderTransport missing native bridge', () {
+    test('connect without a registered handler surfaces error state',
+        () async {
+      final svc = ZebraRfd40ReaderService();
+      await svc.connectToDevice('RFD40-001');
+      expect(svc.connectionState, ReaderConnectionState.error);
+      await svc.dispose();
+    });
+
+    test('startScan without a registered handler surfaces error state',
+        () async {
+      final svc = CipherlabRs36ReaderService();
+      await svc.startScan();
+      expect(svc.connectionState, ReaderConnectionState.error);
+      await svc.dispose();
+    });
+  });
+
   group('createReaderService factory', () {
     test('synthetic model returns SyntheticReaderService', () {
       final svc = createReaderService(RfidReaderModel.synthetic);
@@ -73,15 +202,15 @@ void main() {
       svc.dispose();
     });
 
-    test('zebraRfd40 model returns a service (currently synthetic stub)', () {
+    test('zebraRfd40 model returns ZebraRfd40ReaderService', () {
       final svc = createReaderService(RfidReaderModel.zebraRfd40);
-      expect(svc, isNotNull);
+      expect(svc, isA<ZebraRfd40ReaderService>());
       svc.dispose();
     });
 
-    test('cipherlabRs36 model returns a service (currently synthetic stub)', () {
+    test('cipherlabRs36 model returns CipherlabRs36ReaderService', () {
       final svc = createReaderService(RfidReaderModel.cipherlabRs36);
-      expect(svc, isNotNull);
+      expect(svc, isA<CipherlabRs36ReaderService>());
       svc.dispose();
     });
   });

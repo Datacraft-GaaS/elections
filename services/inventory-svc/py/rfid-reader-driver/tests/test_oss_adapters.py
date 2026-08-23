@@ -239,3 +239,83 @@ async def test_llrp_circuit_breaker_opens_after_threshold(
     client._cb_success()
     assert client._cb_state == _CBState.CLOSED
     assert client._cb_allow()
+
+
+# ---------------------------------------------------------------------------
+# 7. CipherLab offline challenge/response roundtrip
+# ---------------------------------------------------------------------------
+
+
+async def test_cipherlab_challenge_response_roundtrip() -> None:
+    """issue_challenge/submit_response verify HMAC without any BLE transport."""
+    from eel_rfid_reader.adapters.cipherlab_rs36 import CipherLabRS36Adapter
+
+    adapter = CipherLabRS36Adapter(device_address="AA:BB:CC:DD:EE:02")
+    tag_epc = "cafebabe00000001"
+    _nonce_hex, challenge_hex = await adapter.issue_challenge(tag_epc)
+
+    result = await adapter.submit_response(
+        tag_epc, bytes.fromhex(challenge_hex), tamper_indicator=False
+    )
+
+    assert result.challenge_valid
+    assert not result.tamper_detected
+    assert result.message == "ok"
+
+
+async def test_cipherlab_submit_without_pending_challenge() -> None:
+    """submit_response rejects when no challenge was issued for the tag."""
+    from eel_rfid_reader.adapters.cipherlab_rs36 import CipherLabRS36Adapter
+
+    adapter = CipherLabRS36Adapter(device_address="AA:BB:CC:DD:EE:03")
+    result = await adapter.submit_response(
+        "cafebabe00000002", b"\x00" * 32, tamper_indicator=True
+    )
+
+    assert not result.challenge_valid
+    assert result.tamper_detected
+
+
+async def test_cipherlab_close_clears_client_on_disconnect_error() -> None:
+    """close() logs disconnect failures and still releases the client."""
+    from eel_rfid_reader.adapters.cipherlab_rs36 import CipherLabRS36Adapter
+
+    adapter = CipherLabRS36Adapter(device_address="AA:BB:CC:DD:EE:04")
+    fake_client = mock.Mock()
+    fake_client.disconnect = mock.AsyncMock(side_effect=RuntimeError("link lost"))
+    adapter._client = fake_client
+
+    await adapter.close()
+
+    fake_client.disconnect.assert_awaited_once()
+    assert adapter._client is None
+
+
+# ---------------------------------------------------------------------------
+# 8. LLRP close releases client even when disconnect raises
+# ---------------------------------------------------------------------------
+
+
+async def test_llrp_close_clears_client_on_disconnect_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """close() logs executor disconnect failures and still clears the client."""
+    from eel_rfid_reader.adapters.llrp_common import LlrpCommonClient
+
+    client = LlrpCommonClient(host="10.0.0.4", port=5084)
+    inner = mock.Mock()
+    inner.disconnect = mock.Mock(side_effect=RuntimeError("socket closed"))
+    client._client = inner
+
+    loop = asyncio.get_event_loop()
+
+    async def fake_run_in_executor(_executor: object, fn: object) -> object:
+        return fn()  # type: ignore[operator]
+
+    monkeypatch.setattr(loop, "run_in_executor", fake_run_in_executor)
+    monkeypatch.setattr(asyncio, "get_event_loop", lambda: loop)
+
+    await client.close()
+
+    inner.disconnect.assert_called_once()
+    assert client._client is None

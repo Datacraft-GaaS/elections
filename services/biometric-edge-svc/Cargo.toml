@@ -8,6 +8,7 @@ members = [
     "crates/kit-attest",
     "crates/diaspora",
     "crates/sensor-driver",
+    "crates/biometric-edge-integration-tests",
 ]
 
 [workspace.package]

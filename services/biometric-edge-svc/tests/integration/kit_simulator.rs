@@ -1,20 +1,38 @@
-//! Integration test: kit simulator submits synthetic enrolments through edge-api,
-//! bvr-svc receives, verifier-rs verifies signature.
+//! Integration test: the kit simulator submits synthetic enrolments through
+//! edge-api, and verifier-side attestation verdicts come back from the same
+//! router (WP-3.8).
 //!
-//! These tests require the full service stack; they run via docker-compose in CI.
-//! Set EDGE_API_URL + BVR_SVC_URL env vars before running.
+//! Hermetic by default: the full edge-api axum router is booted in process on
+//! an ephemeral loopback port; no docker-compose stack is required. Set
+//! EDGE_API_URL to run against a deployed instance instead.
 
-#[cfg(test)]
+use std::net::SocketAddr;
+
+/// Boot the edge-api router on an ephemeral loopback port and return its base
+/// URL. Honors a pre-set EDGE_API_URL for deployed-stack runs.
+async fn edge_api_base_url() -> String {
+    if let Ok(url) = std::env::var("EDGE_API_URL") {
+        return url;
+    }
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("must bind an ephemeral loopback port");
+    let addr: SocketAddr = listener.local_addr().expect("listener address");
+    tokio::spawn(async move {
+        axum::serve(listener, edge_api::app())
+            .await
+            .expect("edge-api server task must not crash");
+    });
+    format!("http://{addr}")
+}
+
 mod kit_simulator {
+    use super::edge_api_base_url;
+
     /// Submits a synthetic enrolment through edge-api and asserts 202 response.
-    ///
-    /// In CI this hits a live edge-api instance. Locally it can be run against
-    /// a docker-compose stack with `cargo test -p edge-api --test kit_simulator`.
     #[tokio::test]
-    #[ignore = "requires live edge-api stack; run with --include-ignored in CI"]
     async fn synthetic_enrolment_accepted() {
-        let url = std::env::var("EDGE_API_URL")
-            .unwrap_or_else(|_| "http://localhost:8090".into());
+        let url = edge_api_base_url().await;
 
         let client = reqwest::Client::new();
         let body = serde_json::json!({
@@ -43,10 +61,8 @@ mod kit_simulator {
     }
 
     #[tokio::test]
-    #[ignore = "requires live edge-api stack"]
     async fn attestation_verify_returns_verdict() {
-        let url = std::env::var("EDGE_API_URL")
-            .unwrap_or_else(|_| "http://localhost:8090".into());
+        let url = edge_api_base_url().await;
 
         let client = reqwest::Client::new();
         let body = serde_json::json!({

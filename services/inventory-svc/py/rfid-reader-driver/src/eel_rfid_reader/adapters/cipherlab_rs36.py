@@ -201,7 +201,9 @@ class CipherLabRS36Adapter(RfidReaderAdapter):
         if self._client is not None:
             try:
                 await self._client.disconnect()
-            except Exception:
-                pass
+            except Exception as exc:
+                _log_.warning(
+                    "ble disconnect failed for %s: %s", self._device_address, exc
+                )
             finally:
                 self._client = None

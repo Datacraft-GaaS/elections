@@ -1,9 +1,32 @@
-use chrono::{DateTime, Utc};
-use tracing::info;
+//! Publishes custody Merkle roots into the transparency-log pipeline.
+//!
+//! The custody domain emits one signed-envelope row per window through the
+//! transactional outbox on `eel.custody.merkle_root_published.v1`; tlog-ingest
+//! maps that topic to the CustodyEvents domain and the sequencer anchors it.
+//! The five-channel public fan-out (web, GitHub mirror, IPFS, Gazette print,
+//! KBC radio) then happens in transparency-svc's publication stage, so this
+//! crate only owns the single outbox write.
 
-/// Publishes Merkle roots to the transparency-svc.
-///
-/// Pushes to 5 independent channels every 10 min for audit resilience.
+use chrono::{DateTime, Utc};
+use eel_outbox_rs::{Outbox, OutboxEnvelope};
+use serde_json::json;
+use sqlx::PgPool;
+
+/// SPIFFE identity of this service used as the CloudEvents source.
+const SOURCE_URI: &str = "spiffe://eel.local/service/inventory-backend";
+
+/// Kafka topic consumed by tlog-ingest for the CustodyEvents domain.
+pub const TOPIC_MERKLE_ROOT_PUBLISHED: &str = "eel.custody.merkle_root_published.v1";
+
+#[derive(Debug, thiserror::Error)]
+pub enum MerkleError {
+    #[error("failed to publish merkle root: {0}")]
+    Publish(String),
+    #[error(transparent)]
+    Outbox(#[from] eel_outbox_rs::OutboxError),
+}
+
+/// Publishes Merkle roots to the transparency-svc pipeline.
 pub struct MerklePublisher;
 
 impl MerklePublisher {
@@ -11,16 +34,57 @@ impl MerklePublisher {
         Self
     }
 
-    /// Publish a Merkle root hash for the given window timestamp.
-    /// In production this fans out over 5 independent transparency channels.
-    pub fn publish_root(
+    /// Anchor a custody-window Merkle root: writes the outbox row in its own
+    /// transaction and returns the event id.
+    pub async fn publish_root(
         &self,
+        pool: &PgPool,
         root_hash: &str,
         window_ts: DateTime<Utc>,
-    ) -> Result<(), MerkleError> {
-        info!(root_hash, window_ts = %window_ts, "publishing merkle root");
-        // TODO(WP-4.3): fan out to transparency-svc over 5 channels
-        Ok(())
+    ) -> Result<String, MerkleError> {
+        let envelope = OutboxEnvelope {
+            id: uuid::Uuid::now_v7().to_string(),
+            event_type: TOPIC_MERKLE_ROOT_PUBLISHED.into(),
+            source: SOURCE_URI.into(),
+            subject: Some(format!("custody-window/{}", window_ts.to_rfc3339())),
+            time: Utc::now().to_rfc3339(),
+            eel_stream_id: format!("custody-merkle-{}", window_ts.timestamp()),
+            eel_seq: 1,
+            eel_hlc: Utc::now().timestamp_millis(),
+            eel_prev_hash: None,
+            eel_correlation_id: None,
+            eel_causation_id: None,
+            eel_producer_key_id: None,
+            eel_signature: None,
+            eel_election_id: None,
+            eel_data_class: Some("C".into()),
+            data: json!({
+                "root_hash": root_hash,
+                "window_ts": window_ts.to_rfc3339(),
+            }),
+            topic: TOPIC_MERKLE_ROOT_PUBLISHED.into(),
+            kafka_key: root_hash.to_string(),
+            aggregate_type: "custody_merkle_window".into(),
+            aggregate_id: format!("custody-merkle-{}", window_ts.timestamp()),
+        };
+
+        let outbox = Outbox::new(pool.clone());
+        let mut tx = pool
+            .begin()
+            .await
+            .map_err(|e| MerkleError::Publish(e.to_string()))?;
+        outbox.emit(&mut tx, &envelope).await?;
+        tx.commit()
+            .await
+            .map_err(|e| MerkleError::Publish(e.to_string()))?;
+
+        tracing::info!(
+            root_hash = %root_hash,
+            event_id = %envelope.id,
+            topic = %TOPIC_MERKLE_ROOT_PUBLISHED,
+            "custody merkle root anchored"
+        );
+        Ok(envelope.id)
     }
 }
 
@@ -30,8 +94,15 @@ impl Default for MerklePublisher {
     }
 }
 
-#[derive(Debug, thiserror::Error)]
-pub enum MerkleError {
-    #[error("failed to publish merkle root: {0}")]
-    Publish(String),
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn topic_maps_to_custody_domain() {
+        // tlog-ingest topic_router maps any `eel.custody*` prefix to
+        // Domain::CustodyEvents; keep the constant aligned with that contract.
+        assert!(TOPIC_MERKLE_ROOT_PUBLISHED.starts_with("eel.custody"));
+        assert!(TOPIC_MERKLE_ROOT_PUBLISHED.ends_with(".v1"));
+    }
 }

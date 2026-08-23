@@ -13,6 +13,12 @@ dependencies:
 
   ffi: ^2.1.0
 
+  # ECDSA P-256 bundle signatures (pure-Dart implementation)
+  pointycastle: ^3.9.1
+
+  # Ed25519 device signing key
+  cryptography: ^2.7.0
+
   # Secure local storage
   isar: ^3.1.0
   isar_flutter_libs: ^3.1.0

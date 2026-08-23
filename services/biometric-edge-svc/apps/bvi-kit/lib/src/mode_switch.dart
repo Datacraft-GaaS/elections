@@ -4,9 +4,11 @@
 /// The bundle schema mirrors RTS mode_switch.dart with an additional
 /// biometric_scope field for BVI-specific scope restriction.
 ///
-/// Verification: in production, [BviModeBundle.verify] calls into
-/// eel_kit_sdk verifier FFI. The stub here always returns verified=true;
-/// wire the real verifier for field builds.
+/// Verification: [BviModeBundle.loadCurrent] and [BviModeBundle.applyBundle]
+/// check the ECDSA P-256 signature over the canonical JSON of the bundle
+/// against the trust anchor provisioned in EelSecureStore (see eel_kit_sdk
+/// bundle_security). Bundles without a provisioned key or with an invalid
+/// signature are rejected (fail closed).
 ///
 /// Mode fields:
 ///   - election_type: 'general' | 'referendum' | 'by_election'
@@ -16,6 +18,10 @@
 ///   - signature: ECDSA P-256 over canonical JSON (signature key excluded)
 library;
 
+import 'dart:convert';
+
+import 'package:eel_kit_sdk/eel_kit_sdk.dart'
+    show EelSignedBundle, EelSecureStore, ModeBundleTrustSlots;
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 
@@ -63,21 +69,84 @@ class BviModeBundle {
         verified: kDebugMode,
       );
 
-  /// Load current bundle from secure local storage (or default to general).
+  /// Load the persisted mode bundle from secure local storage and re-verify
+  /// its signature against the provisioned trust anchor. Falls back to the
+  /// general election default when nothing is stored, verification fails,
+  /// or secure storage is unavailable (fail closed).
   static Future<BviModeBundle> loadCurrent() async {
-    // TODO(prod): read from EelSecureStore; verify ECDSA P-256 signature
-    // via eel_kit_sdk verifier FFI before returning.
-    _log.info('Loading BVI mode bundle (stub: defaulting to general)');
-    return defaultGeneral;
+    try {
+      final store = EelSecureStore();
+      final rawJson = await store.read(ModeBundleTrustSlots.appliedBundle);
+      final trustAnchor = await store.read(ModeBundleTrustSlots.trustedPublicKey);
+      if (rawJson == null || trustAnchor == null) {
+        _log.info('No stored mode bundle or trust anchor; using general election default');
+        return defaultGeneral;
+      }
+      final raw = Map<String, Object?>.from(jsonDecode(rawJson) as Map);
+      if (!EelSignedBundle.verify(raw, publicKeyBase64: trustAnchor)) {
+        _log.warning('Stored mode bundle signature invalid; rejecting');
+        return defaultGeneral;
+      }
+      return _parse(raw, verified: true);
+    } catch (e) {
+      // Storage or codec failures degrade to the documented default bundle.
+      _log.warning('Failed to load mode bundle ($e); using general election default');
+      return defaultGeneral;
+    }
   }
 
-  /// Apply a new bundle from raw JSON after signature verification.
-  /// Rejects bundles where verified == false (assertion enforced at caller).
-  static Future<BviModeBundle> applyBundle(Map<String, Object?> raw) async {
-    final verified = await _verify(raw);
+  /// Apply a new bundle from raw JSON after signature verification against
+  /// [trustAnchorB64], or the one provisioned in secure storage when omitted.
+  /// A verified bundle is persisted so [loadCurrent] restores it next start.
+  /// Unverified bundles are rejected by the caller-side assertion (fail closed).
+  static Future<BviModeBundle> applyBundle(
+    Map<String, Object?> raw, {
+    String? trustAnchorB64,
+  }) async {
+    final anchor = trustAnchorB64 ??
+        await _readTrustAnchor();
+
+    // No provisioned anchor means nothing can be verified: fail closed.
+    final verified = anchor != null &&
+        EelSignedBundle.verify(raw, publicKeyBase64: anchor);
+    final bundle = _parse(raw, verified: verified);
+    if (verified) {
+      try {
+        await EelSecureStore()
+            .write(ModeBundleTrustSlots.appliedBundle, jsonEncode(raw));
+      } catch (e) {
+        // Persistence is best effort: the in-session bundle is still valid.
+        _log.warning('Could not persist applied mode bundle: $e');
+      }
+    } else {
+      _log.warning('BVI mode bundle signature invalid; rejecting');
+    }
+    assert(
+      bundle.verified,
+      'BVI mode bundle must be verified before applying; unverified bundle rejected',
+    );
+    _log.info('BVI mode switched: ${bundle.electionType.name} scope=${bundle.biometricScope}');
+    return bundle;
+  }
+
+  /// Provisioned ECDSA P-256 trust anchor, or null when none is stored
+  /// (secure storage unavailable counts as unprovisioned: fail closed).
+  static Future<String?> _readTrustAnchor() async {
+    try {
+      return await EelSecureStore().read(ModeBundleTrustSlots.trustedPublicKey);
+    } catch (e) {
+      _log.warning('Could not read mode bundle trust anchor: $e');
+      return null;
+    }
+  }
+
+  static BviModeBundle _parse(
+    Map<String, Object?> raw, {
+    required bool verified,
+  }) {
     final typeStr = raw['election_type'] as String? ?? 'general';
     final scopeStr = raw['biometric_scope'] as String? ?? 'national';
-    final bundle = BviModeBundle(
+    return BviModeBundle(
       electionType: BviElectionType.values.firstWhere(
         (e) => e.name == typeStr,
         orElse: () => BviElectionType.general,
@@ -88,19 +157,6 @@ class BviModeBundle {
       bundleId: raw['bundle_id'] as String? ?? 'unknown',
       verified: verified,
     );
-    assert(
-      bundle.verified,
-      'BVI mode bundle must be verified before applying; unverified bundle rejected',
-    );
-    _log.info('BVI mode switched: ${bundle.electionType.name} scope=${bundle.biometricScope}');
-    return bundle;
-  }
-
-  static Future<bool> _verify(Map<String, Object?> raw) async {
-    // TODO(prod): extract 'signature' field; verify ECDSA P-256 over canonical
-    // JSON (with signature key excluded) using eel_kit_sdk verifier FFI.
-    _log.info('BVI mode bundle signature verification stub -- always true');
-    return true;
   }
 
   /// Referendum-mode bundle with national scope.

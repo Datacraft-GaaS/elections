@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../lib/src/screens/rfid_scan.dart';
-import '../lib/src/services/rfid_reader_service.dart';
+import 'package:eel_custody_mobile/src/screens/rfid_scan.dart';
+import 'package:eel_custody_mobile/src/services/rfid_reader_service.dart';
 
 Widget _wrap(Widget child) => MaterialApp(home: child);
 
