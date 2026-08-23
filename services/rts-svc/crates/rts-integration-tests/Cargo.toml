@@ -16,3 +16,4 @@ eel-eventstore-rs = { path = "../../../../packages/eel-eventstore-rs" }
 tokio             = { workspace = true }
 uuid              = { workspace = true }
 serde_json        = { workspace = true }
+chrono            = { workspace = true }

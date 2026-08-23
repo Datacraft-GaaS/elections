@@ -1,12 +1,34 @@
 /// Mode-switch tests.
 ///
 /// Verifies that applying a mode bundle mid-session reconfigures the workflow
-/// and that unverified bundles are rejected.
+/// and that unverified bundles are rejected (fail closed).
 library;
 
+import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pointycastle/export.dart' as pc;
 
 import 'package:eel_rts_kit/src/rts_workflow/mode_switch.dart';
+
+/// Sign [payload] with a freshly generated P-256 key pair and return the
+/// completed bundle together with the base64 public key as trust anchor.
+(Map<String, Object?>, String) _signedBundle(Map<String, Object?> payload) {
+  final pair = EelSignedBundle.generateKeyPair();
+  final anchor = EelSignedBundle.encodePublicKey(pair.publicKey as pc.ECPublicKey);
+  final raw = EelSignedBundle.sign(
+    payload,
+    privateKey: pair.privateKey as pc.ECPrivateKey,
+  );
+  return (raw, anchor);
+}
+
+Map<String, Object?> _referendumPayload() => {
+      'election_type': 'referendum',
+      'form_type': 'referendumResultsForm',
+      'valid_from': '2026-01-01T00:00:00Z',
+      'valid_until': '2030-01-01T00:00:00Z',
+      'bundle_id': 'ref-2026',
+    };
 
 void main() {
   group('RtsModeBundle', () {
@@ -17,16 +39,9 @@ void main() {
       expect(bundle.bundleId, 'default-general');
     });
 
-    test('applyBundle parses referendum bundle correctly [FR-M08-002] [FR-M08-042] [EC-KIT-04]', () async {
-      final raw = <String, Object?>{
-        'election_type': 'referendum',
-        'form_type': 'referendumResultsForm',
-        'valid_from': '2026-01-01T00:00:00Z',
-        'valid_until': '2030-01-01T00:00:00Z',
-        'bundle_id': 'ref-2026',
-        'signature': 'stub',
-      };
-      final bundle = await RtsModeBundle.applyBundle(raw);
+    test('applyBundle verifies a properly signed referendum bundle [FR-M08-002] [FR-M08-042] [EC-KIT-04]', () async {
+      final (raw, anchor) = _signedBundle(_referendumPayload());
+      final bundle = await RtsModeBundle.applyBundle(raw, trustAnchorB64: anchor);
       expect(bundle.electionType, ElectionType.referendum);
       expect(bundle.formType, FormType.referendumResultsForm);
       expect(bundle.bundleId, 'ref-2026');
@@ -34,17 +49,32 @@ void main() {
     });
 
     test('applyBundle parses by-election bundle [FR-M08-002] [FR-M08-042]', () async {
-      final raw = <String, Object?>{
+      final (raw, anchor) = _signedBundle({
         'election_type': 'byElection',
         'form_type': 'byElection34a',
         'valid_from': '2026-01-01T00:00:00Z',
         'valid_until': '2030-01-01T00:00:00Z',
         'bundle_id': 'by-2026',
-        'signature': 'stub',
-      };
-      final bundle = await RtsModeBundle.applyBundle(raw);
+      });
+      final bundle = await RtsModeBundle.applyBundle(raw, trustAnchorB64: anchor);
       expect(bundle.electionType, ElectionType.byElection);
       expect(bundle.formType, FormType.byElection34a);
+      expect(bundle.verified, isTrue);
+    });
+
+    test('applyBundle rejects a tampered bundle (signature no longer valid) [EC-KIT-04]', () async {
+      final (raw, anchor) = _signedBundle(_referendumPayload());
+      final tampered = Map<String, Object?>.from(raw)
+        ..['election_type'] = 'general';
+      final bundle =
+          await RtsModeBundle.applyBundle(tampered, trustAnchorB64: anchor);
+      expect(bundle.verified, isFalse);
+    });
+
+    test('applyBundle fails closed when no trust anchor is provisioned [EC-KIT-04]', () async {
+      final (raw, _) = _signedBundle(_referendumPayload());
+      final bundle = await RtsModeBundle.applyBundle(raw);
+      expect(bundle.verified, isFalse);
     });
 
     test('isActive returns false for expired bundle [FR-M08-042]', () {
@@ -79,14 +109,11 @@ void main() {
 
       expect(notifier.state.electionType, ElectionType.general);
 
-      await notifier.applyRaw({
-        'election_type': 'referendum',
-        'form_type': 'referendumResultsForm',
-        'valid_from': '2026-01-01T00:00:00Z',
-        'valid_until': '2030-01-01T00:00:00Z',
+      final (raw, anchor) = _signedBundle({
+        ..._referendumPayload(),
         'bundle_id': 'ref-test',
-        'signature': 'stub',
-      });
+      },);
+      await notifier.applyRaw(raw, trustAnchorB64: anchor);
 
       expect(notifier.state.electionType, ElectionType.referendum);
       expect(notifier.state.bundleId, 'ref-test');
@@ -97,14 +124,14 @@ void main() {
       final notifier = ModeBundleNotifier(initial);
 
       // Apply a by-election bundle during session.
-      await notifier.applyRaw({
+      final (raw, anchor) = _signedBundle({
         'election_type': 'byElection',
         'form_type': 'byElection34a',
         'valid_from': '2026-01-01T00:00:00Z',
         'valid_until': '2030-01-01T00:00:00Z',
         'bundle_id': 'by-mid-session',
-        'signature': 'stub',
       });
+      await notifier.applyRaw(raw, trustAnchorB64: anchor);
 
       expect(notifier.state.electionType, ElectionType.byElection);
       expect(notifier.state.formType, FormType.byElection34a);

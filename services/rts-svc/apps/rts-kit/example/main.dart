@@ -1,7 +1,8 @@
 /// Minimal smoke-test entry point for the eel RTS Kit.
 ///
-/// Launches the app with stub providers. Run with:
+/// Launches the app with in-memory providers. Run with:
 ///   flutter run -d <device> -t example/main.dart
+library;
 import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,7 +24,7 @@ void main() async {
     ProviderScope(
       overrides: [
         outboxQueueProvider.overrideWithValue(queue),
-        modeBundleProvider.overrideWithValue(modeBundle),
+        modeBundleProvider.overrideWith((ref) => modeBundle),
       ],
       child: const EelRtsKitApp(),
     ),

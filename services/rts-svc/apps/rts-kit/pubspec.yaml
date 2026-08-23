@@ -66,6 +66,9 @@ dev_dependencies:
 
   flutter_lints: ^3.0.0
 
+  # P-256 key fixtures for mode-bundle signature tests
+  pointycastle: ^3.9.1
+
 flutter:
   generate: true
 

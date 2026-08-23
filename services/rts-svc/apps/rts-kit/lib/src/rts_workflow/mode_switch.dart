@@ -10,11 +10,15 @@
 /// Mode switching mid-session resets the capture workflow to step 1 and
 /// re-validates any buffered entries against the new form schema.
 ///
-/// Verification: in production, [RtsModeBundle.verify] calls into
-/// eel_kit_sdk verifier FFI. In this implementation a stub always returns
-/// verified=true; wire the real verifier for field builds.
+/// Verification: [RtsModeBundle._verify] checks the ECDSA P-256 signature
+/// over the canonical JSON of the bundle against the trust anchor provisioned
+/// in EelSecureStore (see eel_kit_sdk bundle_security). Bundles without a
+/// provisioned key or with an invalid signature are rejected (fail closed).
 library;
 
+import 'dart:convert';
+
+import 'package:eel_kit_sdk/eel_kit_sdk.dart' show EelSecureStore, EelSignedBundle, ModeBundleTrustSlots;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,24 +54,90 @@ class RtsModeBundle {
     return now.isAfter(validFrom) && now.isBefore(validUntil);
   }
 
-  /// Load current mode bundle from secure local storage (or default to general).
+  /// Default bundle: general election, form 34A.
+  static RtsModeBundle get _defaultGeneral => RtsModeBundle(
+        electionType: ElectionType.general,
+        formType: FormType.form34a,
+        validFrom: DateTime.utc(2024, 1, 1),
+        validUntil: DateTime.utc(2030, 1, 1),
+        bundleId: 'default-general',
+        verified: kDebugMode,
+      );
+
+  /// Load the persisted mode bundle from secure local storage and re-verify
+  /// its signature against the provisioned trust anchor. Falls back to the
+  /// general election default when nothing is stored or verification fails.
   static Future<RtsModeBundle> loadCurrent() async {
-    // TODO(prod): read from EelSecureStore, verify signature via eel_kit_sdk
-    // verifier FFI, then return the verified bundle.
-    _log.info('Loading mode bundle (stub: defaulting to general election)');
-    return RtsModeBundle(
-      electionType: ElectionType.general,
-      formType: FormType.form34a,
-      validFrom: DateTime.utc(2024, 1, 1),
-      validUntil: DateTime.utc(2030, 1, 1),
-      bundleId: 'default-general',
-      verified: kDebugMode, // Only "verified" in debug; prod requires real sig.
-    );
+    try {
+      final store = EelSecureStore();
+      final rawJson = await store.read(ModeBundleTrustSlots.appliedBundle);
+      final trustAnchor = await store.read(ModeBundleTrustSlots.trustedPublicKey);
+      if (rawJson == null || trustAnchor == null) {
+        _log.info('No stored mode bundle or trust anchor; using general election default');
+        return _defaultGeneral;
+      }
+      final raw = Map<String, Object?>.from(jsonDecode(rawJson) as Map);
+      return RtsModeBundle.fromRaw(raw, trustAnchorB64: trustAnchor);
+    } catch (e) {
+      // Storage or codec failures degrade to the documented default bundle.
+      _log.warning('Failed to load mode bundle ($e); using general election default');
+      return _defaultGeneral;
+    }
   }
 
-  /// Apply a new bundle after verifying its signature.
-  static Future<RtsModeBundle> applyBundle(Map<String, Object?> raw) async {
-    final verified = await _verify(raw);
+  /// Parse [raw] after verifying its signature against [trustAnchorB64].
+  factory RtsModeBundle.fromRaw(
+    Map<String, Object?> raw, {
+    required String trustAnchorB64,
+  }) {
+    final verified = EelSignedBundle.verify(raw, publicKeyBase64: trustAnchorB64);
+    if (!verified) {
+      _log.warning('Mode bundle signature invalid; rejecting');
+    }
+    return _parse(raw, verified: verified);
+  }
+
+  /// Apply a new bundle after verifying its signature against the given
+  /// trust anchor, or the one provisioned in secure storage when omitted.
+  /// A verified bundle is persisted so [loadCurrent] restores it next start.
+  static Future<RtsModeBundle> applyBundle(
+    Map<String, Object?> raw, {
+    String? trustAnchorB64,
+  }) async {
+    final anchor = trustAnchorB64 ?? await _readTrustAnchor();
+    // No provisioned anchor means nothing can be verified: fail closed.
+    final verified = anchor != null &&
+        EelSignedBundle.verify(raw, publicKeyBase64: anchor);
+    final bundle = _parse(raw, verified: verified);
+    if (verified) {
+      try {
+        await EelSecureStore()
+            .write(ModeBundleTrustSlots.appliedBundle, jsonEncode(raw));
+      } catch (e) {
+        // Persistence is best effort: the in-session bundle is still valid.
+        _log.warning('Could not persist applied mode bundle: $e');
+      }
+    } else {
+      _log.warning('Mode bundle signature invalid; rejecting');
+    }
+    return bundle;
+  }
+
+  /// Provisioned ECDSA P-256 trust anchor, or null when none is stored
+  /// (secure storage unavailable counts as unprovisioned: fail closed).
+  static Future<String?> _readTrustAnchor() async {
+    try {
+      return await EelSecureStore().read(ModeBundleTrustSlots.trustedPublicKey);
+    } catch (e) {
+      _log.warning('Could not read mode bundle trust anchor: $e');
+      return null;
+    }
+  }
+
+  static RtsModeBundle _parse(
+    Map<String, Object?> raw, {
+    required bool verified,
+  }) {
     final electionTypeStr = raw['election_type'] as String? ?? 'general';
     final formTypeStr = raw['form_type'] as String? ?? 'form34a';
     return RtsModeBundle(
@@ -84,13 +154,6 @@ class RtsModeBundle {
       bundleId: raw['bundle_id'] as String? ?? 'unknown',
       verified: verified,
     );
-  }
-
-  static Future<bool> _verify(Map<String, Object?> raw) async {
-    // TODO(prod): extract 'signature' field, verify ECDSA P-256 over
-    // canonical JSON (signature excluded) using eel_kit_sdk verifier FFI.
-    _log.info('Mode bundle signature verification stub - always true');
-    return true;
   }
 
   Map<String, Object?> toJson() => {
@@ -113,8 +176,9 @@ class RtsModeBundle {
 class ModeBundleNotifier extends StateNotifier<RtsModeBundle> {
   ModeBundleNotifier(super.initial);
 
-  Future<void> applyRaw(Map<String, Object?> raw) async {
-    final bundle = await RtsModeBundle.applyBundle(raw);
+  Future<void> applyRaw(Map<String, Object?> raw, {String? trustAnchorB64}) async {
+    final bundle =
+        await RtsModeBundle.applyBundle(raw, trustAnchorB64: trustAnchorB64);
     assert(
       bundle.verified,
       'Mode bundle must be verified before applying; reject unverified bundles',
@@ -125,7 +189,8 @@ class ModeBundleNotifier extends StateNotifier<RtsModeBundle> {
 }
 
 final modeBundleProvider = StateProvider<RtsModeBundle>(
-  (ref) => throw UnimplementedError('modeBundleProvider must be overridden'),
+  (ref) =>
+      throw StateError('modeBundleProvider must be overridden before runApp'),
 );
 
 final modeBundleNotifierProvider =

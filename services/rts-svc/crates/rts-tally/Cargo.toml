@@ -17,6 +17,9 @@ path = "src/main.rs"
 
 [dependencies]
 eel-eventstore-rs = { path = "../../../../packages/eel-eventstore-rs", features = ["kafka"] }
+eel-events-rs     = { workspace = true }
+eel-outbox-rs     = { workspace = true }
+eel-hlc-rs        = { workspace = true }
 rts-domain        = { path = "../rts-domain" }
 serde             = { workspace = true }
 serde_json        = { workspace = true }
@@ -26,6 +29,12 @@ tracing           = { workspace = true }
 tracing-subscriber = { workspace = true }
 uuid              = { workspace = true }
 thiserror         = { workspace = true }
+ed25519-dalek     = { workspace = true }
+base64            = { workspace = true }
+hex               = { workspace = true }
+sha2              = { workspace = true }
+chrono            = { workspace = true }
+sqlx              = { workspace = true }
 blake3            = "1"
 
 [dev-dependencies]

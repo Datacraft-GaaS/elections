@@ -44,6 +44,11 @@ eel-trace-rs       = { path = "../../packages/eel-trace-rs" }
 ciborium           = { version = "0.2" }
 zstd               = { version = "0.13" }
 
+# Crypto and encoding
+ed25519-dalek      = { version = "2", features = ["rand_core"] }
+base64             = { version = "0.22" }
+hex                = { version = "0.4" }
+sha2               = { version = "0.10" }
 # HTTP / gRPC
 axum              = { version = "0.8",  features = ["macros", "tokio"] }
 tower             = { version = "0.5",  features = ["full"] }

@@ -84,14 +84,21 @@ Map<String, Object?> _buildPayload({
   };
 }
 
-/// Sign via the SDK's signing abstraction.
-/// In production this calls into the TEE via FFI; stub returns a hex zeros sig.
+/// Sign the SHA-256 digest of the canonical payload with the kit's device
+/// signing key ([EelSigningKey] from eel_kit_sdk, Ed25519).
+///
+/// The key seed persists in secure storage; on devices with a TEE
+/// (Strongbox / Secure Enclave) the platform-backed implementation replaces
+/// the software fallback behind the same interface. Returns the signature
+/// as lowercase hex.
 Future<String> _signPayload(Map<String, Object?> payload) async {
   final canonical = const JsonEncoder().convert(payload);
-  final hash = sha256.convert(utf8.encode(canonical)).toString();
-  // TODO(prod): replace with EelSigningKey.sign(hash) from eel_kit_sdk TEE FFI.
-  // Stub: echo the hash as the "signature" for test purposes.
-  return 'stub_sig_$hash';
+  final digest = sha256.convert(utf8.encode(canonical));
+  final key = await EelSigningKey.loadOrCreate();
+  final sigB64 = await key.sign(digest.bytes);
+  return base64Decode(sigB64)
+      .map((b) => b.toRadixString(16).padLeft(2, '0'))
+      .join();
 }
 
 // ---- Provider ---------------------------------------------------------------
