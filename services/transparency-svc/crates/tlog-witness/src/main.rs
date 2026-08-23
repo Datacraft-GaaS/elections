@@ -26,10 +26,10 @@ async fn main() -> anyhow::Result<()> {
         )
         .with_state(state);
 
-    let iab = Arc::new(tlog_witness::iab_client::IabWitnessClient::new(
+    let iab = Arc::new(tlog_witness::iab_client::IabWitnessClient::from_env(
         api_base,
         "iab-internal",
-    ));
+    )?);
     tokio::spawn(iab.run());
 
     let addr =

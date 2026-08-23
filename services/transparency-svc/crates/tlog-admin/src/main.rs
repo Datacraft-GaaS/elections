@@ -16,10 +16,13 @@ enum Commands {
         #[arg(long)]
         domain: String,
     },
-    /// Export tree snapshot to MinIO/S3.
+    /// Export tree snapshot to MinIO/S3 or a local path.
     Export {
         #[arg(long)]
         to: String,
+        /// Database URL; falls back to $DATABASE_URL.
+        #[arg(long)]
+        db_url: Option<String>,
     },
     /// Verify consistency between two STHs.
     VerifyChain {
@@ -47,7 +50,12 @@ async fn main() -> anyhow::Result<()> {
         Commands::Checkpoint { domain } => {
             tlog_admin::checkpoint::run(&domain, &cli.api_url).await?
         }
-        Commands::Export { to } => tlog_admin::export::run(&to).await?,
+        Commands::Export { to, db_url } => {
+            let db = db_url
+                .or_else(|| std::env::var("DATABASE_URL").ok())
+                .expect("export needs --db-url or $DATABASE_URL");
+            tlog_admin::export::run(&db, &to).await?
+        }
         Commands::VerifyChain { sth_a, sth_b } => {
             tlog_admin::verify::run(sth_a, sth_b, &cli.api_url).await?
         }

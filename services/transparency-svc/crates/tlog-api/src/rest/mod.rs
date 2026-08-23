@@ -34,6 +34,10 @@ pub fn router() -> Router<ApiState> {
             "/api/v1/transparency/witnesses/cosign",
             axum::routing::post(witnesses::post_cosign),
         )
+        .route(
+            "/api/v1/transparency/witnesses/report",
+            axum::routing::get(witnesses::witness_report),
+        )
         .route("/api/v1/transparency/domains", get(sth::list_domains))
         .route(
             "/api/v1/transparency/leaves/{index}",
