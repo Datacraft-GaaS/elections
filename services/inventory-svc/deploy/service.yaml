@@ -2,7 +2,13 @@
 # Both DR sites: primary (eu-west) and mirror (eu-central)
 name: inventory-svc
 image: harbor.eel.internal/eel/inventory-svc
-artifacts: []
+artifacts:
+  - name: custody-api
+    binary: custody-api
+    port: 8110
+  - name: printing-api
+    binary: printing-api
+    port: 8111
 # sites: leave empty to deploy to all 7 sites (primary, mirror, edge-*)
 sites: []
 strategy:

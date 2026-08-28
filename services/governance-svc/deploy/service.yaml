@@ -21,7 +21,12 @@ artifacts:
     port: 8098
   - name: eel-governance-forensics
     port: 8099
-  - name: eel-observer-workspace
+  - name: eel-governance-referendum
+    port: 8100
+  - name: eel-governance-recall
+    port: 8101
+  - name: eel-governance-by-election
+    port: 8102
     port: 4020
     runtime: elixir
 sites:

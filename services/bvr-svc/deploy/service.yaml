@@ -2,7 +2,16 @@
 # Fields: name, image, artifacts, sites, strategy, replicas
 name: bvr-svc
 image: harbor.eel.internal/eel/bvr-svc
-artifacts: []
+artifacts:
+  - name: credential-api
+    binary: credential-api
+    port: 8130
+  - name: verifier-api
+    binary: verifier-api
+    port: 8131
+  - name: channel-gateway
+    binary: channel-gateway
+    port: 8132
 # sites: leave empty to deploy to all 7 sites (primary, mirror, edge-*)
 sites: []
 strategy:

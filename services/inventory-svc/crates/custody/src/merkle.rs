@@ -19,10 +19,13 @@ const SOURCE_URI: &str = "spiffe://eel.local/service/inventory-backend";
 pub const TOPIC_MERKLE_ROOT_PUBLISHED: &str = "eel.custody.merkle_root_published.v1";
 
 #[derive(Debug, thiserror::Error)]
+/// MerkleError.
 pub enum MerkleError {
     #[error("failed to publish merkle root: {0}")]
+    /// variant.
     Publish(String),
     #[error(transparent)]
+    /// variant.
     Outbox(#[from] eel_outbox_rs::OutboxError),
 }
 
@@ -30,6 +33,7 @@ pub enum MerkleError {
 pub struct MerklePublisher;
 
 impl MerklePublisher {
+    /// new.
     pub fn new() -> Self {
         Self
     }

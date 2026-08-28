@@ -4,9 +4,13 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case", tag = "type", content = "code")]
 pub enum GeographicScope {
+    /// variant.
     National,
+    /// variant.
     County(String),
+    /// variant.
     Constituency(String),
+    /// variant.
     Station(String),
 }
 

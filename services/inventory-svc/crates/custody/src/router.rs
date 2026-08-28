@@ -9,6 +9,7 @@ use axum::{
 
 use crate::state::AppState;
 
+/// router.
 pub fn router(state: Arc<AppState>) -> Router {
     Router::new()
         .route("/api/v1/custody/assets", get(crate::handlers::list_assets).post(crate::handlers::register_asset))

@@ -7,11 +7,17 @@ use crate::domain::CustodyEvent;
 /// Heartbeat emitted by an RFID/GPS reader attached to a kit.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KitHeartbeat {
+    /// kit_id.
     pub kit_id: String,
+    /// rfid_tag.
     pub rfid_tag: String,
+    /// gps_lat.
     pub gps_lat: f64,
+    /// gps_lon.
     pub gps_lon: f64,
+    /// battery_pct.
     pub battery_pct: u8,
+    /// ts.
     pub ts: DateTime<Utc>,
 }
 

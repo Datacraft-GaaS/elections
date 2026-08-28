@@ -11,23 +11,36 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use serde_json::{json, Value};
+use chrono::Utc;
+use serde_json::json;
+use uuid::Uuid;
 
+use crate::spec::{AuditEvent, DeliveryRecord, DeliveryRecordRequest, PrintOrder, PrintOrderRequest, QCDecision};
+
+/// In-memory store for printing contract handlers.
+/// Swap boundary: replace `Mutex<HashMap>` with `sqlx::PgPool` + `Store` trait
+/// (see `governance-svc/crates/rla/src/store.rs` pattern) when persistence lands.
 #[derive(Clone, Default)]
 pub struct AppState {
-    pub orders: Arc<Mutex<HashMap<String, Value>>>,
-    pub deliveries: Arc<Mutex<Vec<Value>>>,
-    pub audit: Arc<Mutex<Vec<Value>>>,
+    /// orders.
+    pub orders: Arc<Mutex<HashMap<Uuid, PrintOrder>>>,
+    /// deliveries.
+    pub deliveries: Arc<Mutex<HashMap<Uuid, DeliveryRecord>>>,
+    /// audit.
+    pub audit: Arc<Mutex<Vec<AuditEvent>>>,
 }
 
+/// SharedState.
 pub type SharedState = Arc<AppState>;
 
 impl AppState {
+    /// new_shared.
     pub fn new_shared() -> SharedState {
         Arc::new(Self::default())
     }
 }
 
+/// router.
 pub fn router(state: SharedState) -> Router {
     Router::new()
         .route("/api/v1/printing/print-orders", get(list_print_orders).post(create_print_order))
@@ -40,26 +53,49 @@ pub fn router(state: SharedState) -> Router {
 
 async fn create_print_order(
     State(state): State<SharedState>,
-    Json(req): Json<Value>,
+    Json(req): Json<PrintOrderRequest>,
 ) -> impl IntoResponse {
-    let order_id = uuid::Uuid::now_v7().to_string();
-    let order = json!({ "order_id": order_id, "status": "created", "request": req, "created_at": chrono::Utc::now().to_rfc3339() });
-    state.orders.lock().expect("lock poisoned").insert(order_id.clone(), order.clone());
-    state.audit.lock().expect("lock poisoned").push(json!({ "event": "order_created", "order_id": order_id, "at": chrono::Utc::now().to_rfc3339() }));
+    let now = Utc::now();
+    let order = PrintOrder {
+        order_id: Uuid::now_v7(),
+        election_id: req.election_id,
+        position_code: req.position_code,
+        constituency_code: req.constituency_code,
+        ballot_quantity: req.ballot_quantity,
+        proof_id: req.proof_id,
+        security_features: req.security_features,
+        status: "ordered".to_string(),
+        printer_reference: format!("PRN-{}", Uuid::now_v7()),
+        created_at: now,
+        updated_at: now,
+    };
+    state
+        .orders
+        .lock()
+        .expect("lock poisoned")
+        .insert(order.order_id, order.clone());
+    state.audit.lock().expect("lock poisoned").push(AuditEvent {
+        event_id: Uuid::now_v7(),
+        event_type: "order_created".to_string(),
+        order_id: Some(order.order_id),
+        actor_role: None,
+        payload_summary: serde_json::json!({ "order_id": order.order_id }),
+        created_at: now,
+    });
     (StatusCode::CREATED, Json(order))
 }
 
 async fn list_print_orders(State(state): State<SharedState>) -> impl IntoResponse {
     let guard = state.orders.lock().expect("lock poisoned");
-    let mut items: Vec<Value> = guard.values().cloned().collect();
+    let mut items: Vec<PrintOrder> = guard.values().cloned().collect();
     drop(guard);
-    items.sort_by(|a, b| a["order_id"].as_str().cmp(&b["order_id"].as_str()));
+    items.sort_by(|a, b| a.order_id.cmp(&b.order_id));
     Json(json!({ "orders": items }))
 }
 
 async fn get_print_order(
     State(state): State<SharedState>,
-    Path(order_id): Path<String>,
+    Path(order_id): Path<Uuid>,
 ) -> impl IntoResponse {
     let guard = state.orders.lock().expect("lock poisoned");
     match guard.get(&order_id) {
@@ -70,14 +106,14 @@ async fn get_print_order(
 
 async fn submit_qc_decision(
     State(state): State<SharedState>,
-    Path(order_id): Path<String>,
-    Json(req): Json<Value>,
+    Path(order_id): Path<Uuid>,
+    Json(req): Json<QCDecision>,
 ) -> impl IntoResponse {
     let mut guard = state.orders.lock().expect("lock poisoned");
     match guard.get_mut(&order_id) {
         Some(o) => {
-            o["qc_decision"] = req.clone();
-            o["status"] = json!("qc_reviewed");
+            o.status = if req.passed { "qc".to_string() } else { "ordered".to_string() };
+            o.updated_at = Utc::now();
             Json(o.clone()).into_response()
         }
         None => (StatusCode::NOT_FOUND, Json(json!({ "detail": "order not found" }))).into_response(),
@@ -86,11 +122,33 @@ async fn submit_qc_decision(
 
 async fn record_ballot_delivery(
     State(state): State<SharedState>,
-    Json(req): Json<Value>,
+    Json(req): Json<DeliveryRecordRequest>,
 ) -> impl IntoResponse {
-    let delivery = json!({ "delivery_id": uuid::Uuid::now_v7().to_string(), "request": req, "recorded_at": chrono::Utc::now().to_rfc3339() });
-    state.deliveries.lock().expect("lock poisoned").push(delivery.clone());
-    state.audit.lock().expect("lock poisoned").push(json!({ "event": "delivery_recorded", "at": chrono::Utc::now().to_rfc3339() }));
+    let now = Utc::now();
+    let delivery = DeliveryRecord {
+        delivery_id: Uuid::now_v7(),
+        order_id: req.order_id,
+        delivered_quantity: req.delivered_quantity,
+        serial_range_start: req.serial_range_start,
+        serial_range_end: req.serial_range_end,
+        received_by_hash: req.received_by_hash,
+        received_at: req.received_at,
+        status: "received".to_string(),
+        created_at: now,
+    };
+    state
+        .deliveries
+        .lock()
+        .expect("lock poisoned")
+        .insert(delivery.delivery_id, delivery.clone());
+    state.audit.lock().expect("lock poisoned").push(AuditEvent {
+        event_id: Uuid::now_v7(),
+        event_type: "delivery_recorded".to_string(),
+        order_id: Some(delivery.order_id),
+        actor_role: None,
+        payload_summary: serde_json::to_value(&delivery).unwrap_or(serde_json::Value::Null),
+        created_at: now,
+    });
     (StatusCode::CREATED, Json(delivery))
 }
 

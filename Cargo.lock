@@ -4903,7 +4903,7 @@ dependencies = [
 
 [[package]]
 name = "eel-spicedb-tools"
-version = "0.0.0"
+version = "0.1.0"
 
 [[package]]
 name = "eel-synth"
@@ -8490,6 +8490,7 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.20",
  "tokio",
+ "tower 0.5.3",
  "tracing",
  "tracing-subscriber 0.3.23",
  "uuid",

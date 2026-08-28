@@ -286,11 +286,10 @@ ci: lint test contracts
 # Verify every crate inherits the workspace version (no divergent pins) and
 # the workspace version itself is not a placeholder.
 check-release:
-    @ver=$$(grep -m1 '^version' Cargo.toml | sed 's/.*"\(.*\)".*/\1/'); \
-      echo "[check-release] workspace version: $$ver"; \
-      if [ "$$ver" = "0.0.0" ]; then echo "ERROR: placeholder version 0.0.0"; exit 1; fi; \
-      if grep -rn '^version[[:space:]]*=' --include=Cargo.toml services packages tools 2>/dev/null \
-         | grep -v 'version.workspace\|version = "0.1.0"'; then \
+    @echo -n "[check-release] workspace version: "; grep -m1 '^version' Cargo.toml | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1; \
+      if grep -q '^version.*0\.0\.0' Cargo.toml; then echo "ERROR: placeholder version 0.0.0"; exit 1; fi; \
+      if grep -rn '^\[package\]' --include=Cargo.toml services packages tools 2>/dev/null -A1 \
+         | grep '^version' | grep -Ev 'version\.workspace|0\.1\.0'; then \
            echo "ERROR: crate pins a divergent version (expected version.workspace = true)"; exit 1; \
       fi; \
       echo "[check-release] all crates inherit the workspace version"

@@ -3,7 +3,7 @@
 
 use axum::{
     extract::{Path, State},
-    http::StatusCode,
+    http::{header, StatusCode},
     response::IntoResponse,
     routing::{get, post},
     Json, Router,
@@ -11,8 +11,19 @@ use axum::{
 use serde_json::{json, Value};
 use crate::AppState;
 
+/// Legacy `/v1/ai/*` → canonical `/api/v1/ai/*` permanent redirect.
+async fn redirect_legacy(Path(tail): Path<String>) -> impl IntoResponse {
+    use axum::http::header;
+    (
+        StatusCode::PERMANENT_REDIRECT,
+        [(header::LOCATION, format!("/api/v1/ai/{tail}"))],
+    )
+}
+
 pub fn router() -> Router<AppState> {
     Router::new()
+        // Legacy redirect — deprecated `/v1/ai/*` → canonical `/api/v1/ai/*` (TD-06)
+        .route("/v1/ai/{*tail}", get(redirect_legacy).post(redirect_legacy).put(redirect_legacy).patch(redirect_legacy).delete(redirect_legacy))
         // ai-registry/registry.yaml
         .route("/api/v1/ai/registry/models", get(list_models).post(register_model))
         .route("/api/v1/ai/registry/models/{model_id}", get(get_model))
