@@ -1,3 +1,5 @@
+//! Continuous voter registration — CVR ingestion and register snapshot service.
+#![warn(missing_docs)]
 pub mod error;
 pub mod ingest;
 pub mod models;

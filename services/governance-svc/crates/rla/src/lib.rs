@@ -1,4 +1,7 @@
+//! Risk-limiting audit — BRAVO audit lifecycle over [`Store`].
+#![warn(missing_docs)]
 pub mod engine;
+/// HTTP handlers driving the BRAVO audit lifecycle over [`Store`].
 pub mod handlers;
 pub mod manifest;
 pub mod models;

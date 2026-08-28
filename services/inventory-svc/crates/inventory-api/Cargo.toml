@@ -33,6 +33,7 @@ transport = { path = "../transport" }
 warehouse = { path = "../warehouse" }
 
 eel-auth-rs = { path = "../../../../packages/eel-auth-rs" }
+eel-spec-helpers-rs = { path = "../../../../packages/eel-spec-helpers-rs" }
 
 [dev-dependencies]
 tokio  = { workspace = true }

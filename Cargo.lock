@@ -6680,6 +6680,7 @@ dependencies = [
  "chrono",
  "custody",
  "eel-auth-rs",
+ "eel-spec-helpers-rs",
  "serde",
  "serde_json",
  "sqlx",
