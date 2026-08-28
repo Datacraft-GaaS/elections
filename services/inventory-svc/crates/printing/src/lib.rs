@@ -6,6 +6,8 @@ pub mod domain;
 pub mod http;
 /// Typed models for printing contract.
 pub mod spec;
+/// Store trait — swap boundary.
+pub mod store;
 /// Domain events.
 pub mod events;
 /// Printer integrations.

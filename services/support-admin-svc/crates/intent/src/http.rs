@@ -13,6 +13,8 @@ use axum::{
 };
 use serde_json::{json, Value};
 
+use crate::spec::{AdjudicationRecord, AdjudicationRequest, PreMarkValidationRequest, SpoiltBallotRequest};
+
 #[derive(Clone, Default)]
 pub struct AppState {
     pub adjudications: Arc<Mutex<HashMap<String, Value>>>,
@@ -47,29 +49,47 @@ pub fn router(state: SharedState) -> Router {
         .with_state(state)
 }
 
-async fn submit_pre_mark_validation(Json(req): Json<Value>) -> impl IntoResponse {
-    (StatusCode::OK, Json(json!({ "valid": true, "request": req })))
+async fn submit_pre_mark_validation(Json(req): Json<PreMarkValidationRequest>) -> impl IntoResponse {
+    if req.image_delete_elapsed_ms > 1000 {
+        return (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(json!({ "detail": "image_delete_elapsed_ms must be <= 1000" })),
+        )
+            .into_response();
+    }
+    (StatusCode::OK, Json(json!({ "valid": true, "station_code": req.station_code }))).into_response()
 }
 
-async fn submit_spoilt_ballot(Json(req): Json<Value>) -> impl IntoResponse {
+async fn submit_spoilt_ballot(Json(req): Json<SpoiltBallotRequest>) -> impl IntoResponse {
     (
         StatusCode::CREATED,
-        Json(json!({ "spoilt_id": uuid::Uuid::now_v7().to_string(), "request": req })),
+        Json(json!({ "spoilt_id": uuid::Uuid::now_v7().to_string(), "station_code": req.station_code })),
     )
 }
 
 async fn record_adjudication(
     State(state): State<SharedState>,
-    Json(req): Json<Value>,
+    Json(req): Json<AdjudicationRequest>,
 ) -> impl IntoResponse {
-    let id = uuid::Uuid::now_v7().to_string();
-    let record = json!({ "adjudication_id": id, "request": req, "status": "open" });
+    let record = AdjudicationRecord {
+        id: uuid::Uuid::now_v7(),
+        ballot_id: req.ballot_id.clone(),
+        station_code: req.station_code.clone(),
+        contest_id: req.contest_id.clone(),
+        adjudicator_id: req.adjudicator_id.clone(),
+        reason_code: req.reason_code.clone(),
+        decision: req.decision.clone(),
+        photo_evidence_ref: req.photo_evidence_ref.clone(),
+        adjudicated_at: chrono::Utc::now(),
+    };
+    let id = record.id.to_string();
+    let val = serde_json::to_value(&record).unwrap();
     state
         .adjudications
         .lock()
         .expect("lock poisoned")
-        .insert(id, record.clone());
-    (StatusCode::CREATED, Json(record))
+        .insert(id, val.clone());
+    (StatusCode::CREATED, Json(val))
 }
 
 async fn list_adjudications(State(state): State<SharedState>) -> impl IntoResponse {
