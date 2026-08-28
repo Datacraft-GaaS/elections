@@ -8,6 +8,8 @@ use axum::{
 };
 use serde_json::json;
 
+use crate::spec::{IvrVoiceRequest, UssdSessionRequest, WhatsappMessage};
+
 pub fn router() -> Router {
     Router::new()
         .route("/healthz", get(healthz))
@@ -23,16 +25,16 @@ async fn healthz() -> impl IntoResponse {
     Json(json!({ "status": "ok" }))
 }
 
-async fn handle_ussd_session(Json(req): Json<serde_json::Value>) -> impl IntoResponse {
-    Json(json!({ "response_text": "END", "action": "end", "request": req }))
+async fn handle_ussd_session(Json(req): Json<UssdSessionRequest>) -> impl IntoResponse {
+    Json(serde_json::json!({ "response_text": "END", "action": "end", "session_id": req.session_id }))
 }
 
 async fn get_ussd_session_log(Path(session_id): Path<String>) -> impl IntoResponse {
     Json(json!({ "session_id": session_id, "log": [] }))
 }
 
-async fn handle_voice_call(Json(req): Json<serde_json::Value>) -> impl IntoResponse {
-    Json(json!({ "response_text": "END", "request": req }))
+async fn handle_voice_call(Json(req): Json<IvrVoiceRequest>) -> impl IntoResponse {
+    Json(json!({ "response_text": "END", "call_id": req.call_id }))
 }
 
 async fn handle_ivr_session(Json(req): Json<serde_json::Value>) -> impl IntoResponse {
