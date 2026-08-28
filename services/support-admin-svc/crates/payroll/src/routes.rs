@@ -5,7 +5,7 @@ use axum::{
     Router,
 };
 
-use crate::handlers;
+use crate::{handlers, state::AppState};
 
 pub fn router() -> Router {
     Router::new()
@@ -29,6 +29,10 @@ pub fn router() -> Router {
         // HR applications
         .route("/v1/hr/applications", post(handlers::create_application))
         .route("/v1/hr/applications/{id}", get(handlers::get_application))
+        .route(
+            "/v1/hr/applications/by-ref/{reference}",
+            get(handlers::get_application_by_reference),
+        )
         // HR contracts
         .route("/v1/hr/contracts", post(handlers::create_contract))
         .route(
@@ -58,4 +62,34 @@ pub fn router() -> Router {
             "/v1/payroll/payslips/{staff_id}/{period}",
             get(handlers::get_payslip),
         )
+        // HR documents (workforce-lifecycle §2)
+        .route(
+            "/v1/hr/documents/requirements",
+            get(handlers::list_document_requirements),
+        )
+        .route(
+            "/v1/hr/documents/submissions",
+            post(handlers::submit_document),
+        )
+        .route(
+            "/v1/hr/documents/{id}/supersede",
+            post(handlers::supersede_document),
+        )
+        .route(
+            "/v1/hr/documents/{id}/verdict",
+            post(handlers::record_verdict),
+        )
+        .route(
+            "/v1/hr/documents/bulk-verdict",
+            post(handlers::bulk_record_verdict),
+        )
+        .route(
+            "/v1/hr/documents/expiry-sweep",
+            post(handlers::expiry_sweep),
+        )
+        .route(
+            "/v1/hr/applications/{id}/documents/completeness",
+            get(handlers::get_application_completeness),
+        )
+        .with_state(AppState::default())
 }

@@ -8,6 +8,7 @@ paths:
     get:
       summary: Health check
       operationId: healthz
+      x-handler-bound: bvr-svc.whatsapp.healthz
       responses:
         "200":
           description: OK
@@ -22,6 +23,7 @@ paths:
     get:
       summary: Meta webhook verification challenge
       operationId: verifyWebhook
+      x-handler-bound: bvr-svc.whatsapp.verify_webhook
       parameters:
         - name: hub.mode
           in: query
@@ -47,6 +49,7 @@ paths:
     post:
       summary: Receive WhatsApp message event
       operationId: receiveMessage
+      x-handler-bound: bvr-svc.whatsapp.receive_message
       requestBody:
         required: true
         content:

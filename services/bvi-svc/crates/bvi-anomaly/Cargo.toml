@@ -1,0 +1,19 @@
+[package]
+name = "bvi-anomaly"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Election-night statistical anomaly detection for the BVI backend"
+
+[lib]
+name = "bvi_anomaly"
+path = "src/lib.rs"
+
+[dependencies]
+serde  = { workspace = true }
+chrono = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }

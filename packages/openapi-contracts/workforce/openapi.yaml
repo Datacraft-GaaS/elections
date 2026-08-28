@@ -1,0 +1,1265 @@
+openapi: "3.1.0"
+info:
+  title: "eel workforce API"
+  version: "1.0.0"
+  description: |
+    Poll-worker lifecycle (design: docs/workforce-lifecycle.md). Covers worker
+    registry & contacts, the recruitment state machine, interview records,
+    postings & equipment claims, tasking, performance records, and worker
+    notifications. Cross-service state leaves this service only via the
+    transactional outbox (topics `eel.workforce.*`, design §8).
+
+    ## Data classification
+    - Payloads carry ids and SHA-256 hashes, never raw PII beyond appointment
+      names (DPA 2019).
+    - Document bytes never transit this service; they live in MinIO under the
+      applicant tenant prefix (support-admin-svc `/v1/hr/documents/*`).
+
+    ## Idempotency
+    Mutations are idempotent where noted (task ack/done, contact upsert,
+    notification delivery). Legal state-machine transitions are enforced by
+    the server and return 409 with the allowed set otherwise.
+  contact:
+    name: eel platform team
+    url: https://eel.local/support
+
+servers:
+  - url: https://api.eel.local
+    description: production
+  - url: https://staging.api.eel.local
+    description: staging
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: workers
+    description: Worker registry, contacts, and profile updates
+  - name: recruitment
+    description: Recruitment pipeline and interview records
+  - name: postings
+    description: Posting orders and equipment custody claims
+  - name: tasking
+    description: Task templates and assignments
+  - name: performance
+    description: Append-only performance records
+  - name: notifications
+    description: Worker notifications (posting, payment, appointment, training, message)
+  - name: operations
+    description: Operational readiness rollups
+
+paths:
+  /health:
+    get:
+      tags: [operations]
+      operationId: health
+      x-handler-bound: workforce-svc.workforce.health
+      summary: Liveness probe
+      responses:
+        "200":
+          description: Service is up
+
+  /v1/workforce/workers:
+    get:
+      tags: [workers]
+      operationId: listWorkers
+      x-handler-bound: workforce-svc.workforce.list_workers
+      summary: List workers (filter by home_county, role)
+      parameters:
+        - name: home_county
+          in: query
+          schema: { type: string }
+        - name: role
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Worker listing
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [workers]
+                properties:
+                  workers:
+                    type: array
+                    items: { $ref: "#/components/schemas/Worker" }
+    post:
+      tags: [workers]
+      operationId: createWorker
+      x-handler-bound: workforce-svc.workforce.create_worker
+      summary: Register a worker
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateWorkerRequest" }
+      responses:
+        "201":
+          description: Worker created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Worker" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /v1/workforce/workers/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [workers]
+      operationId: getWorker
+      x-handler-bound: workforce-svc.workforce.get_worker
+      summary: Fetch a worker
+      responses:
+        "200":
+          description: Worker
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Worker" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [workers]
+      operationId: updateWorker
+      x-handler-bound: workforce-svc.workforce.update_worker
+      summary: Update a worker's information (county, roles, payroll ref, next-of-kin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateWorkerRequest" }
+      responses:
+        "200":
+          description: Updated worker
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Worker" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /v1/workforce/workers/{id}/contacts/{channel}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+      - name: channel
+        in: path
+        required: true
+        schema: { $ref: "#/components/schemas/Channel" }
+    put:
+      tags: [workers]
+      operationId: upsertContact
+      x-handler-bound: workforce-svc.workforce.upsert_contact
+      summary: Insert-or-update a contact point (idempotent on value hash)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpsertContactRequest" }
+      responses:
+        "200":
+          description: Updated contact point
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ContactPoint" }
+        "201":
+          description: Created contact point
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ContactPoint" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /v1/workforce/workers/{id}/contacts/{channel}/verify:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+      - name: channel
+        in: path
+        required: true
+        schema: { $ref: "#/components/schemas/Channel" }
+    post:
+      tags: [workers]
+      operationId: verifyContact
+      x-handler-bound: workforce-svc.workforce.verify_contact
+      summary: Mark a contact point verified
+      responses:
+        "200":
+          description: Verified contact point
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ContactPoint" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /v1/workforce/workers/{id}/contacts:
+    get:
+      tags: [workers]
+      operationId: listContacts
+      x-handler-bound: workforce-svc.workforce.list_contacts
+      summary: List a worker's contact points
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Contact listing
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [contacts]
+                properties:
+                  contacts:
+                    type: array
+                    items: { $ref: "#/components/schemas/ContactPoint" }
+
+  /v1/workforce/workers/{id}/contact-history:
+    get:
+      tags: [workers]
+      operationId: contactHistory
+      x-handler-bound: workforce-svc.workforce.contact_history
+      summary: Append-only contact change log
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Change log
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [entries]
+                properties:
+                  entries:
+                    type: array
+                    items: { $ref: "#/components/schemas/ContactLogEntry" }
+
+  /v1/workforce/recruitment:
+    get:
+      tags: [recruitment]
+      operationId: listRecruitmentCases
+      x-handler-bound: workforce-svc.workforce.list_cases
+      summary: List recruitment cases (filter by stage, county)
+      parameters:
+        - name: stage
+          in: query
+          schema: { type: string }
+        - name: county
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Case listing
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [cases]
+                properties:
+                  cases:
+                    type: array
+                    items: { $ref: "#/components/schemas/RecruitmentCase" }
+    post:
+      tags: [recruitment]
+      operationId: createRecruitmentCase
+      x-handler-bound: workforce-svc.workforce.create_case
+      summary: Open a recruitment case at `applied`
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateCaseRequest" }
+      responses:
+        "201":
+          description: Case created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecruitmentCase" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /v1/workforce/recruitment/{id}:
+    get:
+      tags: [recruitment]
+      operationId: getRecruitmentCase
+      x-handler-bound: workforce-svc.workforce.get_case
+      summary: Fetch a recruitment case
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Case
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecruitmentCase" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /v1/workforce/recruitment/{id}/transition:
+    post:
+      tags: [recruitment]
+      operationId: transitionCase
+      x-handler-bound: workforce-svc.workforce.transition_case
+      summary: Advance the recruitment state machine (legal transitions enforced)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TransitionRequest" }
+      responses:
+        "200":
+          description: Transitioned case
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecruitmentCase" }
+        "409":
+          description: Illegal transition
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error, from, to, allowed]
+                properties:
+                  error: { type: string }
+                  from: { type: string }
+                  to: { type: string }
+                  allowed:
+                    type: array
+                    items: { type: string }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /v1/workforce/recruitment/{id}/interviews:
+    get:
+      tags: [recruitment]
+      operationId: listInterviews
+      x-handler-bound: workforce-svc.workforce.list_interviews
+      summary: List interview records for a case
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Interview listing
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [interviews]
+                properties:
+                  interviews:
+                    type: array
+                    items: { $ref: "#/components/schemas/InterviewRecord" }
+    post:
+      tags: [recruitment]
+      operationId: createInterview
+      x-handler-bound: workforce-svc.workforce.create_interview
+      summary: Record a structured interview
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateInterviewRequest" }
+      responses:
+        "201":
+          description: Interview recorded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InterviewRecord" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /v1/workforce/postings:
+    get:
+      tags: [postings]
+      operationId: listPostings
+      x-handler-bound: workforce-svc.workforce.list_postings
+      summary: List postings (filter by worker_id, station, active)
+      parameters:
+        - name: worker_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: station
+          in: query
+          schema: { type: string }
+        - name: active
+          in: query
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: Posting listing
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [postings]
+                properties:
+                  postings:
+                    type: array
+                    items: { $ref: "#/components/schemas/PostingOrder" }
+    post:
+      tags: [postings]
+      operationId: createPosting
+      x-handler-bound: workforce-svc.workforce.create_posting
+      summary: Activate a posting (supersedes the worker's prior active posting)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreatePostingRequest" }
+      responses:
+        "201":
+          description: Posting created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PostingOrder" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /v1/workforce/postings/{id}/supersede:
+    post:
+      tags: [postings]
+      operationId: supersedePosting
+      x-handler-bound: workforce-svc.workforce.supersede_posting
+      summary: Redeploy a worker to a new station
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupersedeRequest" }
+      responses:
+        "201":
+          description: Successor posting
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PostingOrder" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /v1/workforce/postings/{id}/equipment:
+    post:
+      tags: [postings]
+      operationId: createEquipmentClaim
+      x-handler-bound: workforce-svc.workforce.create_equipment_claim
+      summary: Claim equipment against an active posting (one open claim at a time)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateClaimRequest" }
+      responses:
+        "201":
+          description: Claim created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EquipmentClaim" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /v1/workforce/equipment/{claim_id}/acknowledge:
+    post:
+      tags: [postings]
+      operationId: acknowledgeClaim
+      x-handler-bound: workforce-svc.workforce.acknowledge_claim
+      summary: Acknowledge receipt of issued equipment
+      parameters:
+        - name: claim_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Acknowledged claim
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EquipmentClaim" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /v1/workforce/equipment/{claim_id}/return:
+    post:
+      tags: [postings]
+      operationId: returnClaim
+      x-handler-bound: workforce-svc.workforce.return_claim
+      summary: Return equipment, closing the custody loop
+      parameters:
+        - name: claim_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Returned claim
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EquipmentClaim" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /v1/workforce/equipment/{claim_id}/flag-loss:
+    post:
+      tags: [postings]
+      operationId: flagLoss
+      x-handler-bound: workforce-svc.workforce.flag_loss
+      summary: Flag equipment loss/damage
+      parameters:
+        - name: claim_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FlagLossRequest" }
+      responses:
+        "200":
+          description: Updated claim
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EquipmentClaim" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /v1/workforce/task-templates:
+    get:
+      tags: [tasking]
+      operationId: listTaskTemplates
+      x-handler-bound: workforce-svc.workforce.list_templates
+      summary: List task templates (filter by role, phase)
+      parameters:
+        - name: role
+          in: query
+          schema: { type: string }
+        - name: phase
+          in: query
+          schema: { $ref: "#/components/schemas/Phase" }
+      responses:
+        "200":
+          description: Template listing
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [templates]
+                properties:
+                  templates:
+                    type: array
+                    items: { $ref: "#/components/schemas/TaskTemplate" }
+    post:
+      tags: [tasking]
+      operationId: createTaskTemplate
+      x-handler-bound: workforce-svc.workforce.create_template
+      summary: Create a task template (optionally linked to just-in-time training)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateTemplateRequest" }
+      responses:
+        "201":
+          description: Template created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskTemplate" }
+
+  /v1/workforce/tasks:
+    get:
+      tags: [tasking]
+      operationId: listTasks
+      x-handler-bound: workforce-svc.workforce.list_tasks
+      summary: List task assignments (filter by posting_id, status)
+      parameters:
+        - name: posting_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/TaskStatus" }
+      responses:
+        "200":
+          description: Assignment listing
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [assignments]
+                properties:
+                  assignments:
+                    type: array
+                    items: { $ref: "#/components/schemas/TaskAssignment" }
+    post:
+      tags: [tasking]
+      operationId: assignTask
+      x-handler-bound: workforce-svc.workforce.assign_task
+      summary: Assign a task to a posting
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AssignTaskRequest" }
+      responses:
+        "201":
+          description: Assignment created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskAssignment" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /v1/workforce/tasks/{id}/ack:
+    post:
+      tags: [tasking]
+      operationId: ackTask
+      x-handler-bound: workforce-svc.workforce.ack_task
+      summary: Acknowledge an assignment (idempotent)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Acknowledged assignment
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskAssignment" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /v1/workforce/tasks/{id}/done:
+    post:
+      tags: [tasking]
+      operationId: doneTask
+      x-handler-bound: workforce-svc.workforce.done_task
+      summary: Complete an assignment (critical tasks require a 64-hex evidence hash)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DoneTaskRequest" }
+      responses:
+        "200":
+          description: Completed assignment
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskAssignment" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /v1/workforce/tasks/{id}/blocked:
+    post:
+      tags: [tasking]
+      operationId: blockTask
+      x-handler-bound: workforce-svc.workforce.block_task
+      summary: Block an assignment with a reason
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BlockTaskRequest" }
+      responses:
+        "200":
+          description: Blocked assignment
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskAssignment" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /v1/workforce/performance:
+    get:
+      tags: [performance]
+      operationId: getPerformance
+      x-handler-bound: workforce-svc.workforce.get_performance
+      summary: Fetch a worker's performance records and summary
+      parameters:
+        - name: worker_id
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Performance records and summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PerformanceResponse" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+    post:
+      tags: [performance]
+      operationId: addPerformanceRecord
+      x-handler-bound: workforce-svc.workforce.add_record
+      summary: Append a performance record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AddRecordRequest" }
+      responses:
+        "201":
+          description: Record appended
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PerformanceRecord" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /v1/workforce/notifications:
+    get:
+      tags: [notifications]
+      operationId: listNotifications
+      x-handler-bound: workforce-svc.workforce.list_notifications
+      summary: List a worker's notifications
+      parameters:
+        - name: worker_id
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Notification listing
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [notifications]
+                properties:
+                  notifications:
+                    type: array
+                    items: { $ref: "#/components/schemas/Notification" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+    post:
+      tags: [notifications]
+      operationId: sendNotification
+      x-handler-bound: workforce-svc.workforce.send_notification
+      summary: Send a worker notification (resolves the preferred contact point)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SendNotificationRequest" }
+      responses:
+        "201":
+          description: Notification recorded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Notification" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /v1/workforce/readiness:
+    get:
+      tags: [operations]
+      operationId: readiness
+      x-handler-bound: workforce-svc.workforce.readiness
+      summary: Per-station operational readiness rollup
+      parameters:
+        - name: station
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Readiness rollup
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReadinessResponse" }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
+    Unprocessable:
+      description: Validation failed
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
+    Conflict:
+      description: Conflict with current state
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
+
+  schemas:
+    ErrorBody:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+
+    Channel:
+      type: string
+      enum: [phone, whatsapp, email, sms]
+
+    NotificationKind:
+      type: string
+      enum: [posting, payment, appointment, training, message]
+
+    Phase:
+      type: string
+      enum: [pre_poll, polling_day, post_poll]
+
+    TaskStatus:
+      type: string
+      enum: [pending, acked, done, blocked]
+
+    PerfCategory:
+      type: string
+      enum: [attendance, punctuality, incident, evaluation]
+
+    InterviewOutcome:
+      type: string
+      enum: [recommend, hold, reject]
+
+    Stage:
+      type: object
+      discriminator:
+        propertyName: state
+      oneOf:
+        - type: object
+          required: [state]
+          properties:
+            state: { type: string, enum: [applied, screened, documents_complete, evaluated, selected, appointed] }
+        - type: object
+          required: [state, reason_code]
+          properties:
+            state: { type: string, enum: [rejected] }
+            reason_code: { type: string }
+        - type: object
+          required: [state, rank]
+          properties:
+            state: { type: string, enum: [waitlist] }
+            rank: { type: integer, format: int64 }
+
+    Worker:
+      type: object
+      required: [worker_id, legal_name, national_id_hash, home_county, role_eligibility, created_at]
+      properties:
+        worker_id: { type: string, format: uuid }
+        legal_name: { type: string }
+        national_id_hash: { type: string, description: "SHA-256 hex" }
+        home_county: { type: string }
+        role_eligibility:
+          type: array
+          items: { type: string }
+        payroll_contract_ref: { type: string, nullable: true }
+        next_of_kin_name: { type: string, nullable: true }
+        next_of_kin_phone_hash: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    CreateWorkerRequest:
+      type: object
+      required: [legal_name, national_id_hash, home_county]
+      properties:
+        legal_name: { type: string }
+        national_id_hash: { type: string }
+        home_county: { type: string }
+        role_eligibility:
+          type: array
+          items: { type: string }
+        payroll_contract_ref: { type: string, nullable: true }
+        next_of_kin: { $ref: "#/components/schemas/NextOfKin" }
+
+    NextOfKin:
+      type: object
+      required: [name, phone_hash]
+      properties:
+        name: { type: string }
+        phone_hash: { type: string }
+
+    UpdateWorkerRequest:
+      type: object
+      properties:
+        home_county: { type: string }
+        role_eligibility:
+          type: array
+          items: { type: string }
+        payroll_contract_ref: { type: string }
+        next_of_kin: { $ref: "#/components/schemas/NextOfKin" }
+
+    ContactPoint:
+      type: object
+      required: [contact_id, worker_id, channel, value_hash_hex, verified, consented, preferred, changed_at]
+      properties:
+        contact_id: { type: string, format: uuid }
+        worker_id: { type: string, format: uuid }
+        channel: { $ref: "#/components/schemas/Channel" }
+        value_hash_hex: { type: string }
+        verified: { type: boolean }
+        consented: { type: boolean }
+        preferred: { type: boolean }
+        changed_at: { type: string, format: date-time }
+
+    UpsertContactRequest:
+      type: object
+      required: [value_hash_hex]
+      properties:
+        value_hash_hex: { type: string }
+        verified: { type: boolean, default: false }
+        consented: { type: boolean, default: false }
+        preferred: { type: boolean, default: false }
+        remove: { type: boolean, default: false }
+        reason: { type: string }
+        actor: { type: string, default: system }
+
+    ContactLogEntry:
+      type: object
+      required: [worker_id, channel, at, actor, action]
+      properties:
+        worker_id: { type: string, format: uuid }
+        channel: { $ref: "#/components/schemas/Channel" }
+        at: { type: string, format: date-time }
+        actor: { type: string }
+        action: { type: string, enum: [added, updated, removed, verified, consent_granted] }
+        reason: { type: string, nullable: true }
+
+    RecruitmentCase:
+      type: object
+      required: [case_id, application_ref, applicant_name, national_id_hash, role_code, county, stage, stage_history, created_at]
+      properties:
+        case_id: { type: string, format: uuid }
+        application_ref: { type: string }
+        applicant_name: { type: string }
+        national_id_hash: { type: string }
+        role_code: { type: string }
+        county: { type: string }
+        stage: { $ref: "#/components/schemas/Stage" }
+        composite_score: { type: number, format: float, nullable: true }
+        stage_history:
+          type: array
+          items: { $ref: "#/components/schemas/StageChange" }
+        created_at: { type: string, format: date-time }
+
+    CreateCaseRequest:
+      type: object
+      required: [application_ref, applicant_name, national_id_hash, role_code, county]
+      properties:
+        application_ref: { type: string }
+        applicant_name: { type: string }
+        national_id_hash: { type: string }
+        role_code: { type: string }
+        county: { type: string }
+        composite_score: { type: number, format: float }
+
+    StageChange:
+      type: object
+      required: [from, to, actor, at]
+      properties:
+        from: { type: string }
+        to: { type: string }
+        actor: { type: string }
+        at: { type: string, format: date-time }
+        reason: { type: string, nullable: true }
+
+    TransitionRequest:
+      type: object
+      required: [to, actor]
+      properties:
+        to: { type: string }
+        actor: { type: string }
+        reason: { type: string }
+        documents_probe: { $ref: "#/components/schemas/DocumentsProbe" }
+        exam_result: { $ref: "#/components/schemas/ExamResult" }
+        contract_ref: { type: string }
+
+    DocumentsProbe:
+      type: object
+      required: [complete]
+      properties:
+        complete: { type: boolean }
+
+    ExamResult:
+      type: object
+      required: [passed, session_id]
+      properties:
+        passed: { type: boolean }
+        session_id: { type: string }
+
+    InterviewRecord:
+      type: object
+      required: [interview_id, case_id, interviewer, notes, outcome, recorded_at]
+      properties:
+        interview_id: { type: string, format: uuid }
+        case_id: { type: string, format: uuid }
+        interviewer: { type: string }
+        scheduled_at: { type: string, format: date-time, nullable: true }
+        score: { type: number, format: float, nullable: true }
+        notes: { type: string }
+        outcome: { $ref: "#/components/schemas/InterviewOutcome" }
+        recorded_at: { type: string, format: date-time }
+
+    CreateInterviewRequest:
+      type: object
+      required: [interviewer, outcome]
+      properties:
+        interviewer: { type: string }
+        scheduled_at: { type: string, format: date-time }
+        score: { type: number, format: float }
+        notes: { type: string }
+        outcome: { $ref: "#/components/schemas/InterviewOutcome" }
+
+    PostingOrder:
+      type: object
+      required: [posting_id, worker_id, station_code, role_code, effective_from, posted_by, status, created_at]
+      properties:
+        posting_id: { type: string, format: uuid }
+        worker_id: { type: string, format: uuid }
+        station_code: { type: string }
+        role_code: { type: string }
+        effective_from: { type: string, format: date-time }
+        effective_to: { type: string, format: date-time, nullable: true }
+        posted_by: { type: string }
+        superseded_by: { type: string, format: uuid, nullable: true }
+        status: { type: string, enum: [active, superseded] }
+        created_at: { type: string, format: date-time }
+
+    CreatePostingRequest:
+      type: object
+      required: [worker_id, station_code, role_code, effective_from, posted_by]
+      properties:
+        worker_id: { type: string, format: uuid }
+        station_code: { type: string }
+        role_code: { type: string }
+        effective_from: { type: string, format: date-time }
+        effective_to: { type: string, format: date-time }
+        posted_by: { type: string }
+
+    SupersedeRequest:
+      type: object
+      required: [new_station_code, effective_from, posted_by]
+      properties:
+        new_station_code: { type: string }
+        effective_from: { type: string, format: date-time }
+        effective_to: { type: string, format: date-time }
+        posted_by: { type: string }
+        role_code: { type: string }
+
+    EquipmentClaim:
+      type: object
+      required: [claim_id, posting_id, kit_serials, acknowledged, returned, loss_flags, created_at]
+      properties:
+        claim_id: { type: string, format: uuid }
+        posting_id: { type: string, format: uuid }
+        kit_serials:
+          type: array
+          items: { type: string }
+        acknowledged: { type: boolean }
+        returned: { type: boolean }
+        loss_flags:
+          type: array
+          items: { type: string }
+        created_at: { type: string, format: date-time }
+
+    CreateClaimRequest:
+      type: object
+      required: [kit_serials]
+      properties:
+        kit_serials:
+          type: array
+          items: { type: string }
+
+    FlagLossRequest:
+      type: object
+      required: [serials, reason]
+      properties:
+        serials:
+          type: array
+          items: { type: string }
+        reason: { type: string }
+
+    TaskTemplate:
+      type: object
+      required: [template_id, role_code, phase, title, critical, created_at]
+      properties:
+        template_id: { type: string, format: uuid }
+        role_code: { type: string }
+        phase: { $ref: "#/components/schemas/Phase" }
+        title: { type: string }
+        critical: { type: boolean }
+        training_content_id: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    CreateTemplateRequest:
+      type: object
+      required: [role_code, phase, title]
+      properties:
+        role_code: { type: string }
+        phase: { $ref: "#/components/schemas/Phase" }
+        title: { type: string }
+        critical: { type: boolean, default: false }
+        training_content_id: { type: string }
+
+    TaskAssignment:
+      type: object
+      required: [assignment_id, posting_id, template_id, due_from, due_to, status, updated_at]
+      properties:
+        assignment_id: { type: string, format: uuid }
+        posting_id: { type: string, format: uuid }
+        template_id: { type: string, format: uuid }
+        due_from: { type: string, format: date-time }
+        due_to: { type: string, format: date-time }
+        status: { $ref: "#/components/schemas/TaskStatus" }
+        evidence_hash: { type: string, nullable: true }
+        block_reason: { type: string, nullable: true }
+        updated_at: { type: string, format: date-time }
+
+    AssignTaskRequest:
+      type: object
+      required: [posting_id, template_id, due_window]
+      properties:
+        posting_id: { type: string, format: uuid }
+        template_id: { type: string, format: uuid }
+        due_window: { $ref: "#/components/schemas/DueWindow" }
+
+    DueWindow:
+      type: object
+      required: [from, to]
+      properties:
+        from: { type: string, format: date-time }
+        to: { type: string, format: date-time }
+
+    DoneTaskRequest:
+      type: object
+      properties:
+        evidence_hash: { type: string }
+
+    BlockTaskRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string }
+
+    PerformanceRecord:
+      type: object
+      required: [record_id, worker_id, category, detail, recorded_by, recorded_at]
+      properties:
+        record_id: { type: string, format: uuid }
+        worker_id: { type: string, format: uuid }
+        category: { $ref: "#/components/schemas/PerfCategory" }
+        score: { type: number, format: float, nullable: true }
+        detail: { type: string }
+        recorded_by: { type: string }
+        recorded_at: { type: string, format: date-time }
+
+    AddRecordRequest:
+      type: object
+      required: [worker_id, category, detail, recorded_by]
+      properties:
+        worker_id: { type: string, format: uuid }
+        category: { $ref: "#/components/schemas/PerfCategory" }
+        score: { type: number, format: float }
+        detail: { type: string }
+        recorded_by: { type: string }
+
+    PerformanceResponse:
+      type: object
+      required: [records, summary]
+      properties:
+        records:
+          type: array
+          items: { $ref: "#/components/schemas/PerformanceRecord" }
+        summary:
+          type: object
+          required: [incident_count]
+          properties:
+            avg_score: { type: number, format: float, nullable: true }
+            incident_count: { type: integer, format: int64 }
+
+    Notification:
+      type: object
+      required: [notification_id, worker_id, kind, subject, body, created_at]
+      properties:
+        notification_id: { type: string, format: uuid }
+        worker_id: { type: string, format: uuid }
+        kind: { $ref: "#/components/schemas/NotificationKind" }
+        channel: { $ref: "#/components/schemas/Channel" }
+        subject: { type: string }
+        body: { type: string }
+        delivery_ref: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    SendNotificationRequest:
+      type: object
+      required: [worker_id, kind, subject, body]
+      properties:
+        worker_id: { type: string, format: uuid }
+        kind: { $ref: "#/components/schemas/NotificationKind" }
+        channel: { $ref: "#/components/schemas/Channel" }
+        subject: { type: string }
+        body: { type: string }
+        delivery_ref: { type: string }
+
+    ReadinessResponse:
+      type: object
+      required: [stations, totals]
+      properties:
+        stations:
+          type: array
+          items:
+            type: object
+            required: [station_code, active_postings, open_kit_claims, tasks_total, tasks_done, tasks_blocked, tasks_overdue]
+            properties:
+              station_code: { type: string }
+              active_postings: { type: integer }
+              open_kit_claims: { type: integer }
+              tasks_total: { type: integer }
+              tasks_done: { type: integer }
+              tasks_blocked: { type: integer }
+              tasks_overdue: { type: integer }
+        totals:
+          type: object
+          properties:
+            active_postings: { type: integer }
+            open_kit_claims: { type: integer }
+            assignments: { type: integer }

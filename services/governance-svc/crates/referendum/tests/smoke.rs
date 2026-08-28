@@ -1,6 +1,7 @@
 #[tokio::test]
 async fn router_smoke() {
-    let app = eel_governance_referendum::router::build_router();
+    let state = eel_governance_referendum::AppState::new();
+    let app = eel_governance_referendum::router::build_router(state);
     drop(app);
 }
 

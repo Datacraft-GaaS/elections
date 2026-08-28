@@ -32,7 +32,7 @@ impl LookupCap {
     /// Returns true if the subject is under cap; increments counter.
     pub fn check_and_increment(&self, subject_id: &str) -> bool {
         let key = Self::key(subject_id);
-        let mut counts = self.counts.lock().unwrap();
+        let mut counts = self.counts.lock().expect("lock poisoned");
         let entry = counts.entry(key).or_insert(0);
         if *entry >= DAILY_CAP {
             return false;
@@ -43,7 +43,7 @@ impl LookupCap {
 
     pub fn count(&self, subject_id: &str) -> usize {
         let key = Self::key(subject_id);
-        let counts = self.counts.lock().unwrap();
+        let counts = self.counts.lock().expect("lock poisoned");
         *counts.get(&key).unwrap_or(&0)
     }
 }

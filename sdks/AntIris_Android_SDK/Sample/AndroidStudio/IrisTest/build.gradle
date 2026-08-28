@@ -1,0 +1,48 @@
+apply plugin: 'com.android.application'
+android {
+    compileSdkVersion rootProject.ext.versionCompiler
+    defaultConfig {
+        applicationId "com.antiris.iristest"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.versionTarget
+        versionCode rootProject.ext.versionCode
+        versionName rootProject.ext.versionNameString
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        ndk {
+            abiFilters "armeabi-v7a",'arm64-v8a'
+        }
+    }
+    android.applicationVariants.all { variant ->
+        variant.outputs.all {
+            outputFileName  ="IrisTest" + "_v" +
+                    defaultConfig.versionName + "_" + defaultConfig.versionCode + "_" +
+                    new Date().format("yyyy-MM-dd") + ".apk"
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility rootProject.ext.javaSourceCompatibility
+        targetCompatibility rootProject.ext.javaTargetCompatibility
+    }
+    buildFeatures {
+        viewBinding true
+    }
+    sourceSets.main {
+        jniLibs.srcDirs rootProject.ext.jniLibsSrcDirs
+    }
+    namespace 'com.antiris'
+}
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: '../../../libs')
+    implementation "androidx.appcompat:appcompat:${androidXVersion}"
+   // implementation 'android.arch.persistence.room:runtime:1.1.1'
+   // annotationProcessor 'android.arch.persistence.room:compiler:1.1.1'
+   // implementation 'androidx.work:work-runtime:2.7.1'
+    implementation files ("../../../libs/antiris.antusbcamera.jar")
+    implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.8.10"))
+}

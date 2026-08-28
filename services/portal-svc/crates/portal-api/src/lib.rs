@@ -133,6 +133,8 @@ fn signing_headers(merkle_root: &str, snapshot_id: &str) -> HeaderMap {
 // Handlers
 // ---------------------------------------------------------------------------
 
+pub mod spec;
+
 async fn health() -> Json<HealthResponse> {
     Json(HealthResponse {
         ok: true,
@@ -210,4 +212,12 @@ pub fn app() -> Router {
         .route("/api/v1/portal/snapshots/bulk.tar.gz", get(snapshots_bulk))
         .route("/api/v1/portal/snapshots/{id}", get(snapshot_by_id))
         .route("/api/v1/portal/snapshots/{id}/verify", get(snapshot_verify))
+        // Public contract endpoints (portal/public.yaml)
+        .route("/api/v1/portal/results", get(spec::get_national_results))
+        .route("/api/v1/portal/results/{scope}/{code}", get(spec::get_scoped_results))
+        .route("/api/v1/portal/forms/{form_id}/proof", get(spec::get_form_inclusion_proof))
+        .route("/api/v1/portal/merkle/{root_id}", get(spec::get_merkle_root))
+        .route("/api/v1/portal/turnout", get(spec::get_live_turnout))
+        .route("/api/v1/portal/civic/{item_id}", get(spec::get_civic_content))
+        .route("/api/v1/portal/admin/content", axum::routing::post(spec::publish_civic_content))
 }

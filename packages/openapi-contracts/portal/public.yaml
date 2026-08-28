@@ -508,6 +508,7 @@ paths:
   /api/v1/portal/results:
     get:
       operationId: getNationalResults
+      x-handler-bound: portal-svc.portal.get_national_results
       summary: "National election result snapshot (signed-static, Tier 1)"
       description: >
         Returns the latest certified national result snapshot. Response is served from
@@ -555,6 +556,7 @@ paths:
   /api/v1/portal/results/{scope}/{code}:
     get:
       operationId: getScopedResults
+      x-handler-bound: portal-svc.portal.get_scoped_results
       summary: "Regional or constituency result snapshot (signed-static, Tier 1)"
       description: >
         Returns the latest result snapshot for a given scope and code combination.
@@ -612,6 +614,7 @@ paths:
   /api/v1/portal/forms/{form_id}/proof:
     get:
       operationId: getFormInclusionProof
+      x-handler-bound: portal-svc.portal.get_form_inclusion_proof
       summary: "Fetch Merkle inclusion proof for a published result form (Tier 2)"
       description: >
         Returns a Merkle inclusion proof proving a specific form is included in the
@@ -647,6 +650,7 @@ paths:
   /api/v1/portal/merkle/{root_id}:
     get:
       operationId: getMerkleRoot
+      x-handler-bound: portal-svc.portal.get_merkle_root
       summary: "Retrieve a published Merkle tree root (signed-static, Tier 1)"
       description: >
         Returns a published Merkle root with Cosign signature and Rekor entry URL.
@@ -685,6 +689,7 @@ paths:
   /api/v1/portal/turnout:
     get:
       operationId: getLiveTurnout
+      x-handler-bound: portal-svc.portal.get_live_turnout
       summary: "Live turnout aggregate (signed-static, Tier 1)"
       description: >
         Returns the most recent national turnout summary. Updated every 5 minutes on polling day.
@@ -729,6 +734,7 @@ paths:
   /api/v1/portal/civic/{item_id}:
     get:
       operationId: getCivicContent
+      x-handler-bound: portal-svc.portal.get_civic_content
       summary: "Retrieve a civic explainer content item (Tier 1)"
       description: >
         Returns a single civic education or explainer content item by its ID.
@@ -786,6 +792,7 @@ paths:
   /api/v1/portal/admin/content:
     post:
       operationId: publishCivicContent
+      x-handler-bound: portal-svc.portal.publish_civic_content
       summary: "Publish a civic content item (Tier 3, admin)"
       description: >
         Content editors publish or update civic explainer content. Idempotent on slug + language:

@@ -145,4 +145,11 @@ class OfflineQueue {
   }
 
   Future<Database> get rawDb async => _database;
+
+  /// Close the underlying database (used by tests and lifecycle teardown).
+  Future<void> close() async {
+    final db = _db;
+    _db = null;
+    await db?.close();
+  }
 }

@@ -31,6 +31,7 @@ paths:
   /api/v1/inventory/kits:
     get:
       operationId: listKitAllocationSummary
+      x-handler-bound: inventory-svc.inventory.list_kit_allocation_summary
       tags: [kits]
       summary: Public kit allocation summary
       description: >
@@ -90,6 +91,7 @@ paths:
   /api/v1/inventory/kits/{constituency_code}/allocation:
     get:
       operationId: getConstituencyKitAllocation
+      x-handler-bound: inventory-svc.inventory.get_constituency_kit_allocation
       tags: [kits]
       summary: Kit allocation for a constituency
       description: Returns kit allocation detail for a specific constituency. Tier 1 public endpoint.
@@ -126,6 +128,7 @@ paths:
   /api/v1/inventory/materials/{constituency_code}/status:
     get:
       operationId: getMaterialStatus
+      x-handler-bound: inventory-svc.inventory.get_material_status
       tags: [materials]
       summary: Ballot paper and material status for a constituency
       description: >
@@ -158,6 +161,7 @@ paths:
   /api/v1/inventory/shortfalls:
     post:
       operationId: reportShortfall
+      x-handler-bound: inventory-svc.inventory.report_shortfall
       tags: [shortfalls]
       summary: Report a material shortfall
       description: >
@@ -200,6 +204,7 @@ paths:
 
     get:
       operationId: listShortfalls
+      x-handler-bound: inventory-svc.inventory.list_shortfalls
       tags: [shortfalls]
       summary: List material shortfalls
       description: Paginated list of shortfall reports. Tier 3 endpoint.
@@ -241,6 +246,7 @@ paths:
   /api/v1/inventory/audit-trail:
     get:
       operationId: getInventoryAuditTrail
+      x-handler-bound: inventory-svc.inventory.get_inventory_audit_trail
       tags: [audit]
       summary: Inventory audit log
       description: >

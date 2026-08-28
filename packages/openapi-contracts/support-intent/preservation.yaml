@@ -41,6 +41,7 @@ paths:
   /v1/intent/premark:
     post:
       operationId: submitPreMarkValidation
+      x-handler-bound: support-admin-svc.support-intent.submit_pre_mark_validation
       tags: [premark]
       summary: "Submit pre-mark validation event from kit"
       description: |
@@ -70,6 +71,7 @@ paths:
   /v1/intent/spoilt:
     post:
       operationId: submitSpoiltBallot
+      x-handler-bound: support-admin-svc.support-intent.submit_spoilt_ballot
       tags: [spoilt]
       summary: "Record spoilt ballot and replacement (Elections Act s.54)"
       security:
@@ -93,6 +95,7 @@ paths:
   /v1/intent/adjudications:
     post:
       operationId: recordAdjudication
+      x-handler-bound: support-admin-svc.support-intent.record_adjudication
       tags: [adjudication]
       summary: "Record ballot adjudication"
       description: |
@@ -119,6 +122,7 @@ paths:
           description: "Unknown reason code or decision mismatch"
     get:
       operationId: listAdjudications
+      x-handler-bound: support-admin-svc.support-intent.list_adjudications
       tags: [adjudication]
       summary: "List adjudication events (IAB audit panel)"
       security:
@@ -146,6 +150,7 @@ paths:
   /v1/intent/adjudications/{id}:
     get:
       operationId: getAdjudication
+      x-handler-bound: support-admin-svc.support-intent.get_adjudication
       tags: [adjudication]
       summary: "Single adjudication record"
       security:
@@ -170,6 +175,7 @@ paths:
   /v1/intent/alerts:
     get:
       operationId: listRejectionRateAlerts
+      x-handler-bound: support-admin-svc.support-intent.list_rejection_rate_alerts
       tags: [alerts]
       summary: "Rejection-rate outlier alerts to ECC"
       description: "COMMISSION_OPS or ECC_OFFICER JWT required."
@@ -197,6 +203,7 @@ paths:
   /v1/intent/alerts/{id}/acknowledge:
     post:
       operationId: acknowledgeAlert
+      x-handler-bound: support-admin-svc.support-intent.acknowledge_alert
       tags: [alerts]
       summary: "Acknowledge rejection-rate alert"
       security:
@@ -227,6 +234,7 @@ paths:
   /v1/intent/catalogue:
     get:
       operationId: listAdjudicationCatalogue
+      x-handler-bound: support-admin-svc.support-intent.list_adjudication_catalogue
       tags: [catalogue]
       summary: "List adjudication reason-code catalogue (A1-A8, V1-V3)"
       security: []
@@ -243,6 +251,7 @@ paths:
   /v1/intent/toggle:
     post:
       operationId: toggleAdjudication
+      x-handler-bound: support-admin-svc.support-intent.toggle_adjudication
       tags: [toggle]
       summary: "Enable or disable pre-mark validation at station"
       description: "COMMISSION_OPS JWT required. Audit-logged."
@@ -259,6 +268,7 @@ paths:
           description: "Toggle applied"
     get:
       operationId: listToggleAudit
+      x-handler-bound: support-admin-svc.support-intent.list_toggle_audit
       tags: [toggle]
       summary: "Audit log of toggle events"
       security:

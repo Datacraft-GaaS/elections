@@ -28,6 +28,7 @@ paths:
   /api/v1/governance/review/reviews:
     post:
       operationId: initiatePostElectionReview
+      x-handler-bound: governance-svc.governance-review.initiate_post_election_review
       tags: [reviews]
       summary: Initiate a post-election review
       description: >
@@ -67,6 +68,7 @@ paths:
 
     get:
       operationId: listPostElectionReviews
+      x-handler-bound: governance-svc.governance-review.list_post_election_reviews
       tags: [reviews]
       summary: List post-election reviews
       description: Paginated list of post-election reviews. Tier 3 endpoint.
@@ -106,6 +108,7 @@ paths:
   /api/v1/governance/review/reviews/{review_id}:
     get:
       operationId: getPostElectionReview
+      x-handler-bound: governance-svc.governance-review.get_post_election_review
       tags: [reviews]
       summary: Get post-election review detail
       description: Returns full detail for a specific review. Tier 3 endpoint.
@@ -134,6 +137,7 @@ paths:
   /api/v1/governance/review/reviews/{review_id}/findings:
     post:
       operationId: addReviewFinding
+      x-handler-bound: governance-svc.governance-review.add_review_finding
       tags: [findings]
       summary: Add a finding to a review
       description: >
@@ -177,6 +181,7 @@ paths:
   /api/v1/governance/review/reviews/{review_id}/publish:
     post:
       operationId: publishReviewReport
+      x-handler-bound: governance-svc.governance-review.publish_review_report
       tags: [reviews]
       summary: Publish the final review report
       description: >

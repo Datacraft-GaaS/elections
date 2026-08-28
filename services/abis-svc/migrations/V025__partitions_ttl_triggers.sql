@@ -49,7 +49,8 @@ BEGIN
 		WHERE c.relname = 'eel_abis_audit_shadow_p'
 	) THEN
 		EXECUTE 'CREATE TABLE IF NOT EXISTS eel_abis_audit_shadow_p (
-			LIKE eel_abis_audit_shadow INCLUDING ALL
+			LIKE eel_abis_audit_shadow INCLUDING DEFAULTS,
+			PRIMARY KEY (audit_id, created_at)
 		) PARTITION BY RANGE (created_at)';
 
 		-- default legacy catch-all

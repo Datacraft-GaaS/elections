@@ -31,6 +31,7 @@ paths:
     get:
       tags: [constituencies]
       operationId: listConstituencies
+      x-handler-bound: boundary-svc.boundary.list_constituencies
       summary: List constituencies
       description: >
         Returns all constituencies with their GeoJSON boundary polygons. Data
@@ -62,6 +63,7 @@ paths:
     get:
       tags: [constituencies]
       operationId: getConstituency
+      x-handler-bound: boundary-svc.boundary.get_constituency
       summary: Constituency detail with GeoJSON
       description: >
         Returns the full detail of a single constituency including its
@@ -89,6 +91,7 @@ paths:
     get:
       tags: [wards]
       operationId: listWards
+      x-handler-bound: boundary-svc.boundary.list_wards
       summary: List wards
       description: >
         Returns all wards with their GeoJSON boundary polygons and parent
@@ -127,6 +130,7 @@ paths:
     get:
       tags: [counties]
       operationId: listCounties
+      x-handler-bound: boundary-svc.boundary.list_counties
       summary: List counties
       description: >
         Returns all 47 counties with their GeoJSON boundary polygons.
@@ -157,6 +161,7 @@ paths:
     get:
       tags: [stations]
       operationId: listStations
+      x-handler-bound: boundary-svc.boundary.list_stations
       summary: Polling station list
       description: >
         Returns all registered polling stations with location (latitude,
@@ -207,6 +212,7 @@ paths:
     get:
       tags: [stations]
       operationId: getStation
+      x-handler-bound: boundary-svc.boundary.get_station
       summary: Polling station detail
       description: >
         Returns full detail of a single polling station including geographic
@@ -234,6 +240,7 @@ paths:
     get:
       tags: [changes]
       operationId: listBoundaryChanges
+      x-handler-bound: boundary-svc.boundary.list_boundary_changes
       summary: Boundary change history
       description: >
         Returns a paginated log of all boundary change events, including
@@ -282,6 +289,7 @@ paths:
     post:
       tags: [admin]
       operationId: publishBoundarySnapshot
+      x-handler-bound: boundary-svc.boundary.publish_boundary_snapshot
       summary: Publish new boundary snapshot
       description: >
         Publishes a new authoritative boundary snapshot. This operation

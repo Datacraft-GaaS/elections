@@ -5,6 +5,7 @@
 //! Back-pressures producers via `TokioSemaphore` bounded by sequencer rate.
 
 pub mod consumer;
+pub mod failures;
 pub mod offset_tracker;
 pub mod topic_router;
 

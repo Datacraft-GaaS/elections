@@ -9,9 +9,10 @@ Three views:
 
 from __future__ import annotations
 
-import hashlib
+import json
 from typing import Any
 
+import blake3
 from django.contrib.auth.decorators import login_required, permission_required
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, render
@@ -26,18 +27,40 @@ from .models import CoverStateTransition, CoverTamperAlert, RfidCoverRead, RfidC
 # ---------------------------------------------------------------------------
 
 
+def _canonical_transition_bytes(t: CoverStateTransition) -> bytes:
+    """Serialise a transition exactly as the Rust writer does.
+
+    Mirrors `rfid-cover-custody/src/hash_chain.rs::compute_this_hash`:
+    serde_json object with keys in order transition_id, tag_id, from_state,
+    to_state, officer_id, officer_svid, transitioned_at; compact separators;
+    null for absent optional values; RFC 3339 timestamp.
+    """
+    payload = {
+        "transition_id": str(t.transition_id),
+        "tag_id": str(t.tag_id),
+        "from_state": t.from_state,
+        "to_state": t.to_state,
+        "officer_id": str(t.officer_id) if t.officer_id else None,
+        "officer_svid": t.officer_svid if t.officer_svid else None,
+        "transitioned_at": t.transitioned_at.isoformat(),
+    }
+    return json.dumps(payload, separators=(",", ":")).encode()
+
+
 def _verify_chain(transitions: list[CoverStateTransition]) -> list[dict[str, Any]]:
-    """Return per-transition verification status by replaying prev_hash chain."""
+    """Return per-transition verification status by replaying the BLAKE3 chain.
+
+    Matches the Rust writer: this_hash = BLAKE3(prev_hash_bytes || canonical_json).
+    """
     result = []
-    prev = None
+    prev = b""
     for t in transitions:
-        if prev is None:
-            valid = True
-        else:
-            expected = hashlib.sha256(prev.this_hash.encode()).hexdigest()
-            valid = t.prev_hash == expected
+        expected = blake3.blake3(prev + _canonical_transition_bytes(t)).digest()
+        valid = prev == (bytes(t.prev_hash) if t.prev_hash else b"") and bytes(
+            t.this_hash
+        ) == expected
         result.append({"transition": t, "chain_valid": valid})
-        prev = t
+        prev = bytes(t.this_hash)
     return result
 
 
@@ -113,9 +136,22 @@ def tamper_triage_view(request: HttpRequest) -> HttpResponse:
 @permission_required("rfid_covers.change_covertamperalert", raise_exception=True)
 @require_POST
 def _resolve_alert(request: HttpRequest) -> HttpResponse:
+    from .dual_control import DualApprovalError, countersigned_note, validate_dual_approval
+
     alert_id = request.POST.get("alert_id", "")
-    note = (
-        request.POST.get("resolution_note", "").strip() or f"Resolved by {request.user}"
+
+    # Wave-2 HM1: tamper-alert resolution is dual-control. The second officer
+    # is physically co-located (works offline); both ids are recorded.
+    try:
+        second = validate_dual_approval(str(request.user), request.POST.get("second_officer"))
+    except DualApprovalError as e:
+        return HttpResponse(str(e), status=422)
+
+    note = countersigned_note(
+        str(request.user),
+        second,
+        request.POST.get("resolution_note", "").strip()
+        or f"Resolved by {request.user}",
     )
     alert = get_object_or_404(
         CoverTamperAlert, alert_id=alert_id, resolved_at__isnull=True
@@ -124,7 +160,11 @@ def _resolve_alert(request: HttpRequest) -> HttpResponse:
     alert.resolution_note = note
     alert.save(update_fields=["resolved_at", "resolution_note"])
     remaining = CoverTamperAlert.objects.filter(resolved_at__isnull=True).count()
-    ctx = {"resolved_alert_id": alert_id, "remaining": remaining}
+    ctx = {
+        "resolved_alert_id": alert_id,
+        "remaining": remaining,
+        "countersigned_by": second,
+    }
     return render(request, "rfid_covers/tamper_triage.html#resolved_fragment", ctx)
 
 

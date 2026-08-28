@@ -5,6 +5,7 @@
 //! Elections Act ss.5, 44, 44A, 54, 72.
 
 pub mod aggregates;
+pub mod http;
 pub mod events;
 pub mod guards;
 pub mod workflows;

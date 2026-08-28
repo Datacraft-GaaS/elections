@@ -30,6 +30,7 @@ paths:
   /api/v1/governance/referendum/questions:
     get:
       operationId: listReferendumQuestions
+      x-handler-bound: governance-svc.governance-referendum.list_referendum_questions
       tags: [questions]
       summary: List referendum questions
       description: >
@@ -72,6 +73,7 @@ paths:
 
     post:
       operationId: registerReferendumQuestion
+      x-handler-bound: governance-svc.governance-referendum.register_referendum_question
       tags: [questions]
       summary: Register a referendum question (admin)
       description: >
@@ -115,6 +117,7 @@ paths:
   /api/v1/governance/referendum/results:
     get:
       operationId: getReferendumResults
+      x-handler-bound: governance-svc.governance-referendum.get_referendum_results
       tags: [results]
       summary: Referendum results
       description: >
@@ -149,6 +152,7 @@ paths:
   /api/v1/governance/referendum/county-threshold:
     get:
       operationId: getCountyThresholdStatus
+      x-handler-bound: governance-svc.governance-referendum.get_county_threshold_status
       tags: [threshold]
       summary: 24-of-47 county compliance status
       description: >

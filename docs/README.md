@@ -1,6 +1,9 @@
 # docs
 
-- `architecture/`, system-wide design (overview, boundaries, data flow)
+- `workforce-lifecycle.md`, poll-worker lifecycle design: recruitment, documents, competency exams, registry, postings, tasking, equipment, performance
+- `abis/`, **ABIS biometric platform reference**: 85-crate matcher/algorithm inventory across fingerprint, iris, face, security & standards volumes
+- `system/`, **complete implementation-referenced system reference**: architecture, security & safeguards, operations, shared packages, tools, and one page per service (start at `system/README.md`)
+- `architecture/`, earlier system-wide design prose (overview, boundaries, data flow)
 - `adr/`, architecture decision records, one file per decision, numbered
 - `research/`, spikes and external-integration research
 - `plans/`, the full build plan (waves, work packages, edge-case matrix, DoD, completeness audit, per-module pages)

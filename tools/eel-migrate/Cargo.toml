@@ -1,0 +1,19 @@
+[package]
+name = "eel-migrate"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Repo-wide migration runner: applies every services/*/migrations/*.sql to a shared Postgres database, ordered and tracked by (service, name). Handles the V### naming that sqlx migrate cannot parse."
+
+[[bin]]
+name = "eel-migrate"
+path = "src/main.rs"
+
+[dependencies]
+tokio              = { workspace = true }
+sqlx               = { workspace = true }
+tracing            = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow             = { workspace = true }

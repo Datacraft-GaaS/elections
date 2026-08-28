@@ -202,3 +202,25 @@ pub struct WhatsappWebhookPayload {
     pub object: String,
     pub entry: serde_json::Value,
 }
+
+// Section 44A dual-officer verification
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct S44aOfficer1Request {
+    pub county_code: String,
+    pub station_code: String,
+    pub officer_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct S44aOfficer2Request {
+    pub station_code: String,
+    pub officer_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct S44aConfirmation {
+    pub confirmation_id: Uuid,
+    pub station_code: String,
+    pub status: String,
+}

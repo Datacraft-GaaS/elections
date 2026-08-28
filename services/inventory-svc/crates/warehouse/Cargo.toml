@@ -1,0 +1,23 @@
+[package]
+name = "warehouse"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Warehouse, transfer, pallet, and incident domain for M20 inventory (WP-4.3): warehouse hierarchy, inter-warehouse transfers with departure/arrival, pallet tracking from receipt to polling station, break bulk, and tamper/incident noting"
+
+[lib]
+name = "warehouse"
+path = "src/lib.rs"
+
+[dependencies]
+serde         = { workspace = true }
+serde_json    = { workspace = true }
+chrono        = { workspace = true }
+uuid          = { workspace = true }
+thiserror     = { workspace = true }
+tracing       = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }

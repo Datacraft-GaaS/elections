@@ -28,6 +28,7 @@ paths:
   /api/v1/governance/intl-observer/missions:
     post:
       operationId: registerObserverMission
+      x-handler-bound: governance-svc.governance-intl-observer.register_observer_mission
       tags: [missions]
       summary: Register an international observer mission
       description: >
@@ -67,6 +68,7 @@ paths:
 
     get:
       operationId: listObserverMissions
+      x-handler-bound: governance-svc.governance-intl-observer.list_observer_missions
       tags: [missions]
       summary: List observer missions
       description: Paginated list of international observer missions. Tier 3 endpoint.
@@ -105,6 +107,7 @@ paths:
   /api/v1/governance/intl-observer/missions/{mission_id}:
     get:
       operationId: getObserverMission
+      x-handler-bound: governance-svc.governance-intl-observer.get_observer_mission
       tags: [missions]
       summary: Get observer mission detail
       description: Returns full detail for a specific mission. Tier 3 endpoint.
@@ -133,6 +136,7 @@ paths:
   /api/v1/governance/intl-observer/missions/{mission_id}/reports:
     post:
       operationId: submitObserverReport
+      x-handler-bound: governance-svc.governance-intl-observer.submit_observer_report
       tags: [reports]
       summary: Submit an observer mission report
       description: >
@@ -176,6 +180,7 @@ paths:
 
     get:
       operationId: listObserverReports
+      x-handler-bound: governance-svc.governance-intl-observer.list_observer_reports
       tags: [reports]
       summary: List reports for an observer mission
       description: Paginated list of reports for a mission. Tier 3 endpoint.

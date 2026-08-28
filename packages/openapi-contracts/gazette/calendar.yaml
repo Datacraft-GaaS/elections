@@ -27,6 +27,7 @@ paths:
     get:
       tags: [notices]
       operationId: listGazetteNotices
+      x-handler-bound: portal-svc.gazette.list_gazette_notices
       summary: List gazette notices
       description: Returns published gazette notices including election dates, nomination deadlines, and results declarations. Public, tier 1, with Merkle proofs.
       x-eel-sla:
@@ -67,6 +68,7 @@ paths:
     post:
       tags: [notices]
       operationId: publishGazetteNotice
+      x-handler-bound: portal-svc.gazette.create_gazette_notice
       summary: Publish gazette notice
       description: Creates and publishes a gazette notice. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -110,6 +112,7 @@ paths:
     get:
       tags: [notices]
       operationId: getGazetteNotice
+      x-handler-bound: portal-svc.gazette.get_gazette_notice
       summary: Get gazette notice detail
       description: Returns full gazette notice including legal instrument and effective dates. Public, tier 1.
       x-eel-sla:
@@ -140,6 +143,7 @@ paths:
     get:
       tags: [inspection]
       operationId: listInspectionWindows
+      x-handler-bound: portal-svc.gazette.list_inspection_windows
       summary: List voter list inspection windows
       description: Returns scheduled public inspection windows for the voter register. Public, tier 1, with Merkle proofs.
       x-eel-sla:
@@ -177,6 +181,7 @@ paths:
     get:
       tags: [inspection]
       operationId: getInspectionWindow
+      x-handler-bound: portal-svc.gazette.get_inspection_window
       summary: Get inspection window detail
       description: Returns date range, venues, and status of an inspection window. Public, tier 1.
       x-eel-sla:
@@ -207,6 +212,7 @@ paths:
     post:
       tags: [objections]
       operationId: fileListObjection
+      x-handler-bound: portal-svc.gazette.file_list_objection
       summary: File voter list objection
       description: Submits an objection against the voter register during an active inspection window. Idempotent on Idempotency-Key. Public with optional JWT, rate limited.
       x-eel-sla:
@@ -255,6 +261,7 @@ paths:
     get:
       tags: [objections]
       operationId: getObjectionStatus
+      x-handler-bound: portal-svc.gazette.get_objection_status
       summary: Get objection status by reference code
       description: Returns objection review status. Public with reference code.
       x-eel-sla:

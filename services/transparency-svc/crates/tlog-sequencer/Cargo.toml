@@ -16,7 +16,7 @@ path = "src/lib.rs"
 
 [dependencies]
 tlog-domain = { path = "../tlog-domain" }
-eel-crypto-rs = { path = "../../../../packages/eel-crypto-rs" }
+eel-crypto-rs = { path = "../../../../packages/eel-crypto-rs", features = ["pkcs11"] }
 
 axum = { workspace = true }
 tonic = { workspace = true }
@@ -31,4 +31,6 @@ tracing-subscriber = { workspace = true }
 uuid = { workspace = true }
 chrono = { workspace = true }
 hex = "0.4"
+cryptoki       = { workspace = true }
+ed25519-dalek  = { workspace = true }
 anyhow = { workspace = true }

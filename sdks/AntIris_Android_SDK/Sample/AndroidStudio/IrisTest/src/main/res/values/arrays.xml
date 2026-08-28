@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="ctype" >
+        <!-- Customize your theme here. -->
+        <item >High speed</item>
+        <item >Full speed</item>
+        <item >Low speed</item>
+    </string-array>
+
+
+</resources>

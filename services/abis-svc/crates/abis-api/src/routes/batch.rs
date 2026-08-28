@@ -17,6 +17,7 @@ pub async fn submit_batch_dedup(
             job_id: uuid::Uuid::new_v4().to_string(),
             status: "queued".to_string(),
             estimated_duration_s: 3600,
+            probe_count: None,
         }),
     )
 }

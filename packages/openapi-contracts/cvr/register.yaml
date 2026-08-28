@@ -27,6 +27,7 @@ paths:
     post:
       tags: [lookups]
       operationId: voterLookup
+      x-handler-bound: bvr-svc.cvr.voter_lookup
       summary: Voter registration lookup
       description: Checks voter registration status by hashed ID. Constant-time response regardless of found/not-found to resist timing attacks. Rate-limited at 10 req/IP/min. Public with rate limit.
       x-eel-sla:
@@ -66,6 +67,7 @@ paths:
     get:
       tags: [register]
       operationId: getRegisterSnapshot
+      x-handler-bound: bvr-svc.cvr.get_register_snapshot
       summary: Bulk register download (anonymised aggregate)
       description: Returns a presigned MinIO URL for a signed Parquet/CSV export. Contains station-level counts only, no individual records. Tier 4, requires JWT, SpiceDB, and explicit bulk-access scope.
       x-eel-sla:
@@ -107,6 +109,7 @@ paths:
     get:
       tags: [register]
       operationId: getRegisterStats
+      x-handler-bound: bvr-svc.cvr.get_register_stats
       summary: Aggregate register statistics
       description: Returns county and constituency voter counts. No individual records. Public, tier 1, with Merkle proofs.
       x-eel-sla:
@@ -146,6 +149,7 @@ paths:
     post:
       tags: [ussd]
       operationId: handleUssdSession
+      x-handler-bound: bvr-svc.cvr.handle_ussd_session
       summary: USSD session hook for voter lookup
       description: Handles USSD gateway callbacks for voter self-lookup. mTLS required. Idempotent on Idempotency-Key plus session_id.
       x-eel-sla:

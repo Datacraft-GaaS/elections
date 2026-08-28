@@ -27,6 +27,7 @@ paths:
     post:
       tags: [appeals]
       operationId: fileDeregAppeal
+      x-handler-bound: bvr-svc.dereg.file_appeal
       summary: File deregistration appeal
       description: Submits an appeal against a deregistration decision. Idempotent on Idempotency-Key. Requires JWT.
       x-eel-sla:
@@ -64,6 +65,7 @@ paths:
     get:
       tags: [appeals]
       operationId: listDeregAppeals
+      x-handler-bound: bvr-svc.dereg.list_dereg_appeals
       summary: List deregistration appeals (admin)
       description: Returns paginated list of all appeals. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -102,6 +104,7 @@ paths:
     get:
       tags: [appeals]
       operationId: getDeregAppeal
+      x-handler-bound: bvr-svc.dereg.get_dereg_appeal
       summary: Get appeal status (citizen)
       description: Returns appeal status visible to the applicant. Requires JWT.
       x-eel-sla:
@@ -133,6 +136,7 @@ paths:
     post:
       tags: [decisions]
       operationId: decideDeregAppeal
+      x-handler-bound: bvr-svc.dereg.decide_dereg_appeal
       summary: Record appeal decision
       description: Records an upheld or dismissed decision. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -175,6 +179,7 @@ paths:
     post:
       tags: [ussd]
       operationId: handleDeregUssdSession
+      x-handler-bound: bvr-svc.dereg.handle_dereg_ussd_session
       summary: USSD appeal status check
       description: Handles USSD gateway callbacks for appeal status self-service. mTLS required. Idempotent on Idempotency-Key.
       x-eel-sla:

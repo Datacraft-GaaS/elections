@@ -31,6 +31,7 @@ paths:
     post:
       tags: [candidates]
       operationId: submitCandidacy
+      x-handler-bound: crms-svc.crms.create_candidate
       summary: Submit candidacy application
       description: >
         Tier 2. Submits a new candidacy. Triggers an asynchronous IPRS identity
@@ -73,6 +74,7 @@ paths:
     get:
       tags: [candidates]
       operationId: listPublicCandidates
+      x-handler-bound: crms-svc.crms.list_candidates
       summary: List approved public candidates
       description: >
         Tier 1. Public endpoint. Returns approved candidates after nomination close.
@@ -145,6 +147,7 @@ paths:
     get:
       tags: [candidates]
       operationId: getCandidateStatus
+      x-handler-bound: crms-svc.crms.get_candidate
       summary: Get candidate status
       description: >
         Tier 2. Returns the full Candidate resource including current status,
@@ -177,6 +180,7 @@ paths:
     post:
       tags: [documents]
       operationId: initiateDocumentUpload
+      x-handler-bound: crms-svc.crms.add_document
       summary: Request presigned URL for statutory document upload
       description: >
         Tier 2. Returns a short-lived MinIO presigned PUT URL. The client uploads
@@ -221,6 +225,7 @@ paths:
     post:
       tags: [clearances]
       operationId: recordClearanceDecision
+      x-handler-bound: crms-svc.crms.create_clearance
       summary: Record a clearance decision from KRA, EACC, or court
       description: >
         Tier 3. Requires JWT plus SpiceDB authorization. Records a statutory
@@ -267,6 +272,7 @@ paths:
     get:
       tags: [quotas]
       operationId: getQuotaCompliance
+      x-handler-bound: crms-svc.crms.get_quota_compliance
       summary: Get quota compliance status for a scope and code
       description: >
         Tier 3. Requires JWT plus SpiceDB authorization. Returns gender, youth,
@@ -313,6 +319,7 @@ paths:
     post:
       tags: [ballot-proofs]
       operationId: publishBallotProof
+      x-handler-bound: crms-svc.crms.publish_ballot_proof
       summary: Publish signed ballot design proof
       description: >
         Tier 3. Requires JWT plus SpiceDB authorization. Records the hash of the
@@ -357,6 +364,7 @@ paths:
     get:
       tags: [ballot-proofs]
       operationId: getBallotProof
+      x-handler-bound: crms-svc.crms.get_ballot_proof
       summary: Retrieve a ballot design proof
       description: >
         Tier 1. Public endpoint. Returns the ballot proof resource with

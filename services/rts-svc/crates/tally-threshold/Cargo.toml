@@ -1,0 +1,23 @@
+[package]
+name = "tally-threshold"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "N6: threshold-encrypted tallies until close (Shamir k-of-n + keyed-BLAKE3 sealing)"
+
+[lib]
+name = "tally_threshold"
+path = "src/lib.rs"
+
+[dependencies]
+ark-ff        = { workspace = true }
+ark-bls12-381 = { workspace = true }
+blake3        = { workspace = true }
+sha2          = { workspace = true }
+hex           = { workspace = true }
+serde         = { workspace = true }
+serde_json    = { workspace = true }
+thiserror     = { workspace = true }
+rand          = "0.8"

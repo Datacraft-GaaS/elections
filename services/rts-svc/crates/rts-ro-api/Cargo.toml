@@ -24,6 +24,8 @@ serde_json        = { workspace = true }
 utoipa            = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
 uuid              = { workspace = true }
+ed25519-dalek     = { workspace = true }
+hex               = "0.4"
 thiserror         = { workspace = true }
 tracing           = { workspace = true }
 tracing-subscriber = { workspace = true }

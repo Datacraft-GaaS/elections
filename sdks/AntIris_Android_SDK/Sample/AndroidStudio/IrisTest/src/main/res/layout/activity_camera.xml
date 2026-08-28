@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/topLayout"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="match_parent"
+    android:layout_gravity="center"
+
+    android:orientation="horizontal">
+
+    <LinearLayout
+        android:id="@+id/midLayout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="6.4"
+        android:background="@color/GRAY"
+        android:orientation="vertical">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+            <com.antiris.AntUSBCamera.widget.USBCameraTextureView
+                android:id="@+id/camera_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <LinearLayout
+                android:id="@+id/progressCircle"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_alignBottom="@id/camera_view"
+                android:layout_alignTop="@id/camera_view"
+                android:orientation="horizontal">
+
+                <com.antiris.AntUSBCamera.widget.CustomProgressCircle
+                    android:id="@+id/enroll_progress"
+                    baseColor="#00ffffff"
+                    color="#ff00e200"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:alpha="0.5"/>
+
+            </LinearLayout>
+
+            <com.antiris.AntUSBCamera.widget.Draw
+                android:id="@+id/oval"
+                android:layout_width="480dp"
+                android:layout_height="240dp"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentTop="true"
+                android:scaleType="fitXY"/>
+
+        </RelativeLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="280dp"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_marginTop="20dp"
+            android:id="@+id/ll_checkBox"
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <CheckBox
+                android:id="@+id/ck_camera"
+                android:clickable="false"
+                android:layout_width="wrap_content"
+                android:layout_height="24dp"
+                android:checked="false"
+                android:text="@string/text_camera_connect"
+                tools:ignore="NestedWeights" />
+
+            <!--CheckBox
+                android:id="@+id/check_led"
+                android:layout_width="wrap_content"
+                android:layout_height="24dp"
+                android:checked="true"
+                android:clickable="false"
+                android:text="@string/led_light" /-->
+
+                <CheckBox
+                    android:clickable="false"
+                    android:id="@+id/check_mirror"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:checked="false"
+                    android:text="@string/mirror"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/eye_num"
+            android:orientation="horizontal"
+            android:layout_below="@+id/device_status_layout"
+            android:layout_width="match_parent"
+            android:visibility="visible"
+            android:layout_marginTop="0dp"
+            android:layout_height="30dp">
+            <LinearLayout
+                android:layout_weight="1.2"
+                android:layout_width="0dp"
+                android:layout_gravity="center"
+                android:layout_height="wrap_content">
+                <RadioGroup
+                    android:layout_marginStart="10dp"
+                    android:id="@+id/eyeNumRadioGroup"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/left_eye"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="@string/left_eye" />
+
+                    <RadioButton
+                        android:id="@+id/right_eye"
+                        android:checked="false"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text= "@string/right_eye" />
+                </RadioGroup>
+            </LinearLayout>
+
+        </LinearLayout>
+
+
+
+        <LinearLayout
+            android:id="@+id/irex_type"
+            android:orientation="horizontal"
+            android:layout_below="@+id/eye_num"
+            android:layout_width="match_parent"
+            android:visibility="visible"
+            android:layout_marginTop="0dp"
+            android:layout_height="30dp">
+            <LinearLayout
+                android:layout_weight="1.2"
+                android:layout_width="0dp"
+                android:layout_gravity="center"
+                android:layout_height="wrap_content">
+                <RadioGroup
+                    android:layout_marginStart="10dp"
+                    android:id="@+id/irex_type_group"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/k1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="false"
+                        android:text="K1" />
+
+                    <RadioButton
+                        android:id="@+id/k2"
+                        android:checked="false"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text= "K2"/>
+                    <RadioButton
+                        android:id="@+id/k3"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="false"
+                        android:text="K3" />
+
+                    <RadioButton
+                        android:id="@+id/k7"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text= "K7"/>
+                </RadioGroup>
+            </LinearLayout>
+
+        </LinearLayout>
+
+
+        <TextView
+            android:id="@+id/hintTv"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_below="@id/ll_k7"
+            android:gravity="center"
+            android:textColor="@color/RED"
+            android:textSize="20dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="10dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <Spinner
+                android:id="@+id/spinner_speed_level"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+            </Spinner>
+
+        </LinearLayout>
+
+
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:orientation="horizontal"
+            android:weightSum="1">
+
+            <Button
+                android:id="@+id/enrollBtn"
+                android:textAllCaps="false"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
+                android:textColor="@color/white"
+                android:background="@drawable/button_style"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_weight="0.5"
+                android:text="@string/text_enroll"/>
+
+            <Button
+                android:id="@+id/cancel"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
+                android:textColor="@color/white"
+                android:background="@drawable/button_style"
+                android:textAllCaps="false"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_weight="0.5"
+                android:text="@string/stop_stream"/>
+
+            <!--Button
+                android:id="@+id/accept"
+                android:textAllCaps="false"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
+                android:textColor="@color/white"
+                android:background="@drawable/button_style"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_weight="0.5"
+                android:text="@string/accept"/-->
+        </LinearLayout>
+
+
+
+        <!--LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10.0dip"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/capture"
+                android:textAllCaps="false"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
+                android:textColor="@color/white"
+                android:background="@drawable/button_style"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_weight="0.5"
+                android:text="@string/capture"/>
+
+            <Button
+                android:id="@+id/cancel"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
+                android:textColor="@color/white"
+                android:background="@drawable/button_style"
+                android:textAllCaps="false"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_weight="0.5"
+                android:text="@string/stop_stream"/>
+        </LinearLayout-->
+
+        <TextView
+            android:id="@+id/text_exposure"
+            android:layout_width="match_parent"
+            android:layout_height="20dp"
+            android:gravity="center"
+            android:text="@string/exposure"
+            android:textSize="16dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10.0dip"
+            android:orientation="horizontal">
+
+            <SeekBar
+                android:id="@+id/seekbar_exposure"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="754"
+                android:progress="684" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ll_k7"
+            android:orientation="horizontal"
+            android:layout_below="@+id/hintLayout"
+            android:layout_weight="1"
+            android:layout_width="match_parent"
+            android:layout_height="0dp">
+
+            <ImageView
+                android:id="@+id/k7imageLeft"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:layout_gravity="center"
+                android:layout_weight="1"
+                android:scaleType="fitCenter" />
+            <ImageView
+                android:id="@+id/k7imageRight"
+                android:layout_marginStart="2dp"
+                android:layout_weight="1"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:layout_gravity="center"
+                android:scaleType="fitCenter" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+</LinearLayout>

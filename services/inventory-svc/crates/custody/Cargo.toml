@@ -11,7 +11,15 @@ description = "Event-sourced custody domain for M20 inventory management (WP-4.3
 name = "custody"
 path = "src/lib.rs"
 
+[[bin]]
+name = "custody-api"
+path = "src/main.rs"
+
 [dependencies]
+axum              = { workspace = true }
+tokio             = { workspace = true }
+tracing           = { workspace = true }
+tracing-subscriber = { workspace = true }
 eel-outbox-rs = { workspace = true }
 sqlx          = { workspace = true }
 serde         = { workspace = true }
@@ -19,7 +27,6 @@ serde_json    = { workspace = true }
 chrono        = { workspace = true }
 uuid          = { workspace = true }
 thiserror     = { workspace = true }
-tracing       = { workspace = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }

@@ -1,5 +1,7 @@
 //! ABIS API library: router and shared types.
 
+pub mod error;
+pub mod idempotency;
 pub mod middleware;
 pub mod models;
 pub mod openapi;

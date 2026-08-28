@@ -9,6 +9,7 @@ use axum::{Json, Router};
 use crate::handlers::*;
 use crate::state::AppState;
 
+/// Liveness probe returning a minimal `{"status":"ok"}` payload.
 pub async fn health() -> Json<serde_json::Value> {
     Json(serde_json::json!({ "status": "ok" }))
 }
@@ -165,5 +166,19 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/v1/crms/symbols/{id}/reject", post(reject_symbol))
         // Domain events
         .route("/api/v1/crms/events", get(list_events))
+        // Public contract endpoints (crms/nomination.yaml quota + ballot-proofs)
+        .route(
+            "/api/v1/crms/ballot-proofs",
+            post(spec::publish_ballot_proof),
+        )
+        .route(
+            "/api/v1/crms/ballot-proofs/{proof_id}",
+            get(spec::get_ballot_proof),
+        )
+        .route(
+            "/api/v1/crms/quotas/{scope}/{code}",
+            get(spec::get_quota_compliance),
+        )
+        .merge(public::router())
         .with_state(state)
 }

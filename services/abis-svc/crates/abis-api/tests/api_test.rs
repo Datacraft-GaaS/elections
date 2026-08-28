@@ -8,8 +8,58 @@ use tower::ServiceExt;
 
 use abis_api::{app, state::AppState};
 
+fn db_url() -> String {
+    std::env::var("EEL_ABIS_DATABASE_URL")
+        .or_else(|_| std::env::var("DATABASE_URL"))
+        .unwrap_or_else(|_| "postgres://127.0.0.1:5432/eel_abis".to_string())
+}
+
 fn test_app() -> axum::Router {
     app(Arc::new(AppState::new()))
+}
+
+/// Connect to the database, or `None` when none is reachable.
+///
+/// Integration tests that touch the store use this and skip gracefully when
+/// Postgres is unavailable (CI provides it via a service + migrations).
+async fn db_pool() -> Option<sqlx::PgPool> {
+    let pool = sqlx::postgres::PgPoolOptions::new()
+        .max_connections(4)
+        .acquire_timeout(std::time::Duration::from_secs(2))
+        .connect(&db_url())
+        .await
+        .ok()?;
+    sqlx::query("SELECT 1").execute(&pool).await.ok()?;
+    Some(pool)
+}
+
+/// Seed the minimal crypto/blob chain the match handlers require:
+/// a KEK generation and a probe blob manifest row (see `eel_match_requests`
+/// → `eel_blob_manifest` → `eel_kek_generations` FKs).
+async fn seed_probe(pool: &sqlx::PgPool, blob_ref: &str) {
+    sqlx::query(
+        "INSERT INTO eel_kek_generations (kek_version, hsm_key_id, cycle_id) \
+         VALUES (1, 'test-hsm-key', 'test-cycle') \
+         ON CONFLICT (kek_version) DO NOTHING",
+    )
+    .execute(pool)
+    .await
+    .expect("seed kek generation");
+
+    sqlx::query(
+        "INSERT INTO eel_blob_manifest \
+             (blob_ref, sha256, size_bytes, kek_version, dek_wrapped, \
+              minio_bucket, minio_object_key, class, retention_until) \
+         VALUES ($1, $2, 64, 1, $3, 'test-bucket', $4, 'public', NOW() + INTERVAL '1 year') \
+         ON CONFLICT (blob_ref) DO NOTHING",
+    )
+    .bind(blob_ref)
+    .bind([0u8; 32].to_vec())
+    .bind([0u8; 32].to_vec())
+    .bind(format!("probes/{blob_ref}"))
+    .execute(pool)
+    .await
+    .expect("seed probe blob manifest");
 }
 
 fn json_body(s: &str) -> Body {
@@ -33,14 +83,20 @@ async fn test_healthz() {
 
 #[tokio::test]
 async fn test_match_1n() {
-    let app = test_app();
-    let body = r#"{"probe_ref":"p1","modality":"fingerprint","caller_id":"c1","election_id":"e1"}"#;
+    let Some(pool) = db_pool().await else {
+        eprintln!("skipping: no reachable ABIS database");
+        return;
+    };
+    seed_probe(&pool, "p1").await;
+    let app = app(Arc::new(AppState { db: pool }));
+    let body = r#"{"probe_ref":"p1","modality":"fingerprint","caller_id":"c1","election_id":"33333333-2222-3333-4444-555555555555"}"#;
     let resp = app
         .oneshot(
             Request::builder()
                 .method("POST")
                 .uri("/api/v1/abis/match/1n")
                 .header("content-type", "application/json")
+                .header("idempotency-key", "11111111-2222-3333-4444-555555555555")
                 .body(json_body(body))
                 .unwrap(),
         )
@@ -51,7 +107,12 @@ async fn test_match_1n() {
 
 #[tokio::test]
 async fn test_match_11() {
-    let app = test_app();
+    let Some(pool) = db_pool().await else {
+        eprintln!("skipping: no reachable ABIS database");
+        return;
+    };
+    seed_probe(&pool, "p1").await;
+    let app = app(Arc::new(AppState { db: pool }));
     let body = r#"{"probe_ref":"p1","gallery_ref":"g1","modality":"iris","caller_id":"c1"}"#;
     let resp = app
         .oneshot(
@@ -59,6 +120,7 @@ async fn test_match_11() {
                 .method("POST")
                 .uri("/api/v1/abis/match/11")
                 .header("content-type", "application/json")
+                .header("idempotency-key", "22222222-2222-3333-4444-555555555555")
                 .body(json_body(body))
                 .unwrap(),
         )
@@ -69,11 +131,41 @@ async fn test_match_11() {
 
 #[tokio::test]
 async fn test_get_match_result() {
-    let app = test_app();
+    let Some(pool) = db_pool().await else {
+        eprintln!("skipping: no reachable ABIS database");
+        return;
+    };
+    seed_probe(&pool, "p2").await;
+    let app = app(Arc::new(AppState { db: pool }));
+
+    // Mint a request row via 1:n, then fetch its result back.
+    let body = r#"{"probe_ref":"p2","modality":"fingerprint","caller_id":"c1","election_id":"33333333-2222-3333-4444-555555555555"}"#;
+    let submit = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/abis/match/1n")
+                .header("content-type", "application/json")
+                .header("idempotency-key", "44444444-2222-3333-4444-555555555555")
+                .body(json_body(body))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(submit.status(), StatusCode::ACCEPTED);
+
+    let bytes = axum::body::to_bytes(submit.into_body(), 1_000_000).await.unwrap();
+    let request_id = serde_json::from_slice::<serde_json::Value>(&bytes)
+        .unwrap()["request_id"]
+        .as_str()
+        .unwrap()
+        .to_string();
+
     let resp = app
         .oneshot(
             Request::builder()
-                .uri("/api/v1/abis/match/req-001")
+                .uri(format!("/api/v1/abis/match/{request_id}"))
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -146,4 +238,41 @@ async fn test_get_reports() {
         .await
         .unwrap();
     assert_eq!(resp.status(), StatusCode::OK);
+}
+
+#[tokio::test]
+async fn test_kit_enrol_requires_attestation() {
+    let app = test_app();
+    let body = r#"{"subject_id":"00000000-0000-4000-8000-000000000001","operator_id":"op-1","kit_id":"KIT-1","templates":[]}"#;
+    let resp = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/kit/enrolment")
+                .header("content-type", "application/json")
+                .body(json_body(body))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn test_kit_enrol_rejects_non_uuid_subject() {
+    let app = test_app();
+    let body = r#"{"subject_id":"not-a-uuid","operator_id":"op-1","kit_id":"KIT-1","templates":[{"modality":"iris","data_b64":"eA==","quality":0.9}]}"#;
+    let resp = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/kit/enrolment")
+                .header("content-type", "application/json")
+                .header("x-kit-attestation", "test-attestation")
+                .body(json_body(body))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
 }

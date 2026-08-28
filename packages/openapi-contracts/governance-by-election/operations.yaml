@@ -25,6 +25,7 @@ paths:
   /api/v1/governance/by-election/elections:
     post:
       operationId: declareByElection
+      x-handler-bound: governance-svc.governance-by-election.declare_by_election
       tags: [by-elections]
       summary: Declare a by-election
       description: >
@@ -67,6 +68,7 @@ paths:
 
     get:
       operationId: listByElections
+      x-handler-bound: governance-svc.governance-by-election.list_by_elections
       tags: [by-elections]
       summary: List by-elections
       description: >
@@ -117,6 +119,7 @@ paths:
   /api/v1/governance/by-election/elections/{by_election_id}:
     get:
       operationId: getByElection
+      x-handler-bound: governance-svc.governance-by-election.get_by_election
       tags: [by-elections]
       summary: Get by-election detail
       description: Returns full detail for a specific by-election. Tier 2 public endpoint.
@@ -142,6 +145,7 @@ paths:
   /api/v1/governance/by-election/elections/{by_election_id}/status:
     patch:
       operationId: transitionByElectionStatus
+      x-handler-bound: governance-svc.governance-by-election.transition_by_election_status
       tags: [by-elections]
       summary: Transition by-election status
       description: >

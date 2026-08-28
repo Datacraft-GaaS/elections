@@ -29,6 +29,7 @@ paths:
   /api/v1/diaspora/embassies:
     get:
       operationId: listEmbassies
+      x-handler-bound: biometric-edge-svc.diaspora-logistics.list_embassies
       tags: [embassies]
       summary: List embassies with diaspora voting
       description: >
@@ -74,6 +75,7 @@ paths:
   /api/v1/diaspora/embassies/{embassy_code}:
     get:
       operationId: getEmbassy
+      x-handler-bound: biometric-edge-svc.diaspora-logistics.get_embassy
       tags: [embassies]
       summary: Embassy detail
       description: Returns detailed information for a specific embassy. Tier 1 public endpoint.
@@ -110,6 +112,7 @@ paths:
   /api/v1/diaspora/ballot-dispatches:
     post:
       operationId: createBallotDispatch
+      x-handler-bound: biometric-edge-svc.diaspora-logistics.create_ballot_dispatch
       tags: [dispatches]
       summary: Record ballot dispatch to embassy
       description: >
@@ -152,6 +155,7 @@ paths:
 
     get:
       operationId: listBallotDispatches
+      x-handler-bound: biometric-edge-svc.diaspora-logistics.list_ballot_dispatches
       tags: [dispatches]
       summary: List ballot dispatches
       description: Paginated list of ballot dispatches. Tier 3 endpoint.
@@ -193,6 +197,7 @@ paths:
   /api/v1/diaspora/ballot-dispatches/{dispatch_id}:
     get:
       operationId: getBallotDispatch
+      x-handler-bound: biometric-edge-svc.diaspora-logistics.get_ballot_dispatch
       tags: [dispatches]
       summary: Get ballot dispatch detail
       description: Returns full detail for a specific dispatch. Tier 3 endpoint.
@@ -224,6 +229,7 @@ paths:
   /api/v1/diaspora/ballot-dispatches/{dispatch_id}/delivery-confirmation:
     post:
       operationId: confirmBallotDelivery
+      x-handler-bound: biometric-edge-svc.diaspora-logistics.confirm_ballot_delivery
       tags: [dispatches]
       summary: Confirm ballot delivery at embassy
       description: >
@@ -270,6 +276,7 @@ paths:
   /api/v1/diaspora/return-dispatches:
     get:
       operationId: listReturnDispatches
+      x-handler-bound: biometric-edge-svc.diaspora-logistics.list_return_dispatches
       tags: [returns]
       summary: List return dispatches of unused ballots
       description: >

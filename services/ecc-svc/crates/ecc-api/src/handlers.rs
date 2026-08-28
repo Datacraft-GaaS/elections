@@ -180,3 +180,86 @@ pub async fn ussd_session(Json(req): Json<UssdSessionRequest>) -> impl IntoRespo
 pub async fn whatsapp_webhook(Json(_payload): Json<WhatsappWebhookPayload>) -> impl IntoResponse {
     StatusCode::OK
 }
+
+// Section 44A handlers
+
+use axum::extract::State;
+use axum::response::Response;
+use chrono::Utc;
+use crate::store::{S44aRow, Store, StoreError};
+
+fn store_error_response(err: StoreError) -> Response {
+    match err {
+        StoreError::S44aConfirmationExists => (
+            StatusCode::CONFLICT,
+            "s44a confirmation already exists for station",
+        )
+            .into_response(),
+        StoreError::S44aNotAwaitingOfficer2 => (
+            StatusCode::CONFLICT,
+            "no s44a confirmation awaiting officer2 for station",
+        )
+            .into_response(),
+        other => (StatusCode::INTERNAL_SERVER_ERROR, other.to_string()).into_response(),
+    }
+}
+
+/// POST /ecc/s44a/officer1 -- record officer 1 confirmation for a station.
+///
+/// Returns 409 if the station already has a confirmation row.
+pub async fn create_s44a_officer1(
+    State(store): State<Store>,
+    Json(req): Json<S44aOfficer1Request>,
+) -> Response {
+    info!(station_code=%req.station_code, officer_id=%req.officer_id, "s44a officer1 confirm");
+    let row = S44aRow {
+        confirmation_id: Uuid::new_v4(),
+        county_code: req.county_code.clone(),
+        station_code: req.station_code.clone(),
+        officer1_id: req.officer_id,
+        officer1_confirmed_at: Utc::now(),
+        officer2_id: None,
+        officer2_confirmed_at: None,
+        status: "officer1_confirmed".to_string(),
+    };
+    let confirmation_id = row.confirmation_id;
+    match store.insert_s44a_officer1(&row).await {
+        Ok(()) => (
+            StatusCode::CREATED,
+            Json(S44aConfirmation {
+                confirmation_id,
+                station_code: req.station_code,
+                status: "officer1_confirmed".to_string(),
+            }),
+        )
+            .into_response(),
+        Err(e) => store_error_response(e),
+    }
+}
+
+/// POST /ecc/s44a/officer2 -- complete dual-officer verification.
+///
+/// Returns 409 if no confirmation is in the `officer1_confirmed` state.
+pub async fn complete_s44a_officer2(
+    State(store): State<Store>,
+    Json(req): Json<S44aOfficer2Request>,
+) -> Response {
+    info!(station_code=%req.station_code, officer_id=%req.officer_id, "s44a officer2 confirm");
+    match store
+        .complete_s44a_officer2(&req.station_code, &req.officer_id, Utc::now())
+        .await
+    {
+        Ok(Some(row)) => Json(S44aConfirmation {
+            confirmation_id: row.confirmation_id,
+            station_code: row.station_code,
+            status: row.status,
+        })
+        .into_response(),
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            format!("no s44a confirmation for station {}", req.station_code),
+        )
+            .into_response(),
+        Err(e) => store_error_response(e),
+    }
+}

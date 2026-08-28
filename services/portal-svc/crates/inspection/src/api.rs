@@ -17,11 +17,13 @@ use crate::{
     events,
 };
 
-#[derive(Clone)]
-pub struct AppState {}
+#[derive(Clone, Default)]
+pub struct AppState {
+    pub snapshots: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, crate::domain::RollSnapshot>>>,
+}
 
 pub fn router() -> Router {
-    let state = AppState {};
+    let state = AppState::default();
     Router::new()
         .route("/rolls/snapshot", post(create_roll_snapshot))
         .route("/rolls/snapshot/{id}", get(get_roll_snapshot))
@@ -33,6 +35,10 @@ pub fn router() -> Router {
         .route("/corrections/{id}", get(get_correction))
         .route("/corrections/{id}/decision", patch(decide_correction))
         .route("/corrections/auto-referral/run", post(run_auto_referral))
+        // Public contract endpoints (inspection/voter-list.yaml)
+        .route("/api/v1/inspection/voter-list/snapshots", get(list_voter_list_snapshots))
+        .route("/api/v1/inspection/voter-list/snapshots/{snapshot_id}", get(get_voter_list_snapshot))
+        .route("/api/v1/inspection/voter-list/search", get(search_voter_list))
         .with_state(state)
 }
 
@@ -89,7 +95,7 @@ pub struct DecideCorrectionReq {
 // --- Handlers ---
 
 async fn create_roll_snapshot(
-    State(_state): State<AppState>,
+    State(state): State<AppState>,
     Json(req): Json<CreateSnapshotReq>,
 ) -> impl IntoResponse {
     let snap = RollSnapshot {
@@ -101,6 +107,7 @@ async fn create_roll_snapshot(
     };
     let _ev = events::roll_snapshotted_v1(&snap.id, &snap.snapshot_hash);
     tracing::info!(id = %snap.id, "roll snapshot created");
+    state.snapshots.lock().expect("lock poisoned").insert(snap.id.to_string(), snap.clone());
     (StatusCode::CREATED, Json(snap))
 }
 
@@ -210,4 +217,53 @@ async fn run_auto_referral(State(_state): State<AppState>) -> impl IntoResponse 
     // and delegates to auto_referral::AutoReferralScheduler.
     tracing::info!("auto-referral run triggered (stub)");
     StatusCode::NO_CONTENT
+}
+
+// --- Public contract handlers (inspection/voter-list.yaml) ---
+
+async fn list_voter_list_snapshots(State(state): State<AppState>) -> impl IntoResponse {
+    let guard = state.snapshots.lock().expect("lock poisoned");
+    let mut snapshots: Vec<serde_json::Value> = guard
+        .values()
+        .map(|s| {
+            serde_json::json!({
+                "snapshot_id": s.id.to_string(),
+                "published_at": s.taken_at.to_rfc3339(),
+                "station_count": s.station_count,
+                "total_registered": s.voter_count,
+                "hash": s.snapshot_hash,
+            })
+        })
+        .collect();
+    drop(guard);
+    snapshots.sort_by(|a, b| a["snapshot_id"].as_str().cmp(&b["snapshot_id"].as_str()));
+    Json(serde_json::json!({ "snapshots": snapshots, "total": snapshots.len() }))
+}
+
+async fn get_voter_list_snapshot(
+    State(state): State<AppState>,
+    Path(snapshot_id): Path<String>,
+) -> impl IntoResponse {
+    let guard = state.snapshots.lock().expect("lock poisoned");
+    match guard.get(&snapshot_id) {
+        Some(s) => Json(serde_json::json!({
+            "snapshot_id": s.id.to_string(),
+            "published_at": s.taken_at.to_rfc3339(),
+            "station_count": s.station_count,
+            "total_registered": s.voter_count,
+            "hash": s.snapshot_hash,
+            "download_url": format!("https://inspection.eel.local/snapshots/{snapshot_id}"),
+            "download_expires_at": (chrono::Utc::now() + chrono::Duration::hours(1)).to_rfc3339(),
+        }))
+        .into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({ "detail": "snapshot not found" })),
+        )
+            .into_response(),
+    }
+}
+
+async fn search_voter_list(State(_state): State<AppState>) -> impl IntoResponse {
+    Json(serde_json::json!({ "found": false, "polling_station_name": serde_json::Value::Null }))
 }

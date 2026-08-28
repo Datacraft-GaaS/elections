@@ -380,6 +380,7 @@ paths:
   /api/v1/verifier/whatsapp/webhook:
     get:
       operationId: verifyWhatsAppWebhook
+      x-handler-bound: bvr-svc.verifier.verify_whatsapp_webhook
       summary: "Meta webhook verification challenge"
       description: >
         Meta sends this GET request when the webhook URL is registered or re-verified
@@ -434,6 +435,7 @@ paths:
 
     post:
       operationId: handleWhatsAppWebhookFull
+      x-handler-bound: bvr-svc.verifier.handle_whatsapp_webhook
       summary: "WhatsApp Cloud API inbound event webhook"
       description: >
         Meta POSTs incoming messages and status updates here.

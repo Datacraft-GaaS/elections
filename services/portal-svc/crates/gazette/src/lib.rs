@@ -8,3 +8,6 @@ pub use domain::{
     SubscriptionChannel,
 };
 pub use rules::derive_notices;
+
+pub mod spec;
+pub mod spec_handlers;

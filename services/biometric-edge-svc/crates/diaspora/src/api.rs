@@ -30,6 +30,9 @@ pub struct DiasporaState {
     pub forms: Mutex<Vec<Form34ADiaspora>>,
     pub pouches: Mutex<Vec<PouchCustody>>,
     pub batches: Mutex<Vec<TransmissionBatch>>,
+    pub embassies: Mutex<HashMap<String, serde_json::Value>>,
+    pub ballot_dispatches: Mutex<HashMap<String, serde_json::Value>>,
+    pub return_dispatches: Mutex<HashMap<String, serde_json::Value>>,
 }
 
 pub type SharedState = Arc<DiasporaState>;
@@ -54,6 +57,13 @@ pub fn router() -> Router<SharedState> {
         .route("/pouches", post(create_pouch))
         .route("/pouches/{id}/transfer", post(transfer_pouch))
         .route("/pouches/{id}/receive", post(receive_pouch))
+        // Public contract endpoints (diaspora-logistics/logistics.yaml)
+        .route("/api/v1/diaspora/embassies", get(crate::spec::list_embassies))
+        .route("/api/v1/diaspora/embassies/{embassy_code}", get(crate::spec::get_embassy))
+        .route("/api/v1/diaspora/ballot-dispatches", get(crate::spec::list_ballot_dispatches).post(crate::spec::create_ballot_dispatch))
+        .route("/api/v1/diaspora/ballot-dispatches/{dispatch_id}", get(crate::spec::get_ballot_dispatch))
+        .route("/api/v1/diaspora/ballot-dispatches/{dispatch_id}/delivery-confirmation", post(crate::spec::confirm_ballot_delivery))
+        .route("/api/v1/diaspora/return-dispatches", get(crate::spec::list_return_dispatches))
 }
 
 // ---- Station handlers -------------------------------------------------------
@@ -80,13 +90,13 @@ async fn create_station(
         body.station_code,
         body.kits_deployed,
     );
-    let mut lock = state.stations.lock().unwrap();
+    let mut lock = state.stations.lock().expect("lock poisoned");
     lock.push(station.clone());
     (StatusCode::CREATED, Json(station))
 }
 
 async fn list_stations(State(state): State<SharedState>) -> impl IntoResponse {
-    let lock = state.stations.lock().unwrap();
+    let lock = state.stations.lock().expect("lock poisoned");
     Json(lock.clone())
 }
 
@@ -94,7 +104,7 @@ async fn open_station(
     State(state): State<SharedState>,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse {
-    let mut lock = state.stations.lock().unwrap();
+    let mut lock = state.stations.lock().expect("lock poisoned");
     if let Some(s) = lock.iter_mut().find(|s| s.id == id) {
         s.opened_at = Some(Utc::now());
         s.closed_at = None;
@@ -107,7 +117,7 @@ async fn close_station(
     State(state): State<SharedState>,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse {
-    let mut lock = state.stations.lock().unwrap();
+    let mut lock = state.stations.lock().expect("lock poisoned");
     if let Some(s) = lock.iter_mut().find(|s| s.id == id) {
         s.closed_at = Some(Utc::now());
         return (StatusCode::OK, Json(serde_json::json!({"status": "closed"}))).into_response();
@@ -167,7 +177,7 @@ async fn import_roll(
             .unwrap_or_else(Uuid::now_v7);
 
         let roll = roll_from_voter_ids(station_id, voter_ids);
-        state.rolls.lock().unwrap().push(roll);
+        state.rolls.lock().expect("lock poisoned").push(roll);
     }
 
     (StatusCode::OK, Json(report))
@@ -177,7 +187,7 @@ async fn freeze_roll(
     State(state): State<SharedState>,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse {
-    let mut lock = state.rolls.lock().unwrap();
+    let mut lock = state.rolls.lock().expect("lock poisoned");
     if let Some(pos) = lock.iter().position(|r| r.id == id) {
         let roll = lock.remove(pos).freeze(Utc::now());
         lock.push(roll.clone());
@@ -190,7 +200,7 @@ async fn get_roll(
     State(state): State<SharedState>,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse {
-    let lock = state.rolls.lock().unwrap();
+    let lock = state.rolls.lock().expect("lock poisoned");
     if let Some(roll) = lock.iter().find(|r| r.id == id) {
         return (StatusCode::OK, Json(roll.clone())).into_response();
     }
@@ -229,7 +239,7 @@ async fn create_form34a(
     );
     form.hsm_signature = body.hsm_signature;
 
-    state.forms.lock().unwrap().push(form.clone());
+    state.forms.lock().expect("lock poisoned").push(form.clone());
 
     let response = Form34AResponse {
         form,
@@ -242,7 +252,7 @@ async fn get_form34a(
     State(state): State<SharedState>,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse {
-    let lock = state.forms.lock().unwrap();
+    let lock = state.forms.lock().expect("lock poisoned");
     if let Some(form) = lock.iter().find(|f| f.id == id) {
         return (StatusCode::OK, Json(form.clone())).into_response();
     }
@@ -260,7 +270,7 @@ async fn create_batch(
     State(state): State<SharedState>,
     Json(body): Json<CreateBatchBody>,
 ) -> impl IntoResponse {
-    let forms_lock = state.forms.lock().unwrap();
+    let forms_lock = state.forms.lock().expect("lock poisoned");
     let forms: Vec<Form34ADiaspora> = forms_lock
         .iter()
         .filter(|f| body.form_ids.contains(&f.id))
@@ -269,7 +279,7 @@ async fn create_batch(
     drop(forms_lock);
 
     let (batch, _deduped) = batch_transmit(forms, Utc::now());
-    state.batches.lock().unwrap().push(batch.clone());
+    state.batches.lock().expect("lock poisoned").push(batch.clone());
 
     (StatusCode::CREATED, Json(serde_json::json!({
         "id": batch.id,
@@ -282,7 +292,7 @@ async fn get_batch(
     State(state): State<SharedState>,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse {
-    let lock = state.batches.lock().unwrap();
+    let lock = state.batches.lock().expect("lock poisoned");
     if let Some(b) = lock.iter().find(|b| b.id == id) {
         return (StatusCode::OK, Json(serde_json::json!({
             "id": b.id,
@@ -310,7 +320,7 @@ async fn create_pouch(
     if let Some(seal_id) = body.seal_id {
         pouch.seal(seal_id, Utc::now());
     }
-    state.pouches.lock().unwrap().push(pouch.clone());
+    state.pouches.lock().expect("lock poisoned").push(pouch.clone());
     (StatusCode::CREATED, Json(pouch))
 }
 
@@ -329,7 +339,7 @@ async fn transfer_pouch(
     Path(id): Path<Uuid>,
     Json(body): Json<TransferPouchBody>,
 ) -> impl IntoResponse {
-    let mut lock = state.pouches.lock().unwrap();
+    let mut lock = state.pouches.lock().expect("lock poisoned");
     if let Some(pouch) = lock.iter_mut().find(|p| p.id == id) {
         let event = CustodyEvent {
             transferred_at: Utc::now(),
@@ -350,7 +360,7 @@ async fn receive_pouch(
     State(state): State<SharedState>,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse {
-    let mut lock = state.pouches.lock().unwrap();
+    let mut lock = state.pouches.lock().expect("lock poisoned");
     if let Some(pouch) = lock.iter_mut().find(|p| p.id == id) {
         pouch.receive_at_nairobi(Utc::now());
         return (StatusCode::OK, Json(pouch.clone())).into_response();

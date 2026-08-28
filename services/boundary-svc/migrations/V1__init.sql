@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS shapefile_imports (
 -- Outbox (consumed by eel-outbox-rs)
 -- ---------------------------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS outbox (
+CREATE TABLE IF NOT EXISTS boundary_outbox (
     id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     aggregate_id  TEXT NOT NULL,
     event_type    TEXT NOT NULL,
@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS outbox (
     published_at  TIMESTAMPTZ
 );
 
-CREATE INDEX ON outbox (published_at) WHERE published_at IS NULL;
+CREATE INDEX ON boundary_outbox (published_at) WHERE published_at IS NULL;
 
 -- ---------------------------------------------------------------------------
 -- Audit shadow log (populated by trigger from eel-observability-rs)

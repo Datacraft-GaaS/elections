@@ -30,6 +30,7 @@ paths:
   /api/v1/governance/court/petitions:
     post:
       operationId: filePetition
+      x-handler-bound: governance-svc.governance-court.file_petition
       tags: [petitions]
       summary: File an election petition
       description: >
@@ -69,6 +70,7 @@ paths:
 
     get:
       operationId: listPetitions
+      x-handler-bound: governance-svc.governance-court.list_petitions
       tags: [petitions]
       summary: List petitions
       description: Paginated list of election petitions. Tier 3 endpoint.
@@ -107,6 +109,7 @@ paths:
   /api/v1/governance/court/petitions/{petition_id}:
     get:
       operationId: getPetition
+      x-handler-bound: governance-svc.governance-court.get_petition
       tags: [petitions]
       summary: Get petition detail
       description: Returns full detail for a specific petition. Tier 3 endpoint.
@@ -135,6 +138,7 @@ paths:
   /api/v1/governance/court/petitions/{petition_id}/evidence-requests:
     post:
       operationId: createEvidenceRequest
+      x-handler-bound: governance-svc.governance-court.create_evidence_request
       tags: [evidence]
       summary: Court requests an evidence package
       description: >
@@ -178,6 +182,7 @@ paths:
   /api/v1/governance/court/petitions/{petition_id}/judgments:
     post:
       operationId: recordJudgment
+      x-handler-bound: governance-svc.governance-court.record_judgment
       tags: [judgments]
       summary: Record a court judgment
       description: >

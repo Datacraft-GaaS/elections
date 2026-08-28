@@ -1,5 +1,5 @@
 use axum::{
-    extract::Path,
+    extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
     Json,
@@ -9,21 +9,12 @@ use tracing::info;
 use crate::cost_report::build_cost_report;
 use crate::kit_plan::{generate_kit_plan, sign_kit_plan};
 use crate::models::*;
+use crate::spec;
+use crate::state::SharedState;
 use crate::register_subset::generate_subset;
 
 pub async fn health() -> impl IntoResponse {
     StatusCode::OK
-}
-
-pub async fn list_by_elections() -> impl IntoResponse {
-    info!("list_by_elections");
-    let elections: Vec<ByElection> = vec![];
-    Json(serde_json::json!({ "by_elections": elections, "total": 0 }))
-}
-
-pub async fn get_by_election(Path(id): Path<String>) -> impl IntoResponse {
-    info!(id, "get_by_election");
-    Json(ByElection { id, ..Default::default() })
 }
 
 pub async fn create_by_election(Json(body): Json<serde_json::Value>) -> impl IntoResponse {
@@ -113,4 +104,81 @@ pub async fn get_cost_report(Path(id): Path<String>) -> impl IntoResponse {
         by_election_id: id,
         ..Default::default()
     })
+}
+
+// ---------------------------------------------------------------------------
+// Public contract endpoints (governance-by-election/operations.yaml)
+// ---------------------------------------------------------------------------
+
+/// POST /api/v1/governance/by-election/elections — declare a by-election.
+pub async fn declare_by_election(
+    State(state): State<SharedState>,
+    Json(req): Json<spec::ByElectionDeclaration>,
+) -> impl IntoResponse {
+    info!(constituency = %req.constituency_code, "declare_by_election");
+    let now = chrono::Utc::now().to_rfc3339();
+    let election = spec::ByElection {
+        by_election_id: uuid::Uuid::now_v7().to_string(),
+        trigger_reason: req.trigger_reason,
+        constituency_code: req.constituency_code,
+        gazette_ref: req.gazette_ref,
+        election_date: req.election_date,
+        status: "declared".to_string(),
+        created_at: now.clone(),
+        updated_at: now,
+    };
+    let mut guard = state.elections.lock().expect("lock poisoned");
+    guard.insert(election.by_election_id.clone(), election.clone());
+    drop(guard);
+    (StatusCode::CREATED, Json(election)).into_response()
+}
+
+/// GET /api/v1/governance/by-election/elections — list by-elections.
+pub async fn list_by_elections(State(state): State<SharedState>) -> impl IntoResponse {
+    info!("list_by_elections");
+    let guard = state.elections.lock().expect("lock poisoned");
+    let mut items: Vec<spec::ByElection> = guard.values().cloned().collect();
+    drop(guard);
+    items.sort_by(|a, b| a.created_at.cmp(&b.created_at));
+    Json(serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }))
+}
+
+/// GET /api/v1/governance/by-election/elections/{by_election_id} — fetch one.
+pub async fn get_by_election(
+    State(state): State<SharedState>,
+    Path(by_election_id): Path<String>,
+) -> impl IntoResponse {
+    info!(by_election_id, "get_by_election");
+    let guard = state.elections.lock().expect("lock poisoned");
+    match guard.get(&by_election_id) {
+        Some(e) => Json(e.clone()).into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"detail": "by-election not found"})),
+        )
+            .into_response(),
+    }
+}
+
+/// PATCH /api/v1/governance/by-election/elections/{by_election_id}/status —
+/// transition the by-election status.
+pub async fn transition_by_election_status(
+    State(state): State<SharedState>,
+    Path(by_election_id): Path<String>,
+    Json(req): Json<spec::StatusTransition>,
+) -> impl IntoResponse {
+    info!(by_election_id, new_status = %req.new_status, "transition_by_election_status");
+    let mut guard = state.elections.lock().expect("lock poisoned");
+    match guard.get_mut(&by_election_id) {
+        Some(e) => {
+            e.status = req.new_status;
+            e.updated_at = chrono::Utc::now().to_rfc3339();
+            Json(e.clone()).into_response()
+        }
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"detail": "by-election not found"})),
+        )
+            .into_response(),
+    }
 }

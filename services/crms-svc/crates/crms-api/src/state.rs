@@ -21,27 +21,53 @@ use crms_domain::payment::FeeSchedule;
 use crms_domain::primaries::PrimaryDispute;
 use crms_domain::primaries::PrimaryResult;
 use crms_domain::symbol::PartySymbol;
+
+use crate::spec::BallotProof as SpecBallotProof;
 use uuid::Uuid;
 
 /// Process-local registries backing the CRMS handlers.
 #[derive(Default)]
 pub struct AppState {
+    /// Candidates by id.
     pub candidates: Mutex<HashMap<Uuid, Candidate>>,
+    /// Nominations by id.
     pub nominations: Mutex<HashMap<Uuid, Nomination>>,
+    /// Clearance decisions in insertion order.
     pub clearances: Mutex<Vec<ClearanceDecision>>,
+    /// Gazettes by id.
     pub gazettes: Mutex<HashMap<Uuid, Gazette>>,
+    /// Ballot proofs by id.
     pub ballots: Mutex<HashMap<Uuid, BallotProof>>,
+    /// Parties by id.
     pub parties: Mutex<HashMap<Uuid, PoliticalParty>>,
+    /// Coalitions by id.
     pub coalitions: Mutex<HashMap<Uuid, CoalitionRegistration>>,
+    /// Primary results by id.
     pub primary_results: Mutex<HashMap<Uuid, PrimaryResult>>,
+    /// Primary disputes in insertion order.
     pub disputes: Mutex<Vec<PrimaryDispute>>,
+    /// Fee schedules in insertion order.
     pub fee_schedules: Mutex<Vec<FeeSchedule>>,
+    /// Fee payments by id.
     pub payments: Mutex<HashMap<Uuid, FeePayment>>,
+    /// Party symbols by id.
     pub symbols: Mutex<HashMap<Uuid, PartySymbol>>,
+    /// Domain events in insertion order.
     pub events: Mutex<Vec<DomainEvent>>,
+    /// Spec-facing ballot proofs (governance/nomination ballot-proofs surface).
+    pub spec_ballot_proofs: Mutex<HashMap<String, SpecBallotProof>>,
+    /// Public party registrations (party/registration.yaml).
+    pub public_registrations: Mutex<HashMap<String, serde_json::Value>>,
+    /// Public primary schedules (party/primaries.yaml).
+    pub public_primaries: Mutex<HashMap<String, serde_json::Value>>,
+    /// Public symbol registrations (symbol/registry.yaml).
+    pub public_symbols: Mutex<HashMap<String, serde_json::Value>>,
+    /// Public nomination fees (nomination/fees.yaml).
+    pub public_fees: Mutex<HashMap<String, serde_json::Value>>,
 }
 
 impl AppState {
+    /// Construct an empty in-memory state.
     pub fn new() -> Self {
         Self::default()
     }

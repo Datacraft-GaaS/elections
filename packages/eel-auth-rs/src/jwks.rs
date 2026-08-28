@@ -30,6 +30,7 @@ struct KeycloakClaims {
     pub iat: i64,
     pub iss: String,
     pub azp: Option<String>,
+    pub aud: Option<AudValue>,
     pub sid: Option<String>,
     pub scope: Option<String>,
     pub realm_access: Option<RealmAccess>,
@@ -40,16 +41,48 @@ struct RealmAccess {
     pub roles: Vec<String>,
 }
 
+/// JWT `aud` may be a single string or an array; Keycloak uses both.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+enum AudValue {
+    One(String),
+    Many(Vec<String>),
+}
+
+impl AudValue {
+    fn contains(&self, aud: &str) -> bool {
+        match self {
+            AudValue::One(a) => a == aud,
+            AudValue::Many(xs) => xs.iter().any(|a| a == aud),
+        }
+    }
+}
+
 /// Cached JWKS verifier with automatic kid-miss refetch.
 pub struct JwksVerifier {
     jwks_url: String,
     http: Client,
     cache: Cache<String, Arc<Jwk>>,
     realm: String,
+    /// Expected `aud`/`azp` claim. When set, tokens minted for any other
+    /// audience are rejected -- preventing cross-service replay of operator
+    /// credentials. Unset preserves legacy behaviour (any audience).
+    expected_audience: Option<String>,
 }
 
 impl JwksVerifier {
     pub fn new(jwks_url: impl Into<String>, realm: impl Into<String>) -> Self {
+        Self::with_audience(jwks_url, realm, None)
+    }
+
+    /// Build a verifier pinned to one audience. Services SHOULD pass their
+    /// own audience (e.g. from `EEL_OIDC_AUDIENCE`) so tokens issued for a
+    /// different service are refused.
+    pub fn with_audience(
+        jwks_url: impl Into<String>,
+        realm: impl Into<String>,
+        audience: Option<String>,
+    ) -> Self {
         let cache = Cache::builder()
             .max_capacity(64)
             .time_to_live(Duration::from_secs(300))
@@ -63,6 +96,7 @@ impl JwksVerifier {
                 .expect("http client"),
             cache,
             realm: realm.into(),
+            expected_audience: audience,
         }
     }
 
@@ -102,13 +136,39 @@ impl JwksVerifier {
             .replace("/.well-known/openid-configuration/jwks", "")
             .replace("/protocol/openid-connect/certs", "");
         validation.set_issuer(&[&issuer_base]);
-        validation.validate_aud = false;
+
+        // Audience policy: when a pin is configured, require the token to
+        // carry it; otherwise keep the historical any-audience behaviour.
+        match self.expected_audience.as_deref() {
+            Some(aud) => {
+                validation.validate_aud = true;
+                validation.set_audience(&[aud]);
+            }
+            None => validation.validate_aud = false,
+        }
 
         let token_data = decode::<KeycloakClaims>(token, &decoding_key, &validation)
             .map_err(|e| match e.kind() {
                 jsonwebtoken::errors::ErrorKind::ExpiredSignature => AuthError::TokenExpired,
                 _ => AuthError::JwtVerification(e.to_string()),
             })?;
+
+        if let Some(aud) = self.expected_audience.as_deref() {
+            // Keycloak service accounts may omit aud and rely on azp; accept
+            // azp == pinned audience as an alternative proof of intent.
+            let azp_ok = token_data.claims.azp.as_deref() == Some(aud);
+            let aud_ok = token_data
+                .claims
+                .aud
+                .as_ref()
+                .map(|a| a.contains(aud))
+                .unwrap_or(false);
+            if !aud_ok && !azp_ok {
+                return Err(AuthError::JwtVerification(format!(
+                    "token audience mismatch: expected {aud}"
+                )));
+            }
+        }
 
         let claims = token_data.claims;
         let roles = claims.realm_access.map(|r| r.roles).unwrap_or_default();

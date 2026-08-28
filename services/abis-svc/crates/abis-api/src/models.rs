@@ -1,139 +1,195 @@
 //! API request/response models for the ABIS service.
 
+use chrono::{DateTime, Utc};
 use utoipa::ToSchema;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Modality {
-    Fingerprint,
-    Iris,
-    Face,
-    Multimodal,
+	Fingerprint,
+	Iris,
+	Face,
+	Multimodal,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum MatchOutcome {
-    Match,
-    NoMatch,
-    Inconclusive,
-    Adjudicate,
-    InsufficientQuality,
+	Match,
+	NoMatch,
+	Inconclusive,
+	Adjudicate,
+	InsufficientQuality,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct Match1NRequest {
-    pub probe_ref: String,
-    pub modality: Modality,
-    pub caller_id: String,
-    pub election_id: String,
+	pub probe_ref: String,
+	pub modality: String,
+	pub caller_id: String,
+	pub election_id: String,
+	#[serde(default)]
+	pub threshold_override: Option<f32>,
+	#[serde(default)]
+	pub max_candidates: Option<u32>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct Match11Request {
-    pub probe_ref: String,
-    pub gallery_ref: String,
-    pub modality: Modality,
-    pub caller_id: String,
+	pub probe_ref: String,
+	pub gallery_ref: String,
+	pub modality: String,
+	pub caller_id: String,
+	#[serde(default)]
+	pub purpose: Option<String>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct MatchAccepted {
-    pub request_id: String,
-    pub status: String,
-    pub estimated_completion_ms: u64,
+	pub request_id: String,
+	pub status: String,
+	pub estimated_completion_ms: u64,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct Match1NResult {
-    pub request_id: String,
-    pub status: String,
-    pub candidates: Vec<MatchCandidate>,
+	pub request_id: String,
+	pub status: String,
+	#[serde(default)]
+	pub candidates: Vec<MatchCandidate>,
+	pub submitted_at: DateTime<Utc>,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub completed_at: Option<DateTime<Utc>>,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub failure_reason: Option<String>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct MatchCandidate {
-    pub gallery_ref: String,
-    pub score: f32,
-    pub decision: String,
+	pub gallery_ref: String,
+	pub score: f32,
+	pub decision: String,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub modality: Option<String>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct Match11Result {
-    pub request_id: String,
-    pub decision: String,
-    pub score: f32,
-    pub threshold_used: f32,
-    pub processed_at: String,
+	pub request_id: String,
+	pub decision: String,
+	pub score: f32,
+	pub threshold_used: f32,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub modality: Option<String>,
+	pub processed_at: DateTime<Utc>,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub engine_version: Option<String>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum AdjudicationStatus {
-    Open,
-    InReview,
-    Resolved,
-    Escalated,
+	Open,
+	InReview,
+	Resolved,
+	Escalated,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct AdjudicationCase {
-    pub case_id: String,
-    pub status: AdjudicationStatus,
-    pub match_score: f32,
-    pub probe_ref: String,
-    pub candidate_gallery_ref: String,
-    pub created_at: String,
+	pub case_id: String,
+	pub status: String,
+	pub match_score: f32,
+	pub probe_ref: String,
+	pub candidate_gallery_ref: String,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub outcome: Option<String>,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub resolution_notes: Option<String>,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub adjudicator_id: Option<String>,
+	pub created_at: DateTime<Utc>,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub resolved_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
+pub struct PaginationMeta {
+	pub total: i64,
+	pub page: u32,
+	pub page_size: u32,
+	pub has_next: bool,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct AdjudicationCasePage {
-    pub cases: Vec<AdjudicationCase>,
-    pub total: u64,
+	pub cases: Vec<AdjudicationCase>,
+	pub pagination: PaginationMeta,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct AdjudicationResolutionRequest {
-    pub outcome: String,
-    pub adjudicator_id: String,
-    pub resolution_notes: String,
+	pub outcome: String,
+	pub adjudicator_id: String,
+	pub resolution_notes: String,
+	#[serde(default)]
+	pub supporting_refs: Vec<String>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct BatchDedupRequest {
-    pub election_id: String,
-    pub mode: String,
-    pub requester_id: String,
+	pub election_id: String,
+	pub mode: String,
+	pub requester_id: String,
+	#[serde(default)]
+	pub modality: Option<String>,
+	#[serde(default)]
+	pub priority: Option<String>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct BatchJobAccepted {
-    pub job_id: String,
-    pub status: String,
-    pub estimated_duration_s: u64,
+	pub job_id: String,
+	pub status: String,
+	pub estimated_duration_s: i64,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub probe_count: Option<i64>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct AbisReport {
-    pub generated_at: String,
-    pub gallery_size: u64,
-    pub pending_dedup_count: u64,
-    pub open_adjudication_count: u32,
-    pub match_throughput_per_hour: u64,
-    pub duplicate_rate_pct: f32,
-    pub p99_match_ms: u32,
+	pub generated_at: DateTime<Utc>,
+	pub gallery_size: i64,
+	pub pending_dedup_count: i64,
+	pub open_adjudication_count: i64,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub match_throughput_per_hour: Option<i64>,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub duplicate_rate_pct: Option<f64>,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub p50_match_ms: Option<f64>,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub p95_match_ms: Option<f64>,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub p99_match_ms: Option<f64>,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub error_rate_pct: Option<f64>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
 pub struct HealthResponse {
-    pub ok: bool,
+	pub ok: bool,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema)]
+/// Contract query parameters for GET /api/v1/abis/adjudication.
+#[derive(Debug, Clone, serde::Deserialize, ToSchema)]
 pub struct ListAdjudicationQuery {
-    pub status: Option<String>,
-    pub priority: Option<String>,
-    pub assigned_to: Option<String>,
-    pub page: Option<u32>,
-    pub page_size: Option<u32>,
+	#[serde(default)]
+	pub status: Option<String>,
+	#[serde(default)]
+	pub min_score: Option<f32>,
+	#[serde(default)]
+	pub page: Option<u32>,
+	#[serde(default)]
+	pub page_size: Option<u32>,
 }

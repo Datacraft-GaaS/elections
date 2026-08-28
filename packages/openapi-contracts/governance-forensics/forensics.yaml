@@ -30,6 +30,7 @@ paths:
   /api/v1/governance/forensics/investigations:
     post:
       operationId: initiateForensicInvestigation
+      x-handler-bound: governance-svc.governance-forensics.initiate_forensic_investigation
       tags: [investigations]
       summary: Initiate a forensic investigation
       description: >
@@ -69,6 +70,7 @@ paths:
 
     get:
       operationId: listForensicInvestigations
+      x-handler-bound: governance-svc.governance-forensics.list_forensic_investigations
       tags: [investigations]
       summary: List forensic investigations
       description: Paginated list of forensic investigations. Tier 3 endpoint.
@@ -108,6 +110,7 @@ paths:
   /api/v1/governance/forensics/investigations/{investigation_id}:
     get:
       operationId: getForensicInvestigation
+      x-handler-bound: governance-svc.governance-forensics.get_forensic_investigation
       tags: [investigations]
       summary: Get forensic investigation detail
       description: Returns full detail for a specific investigation. Tier 3 endpoint.
@@ -136,6 +139,7 @@ paths:
   /api/v1/governance/forensics/investigations/{investigation_id}/evidence:
     post:
       operationId: attachEvidence
+      x-handler-bound: governance-svc.governance-forensics.attach_evidence
       tags: [evidence]
       summary: Attach evidence to an investigation
       description: >
@@ -179,6 +183,7 @@ paths:
   /api/v1/governance/forensics/investigations/{investigation_id}/findings:
     post:
       operationId: addForensicFinding
+      x-handler-bound: governance-svc.governance-forensics.add_forensic_finding
       tags: [findings]
       summary: Add a forensic finding
       description: >

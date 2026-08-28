@@ -25,6 +25,7 @@ paths:
     get:
       tags: [questions]
       operationId: listReferendumQuestions
+      x-handler-bound: governance-svc.explainer.list_referendum_explainers
       summary: List referendum questions with explanations
       description: Returns all published referendum questions with plain-language explainers. Public, tier 1, with Merkle proofs.
       x-eel-sla:
@@ -59,6 +60,7 @@ paths:
     post:
       tags: [questions]
       operationId: publishReferendumExplainer
+      x-handler-bound: governance-svc.explainer.publish_referendum_explainer
       summary: Publish referendum explainer
       description: Creates or updates a referendum question explainer. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -102,6 +104,7 @@ paths:
     get:
       tags: [questions]
       operationId: getReferendumExplainer
+      x-handler-bound: governance-svc.explainer.get_referendum_explainer
       summary: Get referendum question detail with plain-language explanation
       description: Returns full explainer including implications, FAQ, media references, and legal citation. Public, tier 1, with Merkle proofs.
       x-eel-sla:
@@ -135,6 +138,7 @@ paths:
     get:
       tags: [translations]
       operationId: getReferendumExplainerTranslations
+      x-handler-bound: governance-svc.explainer.get_referendum_explainer_translations
       summary: Get explainer translations in all 11 official languages
       description: Returns the question text, plain-language explanation, and implication text in all available languages. Public, tier 1, with Merkle proofs.
       x-eel-sla:

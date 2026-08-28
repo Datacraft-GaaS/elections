@@ -106,16 +106,18 @@ BEGIN
 	END IF;
 END $$;
 
--- Ensure adjudication_cases has a reviewer FK once eel_reviewers exists.
+-- Ensure adjudication cases have a reviewer FK once eel_reviewers exists.
+-- Uses the current (v2) table and its UUID `assigned_to` column; the legacy
+-- V004 `eel_adjudication_cases.investigator_id` is TEXT and was superseded.
 DO $$
 BEGIN
 	IF NOT EXISTS (
 		SELECT 1 FROM information_schema.table_constraints
 		WHERE constraint_name = 'fk_eel_adjudication_investigator'
 	) THEN
-		ALTER TABLE eel_adjudication_cases
+		ALTER TABLE eel_adjudication_cases_v2
 			ADD CONSTRAINT fk_eel_adjudication_investigator
-			FOREIGN KEY (investigator_id) REFERENCES eel_reviewers(reviewer_id)
+			FOREIGN KEY (assigned_to) REFERENCES eel_reviewers(reviewer_id)
 			ON DELETE SET NULL
 			DEFERRABLE INITIALLY DEFERRED;
 	END IF;

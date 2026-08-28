@@ -24,6 +24,7 @@ paths:
     get:
       tags: [queue-status]
       operationId: getStationQueueStatus
+      x-handler-bound: queue-svc.queue.get_station_queue_status
       summary: Current queue status for a station
       description: >
         Returns the current estimated queue wait time and queue length for
@@ -52,6 +53,7 @@ paths:
     get:
       tags: [queue-status]
       operationId: listStationQueueStatuses
+      x-handler-bound: queue-svc.queue.list_station_queue_statuses
       summary: All station queue statuses
       description: >
         Returns a paginated summary of current queue statuses across all
@@ -93,6 +95,7 @@ paths:
     post:
       tags: [observations]
       operationId: submitQueueObservation
+      x-handler-bound: queue-svc.queue.submit_queue_observation
       summary: Submit queue observation
       description: >
         Accepts a queue length observation from a credentialed observer
@@ -137,6 +140,7 @@ paths:
     get:
       tags: [analytics]
       operationId: getCountyQueueAnalytics
+      x-handler-bound: queue-svc.queue.get_county_queue_analytics
       summary: County-level queue analytics
       description: >
         Returns aggregated queue analytics for all stations in the specified

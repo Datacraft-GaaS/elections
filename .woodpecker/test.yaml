@@ -12,13 +12,30 @@ matrix:
     - LANG: flutter
     - LANG: node
 
+services:
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: eel
+      POSTGRES_PASSWORD: eel
+      POSTGRES_DB: eel_abis
+
 steps:
   - name: test-rust
     image: eel/build-image:latest
     when:
       matrix:
         LANG: rust
+    environment:
+      DATABASE_URL: postgres://eel:eel@database:5432/eel_abis
+      EEL_ABIS_DATABASE_URL: postgres://eel:eel@database:5432/eel_abis
     commands:
+      - |
+        # Wait for Postgres and apply migrations (idempotent).
+        for i in $(seq 1 30); do
+          if cargo run -q -p eel-migrate; then break; fi
+          sleep 1
+        done
       - cargo nextest run --workspace --all-features --no-fail-fast
 
   - name: test-python

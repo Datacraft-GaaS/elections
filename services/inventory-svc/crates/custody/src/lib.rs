@@ -1,4 +1,8 @@
 pub mod domain;
+pub mod handlers;
+pub mod router;
+pub mod spec;
+pub mod state;
 pub mod events;
 pub mod geo_rbac;
 pub mod merkle;

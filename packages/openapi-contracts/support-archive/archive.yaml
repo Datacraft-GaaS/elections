@@ -25,6 +25,7 @@ paths:
     post:
       tags: [collections]
       operationId: createArchivalCollection
+      x-handler-bound: support-admin-svc.support-archive.create_archival_collection
       summary: Create archival collection
       description: Creates an archival collection record for sealed election materials. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -64,6 +65,7 @@ paths:
     get:
       tags: [collections]
       operationId: listArchivalCollections
+      x-handler-bound: support-admin-svc.support-archive.list_archival_collections
       summary: List archival collections
       description: Returns paginated archival collections. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -113,6 +115,7 @@ paths:
     get:
       tags: [collections]
       operationId: getArchivalCollection
+      x-handler-bound: support-admin-svc.support-archive.get_archival_collection
       summary: Get archival collection detail
       description: Returns collection metadata and status. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -141,6 +144,7 @@ paths:
     post:
       tags: [retrieval]
       operationId: createRetrievalRequest
+      x-handler-bound: support-admin-svc.support-archive.create_retrieval_request
       summary: Request archive retrieval
       description: Creates an archive retrieval request for audit, legal, or FOI purposes. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -190,6 +194,7 @@ paths:
     get:
       tags: [retrieval]
       operationId: getRetrievalRequest
+      x-handler-bound: support-admin-svc.support-archive.get_retrieval_request
       summary: Get retrieval request status
       description: Returns retrieval request status and download URL when ready. Requires JWT and SpiceDB authorization.
       x-eel-sla:

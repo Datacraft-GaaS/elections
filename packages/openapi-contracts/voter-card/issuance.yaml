@@ -25,6 +25,7 @@ paths:
     post:
       tags: [requests]
       operationId: requestVoterCard
+      x-handler-bound: bvr-svc.voter-card.request_voter_card
       summary: Request voter ID card
       description: Submits a voter ID card request (first issue, replacement, or correction). Idempotent on Idempotency-Key. Requires JWT.
       x-eel-sla:
@@ -66,6 +67,7 @@ paths:
     get:
       tags: [requests]
       operationId: getVoterCardRequest
+      x-handler-bound: bvr-svc.voter-card.get_voter_card_request
       summary: Get voter card request status
       description: Returns request status and collection details. Requires JWT.
       x-eel-sla:
@@ -97,6 +99,7 @@ paths:
     post:
       tags: [collection]
       operationId: confirmVoterCardCollection
+      x-handler-bound: bvr-svc.voter-card.confirm_voter_card_collection
       summary: Confirm voter card collection
       description: Records that a voter has collected their card. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -139,6 +142,7 @@ paths:
     get:
       tags: [collection]
       operationId: listCollectionCentres
+      x-handler-bound: bvr-svc.voter-card.list_collection_centres
       summary: List voter card collection centres
       description: Returns all active collection centres. Public, tier 1, with Merkle proofs.
       x-eel-sla:

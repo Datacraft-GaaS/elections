@@ -5,6 +5,8 @@
 /// IMU sanity envelope: acceleration/rotation must be plausible for a
 /// stationary polling-station installation.
 
+import 'dart:math' as math;
+
 const double _maxConstellationDeltaM = 50.0;
 const double _maxAccelMps2 = 4.9; // 0.5 g
 
@@ -60,15 +62,9 @@ class GnssGuard {
     return 2 * r * _asin(_sqrt(a));
   }
 
-  double _toRad(double deg) => deg * 3.141592653589793 / 180.0;
-  double _sin2(double x) => _sin(x) * _sin(x);
-  double _sin(double x) => x - x * x * x / 6.0; // small-angle stub
-  double _cos(double x) => 1.0 - x * x / 2.0;
-  double _asin(double x) => x; // stub; production uses dart:math
-  double _sqrt(double x) => x <= 0 ? 0 : _sqrtApprox(x);
-  double _sqrtApprox(double x) {
-    var r = x;
-    for (var i = 0; i < 20; i++) r = (r + x / r) / 2;
-    return r;
-  }
+  double _toRad(double deg) => deg * math.pi / 180.0;
+  double _sin2(double x) => math.sin(x) * math.sin(x);
+  double _cos(double x) => math.cos(x);
+  double _asin(double x) => math.asin(x.clamp(-1.0, 1.0));
+  double _sqrt(double x) => x <= 0 ? 0 : math.sqrt(x);
 }

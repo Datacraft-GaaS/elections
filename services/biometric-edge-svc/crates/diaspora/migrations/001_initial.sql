@@ -1,5 +1,5 @@
 -- Diaspora voting schema (WP-5.8, M24).
--- Requires PostGIS for custody_events GPS point storage.
+-- Requires PostGIS for diaspora_custody_events GPS point storage.
 
 CREATE EXTENSION IF NOT EXISTS postgis;
 
@@ -54,7 +54,7 @@ CREATE TABLE pouch_custodies (
 
 -- Individual custody handover events in the pouch chain.
 -- gps_location stores the WGS-84 point where the transfer happened.
-CREATE TABLE custody_events (
+CREATE TABLE diaspora_custody_events (
     id              BIGSERIAL   PRIMARY KEY,
     pouch_id        UUID        NOT NULL REFERENCES pouch_custodies(id),
     transferred_at  TIMESTAMPTZ NOT NULL,
@@ -67,6 +67,6 @@ CREATE TABLE custody_events (
     CONSTRAINT unique_pouch_seq UNIQUE (pouch_id, seq)
 );
 
-CREATE INDEX idx_custody_events_pouch ON custody_events(pouch_id, seq);
+CREATE INDEX idx_diaspora_custody_events_pouch ON diaspora_custody_events(pouch_id, seq);
 CREATE INDEX idx_forms34a_station    ON forms_34a_diaspora(embassy_station_id);
 CREATE INDEX idx_rolls_station        ON diaspora_rolls(embassy_station_id);

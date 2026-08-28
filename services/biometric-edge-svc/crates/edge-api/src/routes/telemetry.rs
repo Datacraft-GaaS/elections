@@ -45,7 +45,7 @@ async fn telemetry(
         battery_pct = ?req.battery_pct,
         "kit heartbeat"
     );
-    // Production: persist to kit_heartbeats table + emit kit_heartbeat.v1 outbox event.
+    // Production: persist to biometric_kit_heartbeats table + emit kit_heartbeat.v1 outbox event.
     let server_time = chrono::Utc::now().to_rfc3339();
     Ok((StatusCode::ACCEPTED, Json(TelemetryResponse { received: true, server_time })))
 }

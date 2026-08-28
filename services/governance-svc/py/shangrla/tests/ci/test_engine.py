@@ -1,4 +1,4 @@
-from shangrla.engine import ShangrlaEngine
+from shangrla.engine import PairwiseAssertion, ShangrlaEngine
 from shangrla.models import AuditRun, SampledBallot
 
 
@@ -26,7 +26,11 @@ def test_evaluate_pass():
         )
         for i in range(5)
     ]
-    result = engine.evaluate_run(run, ballots)
+    result = engine.evaluate_run(
+        run,
+        ballots,
+        PairwiseAssertion(winner="A", loser="B", reported_share=0.7),
+    )
     assert isinstance(result.passed, bool)
     assert result.t_statistic > 0
 

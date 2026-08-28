@@ -40,6 +40,7 @@ paths:
   /api/v1/biometric-edge/enrolments:
     post:
       operationId: submitEdgeEnrolment
+      x-handler-bound: biometric-edge-svc.biometric-edge.submit_enrolment
       summary: "Submit biometric enrolment capture from edge device"
       description: |
         Receives a biometric enrolment record captured at the edge device.
@@ -119,6 +120,7 @@ paths:
   /api/v1/biometric-edge/identifications:
     post:
       operationId: submitEdgeIdentification
+      x-handler-bound: biometric-edge-svc.biometric-edge.identify
       summary: "Submit biometric identification request from edge device"
       description: |
         Triggers a 1:N biometric search against the enrolled voter register
@@ -198,6 +200,7 @@ paths:
   /api/v1/biometric-edge/config:
     get:
       operationId: getDeviceConfig
+      x-handler-bound: biometric-edge-svc.biometric-edge.get_config_default
       summary: "Retrieve device configuration for a registered edge device"
       description: |
         Returns the current operational configuration for the requesting device,
@@ -261,6 +264,7 @@ paths:
   /api/v1/biometric-edge/attestation:
     post:
       operationId: submitDeviceAttestation
+      x-handler-bound: biometric-edge-svc.biometric-edge.attest
       summary: "Submit TPM-based hardware attestation evidence"
       description: |
         Accepts a TPM 2.0 quote signed by the device's attestation key along
@@ -333,6 +337,7 @@ paths:
   /api/v1/biometric-edge/heartbeat:
     post:
       operationId: submitDeviceHeartbeat
+      x-handler-bound: biometric-edge-svc.biometric-edge.telemetry
       summary: "Report device liveness and operational telemetry"
       description: |
         Periodic liveness ping from an edge device. Carries non-sensitive

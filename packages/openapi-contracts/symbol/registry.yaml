@@ -27,6 +27,7 @@ paths:
     post:
       tags: [symbol-registrations]
       operationId: registerPartySymbol
+      x-handler-bound: crms-svc.symbol.register_party_symbol
       summary: Register party symbol and official colours
       description: >
         Tier 3. Requires JWT plus SpiceDB authorization. Submits a party's
@@ -74,6 +75,7 @@ paths:
     get:
       tags: [symbol-registrations]
       operationId: getSymbolRegistration
+      x-handler-bound: crms-svc.symbol.get_symbol_registration
       summary: Get symbol registration status
       description: >
         Tier 2. Returns the symbol registration resource for the given
@@ -106,6 +108,7 @@ paths:
     get:
       tags: [public-registry]
       operationId: getPartySymbol
+      x-handler-bound: crms-svc.symbol.get_party_symbol
       summary: Get published symbol details for a party
       description: >
         Tier 1. Public endpoint. Returns the approved and published symbol
@@ -146,6 +149,7 @@ paths:
     post:
       tags: [collision-checks]
       operationId: checkSymbolCollision
+      x-handler-bound: crms-svc.symbol.check_symbol_collision
       summary: Check for symbol and colour collision against the registry
       description: >
         Tier 3. Requires JWT plus SpiceDB authorization. Runs a perceptual hash
@@ -191,6 +195,7 @@ paths:
     get:
       tags: [public-registry]
       operationId: listPublicSymbolRegistry
+      x-handler-bound: crms-svc.symbol.list_public_symbol_registry
       summary: List all parties with registered symbols
       description: >
         Tier 1. Public endpoint. Returns the full public party symbol registry.

@@ -1,0 +1,39 @@
+[package]
+name = "bvi-api"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "BVI backend REST API: sessions, identification, telemetry, distress, config, kits, turnout, voter station lookup"
+
+[[bin]]
+name = "bvi-api"
+path = "src/main.rs"
+
+[lib]
+name = "bvi_api"
+path = "src/lib.rs"
+
+[dependencies]
+bvi-config  = { workspace = true }
+bvi-turnout = { workspace = true }
+bvi-anomaly = { workspace = true }
+bvi-register-anchor = { workspace = true }
+axum        = { workspace = true }
+tower       = { workspace = true }
+tokio       = { workspace = true }
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+sqlx        = { workspace = true }
+uuid        = { workspace = true }
+chrono      = { workspace = true }
+tracing     = { workspace = true }
+tracing-subscriber = { workspace = true }
+thiserror   = { workspace = true }
+sha2        = { workspace = true }
+hex         = "0.4"
+anyhow      = { workspace = true }
+
+[dev-dependencies]
+

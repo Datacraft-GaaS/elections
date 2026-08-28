@@ -27,6 +27,7 @@ paths:
     post:
       tags: [line-items]
       operationId: createBudgetLineItem
+      x-handler-bound: support-admin-svc.support-budget.create_budget_line_item
       summary: Create budget line item
       description: Creates a new budget line item. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -66,6 +67,7 @@ paths:
     get:
       tags: [line-items]
       operationId: listBudgetLineItems
+      x-handler-bound: support-admin-svc.support-budget.list_budget_line_items
       summary: List budget line items
       description: Returns paginated budget line items. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -111,6 +113,7 @@ paths:
     post:
       tags: [expenditures]
       operationId: recordExpenditure
+      x-handler-bound: support-admin-svc.support-budget.record_expenditure
       summary: Record an expenditure against a line item
       description: Records an expenditure transaction. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -151,6 +154,7 @@ paths:
     get:
       tags: [reports]
       operationId: getBudgetSummary
+      x-handler-bound: support-admin-svc.support-budget.get_budget_summary
       summary: Budget utilisation summary
       description: Returns aggregate budget utilisation across departments. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -188,6 +192,7 @@ paths:
     get:
       tags: [reports]
       operationId: getOagExport
+      x-handler-bound: support-admin-svc.support-budget.get_oag_export
       summary: OAG-format export (presigned URL)
       description: Returns a presigned MinIO URL for OAG-formatted expenditure export. Valid for 30 minutes. Requires JWT and SpiceDB authorization.
       x-eel-sla:

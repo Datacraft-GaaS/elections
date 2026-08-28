@@ -46,6 +46,7 @@ paths:
     get:
       tags: [config]
       operationId: getAppConfig
+      x-handler-bound: field-mobile-svc.field-mobile-bff.get_app_config
       summary: Retrieve app configuration bundle
       description: >
         Returns the current election configuration bundle including feature
@@ -100,6 +101,7 @@ paths:
     post:
       tags: [sessions]
       operationId: createBffSession
+      x-handler-bound: field-mobile-svc.field-mobile-bff.create_bff_session
       summary: Establish an authenticated BFF session
       description: >
         Exchanges a verified JWT and platform attestation token for a
@@ -144,6 +146,7 @@ paths:
     post:
       tags: [sessions]
       operationId: refreshBffSession
+      x-handler-bound: field-mobile-svc.field-mobile-bff.refresh_bff_session
       summary: Silent token refresh
       description: >
         Silently renews an expiring access token using the session_id.
@@ -184,6 +187,7 @@ paths:
     get:
       tags: [voter]
       operationId: verifyVoter
+      x-handler-bound: field-mobile-svc.field-mobile-bff.verify_voter
       summary: Voter registration verification lookup (M29)
       description: >
         Checks voter registration status given an ID hash. Returns only
@@ -233,6 +237,7 @@ paths:
     get:
       tags: [station]
       operationId: getStationStatus
+      x-handler-bound: field-mobile-svc.field-mobile-bff.get_station_status
       summary: Get polling station operational status (M31, M32)
       description: >
         Returns real-time operational status of a polling station including
@@ -272,6 +277,7 @@ paths:
     post:
       tags: [forms]
       operationId: syncForms
+      x-handler-bound: field-mobile-svc.field-mobile-bff.sync_forms
       summary: Sync offline forms from field kit (M31)
       description: >
         Accepts a batch of encrypted form payloads captured offline at the
@@ -323,6 +329,7 @@ paths:
     post:
       tags: [incidents]
       operationId: reportIncident
+      x-handler-bound: field-mobile-svc.field-mobile-bff.report_incident
       summary: Report a field incident (all roles)
       description: >
         Submits a field incident report from any authenticated role. Evidence
@@ -374,6 +381,7 @@ paths:
     get:
       tags: [dispatch]
       operationId: listDispatchAssignments
+      x-handler-bound: field-mobile-svc.field-mobile-bff.list_dispatch_assignments
       summary: Get dispatch assignments for the authenticated dispatcher (M33)
       description: >
         Returns the current list of dispatch assignments visible to the
@@ -418,6 +426,7 @@ paths:
     patch:
       tags: [dispatch]
       operationId: updateDispatchAssignment
+      x-handler-bound: field-mobile-svc.field-mobile-bff.update_dispatch_assignment
       summary: Confirm or update a dispatch assignment (M33)
       description: >
         Allows a dispatcher or the assigned officer to update assignment
@@ -472,6 +481,7 @@ paths:
     get:
       tags: [observer]
       operationId: getObserverAccessPass
+      x-handler-bound: field-mobile-svc.field-mobile-bff.get_observer_access_pass
       summary: Get observer QR access pass for station entry (M34)
       description: >
         Issues a time-bounded QR access pass for the authenticated observer.
@@ -519,6 +529,7 @@ paths:
     post:
       tags: [observer]
       operationId: submitObservation
+      x-handler-bound: field-mobile-svc.field-mobile-bff.submit_observation
       summary: Submit an observer observation (M34)
       description: >
         Records an observer's structured observation at a polling station.
@@ -569,6 +580,7 @@ paths:
     post:
       tags: [tamper]
       operationId: reportTamperEvent
+      x-handler-bound: field-mobile-svc.field-mobile-bff.report_tamper_event
       summary: Report RASP tamper event (internal mTLS)
       description: >
         Called by the in-app RASP SDK after killing the session. Service-to-

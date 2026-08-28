@@ -176,6 +176,12 @@ eel-outbox-rs     = { path = "packages/eel-outbox-rs" }
 # trace audit can map tests to requirements without altering behavior.
 eel-trace-rs = { path = "packages/eel-trace-rs" }
 
+# BVI backend crates (M06): bvi-api inherits these from the root workspace.
+bvi-config  = { path = "services/bvi-svc/crates/bvi-config" }
+bvi-turnout = { path = "services/bvi-svc/crates/bvi-turnout" }
+bvi-register-anchor = { path = "services/bvi-svc/crates/bvi-register-anchor" }
+bvi-anomaly = { path = "services/bvi-svc/crates/bvi-anomaly" }
+
 # CLI tooling
 clap            = { version = "4",    features = ["derive", "env"] }
 indicatif       = { version = "0.17" }

@@ -324,6 +324,7 @@ paths:
   /api/v1/log/entries:
     get:
       operationId: getLogEntries
+      x-handler-bound: transparency-svc.transparency.get_log_entries
       summary: "Retrieve paginated log entries"
       description: |
         Returns a page of log entries ordered by leaf index ascending.
@@ -434,6 +435,7 @@ paths:
   /api/v1/log/leaves:
     post:
       operationId: appendLeaf
+      x-handler-bound: transparency-svc.transparency.append_leaf
       summary: "Append a leaf to the transparency log"
       description: |
         Internal endpoint for backend services to append a new leaf to the

@@ -9,6 +9,7 @@
 //!   - CloudEvent emission via eel-outbox-rs
 
 pub mod api;
+pub mod spec;
 pub mod domain;
 pub mod events;
 pub mod import;

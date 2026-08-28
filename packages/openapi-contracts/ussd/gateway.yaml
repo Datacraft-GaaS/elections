@@ -23,6 +23,7 @@ paths:
     post:
       tags: [sessions]
       operationId: handleUssdSession
+      x-handler-bound: bvr-svc.ussd.handle_ussd_session
       summary: Unified USSD session hook
       description: >
         Receives a USSD session step from a telco gateway. The service_code
@@ -88,6 +89,7 @@ paths:
     get:
       tags: [sessions]
       operationId: getUssdSessionLog
+      x-handler-bound: bvr-svc.ussd.get_ussd_session_log
       summary: Retrieve USSD session audit log
       description: >
         Returns the full audit log of a USSD session including all steps,

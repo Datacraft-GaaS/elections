@@ -189,13 +189,16 @@ pub async fn get_reports(State(_state): State<Arc<AppState>>) -> (StatusCode, Js
 	(
 		StatusCode::OK,
 		Json(AbisReport {
-			generated_at: chrono::Utc::now().to_rfc3339(),
+			generated_at: chrono::Utc::now(),
 			gallery_size: 0,
 			pending_dedup_count: 0,
 			open_adjudication_count: 0,
-			match_throughput_per_hour: 0,
-			duplicate_rate_pct: 0.0,
-			p99_match_ms: 0,
+			match_throughput_per_hour: Some(0),
+			duplicate_rate_pct: Some(0.0),
+			p50_match_ms: None,
+			p95_match_ms: None,
+			p99_match_ms: None,
+			error_rate_pct: None,
 		}),
 	)
 }

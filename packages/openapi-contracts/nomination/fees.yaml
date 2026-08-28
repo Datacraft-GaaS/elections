@@ -27,6 +27,7 @@ paths:
     post:
       tags: [fees]
       operationId: initiateNominationFee
+      x-handler-bound: crms-svc.nomination.initiate_nomination_fee
       summary: Initiate nomination fee payment via M-Pesa STK push
       description: >
         Tier 2. Initiates an M-Pesa STK push to the candidate's registered
@@ -73,6 +74,7 @@ paths:
     get:
       tags: [fees]
       operationId: getNominationFeeStatus
+      x-handler-bound: crms-svc.nomination.get_nomination_fee_status
       summary: Get nomination fee payment status
       description: >
         Tier 2. Returns the current state of a fee payment. Poll this endpoint
@@ -105,6 +107,7 @@ paths:
     post:
       tags: [callbacks]
       operationId: processMpesaCallback
+      x-handler-bound: crms-svc.nomination.process_mpesa_callback
       summary: Process M-Pesa payment callback
       description: >
         Tier 3. Internal endpoint secured by mutual TLS. Receives the
@@ -147,6 +150,7 @@ paths:
     get:
       tags: [receipts]
       operationId: getNominationFeeReceipt
+      x-handler-bound: crms-svc.nomination.get_nomination_fee_receipt
       summary: Download nomination fee payment receipt
       description: >
         Tier 2. Returns a presigned MinIO URL pointing to the generated PDF

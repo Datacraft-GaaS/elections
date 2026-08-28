@@ -1,5 +1,6 @@
 name: eel_kit_l1
 description: EEL Kit L1 on-device IsoForest anomaly plugin
+publish_to: none
 version: 0.1.0
 environment:
   sdk: ">=3.4.0 <4.0.0"

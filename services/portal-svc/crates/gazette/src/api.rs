@@ -18,13 +18,15 @@ use crate::{
     rules::derive_notices,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct AppState {
     // In a real deployment: sqlx::PgPool, outbox client, HSM key ref, gov printer URL
+    pub windows: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, crate::spec::InspectionWindow>>>,
+    pub objections: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, crate::spec::ListObjection>>>,
 }
 
 pub fn router() -> Router {
-    let state = AppState {};
+    let state = AppState::default();
     Router::new()
         .route("/calendar/events", post(create_calendar_event).get(list_calendar_events))
         .route(
@@ -40,6 +42,12 @@ pub fn router() -> Router {
         .route("/gazette/notices/{id}/submit", post(submit_gazette_notice))
         .route("/subscriptions", post(create_subscription))
         .route("/subscriptions/{id}", delete(delete_subscription))
+        // Public contract endpoints (gazette/calendar.yaml)
+        .route("/api/v1/gazette/notices/{notice_id}", get(crate::spec_handlers::get_gazette_notice))
+        .route("/api/v1/gazette/inspection/windows", get(crate::spec_handlers::list_inspection_windows))
+        .route("/api/v1/gazette/inspection/windows/{window_id}", get(crate::spec_handlers::get_inspection_window))
+        .route("/api/v1/gazette/inspection/objections", post(crate::spec_handlers::file_list_objection))
+        .route("/api/v1/gazette/inspection/objections/{reference_code}", get(crate::spec_handlers::get_objection_status))
         .with_state(state)
 }
 

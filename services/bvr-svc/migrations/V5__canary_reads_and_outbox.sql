@@ -11,7 +11,7 @@ CREATE INDEX IF NOT EXISTS idx_canary_voter ON canary_reads (voter_id);
 CREATE INDEX IF NOT EXISTS idx_canary_when  ON canary_reads (accessed_at DESC);
 
 -- Transactional outbox (eel-outbox-rs schema expected by Debezium)
-CREATE TABLE IF NOT EXISTS outbox (
+CREATE TABLE IF NOT EXISTS bvr_outbox (
     id              TEXT        NOT NULL PRIMARY KEY,
     event_type      TEXT        NOT NULL,
     source          TEXT        NOT NULL,
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS outbox (
     published_at    TIMESTAMPTZ
 );
 
-CREATE INDEX IF NOT EXISTS idx_outbox_unpublished ON outbox (id) WHERE published_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_bvr_outbox_unpublished ON bvr_outbox (id) WHERE published_at IS NULL;
 
 -- audit_events generic table
 CREATE TABLE IF NOT EXISTS audit_events (

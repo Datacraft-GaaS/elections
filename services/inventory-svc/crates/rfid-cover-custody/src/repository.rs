@@ -5,6 +5,8 @@
 
 use chrono::Utc;
 use sqlx::PgPool;
+use ed25519_dalek::VerifyingKey;
+use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::domain::{CoverRead, CoverState, CoverTag, CoverTamperAlert, ReaderType, Severity, TamperState};
@@ -130,11 +132,52 @@ pub async fn insert_read(pool: &PgPool, read: &CoverRead) -> Result<(), RfidErro
 // CoverStateTransition
 // ---------------------------------------------------------------------------
 
+/// Officer key registry, parsed once from `EEL_CUSTODY_OFFICER_KEYS`.
+fn officer_registry() -> &'static HashMap<String, VerifyingKey> {
+    static REGISTRY: std::sync::OnceLock<HashMap<String, VerifyingKey>> = std::sync::OnceLock::new();
+    REGISTRY.get_or_init(|| {
+        let spec = std::env::var("EEL_CUSTODY_OFFICER_KEYS").unwrap_or_default();
+        match crate::officer_sig::parse_registry(&spec) {
+            Ok(map) => map,
+            Err(e) => {
+                tracing::error!(error = %e, "EEL_CUSTODY_OFFICER_KEYS malformed; high-risk custody transitions will be REJECTED");
+                HashMap::new()
+            }
+        }
+    })
+}
+
 /// Insert a new state transition row.
+///
+/// High-risk transitions (SEALED_RETURN / TALLY_ARRIVED / COUNT_COMPLETE /
+/// STORAGE_ARCHIVE) are refused unless they carry an Ed25519 officer
+/// signature that verifies over `this_hash` against a registered officer key.
 pub async fn insert_transition(
     pool: &PgPool,
     t: &crate::domain::CoverStateTransition,
 ) -> Result<(), RfidError> {
+    use crate::officer_sig::{check_transition_signature, SignatureCheck};
+    match check_transition_signature(
+        officer_registry(),
+        t.officer_id,
+        t.to_state.as_str(),
+        &t.this_hash,
+        t.officer_signature.as_deref(),
+    ) {
+        SignatureCheck::Verified | SignatureCheck::NotRequired => {}
+        SignatureCheck::Missing => {
+            return Err(RfidError::OfficerSignatureRequired {
+                to_state: t.to_state.as_str().to_string(),
+            })
+        }
+        SignatureCheck::UnregisteredOfficer => {
+            return Err(RfidError::OfficerUnregistered {
+                officer_id: t.officer_id.map(|o| o.to_string()).unwrap_or_default(),
+            })
+        }
+        SignatureCheck::Invalid => return Err(RfidError::OfficerSignatureInvalid),
+    }
+
     sqlx::query(
         r#"
         INSERT INTO eel_cover_state_transitions

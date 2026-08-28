@@ -1,0 +1,242 @@
+---
+import '../styles/global.css'
+import { getRelativeLocaleUrl } from 'astro:i18n'
+import { t } from '../lib/i18n.js'
+
+interface Props {
+  title: string
+  description?: string
+}
+
+const { title, description } = Astro.props
+const locale = Astro.currentLocale ?? 'en'
+const dir = locale === 'ar' ? 'rtl' : 'ltr'
+
+const nav = [
+  { href: '/', label: t(locale, 'nav.home') },
+  { href: '/apply', label: t(locale, 'nav.apply') },
+  { href: '/status', label: t(locale, 'nav.status') },
+]
+
+const otherLocale = locale === 'en' ? 'sw' : 'en'
+// Strip the locale prefix from the current path to build the sibling URL.
+const pathParts = Astro.url.pathname.split('/').filter(Boolean)
+const isLocalized = pathParts[0] === locale
+const barePath = isLocalized ? '/' + pathParts.slice(1).join('/') : Astro.url.pathname
+const switchHref = getRelativeLocaleUrl(otherLocale, barePath)
+---
+
+<!doctype html>
+<html lang={locale} dir={dir}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    <meta name="theme-color" content="#0e4a2e" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,0..100,0..1&family=Public+Sans:ital,wght@0,300..800;1,300..800&family=IBM+Plex+Mono:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <meta property="og:title" content={title} />
+    {description && <meta property="og:description" content={description} />}
+    <meta property="og:type" content="website" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230e4a2e'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='18' fill='%23f1f0e8' text-anchor='middle'%3E%E2%9C%8E%3C/text%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <a href="#main" class="skip-link">{t(locale, 'nav.home')}</a>
+
+    <header class="site-head">
+      <div class="container site-head__inner">
+        <a href={getRelativeLocaleUrl(locale, '/')} class="brand" aria-label={t(locale, 'brand')}>
+          <span class="brand__mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" width="34" height="34" role="img">
+              <rect x="3" y="5" width="26" height="22" rx="4" fill="none" stroke="currentColor" stroke-width="2.5" />
+              <line x1="3" y1="11" x2="29" y2="11" stroke="currentColor" stroke-width="2.5" />
+              <circle cx="16" cy="19.5" r="2.6" fill="var(--seal)" stroke="none" />
+            </svg>
+          </span>
+          <span class="brand__text">
+            <span class="brand__name">{t(locale, 'brand.short')}</span>
+          </span>
+        </a>
+
+        <nav class="site-nav" aria-label="Main">
+          <ul role="list">
+            {nav.map((item) => (
+              <li>
+                <a
+                  href={getRelativeLocaleUrl(locale, item.href)}
+                  aria-current={Astro.url.pathname === item.href || (isLocalized && '/' + pathParts.slice(1).join('/') === item.href) ? 'page' : undefined}
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <a class="lang-toggle" href={switchHref} lang={otherLocale}>
+          <span aria-hidden="true">🌍</span> {t(locale, 'lang.switch')}
+        </a>
+      </div>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+
+    <footer class="site-foot">
+      <div class="container site-foot__inner">
+        <p class="site-foot__line">{t(locale, 'footer.line')}</p>
+        <p class="site-foot__help">{t(locale, 'footer.help')}: <span class="mono">0800&nbsp;221&nbsp;000</span></p>
+        <nav class="site-foot__links" aria-label="Footer">
+          <a href={getRelativeLocaleUrl(locale, '/')}>{t(locale, 'nav.home')}</a>
+          <a href={getRelativeLocaleUrl(locale, '/apply')}>{t(locale, 'nav.apply')}</a>
+          <a href={getRelativeLocaleUrl(locale, '/status')}>{t(locale, 'nav.status')}</a>
+        </nav>
+        <p class="site-foot__meta">© 2026 · {t(locale, 'brand')}</p>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style>
+  .site-head {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgb(241 240 232 / 0.86);
+    backdrop-filter: saturate(1.2) blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .site-head__inner {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    min-height: 4rem;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    text-decoration: none;
+    color: var(--green-deep);
+    font-family: var(--font-display);
+    font-weight: 620;
+    font-size: 1.15rem;
+  }
+
+  .brand__mark {
+    display: inline-flex;
+    color: var(--green-deep);
+  }
+
+  .site-nav {
+    margin-left: auto;
+  }
+
+  .site-nav ul {
+    display: flex;
+    gap: 0.35rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .site-nav a {
+    display: block;
+    padding: 0.5rem 0.9rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    text-decoration: none;
+  }
+
+  .site-nav a:hover {
+    background: var(--paper-2);
+    color: var(--ink);
+  }
+
+  .site-nav a[aria-current='page'] {
+    background: var(--green-tint);
+    color: var(--green-deep);
+  }
+
+  .lang-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 650;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    text-decoration: none;
+    padding: 0.45rem 0.8rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+  }
+
+  .lang-toggle:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+
+  .site-foot {
+    margin-top: 5rem;
+    border-top: 1px solid var(--line);
+    background: var(--paper-2);
+  }
+
+  .site-foot__inner {
+    padding: 2.5rem 0 2rem;
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .site-foot__line {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    color: var(--ink);
+    max-width: 42rem;
+  }
+
+  .site-foot__help,
+  .site-foot__meta {
+    font-size: 0.9rem;
+    color: var(--ink-faint);
+  }
+
+  .site-foot__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+  }
+
+  .site-foot__links a {
+    font-weight: 600;
+    color: var(--green-deep);
+    text-decoration: none;
+  }
+
+  @media (max-width: 720px) {
+    .site-head__inner {
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      padding-block: 0.6rem;
+    }
+    .site-nav {
+      order: 3;
+      margin-left: 0;
+      width: 100%;
+      overflow-x: auto;
+    }
+    .lang-toggle {
+      margin-left: auto;
+    }
+  }
+</style>

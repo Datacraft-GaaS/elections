@@ -1,0 +1,53 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+buildscript {
+    ext {
+        agp_version = '8.8.0'
+    }
+    repositories {
+        google()
+        //jcenter()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:$agp_version"
+        // classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
+
+    }
+}
+
+allprojects {
+    repositories {
+       google()
+        mavenCentral()
+    }
+
+
+        task cleanBuildDir(type: Delete) {
+            delete "${projectDir}/build"
+            delete "${projectDir}/.cxx"
+            delete "${projectDir}/out"
+
+        }
+
+}
+
+tasks.register('clean', Delete) {
+    delete rootProject.getBuildDir()
+}
+
+
+ext {
+    androidXVersion = '1.4.1'  // variable that can be referenced to keep support libs consistentcommonLibVersion= '4.0.1'
+    ndkVersion='29.0.14206865'
+    versionCompiler = 33
+    // when target=27, 9.0 is ok
+    versionTarget = 31
+    // if hope supporting 4.4
+    // please modify it to 16
+    minSdkVersion = 21
+versionCode=3
+    versionNameString = '2.3.8'
+    javaSourceCompatibility = JavaVersion.VERSION_17
+    javaTargetCompatibility = JavaVersion.VERSION_17
+    jniLibsSrcDirs='../../../libs/jniLibs'
+}

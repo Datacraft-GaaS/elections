@@ -33,6 +33,7 @@ paths:
     get:
       tags: [alerts]
       operationId: listAnomalyAlerts
+      x-handler-bound: ai-platform-svc.ai-anomaly.list_anomaly_alerts
       summary: List anomaly alerts
       description: >
         Returns a paginated list of anomaly alerts. Supports filtering by
@@ -99,6 +100,7 @@ paths:
     get:
       tags: [alerts]
       operationId: getAnomalyAlert
+      x-handler-bound: ai-platform-svc.ai-anomaly.get_anomaly_alert
       summary: Get an anomaly alert by ID
       description: Retrieve full detail for a specific anomaly alert including explanation.
       x-eel-sla:
@@ -129,6 +131,7 @@ paths:
     post:
       tags: [adjudications]
       operationId: adjudicateAlert
+      x-handler-bound: ai-platform-svc.ai-anomaly.adjudicate_alert
       summary: Submit an analyst adjudication for an alert
       description: >
         Records an analyst verdict on an anomaly alert. Optionally escalates
@@ -181,6 +184,7 @@ paths:
     get:
       tags: [reports]
       operationId: getAnomalySummaryReport
+      x-handler-bound: ai-platform-svc.ai-anomaly.get_anomaly_summary_report
       summary: Aggregate anomaly counts by type and severity
       description: >
         Returns aggregate counts of anomaly alerts grouped by alert_type and
@@ -231,6 +235,7 @@ paths:
     post:
       tags: [ingest]
       operationId: ingestEventBatch
+      x-handler-bound: ai-platform-svc.ai-anomaly.ingest_event_batch
       summary: Ingest event batch from Kafka for anomaly analysis
       description: >
         Internal service-to-service endpoint secured by mTLS. Receives

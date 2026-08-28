@@ -1,0 +1,16 @@
+{
+  "name": "hr-public",
+  "version": "1.0.0",
+  "description": "Poll worker application portal (eel hr-public)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "astro": "^7.2.6"
+  }
+}

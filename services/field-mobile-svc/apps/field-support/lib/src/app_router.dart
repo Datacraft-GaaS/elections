@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter/material.dart';
 import 'features/ticket_queue/ticket_queue_screen.dart';
 import 'features/diagnostics/diagnostics_screen.dart';
 import 'features/warranty/warranty_screen.dart';

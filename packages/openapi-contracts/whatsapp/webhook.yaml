@@ -22,6 +22,7 @@ paths:
     post:
       tags: [webhook]
       operationId: receiveWhatsAppWebhook
+      x-handler-bound: bvr-svc.whatsapp.receive_whatsapp_webhook
       summary: WhatsApp Cloud API webhook receiver
       description: >
         Receives event payloads from the WhatsApp Cloud API (Meta). Events
@@ -71,6 +72,7 @@ paths:
     get:
       tags: [webhook]
       operationId: verifyWhatsAppWebhook
+      x-handler-bound: bvr-svc.whatsapp.verify_whatsapp_webhook
       summary: Meta webhook verification challenge
       description: >
         Handles the webhook verification challenge from Meta during initial

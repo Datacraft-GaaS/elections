@@ -1,7 +1,14 @@
-use axum::{extract::Path, http::StatusCode, response::IntoResponse, Json};
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    response::IntoResponse,
+    Json,
+};
 use tracing::info;
 
 use crate::models::*;
+use crate::spec;
+use crate::state::SharedState;
 
 pub async fn health() -> impl IntoResponse {
     StatusCode::OK
@@ -116,4 +123,124 @@ pub async fn record_long_drip_review(
 pub async fn next_cycle_handoff() -> impl IntoResponse {
     info!("next_cycle_handoff");
     Json(serde_json::json!({ "handoff_items": [] }))
+}
+
+// ---------------------------------------------------------------------------
+// Public contract endpoints (governance-review/post-election.yaml)
+// ---------------------------------------------------------------------------
+
+/// POST /api/v1/governance/review/reviews — initiate a post-election review.
+pub async fn initiate_post_election_review(
+    State(state): State<SharedState>,
+    Json(req): Json<spec::ReviewInitRequest>,
+) -> impl IntoResponse {
+    info!(election_id = %req.election_id, "initiate_post_election_review");
+    if req.reviewers.is_empty() {
+        return (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(serde_json::json!({"detail": "at least one reviewer is required"})),
+        )
+            .into_response();
+    }
+    let now = chrono::Utc::now().to_rfc3339();
+    let review = spec::ElectionReview {
+        review_id: uuid::Uuid::now_v7().to_string(),
+        election_id: req.election_id,
+        scope: req.scope,
+        scope_code: req.scope_code,
+        reviewers: req.reviewers,
+        status: "initiated".to_string(),
+        report_url: None,
+        created_at: now.clone(),
+        updated_at: now,
+    };
+    let mut guard = state.reviews.lock().expect("lock poisoned");
+    guard.insert(review.review_id.clone(), review.clone());
+    drop(guard);
+    (StatusCode::CREATED, Json(review)).into_response()
+}
+
+/// GET /api/v1/governance/review/reviews — list post-election reviews.
+pub async fn list_post_election_reviews(State(state): State<SharedState>) -> impl IntoResponse {
+    info!("list_post_election_reviews");
+    let guard = state.reviews.lock().expect("lock poisoned");
+    let mut items: Vec<spec::ElectionReview> = guard.values().cloned().collect();
+    drop(guard);
+    items.sort_by(|a, b| a.created_at.cmp(&b.created_at));
+    Json(serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }))
+}
+
+/// GET /api/v1/governance/review/reviews/{review_id} — fetch one review.
+pub async fn get_post_election_review(
+    State(state): State<SharedState>,
+    Path(review_id): Path<String>,
+) -> impl IntoResponse {
+    info!(review_id, "get_post_election_review");
+    let guard = state.reviews.lock().expect("lock poisoned");
+    match guard.get(&review_id) {
+        Some(r) => Json(r.clone()).into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"detail": "review not found"})),
+        )
+            .into_response(),
+    }
+}
+
+/// POST /api/v1/governance/review/reviews/{review_id}/findings — add a finding.
+pub async fn add_review_finding(
+    State(state): State<SharedState>,
+    Path(review_id): Path<String>,
+    Json(req): Json<spec::ReviewFindingRequest>,
+) -> impl IntoResponse {
+    info!(review_id, "add_review_finding");
+    if !state.reviews.lock().expect("lock poisoned").contains_key(&review_id) {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"detail": "review not found"})),
+        )
+            .into_response();
+    }
+    let finding = spec::ReviewFinding {
+        finding_id: uuid::Uuid::now_v7().to_string(),
+        review_id: review_id.clone(),
+        category: req.category,
+        severity: req.severity,
+        description: req.description,
+        recommendation: req.recommendation,
+        created_at: chrono::Utc::now().to_rfc3339(),
+    };
+    let mut guard = state.findings.lock().expect("lock poisoned");
+    guard.entry(review_id).or_default().push(finding.clone());
+    drop(guard);
+    {
+        let mut rguard = state.reviews.lock().expect("lock poisoned");
+        if let Some(r) = rguard.get_mut(&finding.review_id) {
+            r.status = "analysing".to_string();
+            r.updated_at = chrono::Utc::now().to_rfc3339();
+        }
+    }
+    (StatusCode::CREATED, Json(finding)).into_response()
+}
+
+/// POST /api/v1/governance/review/reviews/{review_id}/publish — publish the report.
+pub async fn publish_review_report(
+    State(state): State<SharedState>,
+    Path(review_id): Path<String>,
+) -> impl IntoResponse {
+    info!(review_id, "publish_review_report");
+    let mut guard = state.reviews.lock().expect("lock poisoned");
+    match guard.get_mut(&review_id) {
+        Some(r) => {
+            r.status = "published".to_string();
+            r.report_url = Some(format!("https://reports.eel.local/review/{review_id}"));
+            r.updated_at = chrono::Utc::now().to_rfc3339();
+            Json(r.clone()).into_response()
+        }
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"detail": "review not found"})),
+        )
+            .into_response(),
+    }
 }

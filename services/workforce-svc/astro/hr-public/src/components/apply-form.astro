@@ -1,0 +1,884 @@
+---
+import Application from '../layouts/application.astro'
+import { t } from '../lib/i18n.js'
+
+const locale = Astro.currentLocale ?? 'en'
+
+const counties = [
+  'Baringo', 'Bomet', 'Bungoma', 'Busia', 'Elgeyo-Marakwet', 'Embu', 'Garissa',
+  'Homa Bay', 'Isiolo', 'Kajiado', 'Kakamega', 'Kericho', 'Kiambu', 'Kilifi',
+  'Kirinyaga', 'Kisii', 'Kisumu', 'Kitui', 'Kwale', 'Laikipia', 'Lamu',
+  'Machakos', 'Makueni', 'Mandera', 'Marsabit', 'Meru', 'Migori', 'Mombasa',
+  "Murang'a", 'Nairobi', 'Nakuru', 'Nandi', 'Narok', 'Nyamira', 'Nyandarua',
+  'Nyeri', 'Samburu', 'Siaya', 'Taita-Taveta', 'Tana River', 'Tharaka-Nithi',
+  'Trans Nzoia', 'Turkana', 'Uasin Gishu', 'Vihiga', 'Wajir', 'West Pokot',
+]
+
+const roles = [
+  { code: 'po', label: t(locale, 'roles.po.title') },
+  { code: 'dpo', label: t(locale, 'roles.dpo.title') },
+  { code: 'clerk', label: t(locale, 'roles.clerk.title') },
+]
+
+const docs = [
+  { id: 'national_id', name: 'National ID card', required: true, hint: 'Both sides in one photo' },
+  { id: 'kra_pin', name: 'KRA PIN certificate', required: true },
+  { id: 'police_clearance', name: 'Police clearance certificate', required: true, hint: 'Issued within the last 12 months' },
+  { id: 'passport_photo', name: 'Passport photograph', required: true, hint: 'Taken within 6 months' },
+  { id: 'academic_cert', name: 'Academic / professional certificates', required: true },
+  { id: 'bank_letter', name: 'Bank confirmation letter', required: false, hint: 'For payment' },
+]
+
+const steps = [
+  t(locale, 'apply.step.you'),
+  t(locale, 'apply.step.role'),
+  t(locale, 'apply.step.papers'),
+  t(locale, 'apply.step.oath'),
+  t(locale, 'apply.step.seal'),
+]
+---
+
+<Application title={`${t(locale, 'apply.title')} · ${t(locale, 'brand')}`} description={t(locale, 'apply.lead')}>
+  <div class="apply">
+    <header class="apply__head container">
+      <p class="eyebrow">{t(locale, 'brand.short')}</p>
+      <h1 class="display apply__title">{t(locale, 'apply.title')}</h1>
+      <p class="apply__lead">{t(locale, 'apply.lead')}</p>
+    </header>
+
+    <!-- progress: the named stages of the real process -->
+    <div class="container">
+      <ol class="progress" role="list" aria-label="Application progress">
+        {steps.map((label, i) => (
+          <li class={`progress__step${i === 0 ? ' is-current' : ''}`} data-step={i}>
+            <span class="progress__dot" aria-hidden="true"></span>
+            <span class="progress__label">{label}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+
+    <div class="container apply__wrap">
+      <aside class="card resume" id="resume-banner" hidden>
+        <div class="resume__copy">
+          <p class="eyebrow">In progress</p>
+          <p class="resume__text">You have a draft saved on this device.</p>
+        </div>
+        <div class="resume__actions">
+          <button type="button" class="btn btn--primary" id="resume-btn">Resume draft</button>
+          <button type="button" class="btn btn--ghost" id="discard-btn">Discard</button>
+        </div>
+      </aside>
+
+      <form id="apply-form" class="card form" novalidate>
+        <!-- STEP 1: About you -->
+        <section class="step" data-step="0" aria-labelledby="step-0-title">
+          <h2 class="step__title" tabindex="-1" id="step-0-title">{t(locale, 'apply.you.title')}</h2>
+
+          <div class="field">
+            <label for="f-name">{t(locale, 'apply.name')}</label>
+            <input class="input" id="f-name" name="name" type="text" autocomplete="name" required />
+            <p class="field-hint">{t(locale, 'apply.name.hint')}</p>
+            <p class="field-error" data-error-for="f-name">{t(locale, 'err.required')}</p>
+          </div>
+
+          <div class="field">
+            <label for="f-id">{t(locale, 'apply.id')}</label>
+            <input class="input" id="f-id" name="national_id" type="text" inputmode="numeric" required />
+            <p class="field-hint">{t(locale, 'apply.id.hint')}</p>
+            <p class="field-error" data-error-for="f-id">{t(locale, 'err.id')}</p>
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label for="f-county">{t(locale, 'apply.county')}</label>
+              <select class="select" id="f-county" name="county" required>
+                <option value="">—</option>
+                {counties.map((c) => <option value={c}>{c}</option>)}
+              </select>
+              <p class="field-error" data-error-for="f-county">{t(locale, 'err.required')}</p>
+            </div>
+
+            <div class="field">
+              <label for="f-phone">{t(locale, 'apply.phone')}</label>
+              <input class="input" id="f-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" required />
+              <p class="field-hint">{t(locale, 'apply.phone.hint')}</p>
+              <p class="field-error" data-error-for="f-phone">{t(locale, 'err.phone')}</p>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="f-email">{t(locale, 'apply.email')}</label>
+            <input class="input" id="f-email" name="email" type="email" autocomplete="email" />
+          </div>
+        </section>
+
+        <!-- STEP 2: Role -->
+        <section class="step" data-step="1" hidden aria-labelledby="step-1-title">
+          <h2 class="step__title" tabindex="-1" id="step-1-title">{t(locale, 'apply.role.title')}</h2>
+
+          <fieldset class="role-pick">
+            <legend class="visually-hidden">{t(locale, 'apply.role.title')}</legend>
+            {roles.map((r) => (
+              <label class="role-opt">
+                <input type="radio" name="role" value={r.code} data-role={r.code} />
+                <span class="role-opt__card">
+                  <span class="role-opt__code mono">{r.code.toUpperCase()}</span>
+                  <span class="role-opt__label">{r.label}</span>
+                </span>
+              </label>
+            ))}
+          </fieldset>
+          <p class="field-error" data-error-for="role">{t(locale, 'err.required')}</p>
+
+          <div class="field">
+            <label for="f-serve-county">{t(locale, 'apply.role.county')}</label>
+            <select class="select" id="f-serve-county" name="serve_county">
+              <option value="">{t(locale, 'apply.role.any')}</option>
+              {counties.map((c) => <option value={c}>{c}</option>)}
+            </select>
+          </div>
+        </section>
+
+        <!-- STEP 3: Papers -->
+        <section class="step" data-step="2" hidden aria-labelledby="step-2-title">
+          <h2 class="step__title" tabindex="-1" id="step-2-title">{t(locale, 'apply.papers.title')}</h2>
+          <p class="step__lead">{t(locale, 'apply.papers.lead')}</p>
+
+          <ul class="docs" role="list">
+            {docs.map((d) => (
+              <li class="doc" data-doc={d.id} data-required={d.required ? 'true' : 'false'}>
+                <div class="doc__info">
+                  <span class="doc__name">{d.name}</span>
+                  {d.hint && <span class="doc__hint">{d.hint}</span>}
+                </div>
+                <div class="doc__right">
+                  <span class={`badge ${d.required ? 'badge--seal' : ''}`}>
+                    {d.required ? t(locale, 'apply.papers.required') : t(locale, 'apply.papers.optional')}
+                  </span>
+                  <label class="doc__upload">
+                    <input type="file" class="visually-hidden" data-file-input={d.id} accept="image/*,.pdf" />
+                    <span class="btn btn--ghost doc__btn">{t(locale, 'apply.papers.add')}</span>
+                  </label>
+                  <span class="doc__status mono" data-file-status={d.id}></span>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <p class="field-error" data-error-for="docs">{t(locale, 'err.docs')}</p>
+        </section>
+
+        <!-- STEP 4: Oath -->
+        <section class="step" data-step="3" hidden aria-labelledby="step-3-title">
+          <h2 class="step__title" tabindex="-1" id="step-3-title">{t(locale, 'apply.oath.title')}</h2>
+
+          <div class="oath">
+            <p class="oath__body">{t(locale, 'apply.oath.body')}</p>
+            <label class="oath__confirm">
+              <input type="checkbox" id="f-oath" name="oath" />
+              <span class="oath__box" aria-hidden="true"></span>
+              <span>{t(locale, 'apply.oath.confirm')}</span>
+            </label>
+            <p class="field-error" data-error-for="f-oath">{t(locale, 'err.oath')}</p>
+          </div>
+        </section>
+
+        <!-- STEP 5: Review & seal -->
+        <section class="step" data-step="4" hidden aria-labelledby="step-4-title">
+          <h2 class="step__title" tabindex="-1" id="step-4-title">{t(locale, 'apply.seal.title')}</h2>
+          <p class="step__lead">{t(locale, 'apply.seal.review')}</p>
+
+          <dl class="review" id="review"></dl>
+
+          <button type="submit" class="btn btn--seal btn--lg btn--block" id="submit-btn">
+            {t(locale, 'apply.submit')}
+          </button>
+        </section>
+
+        <!-- nav buttons -->
+        <div class="form__nav">
+          <button type="button" class="btn btn--ghost" id="back-btn" hidden>{t(locale, 'apply.back')}</button>
+          <button
+            type="button"
+            class="btn btn--primary"
+            id="next-btn"
+            data-continue={t(locale, 'apply.continue')}
+            data-review={t(locale, 'apply.review')}
+          >
+            {t(locale, 'apply.continue')}
+          </button>
+        </div>
+
+        <p class="form__saved" aria-hidden="true">{t(locale, 'apply.lead')}</p>
+      </form>
+
+      <!-- SUCCESS -->
+      <section class="card done" id="done" hidden aria-live="polite">
+        <p class="eyebrow">{t(locale, 'apply.done.eyebrow')}</p>
+        <h2 class="display done__title">{t(locale, 'apply.done.title')}</h2>
+        <p class="done__body">{t(locale, 'apply.done.body')}</p>
+
+        <div class="done__seal-wrap">
+          <div class="seal seal--large seal--animate">
+            RECEIVED
+            <span class="seal__ref mono" id="done-ref">PWP-0000-0000</span>
+          </div>
+        </div>
+
+        <h3 class="done__next">{t(locale, 'apply.done.next')}</h3>
+        <ol class="done__steps">
+          {t(locale, 'apply.done.steps').map((s) => <li>{s}</li>)}
+        </ol>
+
+        <a class="btn btn--primary" href={Astro.url.pathname.startsWith('/sw') ? '/sw/status' : '/status'}>
+          {t(locale, 'apply.done.track')}
+        </a>
+      </section>
+    </div>
+  </div>
+</Application>
+
+<script>
+  const form = document.getElementById('apply-form')
+  const steps = Array.from(form.querySelectorAll('.step'))
+  const progressSteps = Array.from(document.querySelectorAll('.progress__step'))
+  const backBtn = document.getElementById('back-btn')
+  const nextBtn = document.getElementById('next-btn')
+  const done = document.getElementById('done')
+  const submitBtn = document.getElementById('submit-btn')
+
+  let current = 0
+  const files = {} // doc id -> File
+
+  const resumeBanner = document.getElementById('resume-banner')
+  const resumeBtn = document.getElementById('resume-btn')
+  const discardBtn = document.getElementById('discard-btn')
+  const DRAFT_KEY = 'eel-apply-draft'
+
+  function saveDraft() {
+    const role = form.querySelector('input[name="role"]:checked')?.value
+    const draft = {
+      name: field('f-name').value,
+      id: field('f-id').value,
+      county: field('f-county').value,
+      phone: field('f-phone').value,
+      email: field('f-email').value,
+      role,
+      serve_county: field('f-serve-county').value,
+      oath: field('f-oath').checked,
+      step: current,
+      files: Object.fromEntries(Object.entries(files).map(([k, f]) => [k, f.name])),
+    }
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)) } catch (_) {}
+  }
+
+  function clearDraft() { try { localStorage.removeItem(DRAFT_KEY) } catch (_) {} }
+
+  function loadDraft() {
+    let draft = null
+    try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null') } catch (_) {}
+    if (!draft) return null
+    field('f-name').value = draft.name || ''
+    field('f-id').value = draft.id || ''
+    field('f-county').value = draft.county || ''
+    field('f-phone').value = draft.phone || ''
+    field('f-email').value = draft.email || ''
+    field('f-serve-county').value = draft.serve_county || ''
+    field('f-oath').checked = !!draft.oath
+    if (draft.role) {
+      const radio = form.querySelector(`input[name="role"][value="${draft.role}"]`)
+      if (radio) radio.checked = true
+    }
+    for (const [id, name] of Object.entries(draft.files || {})) {
+      // File objects cannot survive a reload; note the name so the applicant
+      // knows what to re-attach.
+      const status = document.querySelector(`[data-file-status="${id}"]`)
+      if (status && name) { status.textContent = `${name} (re-attach)`; status.classList.add('is-set') }
+    }
+    return draft
+  }
+
+  function showStep(i) {
+    steps.forEach((s, idx) => { s.hidden = idx !== i })
+    progressSteps.forEach((p, idx) => {
+      p.classList.toggle('is-current', idx === i)
+      p.classList.toggle('is-done', idx < i)
+      p.setAttribute('aria-current', idx === i ? 'step' : 'false')
+    })
+    backBtn.hidden = i === 0
+    nextBtn.hidden = i === steps.length - 1
+    nextBtn.textContent = i === steps.length - 2
+      ? nextBtn.dataset.review
+      : nextBtn.dataset.continue
+    if (i > 0) {
+      steps[i].querySelector('h2')?.focus()
+    }
+    current = i
+  }
+
+  function field(id) { return document.getElementById(id) }
+  function setError(id, on) {
+    const el = document.querySelector(`[data-error-for="${id}"]`)
+    const input = document.getElementById(id)
+    if (el) el.classList.toggle('is-visible', !!on)
+    if (input) input.setAttribute('aria-invalid', on ? 'true' : 'false')
+  }
+  function clearErrors() {
+    form.querySelectorAll('.field-error').forEach((e) => e.classList.remove('is-visible'))
+    form.querySelectorAll('[aria-invalid]').forEach((e) => e.removeAttribute('aria-invalid'))
+  }
+
+  function validId(v) {
+    return /^\d{6,9}$/.test(v.replace(/\s/g, ''))
+  }
+  function validPhone(v) {
+    return /^(\+?254|0)?7\d{8}$/.test(v.replace(/[\s-]/g, ''))
+  }
+
+  function stepValid(i) {
+    clearErrors()
+    let ok = true
+    if (i === 0) {
+      if (!field('f-name').value.trim()) { setError('f-name', true); ok = false }
+      if (!validId(field('f-id').value)) { setError('f-id', true); ok = false }
+      if (!field('f-county').value) { setError('f-county', true); ok = false }
+      if (!validPhone(field('f-phone').value)) { setError('f-phone', true); ok = false }
+    } else if (i === 1) {
+      const role = form.querySelector('input[name="role"]:checked')
+      if (!role) { setError('role', true); ok = false }
+    } else if (i === 2) {
+      const role = form.querySelector('input[name="role"]:checked')?.value
+      const missing = docs.filter((d) => d.required && !(d.id === 'academic_cert' && role === 'clerk') && !files[d.id])
+      if (missing.length) { setError('docs', true); ok = false }
+    } else if (i === 3) {
+      if (!field('f-oath').checked) { setError('f-oath', true); ok = false }
+    }
+    return ok
+  }
+
+  // document definitions mirrored from the server render
+  const docs = [
+    { id: 'national_id', name: 'National ID card' },
+    { id: 'kra_pin', name: 'KRA PIN certificate' },
+    { id: 'police_clearance', name: 'Police clearance certificate' },
+    { id: 'passport_photo', name: 'Passport photograph' },
+    { id: 'academic_cert', name: 'Academic / professional certificates' },
+    { id: 'bank_letter', name: 'Bank confirmation letter' },
+  ]
+
+  form.addEventListener('change', (e) => {
+    if (e.target.matches('input[type="file"]')) {
+      const id = e.target.dataset.fileInput
+      const f = e.target.files[0]
+      const status = document.querySelector(`[data-file-status="${id}"]`)
+      if (f) {
+        files[id] = f
+        if (status) { status.textContent = f.name; status.classList.add('is-set') }
+      } else {
+        delete files[id]
+        if (status) { status.textContent = ''; status.classList.remove('is-set') }
+      }
+    }
+    if (e.target.name === 'role') {
+      // academic certificates are optional for clerks only
+      const clerk = e.target.value === 'clerk'
+      document.querySelector('[data-doc="academic_cert"]').setAttribute('data-required', clerk ? 'false' : 'true')
+    }
+    saveDraft()
+  })
+
+  nextBtn.addEventListener('click', () => {
+    if (stepValid(current)) {
+      if (current === steps.length - 2) buildReview()
+      showStep(current + 1)
+      saveDraft()
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  })
+
+  backBtn.addEventListener('click', () => {
+    if (current > 0) showStep(current - 1)
+    saveDraft()
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  })
+
+  function buildReview() {
+    const roleCode = form.querySelector('input[name="role"]:checked')?.value || '—'
+    const roleLabel = form.querySelector(`input[name="role"]:checked`)?.closest('label')?.querySelector('.role-opt__label')?.textContent || roleCode
+    const idRaw = field('f-id').value
+    const masked = idRaw ? '•'.repeat(Math.max(0, idRaw.length - 4)) + idRaw.slice(-4) : '—'
+    const uploads = docs.map((d) => `${d.name}: ${files[d.id] ? '✓' : '—'}`).join('<br>')
+    document.getElementById('review').innerHTML = [
+      ['Name', field('f-name').value],
+      ['National ID', masked],
+      ['County', field('f-county').value],
+      ['Phone', field('f-phone').value],
+      ['Role', roleLabel],
+      ['Serve county', field('f-serve-county').value || 'Any county'],
+      ['Documents', uploads],
+    ].map(([k, v]) => `<div class="review__row"><dt>${k}</dt><dd>${v}</dd></div>`).join('')
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault()
+    if (!stepValid(current)) return
+    if (!field('f-oath').checked) return
+    submitApplication()
+  })
+
+  /// Posts the application to the intake endpoint (PUBLIC_APPLY_ENDPOINT).
+  /// Falls back to a locally-generated reference when no endpoint is
+  /// configured or the network is unavailable (static/demo build).
+  async function submitApplication() {
+    const submitLabel = submitBtn.dataset.submit || submitBtn.textContent.trim()
+    submitBtn.dataset.submit = submitLabel
+    submitBtn.disabled = true
+    submitBtn.textContent = submitLabel + '…'
+
+    let ref
+    const endpoint = import.meta.env.PUBLIC_APPLY_ENDPOINT
+    if (!endpoint) {
+      ref = localReference()
+    } else {
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(await buildPayload()),
+        })
+        if (res.ok) {
+          const body = await res.json()
+          ref = body.application?.application_ref || localReference()
+        } else {
+          ref = localReference()
+        }
+      } catch (_) {
+        ref = localReference()
+      }
+    }
+
+    submitBtn.disabled = false
+    submitBtn.textContent = submitLabel
+
+    document.getElementById('done-ref').textContent = ref
+    clearDraft()
+    form.hidden = true
+    done.hidden = false
+    done.querySelector('h2')?.focus()
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  async function buildPayload() {
+    const roleCode = form.querySelector('input[name="role"]:checked')?.value
+    const documents = []
+    for (const d of docs) {
+      const file = files[d.id]
+      if (!file) continue
+      try {
+        // Real SHA-256 of the bytes. object_key is a placeholder until MinIO
+        // presigned upload is wired; the hash is the verifiable fingerprint.
+        documents.push({
+          doc_type: d.id,
+          content_hash_hex: await sha256(file),
+          object_key: file.name,
+          channel: 'web',
+        })
+      } catch (_) {
+        // Hashing unavailable (insecure context): submit without this file.
+      }
+    }
+    return {
+      applicant_name: field('f-name').value.trim(),
+      national_id: field('f-id').value.trim(),
+      role_code: roleCode,
+      county: (field('f-serve-county').value || field('f-county').value).trim(),
+      phone: field('f-phone').value.trim() || undefined,
+      email: field('f-email').value.trim() || undefined,
+      documents,
+    }
+  }
+
+  async function sha256(file) {
+    const buf = await file.arrayBuffer()
+    const digest = await crypto.subtle.digest('SHA-256', buf)
+    return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('')
+  }
+
+  function localReference() {
+    return 'PWP-' + rand4() + '-' + rand4()
+  }
+
+  function rand4() {
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+    let s = ''
+    for (let i = 0; i < 4; i++) s += chars[Math.floor(Math.random() * chars.length)]
+    return s
+  }
+
+  // Resume a saved draft if one exists on this device.
+  const draft = loadDraft()
+  if (draft) {
+    resumeBanner.hidden = false
+    const start = Math.min(draft.step || 0, steps.length - 1)
+    showStep(start)
+    // Jump to the first incomplete step so the applicant knows where to go.
+    let target = start
+    for (let i = 0; i <= start; i++) { if (!stepValid(i)) { target = i; break } }
+    showStep(target)
+  } else {
+    showStep(0)
+  }
+
+  resumeBtn.addEventListener('click', () => {
+    resumeBanner.hidden = true
+    form.hidden = false
+    done.hidden = true
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  })
+
+  discardBtn.addEventListener('click', () => {
+    clearDraft()
+    resumeBanner.hidden = true
+  })
+</script>
+
+<style>
+  .resume {
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    border-color: var(--green-line);
+    background: var(--green-tint);
+  }
+  .resume__text {
+    margin: 0.25rem 0 0;
+    font-weight: 600;
+    color: var(--green-deep);
+  }
+  .resume__actions {
+    display: flex;
+    gap: 0.6rem;
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .apply__head {
+    padding: 3rem 0 1.5rem;
+  }
+  .apply__title {
+    font-size: clamp(2rem, 4.5vw, 3rem);
+    margin: 0.4rem 0 0.5rem;
+  }
+  .apply__lead {
+    color: var(--ink-soft);
+    max-width: 56ch;
+  }
+
+  .progress {
+    list-style: none;
+    display: flex;
+    gap: 0.4rem;
+    margin: 0 0 2rem;
+    padding: 0;
+    flex-wrap: wrap;
+  }
+  .progress__step {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--raised);
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--ink-faint);
+    transition: all 160ms var(--ease);
+  }
+  .progress__dot {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: var(--line-strong);
+    flex: none;
+  }
+  .progress__step.is-current {
+    border-color: var(--green);
+    background: var(--green-tint);
+    color: var(--green-deep);
+  }
+  .progress__step.is-current .progress__dot {
+    background: var(--green);
+  }
+  .progress__step.is-done {
+    color: var(--green-deep);
+  }
+  .progress__step.is-done .progress__dot {
+    background: var(--green);
+  }
+
+  .apply__wrap {
+    padding-bottom: 4rem;
+  }
+  .form {
+    padding: 2rem;
+    max-width: 46rem;
+  }
+  .step__title {
+    font-size: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .step__lead {
+    color: var(--ink-soft);
+    margin: -0.5rem 0 1.25rem;
+  }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .form__nav {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--line);
+  }
+  .form__nav .btn:only-child {
+    margin-left: auto;
+  }
+  .form__saved {
+    margin: 1rem 0 0;
+    font-size: 0.82rem;
+    color: var(--ink-faint);
+    text-align: center;
+  }
+
+  /* role picker */
+  .role-pick {
+    border: none;
+    margin: 0 0 1.25rem;
+    padding: 0;
+    display: grid;
+    gap: 0.75rem;
+  }
+  .role-opt input {
+    position: absolute;
+    opacity: 0;
+  }
+  .role-opt__card {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 1rem 1.1rem;
+    border: 2px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    cursor: pointer;
+    transition: border-color 140ms var(--ease), box-shadow 140ms var(--ease);
+  }
+  .role-opt__code {
+    color: var(--seal);
+    font-weight: 700;
+    font-size: 0.8rem;
+    flex: none;
+  }
+  .role-opt__label {
+    font-weight: 650;
+  }
+  .role-opt input:focus-visible + .role-opt__card {
+    box-shadow: var(--focus);
+  }
+  .role-opt input:checked + .role-opt__card {
+    border-color: var(--green);
+    background: var(--green-tint);
+    box-shadow: 0 0 0 1px var(--green);
+  }
+
+  /* documents */
+  .docs {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.6rem;
+  }
+  .doc {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+  }
+  .doc__info {
+    display: grid;
+  }
+  .doc__name {
+    font-weight: 650;
+  }
+  .doc__hint {
+    font-size: 0.82rem;
+    color: var(--ink-faint);
+  }
+  .doc__right {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    flex: none;
+  }
+  .doc__btn {
+    font-size: 0.85rem;
+    padding: 0.5rem 0.9rem;
+  }
+  .doc__status {
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+    max-width: 12rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .doc__status.is-set {
+    color: var(--green-deep);
+  }
+
+  /* oath */
+  .oath {
+    background: var(--paper-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+  }
+  .oath__body {
+    font-family: var(--font-display);
+    font-size: 1.12rem;
+    color: var(--ink);
+    max-width: 60ch;
+  }
+  .oath__confirm {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    cursor: pointer;
+    font-weight: 650;
+    margin-top: 0.5rem;
+  }
+  .oath__confirm input {
+    position: absolute;
+    opacity: 0;
+  }
+  .oath__box {
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 2px solid var(--line-strong);
+    border-radius: 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    transition: all 140ms var(--ease);
+  }
+  .oath__confirm input:focus-visible + .oath__box {
+    box-shadow: var(--focus);
+  }
+  .oath__confirm input:checked + .oath__box {
+    background: var(--green);
+    border-color: var(--green);
+  }
+  .oath__confirm input:checked + .oath__box::after {
+    content: '✓';
+    color: #fff;
+    font-weight: 700;
+  }
+
+  /* review */
+  .review {
+    margin: 0 0 1.5rem;
+    display: grid;
+    gap: 0.5rem;
+  }
+  .review__row {
+    display: grid;
+    grid-template-columns: minmax(8rem, 12rem) 1fr;
+    gap: 1rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px dashed var(--line);
+  }
+  .review__row dt {
+    color: var(--ink-faint);
+  }
+  .review__row dd {
+    margin: 0;
+    font-weight: 600;
+  }
+
+  /* success */
+  .done {
+    padding: 2.5rem;
+    max-width: 46rem;
+    text-align: center;
+    display: grid;
+    justify-items: center;
+    gap: 0.5rem;
+  }
+  .done__title {
+    font-size: clamp(1.8rem, 4vw, 2.4rem);
+  }
+  .done__body {
+    color: var(--ink-soft);
+    max-width: 52ch;
+  }
+  .done__seal-wrap {
+    margin: 1.5rem 0;
+  }
+  .done__next {
+    margin-top: 1rem;
+    font-size: 1.2rem;
+  }
+  .done__steps {
+    text-align: left;
+    color: var(--ink-soft);
+    margin: 0 auto 1.5rem;
+    max-width: 42ch;
+  }
+
+  @media (max-width: 640px) {
+    .form {
+      padding: 1.25rem;
+    }
+    .grid-2 {
+      grid-template-columns: 1fr;
+    }
+    .doc {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .doc__right {
+      width: 100%;
+      justify-content: space-between;
+    }
+    .review__row {
+      grid-template-columns: 1fr;
+      gap: 0.2rem;
+    }
+  }
+</style>

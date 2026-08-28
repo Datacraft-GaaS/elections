@@ -16,6 +16,7 @@ path = "src/lib.rs"
 
 [dependencies]
 tlog-domain = { path = "../tlog-domain" }
+tlog-ingest = { path = "../tlog-ingest" }
 eel-crypto-rs = { path = "../../../../packages/eel-crypto-rs" }
 ed25519-dalek = { workspace = true }
 
@@ -31,6 +32,7 @@ uuid = { workspace = true }
 chrono = { workspace = true }
 anyhow = { workspace = true }
 hex = "0.4"
+base64 = { workspace = true }
 tar = "0.4"
 flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
 reqwest = { version = "0.12", features = ["rustls-tls", "json"], default-features = false }

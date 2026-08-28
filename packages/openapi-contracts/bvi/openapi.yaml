@@ -72,6 +72,7 @@ paths:
   /api/v1/bvi/sessions:
     post:
       operationId: openBviSession
+      x-handler-bound: bvi-svc.bvi.open_bvi_session
       summary: Open a new BVI device session
       description: |
         Called by the BVI device at poll-open to establish a session. A device
@@ -139,6 +140,7 @@ paths:
   /api/v1/bvi/sessions/{id}/close:
     patch:
       operationId: closeBviSession
+      x-handler-bound: bvi-svc.bvi.close_bvi_session
       summary: Close a BVI device session
       description: |
         Called at poll-close or on device shutdown. Marks the session as closed
@@ -196,6 +198,7 @@ paths:
   /api/v1/bvi/identifications:
     post:
       operationId: recordIdentification
+      x-handler-bound: bvi-svc.bvi.record_identification
       summary: Record a voter biometric identification event
       description: |
         Submitted by the BVI device immediately after a match decision is reached.
@@ -280,6 +283,7 @@ paths:
   /api/v1/bvi/telemetry:
     post:
       operationId: submitTelemetry
+      x-handler-bound: bvi-svc.bvi.submit_telemetry
       summary: Submit device health telemetry
       description: |
         Devices submit telemetry readings on a configurable interval (default 60 s).
@@ -324,6 +328,7 @@ paths:
   /api/v1/bvi/distress:
     post:
       operationId: raiseDistress
+      x-handler-bound: bvi-svc.bvi.raise_distress
       summary: Raise a distress or duress signal from a device
       description: |
         Silent panic alert from a BVI device. Triggers an immediate notification
@@ -384,6 +389,7 @@ paths:
   /api/v1/bvi/config/{station_code}:
     get:
       operationId: getStationConfig
+      x-handler-bound: bvi-svc.bvi.get_station_config
       summary: Fetch BVI configuration for a station
       description: |
         Devices pull configuration at boot and after re-association. The response
@@ -449,6 +455,7 @@ paths:
   /api/v1/bvi/kits/{serial}/revoke:
     post:
       operationId: revokeKit
+      x-handler-bound: bvi-svc.bvi.revoke_kit
       summary: Revoke a BVI kit
       description: |
         Immediately invalidates the kit's SVID and blacklists its device_serial.
@@ -531,6 +538,7 @@ paths:
   /api/v1/bvi/turnout:
     get:
       operationId: getTurnout
+      x-handler-bound: bvi-svc.bvi.get_turnout
       summary: Get aggregated voter turnout statistics
       description: |
         Returns real-time turnout aggregates. Data-class D, no voter identifiers.
@@ -606,6 +614,7 @@ paths:
   /api/v1/bvi/kits/health:
     get:
       operationId: listKitsHealth
+      x-handler-bound: bvi-svc.bvi.list_kits_health
       summary: List kit health status for the caller's scope
       description: |
         Returns health telemetry for all kits within the caller's SpiceDB scope.
@@ -661,6 +670,7 @@ paths:
   /api/v1/bvi/voters/{voter_id}/station:
     get:
       operationId: getVoterStation
+      x-handler-bound: bvi-svc.bvi.get_voter_station
       summary: Get the assigned polling station for a voter
       description: |
         Returns the voter's registered polling station. Data-class B, voter

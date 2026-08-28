@@ -23,6 +23,8 @@ paths:
     post:
       tags: [content]
       operationId: publishContent
+      x-handler-bound: training-svc.training-cms.publish_content
+      x-handler-bound: training-svc.training-cms.post_content
       summary: Publish educational content item
       description: Creates and publishes a voter education content item. Idempotent on Idempotency-Key.
       x-eel-sla:
@@ -62,6 +64,8 @@ paths:
     get:
       tags: [content]
       operationId: listContent
+      x-handler-bound: training-svc.training-cms.list_content
+      x-handler-bound: training-svc.training-cms.get_content_list
       summary: List published voter education content
       description: Returns paginated list of published content items. Public endpoint. Tier 1 with Merkle proofs.
       x-eel-sla:
@@ -113,6 +117,7 @@ paths:
     get:
       tags: [content]
       operationId: getContent
+      x-handler-bound: training-svc.training-cms.get_content
       summary: Get content item detail
       description: Returns full content item including body HTML in all available languages. Public. Tier 1.
       x-eel-sla:
@@ -142,6 +147,7 @@ paths:
     put:
       tags: [content]
       operationId: updateContent
+      x-handler-bound: training-svc.training-cms.update_content
       summary: Update content item
       description: Full replacement update of a content item. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -183,6 +189,7 @@ paths:
     delete:
       tags: [content]
       operationId: deleteContent
+      x-handler-bound: training-svc.training-cms.delete_content
       summary: Soft-delete content item
       description: Marks content item as deleted. Idempotent. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -212,6 +219,7 @@ paths:
     post:
       tags: [content]
       operationId: addContentTranslation
+      x-handler-bound: training-svc.training-cms.add_content_translation
       summary: Add translation to content item
       description: Adds or replaces a language translation for a content item. Idempotent on Idempotency-Key plus language_code.
       x-eel-sla:

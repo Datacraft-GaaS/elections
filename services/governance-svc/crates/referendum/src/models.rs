@@ -76,3 +76,70 @@ pub struct KitModeBundle {
     pub ack_count: u32,
     pub total_kits: u32,
 }
+
+/// A single answer option for a referendum question.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReferendumOption {
+    pub label: String,
+    pub code: String,
+}
+
+/// Public referendum question (M49 spec: `ReferendumQuestion`).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReferendumQuestion {
+    pub question_id: String,
+    pub text_en: String,
+    pub text_sw: String,
+    pub gazette_ref: String,
+    pub options: Vec<ReferendumOption>,
+    pub created_at: String,
+}
+
+/// Request body for registering a referendum question.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReferendumQuestionRequest {
+    pub question_id: String,
+    pub text_en: String,
+    pub text_sw: String,
+    pub gazette_ref: String,
+    pub options: Vec<ReferendumOption>,
+}
+
+/// Per-county public result row (M49 spec: `CountyResult`).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CountyResult {
+    pub county_code: String,
+    pub county_name: String,
+    pub yes_votes: u64,
+    pub no_votes: u64,
+    pub total_votes: u64,
+    pub approved: bool,
+}
+
+/// National + per-county referendum results (M49 spec: `ReferendumResults`).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReferendumResults {
+    pub question_id: String,
+    pub national_yes: u64,
+    pub national_no: u64,
+    pub national_total: u64,
+    pub county_results: Vec<CountyResult>,
+    pub snapshot_at: String,
+}
+
+/// One county's approval flag in the threshold breakdown.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CountyBreakdown {
+    pub county_code: String,
+    pub approved: bool,
+}
+
+/// 24-of-47 county threshold status (M49 spec: `CountyThresholdStatus`).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CountyThresholdStatus {
+    pub counties_required: u8,
+    pub counties_approved: u8,
+    pub threshold_met: bool,
+    pub county_breakdown: Vec<CountyBreakdown>,
+    pub snapshot_at: String,
+}

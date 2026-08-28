@@ -88,10 +88,19 @@ defmodule EccLive.Live.CoverTamperLive do
   # ---------------------------------------------------------------------------
 
   @impl true
-  def handle_event("resolve", %{"alert_id" => alert_id}, socket) do
-    Logger.info("resolving cover tamper alert", alert_id: alert_id)
-    # POST to inventory-svc API: PATCH /v1/rfid/tamper-alerts/:id/resolve
-    case resolve_alert(alert_id) do
+  def handle_event("resolve", %{"alert_id" => alert_id} = params, socket) do
+    second_officer = Map.get(params, "second_officer_id", "") |> String.trim()
+
+    if second_officer == "" do
+      {:noreply, put_flash(socket, :error, "Dual control: a second officer must countersign the resolution.")}
+    else
+      Logger.info("resolving cover tamper alert",
+        alert_id: alert_id,
+        countersigned_by: second_officer
+      )
+
+      # POST to inventory-svc API: PATCH /v1/rfid/tamper-alerts/:id/resolve
+      case resolve_alert(alert_id, second_officer) do
       :ok ->
         filters = current_filters(socket)
         alerts = fetch_alerts(filters)
@@ -103,6 +112,7 @@ defmodule EccLive.Live.CoverTamperLive do
       {:error, reason} ->
         Logger.error("failed to resolve alert", alert_id: alert_id, reason: reason)
         {:noreply, put_flash(socket, :error, "Could not resolve alert: #{reason}")}
+      end
     end
   end
 
@@ -307,8 +317,10 @@ defmodule EccLive.Live.CoverTamperLive do
     _ -> []
   end
 
-  defp resolve_alert(alert_id) do
-    case Req.patch("#{base_url()}/v1/rfid/tamper-alerts/#{alert_id}/resolve", json: %{}) do
+  defp resolve_alert(alert_id, second_officer) do
+    case Req.patch("#{base_url()}/v1/rfid/tamper-alerts/#{alert_id}/resolve",
+           json: %{second_officer: second_officer}
+         ) do
       {:ok, %{status: s}} when s in [200, 204] -> :ok
       {:ok, %{status: s}} -> {:error, "HTTP #{s}"}
       {:error, reason} -> {:error, inspect(reason)}

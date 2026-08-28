@@ -40,9 +40,9 @@ export default function eelWebAstro(options: EelWebOptions): AstroIntegration {
 					entrypoint: '@eel/web-astro/health',
 				});
 			},
-			'astro:config:done': ({ config }) => {
+			'astro:config:done': ({ config, logger }) => {
 				if (locales.length > 1 && !config.i18n) {
-					console.warn(`[eel-web-astro] Multiple locales configured but Astro i18n not set up. Add i18n config to astro.config.mjs. (default: ${defaultLocale})`);
+					logger.warn(`[eel-web-astro] Multiple locales configured but Astro i18n not set up. Add i18n config to astro.config.mjs. (default: ${defaultLocale})`);
 				}
 			},
 		},

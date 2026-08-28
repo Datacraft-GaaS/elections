@@ -29,6 +29,9 @@ services/inventory-svc/
     custody/            - Asset custody ledger: Asset, CustodyEvent (HSM-signed)
     diaspora-logistics/ - M65 diaspora ballot logistics
     printing/           - M39 ballot printing chain
+    transport/          - Vehicle transport + security deployment (M20)
+    warehouse/          - Warehouses, transfers, pallets, incidents (M20)
+    inventory-api/      - HTTP API for custody + transport + warehouse (M20)
   deploy/               - Kustomize base + overlays (primary, bomas, edge)
   django/               - Admin interface (bulk ops, reconciliation)
   docs/                 - Service documentation
@@ -62,6 +65,75 @@ Emitted:
 Consumed:
 - rts.form34.submitted: Ballot count reconciliation trigger
 - biometric-edge.kit.attested: Kit registration and identity verification
+
+## Transport & security deployment
+
+The `transport` crate (migration `V004__transport_security.sql`) assigns ballot
+lots to vehicles and security agents to vehicles and polling stations:
+
+- `Vehicle` — truck/van/air with a ballot-box capacity.
+- `VehicleLoad` + `LoadItem` — a dispatch load; each ballot lot is captured by
+  an RFID or barcode scan (`scan_method` + `scan_value`), with duplicate-lot
+  rejection and per-vehicle capacity enforcement.
+- `SecurityAgent` + `SecurityAssignment` — assign an agent to escort a vehicle
+  or guard a station within a time window; overlapping assignments for the
+  same agent are rejected.
+
+Events: `eel.transport.vehicle_registered.v1`, `ballots_loaded.v1`,
+`vehicle_dispatched.v1`, `vehicle_delivered.v1`, `security_assigned.v1`,
+`security_released.v1`.
+
+## Warehouses & pallets
+
+The `warehouse` crate (migration `V005__warehouse.sql`) models the physical
+network and the material moving through it:
+
+- `Warehouse` — master / regional / county tier with a geofence for location
+  validation.
+- `WarehouseTransfer` — inter-warehouse movement with explicit departure and
+  arrival, plus arrival reconciliation (`missing_pallets`/`extra_pallets`).
+- `Pallet` + `PalletItem` — a serial-numbered pallet tracked from receipt,
+  through storage/transfer and break bulk, to use at a polling station.
+- `Incident` + `IncidentNote` — tamper, loss, damage, and discrepancy notes
+  with P0–P3 severity and an append-only note log.
+
+Events: `eel.warehouse.warehouse_registered.v1`, `transfer_created.v1`,
+`transfer_departed.v1`, `transfer_arrived.v1`, `pallet_received.v1`,
+`pallet_break_bulk.v1`, `pallet_dispatched.v1`, `pallet_used.v1`,
+`incident_opened.v1`, `incident_resolved.v1`.
+
+## HTTP API (inventory-api)
+
+`crates/inventory-api` is a single `axum` service exposing custody, transport,
+and warehouse domains. It uses an in-memory store by default, so it runs and
+is fully testable **out of the box** with no database.
+
+```bash
+cargo run -p inventory-api            # binds 0.0.0.0:8081 (LISTEN_ADDR to override)
+cargo test -p inventory-api           # hermetic smoke tests
+```
+
+Routes:
+
+- Custody: `POST/GET /v1/inventory/assets`, `POST /v1/inventory/custody-events`, `GET /v1/inventory/assets/{id}/history`
+- Transport: `POST/GET /v1/transport/vehicles`, `POST /v1/transport/loads`, `POST /v1/transport/loads/{id}/items` (RFID/barcode scan), `.../dispatch`, `.../deliver`, `POST/GET /v1/transport/security-assignments`
+- Warehouse: `POST/GET /v1/warehouse/warehouses`, `POST /v1/warehouse/transfers`, `.../{id}/depart`, `.../{id}/arrive`, `POST /v1/warehouse/pallets`, `.../{id}/store`, `.../{id}/break-bulk`, `.../{id}/dispatch`, `.../{id}/used`, `POST/GET /v1/warehouse/incidents`, `.../{id}/resolve`
+
+### Configuration (inventory-api)
+
+| Env var | Default | Meaning |
+|---|---|---|
+| `LISTEN_ADDR` | `0.0.0.0:8081` | Bind address |
+| `DATABASE_URL` | unset → in-memory | Postgres connection string; migrations applied at startup |
+| `SPICEDB_ENDPOINT` | unset | SpiceDB HTTP endpoint; enables authorization |
+| `JWKS_URL` | unset | Keycloak JWKS URL; enables authorization |
+| `JWKS_REALM` | `eel` | Keycloak realm |
+| `EEL_OIDC_AUDIENCE` | unset | Pin accepted token audience/azp |
+
+Authorization is enabled only when **both** `SPICEDB_ENDPOINT` and `JWKS_URL`
+are set. When enabled, every protected route requires a bearer token verified
+against Keycloak and a SpiceDB `inventory_access` check on `inventory`
+(fail-closed); `/health` stays public.
 
 ## Data model
 

@@ -3,6 +3,7 @@
 pub mod health;
 pub mod leaves;
 pub mod proofs;
+pub mod spec;
 pub mod sth;
 pub mod witnesses;
 
@@ -43,4 +44,10 @@ pub fn router() -> Router<ApiState> {
             "/api/v1/transparency/leaves/{index}",
             get(leaves::get_leaf),
         )
+        .route(
+            "/v1/tlog/receipts/{code}",
+            get(proofs::resolve_receipt),
+        )
+        .route("/api/v1/log/entries", get(spec::get_log_entries))
+        .route("/api/v1/log/leaves", axum::routing::post(spec::append_leaf))
 }

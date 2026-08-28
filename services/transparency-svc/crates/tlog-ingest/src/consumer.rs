@@ -7,10 +7,40 @@ use rdkafka::consumer::{Consumer, StreamConsumer};
 use rdkafka::message::Message;
 use sqlx::PgPool;
 use tokio::sync::Semaphore;
-use tlog_sequencer::Sequencer;
-use tracing::{info, warn};
+use tlog_sequencer::{AppendResult, Sequencer, SequencerError};
+use tracing::{error, info, warn};
 
 use crate::topic_router::topic_to_domain;
+
+/// Decision for the consumer's offset invariant (ADR-0017): advance the Kafka
+/// offset ONLY when the event is durably in the log; otherwise park (record a
+/// failure and retry) with a stable failure `kind` for dead-letter triage.
+///
+/// HM3 fault-injection policy: pure function over the sequencer outcome, no
+/// database required to evaluate.
+#[derive(Debug, PartialEq)]
+pub enum OffsetPolicy {
+    /// Event durably in the log — safe to save the offset.
+    Advance,
+    /// Park the offset and record a failure of the given kind.
+    Park { kind: &'static str },
+}
+
+/// Map a sequencer append outcome to an offset policy.
+///
+/// Note on duplicate appends: the dedup path in the sequencer returns
+/// `Ok(Some(_))` (a synthetic result with leaf_index 0), so replays after an
+/// offset-save failure are treated as Advance — exactly what makes re-append
+/// on restart dedup-safe.
+pub fn offset_policy(
+    outcome: &Result<Option<AppendResult>, SequencerError>,
+) -> OffsetPolicy {
+    match outcome {
+        Ok(Some(_)) => OffsetPolicy::Advance,
+        Ok(None) => OffsetPolicy::Park { kind: "rate_limited" },
+        Err(e) => OffsetPolicy::Park { kind: e.kind() },
+    }
+}
 
 pub struct IngestConsumer {
     pool: Arc<PgPool>,
@@ -77,7 +107,12 @@ impl IngestConsumer {
                         .and_then(|b64| base64_decode(b64).ok())
                         .unwrap_or_default();
 
-                    match self
+                    // Integrity invariant (ADR-0017): the offset is advanced
+                    // ONLY when the event is durably in the log. Rate-limited
+                    // and failed appends park in tlog_ingest_failures and
+                    // block the offset so they are retried / alarmed, never
+                    // silently skipped.
+                    let outcome = self
                         .sequencer
                         .append(
                             domain,
@@ -88,30 +123,44 @@ impl IngestConsumer {
                             event_time,
                             &sig,
                         )
+                        .await;
+
+                    if let OffsetPolicy::Park { kind } = offset_policy(&outcome) {
+                        match &outcome {
+                            Ok(None) => {
+                                warn!(topic = %topic, "rate limit exceeded; parking failure")
+                            }
+                            Err(e) => warn!(error = %e, "append failed; parking failure"),
+                            Ok(Some(_)) => unreachable!("Advance cannot produce a detail"),
+                        }
+                        let detail = match &outcome {
+                            Ok(None) => "sequencer rate limit exceeded".to_string(),
+                            Err(e) => e.to_string(),
+                            Ok(Some(_)) => unreachable!(),
+                        };
+                        if let Err(e2) = crate::failures::record_failure(
+                            &self.pool,
+                            &topic,
+                            msg.partition(),
+                            msg.offset(),
+                            Some(&event_id),
+                            kind,
+                            &detail,
+                        )
                         .await
-                    {
-                        Ok(Some(result)) => {
-                            info!(leaf_index = result.leaf_index, "leaf appended");
+                        {
+                            error!(error = %e2, "failed to record ingest failure; offset NOT advanced");
                         }
-                        Ok(None) => {
-                            warn!(topic = %topic, "rate limit exceeded, will retry");
-                        }
-                        Err(e) => {
-                            warn!(error = %e, "append failed");
-                        }
+                        continue;
                     }
 
                     let partition = msg.partition();
                     let offset = msg.offset();
-                    if let Err(e) = crate::offset_tracker::save_offset(
-                        &self.pool,
-                        &topic,
-                        partition,
-                        offset,
-                    )
-                    .await
+                    if let Err(e) =
+                        crate::offset_tracker::save_offset(&self.pool, &topic, partition, offset)
+                            .await
                     {
-                        warn!(error = %e, "offset save failed");
+                        error!(error = %e, "offset save failed; will re-append on restart (dedup safe)");
                     }
                 }
             }
@@ -150,4 +199,76 @@ fn base64_decode(s: &str) -> Result<Vec<u8>, ()> {
         }
     }
     Ok(out)
+}
+
+#[cfg(test)]
+mod offset_policy_tests {
+    //! HM3 fault-injection policy tests: evaluate the offset decision for every
+    //! sequencer outcome WITHOUT a database. `AppendResult` and
+    //! `InclusionProof` have public fields, so outcomes are constructed
+    //! directly.
+    use super::*;
+    use tlog_domain::InclusionProof;
+
+    fn ok_append(leaf_index: u64) -> Result<Option<AppendResult>, SequencerError> {
+        Ok(Some(AppendResult {
+            leaf_index,
+            tree_size: leaf_index + 1,
+            proof: InclusionProof {
+                leaf_index,
+                tree_size: leaf_index + 1,
+                root_hash: String::new(),
+                hashes: vec![],
+            },
+        }))
+    }
+
+    #[test]
+    fn advance_only_on_success() {
+        assert_eq!(offset_policy(&ok_append(7)), OffsetPolicy::Advance);
+    }
+
+    #[test]
+    fn park_on_rate_limit() {
+        assert_eq!(
+            offset_policy(&Ok(None)),
+            OffsetPolicy::Park { kind: "rate_limited" }
+        );
+    }
+
+    #[test]
+    fn park_on_proof_partition() {
+        // Simulates a partition / proof-generation failure ("db down" payload).
+        let outcome: Result<Option<AppendResult>, SequencerError> =
+            Err(SequencerError::Proof("db down".into()));
+        assert_eq!(offset_policy(&outcome), OffsetPolicy::Park { kind: "proof" });
+    }
+
+    #[test]
+    fn park_on_dead_db() {
+        let outcome: Result<Option<AppendResult>, SequencerError> =
+            Err(SequencerError::Db(sqlx::Error::RowNotFound));
+        assert_eq!(offset_policy(&outcome), OffsetPolicy::Park { kind: "db" });
+    }
+
+    #[test]
+    fn duplicate_append_still_advances() {
+        // Dedup semantics: when an event already exists (e.g. re-append after
+        // an offset-save failure), the sequencer returns Ok(Some(_)) with
+        // leaf_index 0 — the event IS durably in the log, so the offset must
+        // advance. This is exactly what makes restart replays dedup-safe.
+        assert_eq!(offset_policy(&ok_append(0)), OffsetPolicy::Advance);
+    }
+
+    #[test]
+    fn no_failure_mode_advances() {
+        let modes: Vec<Result<Option<AppendResult>, SequencerError>> = vec![
+            Ok(None),
+            Err(SequencerError::Proof("db down".into())),
+            Err(SequencerError::Db(sqlx::Error::RowNotFound)),
+        ];
+        for m in &modes {
+            assert_ne!(offset_policy(m), OffsetPolicy::Advance, "{:?}", m);
+        }
+    }
 }

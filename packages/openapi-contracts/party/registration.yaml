@@ -29,6 +29,7 @@ paths:
     post:
       tags: [registrations]
       operationId: submitPartyRegistration
+      x-handler-bound: crms-svc.party.submit_party_registration
       summary: Submit new party registration application
       description: >
         Tier 2. Submits a new party registration application. The application
@@ -73,6 +74,7 @@ paths:
     get:
       tags: [registrations]
       operationId: getPartyRegistration
+      x-handler-bound: crms-svc.party.get_party_registration
       summary: Get party registration status
       description: >
         Tier 2. Returns the full PartyRegistration resource including current
@@ -105,6 +107,7 @@ paths:
     post:
       tags: [documents]
       operationId: initiatePartyDocumentUpload
+      x-handler-bound: crms-svc.party.initiate_party_document_upload
       summary: Request presigned URL for party statutory document upload
       description: >
         Tier 2. Returns a short-lived MinIO presigned PUT URL. The client uploads
@@ -149,6 +152,7 @@ paths:
     get:
       tags: [parties]
       operationId: listPublicParties
+      x-handler-bound: crms-svc.party.list_public_parties
       summary: List all registered active parties
       description: >
         Tier 1. Public endpoint. Returns all currently registered and active
@@ -216,6 +220,7 @@ paths:
     get:
       tags: [parties]
       operationId: getParty
+      x-handler-bound: crms-svc.party.get_party
       summary: Get public party detail
       description: >
         Tier 1. Public endpoint. Returns full public details for a single
@@ -255,6 +260,7 @@ paths:
     post:
       tags: [admin]
       operationId: recordRegistrationDecision
+      x-handler-bound: crms-svc.party.record_registration_decision
       summary: Record administrative registration decision
       description: >
         Tier 3. Requires JWT plus SpiceDB authorization. Records the registrar's

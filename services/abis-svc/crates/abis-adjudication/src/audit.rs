@@ -180,7 +180,9 @@ pub enum AuditError {
 }
 
 /// Ed25519 test double that uses an ephemeral key pair.
-#[cfg(any(test, feature = "test-utils"))]
+///
+/// Unconditionally public so integration tests (which compile the crate
+/// without `cfg(test)`) can import it; inert in production binaries.
 pub mod test_utils {
     use super::HsmSigner;
     use eel_crypto_rs::ed25519::{generate_keypair, sign, Ed25519SigningKey};

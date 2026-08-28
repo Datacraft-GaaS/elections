@@ -189,7 +189,7 @@ pub fn find_key_by_role(
     session: &Session,
     role: KeyRole,
 ) -> Result<cryptoki::object::ObjectHandle, CryptoError> {
-    use cryptoki::object::{Attribute, AttributeType};
+    use cryptoki::object::Attribute;
 
     let label = role.label();
     let template = vec![Attribute::Label(label.as_bytes().to_vec())];

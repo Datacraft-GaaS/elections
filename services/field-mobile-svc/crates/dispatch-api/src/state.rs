@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use crate::models::{WorkerAssignment, WorkerCheckIn, WorkerCheckOut, WorkerStatusPing};
+use crate::spec::DispatchAssignment;
 
 /// In-memory store for the dispatch service (M33).
 ///
@@ -12,4 +13,5 @@ pub struct AppState {
     pub check_outs: Arc<Mutex<Vec<WorkerCheckOut>>>,
     pub pings: Arc<Mutex<Vec<WorkerStatusPing>>>,
     pub assignments: Arc<Mutex<Vec<WorkerAssignment>>>,
+    pub spec_assignments: Arc<Mutex<std::collections::HashMap<String, DispatchAssignment>>>,
 }

@@ -264,13 +264,16 @@ synth:
 # Seed the local database with synthetic data
 seed: synth
     @echo "[seed] seeding database..."
-    @if command -v sqlx >/dev/null 2>&1 && [ -n "${DATABASE_URL:-}" ]; then \
-      echo "[seed] running sqlx migrations..."; \
-      find services -name "migrations" -type d -maxdepth 8 | \
-        xargs -I{} sh -c 'sqlx migrate run --source {} 2>/dev/null || true'; \
+    @if [ -n "${DATABASE_URL:-}" ]; then \
+      echo "[seed] running migrations (eel-migrate)..."; \
+      cargo run -p eel-migrate; \
     else \
-      echo "[seed] DATABASE_URL not set or sqlx missing, skipping"; \
+      echo "[seed] DATABASE_URL not set, skipping"; \
     fi
+
+# Apply all services' migrations to DATABASE_URL (idempotent)
+migrate:
+    @cargo run -p eel-migrate
 
 # ---------------------------------------------------------------------------
 # CI
@@ -279,6 +282,18 @@ seed: synth
 # Full CI: lint + test + contracts (must exit 0 on empty workspace)
 ci: lint test contracts
     @echo "[ci] all checks passed"
+
+# Verify every crate inherits the workspace version (no divergent pins) and
+# the workspace version itself is not a placeholder.
+check-release:
+    @ver=$$(grep -m1 '^version' Cargo.toml | sed 's/.*"\(.*\)".*/\1/'); \
+      echo "[check-release] workspace version: $$ver"; \
+      if [ "$$ver" = "0.0.0" ]; then echo "ERROR: placeholder version 0.0.0"; exit 1; fi; \
+      if grep -rn '^version[[:space:]]*=' --include=Cargo.toml services packages tools 2>/dev/null \
+         | grep -v 'version.workspace\|version = "0.1.0"'; then \
+           echo "ERROR: crate pins a divergent version (expected version.workspace = true)"; exit 1; \
+      fi; \
+      echo "[check-release] all crates inherit the workspace version"
 
 # ---------------------------------------------------------------------------
 # Housekeeping

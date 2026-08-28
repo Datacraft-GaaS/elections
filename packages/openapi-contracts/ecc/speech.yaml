@@ -28,6 +28,7 @@ paths:
     post:
       tags: [media-items]
       operationId: submitMediaItem
+      x-handler-bound: ecc-svc.ecc.submit_media_item
       summary: Submit media item for analysis
       description: >
         Queues a media item URL for automated analysis followed by analyst
@@ -71,6 +72,7 @@ paths:
     get:
       tags: [media-items]
       operationId: listMediaItems
+      x-handler-bound: ecc-svc.ecc.list_media_items
       summary: List media items
       description: >
         Returns a paginated list of media items the authenticated analyst can
@@ -125,6 +127,7 @@ paths:
     get:
       tags: [media-items]
       operationId: getMediaItem
+      x-handler-bound: ecc-svc.ecc.get_media_item
       summary: Get media item detail
       description: >
         Returns the full detail of a media item including automated analysis
@@ -157,6 +160,7 @@ paths:
     post:
       tags: [adjudications]
       operationId: adjudicateMediaItem
+      x-handler-bound: ecc-svc.ecc.adjudicate_media_item
       summary: Submit analyst decision on media item
       description: >
         Records the analyst verdict for a media item and optionally triggers
@@ -204,6 +208,7 @@ paths:
     get:
       tags: [reports]
       operationId: getSpeechSummaryReport
+      x-handler-bound: ecc-svc.ecc.get_speech_summary_report
       summary: Aggregate speech integrity summary
       description: >
         Returns count-level aggregate statistics by category and verdict.

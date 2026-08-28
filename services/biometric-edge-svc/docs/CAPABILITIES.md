@@ -145,7 +145,7 @@ Tables from `migrations/V1__kit_attestations.sql`, `V2__kit_heartbeats.sql`, `V3
 | Table | Purpose |
 |-------|---------|
 | `kit_attestations` | Last-seen attestation per kit. Columns: `id`, `device_serial`, `attestation_kind` (play_integrity/app_attest/tpm_quote/legacy_software), `integrity_level` (MEETS_STRONG/MEETS_DEVICE/MEETS_BASIC), `kit_tier`, `cert_thumbprint`, `legacy_warning`, `attested_at`, `expires_at`, `revoked`, `revoked_at`, `revoked_reason`, `created_at`, `updated_at`. Unique index on `(device_serial, attested_at DESC)`. Partial index on `expires_at WHERE revoked=FALSE`. |
-| `kit_heartbeats` | Daily telemetry. Columns: `id`, `device_serial`, `station_code`, `recorded_at`, `battery_pct`, `gps_lat`, `gps_lon`, `gnss_fix_quality`, `network_rssi_dbm`, `uptime_s`, `enrolled_count`. Partitioned by RANGE(`recorded_at`); 30-day rolling retention. |
+| `biometric_kit_heartbeats` | Daily telemetry. Columns: `id`, `device_serial`, `station_code`, `recorded_at`, `battery_pct`, `gps_lat`, `gps_lon`, `gnss_fix_quality`, `network_rssi_dbm`, `uptime_s`, `enrolled_count`. Partitioned by RANGE(`recorded_at`); 30-day rolling retention. |
 | `kit_ota_manifests` | Signed OTA update manifests. Columns: `id`, `kit_tier` (bvr-kit/bvi-kit/legacy-android), `version`, `download_url`, `manifest_sig`, `released_at`, `active`. Unique on `(kit_tier, version)`. Partial index on `(kit_tier, released_at DESC) WHERE active=TRUE`. |
 | `kit_telemetry_outbox` (V4) | Telemetry outbox for Kafka relay. Planned columns: `id`, `device_serial`, `payload` (JSONB), `created_at`, `published_at`. Verify in Wave 2. |
 | Isar (kit-side) | Encrypted local database on each kit (isar + SQLCipher). Stores: pending enrolment events, pending identification events, cached register extract, OTA manifest cache. Not server-side; crash-consistent via Isar ACID transactions. |
@@ -222,7 +222,7 @@ All CloudEvents 1.0. Source: `spiffe://eel.local/svc/biometric-edge-svc`.
 | POST | `/v1/edge/kits/{serial}/enrolments` | Kit submits batch enrolment events (SPIRE SVID auth) |
 | POST | `/v1/edge/kits/{serial}/identifications` | Kit submits batch identification events (SPIRE SVID auth) |
 | POST | `/v1/edge/kits/{serial}/sync` | Kit requests offline queue sync; supplies queued events from 7-day local cache |
-| POST | `/v1/edge/kits/{serial}/heartbeat` | Kit telemetry: battery, GPS, RSSI, uptime (inserted into kit_heartbeats) |
+| POST | `/v1/edge/kits/{serial}/heartbeat` | Kit telemetry: battery, GPS, RSSI, uptime (inserted into biometric_kit_heartbeats) |
 | GET | `/v1/diaspora/stations/{station_id}/roll` | Fetch DiasporaRoll config for embassy station |
 | POST | `/v1/diaspora/stations/{station_id}/form34ad` | Embassy staff submit Form34AD closure results |
 | GET | `/healthz` | Liveness |
@@ -252,7 +252,7 @@ Web-based kit registry management: legacy device registration, OTA manifest prom
 ## 9. Sharding, indexing, and scale
 
 - `kit_attestations`: unique index on `(device_serial, attested_at DESC)`; partial index on `expires_at WHERE revoked=FALSE`. 65,000 kits = 65,000 rows (plus 14,100 legacy) = ~80k rows; fits in PG cache trivially.
-- `kit_heartbeats`: partitioned by day (RANGE on `recorded_at`); 30-day rolling retention. At 65k kits heartbeating every 5 min = 13k heartbeats/min; daily partition = 18.7M rows; manageable with daily partition drops.
+- `biometric_kit_heartbeats`: partitioned by day (RANGE on `recorded_at`); 30-day rolling retention. At 65k kits heartbeating every 5 min = 13k heartbeats/min; daily partition = 18.7M rows; manageable with daily partition drops.
 - `kit_ota_manifests`: at most 3 tiers x dozens of versions = < 100 rows; no sharding needed.
 - Scale target: 65,000 concurrent kit attestations at poll-open (T-2 hours); edge-api HPA scales to handle burst; kit attestation is idempotent (kit retries on timeout).
 - Load test: `loadtest/` virtual kit simulator at 65,000 concurrent devices.
@@ -279,7 +279,7 @@ Web-based kit registry management: legacy device registration, OTA manifest prom
 | Store | Class (ADR-0016) | Retention |
 |-------|-----------------|-----------|
 | `kit_attestations` | Class B: operational | 10 years |
-| `kit_heartbeats` | Class C: ephemeral | 30 days (rolling partition drops) |
+| `biometric_kit_heartbeats` | Class C: ephemeral | 30 days (rolling partition drops) |
 | `kit_ota_manifests` | Class B | 10 years (historical versions retained) |
 | `kit_telemetry_outbox` | Class C | 30 days |
 | Isar offline queue (kit-side) | Class A (election records) | 7 days on device; sync to server before expiry |

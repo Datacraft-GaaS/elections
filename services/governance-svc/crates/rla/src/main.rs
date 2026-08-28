@@ -12,7 +12,24 @@ async fn main() {
         .init();
     let http_addr = env::var("HTTP_ADDR").unwrap_or_else(|_| "0.0.0.0:8091".to_string());
     info!(http_addr, "eel-governance-rla starting");
-    let app = eel_governance_rla::router::build_router();
+
+    let store = match env::var("DATABASE_URL") {
+        Ok(url) => {
+            let pool = sqlx::postgres::PgPoolOptions::new()
+                .max_connections(10)
+                .connect(&url)
+                .await
+                .expect("database connect failed");
+            eel_governance_rla::store::Store::Pg(pool)
+        }
+        Err(_) => {
+            info!("DATABASE_URL unset; using in-memory store");
+            eel_governance_rla::store::Store::Mem(Default::default())
+        }
+    };
+
+    let spec_state = eel_governance_rla::SpecState::new();
+    let app = eel_governance_rla::router::build_router(store, spec_state);
     let listener = tokio::net::TcpListener::bind(&http_addr).await.expect("bind failed");
     info!(http_addr, "eel-governance-rla HTTP listening");
     axum::serve(listener, app).await.expect("HTTP server failed");

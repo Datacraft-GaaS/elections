@@ -55,6 +55,7 @@ paths:
   /api/v1/custody/assets:
     post:
       operationId: registerAsset
+      x-handler-bound: inventory-svc.custody.register_asset
       summary: Register a new electoral asset
       description: |
         Creates an asset record and establishes initial custody. Idempotent on
@@ -128,6 +129,7 @@ paths:
 
     get:
       operationId: listAssets
+      x-handler-bound: inventory-svc.custody.list_assets
       summary: List assets with optional filters
       description: Returns a paginated list of assets visible to the caller's SpiceDB scope.
       tags: [Assets]
@@ -183,6 +185,7 @@ paths:
   /api/v1/custody/assets/{id}/custody:
     patch:
       operationId: transferCustody
+      x-handler-bound: inventory-svc.custody.transfer_custody
       summary: Transfer asset custody
       description: |
         Records a chain-of-custody transfer event. Both the outgoing and incoming
@@ -248,6 +251,7 @@ paths:
   /api/v1/custody/assets/{id}/history:
     get:
       operationId: getAssetHistory
+      x-handler-bound: inventory-svc.custody.get_asset_history
       summary: Get full custody history for an asset
       description: Returns all custody transfer events for the asset in chronological order.
       tags: [Assets]
@@ -282,6 +286,7 @@ paths:
   /api/v1/custody/seals:
     post:
       operationId: createSeal
+      x-handler-bound: inventory-svc.custody.create_seal
       summary: Apply a tamper-evident seal to an asset
       description: |
         Records the application of a numbered seal to an asset. The asset must be
@@ -348,6 +353,7 @@ paths:
   /api/v1/custody/seals/{id}/break:
     patch:
       operationId: breakSeal
+      x-handler-bound: inventory-svc.custody.break_seal
       summary: Break a seal (dual-officer)
       description: |
         Records the authorised breaking of a seal. This is a **dual-control**
@@ -437,6 +443,7 @@ paths:
   /api/v1/custody/reserves:
     get:
       operationId: listReserves
+      x-handler-bound: inventory-svc.custody.list_reserves
       summary: List reserve stock levels
       description: Returns current reserve inventory with threshold breach indicators.
       tags: [Reserves]
@@ -482,6 +489,7 @@ paths:
   /api/v1/custody/summary:
     get:
       operationId: getCustodySummary
+      x-handler-bound: inventory-svc.custody.get_custody_summary
       summary: Get aggregate custody statistics
       description: |
         Returns a real-time aggregate snapshot. Data-class D, aggregate counts
@@ -541,6 +549,7 @@ paths:
   /api/v1/custody/reconcile:
     post:
       operationId: startReconciliation
+      x-handler-bound: inventory-svc.custody.start_reconciliation
       summary: Start a physical reconciliation session
       description: |
         Opens a reconciliation session for a station. The session records expected
@@ -603,6 +612,7 @@ paths:
   /api/v1/custody/reconcile/{id}/report:
     get:
       operationId: getReconcileReport
+      x-handler-bound: inventory-svc.custody.get_reconcile_report
       summary: Fetch a reconciliation report
       description: Returns the full reconciliation report including all discrepancy details.
       tags: [Reconciliation]

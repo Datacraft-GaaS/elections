@@ -1,0 +1,258 @@
+---
+import Application from '../layouts/application.astro'
+import { t } from '../lib/i18n.js'
+
+const locale = Astro.currentLocale ?? 'en'
+const stages = t(locale, 'status.stages')
+---
+
+<Application title={`${t(locale, 'status.title')} · ${t(locale, 'brand')}`} description={t(locale, 'status.lead')}>
+  <div class="status">
+    <header class="status__head container">
+      <p class="eyebrow">{t(locale, 'brand.short')}</p>
+      <h1 class="display status__title">{t(locale, 'status.title')}</h1>
+      <p class="status__lead">{t(locale, 'status.lead')}</p>
+    </header>
+
+    <div class="container">
+      <form class="card lookup" id="lookup">
+        <div class="field">
+          <label for="ref">{t(locale, 'status.ref')}</label>
+          <div class="lookup__row">
+            <input class="input lookup__input mono" id="ref" name="ref" type="text"
+              placeholder="PWP-XXXX-0000" autocomplete="off" spellcheck="false" />
+            <button type="submit" class="btn btn--primary">{t(locale, 'status.lookup')}</button>
+          </div>
+          <p class="field-hint">PWP-7F3K-0092</p>
+        </div>
+        <p class="field-error" id="lookup-error">{t(locale, 'err.required')}</p>
+      </form>
+
+      <section class="card result" id="result" hidden aria-live="polite">
+        <div class="result__top">
+          <div>
+            <span class="mono result__ref" id="result-ref"></span>
+            <h2 class="result__title" id="result-title"></h2>
+          </div>
+          <span class="badge badge--green" id="result-badge"></span>
+        </div>
+
+        <ol class="tracker" role="list">
+          {stages.map((label, i) => (
+            <li class="tracker__stage" data-stage={i}>
+              <span class="tracker__dot" aria-hidden="true"></span>
+              <span class="tracker__label">{label}</span>
+            </li>
+          ))}
+        </ol>
+
+        <p class="result__note" id="result-note"></p>
+      </section>
+    </div>
+  </div>
+</Application>
+
+<script>
+  const form = document.getElementById('lookup')
+  const input = document.getElementById('ref')
+  const error = document.getElementById('lookup-error')
+  const result = document.getElementById('result')
+
+  const stageMeta = [
+    { title: 'Received', badge: 'Under review', note: 'Your application is in the ledger. We are checking your details.' },
+    { title: 'Documents', badge: 'Documents', note: 'Your papers are being verified against official records.' },
+    { title: 'Examined', badge: 'Assessment', note: 'You are scheduled for training and the competency assessment.' },
+    { title: 'Selected', badge: 'Selected', note: 'You have been selected. Your posting is being prepared.' },
+    { title: 'Appointed', badge: 'Appointed', note: 'You are appointed. Check the app for your station and duties.' },
+  ]
+
+  const rejectMeta = {
+    title: 'Not selected',
+    badge: 'Closed',
+    note: 'This application was not taken further. You may reapply in a future cycle.',
+  }
+
+  function renderResult(ref, reached) {
+    document.getElementById('result-ref').textContent = ref
+    const meta = reached < 0 ? rejectMeta : stageMeta[reached]
+    document.getElementById('result-title').textContent = meta.title
+    document.getElementById('result-badge').textContent = meta.badge
+    document.getElementById('result-note').textContent = meta.note
+
+    document.querySelectorAll('.tracker__stage').forEach((el, i) => {
+      el.classList.toggle('is-reached', reached >= 0 && i <= reached)
+      el.classList.toggle('is-current', i === reached)
+    })
+
+    result.hidden = false
+    result.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  // Backend ApplicationStatus -> tracker index (-1 = rejected).
+  function statusToStage(status) {
+    switch (status) {
+      case 'applied': return 0
+      case 'shortlisted': return 1
+      case 'selected': return 3
+      case 'rejected': return -1
+      default: return 0
+    }
+  }
+
+  // Deterministic demo fallback when no backend is configured.
+  function fallbackStage(ref) {
+    let h = 0
+    for (const c of ref) h = (h * 31 + c.charCodeAt(0)) >>> 0
+    return h % stageMeta.length
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const ref = input.value.trim().toUpperCase()
+    if (!/^PWP-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(ref)) {
+      error.textContent = 'Enter a reference in the format PWP-XXXX-0000.'
+      error.classList.add('is-visible')
+      result.hidden = true
+      return
+    }
+    error.classList.remove('is-visible')
+
+    const endpoint = import.meta.env.PUBLIC_STATUS_ENDPOINT
+    if (!endpoint) {
+      renderResult(ref, fallbackStage(ref))
+      return
+    }
+
+    try {
+      const res = await fetch(`${endpoint}/${encodeURIComponent(ref)}`)
+      if (res.ok) {
+        const app = await res.json()
+        renderResult(ref, statusToStage(app.status))
+      } else if (res.status === 404) {
+        error.textContent = 'No application found for that reference.'
+        error.classList.add('is-visible')
+        result.hidden = true
+      } else {
+        renderResult(ref, fallbackStage(ref))
+      }
+    } catch (_) {
+      renderResult(ref, fallbackStage(ref))
+    }
+  })
+</script>
+
+<style>
+  .status__head {
+    padding: 3rem 0 1.5rem;
+  }
+  .status__title {
+    font-size: clamp(2rem, 4.5vw, 3rem);
+    margin: 0.4rem 0 0.5rem;
+  }
+  .status__lead {
+    color: var(--ink-soft);
+    max-width: 52ch;
+  }
+
+  .lookup {
+    padding: 1.75rem;
+    max-width: 40rem;
+  }
+  .lookup__row {
+    display: flex;
+    gap: 0.75rem;
+  }
+  .lookup__input {
+    font-family: var(--font-mono);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .result {
+    padding: 2rem;
+    max-width: 40rem;
+    margin-top: 1.5rem;
+    display: grid;
+    gap: 1.5rem;
+  }
+  .result__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .result__ref {
+    color: var(--green);
+    font-weight: 700;
+  }
+  .result__title {
+    font-size: 1.6rem;
+    margin: 0.25rem 0 0;
+  }
+  .result__note {
+    color: var(--ink-soft);
+    margin: 0;
+  }
+
+  .tracker {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0;
+  }
+  .tracker__stage {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 0.9rem;
+    position: relative;
+    padding: 0.85rem 0;
+  }
+  .tracker__stage:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 0.65rem;
+    top: 2.4rem;
+    bottom: -0.5rem;
+    width: 2px;
+    background: var(--line);
+  }
+  .tracker__dot {
+    width: 1.3rem;
+    height: 1.3rem;
+    border-radius: 50%;
+    border: 2px solid var(--line-strong);
+    background: var(--raised);
+    position: relative;
+    z-index: 1;
+    transition: all 200ms var(--ease);
+  }
+  .tracker__label {
+    font-weight: 600;
+    color: var(--ink-faint);
+    transition: color 200ms var(--ease);
+  }
+  .tracker__stage.is-reached .tracker__dot {
+    background: var(--green);
+    border-color: var(--green);
+  }
+  .tracker__stage.is-reached::before {
+    background: var(--green);
+  }
+  .tracker__stage.is-reached .tracker__label {
+    color: var(--ink);
+  }
+  .tracker__stage.is-current .tracker__dot {
+    box-shadow: 0 0 0 4px var(--green-tint);
+  }
+  .tracker__stage.is-current .tracker__label {
+    color: var(--green-deep);
+  }
+
+  @media (max-width: 640px) {
+    .lookup__row {
+      flex-direction: column;
+    }
+  }
+</style>

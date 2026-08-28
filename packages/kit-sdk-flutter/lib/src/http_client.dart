@@ -1,19 +1,17 @@
 import 'package:dio/dio.dart';
 import 'attestation.dart';
 
-/// Dio client with cert pinning, attestation header injection, and retry.
+/// Dio client with attestation header injection and retry.
 ///
-/// [spkiPin] is the SPKI pin for the IEBC intermediate CA. TLS 1.3 is
-/// enforced at the OS/platform layer; Dart's http stack uses the system TLS.
+/// TLS 1.3 is enforced at the OS/platform layer; Dart's http stack uses the
+/// system TLS.
 class EelHttpClient {
   EelHttpClient({
     required String baseUrl,
     required EelAttestationClient attestation,
-    String? spkiPin,
     Duration connectTimeout = const Duration(seconds: 10),
     Duration receiveTimeout = const Duration(seconds: 30),
-  })  : _attestation = attestation,
-        _spkiPin = spkiPin {
+  })  : _attestation = attestation {
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
       connectTimeout: connectTimeout,
@@ -25,8 +23,6 @@ class EelHttpClient {
   }
 
   final EelAttestationClient _attestation;
-  // ignore: unused_field
-  final String? _spkiPin;
   late final Dio _dio;
 
   Dio get raw => _dio;

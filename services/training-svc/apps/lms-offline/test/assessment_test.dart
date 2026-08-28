@@ -1,4 +1,4 @@
-import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -6,16 +6,30 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:eel_lms_offline/features/assessment/assessment_model.dart';
 import 'package:eel_lms_offline/features/sync/offline_queue.dart';
 
+// Real SQLite FFI I/O must run under plain `test()`, never `testWidgets`:
+// FakeAsync does not advance platform I/O, which deadlocks the awaits.
 void main() {
   setUpAll(() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   });
 
-  testWidgets('offline assessment idempotency [EC-DAT-01]', (tester) async {
-    final queue = OfflineQueue();
+  late Directory tempDir;
+  late OfflineQueue queue;
 
-    final attempt = AssessmentAttempt(
+  setUp(() async {
+    tempDir = await Directory.systemTemp.createTemp('lms_offline_test');
+    databaseFactory.setDatabasesPath(tempDir.path);
+    queue = OfflineQueue();
+  });
+
+  tearDown(() async {
+    await queue.close();
+    await tempDir.delete(recursive: true);
+  });
+
+  test('offline assessment idempotency [EC-DAT-01]', () async {
+    const attempt = AssessmentAttempt(
       id: 'test-id-1',
       workerId: 'worker-001',
       moduleId: 'module-001',
@@ -47,7 +61,26 @@ void main() {
     );
   });
 
-  test('5-module cache limit enforced', () async {
+  test('offline assessment entries survive queue reload [EC-DAT-01]', () async {
+    final entry = OfflineQueueEntry(
+      id: 'test-id-2',
+      workerId: 'worker-002',
+      moduleId: 'module-001',
+      idempotencyKey: 'idem-key-002',
+      answers: {'q1': 'a'},
+      status: 'pending',
+      createdAt: DateTime.now(),
+    );
+    await queue.insert(entry);
+
+    // A fresh instance over the same path sees the persisted row.
+    final reloaded = OfflineQueue();
+    addTearDown(reloaded.close);
+    final pending = await reloaded.getPending();
+    expect(pending.where((e) => e.idempotencyKey == 'idem-key-002').length, 1);
+  });
+
+  test('5-module cache limit enforced', () {
     // Verifies that the limit constant is set to 5
     // Full enforcement is tested via ModuleRepository integration test
     const maxModules = 5;

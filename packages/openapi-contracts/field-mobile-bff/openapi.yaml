@@ -31,6 +31,7 @@ paths:
     post:
       tags: [agent]
       operationId: agentCheckIn
+      x-handler-bound: field-mobile-svc.field-mobile-bff.agent_check_in
       summary: Party agent check-in at station
       requestBody:
         required: true
@@ -54,6 +55,7 @@ paths:
     get:
       tags: [agent]
       operationId: getStationDashboard
+      x-handler-bound: field-mobile-svc.field-mobile-bff.get_station_dashboard
       summary: Retrieve station operational dashboard for the agent
       parameters:
         - name: code
@@ -76,6 +78,7 @@ paths:
     get:
       tags: [forms]
       operationId: getForm34a
+      x-handler-bound: field-mobile-svc.field-mobile-bff.get_form34a
       summary: Retrieve a Form 34A by ID
       parameters:
         - name: id
@@ -98,6 +101,7 @@ paths:
     post:
       tags: [forms]
       operationId: countersignForm34a
+      x-handler-bound: field-mobile-svc.field-mobile-bff.countersign_form34a
       summary: Countersign a Form 34A
       parameters:
         - name: id
@@ -126,6 +130,7 @@ paths:
     post:
       tags: [incidents]
       operationId: createIncident
+      x-handler-bound: field-mobile-svc.field-mobile-bff.create_incident
       summary: Report a field incident
       requestBody:
         required: true
@@ -145,6 +150,7 @@ paths:
     get:
       tags: [verify]
       operationId: verifyRegistration
+      x-handler-bound: field-mobile-svc.field-mobile-bff.verify_registration
       summary: Verify voter registration status
       parameters:
         - name: id_number

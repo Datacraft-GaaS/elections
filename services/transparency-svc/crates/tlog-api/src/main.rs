@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use sqlx::postgres::PgPoolOptions;
-use tlog_api::{rest, ApiState};
+use tlog_api::{grpc, rest, ApiState};
 use tlog_sequencer::Sequencer;
 
 #[tokio::main]
@@ -20,11 +20,32 @@ async fn main() -> anyhow::Result<()> {
     let state = ApiState { pool, sequencer };
 
     let rest_app = rest::router().with_state(state.clone());
+    let grpc_svc = grpc::service(state);
 
-    let addr =
-        std::env::var("BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".to_string());
-    let listener = tokio::net::TcpListener::bind(&addr).await?;
-    tracing::info!(addr = %addr, "tlog-api listening");
-    axum::serve(listener, rest_app).await?;
+    let addr = std::env::var("BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".to_string());
+    let grpc_addr =
+        std::env::var("GRPC_ADDR").unwrap_or_else(|_| "0.0.0.0:50051".to_string());
+
+    // REST (axum) and gRPC (tonic) share one ApiState and are served
+    // concurrently; either address failing to bind aborts startup.
+    let rest_task = tokio::spawn(async move {
+        let listener = tokio::net::TcpListener::bind(&addr).await?;
+        tracing::info!(addr = %addr, "tlog-api REST listening");
+        axum::serve(listener, rest_app).await?;
+        anyhow::Ok(())
+    });
+
+    let grpc_task = tokio::spawn(async move {
+        tracing::info!(addr = %grpc_addr, "tlog-api gRPC listening");
+        tonic::transport::Server::builder()
+            .add_service(grpc_svc)
+            .serve(grpc_addr.parse()?)
+            .await?;
+        anyhow::Ok(())
+    });
+
+    let (rest_res, grpc_res) = tokio::join!(rest_task, grpc_task);
+    rest_res??;
+    grpc_res??;
     Ok(())
 }

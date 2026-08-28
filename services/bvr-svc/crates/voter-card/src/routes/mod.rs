@@ -1,5 +1,6 @@
 pub mod batches;
 pub mod blacklist;
+pub mod spec;
 pub mod health;
 pub mod status;
 
@@ -12,4 +13,5 @@ pub fn router() -> Router<AppState> {
         .merge(status::router())
         .merge(batches::router())
         .merge(blacklist::router())
+        .merge(spec::router())
 }

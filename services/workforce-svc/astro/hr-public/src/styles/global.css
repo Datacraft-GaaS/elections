@@ -1,0 +1,429 @@
+/* ==========================================================================
+   hr-public — poll worker application portal
+   Design language: "The Polling Clerk's Ledger"
+   Ballot paper ground, ballot-box green ink, one stamp-pad red reserved for
+   the oath & the seal. Mono type for reference numbers & hashes (the platform
+   verifies; numbers are identity here).
+   ========================================================================== */
+
+:root {
+  /* surfaces */
+  --paper: #f1f0e8;
+  --paper-2: #e9e8de;
+  --raised: #fbfaf4;
+  --white: #ffffff;
+
+  /* ink */
+  --ink: #12231a;
+  --ink-soft: #43564a;
+  --ink-faint: #58665d;
+
+  /* ballot green */
+  --green: #1b6a43;
+  --green-deep: #0e4a2e;
+  --green-tint: #e3efe6;
+  --green-line: #c3dcc9;
+
+  /* stamp-pad red — oath & seal only */
+  --seal: #b3261e;
+  --seal-deep: #8f1d16;
+  --seal-tint: #fbe9e7;
+
+  /* dawn gold — confirmation only */
+  --gold: #b4862f;
+  --gold-tint: #f6eedd;
+
+  /* neutrals */
+  --line: #d6d3c3;
+  --line-strong: #b9b6a6;
+  --danger: #b3261e;
+
+  /* type */
+  --font-display: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --font-body: 'Public Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', ui-monospace, monospace;
+
+  /* rhythm */
+  --radius: 14px;
+  --radius-sm: 9px;
+  --shadow-sm: 0 1px 2px rgb(18 35 26 / 0.06);
+  --shadow-md: 0 10px 30px -12px rgb(18 35 26 / 0.22);
+  --shadow-seal: 0 2px 0 0 rgb(18 35 26 / 0.08);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --focus: 0 0 0 3px rgb(27 106 67 / 0.32);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* texture: faint paper grain, on-brief without shouting */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(120% 90% at 85% -10%, rgb(27 106 67 / 0.05), transparent 55%),
+    radial-gradient(100% 80% at -10% 110%, rgb(179 38 30 / 0.04), transparent 55%),
+    var(--paper);
+}
+
+::selection {
+  background: var(--green);
+  color: var(--white);
+}
+
+a {
+  color: var(--green-deep);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: var(--green);
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+  border-radius: 4px;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.5em;
+  color: var(--ink);
+}
+
+p {
+  margin: 0 0 1em;
+}
+
+/* display uses Fraunces' optical sizing for a hand-set, ledger feel */
+.display {
+  font-family: var(--font-display);
+  font-variation-settings: 'opsz' 72, 'SOFT' 60, 'WONK' 1;
+  font-weight: 580;
+  letter-spacing: -0.02em;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  letter-spacing: 0.02em;
+}
+
+/* accessible skip link */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 1rem;
+  z-index: 100;
+  background: var(--green-deep);
+  color: #fff;
+  padding: 0.65rem 1.1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  left: 1rem;
+}
+
+.container {
+  width: min(100% - 2.5rem, 72rem);
+  margin-inline: auto;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--green);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.eyebrow::before {
+  content: '';
+  width: 1.75rem;
+  height: 1px;
+  background: var(--seal);
+}
+
+/* buttons ---------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  font-family: var(--font-body);
+  font-weight: 650;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0.85rem 1.4rem;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    transform 140ms var(--ease),
+    background-color 160ms var(--ease),
+    border-color 160ms var(--ease),
+    box-shadow 160ms var(--ease);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn--primary {
+  background: var(--green);
+  color: #fff;
+}
+
+.btn--primary:hover {
+  background: var(--green-deep);
+}
+
+.btn--seal {
+  background: var(--seal);
+  color: #fff;
+}
+
+.btn--seal:hover {
+  background: var(--seal-deep);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+
+.btn--ghost:hover {
+  border-color: var(--ink);
+  background: var(--paper-2);
+}
+
+.btn--lg {
+  padding: 1rem 1.7rem;
+  font-size: 1.05rem;
+}
+
+.btn--block {
+  width: 100%;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* cards ------------------------------------------------------------------ */
+.card {
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+/* forms ------------------------------------------------------------------ */
+.field {
+  display: grid;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+}
+
+.field > label,
+.field-label {
+  font-weight: 650;
+  font-size: 0.92rem;
+}
+
+.field-hint {
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--ink);
+  background: var(--white);
+  border: 2px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 0.9rem;
+  transition: border-color 140ms var(--ease), box-shadow 140ms var(--ease);
+}
+
+.input:hover,
+.select:hover,
+.textarea:hover {
+  border-color: var(--line-strong);
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: var(--focus);
+}
+
+.input[aria-invalid='true'],
+.textarea[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.field-error {
+  color: var(--danger);
+  font-size: 0.85rem;
+  display: none;
+}
+
+.field-error.is-visible {
+  display: block;
+}
+
+/* chip / badge ----------------------------------------------------------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-weight: 600;
+  background: var(--paper-2);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+}
+
+.badge--green {
+  background: var(--green-tint);
+  color: var(--green-deep);
+  border: 1px solid var(--green-line);
+}
+
+.badge--seal {
+  background: var(--seal-tint);
+  color: var(--seal-deep);
+  border: 1px solid #f0c9c4;
+}
+
+.badge--gold {
+  background: var(--gold-tint);
+  color: #7a5718;
+  border: 1px solid #e7d5ab;
+}
+
+/* the seal stamp ---------------------------------------------------------- */
+.seal {
+  --seal-color: var(--seal);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--seal-color);
+  border: 3px double var(--seal-color);
+  border-radius: 8px;
+  padding: 0.6rem 1.4rem;
+  position: relative;
+  transform: rotate(-2.5deg);
+  background:
+    radial-gradient(140% 140% at 20% 10%, rgb(179 38 30 / 0.06), transparent 55%),
+    var(--raised);
+}
+
+.seal--large {
+  font-size: 1.05rem;
+  padding: 1rem 2rem;
+  border-width: 4px;
+}
+
+.seal .seal__ref {
+  font-size: 0.82em;
+  margin-top: 0.2rem;
+  letter-spacing: 0.1em;
+}
+
+/* stamp animation (reduced-motion aware) */
+@keyframes stamp-in {
+  0% {
+    transform: rotate(-2.5deg) scale(1.9);
+    opacity: 0;
+  }
+  45% {
+    transform: rotate(-2.5deg) scale(0.96);
+    opacity: 1;
+  }
+  70% {
+    transform: rotate(-2.5deg) scale(1.04);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(-2.5deg) scale(1);
+    opacity: 1;
+  }
+}
+
+.seal--animate {
+  animation: stamp-in 520ms var(--ease) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .seal--animate {
+    animation: none;
+  }
+}

@@ -1,8 +1,15 @@
-use axum::{extract::Path, http::StatusCode, response::IntoResponse, Json};
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    response::IntoResponse,
+    Json,
+};
 use tracing::info;
 
 use crate::models::*;
 use crate::saml::SamlBroker;
+use crate::spec;
+use crate::state::SharedState;
 
 pub async fn health() -> impl IntoResponse {
     StatusCode::OK
@@ -113,4 +120,75 @@ pub async fn saml_acs(Json(body): Json<serde_json::Value>) -> impl IntoResponse 
             Json(serde_json::json!({ "error": e })),
         ),
     }
+}
+
+// ---------------------------------------------------------------------------
+// Public contract endpoints (governance-county-coord/coordination.yaml)
+// ---------------------------------------------------------------------------
+
+/// POST /api/v1/governance/county-coord/status-reports — submit a county status
+/// report.
+pub async fn submit_county_status_report(
+    State(state): State<SharedState>,
+    Json(req): Json<spec::CountyStatusReportRequest>,
+) -> impl IntoResponse {
+    info!(county = %req.county_code, "submit_county_status_report");
+    let report = spec::CountyStatusReport {
+        report_id: uuid::Uuid::now_v7().to_string(),
+        county_code: req.county_code,
+        stations_open: req.stations_open,
+        stations_closed_early: req.stations_closed_early,
+        incidents: req.incidents,
+        notes: req.notes,
+        submitted_at: req.submitted_at,
+        created_at: chrono::Utc::now().to_rfc3339(),
+    };
+    let mut guard = state.reports.lock().expect("lock poisoned");
+    guard.insert(report.report_id.clone(), report.clone());
+    drop(guard);
+    (StatusCode::CREATED, Json(report)).into_response()
+}
+
+/// GET /api/v1/governance/county-coord/status-reports — list county status
+/// reports.
+pub async fn list_county_status_reports(State(state): State<SharedState>) -> impl IntoResponse {
+    info!("list_county_status_reports");
+    let guard = state.reports.lock().expect("lock poisoned");
+    let mut items: Vec<spec::CountyStatusReport> = guard.values().cloned().collect();
+    drop(guard);
+    items.sort_by(|a, b| a.submitted_at.cmp(&b.submitted_at));
+    Json(serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }))
+}
+
+/// POST /api/v1/governance/county-coord/escalations — escalate an incident.
+pub async fn escalate_to_national(
+    State(state): State<SharedState>,
+    Json(req): Json<spec::CoordinationEscalationRequest>,
+) -> impl IntoResponse {
+    info!(county = %req.county_code, severity = %req.severity, "escalate_to_national");
+    let now = chrono::Utc::now().to_rfc3339();
+    let escalation = spec::CoordinationEscalation {
+        escalation_id: uuid::Uuid::now_v7().to_string(),
+        county_code: req.county_code,
+        incident_type: req.incident_type,
+        severity: req.severity,
+        description: req.description,
+        status: "open".to_string(),
+        created_at: now.clone(),
+        updated_at: now,
+    };
+    let mut guard = state.escalations.lock().expect("lock poisoned");
+    guard.insert(escalation.escalation_id.clone(), escalation.clone());
+    drop(guard);
+    (StatusCode::CREATED, Json(escalation)).into_response()
+}
+
+/// GET /api/v1/governance/county-coord/escalations — list escalations.
+pub async fn list_escalations(State(state): State<SharedState>) -> impl IntoResponse {
+    info!("list_escalations");
+    let guard = state.escalations.lock().expect("lock poisoned");
+    let mut items: Vec<spec::CoordinationEscalation> = guard.values().cloned().collect();
+    drop(guard);
+    items.sort_by(|a, b| a.created_at.cmp(&b.created_at));
+    Json(serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }))
 }

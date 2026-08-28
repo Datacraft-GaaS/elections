@@ -32,6 +32,7 @@ paths:
   /api/v1/printing/print-orders:
     post:
       operationId: createPrintOrder
+      x-handler-bound: inventory-svc.printing.create_print_order
       tags: [print-orders]
       summary: Issue a print order to the government printer
       description: >
@@ -74,6 +75,7 @@ paths:
 
     get:
       operationId: listPrintOrdersPublic
+      x-handler-bound: inventory-svc.printing.list_print_orders
       tags: [print-orders]
       summary: Public aggregate print order counts
       description: >
@@ -120,6 +122,7 @@ paths:
   /api/v1/printing/print-orders/{order_id}:
     get:
       operationId: getPrintOrder
+      x-handler-bound: inventory-svc.printing.get_print_order
       tags: [print-orders]
       summary: Get print order status
       description: Returns full print order detail including status. Tier 3 endpoint.
@@ -151,6 +154,7 @@ paths:
   /api/v1/printing/print-orders/{order_id}/qc:
     post:
       operationId: submitQCDecision
+      x-handler-bound: inventory-svc.printing.submit_qc_decision
       tags: [qc]
       summary: Submit QC pass or fail for a print order
       description: >
@@ -197,6 +201,7 @@ paths:
   /api/v1/printing/deliveries:
     post:
       operationId: recordBallotDelivery
+      x-handler-bound: inventory-svc.printing.record_ballot_delivery
       tags: [deliveries]
       summary: Record ballot delivery to IEBC warehouse
       description: >
@@ -240,6 +245,7 @@ paths:
   /api/v1/printing/audit-trail:
     get:
       operationId: getPrintingAuditTrail
+      x-handler-bound: inventory-svc.printing.get_printing_audit_trail
       tags: [audit]
       summary: Printing chain audit log
       description: >

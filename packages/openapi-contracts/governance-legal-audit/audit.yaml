@@ -30,6 +30,7 @@ paths:
   /api/v1/governance/legal-audit/transmissions:
     get:
       operationId: listTransmissionLegalRecords
+      x-handler-bound: governance-svc.governance-legal-audit.list_transmission_legal_records
       tags: [transmissions]
       summary: List transmission legal audit records
       description: Paginated list of transmission legal audit records. Tier 3 endpoint.
@@ -72,6 +73,7 @@ paths:
   /api/v1/governance/legal-audit/transmissions/{form_id}:
     get:
       operationId: getTransmissionLegalBasis
+      x-handler-bound: governance-svc.governance-legal-audit.get_transmission_legal_basis
       tags: [transmissions]
       summary: Get legal basis for a form transmission
       description: >
@@ -102,6 +104,7 @@ paths:
   /api/v1/governance/legal-audit/certifications:
     post:
       operationId: certifyTransmission
+      x-handler-bound: governance-svc.governance-legal-audit.certify_transmission
       tags: [certifications]
       summary: Officer certifies a transmission step
       description: >
@@ -142,6 +145,7 @@ paths:
   /api/v1/governance/legal-audit/reports/{report_id}:
     get:
       operationId: getLegalAuditReport
+      x-handler-bound: governance-svc.governance-legal-audit.get_legal_audit_report
       tags: [reports]
       summary: Get a legal audit report
       description: Returns a compiled legal audit report. Tier 3 endpoint.

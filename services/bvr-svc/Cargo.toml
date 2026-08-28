@@ -7,6 +7,9 @@ members = [
     "crates/cvr",
     "crates/dereg-appeal",
     "crates/voter-card",
+    "crates/credential",
+    "crates/verifier-api",
+    "crates/channel-gateway",
 ]
 
 [workspace.package]

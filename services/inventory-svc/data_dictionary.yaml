@@ -31,7 +31,7 @@ tables:
     tier: T1-audit
     pii: false
     description: 10-min Merkle root windows published to 5 channels
-  - name: kit_heartbeats
+  - name: inventory_kit_heartbeats
     module: M20
     tier: T2
     pii: false

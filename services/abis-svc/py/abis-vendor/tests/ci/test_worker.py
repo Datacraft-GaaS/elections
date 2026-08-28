@@ -72,7 +72,7 @@ def test_match_request_extra_fields_forbidden():
     from pydantic import ValidationError
 
     with pytest.raises(ValidationError):
-        MatchRequest(  # type: ignore
+        MatchRequest(  # type: ignore[call-arg]
             request_id="r",
             probe_ref="p",
             modality="f",

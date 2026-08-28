@@ -31,6 +31,7 @@ paths:
     post:
       tags: [tickets]
       operationId: createSupportTicket
+      x-handler-bound: field-mobile-svc.field-mobile-support.create_support_ticket
       summary: Open a field support ticket (M32)
       description: >
         Submitted from the field officer's mobile app when experiencing a
@@ -81,6 +82,7 @@ paths:
     get:
       tags: [tickets]
       operationId: listSupportTickets
+      x-handler-bound: field-mobile-svc.field-mobile-support.list_support_tickets
       summary: List support tickets (back-office, tier 3)
       description: >
         Paginated list of all support tickets. Requires JWT + SpiceDB. No
@@ -136,6 +138,7 @@ paths:
     get:
       tags: [tickets]
       operationId: getSupportTicket
+      x-handler-bound: field-mobile-svc.field-mobile-support.get_support_ticket
       summary: Get a support ticket by ID
       description: >
         Retrieve full ticket detail. Accessible to the originating field
@@ -168,6 +171,7 @@ paths:
     patch:
       tags: [tickets]
       operationId: updateSupportTicket
+      x-handler-bound: field-mobile-svc.field-mobile-support.update_support_ticket
       summary: Update a support ticket (technician, back-office tier 3)
       description: >
         Allows a technician to update ticket status, add resolution notes, and
@@ -221,6 +225,7 @@ paths:
     get:
       tags: [knowledge-base]
       operationId: listKnowledgeBaseArticles
+      x-handler-bound: field-mobile-svc.field-mobile-support.list_knowledge_base_articles
       summary: List troubleshooting guide articles
       description: >
         Returns a paginated list of knowledge base article summaries. Designed
@@ -269,6 +274,7 @@ paths:
     get:
       tags: [knowledge-base]
       operationId: getKnowledgeBaseArticle
+      x-handler-bound: field-mobile-svc.field-mobile-support.get_knowledge_base_article
       summary: Get a knowledge base article by ID
       description: >
         Returns the full article content including step-by-step instructions

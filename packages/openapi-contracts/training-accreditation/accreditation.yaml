@@ -27,6 +27,7 @@ paths:
     post:
       tags: [applications]
       operationId: submitAccreditationApplication
+      x-handler-bound: training-svc.training-accreditation.submit_accreditation_application
       summary: Apply for media or observer accreditation
       description: Submits an accreditation application. Idempotent on Idempotency-Key. Requires JWT.
       x-eel-sla:
@@ -64,6 +65,7 @@ paths:
     get:
       tags: [applications]
       operationId: listAccreditationApplications
+      x-handler-bound: training-svc.training-accreditation.list_accreditation_applications
       summary: List accreditation applications (admin)
       description: Returns paginated list of all applications. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -108,6 +110,7 @@ paths:
     get:
       tags: [applications]
       operationId: getAccreditationApplication
+      x-handler-bound: training-svc.training-accreditation.get_accreditation_application
       summary: Get accreditation application detail
       description: Returns application status and submitted documents. Requires JWT.
       x-eel-sla:
@@ -139,6 +142,7 @@ paths:
     post:
       tags: [decisions]
       operationId: decideAccreditationApplication
+      x-handler-bound: training-svc.training-accreditation.decide_accreditation_application
       summary: Approve or reject accreditation application
       description: Records an accreditation decision. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -190,6 +194,7 @@ paths:
     get:
       tags: [badges]
       operationId: verifyBadge
+      x-handler-bound: training-svc.training-accreditation.verify_badge
       summary: Verify accreditation badge via QR scan
       description: Returns masked verification details for a badge. Public endpoint secured with HMAC token query parameter.
       x-eel-sla:

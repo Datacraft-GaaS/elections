@@ -4,8 +4,6 @@ pub mod transparency {
     tonic::include_proto!("eel.transparency.v1");
 }
 
-use std::sync::Arc;
-
 use tlog_domain::Domain;
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Request, Response, Status};
@@ -69,28 +67,180 @@ impl TransparencyLog for TlogGrpcService {
 
     async fn get_proof(
         &self,
-        _request: Request<ProofQuery>,
+        request: Request<ProofQuery>,
     ) -> Result<Response<ProofResponse>, Status> {
-        Err(Status::unimplemented("proof queries not yet implemented"))
+        let query = request.into_inner().query.ok_or_else(|| {
+            Status::invalid_argument("query must be inclusion or consistency")
+        })?;
+        match query {
+            transparency::proof_query::Query::Inclusion(q) => {
+                let leaf_hash = hex::decode(&q.leaf_hash)
+                    .map_err(|_| Status::invalid_argument("leaf_hash must be hex"))?;
+                if leaf_hash.len() != 32 {
+                    return Err(Status::invalid_argument("leaf_hash must be 32 bytes"));
+                }
+                let proof = tlog_sequencer::proofs::inclusion_proof(&self.state.pool, &leaf_hash)
+                    .await
+                    .map_err(|e| Status::internal(e.to_string()))?;
+                let Some(proof) = proof else {
+                    return Err(Status::not_found("unknown leaf hash"));
+                };
+                Ok(Response::new(ProofResponse {
+                    proof: Some(transparency::proof_response::Proof::Inclusion(
+                        InclusionProofResponse {
+                            leaf_index: proof.leaf_index,
+                            tree_size: proof.tree_size,
+                            root_hash: proof.root_hash,
+                            hashes: proof.hashes,
+                            rate_limited: false,
+                        },
+                    )),
+                }))
+            }
+            transparency::proof_query::Query::Consistency(q) => {
+                if q.from_size == 0 || q.from_size > q.to_size {
+                    return Err(Status::invalid_argument(
+                        "from_size must be non-zero and <= to_size",
+                    ));
+                }
+                let proof =
+                    tlog_sequencer::proofs::consistency_proof(&self.state.pool, q.from_size)
+                        .await
+                        .map_err(|e| Status::internal(e.to_string()))?;
+                let Some(proof) = proof else {
+                    return Err(Status::not_found("tree smaller than from_size"));
+                };
+                if proof.new_size < q.to_size {
+                    return Err(Status::out_of_range("to_size beyond current tree size"));
+                }
+                Ok(Response::new(ProofResponse {
+                    proof: Some(transparency::proof_response::Proof::Consistency(
+                        ConsistencyProofResponse {
+                            old_size: proof.old_size,
+                            new_size: proof.new_size,
+                            old_root: proof.old_root,
+                            new_root: proof.new_root,
+                            hashes: proof.hashes,
+                        },
+                    )),
+                }))
+            }
+        }
     }
 
     async fn get_sth(
         &self,
-        _request: Request<SthQuery>,
+        request: Request<SthQuery>,
     ) -> Result<Response<SignedTreeHeadResponse>, Status> {
-        Err(Status::unimplemented("get_sth not yet implemented"))
+        let q = request.into_inner();
+        sth_row(&self.state.pool, q.tree_size, q.cadence.as_deref())
+            .await?
+            .ok_or_else(|| Status::not_found("no signed tree head found"))
+            .map(|sth| Response::new(sth))
     }
 
     async fn subscribe_sth(
         &self,
-        _request: Request<SthQuery>,
+        request: Request<SthQuery>,
     ) -> Result<Response<Self::SubscribeSthStream>, Status> {
-        let (tx, rx) = tokio::sync::mpsc::channel(16);
-        drop(tx);
+        let q = request.into_inner();
+        let pool = self.state.pool.clone();
+        let (tx, rx) = tokio::sync::mpsc::channel::<Result<SignedTreeHeadResponse, Status>>(16);
+
+        tokio::spawn(async move {
+            // Poll for new STHs at the hot cadence; push each unseen head.
+            let mut ticker = tokio::time::interval(std::time::Duration::from_secs(
+                tlog_domain::SthCadence::Hot.interval_secs(),
+            ));
+            let mut last_id = String::new();
+            loop {
+                ticker.tick().await;
+                let next = sth_row(&pool, q.tree_size, q.cadence.as_deref()).await;
+                match next {
+                    Ok(Some(sth)) if sth.id != last_id => {
+                        last_id = sth.id.clone();
+                        if tx.send(Ok(sth)).await.is_err() {
+                            break;
+                        }
+                    }
+                    Ok(_) => {}
+                    Err(status) => {
+                        let _ = tx.send(Err(status)).await;
+                        break;
+                    }
+                }
+            }
+        });
+
         Ok(Response::new(ReceiverStream::new(rx)))
     }
 }
 
 pub fn service(state: ApiState) -> TransparencyLogServer<TlogGrpcService> {
     TransparencyLogServer::new(TlogGrpcService { state })
+}
+
+/// Fetch the newest SHT matching optional `tree_size` / `cadence` filters.
+async fn sth_row(
+    pool: &sqlx::PgPool,
+    tree_size: Option<u64>,
+    cadence: Option<&str>,
+) -> Result<Option<SignedTreeHeadResponse>, Status> {
+    let mut sql = String::from(
+        "SELECT id::text, tree_size, root_hash, domain, cadence, signed_at, signature, \
+         key_role, key_fingerprint FROM sth",
+    );
+    let mut clauses: Vec<String> = Vec::new();
+    if tree_size.is_some() {
+        clauses.push("tree_size = $1".to_owned());
+    }
+    if cadence.is_some() {
+        clauses.push(format!("cadence = ${}", clauses.len() + 1));
+    }
+    if !clauses.is_empty() {
+        sql.push_str(" WHERE ");
+        sql.push_str(&clauses.join(" AND "));
+    }
+    sql.push_str(" ORDER BY tree_size DESC, signed_at DESC LIMIT 1");
+
+    let mut q = sqlx::query_as::<
+        _,
+        (
+            String,
+            i64,
+            Vec<u8>,
+            Option<String>,
+            String,
+            chrono::DateTime<chrono::Utc>,
+            Vec<u8>,
+            String,
+            String,
+        ),
+    >(&sql);
+    if let Some(ts) = tree_size {
+        q = q.bind(ts as i64);
+    }
+    if let Some(c) = cadence {
+        q = q.bind(c);
+    }
+
+    let row = q
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| Status::internal(e.to_string()))?;
+    Ok(row.map(
+        |(id, ts, root_hash, domain, cadence, signed_at, sig, key_role, key_fp)| {
+            SignedTreeHeadResponse {
+                id,
+                tree_size: ts as u64,
+                root_hash: hex::encode(root_hash),
+                cadence,
+                signed_at_us: signed_at.timestamp_micros(),
+                signature: hex::encode(sig),
+                key_role,
+                key_fingerprint: key_fp,
+                domain,
+            }
+        },
+    ))
 }

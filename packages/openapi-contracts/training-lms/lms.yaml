@@ -31,6 +31,7 @@ paths:
     get:
       tags: [courses]
       operationId: listCourses
+      x-handler-bound: training-svc.training-lms.list_courses
       summary: List training courses
       description: Returns paginated catalogue of available training courses. Requires JWT.
       x-eel-sla:
@@ -60,6 +61,7 @@ paths:
     get:
       tags: [courses]
       operationId: getCourse
+      x-handler-bound: training-svc.training-lms.get_course
       summary: Get course detail
       description: Returns full course metadata, modules, and assessment configuration.
       x-eel-sla:
@@ -86,6 +88,7 @@ paths:
     post:
       tags: [enrolments]
       operationId: createEnrolment
+      x-handler-bound: training-svc.training-lms.create_enrolment
       summary: Enrol poll worker in training course
       description: Creates an enrolment record for a poll worker in a training course. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -128,6 +131,7 @@ paths:
     get:
       tags: [enrolments]
       operationId: getEnrolment
+      x-handler-bound: training-svc.training-lms.get_enrolment
       summary: Get enrolment detail
       description: Returns enrolment status and progress for a poll worker.
       x-eel-sla:
@@ -158,6 +162,7 @@ paths:
     post:
       tags: [assessments]
       operationId: submitAssessment
+      x-handler-bound: training-svc.training-lms.submit_assessment
       summary: Submit assessment answers
       description: Records a poll worker's assessment submission and computes result. Idempotent on Idempotency-Key. Answer data is ephemeral (class E) after scoring.
       x-eel-sla:
@@ -198,6 +203,7 @@ paths:
     get:
       tags: [completions]
       operationId: listCompletions
+      x-handler-bound: training-svc.training-lms.list_completions
       summary: Completion report
       description: Returns paginated completion records for audit and HR purposes. Requires JWT and SpiceDB authorization. No individual PII exposed.
       x-eel-sla:
@@ -252,6 +258,8 @@ paths:
     get:
       tags: [certificates]
       operationId: getCertificate
+      x-handler-bound: training-svc.training-lms.get_certificate
+      x-handler-bound: training-svc.training-lms.get_certificate
       summary: Download training certificate
       description: Returns a presigned MinIO URL for certificate PDF download. Valid for 15 minutes. Requires JWT or public token query parameter.
       x-eel-sla:

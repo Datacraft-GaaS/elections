@@ -1,56 +1,37 @@
 //! Application state shared across handlers.
 
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-
-/// Idempotency key store (in-memory, keyed by Idempotency-Key header value).
-#[derive(Default)]
-pub struct IdempotencyStore {
-    inner: Mutex<HashMap<String, serde_json::Value>>,
-}
-
-impl IdempotencyStore {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Check if the key has been seen; return the cached response if so.
-    pub fn get(&self, key: &str) -> Option<serde_json::Value> {
-        self.inner
-            .lock()
-            .expect("idempotency lock")
-            .get(key)
-            .cloned()
-    }
-
-    /// Store a response for the given key.
-    pub fn set(&self, key: String, value: serde_json::Value) {
-        self.inner
-            .lock()
-            .expect("idempotency lock")
-            .insert(key, value);
-    }
-}
-
+/// Shared application state.
+///
+/// The PostgreSQL pool is constructed lazily so the router can be built
+/// (and exercised in hermetic tests) without a live database; connections
+/// are attempted only when a handler touches the store. Store failures
+/// surface as 503 problem+json responses, never at construction time.
 pub struct AppState {
-    pub mock_mode: bool,
-    pub idempotency: IdempotencyStore,
+	pub db: sqlx::PgPool,
 }
 
 impl AppState {
-    pub fn new() -> Self {
-        let mock_mode = std::env::var("EEL_ABIS_MOCK")
-            .map(|v| v == "true" || v == "1")
-            .unwrap_or(true);
-        Self {
-            mock_mode,
-            idempotency: IdempotencyStore::new(),
-        }
-    }
+	/// Build state from the environment (`EEL_ABIS_DATABASE_URL`, falling
+	/// back to `DATABASE_URL`, then to a local default).
+	pub fn new() -> Self {
+		let url = std::env::var("EEL_ABIS_DATABASE_URL")
+			.or_else(|_| std::env::var("DATABASE_URL"))
+			.unwrap_or_else(|_| "postgres://127.0.0.1:5432/eel_abis".to_string());
+		Self::from_url(&url)
+	}
+
+	pub fn from_url(url: &str) -> Self {
+		let db = sqlx::postgres::PgPoolOptions::new()
+			.max_connections(16)
+			.acquire_timeout(std::time::Duration::from_secs(5))
+			.connect_lazy(url)
+			.expect("connect_lazy cannot fail");
+		Self { db }
+	}
 }
 
 impl Default for AppState {
-    fn default() -> Self {
-        Self::new()
-    }
+	fn default() -> Self {
+		Self::new()
+	}
 }

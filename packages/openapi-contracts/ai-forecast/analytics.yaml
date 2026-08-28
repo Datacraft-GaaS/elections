@@ -32,6 +32,7 @@ paths:
     get:
       tags: [turnout]
       operationId: getNationalTurnoutForecast
+      x-handler-bound: ai-platform-svc.ai-forecast.get_national_turnout_forecast
       summary: Get national voter turnout forecast
       description: >
         Returns the current national-level turnout forecast including
@@ -88,6 +89,7 @@ paths:
     get:
       tags: [turnout]
       operationId: getCountyTurnoutForecast
+      x-handler-bound: ai-platform-svc.ai-forecast.get_county_turnout_forecast
       summary: Get county-level voter turnout forecast
       description: >
         Returns turnout forecast aggregated at county level. No PII.
@@ -149,6 +151,7 @@ paths:
     get:
       tags: [turnout]
       operationId: getConstituencyTurnoutForecast
+      x-handler-bound: ai-platform-svc.ai-forecast.get_constituency_turnout_forecast
       summary: Get constituency-level voter turnout forecast
       description: >
         Returns turnout forecast at constituency granularity. No PII.
@@ -210,6 +213,7 @@ paths:
     get:
       tags: [accuracy]
       operationId: listForecastAccuracyReports
+      x-handler-bound: ai-platform-svc.ai-forecast.list_forecast_accuracy_reports
       summary: List forecast accuracy reports
       description: >
         Paginated list of post-election forecast accuracy assessments.
@@ -254,6 +258,7 @@ paths:
     post:
       tags: [training]
       operationId: triggerModelRetrain
+      x-handler-bound: ai-platform-svc.ai-forecast.trigger_model_retrain
       summary: Trigger AI model retraining job
       description: >
         Enqueues a retraining job for a turnout or anomaly model against a

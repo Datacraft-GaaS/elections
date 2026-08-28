@@ -27,6 +27,16 @@ pub enum RfidError {
     #[error("invalid HMAC key")]
     InvalidHmacKey,
 
+    // ---- Custody officer signature enforcement ----
+    #[error("custody transition to {to_state} requires a valid officer signature")]
+    OfficerSignatureRequired { to_state: String },
+
+    #[error("officer {officer_id} has no registered verification key")]
+    OfficerUnregistered { officer_id: String },
+
+    #[error("officer signature does not verify over this_hash")]
+    OfficerSignatureInvalid,
+
     #[error("reader signature verification failed")]
     ReaderSignatureInvalid,
 

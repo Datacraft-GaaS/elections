@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS merkle_checkpoints (
 );
 
 -- FR-M20-025: kit GPS heartbeats for geofence monitoring
-CREATE TABLE IF NOT EXISTS kit_heartbeats (
+CREATE TABLE IF NOT EXISTS inventory_kit_heartbeats (
     id              BIGSERIAL PRIMARY KEY,
     kit_id          TEXT NOT NULL,
     rfid_tag        TEXT NOT NULL,
@@ -106,5 +106,5 @@ CREATE TABLE IF NOT EXISTS custody_outbox (
 CREATE INDEX IF NOT EXISTS idx_custody_events_asset_id  ON custody_events(asset_id);
 CREATE INDEX IF NOT EXISTS idx_custody_events_seq       ON custody_events(asset_id, seq);
 CREATE INDEX IF NOT EXISTS idx_seals_asset_id           ON seals(asset_id);
-CREATE INDEX IF NOT EXISTS idx_kit_heartbeats_kit_ts    ON kit_heartbeats(kit_id, ts);
+CREATE INDEX IF NOT EXISTS idx_inventory_kit_heartbeats_kit_ts    ON inventory_kit_heartbeats(kit_id, ts);
 CREATE INDEX IF NOT EXISTS idx_custody_outbox_pending   ON custody_outbox(id) WHERE NOT published;

@@ -31,6 +31,7 @@ paths:
     post:
       tags: [models]
       operationId: registerModel
+      x-handler-bound: ai-platform-svc.ai-registry.register_model
       summary: Register a new AI model
       description: >
         Register an AI model artifact with its fairness report and training
@@ -80,6 +81,7 @@ paths:
     get:
       tags: [models]
       operationId: listModels
+      x-handler-bound: ai-platform-svc.ai-registry.list_models
       summary: List registered AI models
       description: Returns a paginated list of all registered AI models.
       x-eel-sla:
@@ -123,6 +125,7 @@ paths:
     get:
       tags: [models]
       operationId: getModel
+      x-handler-bound: ai-platform-svc.ai-registry.get_model
       summary: Get a registered AI model by ID
       description: Retrieve full details for a specific model registration.
       x-eel-sla:
@@ -153,6 +156,7 @@ paths:
     post:
       tags: [deployments]
       operationId: deployModel
+      x-handler-bound: ai-platform-svc.ai-registry.deploy_model
       summary: Deploy an AI model to an environment
       description: >
         Create a deployment record for a registered model. Requires explicit
@@ -203,6 +207,7 @@ paths:
     get:
       tags: [audit]
       operationId: listAuditLog
+      x-handler-bound: ai-platform-svc.ai-registry.list_audit_log
       summary: Retrieve AI registry audit log
       description: >
         Paginated audit trail of all model registration and deployment events.

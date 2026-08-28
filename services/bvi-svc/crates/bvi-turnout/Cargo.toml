@@ -1,0 +1,17 @@
+[package]
+name = "bvi-turnout"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Turnout rollup queries and aggregation for the BVI backend (M06/M07)"
+
+[lib]
+name = "bvi_turnout"
+path = "src/lib.rs"
+
+[dependencies]
+sqlx   = { workspace = true }
+chrono = { workspace = true }
+serde  = { workspace = true }

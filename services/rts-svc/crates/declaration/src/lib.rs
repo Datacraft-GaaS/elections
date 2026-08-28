@@ -6,6 +6,7 @@ pub mod aggregate;
 pub mod api;
 pub mod events;
 pub mod gazette;
+pub mod quorum;
 pub mod rules;
 
 #[cfg(test)]

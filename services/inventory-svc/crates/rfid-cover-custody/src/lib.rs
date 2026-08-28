@@ -12,6 +12,7 @@ pub mod error;
 pub mod events;
 pub mod hash_chain;
 pub mod metrics;
+pub mod officer_sig;
 pub mod read_ingest;
 pub mod reader;
 pub mod replay_defence;

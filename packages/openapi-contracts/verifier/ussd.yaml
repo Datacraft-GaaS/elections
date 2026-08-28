@@ -176,6 +176,7 @@ paths:
   /api/v1/verifier/ussd/session:
     post:
       operationId: handleUSSDSessionFull
+      x-handler-bound: bvr-svc.verifier.handle_ussd_session
       summary: "USSD session interaction (telco gateway webhook)"
       description: >
         The telco USSD gateway POSTs each subscriber interaction here.

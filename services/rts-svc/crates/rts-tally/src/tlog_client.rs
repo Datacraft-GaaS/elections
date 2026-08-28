@@ -20,6 +20,14 @@ use tracing::instrument;
 /// Kafka topic consumed by `tlog-ingest` for result-domain anchoring.
 pub const TOPIC_SNAPSHOT_ANCHORED: &str = "eel.results.snapshot_anchored.v1";
 
+/// Short voter-facing receipt code printed on the posted Form 34A: the
+/// first 12 characters of the anchor payload hash, uppercased. Resolved
+/// server-side by `tlog-api`'s receipt endpoint via prefix match against
+/// the stored leaf hashes.
+pub fn receipt_code(data_hash: &str) -> String {
+    data_hash.chars().take(12).collect::<String>().to_uppercase()
+}
+
 /// SPIFFE identity of this service used as the CloudEvents source.
 pub const SOURCE_URI: &str = "spiffe://eel.local/service/rts-backend";
 
@@ -267,6 +275,24 @@ mod tests {
         let e1 = client.build_anchor_envelope("r", "s1").unwrap();
         let e2 = client.build_anchor_envelope("r", "s2").unwrap();
         assert!(e2.eel_seq > e1.eel_seq);
+    }
+
+    #[test]
+    fn receipt_code_is_first_twelve_chars_uppercase() {
+        let data_hash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+        assert_eq!(receipt_code(data_hash), "0123456789AB");
+        assert_eq!(receipt_code(data_hash).len(), 12);
+    }
+
+    #[test]
+    fn receipt_code_matches_envelope_data_hash_prefix() {
+        let env = test_client()
+            .build_anchor_envelope("root", "snap-rc")
+            .unwrap();
+        let data_hash = env.data["data_hash"].as_str().unwrap();
+        let code = receipt_code(data_hash);
+        assert_eq!(code.len(), 12);
+        assert_eq!(code, data_hash[..12].to_uppercase());
     }
 
     #[test]

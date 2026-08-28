@@ -81,14 +81,21 @@ impl Sequencer {
 
         let new_size = index + 1;
 
+        // Compute the real inclusion proof against the full tree.
+        let hashes = crate::proofs::load_leaf_hashes(&self.pool).await?;
+        let tree = eel_crypto_rs::merkle::MerkleTree::from_leaf_hashes(hashes);
+        let path = tree
+            .inclusion_proof(index as usize)
+            .map_err(|e| crate::SequencerError::Proof(e.to_string()))?;
+
         Ok(Some(AppendResult {
             leaf_index: index,
             tree_size: new_size,
             proof: InclusionProof {
                 leaf_index: index,
                 tree_size: new_size,
-                root_hash: hex::encode(leaf_hash_bytes),
-                hashes: vec![],
+                root_hash: hex::encode(tree.root()),
+                hashes: path.iter().map(|h| hex::encode(h)).collect(),
             },
         }))
     }

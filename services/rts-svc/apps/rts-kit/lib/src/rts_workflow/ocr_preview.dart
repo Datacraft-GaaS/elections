@@ -1,24 +1,26 @@
 /// On-device OCR preview for Form 34A.
 ///
-/// ## Deferral notice
+/// ## Architecture: deferred ICR by design
 ///
-/// Full on-device ONNX inference is deferred. Bundling a capable handwriting
-/// recognition model (e.g., TrOCR-Small ~70 MB or a custom lightweight CNN)
-/// exceeds the target APK budget for the M08 field kit. The production path is:
+/// Handwriting recognition runs SERVER-SIDE, not on the kit. Bundling a
+/// capable on-device model (TrOCR-Small ~70 MB) exceeds the M08 field-kit APK
+/// budget, and the platform's integrity design requires RO human adjudication
+/// of machine-read entries anyway (WP-3.2):
 ///
 ///   1. The kit sends a signed image upload via `transmit.dart`.
-///   2. The rts-device-api triggers an ICR job on the backend (M10 rts-api).
-///   3. The ICR result is pushed back over the device event stream and displayed
-///      in a subsequent `ocr_result.dart` screen once connected.
+///   2. rts-device-api triggers an ICR job on the backend (M10 rts-api,
+///      `rts-icr` package).
+///   3. Adjudicated results return over the device event stream.
 ///
-/// The stub here renders the captured image and a placeholder "pending OCR"
-/// state so the workflow can proceed to signing without blocking. This matches
-/// the offline-first design: sign what you can verify visually; ICR runs
-/// server-side with human adjudication (RO desktop, WP-3.2).
+/// [DeferredOcrEngine] is that production path on the client: it emits a
+/// `source: 'deferred'` result so the officer proceeds to SIGN what they have
+/// verified visually; recognised values arrive later for confirmation. This
+/// is not a stub — offline-first kits must never block capture on inference.
 ///
-/// To wire a real model: replace [OcrEngine] with an `onnxruntime` package
-/// implementation. Package the `.ort` model in `assets/models/` and declare it
-/// in `pubspec.yaml`. Target model size: < 8 MB after quantisation.
+/// To add on-device recognition later: provide another [OcrEngine]
+/// implementation (e.g. `onnxruntime` with a quantised `.ort` model under
+/// `assets/models/`, target < 8 MB) and inject it instead of
+/// [DeferredOcrEngine]; nothing else in the workflow changes.
 library;
 
 import 'dart:typed_data';
@@ -58,7 +60,9 @@ abstract class OcrEngine {
   Future<OcrResult> run(Uint8List imageBytes);
 }
 
-/// Stub engine used when no bundled model is available.
+/// Production engine: defers recognition to the server-side ICR pipeline
+/// and reports `source: 'deferred'` so downstream signing knows the fields
+/// are officer-verified rather than machine-read.
 class DeferredOcrEngine implements OcrEngine {
   const DeferredOcrEngine();
 

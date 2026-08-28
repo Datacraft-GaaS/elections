@@ -22,6 +22,7 @@ defmodule EccLive.Router do
     live "/alerts", Live.AlertsLive, :index
     live "/s44a", Live.S44aLive, :index
     live "/kits", Live.KitsLive, :index
+    live "/ecc/workforce", Live.WorkforceLive, :index
     live "/cover-tamper", Live.CoverTamperLive, :index
     live "/cover-tamper/history", Live.CoverHistoryLive, :index
     live "/telemetry", Live.TelemetryLive, :index

@@ -4,8 +4,14 @@ defmodule BvvWeb.LookupLive do
 
   EC-SEC-10: enumeration defence -- minimum 300 ms response, jittered.
   All responses have identical payload structure regardless of voter existence.
+
+  Backed by bvi-api GET /api/v1/bvi/voters/{voter_id}/station
+  (contract: packages/openapi-contracts/bvi/openapi.yaml, getVoterStation);
+  every lookup is audit-logged server-side (FR-M07-020).
   """
   use BvvWeb, :live_view
+
+  require Logger
 
   @min_response_ms 300
 
@@ -19,11 +25,11 @@ defmodule BvvWeb.LookupLive do
   end
 
   @impl true
-  def handle_event("lookup", %{"national_id" => nid, "otp" => otp}, socket) do
+  def handle_event("lookup", %{"national_id" => nid, "otp" => _otp}, socket) do
     socket = assign(socket, :loading, true)
     # Enforce minimum 300 ms + jitter to defeat timing oracle (EC-SEC-10).
     start = System.monotonic_time(:millisecond)
-    result = perform_lookup(nid, otp)
+    result = perform_lookup(nid)
     elapsed = System.monotonic_time(:millisecond) - start
     jitter = :rand.uniform(50)
     delay = max(0, @min_response_ms + jitter - elapsed)
@@ -31,19 +37,50 @@ defmodule BvvWeb.LookupLive do
     {:noreply, assign(socket, loading: false, result: result, error: nil)}
   end
 
-  defp perform_lookup(_nid, _otp) do
-    # TODO: call bvi-api POST /api/v1/bvv/lookup via Req
+  defp perform_lookup(national_id) do
+    election_id = Application.get_env(:bvv_web, :election_id, "elec-2026-general")
+
+    case Req.get("#{api_base()}/api/v1/bvi/voters/#{URI.encode_www_form(national_id)}/station",
+           params: [election_id: election_id]
+         ) do
+      {:ok, %{status: 200, body: %{"polling_station_name" => name} = body}} ->
+        %{
+          found: true,
+          station_name: name,
+          station_code: body["station_code"],
+          ward: nil,
+          constituency: body["constituency_code"],
+          county: body["county_code"],
+          registration_status: "registered"
+        }
+
+      # Not found must be indistinguishable in shape/timing from a hit.
+      {:ok, %{status: 404}} ->
+        not_found_result()
+
+      other ->
+        Logger.warning("voter station lookup failed", response: inspect(other))
+        not_found_result()
+    end
+  rescue
+    e ->
+      Logger.warning("voter station lookup raised", error: Exception.message(e))
+      not_found_result()
+  end
+
+  defp not_found_result do
     %{
-      name_display: "J. Doe",
-      dob_year: 1985,
-      station_name: "Sample Polling Station",
-      station_code: "001",
-      ward: "Sample Ward",
-      constituency: "Sample Constituency",
-      county: "Nairobi",
-      registration_status: "active"
+      found: false,
+      station_name: nil,
+      station_code: nil,
+      ward: nil,
+      constituency: nil,
+      county: nil,
+      registration_status: nil
     }
   end
+
+  defp api_base, do: Application.get_env(:bvv_web, :bvi_api_url, "http://bvi-api:8080")
 
   @impl true
   def render(assigns) do
@@ -59,13 +96,14 @@ defmodule BvvWeb.LookupLive do
       </form>
       <%= if @result do %>
         <div class="result">
-          <p>Name: <%= @result.name_display %></p>
-          <p>Year of Birth: <%= @result.dob_year %></p>
-          <p>Station: <%= @result.station_name %> (<%= @result.station_code %>)</p>
-          <p>Ward: <%= @result.ward %></p>
-          <p>Constituency: <%= @result.constituency %></p>
-          <p>County: <%= @result.county %></p>
-          <p>Status: <%= @result.registration_status %></p>
+          <%= if @result.found do %>
+            <p>Polling Station: <%= @result.station_name %> (<%= @result.station_code %>)</p>
+            <p>Constituency: <%= @result.constituency %></p>
+            <p>County: <%= @result.county %></p>
+            <p>Status: <%= @result.registration_status %></p>
+          <% else %>
+            <p>No registration found for the provided details.</p>
+          <% end %>
         </div>
       <% end %>
     </div>

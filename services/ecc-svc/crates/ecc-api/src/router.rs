@@ -1,10 +1,12 @@
 use crate::handlers::*;
+use crate::speech;
+use crate::store::Store;
 use axum::{
     routing::{get, post},
     Router,
 };
 
-pub fn build_router() -> Router {
+pub fn build_router(store: Store) -> Router {
     Router::new()
         .route("/health", get(health))
         // ECC
@@ -21,6 +23,9 @@ pub fn build_router() -> Router {
         )
         .route("/ecc/turnout-heatmap", get(get_turnout_heatmap))
         .route("/ecc/audit-log", get(get_audit_log))
+        // Section 44A dual-officer verification
+        .route("/ecc/s44a/officer1", post(create_s44a_officer1))
+        .route("/ecc/s44a/officer2", post(complete_s44a_officer2))
         // IAB
         .route(
             "/iab/audit-reports",
@@ -46,4 +51,10 @@ pub fn build_router() -> Router {
         .route("/ecc/events/party", get(crate::sse::party_stream))
         .route("/ecc/events/observer", get(crate::sse::observer_stream))
         .route("/ecc/events/journalist", get(crate::sse::journalist_stream))
+        // Speech integrity (M17) public contract
+        .route("/speech/media-items", get(speech::list_media_items).post(speech::submit_media_item))
+        .route("/speech/media-items/{item_id}", get(speech::get_media_item))
+        .route("/speech/media-items/{item_id}/adjudications", post(speech::adjudicate_media_item))
+        .route("/speech/reports/summary", get(speech::get_speech_summary_report))
+        .with_state(store)
 }

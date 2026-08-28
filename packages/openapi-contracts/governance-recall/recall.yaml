@@ -29,6 +29,7 @@ paths:
   /api/v1/governance/recall/petitions:
     post:
       operationId: initiateRecallPetition
+      x-handler-bound: governance-svc.governance-recall.initiate_recall_petition
       tags: [recall-petitions]
       summary: Initiate a recall petition
       description: >
@@ -71,6 +72,7 @@ paths:
 
     get:
       operationId: listRecallPetitions
+      x-handler-bound: governance-svc.governance-recall.list_recall_petitions
       tags: [recall-petitions]
       summary: List recall petitions
       description: Paginated list of recall petitions. Tier 3 endpoint.
@@ -112,6 +114,7 @@ paths:
   /api/v1/governance/recall/petitions/{petition_id}:
     get:
       operationId: getRecallPetition
+      x-handler-bound: governance-svc.governance-recall.get_recall_petition
       tags: [recall-petitions]
       summary: Get recall petition detail
       description: Returns full detail for a specific recall petition. Tier 3 endpoint.
@@ -143,6 +146,7 @@ paths:
   /api/v1/governance/recall/petitions/{petition_id}/signatures:
     post:
       operationId: recordRecallSignature
+      x-handler-bound: governance-svc.governance-recall.record_recall_signature
       tags: [signatures]
       summary: Record a recall petition signature
       description: >
@@ -188,6 +192,7 @@ paths:
   /api/v1/governance/recall/petitions/{petition_id}/verification:
     post:
       operationId: verifySignatureCount
+      x-handler-bound: governance-svc.governance-recall.verify_signature_count
       tags: [verification]
       summary: Verify the recall petition signature count
       description: >

@@ -22,41 +22,41 @@ pub fn metrics() -> &'static HsmMetrics {
             "Total sign operations",
             &["role"]
         )
-        .unwrap(),
+        .expect("eel_hsm_sign_total registration failed"),
         sign_error_total: register_int_counter_vec!(
             "eel_hsm_sign_error_total",
             "Total sign errors",
             &["role"]
         )
-        .unwrap(),
+        .expect("eel_hsm_sign_error_total registration failed"),
         ceremony_started_total: register_int_counter_vec!(
             "eel_hsm_ceremony_started_total",
             "Total ceremonies started",
             &["role"]
         )
-        .unwrap(),
+        .expect("eel_hsm_ceremony_started_total registration failed"),
         ceremony_complete_total: register_int_counter_vec!(
             "eel_hsm_ceremony_complete_total",
             "Total ceremonies completed successfully",
             &["role"]
         )
-        .unwrap(),
+        .expect("eel_hsm_ceremony_complete_total registration failed"),
         ceremony_aborted_total: register_int_counter_vec!(
             "eel_hsm_ceremony_aborted_total",
             "Total ceremonies aborted",
             &["role"]
         )
-        .unwrap(),
+        .expect("eel_hsm_ceremony_aborted_total registration failed"),
         rate_limited_total: register_int_counter_vec!(
             "eel_hsm_rate_limited_total",
             "Total requests rejected by rate limiter",
             &["role"]
         )
-        .unwrap(),
+        .expect("eel_hsm_rate_limited_total registration failed"),
         active_ceremonies: register_int_gauge!(
             "eel_hsm_active_ceremonies",
             "Currently active ceremonies"
         )
-        .unwrap(),
+        .expect("eel_hsm_active_ceremonies registration failed"),
     })
 }

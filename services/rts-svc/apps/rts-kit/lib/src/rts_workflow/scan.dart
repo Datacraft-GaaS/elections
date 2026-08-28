@@ -100,16 +100,66 @@ double _michelsonContrast(img.Image gray) {
   return (max - min) / (max + min);
 }
 
-/// Detect four corners using a simple Harris-inspired response count.
-/// Returns the number of corner candidates found (expect 4 for a flat form).
+/// Detect form-corner candidates using a Sobel edge response count.
+/// Returns the number of edge clusters found (expect ~4 for a flat form).
 int _detectCorners(img.Image gray) {
-  final edges = img.sobel(img.copyResize(gray, width: 200));
-  int count = 0;
-  for (final px in edges) {
-    if (img.getLuminance(px) > 200) count++;
+  final points = _edgePoints(gray);
+  if (points.isEmpty) return 0;
+  // Cluster edge pixels on a coarse grid; distinct clusters approximate
+  // candidate corners (4 for a well-framed flat form).
+  final cells = <String>{};
+  const cell = 16;
+  for (final pt in points) {
+    cells.add('x${pt.x ~/ cell}y${pt.y ~/ cell}');
   }
-  // Normalise to ~corner count; very rough.
-  return (count / 80).round().clamp(0, 8);
+  return cells.length.clamp(0, 8);
+}
+
+/// Downscaled Sobel edge pixels (coordinates in FULL-RESOLUTION space).
+List<({int x, int y})> _edgePoints(img.Image gray) {
+  const probeWidth = 200;
+  final scaled = img.copyResize(gray, width: probeWidth);
+  final scale = gray.width / probeWidth;
+  final edges = img.sobel(scaled);
+  final pts = <({int x, int y})>[];
+  for (final px in edges) {
+    if (img.getLuminance(px) > 200) {
+      pts.add((x: (px.x * scale).round(), y: (px.y * scale).round()));
+    }
+  }
+  return pts;
+}
+
+/// Locate the four document corners from edge pixels using diagonal extremes:
+/// TL minimises x+y, TR maximises x-y, BR maximises x+y, BL minimises x-y.
+/// Returns [tlX, tlY, trX, trY, brX, brY, blX, blY] or null when too few
+/// edge pixels exist to bracket the page.
+List<int>? _formCornersQuad(img.Image gray) {
+  final pts = _edgePoints(gray);
+  if (pts.length < 8) return null;
+
+  ({int x, int y}) extreme(bool Function(({int x, int y}) a, ({int x, int y}) b) better) {
+    var acc = pts.first;
+    for (final p in pts.skip(1)) {
+      if (better(p, acc)) acc = p;
+    }
+    return acc;
+  }
+
+  int score(({int x, int y}) p) => p.x + p.y;
+  int diff(({int x, int y}) p) => p.x - p.y;
+
+  final tl = extreme((a, b) => score(a) < score(b));
+  final br = extreme((a, b) => score(a) > score(b));
+  final tr = extreme((a, b) => diff(a) > diff(b));
+  final bl = extreme((a, b) => diff(a) < diff(b));
+
+  // Reject degenerate quads (corners collapsing onto each other).
+  if ((tl.x - br.x).abs() < gray.width * 0.2 ||
+      (tl.y - br.y).abs() < gray.height * 0.2) {
+    return null;
+  }
+  return [tl.x, tl.y, tr.x, tr.y, br.x, br.y, bl.x, bl.y];
 }
 
 ScanQualityResult assessQuality(img.Image image) {
@@ -153,24 +203,44 @@ ScanQualityResult assessQuality(img.Image image) {
   );
 }
 
-/// Apply basic perspective-correction placeholder. A full homography requires
-/// manual corner selection or ML-based detection; this crops + deskews.
+/// Apply four-point perspective correction.
+///
+/// Detects the form's corners via diagonal extremes over Sobel edges and
+/// warps the quad to an upright rectangle with [img.copyRectify]. When the
+/// quad cannot be trusted (too few edges / degenerate geometry) the function
+/// falls back to levelled centre-crop so capture never blocks on corner
+/// detection alone.
 Uint8List applyPerspectiveCorrection(Uint8List rawJpeg) {
   final image = img.decodeImage(rawJpeg);
   if (image == null) throw StateError('Failed to decode image');
 
-  // Straighten: adjust brightness/contrast + crop 5% border artefacts.
-  // img.autoLevel is not available in image ^4.x; use adjustColor instead.
-  final levelled = img.adjustColor(image, brightness: 0, contrast: 1.1);
-  final cropped = img.copyCrop(
-    levelled,
-    x: (levelled.width * 0.05).round(),
-    y: (levelled.height * 0.05).round(),
-    width: (levelled.width * 0.90).round(),
-    height: (levelled.height * 0.90).round(),
-  );
+  final gray = img.grayscale(image);
+  final quad = _formCornersQuad(gray);
 
-  return Uint8List.fromList(img.encodeJpg(cropped, quality: 90));
+  img.Image corrected;
+  if (quad != null) {
+    // copyRectify maps the source quad (tl, tr, br, bl) onto an upright rect.
+    corrected = img.copyRectify(
+      image,
+      topLeft: img.Point(quad[0], quad[1]),
+      topRight: img.Point(quad[2], quad[3]),
+      bottomRight: img.Point(quad[4], quad[5]),
+      bottomLeft: img.Point(quad[6], quad[7]),
+    );
+  } else {
+    final cropped = img.copyCrop(
+      image,
+      x: (image.width * 0.05).round(),
+      y: (image.height * 0.05).round(),
+      width: (image.width * 0.90).round(),
+      height: (image.height * 0.90).round(),
+    );
+    corrected = cropped;
+  }
+
+  // Normalise exposure: slight contrast lift compensates shadowed booths.
+  final levelled = img.adjustColor(corrected, brightness: 0, contrast: 1.1);
+  return Uint8List.fromList(img.encodeJpg(levelled, quality: 90));
 }
 
 // ---- Providers --------------------------------------------------------------

@@ -44,6 +44,7 @@ paths:
   /v1/special/facilities:
     get:
       operationId: listSpecialFacilities
+      x-handler-bound: support-admin-svc.support-special-voter.list_special_facilities
       tags: [facilities]
       summary: "List all special voter facilities"
       security:
@@ -71,6 +72,7 @@ paths:
   /v1/special/facilities/{id}:
     get:
       operationId: getSpecialFacility
+      x-handler-bound: support-admin-svc.support-special-voter.get_special_facility
       tags: [facilities]
       summary: "Facility detail and status"
       security:
@@ -95,6 +97,7 @@ paths:
   /v1/special/facilities/{id}/events:
     post:
       operationId: submitSpecialVoterEvent
+      x-handler-bound: support-admin-svc.support-special-voter.submit_special_voter_event
       tags: [events]
       summary: "Submit special voter event from kit"
       description: |
@@ -127,6 +130,7 @@ paths:
           description: "Idempotency key reuse or validation error"
     get:
       operationId: listSpecialVoterEvents
+      x-handler-bound: support-admin-svc.support-special-voter.list_special_voter_events
       tags: [events]
       summary: "Event log for a facility"
       security:
@@ -151,6 +155,7 @@ paths:
   /v1/special/forms/34:
     post:
       operationId: submitSpecialForm34
+      x-handler-bound: support-admin-svc.support-special-voter.submit_special_form34
       tags: [forms]
       summary: "Submit special Form 34 from kit"
       security:
@@ -172,6 +177,7 @@ paths:
           description: "Accepted; form queued for Merkle anchor"
     get:
       operationId: listSpecialForms34
+      x-handler-bound: support-admin-svc.support-special-voter.list_special_forms34
       tags: [forms]
       summary: "List published special Form 34 variants"
       security: []
@@ -188,6 +194,7 @@ paths:
   /v1/special/forms/34/{id}:
     get:
       operationId: getSpecialForm34
+      x-handler-bound: support-admin-svc.support-special-voter.get_special_form34
       tags: [forms]
       summary: "Single form with Merkle proof"
       security: []
@@ -209,6 +216,7 @@ paths:
   /v1/special/idp/reassignments:
     post:
       operationId: recordIDPReassignment
+      x-handler-bound: support-admin-svc.support-special-voter.record_idp_reassignment
       tags: [idp]
       summary: "Record IDP voter reassignment"
       description: "IEBC officer JWT required. Idempotent. Triggers overcounting guard."
@@ -235,6 +243,7 @@ paths:
   /v1/special/dashboard:
     get:
       operationId: getSpecialDashboard
+      x-handler-bound: support-admin-svc.support-special-voter.get_special_dashboard
       tags: [facilities]
       summary: "Ops coordinator live status"
       security:
@@ -250,6 +259,7 @@ paths:
   /v1/special/audit/sample/{category}:
     get:
       operationId: getAuditSample
+      x-handler-bound: support-admin-svc.support-special-voter.get_audit_sample
       tags: [audit]
       summary: "IAB random 5% sample authentication logs"
       description: "IAB_AUDITOR JWT required. Rate-limited 10/hr."
@@ -280,6 +290,7 @@ paths:
   /v1/special/public/counts:
     get:
       operationId: getPublicVoterCounts
+      x-handler-bound: support-admin-svc.support-special-voter.get_public_voter_counts
       tags: [public]
       summary: "Voter counts per facility (no PII)"
       security: []

@@ -1,0 +1,36 @@
+[package]
+name = "workforce-api"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "HTTP API surface for workforce-svc: registry & contacts, recruitment state machine, postings & equipment, tasking, performance"
+
+[lib]
+name = "workforce_api"
+path = "src/lib.rs"
+
+[[bin]]
+name = "workforce-api"
+path = "src/main.rs"
+
+[dependencies]
+axum               = { workspace = true }
+tokio              = { workspace = true }
+tower              = { workspace = true }
+serde              = { workspace = true }
+serde_json         = { workspace = true }
+uuid               = { workspace = true }
+chrono             = { workspace = true }
+tracing            = { workspace = true }
+tracing-subscriber = { workspace = true }
+thiserror          = { workspace = true }
+sqlx               = { workspace = true }
+hex                = { workspace = true }
+sha2               = { workspace = true }
+eel-outbox-rs      = { workspace = true }
+
+[dev-dependencies]
+tokio  = { workspace = true }
+tower  = { workspace = true }

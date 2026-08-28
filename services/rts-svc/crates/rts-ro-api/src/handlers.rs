@@ -1,9 +1,9 @@
 use axum::{
     extract::Path,
     http::StatusCode,
-    response::{IntoResponse, Json},
+    response::{IntoResponse, Response, Json},
 };
-use tracing::info;
+use tracing::{info, warn};
 use uuid::Uuid;
 
 use crate::models::*;
@@ -132,16 +132,43 @@ pub async fn create_dispute(
 }
 
 // POST /api/v1/rts/ro/agents/countersign
-// Party-agent countersignature on 34A/34B; emits agent_countersign.v1.
+// Party-agent countersignature on 34A/34B. The signature is verified against
+// the registered agent key over canonical bytes form|agent|party|signed_at;
+// unregistered agents or invalid signatures are rejected outright.
 pub async fn agent_countersign(
     Json(req): Json<AgentCountersignRequest>,
-) -> impl IntoResponse {
+) -> Response {
+    static REGISTRY: std::sync::OnceLock<crate::agents::AgentRegistry> = std::sync::OnceLock::new();
+    let registry = REGISTRY.get_or_init(crate::agents::AgentRegistry::from_env);
+
+    use crate::agents::CountersignError;
+    match registry.verify(
+        req.form_id,
+        &req.agent_id,
+        &req.party_code,
+        &req.signed_at,
+        &req.agent_signature,
+    ) {
+        Ok(()) => {}
+        Err(CountersignError::UnknownAgent) => {
+            warn!(agent_id = %req.agent_id, "countersign rejected: unregistered agent");
+            return (StatusCode::FORBIDDEN, "unregistered agent").into_response();
+        }
+        Err(CountersignError::BadSignatureFormat) => {
+            return (StatusCode::BAD_REQUEST, "malformed signature encoding").into_response();
+        }
+        Err(CountersignError::InvalidSignature) => {
+            warn!(form_id = %req.form_id, agent_id = %req.agent_id, "countersign rejected: invalid signature");
+            return (StatusCode::FORBIDDEN, "signature does not verify").into_response();
+        }
+    }
+
     info!(
         form_id = %req.form_id,
         agent_id = %req.agent_id,
         party_code = %req.party_code,
         idempotency_key = %req.idempotency_key,
-        "agent_countersign"
+        "agent_countersign verified"
     );
     (
         StatusCode::ACCEPTED,
@@ -151,6 +178,7 @@ pub async fn agent_countersign(
             status: "countersigned".into(),
         }),
     )
+        .into_response()
 }
 
 // POST /api/v1/rts/ro/session-recording

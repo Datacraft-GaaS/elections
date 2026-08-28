@@ -32,5 +32,6 @@ pub fn build_router_with_state(broadcast: Arc<ShardedBroadcast>) -> Router {
         .route("/verify/v1/anomalies", get(get_anomalies))
         .route("/verify/v1/clone-report", post(report_clone))
         .route("/verify/v1/binary-integrity", post(binary_integrity_check))
+        .merge(crate::spec::router())
         .with_state(broadcast)
 }

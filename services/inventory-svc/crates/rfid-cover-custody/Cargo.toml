@@ -16,6 +16,7 @@ name    = "rfid_test"
 path    = "tests/rfid_test.rs"
 
 [dependencies]
+ed25519-dalek = { workspace = true }
 # HTTP / async
 axum            = { workspace = true }
 tokio           = { workspace = true }

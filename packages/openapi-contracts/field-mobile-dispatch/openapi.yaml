@@ -29,6 +29,7 @@ paths:
     get:
       tags: [assignments]
       operationId: getWorkerAssignments
+      x-handler-bound: field-mobile-svc.field-mobile-dispatch.get_assignments
       summary: List assignments for a worker
       parameters:
         - name: worker_id
@@ -58,6 +59,7 @@ paths:
     post:
       tags: [attendance]
       operationId: workerCheckIn
+      x-handler-bound: field-mobile-svc.field-mobile-dispatch.check_in
       summary: Record worker check-in at a polling station
       requestBody:
         required: true
@@ -81,6 +83,7 @@ paths:
     post:
       tags: [attendance]
       operationId: workerStatusPing
+      x-handler-bound: field-mobile-svc.field-mobile-dispatch.status_ping
       summary: Submit a worker status ping (on-station, break, absent)
       requestBody:
         required: true
@@ -102,6 +105,7 @@ paths:
     post:
       tags: [attendance]
       operationId: workerCheckOut
+      x-handler-bound: field-mobile-svc.field-mobile-dispatch.check_out
       summary: Record worker check-out and trigger payroll event
       requestBody:
         required: true
@@ -125,6 +129,7 @@ paths:
     get:
       tags: [workers]
       operationId: getWorkerStatus
+      x-handler-bound: field-mobile-svc.field-mobile-dispatch.get_status
       summary: Get current status for a worker
       parameters:
         - name: id

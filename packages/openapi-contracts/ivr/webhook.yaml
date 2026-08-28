@@ -23,6 +23,7 @@ paths:
     post:
       tags: [sessions]
       operationId: handleIvrSession
+      x-handler-bound: bvr-svc.ivr.handle_ivr_session
       summary: Africa's Talking IVR session hook
       description: >
         Receives IVR session events from Africa's Talking Voice API. Each

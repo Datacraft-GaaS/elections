@@ -25,6 +25,7 @@ paths:
     get:
       tags: [snapshots]
       operationId: listVoterListSnapshots
+      x-handler-bound: portal-svc.inspection.list_voter_list_snapshots
       summary: List published voter register snapshots
       description: Returns published snapshots available for public inspection. Contains station-level counts only, no individual records. Public, tier 1, with Merkle proofs.
       x-eel-sla:
@@ -61,6 +62,7 @@ paths:
     get:
       tags: [snapshots]
       operationId: getVoterListSnapshot
+      x-handler-bound: portal-svc.inspection.get_voter_list_snapshot
       summary: Get snapshot metadata and download URL
       description: Returns snapshot metadata and a presigned CSV download URL for the anonymised aggregate. Public, tier 1.
       x-eel-sla:
@@ -91,6 +93,7 @@ paths:
     get:
       tags: [search]
       operationId: searchVoterList
+      x-handler-bound: portal-svc.inspection.search_voter_list
       summary: Search voter list by hashed ID
       description: Checks whether a voter is on the register. Returns station name only if found. Anti-enumeration rate limit applies (5 req/IP/min). Constant-time response. Public with rate limit.
       x-eel-sla:

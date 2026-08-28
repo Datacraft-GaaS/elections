@@ -2,9 +2,10 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 /// Asset types tracked in custody.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum AssetType {
+    #[default]
     Kit,
     Ballot,
     Seal,
@@ -12,9 +13,10 @@ pub enum AssetType {
 }
 
 /// Lifecycle status of a managed asset.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum AssetStatus {
+    #[default]
     New,
     InTransit,
     InWarehouse,

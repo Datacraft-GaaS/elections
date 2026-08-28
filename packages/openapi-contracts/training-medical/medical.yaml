@@ -25,6 +25,8 @@ paths:
     post:
       tags: [incidents]
       operationId: reportMedicalIncident
+      x-handler-bound: training-svc.training-medical.report_medical_incident
+      x-handler-bound: training-svc.training-medical.report_incident
       summary: Report a medical incident at a polling station
       description: Creates a medical incident record. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -64,6 +66,8 @@ paths:
     get:
       tags: [incidents]
       operationId: listMedicalIncidents
+      x-handler-bound: training-svc.training-medical.list_medical_incidents
+      x-handler-bound: training-svc.training-medical.list_incidents
       summary: List medical incidents
       description: Returns paginated incident list. No PII in list view. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -113,6 +117,7 @@ paths:
     patch:
       tags: [incidents]
       operationId: updateMedicalIncident
+      x-handler-bound: training-svc.training-medical.update_medical_incident
       summary: Update incident status
       description: Updates the status of a medical incident. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -163,6 +168,7 @@ paths:
     get:
       tags: [personnel]
       operationId: getMedicalPersonnelByCounty
+      x-handler-bound: training-svc.training-medical.get_medical_personnel_by_county
       summary: Medical personnel roster for a county
       description: Returns medical first responders assigned to a county. Data class B. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -191,6 +197,7 @@ paths:
     post:
       tags: [personnel]
       operationId: registerMedicalPersonnel
+      x-handler-bound: training-svc.training-medical.register_medical_personnel
       summary: Register a medical first responder
       description: Registers a medical first responder in the system. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
       x-eel-sla:

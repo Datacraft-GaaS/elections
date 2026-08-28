@@ -17,6 +17,9 @@ pub enum ApiError {
     #[error("bad request: {0}")]
     BadRequest(String),
 
+    #[error("conflict: {0}")]
+    Conflict(String),
+
     #[error("domain error: {0}")]
     Domain(#[from] DomainError),
 
@@ -29,12 +32,19 @@ impl IntoResponse for ApiError {
         let (status, message) = match &self {
             ApiError::NotFound => (StatusCode::NOT_FOUND, self.to_string()),
             ApiError::BadRequest(_) => (StatusCode::BAD_REQUEST, self.to_string()),
+            ApiError::Conflict(_) => (StatusCode::CONFLICT, self.to_string()),
             ApiError::Domain(DomainError::TrainingGateNotPassed) => {
                 (StatusCode::UNPROCESSABLE_ENTITY, self.to_string())
             }
             ApiError::Domain(DomainError::SodViolation) => {
                 (StatusCode::UNPROCESSABLE_ENTITY, self.to_string())
             }
+            ApiError::Domain(
+                DomainError::InvalidContentHash
+                | DomainError::InvalidChannel
+                | DomainError::RejectionReasonRequired
+                | DomainError::DualControlViolation,
+            ) => (StatusCode::UNPROCESSABLE_ENTITY, self.to_string()),
             ApiError::Internal(_) => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
         };
         (status, Json(json!({ "error": message }))).into_response()

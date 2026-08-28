@@ -116,6 +116,12 @@ class CoverStateTransition(models.Model):
     from_state = models.CharField(max_length=32)
     to_state = models.CharField(max_length=32)
     officer_id = models.CharField(max_length=64)
+    officer_svid = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="SPIFFE ID of the officer performing the transition",
+    )
     reader_read = models.ForeignKey(
         RfidCoverRead,
         on_delete=models.DO_NOTHING,
@@ -124,11 +130,11 @@ class CoverStateTransition(models.Model):
         null=True,
         blank=True,
     )
-    prev_hash = models.CharField(
-        max_length=64, help_text="SHA-256 of previous transition row"
+    prev_hash = models.BinaryField(
+        null=True, help_text="BLAKE3 hash of the previous transition (None for genesis row)"
     )
-    this_hash = models.CharField(
-        max_length=64, help_text="SHA-256 of this transition row"
+    this_hash = models.BinaryField(
+        help_text="BLAKE3(prev_hash || canonical_json(this_transition))"
     )
     hsm_signature = models.TextField(help_text="Officer HSM signature over this_hash")
     merkle_anchor_id = models.CharField(

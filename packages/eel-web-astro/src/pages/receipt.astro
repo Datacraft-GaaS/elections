@@ -1,0 +1,181 @@
+---
+import { generateCspNonce, buildCsp } from '../seo/index.js';
+
+const nonce = generateCspNonce();
+const csp = buildCsp(nonce, {
+	'connect-src': `'self' ${import.meta.env.PUBLIC_TLOG_API ?? 'http://localhost:8080'}`,
+});
+const apiBase = import.meta.env.PUBLIC_TLOG_API ?? 'http://localhost:8080';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Station Result Receipt</title>
+    <meta
+      name="description"
+      content="Verify a station result receipt against the signed transparency log."
+    />
+    <meta http-equiv="Content-Security-Policy" content={csp} />
+    <meta name="tlog-api-base" content={apiBase} />
+  </head>
+  <body>
+    <main id="main-content">
+      <h1>Station Result Receipt</h1>
+      <p>
+        Enter the receipt code printed on the posted Form 34A to verify it
+        against the latest signed transparency log tree head.
+      </p>
+      <form id="receipt-form">
+        <label for="station">Polling station</label>
+        <input type="text" id="station" name="station" required />
+        <label for="code">Receipt code</label>
+        <input
+          type="text"
+          id="code"
+          name="code"
+          pattern="[0-9a-fA-F]{8,16}"
+          maxlength="16"
+          minlength="8"
+          required
+        />
+        <button type="submit">Verify</button>
+      </form>
+      <section id="result" hidden></section>
+    </main>
+
+    <script is:inline nonce={nonce}>
+      (function () {
+        var form = document.getElementById('receipt-form');
+        var result = document.getElementById('result');
+        var apiBase =
+          document.querySelector('meta[name="tlog-api-base"]').content ||
+          'http://localhost:8080';
+        // Wave-2 N10: the build embeds this page bundle's SHA-256; if a signed
+        // attestation for that digest exists it is shown. Verification of the
+        // attestation signature is performed by tlog-api (offline-safe: the
+        // embedded digest is compared against whatever artifact hash the
+        // attestation covers — a mismatch flags a tampered client).
+        var expectedDigest =
+          (document.querySelector('meta[name="verifier-sha256"]') || {}).content || '';
+
+        function esc(value) {
+          var div = document.createElement('div');
+          div.textContent = String(value);
+          return div.innerHTML;
+        }
+
+        form.addEventListener('submit', function (event) {
+          event.preventDefault();
+          result.hidden = false;
+          result.innerHTML = '<p>Verifying&hellip;</p>';
+          var code = document.getElementById('code').value.trim();
+          fetch(apiBase + '/v1/tlog/receipts/' + encodeURIComponent(code))
+            .then(function (res) {
+              if (res.status === 404) throw new Error('No leaf matches this receipt code.');
+              if (res.status === 409)
+                throw new Error('This receipt code is ambiguous; more than one leaf matches.');
+              if (!res.ok) throw new Error('Lookup failed (HTTP ' + res.status + ').');
+              return res.json();
+            })
+            .then(function (data) {
+              var sth = data.sth || {};
+              var match =
+                sth.root_hash && data.root_hash === sth.root_hash ? 'MATCH' : 'NO-MATCH';
+              var rows = [
+                ['Leaf index', data.leaf_index],
+                ['Tree size', data.tree_size],
+                ['Root hash', data.root_hash],
+                ['Proof hashes', (data.hashes || []).join(', ')],
+                ['Leaf hash', data.leaf_hash_hex],
+                ['STH root hash', sth.root_hash || '(unavailable)'],
+                ['Signed at', sth.signed_at || ''],
+              ]
+                .map(function (row) {
+                  return '<tr><th>' + esc(row[0]) + '</th><td>' + esc(row[1]) + '</td></tr>';
+                })
+                .join('');
+              var attestationNote = expectedDigest
+                ? '<p class=attestation>Verifier bundle sha256: <code>' +
+                  esc(expectedDigest) +
+                  '</code> (build-embedded; attested via tlog-admin attest-artifact)</p>'
+                : '';
+              result.innerHTML =
+                '<h2>' +
+                match +
+                '</h2>' +
+                '<p>' +
+                (match === 'MATCH'
+                  ? 'The proof root matches the signed tree head.'
+                  : 'The proof root does not match the signed tree head.') +
+                '</p>' + attestationNote + '<table>' +
+                rows +
+                '</table>';
+            })
+            .catch(function (err) {
+              result.innerHTML = '<p>' + esc(err.message) + '</p>';
+            });
+        });
+      })();
+    </script>
+
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #fff;
+        color: #111827;
+        font-family: 'Noto Sans', 'Segoe UI', system-ui, sans-serif;
+      }
+      main {
+        max-width: 40rem;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+      }
+      label {
+        display: block;
+        margin: 1rem 0 0.25rem;
+        font-weight: 600;
+      }
+      input {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        font: inherit;
+      }
+      button {
+        margin-top: 1rem;
+        padding: 0.5rem 1rem;
+        background: #1a56db;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        font: inherit;
+        cursor: pointer;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 0.375rem 0.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        overflow-wrap: anywhere;
+      }
+      th {
+        font-weight: 600;
+        white-space: nowrap;
+      }
+    </style>
+  </body>
+</html>

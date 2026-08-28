@@ -1,0 +1,397 @@
+---
+import Application from '../layouts/application.astro'
+import { t } from '../lib/i18n.js'
+
+const locale = Astro.currentLocale ?? 'en'
+const roles = [
+  { key: 'po', title: t(locale, 'roles.po.title'), body: t(locale, 'roles.po.body'), code: 'PO' },
+  { key: 'dpo', title: t(locale, 'roles.dpo.title'), body: t(locale, 'roles.dpo.body'), code: 'DPO' },
+  { key: 'clerk', title: t(locale, 'roles.clerk.title'), body: t(locale, 'roles.clerk.body'), code: 'CLERK' },
+]
+const howSteps = t(locale, 'how.steps')
+const needItems = t(locale, 'need.items')
+---
+
+<Application
+  title={`${t(locale, 'hero.title')} · ${t(locale, 'brand')}`}
+  description={t(locale, 'hero.lead')}
+>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container hero__grid">
+      <div class="hero__copy">
+        <p class="eyebrow">{t(locale, 'hero.eyebrow')}</p>
+        <h1 class="display hero__title">{t(locale, 'hero.title')}</h1>
+        <p class="hero__lead">{t(locale, 'hero.lead')}</p>
+        <div class="hero__actions">
+          <a class="btn btn--primary btn--lg" href={Astro.url.pathname.startsWith('/sw') ? '/sw/apply' : '/apply'}>
+            {t(locale, 'hero.cta')} <span aria-hidden="true">→</span>
+          </a>
+          <a class="btn btn--ghost btn--lg" href={Astro.url.pathname.startsWith('/sw') ? '/sw/status' : '/status'}>
+            {t(locale, 'hero.cta.status')}
+          </a>
+        </div>
+        <p class="hero__note">{t(locale, 'hero.note')}</p>
+      </div>
+
+      <div class="hero__artifact" aria-hidden="true">
+        <div class="specimen">
+          <div class="specimen__top">
+            <span class="badge badge--green">APPLICATION</span>
+            <span class="mono specimen__no">REF · PWP-7F3K-0092</span>
+          </div>
+          <dl class="specimen__fields">
+            <div><dt>Name</dt><dd>Wanjiku N.</dd></div>
+            <div><dt>Role</dt><dd>Presiding Officer</dd></div>
+            <div><dt>County</dt><dd>Nakuru</dd></div>
+          </dl>
+          <div class="specimen__track" style="--progress: 40%">
+            <span class="specimen__track-fill"></span>
+          </div>
+          <div class="seal seal--animate">
+            RECEIVED
+            <span class="seal__ref">PWP-7F3K-0092</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROLES -->
+  <section class="section">
+    <div class="container">
+      <p class="eyebrow">{t(locale, 'roles.eyebrow')}</p>
+      <h2 class="display section__title">{t(locale, 'roles.title')}</h2>
+      <div class="roles">
+        {roles.map((r) => (
+          <article class="card role">
+            <div class="role__head">
+              <span class="role__code mono">{r.code}</span>
+              <h3 class="role__title">{r.title}</h3>
+            </div>
+            <p class="role__body">{r.body}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="section section--tint">
+    <div class="container">
+      <p class="eyebrow">{t(locale, 'how.eyebrow')}</p>
+      <h2 class="display section__title">{t(locale, 'how.title')}</h2>
+      <ol class="steps">
+        {howSteps.map((s) => (
+          <li class="step">
+            <span class="step__seal mono" aria-hidden="true"></span>
+            <div>
+              <h3 class="step__title">{s.title}</h3>
+              <p class="step__body">{s.body}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- WHAT YOU NEED -->
+  <section class="section">
+    <div class="container">
+      <p class="eyebrow">{t(locale, 'need.eyebrow')}</p>
+      <h2 class="display section__title">{t(locale, 'need.title')}</h2>
+      <ul class="need">
+        {needItems.map((item) => (
+          <li class="need__item">
+            <span class="need__check" aria-hidden="true">✓</span>
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section">
+    <div class="container">
+      <div class="cta card">
+        <div>
+          <h2 class="display cta__title">{t(locale, 'cta.title')}</h2>
+          <p class="cta__body">{t(locale, 'cta.body')}</p>
+        </div>
+        <a class="btn btn--seal btn--lg" href={Astro.url.pathname.startsWith('/sw') ? '/sw/apply' : '/apply'}>
+          {t(locale, 'cta.button')}
+        </a>
+      </div>
+    </div>
+  </section>
+</Application>
+
+<style>
+  .hero {
+    padding: 4.5rem 0 3.5rem;
+  }
+
+  .hero__grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 3rem;
+    align-items: center;
+  }
+
+  .hero__title {
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    margin: 0.5rem 0 0.75rem;
+    max-width: 17ch;
+  }
+
+  .hero__lead {
+    font-size: 1.18rem;
+    color: var(--ink-soft);
+    max-width: 52ch;
+    margin-bottom: 1.75rem;
+  }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+  }
+
+  .hero__note {
+    margin-top: 1.25rem;
+    font-size: 0.9rem;
+    color: var(--ink-faint);
+  }
+
+  .hero__artifact {
+    display: flex;
+    justify-content: center;
+  }
+
+  .specimen {
+    background: var(--raised);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    padding: 1.5rem;
+    width: min(100%, 22rem);
+    transform: rotate(1.5deg);
+    display: grid;
+    gap: 1.1rem;
+  }
+
+  .specimen__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+  }
+
+  .specimen__no {
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+  }
+
+  .specimen__fields {
+    margin: 0;
+    display: grid;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+  }
+  .specimen__fields div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px dashed var(--line);
+    padding-bottom: 0.4rem;
+  }
+  .specimen__fields dt {
+    color: var(--ink-faint);
+  }
+  .specimen__fields dd {
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .specimen__track {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--paper-2);
+    overflow: hidden;
+  }
+  .specimen__track-fill {
+    display: block;
+    width: var(--progress);
+    height: 100%;
+    background: var(--green);
+    border-radius: 999px;
+  }
+
+  /* sections */
+  .section {
+    padding: 3.25rem 0;
+  }
+  .section--tint {
+    background: var(--paper-2);
+    border-block: 1px solid var(--line);
+  }
+  .section__title {
+    font-size: clamp(1.8rem, 3.6vw, 2.5rem);
+    max-width: 24ch;
+    margin-top: 0.5rem;
+  }
+
+  /* roles */
+  .roles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+    margin-top: 2rem;
+  }
+  .role {
+    padding: 1.5rem;
+    display: grid;
+    align-content: start;
+    gap: 0.7rem;
+    transition: transform 180ms var(--ease), box-shadow 180ms var(--ease);
+  }
+  .role:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+  }
+  .role__head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.7rem;
+  }
+  .role__code {
+    font-weight: 700;
+    color: var(--seal);
+    font-size: 0.8rem;
+  }
+  .role__title {
+    font-size: 1.25rem;
+    margin: 0;
+  }
+  .role__body {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 0.97rem;
+  }
+
+  /* how it works — the sequence is real, so numbering carries meaning */
+  .steps {
+    list-style: none;
+    margin: 2rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0;
+    counter-reset: step;
+  }
+  .step {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.4rem;
+    padding: 1.1rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .step:last-child {
+    border-bottom: none;
+  }
+  .step__seal {
+    position: relative;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 8px;
+    border: 2px solid var(--green);
+    color: var(--green-deep);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    margin-top: 0.1rem;
+  }
+  .step__seal::before {
+    content: counter(step);
+  }
+  .step__title {
+    font-size: 1.15rem;
+    margin: 0 0 0.25rem;
+  }
+  .step__body {
+    margin: 0;
+    color: var(--ink-soft);
+    max-width: 60ch;
+  }
+
+  /* need */
+  .need {
+    list-style: none;
+    margin: 2rem 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.9rem;
+  }
+  .need__item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--raised);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 0.8rem 1rem;
+    font-weight: 550;
+  }
+  .need__check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: var(--green-tint);
+    color: var(--green-deep);
+    font-weight: 700;
+    flex: none;
+  }
+
+  /* CTA */
+  .cta {
+    padding: 2.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    flex-wrap: wrap;
+    background: var(--green-deep);
+    border-color: var(--green-deep);
+    color: var(--paper);
+  }
+  .cta__title {
+    color: var(--paper);
+    font-size: 1.7rem;
+  }
+  .cta__body {
+    color: rgb(241 240 232 / 0.82);
+    margin: 0;
+    max-width: 46ch;
+  }
+
+  @media (max-width: 860px) {
+    .hero__grid {
+      grid-template-columns: 1fr;
+    }
+    .hero__artifact {
+      display: none;
+    }
+    .roles {
+      grid-template-columns: 1fr;
+    }
+    .need {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

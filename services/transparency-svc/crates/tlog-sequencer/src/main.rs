@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use sqlx::postgres::PgPoolOptions;
-use tlog_sequencer::{Sequencer, SthProducer};
+use tlog_sequencer::{signer::SthSigner, Sequencer, SthProducer};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -14,7 +14,10 @@ async fn main() -> anyhow::Result<()> {
             .connect(&db_url)
             .await?,
     );
-    let producer = Arc::new(SthProducer::new(pool.clone()));
+    // Signing backend from env: PKCS#11/softHSM by default; `EEL_STH_SIGNER=dev`
+    // selects an explicit development Ed25519 key (refused without key material).
+    let signer = SthSigner::from_env().expect("STH signer configuration failed");
+    let producer = Arc::new(SthProducer::new(pool.clone(), signer));
     producer.clone().spawn_all();
 
     let _sequencer = Sequencer::new(pool, 50_000);

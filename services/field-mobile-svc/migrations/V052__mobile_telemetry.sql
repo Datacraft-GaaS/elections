@@ -98,8 +98,10 @@ CREATE INDEX eel_telemetry_signals_device_occurred
 CREATE INDEX eel_telemetry_signals_class_occurred
     ON eel_telemetry_signals (class, occurred_at DESC);
 
+-- Unique per-device monotonic counter; the partition key must be included so
+-- the uniqueness constraint is valid on the partitioned table.
 CREATE UNIQUE INDEX eel_telemetry_signals_device_counter
-    ON eel_telemetry_signals (device_id, monotonic_counter);
+    ON eel_telemetry_signals (device_id, monotonic_counter, occurred_at);
 
 -- Partial index for high-priority signal classes.
 CREATE INDEX eel_telemetry_signals_critical_class
@@ -176,7 +178,7 @@ CREATE TABLE eel_telemetry_alerts (
                             )),
     severity            TEXT        NOT NULL CHECK (severity IN ('info', 'warn', 'critical')),
     detected_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
-    triggering_signal   UUID        REFERENCES eel_telemetry_signals (signal_id),
+    triggering_signal   UUID,
     payload             JSONB       NOT NULL DEFAULT '{}',
     ecc_dispatched      BOOLEAN     NOT NULL DEFAULT FALSE,
     ecc_dispatched_at   TIMESTAMPTZ,

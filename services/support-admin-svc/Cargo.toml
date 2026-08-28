@@ -6,6 +6,8 @@ members = [
     "crates/budget",
     "crates/payroll",
     "crates/archive",
+    "crates/special-voter",
+    "crates/intent",
 ]
 
 [workspace.package]

@@ -17,7 +17,7 @@ tables:
       integrity_level: { type: text, classification: C }
       revoked: { type: bool, classification: C }
 
-  kit_heartbeats:
+  biometric_kit_heartbeats:
     classification: D
     retention: "30 days (rolling partition)"
     fields:

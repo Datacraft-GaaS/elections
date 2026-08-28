@@ -158,11 +158,11 @@ class CoverStateTransitionAdmin(admin.ModelAdmin):
 
     @admin.display(description="prev hash")
     def prev_hash_preview(self, obj: CoverStateTransition) -> str:
-        return obj.prev_hash[:12] + "..." if obj.prev_hash else ""
+        return bytes(obj.prev_hash).hex()[:12] + "..." if obj.prev_hash else ""
 
     @admin.display(description="this hash")
     def this_hash_preview(self, obj: CoverStateTransition) -> str:
-        return obj.this_hash[:12] + "..." if obj.this_hash else ""
+        return bytes(obj.this_hash).hex()[:12] + "..." if obj.this_hash else ""
 
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False

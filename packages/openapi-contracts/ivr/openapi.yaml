@@ -8,6 +8,7 @@ paths:
     get:
       summary: Health check
       operationId: healthz
+      x-handler-bound: bvr-svc.ivr.healthz
       responses:
         "200":
           description: OK
@@ -22,6 +23,7 @@ paths:
     post:
       summary: Handle IVR call event
       operationId: handleVoiceCall
+      x-handler-bound: bvr-svc.ivr.handle_voice_call
       requestBody:
         required: true
         content:

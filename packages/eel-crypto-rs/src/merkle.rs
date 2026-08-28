@@ -109,6 +109,28 @@ impl MerkleTree {
         }
     }
 
+    /// Build a Merkle tree from pre-computed leaf hashes.
+    ///
+    /// Unlike [`MerkleTree::build`], the entries are treated as final leaf
+    /// hashes and are NOT hashed again. Use this when the caller already
+    /// holds domain-defined leaf hashes (e.g. transparency-log leaves stored
+    /// in a database) so that [`MerkleTree::verify_inclusion_against_root_leaf`]
+    /// verifies against those exact hashes.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use eel_crypto_rs::merkle::{leaf_hash, MerkleTree};
+    /// let hashes = vec![leaf_hash(b"a"), leaf_hash(b"b")];
+    /// let tree = MerkleTree::from_leaf_hashes(hashes);
+    /// assert_eq!(tree.size(), 2);
+    /// ```
+    pub fn from_leaf_hashes(leaves: Vec<Hash>) -> Self {
+        let size = leaves.len();
+        let nodes = build_tree(&leaves);
+        MerkleTree { leaves, nodes, size }
+    }
+
     /// Return the number of leaves in the tree.
     pub fn size(&self) -> usize {
         self.size

@@ -1,6 +1,16 @@
 import httpx
 from typing import Any
 
+# Canonical beacon/seed-mixing implementation lives in beacon.py; re-exported
+# here so existing importers of nist_beacon get the verified API too.
+from .beacon import (  # noqa: F401
+    BeaconClient,
+    BeaconPulse,
+    combine_seeds,
+    commit_seed,
+    verify_commitment,
+)
+
 NIST_BEACON_URL = "https://beacon.nist.gov/beacon/2.0/pulse/last"
 
 

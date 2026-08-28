@@ -5,6 +5,7 @@
 //! Image auto-delete <= 1 second post-inference (FR-M27 privacy constraint).
 
 pub mod aggregates;
+pub mod http;
 pub mod catalogue;
 pub mod events;
 pub mod model;

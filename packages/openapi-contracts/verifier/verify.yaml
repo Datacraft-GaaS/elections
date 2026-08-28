@@ -335,6 +335,7 @@ paths:
   /api/v1/verifier/lookups:
     post:
       operationId: lookupVoterRegistration
+      x-handler-bound: bvr-svc.verifier.lookup_voter_registration
       summary: "Verify voter registration status by hashed ID (mobile, Tier 2)"
       description: >
         Citizen queries their registration status using their hashed national ID.
@@ -395,6 +396,7 @@ paths:
   /api/v1/verifier/station/{station_code}:
     get:
       operationId: getPollingStationDetail
+      x-handler-bound: bvr-svc.verifier.get_polling_station_detail
       summary: "Polling station details (signed-static, Tier 1)"
       description: >
         Returns full detail for a polling station by its code.
@@ -442,6 +444,7 @@ paths:
   /api/v1/verifier/results/summary:
     get:
       operationId: getResultSummary
+      x-handler-bound: bvr-svc.verifier.get_result_summary
       summary: "Election result summary for citizen view (signed-static, Tier 1)"
       description: >
         Returns a citizen-facing summary of the current election results.
@@ -478,6 +481,7 @@ paths:
   /api/v1/verifier/ussd/session:
     post:
       operationId: handleUSSDSession
+      x-handler-bound: bvr-svc.verifier.handle_ussd_session
       summary: "USSD session webhook (telco server-to-server)"
       description: >
         Telco USSD gateways POST each menu interaction here.
@@ -528,6 +532,7 @@ paths:
   /api/v1/verifier/whatsapp/webhook:
     post:
       operationId: handleWhatsAppWebhook
+      x-handler-bound: bvr-svc.verifier.handle_whatsapp_webhook
       summary: "WhatsApp Cloud API webhook (Meta server-to-server)"
       description: >
         Meta POSTs incoming messages and status updates here.

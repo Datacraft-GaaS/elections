@@ -16,8 +16,8 @@ use crate::{
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/models", get(list_models).post(register_model))
-        .route("/models/:id", get(get_model))
-        .route("/models/:id/activate", patch(activate_model))
+        .route("/models/{id}", get(get_model))
+        .route("/models/{id}/activate", patch(activate_model))
 }
 
 async fn list_models(

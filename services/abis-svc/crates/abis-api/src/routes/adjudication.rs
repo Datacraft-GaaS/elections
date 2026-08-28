@@ -73,7 +73,15 @@ pub async fn list_adjudication(
 ) -> (StatusCode, Json<AdjudicationCasePage>) {
 	(
 		StatusCode::OK,
-		Json(AdjudicationCasePage { cases: vec![], total: 0 }),
+		Json(AdjudicationCasePage {
+			cases: vec![],
+			pagination: crate::models::PaginationMeta {
+				total: 0,
+				page: 1,
+				page_size: 50,
+				has_next: false,
+			},
+		}),
 	)
 }
 
@@ -215,11 +223,15 @@ pub async fn resolve_adjudication(
 		StatusCode::OK,
 		Json(AdjudicationCase {
 			case_id,
-			status: AdjudicationStatus::Resolved,
+			status: "resolved".to_string(),
 			match_score: 0.65,
 			probe_ref: "probe-001".into(),
 			candidate_gallery_ref: "gallery-001".into(),
-			created_at: chrono::Utc::now().to_rfc3339(),
+			outcome: Some("no_match".into()),
+			resolution_notes: None,
+			adjudicator_id: None,
+			created_at: chrono::Utc::now(),
+			resolved_at: Some(chrono::Utc::now()),
 		}),
 	)
 }

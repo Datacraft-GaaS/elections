@@ -11,6 +11,10 @@ description = "Domain aggregates, adjudication catalogue, and rejection-rate ale
 name = "intent"
 path = "src/lib.rs"
 
+[[bin]]
+name = "intent-api"
+path = "src/main.rs"
+
 [dependencies]
 eel-eventstore-rs = { path = "../../../../packages/eel-eventstore-rs" }
 eel-events-rs     = { path = "../../../../packages/eel-events-rs" }
@@ -21,6 +25,9 @@ uuid              = { workspace = true }
 chrono            = { workspace = true }
 thiserror         = { workspace = true }
 tracing           = { workspace = true }
+tracing-subscriber = { workspace = true }
+axum              = { workspace = true }
+tokio             = { workspace = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }

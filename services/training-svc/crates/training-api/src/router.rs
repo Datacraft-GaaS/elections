@@ -1,11 +1,13 @@
-use crate::handlers::{accreditation, cms, health, lms, medical};
+use crate::handlers::{accreditation, cms, exam, health, lms, medical, spec};
 use axum::{
     routing::{get, patch, post, put},
     Router,
 };
 
 pub fn build_router() -> Router {
-    Router::new()
+    // Exam engine (§3.2) runs behind its own state; merged with the rest of
+    // the training surface which is currently stateless.
+    let app = Router::new()
         .route("/healthz", get(health))
         // CMS (M37)
         .route(
@@ -92,5 +94,7 @@ pub fn build_router() -> Router {
         .route(
             "/v1/training/medical/cluster-alerts/{id}/resolve",
             post(medical::resolve_cluster_alert),
-        )
+        );
+    app.merge(exam::router(exam::ExamApiState::new()))
+        .merge(spec::router())
 }

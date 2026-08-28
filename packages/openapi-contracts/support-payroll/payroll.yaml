@@ -27,6 +27,7 @@ paths:
     post:
       tags: [personnel]
       operationId: registerPersonnel
+      x-handler-bound: support-admin-svc.support-payroll.register_personnel
       summary: Register election personnel
       description: Creates a personnel HR record. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -66,6 +67,7 @@ paths:
     get:
       tags: [personnel]
       operationId: listPersonnel
+      x-handler-bound: support-admin-svc.support-payroll.list_personnel
       summary: List election personnel
       description: Returns paginated personnel list. No PII fields in list response. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -112,6 +114,7 @@ paths:
     post:
       tags: [disbursements]
       operationId: initiateDisbursement
+      x-handler-bound: support-admin-svc.support-payroll.initiate_disbursement
       summary: Initiate payment disbursement
       description: Queues a disbursement batch job for payroll processing. Idempotent on Idempotency-Key. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -161,6 +164,7 @@ paths:
     get:
       tags: [disbursements]
       operationId: getDisbursementJob
+      x-handler-bound: support-admin-svc.support-payroll.get_disbursement_job
       summary: Get disbursement job status
       description: Returns disbursement job status and batch summary. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -197,6 +201,7 @@ paths:
     get:
       tags: [reports]
       operationId: getCountyPayrollReport
+      x-handler-bound: support-admin-svc.support-payroll.get_county_payroll_report
       summary: Payroll summary by county
       description: Returns aggregate payroll figures for a county. No individual PII. Requires JWT and SpiceDB authorization.
       x-eel-sla:
@@ -233,6 +238,101 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalError'
+
+  # Portal intake (design: docs/workforce-lifecycle.md §1/§2)
+  /v1/hr/applications:
+    post:
+      tags: [applications]
+      operationId: createApplication
+      x-handler-bound: support-admin-svc.support-payroll.create_application
+      summary: Submit a poll-worker application (portal intake)
+      description: |
+        Public portal intake. The national ID, phone and email are hashed
+        (SHA-256) server-side and never persisted in the clear. Idempotent on
+        the national-ID hash: re-submitting the same ID returns the original
+        application with HTTP 200 and `duplicate: true`.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApplicationRequest'
+      responses:
+        '201':
+          description: Application created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [application, duplicate]
+                properties:
+                  application:
+                    $ref: '#/components/schemas/JobApplication'
+                  duplicate:
+                    type: boolean
+        '200':
+          description: Idempotent replay of an existing application
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [application, duplicate]
+                properties:
+                  application:
+                    $ref: '#/components/schemas/JobApplication'
+                  duplicate:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /v1/hr/applications/{id}:
+    get:
+      tags: [applications]
+      operationId: getApplication
+      x-handler-bound: support-admin-svc.support-payroll.get_application
+      summary: Fetch an application by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Application
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobApplication'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/hr/applications/by-ref/{reference}:
+    get:
+      tags: [applications]
+      operationId: getApplicationByReference
+      x-handler-bound: support-admin-svc.support-payroll.get_application_by_reference
+      summary: Look up an application by its public reference (portal status)
+      security: []
+      parameters:
+        - name: reference
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Application
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobApplication'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
 components:
   securitySchemes:
@@ -513,6 +613,102 @@ components:
         trace_id:
           type: string
           x-eel-data-class: D
+
+    JobApplication:
+      type: object
+      required: [id, application_ref, role_code, county, applicant_name, national_id_hash, status, applied_at, training_gate_passed]
+      properties:
+        id:
+          type: string
+          format: uuid
+          x-eel-data-class: C
+        application_ref:
+          type: string
+          description: Human-facing reference (e.g. PWP-7F3K-0092) shown to the applicant.
+          x-eel-data-class: C
+        role_code:
+          type: string
+          x-eel-data-class: C
+        county:
+          type: string
+          x-eel-data-class: C
+        applicant_name:
+          type: string
+          x-eel-data-class: B
+        national_id_hash:
+          type: string
+          description: SHA-256 hex of the national ID; the raw value is never stored.
+          x-eel-data-class: B
+        contact_phone_hash:
+          type: string
+          nullable: true
+          x-eel-data-class: B
+        contact_email_hash:
+          type: string
+          nullable: true
+          x-eel-data-class: B
+        status:
+          type: string
+          enum: [applied, shortlisted, selected, rejected]
+          x-eel-data-class: C
+        applied_at:
+          type: string
+          format: date-time
+          x-eel-data-class: C
+        training_gate_passed:
+          type: boolean
+          x-eel-data-class: C
+
+    NewDocument:
+      type: object
+      required: [doc_type, content_hash_hex, object_key, channel]
+      properties:
+        doc_type:
+          type: string
+          description: national_id | kra_pin | police_clearance | academic_cert | passport_photo | bank_letter | oath
+          x-eel-data-class: C
+        content_hash_hex:
+          type: string
+          description: SHA-256 hex of the uploaded bytes.
+          x-eel-data-class: C
+        object_key:
+          type: string
+          description: MinIO object key (tenant-prefixed) for the uploaded bytes.
+          x-eel-data-class: C
+        channel:
+          type: string
+          enum: [web, mobile, in_person]
+          x-eel-data-class: C
+
+    CreateApplicationRequest:
+      type: object
+      required: [applicant_name, national_id, role_code, county]
+      properties:
+        applicant_name:
+          type: string
+          x-eel-data-class: B
+        national_id:
+          type: string
+          description: Raw national ID; hashed server-side and never persisted in the clear.
+          x-eel-data-class: A
+        role_code:
+          type: string
+          x-eel-data-class: C
+        county:
+          type: string
+          x-eel-data-class: C
+        phone:
+          type: string
+          nullable: true
+          x-eel-data-class: B
+        email:
+          type: string
+          nullable: true
+          x-eel-data-class: B
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/NewDocument'
 
   responses:
     BadRequest:

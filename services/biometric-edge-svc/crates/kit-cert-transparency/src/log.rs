@@ -66,7 +66,7 @@ impl KitCertTransparencyLog {
 
     /// Append a new entry. Returns the leaf index assigned.
     pub fn append(&self, entry: KitCertEntry) -> usize {
-        let mut g = self.inner.lock().unwrap();
+        let mut g = self.inner.lock().expect("lock poisoned");
         let idx = g.len();
         g.push(entry);
         idx
@@ -74,17 +74,17 @@ impl KitCertTransparencyLog {
 
     /// Return the current tree size (number of leaves).
     pub fn tree_size(&self) -> usize {
-        self.inner.lock().unwrap().len()
+        self.inner.lock().expect("lock poisoned").len()
     }
 
     /// Return a clone of the entry at `index`, or `None` if out of range.
     pub fn entry_at(&self, index: usize) -> Option<KitCertEntry> {
-        self.inner.lock().unwrap().get(index).cloned()
+        self.inner.lock().expect("lock poisoned").get(index).cloned()
     }
 
     /// Return the current Signed Tree Head (unsigned).
     pub fn current_sth(&self) -> SignedTreeHead {
-        let g = self.inner.lock().unwrap();
+        let g = self.inner.lock().expect("lock poisoned");
         let root = if g.is_empty() {
             // RFC 6962 §2.1: empty tree hash = SHA256("").
             let hash = sha2::Sha256::new().finalize();
@@ -104,7 +104,7 @@ impl KitCertTransparencyLog {
 
     /// Generate an inclusion proof for the entry at `leaf_index`.
     pub fn inclusion_proof(&self, leaf_index: usize) -> Result<InclusionProof, LogError> {
-        let g = self.inner.lock().unwrap();
+        let g = self.inner.lock().expect("lock poisoned");
         let n = g.len();
         if leaf_index >= n {
             return Err(LogError::IndexOutOfRange(leaf_index, n));
@@ -129,7 +129,7 @@ impl KitCertTransparencyLog {
         entry: &KitCertEntry,
         proof: &InclusionProof,
     ) -> Result<(), LogError> {
-        let g = self.inner.lock().unwrap();
+        let g = self.inner.lock().expect("lock poisoned");
         let n = g.len();
         if leaf_index >= n {
             return Err(LogError::IndexOutOfRange(leaf_index, n));
@@ -162,7 +162,7 @@ impl KitCertTransparencyLog {
         old_size: usize,
         new_size: usize,
     ) -> Result<Vec<String>, LogError> {
-        let g = self.inner.lock().unwrap();
+        let g = self.inner.lock().expect("lock poisoned");
         let n = g.len();
         if new_size > n || old_size > new_size {
             return Err(LogError::IndexOutOfRange(new_size, n));
@@ -183,7 +183,7 @@ impl KitCertTransparencyLog {
     ///
     /// Used by verifiers to confirm an old STH root against newly appended data.
     pub fn root_at(&self, size: usize) -> Result<String, LogError> {
-        let g = self.inner.lock().unwrap();
+        let g = self.inner.lock().expect("lock poisoned");
         let n = g.len();
         if size > n {
             return Err(LogError::IndexOutOfRange(size, n));

@@ -1,0 +1,27 @@
+[package]
+name = "eel-audit-chain"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "N4: BLAKE3 hash-chained admin-action ledger with durable offline JSONL store"
+
+[lib]
+name = "eel_audit_chain"
+path = "src/lib.rs"
+
+[dependencies]
+blake3      = { workspace = true }
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+thiserror   = { workspace = true }
+chrono      = { workspace = true }
+hex         = "0.4"
+tokio       = { workspace = true }
+axum        = { workspace = true }
+tracing     = { workspace = true }
+
+[dev-dependencies]
+tower       = { workspace = true }
+tempfile    = { workspace = true }

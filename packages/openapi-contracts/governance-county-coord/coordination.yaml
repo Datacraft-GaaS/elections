@@ -28,6 +28,7 @@ paths:
   /api/v1/governance/county-coord/status-reports:
     post:
       operationId: submitCountyStatusReport
+      x-handler-bound: governance-svc.governance-county-coord.submit_county_status_report
       tags: [status-reports]
       summary: County coordinator submits a status report
       description: >
@@ -67,6 +68,7 @@ paths:
 
     get:
       operationId: listCountyStatusReports
+      x-handler-bound: governance-svc.governance-county-coord.list_county_status_reports
       tags: [status-reports]
       summary: List county status reports
       description: Paginated list of county status reports. Tier 3 endpoint.
@@ -109,6 +111,7 @@ paths:
   /api/v1/governance/county-coord/escalations:
     post:
       operationId: escalateToNational
+      x-handler-bound: governance-svc.governance-county-coord.escalate_to_national
       tags: [escalations]
       summary: County escalates an incident to national
       description: >
@@ -148,6 +151,7 @@ paths:
 
     get:
       operationId: listEscalations
+      x-handler-bound: governance-svc.governance-county-coord.list_escalations
       tags: [escalations]
       summary: National escalation feed
       description: Paginated feed of all county escalations for national review. Tier 3 endpoint.

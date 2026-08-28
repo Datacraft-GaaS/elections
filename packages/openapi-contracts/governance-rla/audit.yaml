@@ -30,6 +30,7 @@ paths:
   /api/v1/governance/rla/audits:
     get:
       operationId: listRLAAudits
+      x-handler-bound: governance-svc.governance-rla.list_rla_audits
       tags: [audits]
       summary: List RLA audits
       description: Paginated list of all risk-limiting audits. Tier 3 endpoint.
@@ -68,6 +69,7 @@ paths:
 
     post:
       operationId: initiateRLAAudit
+      x-handler-bound: governance-svc.governance-rla.initiate_rla_audit
       tags: [audits]
       summary: Initiate a risk-limiting audit
       description: >
@@ -108,6 +110,7 @@ paths:
   /api/v1/governance/rla/audits/{audit_id}:
     get:
       operationId: getRLAAudit
+      x-handler-bound: governance-svc.governance-rla.get_rla_audit
       tags: [audits]
       summary: Get RLA audit detail
       description: Returns full detail for a specific audit. Tier 3 endpoint.
@@ -136,6 +139,7 @@ paths:
   /api/v1/governance/rla/audits/{audit_id}/samples:
     post:
       operationId: drawAuditSample
+      x-handler-bound: governance-svc.governance-rla.draw_audit_sample
       tags: [samples]
       summary: Draw an audit sample
       description: >
@@ -179,6 +183,7 @@ paths:
   /api/v1/governance/rla/audits/{audit_id}/counts:
     post:
       operationId: submitManualCount
+      x-handler-bound: governance-svc.governance-rla.submit_manual_count
       tags: [counts]
       summary: Submit a manual audit count
       description: >
@@ -222,6 +227,7 @@ paths:
   /api/v1/governance/rla/audits/{audit_id}/results:
     get:
       operationId: getRLAAuditResults
+      x-handler-bound: governance-svc.governance-rla.get_rla_audit_results
       tags: [audits]
       summary: Get RLA audit results
       description: >

@@ -1,0 +1,39 @@
+[package]
+name = "inventory-api"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "HTTP API surface for inventory-svc: custody (M20), transport & security, and warehouse/pallet/incident domains. In-memory store by default (works out of the box); Postgres swap is production concern."
+
+[lib]
+name = "inventory_api"
+path = "src/lib.rs"
+
+[[bin]]
+name = "inventory-api"
+path = "src/main.rs"
+
+[dependencies]
+axum               = { workspace = true }
+tokio              = { workspace = true }
+tower              = { workspace = true }
+serde              = { workspace = true }
+serde_json         = { workspace = true }
+uuid               = { workspace = true }
+chrono             = { workspace = true }
+thiserror          = { workspace = true }
+tracing            = { workspace = true }
+tracing-subscriber = { workspace = true }
+sqlx               = { workspace = true }
+
+custody   = { path = "../custody" }
+transport = { path = "../transport" }
+warehouse = { path = "../warehouse" }
+
+eel-auth-rs = { path = "../../../../packages/eel-auth-rs" }
+
+[dev-dependencies]
+tokio  = { workspace = true }
+tower  = { workspace = true }

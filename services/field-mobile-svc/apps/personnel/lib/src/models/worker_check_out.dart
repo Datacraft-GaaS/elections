@@ -1,3 +1,4 @@
+/// A recorded check-out, matching the dispatch-api `WorkerCheckOut` (camelCase).
 class WorkerCheckOut {
   final String id;
   final String workerId;
@@ -22,4 +23,17 @@ class WorkerCheckOut {
     this.payrollTriggerId,
     required this.signature,
   });
+
+  factory WorkerCheckOut.fromJson(Map<String, dynamic> j) => WorkerCheckOut(
+        id: j['id'] as String,
+        workerId: j['workerId'] as String,
+        stationCode: j['stationCode'] as String,
+        electionId: j['electionId'] as String,
+        gpsLat: (j['gpsLat'] as num).toDouble(),
+        gpsLon: (j['gpsLon'] as num).toDouble(),
+        checkOutAt: DateTime.parse(j['checkOutAt'] as String),
+        hoursWorked: (j['hoursWorked'] as num).toDouble(),
+        payrollTriggerId: j['payrollTriggerId'] as String?,
+        signature: j['signature'] as String,
+      );
 }

@@ -29,6 +29,7 @@ paths:
     post:
       tags: [campaigns]
       operationId: createRedTeamCampaign
+      x-handler-bound: ai-platform-svc.ai-redteam.create_redteam_campaign
       summary: Initiate a red-team campaign
       description: >
         Creates a new adversarial testing campaign targeting a specific eel
@@ -78,6 +79,7 @@ paths:
     get:
       tags: [campaigns]
       operationId: listRedTeamCampaigns
+      x-handler-bound: ai-platform-svc.ai-redteam.list_redteam_campaigns
       summary: List red-team campaigns
       description: Paginated list of all red-team campaigns. Tier 3, JWT + SpiceDB.
       x-eel-sla:
@@ -119,6 +121,7 @@ paths:
     get:
       tags: [campaigns]
       operationId: getRedTeamCampaign
+      x-handler-bound: ai-platform-svc.ai-redteam.get_redteam_campaign
       summary: Get a red-team campaign by ID
       description: Retrieve full campaign detail including findings summary.
       x-eel-sla:
@@ -149,6 +152,7 @@ paths:
     post:
       tags: [findings]
       operationId: addRedTeamFinding
+      x-handler-bound: ai-platform-svc.ai-redteam.add_redteam_finding
       summary: Add a finding to a red-team campaign
       description: >
         Records a vulnerability or observation discovered during the campaign.
@@ -201,6 +205,7 @@ paths:
     post:
       tags: [campaigns]
       operationId: completeRedTeamCampaign
+      x-handler-bound: ai-platform-svc.ai-redteam.complete_redteam_campaign
       summary: Close a red-team campaign with final sign-off
       description: >
         Transitions a campaign to 'complete' status. Requires overall risk

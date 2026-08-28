@@ -385,6 +385,7 @@ paths:
   /api/v1/vprs/applications:
     post:
       operationId: createVPRSApplication
+      x-handler-bound: vprs-svc.vprs.create_application
       summary: "Submit a new pre-registration application"
       description: >
         Citizens submit biographical data and a hashed ID number to begin the pre-registration
@@ -456,6 +457,7 @@ paths:
   /api/v1/vprs/applications/{app_id}:
     get:
       operationId: getVPRSApplication
+      x-handler-bound: vprs-svc.vprs.get_status
       summary: "Retrieve application status"
       description: >
         Returns the current state of a pre-registration application.
@@ -508,6 +510,7 @@ paths:
 
     delete:
       operationId: cancelVPRSApplication
+      x-handler-bound: vprs-svc.vprs.cancel_application
       summary: "Citizen cancellation of pre-registration application"
       description: >
         Cancels an application in draft, submitted, otp_pending, or otp_verified status.
@@ -553,6 +556,7 @@ paths:
   /api/v1/vprs/handoff/{token}:
     get:
       operationId: getVPRSHandoffForm
+      x-handler-bound: vprs-svc.vprs.get_handoff
       summary: "Kit retrieves pre-filled registration form via handoff token"
       description: >
         Field registration kits call this endpoint after scanning a citizen QR code.
@@ -609,6 +613,7 @@ paths:
   /api/v1/vprs/otp/request:
     post:
       operationId: requestVPRSOTP
+      x-handler-bound: vprs-svc.vprs.request_otp
       summary: "Request an SMS OTP challenge"
       description: >
         Delivers a 6-digit OTP via SMS to the phone number matching the provided hash.
@@ -662,6 +667,7 @@ paths:
   /api/v1/vprs/otp/verify:
     post:
       operationId: verifyVPRSOTP
+      x-handler-bound: vprs-svc.vprs.verify_otp
       summary: "Verify an OTP code"
       description: >
         Validates a 6-digit OTP against the outstanding challenge. On success the application
@@ -713,6 +719,7 @@ paths:
   /api/v1/vprs/admin/analytics:
     get:
       operationId: getVPRSAnalytics
+      x-handler-bound: vprs-svc.vprs.get_vprs_analytics
       summary: "Admin analytics, aggregate application statistics by county"
       description: >
         Returns aggregate pre-registration statistics per county. No PII is returned.

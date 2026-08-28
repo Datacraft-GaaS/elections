@@ -32,6 +32,7 @@ paths:
     post:
       tags: [assignments]
       operationId: createDispatchAssignment
+      x-handler-bound: field-mobile-svc.field-mobile-dispatch.create_dispatch_assignment
       summary: Create a personnel dispatch assignment
       description: >
         Creates a single dispatch assignment linking a personnel officer hash
@@ -81,6 +82,7 @@ paths:
     get:
       tags: [assignments]
       operationId: listDispatchAssignments
+      x-handler-bound: field-mobile-svc.field-mobile-dispatch.list_dispatch_assignments
       summary: List dispatch assignments with filters
       description: >
         Paginated list of dispatch assignments. Filterable by station_code,
@@ -136,6 +138,7 @@ paths:
     get:
       tags: [assignments]
       operationId: getDispatchAssignment
+      x-handler-bound: field-mobile-svc.field-mobile-dispatch.get_dispatch_assignment
       summary: Get a dispatch assignment by ID
       description: Retrieve full details of a single assignment.
       x-eel-sla:
@@ -165,6 +168,7 @@ paths:
     patch:
       tags: [assignments]
       operationId: updateDispatchAssignment
+      x-handler-bound: field-mobile-svc.field-mobile-dispatch.update_dispatch_assignment
       summary: Update a dispatch assignment (reassign or cancel)
       description: >
         Partial update supporting reassignment to a different station or
@@ -218,6 +222,7 @@ paths:
     post:
       tags: [bulk]
       operationId: createBulkAssignments
+      x-handler-bound: field-mobile-svc.field-mobile-dispatch.create_bulk_assignments
       summary: Bulk assign personnel from a CSV upload
       description: >
         Triggers a bulk assignment job from a pre-uploaded CSV file in MinIO
@@ -269,6 +274,7 @@ paths:
     get:
       tags: [coverage]
       operationId: getConstituencyCoverage
+      x-handler-bound: field-mobile-svc.field-mobile-dispatch.get_constituency_coverage
       summary: Get staffing coverage analysis for a constituency
       description: >
         Returns a breakdown of how many polling stations in the constituency

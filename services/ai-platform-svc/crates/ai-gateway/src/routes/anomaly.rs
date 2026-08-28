@@ -20,8 +20,8 @@ use crate::{
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/alerts", get(list_alerts).post(ingest_alert))
-        .route("/alerts/:id", get(get_alert))
-        .route("/alerts/:id/resolve", patch(resolve_alert))
+        .route("/alerts/{id}", get(get_alert))
+        .route("/alerts/{id}/resolve", patch(resolve_alert))
         .route("/stream", get(stream_alerts))
 }
 

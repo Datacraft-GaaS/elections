@@ -27,6 +27,7 @@ paths:
     post:
       tags: [primaries]
       operationId: declarePrimarySchedule
+      x-handler-bound: crms-svc.party.declare_primary_schedule
       summary: Declare a primary election schedule
       description: >
         Tier 3. Requires JWT plus SpiceDB authorization. A registered party
@@ -73,6 +74,7 @@ paths:
     get:
       tags: [primaries]
       operationId: listPrimarySchedules
+      x-handler-bound: crms-svc.party.list_primary_schedules
       summary: List all declared primary schedules
       description: >
         Tier 1. Public endpoint. Returns all declared primary election schedules
@@ -143,6 +145,7 @@ paths:
     get:
       tags: [primaries]
       operationId: getPrimaryDetails
+      x-handler-bound: crms-svc.party.get_primary_details
       summary: Get primary election details
       description: >
         Tier 2. Returns the full primary election resource including results
@@ -173,6 +176,7 @@ paths:
     post:
       tags: [results]
       operationId: submitPrimaryResults
+      x-handler-bound: crms-svc.party.submit_primary_results
       summary: Submit primary election results
       description: >
         Tier 3. Requires JWT plus SpiceDB authorization. Records the final
@@ -222,6 +226,7 @@ paths:
     post:
       tags: [disputes]
       operationId: submitPrimaryDispute
+      x-handler-bound: crms-svc.party.submit_primary_dispute
       summary: File a dispute against a primary outcome
       description: >
         Tier 2. Any authenticated party with standing may file a dispute against
@@ -267,6 +272,7 @@ paths:
     get:
       tags: [disputes]
       operationId: listPrimaryDisputes
+      x-handler-bound: crms-svc.party.list_primary_disputes
       summary: List disputes for a primary election
       description: >
         Tier 3. Requires JWT plus SpiceDB authorization. Returns all disputes

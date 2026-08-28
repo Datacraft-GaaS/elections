@@ -1,6 +1,7 @@
 /// kit-l1 on-device IsoForest anomaly plugin entry point.
 ///
 /// This package is embedded as a Flutter plugin inside the eel platform.
+library;
 /// The main() here is the standalone test/dev runner; in production the plugin
 /// is initialised by the host app.
 

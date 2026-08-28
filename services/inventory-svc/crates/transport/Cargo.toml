@@ -1,0 +1,23 @@
+[package]
+name = "transport"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Vehicle transport and security-deployment domain for M20 inventory (WP-4.3): assign ballot lots to vehicles via RFID/barcode scan, and security agents to vehicles and polling stations"
+
+[lib]
+name = "transport"
+path = "src/lib.rs"
+
+[dependencies]
+serde         = { workspace = true }
+serde_json    = { workspace = true }
+chrono        = { workspace = true }
+uuid          = { workspace = true }
+thiserror     = { workspace = true }
+tracing       = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
