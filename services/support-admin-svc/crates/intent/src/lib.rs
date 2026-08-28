@@ -3,6 +3,7 @@
 //!
 //! On-device pre-mark visual validation model is registered via M28 registry.
 //! Image auto-delete <= 1 second post-inference (FR-M27 privacy constraint).
+#![warn(missing_docs)]
 
 pub mod aggregates;
 pub mod http;
