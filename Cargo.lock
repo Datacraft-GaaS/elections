@@ -2409,6 +2409,7 @@ dependencies = [
  "sqlx",
  "thiserror 2.0.20",
  "tokio",
+ "tower 0.5.3",
  "tracing",
  "tracing-subscriber 0.3.23",
  "uuid",
@@ -4899,6 +4900,14 @@ dependencies = [
  "tokio-util",
  "tracing",
  "uuid",
+]
+
+[[package]]
+name = "eel-spec-helpers-rs"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

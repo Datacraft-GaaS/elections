@@ -17,7 +17,7 @@ Priority = `(Impact + Risk) × (6 − Effort)` — `Effort` is inverted (1 = tri
 | TD-02 | 0 tests for 31 new contract-handler modules + 5 new HTTP servers | Test | `spec.rs` / `spec_handlers.rs` / `http.rs` under new bins; `git grep` for handler names found 0 test references | 3 | 5 | 3 | **24** | **Done (smoke+contract)** |
 | TD-03 | In-memory stores (no persistence) in ~21 handler files | Code | `*state.rs` / `spec_state.rs` / `http.rs` using `Mutex<HashMap>` / `Arc<Mutex<...>>` | 4 | 4 | 3 | **24** | **Done (swap doc x2)** |
 | TD-04 | Untyped `serde_json::Value` in 23 handler files | Code | `git grep -l 'serde_json::Value\|Json<Value>'` | 2 | 3 | 2 | **20** | **Done (x4 exemplar)** |
-| TD-05 | Public wrappers duplicate domain logic (party/symbol/fees use separate state) | Architecture | `crms-api` `PublicState` vs `AppState` | 2 | 2 | 2 | **16** | Tracked |
+| TD-05 | Public wrappers duplicate domain logic (party/symbol/fees use separate state) | Architecture | `crms-api` `PublicState` vs `AppState` | 2 | 2 | 2 | **16** | **Done** |
 | TD-06 | Divergent path conventions (`/v1/*` vs `/api/v1/*`) — dual route tables per service | Architecture | `field-mobile-bff` `/verify` vs `/api/v1/mobile/bff`; `ai-gateway` `/v1/ai` vs `/api/v1/ai` | 3 | 2 | 3 | **15** | **Done (exemplar)** |
 | TD-07 | Thin overall coverage — Rust 183/1472, Dart 50/235 | Test | `git ls-files` counts | 3 | 4 | 4 | **14** | Tracked |
 | TD-08 | Duplicated spec boilerplate across 31 `spec.rs` | Code | 31 `spec.rs` files | 2 | 2 | 3 | **12** | Tracked |
@@ -61,7 +61,8 @@ Prioritized order (descending): TD-01 → TD-02/TD-03 → TD-04 → TD-05 → TD
 - **TD-06 Done (exemplar) + Tracked**: Added permanent redirect `GET|POST|PUT|PATCH|DELETE /v1/ai/{*tail} → 308 → /api/v1/ai/{tail}` in `services/ai-platform-svc/crates/ai-gateway/src/spec.rs` (canonical `/api/v1/*` documented in module docs). Collapse to single canonical table for remaining services is Phase-2 work item 6 (requires client migration).
 - **TD-09 Exemplar done (5 crates) + Tracked**: `crms-api` remains `missing_docs` clean (0 warnings); enabled `#![warn(missing_docs)]` on `printing` (`printing/src/lib.rs`), `custody` (`custody/src/lib.rs` + `state.rs` swap doc), `verifier-api` (`verifier-api/src/lib.rs`), and `channel-gateway` (`channel-gateway/src/lib.rs`) as incremental exemplars (each surfaces ~15–184 warnings as expected for 221-crate rollout). Full per-crate rollout is Phase-3.
 - **TD-02 Extended**: Added `contract_create_and_get_print_order` to `services/inventory-svc/crates/printing/tests/http_smoke.rs` — typed create → get → QC flow via `tower::ServiceExt::oneshot` and `axum::body::to_bytes`, asserting 201/200 and `order_id` shape. 7 smoke suites now have 8 tests (printing has 2).
-- **TD-05/07/08/11 Tracked**: Duplicate `PublicState`, thin coverage (183/1472), duplicated `spec.rs` boilerplate, and Nix flakes remain phased — best addressed alongside feature work as noted in the plan.
+- **TD-05 Done**: Collapsed `PublicState` into `AppState` — `crms-api` now stores `public_registrations`/`primaries`/`symbols`/`fees` directly in `AppState`; `PublicState` no longer exists (`git grep` 0 hits).
+- **TD-07/08/11 Tracked**: Thin coverage (183/1472), duplicated `spec.rs` boilerplate, and Nix flakes remain phased — best addressed alongside feature work as noted in the plan.
 
 ## Evidence
 
