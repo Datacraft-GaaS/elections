@@ -2131,8 +2131,11 @@ version = "0.1.0"
 dependencies = [
  "axum 0.8.9",
  "chrono",
+ "eel-outbox-rs",
  "serde",
  "serde_json",
+ "sqlx",
+ "thiserror 2.0.20",
  "tokio",
  "tracing",
  "tracing-subscriber 0.3.23",

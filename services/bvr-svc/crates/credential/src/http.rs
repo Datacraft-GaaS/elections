@@ -1,7 +1,6 @@
 //! Credential issuance public API (credential/openapi.yaml).
 
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use axum::{
     extract::{Path, State},
@@ -10,20 +9,26 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use chrono::Utc;
 use serde_json::json;
+use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::spec::{BatchSummary, Credential, CredentialProof, IssueRequest, RevocationRequest};
+use crate::spec::{IssueRequest, RevocationRequest};
+use crate::store::{Store, StoreError};
 
-/// In-memory store for credential contract handlers.
-/// Swap boundary: replace `Mutex<HashMap>` with `sqlx::PgPool` + `Store` trait
-/// (see `governance-svc/crates/rla/src/store.rs` pattern) when DB persistence lands.
-/// Domain aggregates (`crms-domain`, `eel-events-rs`) already expect a `Store`.
-#[derive(Clone, Default)]
+/// Postgres-backed application state (no in-memory).
+///
+/// Production (`Store::Pg`) uses `PgPool` against `credential_api_*` tables
+/// (`migrations/V054__credential_api.sql`). Hermetic tests use `Store::Mem`.
+#[derive(Clone)]
 pub struct AppState {
-    pub credentials: Arc<Mutex<HashMap<Uuid, Credential>>>,
-    pub batches: Arc<Mutex<HashMap<Uuid, BatchSummary>>>,
+    pub store: Store,
+}
+
+impl Default for AppState {
+    fn default() -> Self {
+        Self { store: Store::mem() }
+    }
 }
 
 pub type SharedState = Arc<AppState>;
@@ -31,6 +36,9 @@ pub type SharedState = Arc<AppState>;
 impl AppState {
     pub fn new_shared() -> SharedState {
         Arc::new(Self::default())
+    }
+    pub fn from_pool(pool: PgPool) -> SharedState {
+        Arc::new(Self { store: Store::pg(pool) })
     }
 }
 
@@ -44,39 +52,21 @@ pub fn router(state: SharedState) -> Router {
         .with_state(state)
 }
 
-async fn issue_credential(State(s): State<SharedState>, Json(req): Json<IssueRequest>) -> impl IntoResponse {
-    let now = Utc::now();
-    let cred = Credential {
-        credential_id: Uuid::now_v7(),
-        credential_type: req.credential_type,
-        holder_id: req.holder_id,
-        holder_name: "holder".to_string(),
-        issuer_id: "spiffe://eel.local/credential-issuer".to_string(),
-        issued_at: now,
-        expires_at: now + chrono::Duration::days(req.valid_for_days as i64),
-        status: "active".to_string(),
-        claims: req.claims,
-        hsm_sig: String::new(),
-    };
-    let id = cred.credential_id;
-    s.credentials.lock().expect("lock poisoned").insert(id, cred.clone());
-    if let Some(bid) = req.batch_id {
-        let mut b = s.batches.lock().expect("lock poisoned");
-        b.entry(bid).or_insert_with(|| BatchSummary {
-            batch_id: bid,
-            credential_type: cred.credential_type.clone(),
-            total_issued: 0,
-            total_failed: 0,
-            total_revoked: 0,
-            status: "completed".to_string(),
-            created_at: now,
-            completed_at: Some(now),
-        });
-        if let Some(entry) = b.get_mut(&bid) {
-            entry.total_issued += 1;
+fn store_err(e: StoreError) -> axum::response::Response {
+    match e {
+        StoreError::NotFound => (StatusCode::NOT_FOUND, Json(json!({ "detail": "not found"}))).into_response(),
+        StoreError::Db(err) => {
+            tracing::error!(error = %err, "store db error");
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "detail": "internal error"}))).into_response()
         }
     }
-    (StatusCode::CREATED, Json(cred))
+}
+
+async fn issue_credential(State(s): State<SharedState>, Json(req): Json<IssueRequest>) -> impl IntoResponse {
+    match s.store.issue_credential(req).await {
+        Ok(cred) => (StatusCode::CREATED, Json(cred)).into_response(),
+        Err(e) => store_err(e),
+    }
 }
 
 async fn revoke_credential(
@@ -87,13 +77,10 @@ async fn revoke_credential(
     let Ok(uid) = id.parse::<Uuid>() else {
         return (StatusCode::BAD_REQUEST, Json(json!({ "detail": "invalid id" }))).into_response();
     };
-    let mut guard = s.credentials.lock().expect("lock poisoned");
-    match guard.get_mut(&uid) {
-        Some(v) => {
-            v.status = "revoked".to_string();
-            Json(v.clone()).into_response()
-        }
-        None => (StatusCode::NOT_FOUND, Json(json!({ "detail": "credential not found" }))).into_response(),
+    match s.store.revoke_credential(uid, req).await {
+        Ok(Some(c)) => Json(c).into_response(),
+        Ok(None) => (StatusCode::NOT_FOUND, Json(json!({ "detail": "credential not found" }))).into_response(),
+        Err(e) => store_err(e),
     }
 }
 
@@ -101,9 +88,10 @@ async fn get_credential(State(s): State<SharedState>, Path(id): Path<String>) ->
     let Ok(uid) = id.parse::<Uuid>() else {
         return (StatusCode::BAD_REQUEST, Json(json!({ "detail": "invalid id" }))).into_response();
     };
-    match s.credentials.lock().expect("lock poisoned").get(&uid) {
-        Some(v) => Json(v.clone()).into_response(),
-        None => (StatusCode::NOT_FOUND, Json(json!({ "detail": "credential not found" }))).into_response(),
+    match s.store.get_credential(uid).await {
+        Ok(Some(v)) => Json(v).into_response(),
+        Ok(None) => (StatusCode::NOT_FOUND, Json(json!({ "detail": "credential not found" }))).into_response(),
+        Err(e) => store_err(e),
     }
 }
 
@@ -111,17 +99,10 @@ async fn get_credential_proof(State(s): State<SharedState>, Path(id): Path<Strin
     let Ok(uid) = id.parse::<Uuid>() else {
         return (StatusCode::BAD_REQUEST, Json(json!({ "detail": "invalid id" }))).into_response();
     };
-    match s.credentials.lock().expect("lock poisoned").get(&uid) {
-        Some(c) => Json(CredentialProof {
-            credential_id: c.credential_id,
-            proof_type: "EcdsaSecp384r1Signature2023".to_string(),
-            proof_value: c.hsm_sig.clone(),
-            verification_method: "https://keys.eel.local/credential-hsm#key-2026".to_string(),
-            created_at: c.issued_at,
-            transparency_leaf_hash: None,
-        })
-        .into_response(),
-        None => (StatusCode::NOT_FOUND, Json(json!({ "detail": "credential not found" }))).into_response(),
+    match s.store.get_proof(uid).await {
+        Ok(Some(p)) => Json(p).into_response(),
+        Ok(None) => (StatusCode::NOT_FOUND, Json(json!({ "detail": "credential not found" }))).into_response(),
+        Err(e) => store_err(e),
     }
 }
 
@@ -129,9 +110,9 @@ async fn get_batch_summary(State(s): State<SharedState>, Path(batch_id): Path<St
     let Ok(bid) = batch_id.parse::<Uuid>() else {
         return (StatusCode::BAD_REQUEST, Json(json!({ "detail": "invalid batch_id" }))).into_response();
     };
-    let guard = s.batches.lock().expect("lock poisoned");
-    match guard.get(&bid) {
-        Some(v) => Json(v.clone()).into_response(),
-        None => (StatusCode::NOT_FOUND, Json(json!({ "detail": "batch not found" }))).into_response(),
+    match s.store.get_batch(bid).await {
+        Ok(Some(v)) => Json(v).into_response(),
+        Ok(None) => (StatusCode::NOT_FOUND, Json(json!({ "detail": "batch not found" }))).into_response(),
+        Err(e) => store_err(e),
     }
 }

@@ -149,3 +149,34 @@ Density = findings ÷ file count (approx, `cloc` unavailable for full workspace;
 |---|---|---|---|
 | 2026-08-30 | Remediate | printing + inventory-api postgres (Store enum, V053/V054, handlers, main). | 2 fixed (printing, inventory-api shortfalls P0 partial), 0 deferred |
 
+---
+
+## Audit Run 2026-08-30 — Remediate (credential postgres, P0 partial)
+
+**Scope:** `services/bvr-svc/crates/credential` (TD-03-P0-01 next) + `services/bvr-svc/migrations/V054__credential_api.sql`. Build mode.
+
+**Changes:**
+
+- `services/bvr-svc/migrations/V054__credential_api.sql:1` — `credential_api_credentials` (`UUID PK`, `holder_id`, `claims JSONB`, `status CHECK`, `batch_id FK`, `INDEX`) + `credential_api_batches` (`UUID PK`, `total_issued` etc., reversible `DROP`).
+- `services/bvr-svc/crates/credential/Cargo.toml:19` — add `sqlx {workspace}` + `eel-outbox-rs` + `thiserror`.
+- `services/bvr-svc/crates/credential/src/store.rs:1` — new `Store` enum (`Pg(PgPool)`/`Mem(MemStore)`) 5 async methods `sqlx` (`issue_credential`, `get_credential`, `revoke_credential`, `get_proof`, `get_batch`) against `credential_api_*`, `Mem` via `Arc<Mutex<HashMap>>`, `StoreError::NotFound/Db`, `#![allow(missing_docs)]`.
+- `services/bvr-svc/crates/credential/src/lib.rs:1` — `pub mod store`.
+- `services/bvr-svc/crates/credential/src/http.rs:1` — `AppState { store: Store }` (`Default→Mem`, `new_shared()→Mem`, `from_pool(PgPool)→Pg`), `router` unchanged, 5 handlers `async` via `store.*.await` + `store_err` `404`/`500` + `tracing::error`.
+- `services/bvr-svc/crates/credential/src/main.rs:1` — `DATABASE_URL` → `PgPoolOptions::new().connect().await` + `Outbox::migrate().await` + `AppState::from_pool`, else `Mem`.
+
+**Verification:** `cargo check -p credential` clean (37 `missing_docs` warnings only), `cargo check --workspace` clean (0 errors), `cargo run --release -p eel-completeness -- scan` `0 errors`, `dart analyze` 0, `flutter test` Iris/Fingerprint 4/4 + BVR enrolment 5/5.
+
+**Finding status update:**
+
+| # | Title | Before | After |
+|---|---|---|---|
+| TD-03-P0-01 | In-memory contract stores (credential) | open (`Mutex<HashMap<Uuid, Credential>>`) | **fixed(2026-08-30) for `credential`** — `credential/src/store.rs:1` + `http.rs:1` + `V054` now postgres; test via `Mem`. |
+
+**Remaining P0 (open, next):** `voter-card`, `diaspora`, `rla`, `reporting`, `court-interface`, `crms-api`, `intent`, `special-voter`, `ai-gateway` — each `Mutex<HashMap>` → `Store` enum + migration (next: `voter-card` `V055`).
+
+### Change Log (append)
+
+| Date | Mode | Summary | Items fixed / deferred |
+|---|---|---|---|
+| 2026-08-30 | Remediate | credential postgres (Store enum, V054, handlers, main). | 1 fixed (credential P0 partial), 0 deferred |
+
