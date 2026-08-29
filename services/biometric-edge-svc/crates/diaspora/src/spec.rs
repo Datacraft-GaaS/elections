@@ -11,8 +11,7 @@ use serde_json::{json, Value};
 use crate::api::SharedState;
 
 fn page(items: &Value) -> Value {
-    let n = items.as_array().map_or(0, |a| a.len());
-    json!({ "items": items, "meta": { "page": 1, "page_size": n, "total": n, "total_pages": 1 } })
+    eel_spec_helpers_rs::page_value(items)
 }
 
 pub async fn list_embassies(State(s): State<SharedState>) -> impl IntoResponse {

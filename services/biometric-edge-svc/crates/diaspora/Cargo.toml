@@ -31,6 +31,7 @@ eel-events-rs  = { path = "../../../../packages/eel-events-rs" }
 eel-outbox-rs  = { path = "../../../../packages/eel-outbox-rs" }
 eel-crypto-rs  = { path = "../../../../packages/eel-crypto-rs" }
 eel-auth-rs    = { path = "../../../../packages/eel-auth-rs" }
+eel-spec-helpers-rs = { path = "../../../../packages/eel-spec-helpers-rs" }
 
 [dev-dependencies]
 rstest   = { workspace = true }
