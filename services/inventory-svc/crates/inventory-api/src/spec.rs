@@ -9,10 +9,37 @@ use axum::{
     response::IntoResponse,
     Json,
 };
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
-fn shortfalls() -> &'static Mutex<HashMap<String, Value>> {
-    static STORE: OnceLock<Mutex<HashMap<String, Value>>> = OnceLock::new();
+/// Typed shortfall creation request (derived from inventory/management.yaml).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ShortfallRequest {
+    /// Constituency code reporting the shortfall.
+    pub constituency_code: String,
+    /// Item type (e.g. ballot_papers, seals, ink).
+    pub item: String,
+    /// Quantity missing.
+    pub quantity: u32,
+    /// Reporting officer hash.
+    pub reported_by_hash: String,
+}
+
+/// Typed shortfall record stored in memory.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Shortfall {
+    /// Unique shortfall id.
+    pub shortfall_id: String,
+    /// Status.
+    pub status: String,
+    /// Creation timestamp.
+    pub created_at: String,
+    /// Original request.
+    pub request: ShortfallRequest,
+}
+
+fn shortfalls() -> &'static Mutex<HashMap<String, Shortfall>> {
+    static STORE: OnceLock<Mutex<HashMap<String, Shortfall>>> = OnceLock::new();
     STORE.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
@@ -48,17 +75,22 @@ pub async fn get_material_status(Path(code): Path<String>) -> impl IntoResponse 
 }
 
 /// POST /api/v1/inventory/shortfalls — report a shortfall.
-pub async fn report_shortfall(Json(req): Json<Value>) -> impl IntoResponse {
+pub async fn report_shortfall(Json(req): Json<ShortfallRequest>) -> impl IntoResponse {
     let id = uuid::Uuid::now_v7().to_string();
-    let v = json!({ "shortfall_id": id, "status": "reported", "created_at": chrono::Utc::now().to_rfc3339(), "request": req });
-    shortfalls().lock().expect("lock poisoned").insert(id, v.clone());
-    (StatusCode::CREATED, Json(v))
+    let rec = Shortfall {
+        shortfall_id: id.clone(),
+        status: "reported".to_string(),
+        created_at: chrono::Utc::now().to_rfc3339(),
+        request: req,
+    };
+    shortfalls().lock().expect("lock poisoned").insert(id, rec.clone());
+    (StatusCode::CREATED, Json(rec))
 }
 
 /// GET /api/v1/inventory/shortfalls — list shortfalls.
 pub async fn list_shortfalls() -> impl IntoResponse {
     let guard = shortfalls().lock().expect("lock poisoned");
-    let items: Vec<Value> = guard.values().cloned().collect();
+    let items: Vec<Shortfall> = guard.values().cloned().collect();
     drop(guard);
     Json(page(&serde_json::to_value(items).unwrap()))
 }
