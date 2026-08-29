@@ -14,8 +14,7 @@ use crate::spec;
 use crate::spec_state::SharedSpecState;
 
 fn page(items: &serde_json::Value) -> serde_json::Value {
-    let n = items.as_array().map_or(0, |a| a.len());
-    serde_json::json!({ "items": items, "total": n, "page": 1, "page_size": n, "next_page": serde_json::Value::Null })
+    eel_spec_helpers_rs::page_flat_value(items)
 }
 
 // ---------------------------------------------------------------------------

@@ -27,6 +27,7 @@ serde_json    = { workspace = true }
 chrono        = { workspace = true }
 uuid          = { workspace = true }
 thiserror     = { workspace = true }
+eel-spec-helpers-rs = { path = "../../../../packages/eel-spec-helpers-rs" }
 
 [dev-dependencies]
 serde_json = { workspace = true }

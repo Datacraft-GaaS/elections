@@ -12,8 +12,7 @@ use crate::spec;
 use crate::state::AppState;
 
 fn page(items: &serde_json::Value) -> serde_json::Value {
-    let n = items.as_array().map_or(0, |a| a.len());
-    serde_json::json!({ "items": items, "total": n, "next_cursor": serde_json::Value::Null })
+    eel_spec_helpers_rs::page_total_cursor_value(items)
 }
 
 /// POST /api/v1/custody/assets — register an asset.

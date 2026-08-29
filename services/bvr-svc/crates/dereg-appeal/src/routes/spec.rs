@@ -41,7 +41,7 @@ pub struct DeregUssdResponse {
 }
 
 fn page(items: &serde_json::Value) -> serde_json::Value {
-    eel_spec_helpers_rs::page_value(items)
+    eel_spec_helpers_rs::page_flat_value(items)
 }
 
 /// GET /api/v1/dereg/appeals — list deregistration appeals.
