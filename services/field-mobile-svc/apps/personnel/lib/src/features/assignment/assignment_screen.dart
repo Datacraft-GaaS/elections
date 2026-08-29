@@ -26,6 +26,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
   List<WorkerAssignment>? _assignments;
   bool _loading = true;
   bool _error = false;
+  String? _errorDetail;
 
   DispatchApi get _api => widget.api ?? DispatchApi();
 
@@ -39,12 +40,13 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
     setState(() {
       _loading = true;
       _error = false;
+      _errorDetail = null;
     });
     try {
       final assignments = await _api.getAssignments(kWorkerId);
       if (mounted) setState(() { _assignments = assignments; _loading = false; });
-    } catch (_) {
-      if (mounted) setState(() { _loading = false; _error = true; });
+    } catch (e) {
+      if (mounted) setState(() { _loading = false; _error = true; _errorDetail = e.toString(); });
     }
   }
 
@@ -58,9 +60,57 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
 
   Widget _buildBody(BuildContext context) {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return Semantics(
+        label: 'Loading assignment',
+        liveRegion: true,
+        child: const Center(child: CircularProgressIndicator()),
+      );
     }
     if (_error) {
+      // Offline-aware: if we have cached assignments, show stale content dimmed + banner instead of full error
+      final cached = _assignments;
+      if (cached != null && cached.isNotEmpty) {
+        return Column(
+          children: [
+            Semantics(
+              liveRegion: true,
+              label: 'Offline — showing cached assignment',
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                color: EelColors.goldTint,
+                child: Row(children: [
+                  const Icon(Icons.wifi_off, size: 18, color: EelColors.gold),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text('Offline — showing cached data. Will refresh when online.', style: Theme.of(context).textTheme.bodySmall)),
+                  const SizedBox(width: 12),
+                  Semantics(
+                    button: true,
+                    label: 'Retry loading assignment',
+                    child: OutlinedButton(onPressed: _load, style: OutlinedButton.styleFrom(minimumSize: const Size(44,44)), child: const Text('Retry')),
+                  ),
+                ]),
+              ),
+            ),
+            Expanded(
+              child: Opacity(
+                opacity: 0.85,
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+                  children: [
+                    _AssignmentHero(assignment: cached.first),
+                    if (cached.length > 1) ...[
+                      const SizedBox(height: 20),
+                      Text('Previous assignments', style: Theme.of(context).textTheme.titleMedium),
+                    ],
+                    for (final a in cached.skip(1)) _AssignmentRow(assignment: a),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      }
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -69,14 +119,28 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
             children: [
               const Icon(Icons.cloud_off, size: 48, color: EelColors.inkFaint),
               const SizedBox(height: 16),
-              Text('Could not load your assignment', style: Theme.of(context).textTheme.titleLarge),
+              Semantics(
+                header: true,
+                child: Text('Could not load your assignment', style: Theme.of(context).textTheme.titleLarge),
+              ),
               const SizedBox(height: 8),
-              Text('Check your connection and try again.', style: Theme.of(context).textTheme.bodyMedium),
+              Text('The assignment service did not respond. Check your connection and try again.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+              if (_errorDetail != null) ...[
+                const SizedBox(height: 8),
+                Text(_errorDetail!, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: EelColors.inkFaint)),
+              ],
+              const SizedBox(height: 8),
+              Text('Next time: assignments sync automatically when online.', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: EelColors.inkFaint)),
               const SizedBox(height: 20),
-              OutlinedButton.icon(
-                onPressed: _load,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
+              Semantics(
+                button: true,
+                label: 'Retry loading assignment',
+                child: OutlinedButton.icon(
+                  onPressed: _load,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retry verification'),
+                  style: OutlinedButton.styleFrom(minimumSize: const Size(44,44)),
+                ),
               ),
             ],
           ),
@@ -93,12 +157,29 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
             children: [
               const Icon(Icons.assignment_outlined, size: 48, color: EelColors.green),
               const SizedBox(height: 16),
-              Text('No assignment yet', style: Theme.of(context).textTheme.titleLarge),
+              Semantics(header: true, child: Text('No assignment yet', style: Theme.of(context).textTheme.titleLarge)),
               const SizedBox(height: 8),
               Text(
-                'Your posting will appear here once it is issued.',
+                'Your posting will appear here once it is issued. You will be notified when it is ready.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 20),
+              Semantics(
+                button: true,
+                label: 'Check again for assignment',
+                child: OutlinedButton.icon(
+                  onPressed: _load,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Check again'),
+                  style: OutlinedButton.styleFrom(minimumSize: const Size(44,44)),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.of(context).maybePop(),
+                style: TextButton.styleFrom(minimumSize: const Size(44,44)),
+                child: const Text('Go to Duty'),
               ),
             ],
           ),
