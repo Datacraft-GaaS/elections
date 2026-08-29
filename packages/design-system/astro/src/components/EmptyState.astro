@@ -1,0 +1,24 @@
+---
+export interface Props {
+  title?: string;
+  guidance?: string;
+  actionLabel?: string;
+  actionHref?: string;
+}
+const { title = 'Nothing here yet', guidance = 'Check back after polls close or adjust your filters.', actionLabel, actionHref } = Astro.props;
+---
+<div class="eel-empty" role="status">
+  <div class="eel-empty__icon" aria-hidden="true">∅</div>
+  <h3 class="eel-empty__title">{title}</h3>
+  <p class="eel-empty__guidance">{guidance}</p>
+  {actionLabel && actionHref && <a href={actionHref} class="eel-empty__action">{actionLabel}</a>}
+  <slot />
+</div>
+<style>
+  .eel-empty { display:flex; flex-direction:column; align-items:center; gap:var(--spacing-3,12px); padding:var(--spacing-8,32px) var(--spacing-4,16px); text-align:center; max-width: var(--prose-measure,65ch); margin:0 auto; }
+  .eel-empty__icon { width:48px; height:48px; display:grid; place-items:center; border-radius:var(--radius-full,9999px); background:var(--color-neutral-100,#f3f4f6); color:var(--color-text-secondary,#4b5563); font-size:1.5rem; }
+  .eel-empty__title { margin:0; font-size:var(--text-lg,1.125rem); font-weight:600; color:var(--color-text-primary,#111827); line-height:var(--leading-tight,1.25); }
+  .eel-empty__guidance { margin:0; font-size:var(--text-sm,0.875rem); color:var(--color-text-secondary,#4b5563); line-height:var(--leading-normal,1.5); }
+  .eel-empty__action { margin-top:var(--spacing-2,8px); display:inline-flex; align-items:center; min-height:var(--touch-min,44px); padding:0 var(--spacing-4,16px); background:var(--color-brand-primary,#1a56db); color:#fff; border-radius:var(--radius-md,4px); text-decoration:none; font-weight:600; font-size:var(--text-sm,0.875rem); }
+  .eel-empty__action:focus-visible { box-shadow:var(--focus-ring); outline:none; outline-offset:var(--focus-offset,2px); }
+</style>

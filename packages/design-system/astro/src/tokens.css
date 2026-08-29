@@ -1,0 +1,170 @@
+/* eel design-system tokens — generated from packages/design-system/tokens.json
+   Systemic fix for P1-4 (raw hex drift) + P1-6 (dark mode) + P2 missing tokens.
+   Style-Dictionary should eventually emit this; this hand-authored layer is the
+   correctness baseline and is lint-enforceable (eel/no-raw-color).
+   WCAG 2.2 AA, colour-blind safe, dark-mode ready. OKLCH migration tracked P2-11. */
+:root {
+  color-scheme: light dark;
+
+  /* brand / semantic — semantic polymorphism: light defaults, dark overrides below */
+  --color-brand-primary: #1a56db;
+  --color-brand-primary-hover: #1e429f;
+  --color-brand-secondary: #0e9f6e;
+  --color-semantic-success: #057a55;
+  --color-semantic-warning: #92400e;
+  --color-semantic-danger: #b91c1c;
+  --color-semantic-info: #1e40af;
+
+  --color-surface-bg: #ffffff;
+  --color-surface: #f9fafb;
+  --color-surface-border: #e5e7eb;
+
+  --color-text-primary: #111827;
+  --color-text-secondary: #4b5563;
+  --color-text-disabled: #9ca3af;
+  --color-text-inverse: #ffffff;
+  --color-text-link: #1a56db;
+
+  --color-neutral-50: #f9fafb;
+  --color-neutral-100: #f3f4f6;
+  --color-neutral-200: #e5e7eb;
+  --color-neutral-300: #d1d5db;
+  --color-neutral-400: #9ca3af;
+  --color-neutral-500: #6b7280;
+  --color-neutral-600: #4b5563;
+  --color-neutral-700: #374151;
+  --color-neutral-800: #1f2937;
+  --color-neutral-900: #111827;
+
+  /* spacing — 4px base (missing 7,9,11 etc. kept as P2 deferred; map existing) */
+  --spacing-0: 0px;
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+  --spacing-10: 40px;
+  --spacing-12: 48px;
+  --spacing-16: 64px;
+  --spacing-20: 80px;
+  --spacing-24: 96px;
+
+  /* typography */
+  --font-sans: 'Noto Sans', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-display: 'Noto Sans', 'Segoe UI', system-ui, sans-serif;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+
+  /* fluid type (P2-14 exemplar — harmonises HR clamp with portal static scale) */
+  --text-fluid-h1: clamp(1.875rem, 4vw, 2.25rem);
+  --text-fluid-h2: clamp(1.5rem, 3vw, 1.875rem);
+
+  /* radius / shadow / touch / focus / prose / z-index / safe-area */
+  --radius-none: 0px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+  --touch-min: 44px;
+  --prose-measure: 65ch;
+  --content-max: 80rem;
+
+  --z-dropdown: 1000;
+  --z-sticky: 1100;
+  --z-modal: 1400;
+  --z-toast: 1600;
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
+  /* motion — semantic tokens (P1-9 reduced-motion consumed globally below) */
+  --motion-fast: 100ms;
+  --motion-normal: 200ms;
+  --motion-slow: 300ms;
+  --motion-easing: cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-easing-in: cubic-bezier(0.4, 0, 1, 1);
+  --motion-easing-out: cubic-bezier(0, 0, 0.2, 1);
+
+  --focus-ring: 0 0 0 3px rgba(26, 86, 219, 0.5);
+  --focus-offset: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-brand-primary: #4f83f1;
+    --color-brand-primary-hover: #6b9eff;
+    --color-brand-secondary: #31c48d;
+    --color-semantic-success: #31c48d;
+    --color-semantic-warning: #fbbf24;
+    --color-semantic-danger: #f87171;
+    --color-semantic-info: #60a5fa;
+    --color-surface-bg: #111827;
+    --color-surface: #1f2937;
+    --color-surface-border: #374151;
+    --color-text-primary: #f9fafb;
+    --color-text-secondary: #9ca3af;
+    --color-text-disabled: #4b5563;
+    --color-text-inverse: #111827;
+    --color-text-link: #4f83f1;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.6);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  }
+}
+
+[data-theme="dark"] {
+  --color-brand-primary: #4f83f1;
+  --color-brand-primary-hover: #6b9eff;
+  --color-brand-secondary: #31c48d;
+  --color-semantic-success: #31c48d;
+  --color-semantic-warning: #fbbf24;
+  --color-semantic-danger: #f87171;
+  --color-semantic-info: #60a5fa;
+  --color-surface-bg: #111827;
+  --color-surface: #1f2937;
+  --color-surface-border: #374151;
+  --color-text-primary: #f9fafb;
+  --color-text-secondary: #9ca3af;
+  --color-text-disabled: #4b5563;
+  --color-text-inverse: #111827;
+  --color-text-link: #4f83f1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html { color-scheme: light dark; }
+body {
+  background: var(--color-surface-bg);
+  color: var(--color-text-primary);
+  /* safe-area insets for notches/dynamic islands (P2-12) */
+  padding-top: var(--safe-top);
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+}

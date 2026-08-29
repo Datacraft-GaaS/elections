@@ -18,6 +18,7 @@ const { caption, striped = true } = Astro.props;
 </div>
 <style>
 	.eel-table-wrapper { overflow-x: auto; border-radius: 8px; border: 1px solid #e5e7eb; }
+	.eel-table-wrapper:focus-visible { box-shadow: var(--focus-ring, 0 0 0 3px rgba(26, 86, 219, 0.5)); outline: none; outline-offset: var(--focus-offset, 2px); }
 	.eel-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
 	.eel-table__caption { caption-side: top; text-align: left; padding: 0.75rem 1rem; font-weight: 600; color: #374151; }
 	.eel-table :global(th) { background: #f9fafb; font-weight: 600; text-align: left; padding: 0.75rem 1rem; color: #374151; border-bottom: 2px solid #e5e7eb; }

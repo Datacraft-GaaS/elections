@@ -67,17 +67,22 @@ const apiBase = import.meta.env.PUBLIC_TLOG_API ?? 'http://localhost:8080';
           return div.innerHTML;
         }
 
+        var submitBtn = form.querySelector('button[type="submit"]');
         form.addEventListener('submit', function (event) {
           event.preventDefault();
           result.hidden = false;
-          result.innerHTML = '<p>Verifying&hellip;</p>';
+          result.setAttribute('role', 'status');
+          result.setAttribute('aria-live', 'polite');
+          result.setAttribute('aria-busy', 'true');
+          if (submitBtn) { submitBtn.disabled = true; submitBtn.setAttribute('aria-busy','true'); }
+          result.innerHTML = '<p><span class="eel-skeleton" style="display:inline-block;width:12rem;height:1rem" aria-label="Loading"></span> Verifying&hellip;</p>';
           var code = document.getElementById('code').value.trim();
           fetch(apiBase + '/v1/tlog/receipts/' + encodeURIComponent(code))
             .then(function (res) {
-              if (res.status === 404) throw new Error('No leaf matches this receipt code.');
+              if (res.status === 404) throw new Error('No record found for that receipt code. Check the code or try your leaf hash. If it still fails, ask the tally centre for help. <a href="/help#receipt">Learn about receipt codes</a>');
               if (res.status === 409)
-                throw new Error('This receipt code is ambiguous; more than one leaf matches.');
-              if (!res.ok) throw new Error('Lookup failed (HTTP ' + res.status + ').');
+                throw new Error('We found more than one record for that receipt. Check your leaf hash or ask the tally centre for help. <a href="/help#receipt">Learn about Merkle proofs</a>');
+              if (!res.ok) throw new Error('We could not reach the tally service (HTTP ' + res.status + '). Check your connection and try again. <button onclick="location.reload()" style="margin-left:0.5rem">Retry verification</button>');
               return res.json();
             })
             .then(function (data) {
@@ -102,20 +107,27 @@ const apiBase = import.meta.env.PUBLIC_TLOG_API ?? 'http://localhost:8080';
                   esc(expectedDigest) +
                   '</code> (build-embedded; attested via tlog-admin attest-artifact)</p>'
                 : '';
+              result.setAttribute('aria-busy', 'false');
+              result.setAttribute('role', 'status');
+              if (submitBtn) { submitBtn.disabled = false; submitBtn.removeAttribute('aria-busy'); }
               result.innerHTML =
                 '<h2>' +
-                match +
+                esc(match) +
                 '</h2>' +
                 '<p>' +
                 (match === 'MATCH'
-                  ? 'The proof root matches the signed tree head.'
-                  : 'The proof root does not match the signed tree head.') +
-                '</p>' + attestationNote + '<table>' +
+                  ? 'Verified — the proof matches the signed tally. Your station result is included in the official count.'
+                  : 'Not verified — the proof does not match the signed tally. Check the codes or contact the tally centre.') +
+                '</p>' + attestationNote + '<table role="status" aria-live="polite">' +
                 rows +
                 '</table>';
             })
             .catch(function (err) {
-              result.innerHTML = '<p>' + esc(err.message) + '</p>';
+              result.setAttribute('aria-busy', 'false');
+              result.setAttribute('role', 'alert');
+              result.setAttribute('aria-live', 'assertive');
+              if (submitBtn) { submitBtn.disabled = false; submitBtn.removeAttribute('aria-busy'); }
+              result.innerHTML = '<div role="alert"><p><strong>What happened:</strong> ' + err.message + '</p><p><strong>Why:</strong> The tally service could not confirm that receipt.</p><p><strong>How to fix:</strong> Recheck the receipt code and leaf hash, ensure you are online, and retry. If it persists, contact the tally centre.</p><p><strong>Prevention:</strong> Keep your receipt until results are certified.</p></div>';
             });
         });
       })();

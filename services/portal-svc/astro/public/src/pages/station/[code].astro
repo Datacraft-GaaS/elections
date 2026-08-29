@@ -1,13 +1,24 @@
 ---
+import Breadcrumb from '../../../../../../packages/design-system/astro/src/components/Breadcrumb.astro';
+import EmptyState from '../../../../../../packages/design-system/astro/src/components/EmptyState.astro';
+
 // Station view: signed Form 34A image, per-candidate tally, Merkle-inclusion proof (FR-M11-003).
 
 export async function getStaticPaths() {
-  // Production: derive from signed tarball via eel-web-astro loader.
-  return []
+  // Production: derive from signed tarball via eel-web-astro SignedContentLoader.
+  // Exemplar enables static generation for sample stations (real loader enumerates 46k).
+  // TODO: replace sample list with tarball enumeration.
+  return [{ params: { code: '012-003' } }, { params: { code: '019-042' } }];
 }
 
 const { code } = Astro.params
 const locale = Astro.currentLocale ?? 'en'
+const county = code ? String(code).split('-')[0] : ''
+const breadcrumbItems = [
+  { label: 'Home', href: '/' },
+  { label: county ? `County ${county}` : 'County', href: county ? `/constituency/${county}` : undefined },
+  { label: `Station ${code}`, current: true },
+];
 ---
 
 <!doctype html>
@@ -16,15 +27,17 @@ const locale = Astro.currentLocale ?? 'en'
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Station {code} Results | eel</title>
+    <link rel="stylesheet" href="/_astro/tokens.css" />
   </head>
   <body>
     <a href="#main" class="skip-link">Skip to main content</a>
     <header><nav><a href="/">Home</a></nav></header>
+    <Breadcrumb items={breadcrumbItems} />
     <main id="main" tabindex="-1">
       <h1>Polling Station <code>{code}</code></h1>
-      <section aria-labelledby="h-form">
+      <section aria-labelledby="h-form" aria-busy="false">
         <h2 id="h-form">Form 34A</h2>
-        <p>Signed form image and tally will appear once the station publishes.</p>
+        <EmptyState title="Results not yet published" guidance="This station has not published a signed Form 34A yet. Check back after polls close or enable notification for this constituency." actionLabel="View constituency tally" actionHref={county ? `/constituency/${county}` : '/'} />
       </section>
       <section aria-labelledby="h-proof">
         <h2 id="h-proof">Merkle Inclusion Proof</h2>
@@ -32,9 +45,9 @@ const locale = Astro.currentLocale ?? 'en'
       </section>
     </main>
     <style>
-      body { font-family: system-ui, sans-serif; max-width: 960px; margin: 0 auto; padding: 1rem; }
+      body { font-family: var(--font-sans, system-ui, sans-serif); max-width: var(--prose-measure, 65ch); margin: 0 auto; padding: 1rem var(--spacing-4, 16px); padding-left: calc(var(--spacing-4,16px) + var(--safe-left,0px)); padding-right: calc(var(--spacing-4,16px) + var(--safe-right,0px)); line-height: var(--leading-normal,1.5); }
       .skip-link { position: absolute; left: -9999px; }
-      .skip-link:focus { left: 0; background: #000; color: #fff; padding: .5rem 1rem; z-index: 100; }
+      .skip-link:focus { left: 0; background: var(--color-neutral-900,#111827); color: #fff; padding: .5rem 1rem; z-index: var(--z-modal,1400); box-shadow: var(--focus-ring); }
     </style>
   </body>
 </html>

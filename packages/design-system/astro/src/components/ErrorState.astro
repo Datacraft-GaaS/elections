@@ -1,0 +1,26 @@
+---
+export interface Props {
+  what: string;
+  why?: string;
+  fix?: string;
+  prevention?: string;
+  retryLabel?: string;
+}
+const { what, why, fix, prevention, retryLabel = 'Retry verification' } = Astro.props;
+---
+<div class="eel-error" role="alert" aria-live="assertive">
+  <h3 class="eel-error__what">{what}</h3>
+  {why && <p class="eel-error__why"><strong>Why:</strong> {why}</p>}
+  {fix && <p class="eel-error__fix"><strong>How to fix:</strong> {fix}</p>}
+  {prevention && <p class="eel-error__prev"><strong>Next time:</strong> {prevention}</p>}
+  <slot />
+  <button class="eel-error__retry" type="button" onclick="location.reload()">{retryLabel}</button>
+</div>
+<style>
+  .eel-error { display:flex; flex-direction:column; gap:var(--spacing-2,8px); padding:var(--spacing-4,16px); border:1px solid var(--color-surface-border,#e5e7eb); border-left:4px solid var(--color-semantic-danger,#b91c1c); background:var(--color-surface,#f9fafb); border-radius:var(--radius-md,4px); max-width:var(--prose-measure,65ch); }
+  .eel-error__what { margin:0; font-size:var(--text-base,1rem); font-weight:700; color:var(--color-semantic-danger,#b91c1c); }
+  .eel-error__why, .eel-error__fix, .eel-error__prev { margin:0; font-size:var(--text-sm,0.875rem); color:var(--color-text-secondary,#4b5563); line-height:var(--leading-normal,1.5); }
+  .eel-error__retry { align-self:flex-start; margin-top:var(--spacing-2,8px); min-height:var(--touch-min,44px); padding:0 var(--spacing-4,16px); background:var(--color-brand-primary,#1a56db); color:#fff; border:none; border-radius:var(--radius-md,4px); font-weight:600; cursor:pointer; }
+  .eel-error__retry:focus-visible { box-shadow:var(--focus-ring); outline:none; }
+  @media (prefers-reduced-motion: reduce) { .eel-error { transition:none; } }
+</style>

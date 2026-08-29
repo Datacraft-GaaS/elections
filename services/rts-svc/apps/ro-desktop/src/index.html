@@ -16,10 +16,16 @@
     header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
     header h1 { font-size: 1rem; font-weight: 600; letter-spacing: 0.02em; }
     .badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 9999px; background: var(--accent); color: #fff; }
-    .recording-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--err); animation: pulse 1.4s ease-in-out infinite; }
+    .recording-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--err); }
+    @media (prefers-reduced-motion: no-preference) {
+      .recording-dot { animation: pulse 1.4s ease-in-out infinite; }
+    }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    @media (prefers-reduced-motion: reduce) {
+      .recording-dot { animation: none !important; }
+    }
     nav { background: var(--surface); border-right: 1px solid var(--border); width: 200px; min-height: calc(100vh - 49px); padding: 16px 0; flex-shrink: 0; }
-    nav button { display: block; width: 100%; text-align: left; padding: 10px 20px; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.875rem; border-left: 3px solid transparent; transition: all .15s; }
+    nav button { display: block; width: 100%; text-align: left; padding: 10px 20px; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.875rem; border-left: 3px solid transparent; min-height: 44px; transition: color .15s var(--motion-easing, cubic-bezier(0.4,0,0.2,1)), background-color .15s var(--motion-easing, cubic-bezier(0.4,0,0.2,1)), border-color .15s var(--motion-easing, cubic-bezier(0.4,0,0.2,1)); }
     nav button:hover, nav button.active { color: var(--text); border-left-color: var(--accent); background: rgba(59,130,246,.08); }
     .layout { display: flex; flex: 1; }
     main { flex: 1; padding: 24px; overflow-y: auto; }
