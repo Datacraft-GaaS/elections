@@ -46,6 +46,7 @@ pub struct Data {
     incidents: HashMap<String, Incident>,
     assets: HashMap<String, Asset>,
     custody_events: Vec<CustodyEvent>,
+    shortfalls: HashMap<String, crate::spec::Shortfall>,
 }
 
 // ---------------------------------------------------------------------------
@@ -1004,6 +1005,95 @@ impl Store {
                 .custody_events
                 .iter()
                 .filter(|e| e.asset_id == asset_id)
+                .cloned()
+                .collect()),
+        }
+    }
+
+    // -- shortfalls (inventory/management.yaml) -------------------------------
+
+    pub async fn insert_shortfall(
+        &self,
+        shortfall: &crate::spec::Shortfall,
+    ) -> Result<(), sqlx::Error> {
+        match self {
+            Store::Pg(pool) => {
+                sqlx::query(
+                    "INSERT INTO inventory_shortfalls (shortfall_id, constituency_code, item, quantity, reported_by_hash, status, created_at, request_json) \
+                     VALUES ($1,$2,$3,$4,$5,$6,$7,$8) \
+                     ON CONFLICT (shortfall_id) DO NOTHING",
+                )
+                .bind(&shortfall.shortfall_id)
+                .bind(&shortfall.request.constituency_code)
+                .bind(&shortfall.request.item)
+                .bind(shortfall.request.quantity as i32)
+                .bind(&shortfall.request.reported_by_hash)
+                .bind(&shortfall.status)
+                .bind(
+                    shortfall
+                        .created_at
+                        .parse::<DateTime<Utc>>()
+                        .unwrap_or_else(|_| Utc::now()),
+                )
+                .bind(serde_json::to_value(&shortfall.request).unwrap_or(serde_json::json!({})))
+                .execute(pool)
+                .await?;
+                Ok(())
+            }
+            Store::Mem(m) => {
+                m.lock()
+                    .unwrap_or_else(|p| p.into_inner())
+                    .shortfalls
+                    .insert(shortfall.shortfall_id.clone(), shortfall.clone());
+                Ok(())
+            }
+        }
+    }
+
+    pub async fn list_shortfalls(&self) -> Result<Vec<crate::spec::Shortfall>, sqlx::Error> {
+        match self {
+            Store::Pg(pool) => {
+                let rows = sqlx::query_as::<_, (String, String, String, i32, String, String, DateTime<Utc>, serde_json::Value)>(
+                    "SELECT shortfall_id, constituency_code, item, quantity, reported_by_hash, status, created_at, request_json \
+                     FROM inventory_shortfalls ORDER BY created_at",
+                )
+                .fetch_all(pool)
+                .await?;
+                Ok(rows
+                    .into_iter()
+                    .map(
+                        |(
+                            shortfall_id,
+                            constituency_code,
+                            item,
+                            quantity,
+                            reported_by_hash,
+                            status,
+                            created_at,
+                            request_json,
+                        )| {
+                            let request: crate::spec::ShortfallRequest =
+                                serde_json::from_value(request_json).unwrap_or(crate::spec::ShortfallRequest {
+                                    constituency_code: constituency_code.clone(),
+                                    item: item.clone(),
+                                    quantity: quantity as u32,
+                                    reported_by_hash: reported_by_hash.clone(),
+                                });
+                            crate::spec::Shortfall {
+                                shortfall_id,
+                                status,
+                                created_at: created_at.to_rfc3339(),
+                                request,
+                            }
+                        },
+                    )
+                    .collect())
+            }
+            Store::Mem(m) => Ok(m
+                .lock()
+                .unwrap_or_else(|p| p.into_inner())
+                .shortfalls
+                .values()
                 .cloned()
                 .collect()),
         }

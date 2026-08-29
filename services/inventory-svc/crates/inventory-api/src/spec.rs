@@ -1,16 +1,15 @@
 //! Public contract handlers (inventory/management.yaml).
 
-use std::collections::HashMap;
-use std::sync::{Mutex, OnceLock};
-
 use axum::{
-    extract::Path,
+    extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
     Json,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+
+use crate::store::Store;
 
 /// Typed shortfall creation request (derived from inventory/management.yaml).
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -36,11 +35,6 @@ pub struct Shortfall {
     pub created_at: String,
     /// Original request.
     pub request: ShortfallRequest,
-}
-
-fn shortfalls() -> &'static Mutex<HashMap<String, Shortfall>> {
-    static STORE: OnceLock<Mutex<HashMap<String, Shortfall>>> = OnceLock::new();
-    STORE.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
 fn page(items: &Value) -> Value {
@@ -74,8 +68,11 @@ pub async fn get_material_status(Path(code): Path<String>) -> impl IntoResponse 
     }))
 }
 
-/// POST /api/v1/inventory/shortfalls — report a shortfall.
-pub async fn report_shortfall(Json(req): Json<ShortfallRequest>) -> impl IntoResponse {
+/// POST /api/v1/inventory/shortfalls — report a shortfall (postgres).
+pub async fn report_shortfall(
+    State(store): State<Store>,
+    Json(req): Json<ShortfallRequest>,
+) -> impl IntoResponse {
     let id = uuid::Uuid::now_v7().to_string();
     let rec = Shortfall {
         shortfall_id: id.clone(),
@@ -83,16 +80,24 @@ pub async fn report_shortfall(Json(req): Json<ShortfallRequest>) -> impl IntoRes
         created_at: chrono::Utc::now().to_rfc3339(),
         request: req,
     };
-    shortfalls().lock().expect("lock poisoned").insert(id, rec.clone());
-    (StatusCode::CREATED, Json(rec))
+    match store.insert_shortfall(&rec).await {
+        Ok(()) => (StatusCode::CREATED, Json(rec)).into_response(),
+        Err(e) => {
+            tracing::error!(error = %e, "shortfall insert failed");
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "detail": "internal error"}))).into_response()
+        }
+    }
 }
 
-/// GET /api/v1/inventory/shortfalls — list shortfalls.
-pub async fn list_shortfalls() -> impl IntoResponse {
-    let guard = shortfalls().lock().expect("lock poisoned");
-    let items: Vec<Shortfall> = guard.values().cloned().collect();
-    drop(guard);
-    Json(page(&serde_json::to_value(items).unwrap()))
+/// GET /api/v1/inventory/shortfalls — list shortfalls (postgres).
+pub async fn list_shortfalls(State(store): State<Store>) -> impl IntoResponse {
+    match store.list_shortfalls().await {
+        Ok(items) => Json(page(&serde_json::to_value(items).unwrap())).into_response(),
+        Err(e) => {
+            tracing::error!(error = %e, "shortfall list failed");
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "detail": "internal error"}))).into_response()
+        }
+    }
 }
 
 /// GET /api/v1/inventory/audit-trail — inventory audit trail.

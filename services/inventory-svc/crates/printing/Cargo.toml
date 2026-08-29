@@ -26,6 +26,8 @@ tracing-subscriber = { workspace = true }
 eel-spec-helpers-rs = { path = "../../../../packages/eel-spec-helpers-rs" }
 axum              = { workspace = true }
 tokio             = { workspace = true }
+sqlx              = { workspace = true }
+eel-outbox-rs     = { workspace = true }
 async-trait       = "0.1"
 anyhow            = "1"
 

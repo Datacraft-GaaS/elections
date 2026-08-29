@@ -115,3 +115,37 @@ Density = findings ÷ file count (approx, `cloc` unavailable for full workspace;
 |---|---|---|---|
 | 2026-08-30 | Remediate | custody postgres exemplar (Store enum, V052, handlers, main). | 1 fixed (custody P0 partial), 0 deferred |
 
+---
+
+## Audit Run 2026-08-30 — Remediate (printing + inventory-api postgres, P0 partial)
+
+**Scope:** `services/inventory-svc/crates/printing` + `services/inventory-svc/crates/inventory-api` (TD-03-P0-01 next). Build mode.
+
+**Changes:**
+
+- `services/inventory-svc/migrations/V053__printing_api_surface.sql:1` — `printing_api_orders/deliveries/audit` (`UUID PK`, `FK`, `CHECK`, `INDEX`, `DEFAULT now()`, `JSONB` for `security_features`/`payload`, reversible `DROP`).
+- `services/inventory-svc/migrations/V054__inventory_shortfalls.sql:1` — `inventory_shortfalls` (`shortfall_id TEXT PK`, `constituency_code`, `item`, `quantity`, `reported_by_hash`, `status`, `created_at`, `request_json JSONB`, `INDEX`).
+- `services/inventory-svc/crates/printing/src/Cargo.toml:19` — add `sqlx {workspace}` + `eel-outbox-rs {workspace}`.
+- `services/inventory-svc/crates/printing/src/store.rs:1` — replaced trait-only `PrintStore` with `Store` enum (`Pg(PgPool)`/`Mem(MemStore)`) 6 async methods `sqlx` (`create_order`, `list_orders`, `get_order`, `submit_qc`, `record_delivery`, `list_audit`) with `Mem` via `SharedMap` + `Mutex<Vec<AuditEvent>>`; audit `printing_api_audit` on create/delivery, `StoreError::NotFound/Db`, `#![allow(missing_docs)]`.
+- `services/inventory-svc/crates/printing/src/http.rs:1` — `AppState { store: Store }` (`Default→Mem`, `new_shared()→Mem`, `from_pool(PgPool)→Pg`), `router` unchanged, 5 handlers `async` via `store.*.await` + `store_err` `404`/`500` + `tracing::error` + `page`.
+- `services/inventory-svc/crates/printing/src/main.rs:1` — `DATABASE_URL` → `PgPoolOptions::new().connect().await` + `Outbox::migrate().await` + `AppState::from_pool`, else `info!("using in-memory (tests only)")`.
+- `services/inventory-svc/crates/inventory-api/src/store.rs:38` — `Data { shortfalls: HashMap<String, Shortfall> }` + `insert_shortfall`/`list_shortfalls` (`Store::Pg` `INSERT INTO inventory_shortfalls` + `SELECT`, `Store::Mem` via `Mutex<HashMap>`).
+- `services/inventory-svc/crates/inventory-api/src/spec.rs:1` — remove `OnceLock<Mutex<HashMap>>` + `shortfalls()`, replace `report_shortfall`/`list_shortfalls` with `State<Store>` `store.insert_shortfall(&rec).await` / `store.list_shortfalls().await` + `500` on `Err` + `page`.
+
+**Verification:** `cargo check -p custody -p printing -p inventory-api` clean (25+9+118 `missing_docs` warnings only), `cargo check --workspace` clean (0 errors), `cargo run --release -p eel-completeness -- scan` `0 errors, 0 warnings, 33 infos`, `dart analyze` 0, `flutter test` Iris/Fingerprint 4/4 + BVR enrolment 5/5.
+
+**Finding status update:**
+
+| # | Title | Before | After |
+|---|---|---|---|
+| TD-03-P0-01 | In-memory contract stores (printing) | open | **fixed(2026-08-30) for `printing`** — `printing/src/store.rs:1` + `http.rs:1` + `V053` now postgres; test still via `Mem`. |
+| TD-03-P0-01 | In-memory contract stores (inventory-api shortfalls) | open (`OnceLock`) | **fixed(2026-08-30) for `inventory-api` shortfalls** — `inventory-api/src/store.rs:38` + `spec.rs:1` + `V054` now postgres; other inventory-api domains already via `Store` enum (vehicles, pallets, etc.). |
+
+**Remaining P0 (open, next in order):** `credential` (`Mutex<HashMap<Uuid, Credential>>`), `voter-card`, `diaspora`, `rla`, `reporting`, `court-interface`, `crms-api`, `intent`, `special-voter`, `ai-gateway` — each `Mutex<HashMap>` → `Store` enum + migration, same S pattern (next: `credential` `V054__credential_api`).
+
+### Change Log (append)
+
+| Date | Mode | Summary | Items fixed / deferred |
+|---|---|---|---|
+| 2026-08-30 | Remediate | printing + inventory-api postgres (Store enum, V053/V054, handlers, main). | 2 fixed (printing, inventory-api shortfalls P0 partial), 0 deferred |
+
