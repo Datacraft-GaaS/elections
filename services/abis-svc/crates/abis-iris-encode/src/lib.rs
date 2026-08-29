@@ -8,6 +8,7 @@
 //!   IEEE Transactions on Circuits and Systems for Video Technology, 14(1), 21-30.
 //!
 //!   Prickle Interpolated Encoding (PIE): internal variant for rotation-robust encoding.
+#![warn(missing_docs)]
 
 pub mod daugman_code;
 pub mod encode;

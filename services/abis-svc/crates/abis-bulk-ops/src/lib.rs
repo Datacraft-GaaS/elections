@@ -3,6 +3,7 @@
 //! Supports 7 operation types: enrol, dedup, delete, export, rewrap, import, retire.
 //! Each operation is resumable from a progress checkpoint. Failure manifests are
 //! written as CSV.
+#![warn(missing_docs)]
 
 pub mod api;
 pub mod dedup;

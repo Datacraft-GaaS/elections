@@ -1,3 +1,5 @@
+//! abis-standards-icao crate.
+#![warn(missing_docs)]
 pub mod bac;
 pub mod dg1;
 pub mod dg14;

@@ -2,6 +2,7 @@
 //!
 //! Provides WAV/PCM ingest with inline radix-2 FFT and MFCC extraction,
 //! cosine similarity and DTW matching, and SNR/duration quality scoring.
+#![warn(missing_docs)]
 
 pub mod domain;
 pub mod matcher;

@@ -5,6 +5,7 @@
 //!
 //! Each metric is independently computable and returns a normalised score
 //! in [0.0, 1.0] where 1.0 is the highest quality.
+#![warn(missing_docs)]
 
 pub mod metrics;
 pub mod policy;

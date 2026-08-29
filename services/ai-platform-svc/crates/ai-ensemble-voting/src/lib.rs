@@ -3,6 +3,7 @@
 //! K-of-N ensemble voting across every AI model decision.
 //! N models are dispatched in parallel via Rayon; at least K must agree
 //! on a label for the decision to be accepted.
+#![warn(missing_docs)]
 
 pub mod ensemble;
 pub mod error;

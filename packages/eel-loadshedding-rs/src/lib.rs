@@ -5,6 +5,7 @@
 //! - CoDel algorithm: targets latency budget, sheds lowest priority first
 //! - Returns 503 with Retry-After and problem+json on shed
 //! - Metrics: shed_count per priority, breach count, queue depth
+#![warn(missing_docs)]
 
 pub mod error;
 pub mod priority;

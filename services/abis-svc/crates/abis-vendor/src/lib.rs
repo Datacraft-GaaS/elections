@@ -6,6 +6,7 @@
 //! - `PythonVendor`  -- HTTP bridge to py/abis-vendor sidecar
 //! - `GrpcVendor`    -- gRPC bridge to a vendor sidecar (stub)
 //! - `VendorRouter`  -- per-modality routing with health-based failover
+#![warn(missing_docs)]
 
 pub mod adapter;
 pub mod error;

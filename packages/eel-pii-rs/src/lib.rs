@@ -22,6 +22,7 @@
 //! let value = id.reveal(Purpose::Identification, &sink);
 //! assert_eq!(value, "KE12345678");
 //! ```
+#![warn(missing_docs)]
 
 use serde::{Deserialize, Serialize};
 use std::fmt;

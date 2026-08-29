@@ -5,6 +5,7 @@
 //! BLAKE3 hash chain, tamper alerts, replay defence, and Prometheus metrics.
 //!
 //! Ref: docs/features/rfid-ballot-box-covers.md
+#![warn(missing_docs)]
 
 pub mod api;
 pub mod domain;

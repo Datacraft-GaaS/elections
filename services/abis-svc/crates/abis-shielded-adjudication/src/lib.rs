@@ -10,6 +10,7 @@
 //! - The TierGate is the sole policy decision point for plaintext vs shielded.
 //! - Every reviewer action is HSM-signed with a prev_action_hash chain.
 //! - Shielded similarity scores match plaintext ABIS accuracy within eps=0.02.
+#![warn(missing_docs)]
 
 pub mod audit;
 pub mod case_shield;

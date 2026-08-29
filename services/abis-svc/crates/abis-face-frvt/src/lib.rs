@@ -10,6 +10,7 @@
 //! - 1:N identification: Rank-1 through Rank-N.
 //! - Quality track: correlation between quality score and FNMR.
 //! - Per-demographic fairness slices: FMR/FNMR by age band, sex, skin tone.
+#![warn(missing_docs)]
 
 pub mod corpus;
 pub mod metrics;

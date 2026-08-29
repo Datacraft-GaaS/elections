@@ -1,6 +1,7 @@
 //! eel-adapter-ipfs: Kenyan-hosted IPFS pinning adapter for M14/M17 transparency channel
 //!
 //! Wire: IPFS HTTP API v0; POST /api/v0/add for pin, POST /api/v0/pin/add for remote pin; content-addressed CIDs.
+#![warn(missing_docs)]
 
 use axum::{extract::State, http::StatusCode, response::Json, routing::{get, post}, Router};
 use serde::{Deserialize, Serialize};

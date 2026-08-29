@@ -1,4 +1,5 @@
 //! ABIS API library: router and shared types.
+#![warn(missing_docs)]
 
 pub mod error;
 pub mod idempotency;

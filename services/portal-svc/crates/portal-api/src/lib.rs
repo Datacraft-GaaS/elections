@@ -9,6 +9,7 @@
 //!
 //! Rate limiting, WAF, and HSTS are enforced at the edge (ADR-0010).
 //! No PII is returned from any endpoint.
+#![warn(missing_docs)]
 
 use axum::{
     extract::Path,

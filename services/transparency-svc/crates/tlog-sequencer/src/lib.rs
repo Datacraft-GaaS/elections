@@ -4,6 +4,7 @@
 //! + Retry-After when the rate limit is exceeded.
 //!
 //! Three background tasks produce STHs at 1s / 60s / 5min cadences.
+#![warn(missing_docs)]
 
 pub mod db;
 pub mod proofs;

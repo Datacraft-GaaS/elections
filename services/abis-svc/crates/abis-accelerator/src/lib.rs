@@ -2,6 +2,7 @@
 //!
 //! Trait-based interfaces for hardware accelerators. The dispatcher selects an accelerator
 //! based on gallery size, latency budget, and energy budget.
+#![warn(missing_docs)]
 
 pub mod cpu_fallback;
 pub mod dispatcher;

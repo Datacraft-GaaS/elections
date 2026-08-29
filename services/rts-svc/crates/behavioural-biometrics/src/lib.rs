@@ -1,3 +1,5 @@
+//! behavioural-biometrics crate.
+#![warn(missing_docs)]
 pub mod api;
 pub mod hijack_detector;
 pub mod keystroke;

@@ -5,6 +5,7 @@
 //!   ACM Computing Surveys 52(6).
 //! - Wang, Z. et al. (2022). "Age-Invariant Face Recognition via Partial
 //!   Factor Pooling." CVPR 2022. (residual age-normalisation approach)
+#![warn(missing_docs)]
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};

@@ -5,6 +5,7 @@
 //! on small parameters, suitable for unit tests.
 //!
 //! Scheme support: CKKS (cosine similarity), BFV (Hamming distance), BGV, TFHE.
+#![warn(missing_docs)]
 
 pub mod batch_1n;
 pub mod context;

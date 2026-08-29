@@ -3,6 +3,7 @@
 //! All detectors are side-effect-free: they take plain data and return
 //! serializable findings. Nothing here touches a database or the network,
 //! so every function is directly unit-testable.
+#![warn(missing_docs)]
 
 use std::collections::BTreeMap;
 

@@ -11,6 +11,7 @@
 //! // Caller provides a populated Sth and InclusionProof from the transparency
 //! // log at spiffe://eel.local.
 //! ```
+#![warn(missing_docs)]
 
 use eel_crypto_rs::merkle::{leaf_hash, node_hash, Hash};
 use eel_crypto_rs::rfc8785::canonicalize;

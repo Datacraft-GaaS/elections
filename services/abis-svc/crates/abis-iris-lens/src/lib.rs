@@ -5,6 +5,7 @@
 //!   LivDet-Iris 2017.
 //!
 //! Detects three lens artefact classes: transparent, coloured, and patterned.
+#![warn(missing_docs)]
 
 pub mod coloured;
 pub mod detector;

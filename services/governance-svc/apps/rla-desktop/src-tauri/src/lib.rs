@@ -1,3 +1,5 @@
+//! src-tauri crate.
+#![warn(missing_docs)]
 pub mod commands;
 pub mod db;
 pub mod error;

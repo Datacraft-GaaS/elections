@@ -3,6 +3,7 @@
 //! Plans the cheapest sequence of: demographic_prune -> face_ANN -> fingerprint_exact ->
 //! iris_exact, and executes concurrently across shards with early-termination when the
 //! confidence threshold is reached.
+#![warn(missing_docs)]
 
 pub mod domain;
 pub mod error;

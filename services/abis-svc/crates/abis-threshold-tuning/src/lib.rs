@@ -3,6 +3,7 @@
 //! Selects decision thresholds that achieve a target false match rate (FMR),
 //! partitioned by modality, age band, sex, and county cohort. Bootstrap resampling
 //! (n=1000) produces 95% confidence intervals.
+#![warn(missing_docs)]
 
 pub mod activate;
 pub mod api;

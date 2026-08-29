@@ -5,6 +5,7 @@
 //! - Transit encrypt/decrypt via `Transit`
 //! - JIT admin credentials with 4h cap via `issue_admin_cred`
 //! - PKI leaf cert issuance via `issue_leaf_cert`
+#![warn(missing_docs)]
 
 pub mod admin_creds;
 pub mod dynamic_creds;

@@ -2,6 +2,7 @@
 //!
 //! Expanded from the stub in abis-matcher/src/adjudication.rs into a full crate.
 //! The abis-matcher stub is left in place; this crate is the real implementation.
+#![warn(missing_docs)]
 
 pub mod assignment;
 pub mod audit;

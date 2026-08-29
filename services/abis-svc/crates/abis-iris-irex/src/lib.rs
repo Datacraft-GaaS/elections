@@ -4,6 +4,7 @@
 //! report-card generation aligned with IREX I through IREX X.
 //!
 //! Reference: <https://www.nist.gov/programs-projects/iris-exchange-irex-overview>
+#![warn(missing_docs)]
 
 pub mod corpus;
 pub mod identify;

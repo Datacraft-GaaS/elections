@@ -29,6 +29,7 @@
 //! let parsed = CbeffContainer::parse(&bytes).expect("round-trip");
 //! assert_eq!(parsed, container);
 //! ```
+#![warn(missing_docs)]
 
 pub mod bdb;
 pub mod container;

@@ -1,3 +1,5 @@
+//! abis-enhancement crate.
+#![warn(missing_docs)]
 pub mod fingerprint;
 pub mod face;
 pub mod slap;

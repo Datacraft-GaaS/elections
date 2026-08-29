@@ -2,6 +2,7 @@
 //!
 //! Recomputes metrics on a labelled holdout set every 6 hours.
 //! Produces daily, weekly, and monthly rollup reports.
+#![warn(missing_docs)]
 
 pub mod domain;
 pub mod error;

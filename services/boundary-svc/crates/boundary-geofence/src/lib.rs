@@ -4,6 +4,7 @@
 //! the client side. The polygon-in-polygon test runs purely in Rust.
 //!
 //! p99 target: < 20 ms local (verified by the `polygon_check` bench).
+#![warn(missing_docs)]
 
 pub mod geo_check;
 pub mod server;

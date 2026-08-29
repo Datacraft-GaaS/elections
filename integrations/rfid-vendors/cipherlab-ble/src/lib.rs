@@ -3,6 +3,7 @@
 //! - `adapter::CipherLabBleHandler` — HTTP client wrapping the py/rfid-reader-driver
 //!   endpoint that uses the bleak-based BLE adapter.  No commercial CipherLab SDK.
 //! - `double::MockCipherLabBle` — in-memory double with tamper + battery-low injection.
+#![warn(missing_docs)]
 
 pub mod adapter;
 pub mod double;

@@ -5,6 +5,7 @@
 //! digests and an optional Ed25519 signature over the canonical manifest. The
 //! bundle is what lets an independent auditor rebuild the tally from committed
 //! events and confirm the published Merkle root bit-for-bit.
+#![warn(missing_docs)]
 
 pub mod bundle;
 pub mod error;

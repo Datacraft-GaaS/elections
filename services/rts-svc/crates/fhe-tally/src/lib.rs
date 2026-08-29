@@ -19,6 +19,7 @@
 //! each homomorphic addition takes ~0.5ms on a Cortex-X2. Full 47,500-station
 //! tally aggregation: ~24 seconds single-threaded; ~3 seconds with 8 threads.
 //! Reference: SEAL benchmarks, Microsoft Research 2024.
+#![warn(missing_docs)]
 
 pub mod aggregate;
 pub mod decrypt;

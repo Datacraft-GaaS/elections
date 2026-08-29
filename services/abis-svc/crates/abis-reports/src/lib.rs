@@ -1,3 +1,5 @@
+//! abis-reports crate.
+#![warn(missing_docs)]
 pub mod anchor;
 pub mod api;
 pub mod domain;

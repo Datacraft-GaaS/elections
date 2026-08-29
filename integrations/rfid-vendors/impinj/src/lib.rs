@@ -4,6 +4,7 @@
 //! - `adapter::ImpinjAdapter` — HTTP client wrapping the py/rfid-reader-driver endpoint
 //!   with circuit-breaker resilience via eel-resilience-rs.
 //! - `double::MockImpinj` — in-memory double for dev/chaos testing with tamper injection.
+#![warn(missing_docs)]
 
 pub mod adapter;
 pub mod double;

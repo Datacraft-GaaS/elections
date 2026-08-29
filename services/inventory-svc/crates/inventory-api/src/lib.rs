@@ -5,6 +5,7 @@
 //! (sqlx) and an in-memory fake, so the service runs without a database and
 //! is fully testable. [`auth::Auth`] adds JWT + SpiceDB authorization when
 //! configured via the environment.
+#![warn(missing_docs)]
 
 pub mod auth;
 pub mod handlers;

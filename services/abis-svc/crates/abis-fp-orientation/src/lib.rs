@@ -6,6 +6,7 @@
 //!   Kawagoe & Tojo 1984).
 //! - Pattern classification {Arch, TentedArch, LeftLoop, RightLoop, Whorl, TwinLoop}.
 //! - Multi-granularity matcher (pattern class -> singular points -> field correlation).
+#![warn(missing_docs)]
 
 pub mod field;
 pub mod matcher;

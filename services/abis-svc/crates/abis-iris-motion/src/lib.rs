@@ -1,4 +1,5 @@
 //! Motion blur estimation, multi-frame stacking, and iris identity tracking.
+#![warn(missing_docs)]
 
 pub mod blur;
 pub mod stack;

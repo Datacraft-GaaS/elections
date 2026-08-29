@@ -2,6 +2,7 @@
 //!
 //! All fields are validated against the ICAO checksum algorithm. PII: all name/DOB/ID fields
 //! are Tier A (Restricted) per ADR-0016.
+#![warn(missing_docs)]
 
 use thiserror::Error;
 

@@ -30,6 +30,7 @@
 //! let tx2 = NistTransaction::parse(&bytes).expect("round-trip");
 //! assert_eq!(tx, tx2);
 //! ```
+#![warn(missing_docs)]
 
 pub mod error;
 pub mod record;

@@ -2,6 +2,7 @@
 //!
 //! Packages template extraction, verification pipeline, and report card
 //! generation matching the FRVT 1:1, 1:N, Quality, and PAD tracks.
+#![warn(missing_docs)]
 
 pub mod frvt_1v1;
 pub mod frvt_1vn;

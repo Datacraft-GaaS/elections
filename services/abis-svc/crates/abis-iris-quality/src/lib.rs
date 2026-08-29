@@ -2,6 +2,7 @@
 //!
 //! Reference: ISO/IEC 29794-6:2021. Biometric sample quality.
 //! Part 6: Iris image data.
+#![warn(missing_docs)]
 
 pub mod metrics;
 pub mod policy;

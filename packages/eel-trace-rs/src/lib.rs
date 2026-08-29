@@ -15,6 +15,7 @@
 //! #[test]
 //! fn two_thirds_violation_detected() { ... }
 //! ```
+#![warn(missing_docs)]
 
 use proc_macro::TokenStream;
 

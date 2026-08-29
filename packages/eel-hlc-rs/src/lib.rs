@@ -14,6 +14,7 @@
 //! let t2 = clock.now();
 //! assert!(t2 >= t1, "HLC is non-decreasing");
 //! ```
+#![warn(missing_docs)]
 
 use std::{fmt, str::FromStr};
 

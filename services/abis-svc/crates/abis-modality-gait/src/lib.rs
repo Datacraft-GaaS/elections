@@ -1,3 +1,5 @@
+//! abis-modality-gait crate.
+#![warn(missing_docs)]
 pub mod domain;
 pub mod matcher;
 pub mod parser;

@@ -7,6 +7,7 @@
 //!   - Physical pouch custody chain
 //!   - Delayed batch transmission with exponential backoff
 //!   - CloudEvent emission via eel-outbox-rs
+#![warn(missing_docs)]
 
 pub mod api;
 pub mod spec;

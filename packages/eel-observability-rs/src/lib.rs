@@ -4,6 +4,7 @@
 //! - SLO metric macro: `slo!(service, indicator, target)`
 //! - Audit shadow trigger: creates PG trigger mirroring mutations to audit.<table>_history
 //! - PII log scrubber: tracing layer detecting PIIRestricted/PIISensitive in log fields
+#![warn(missing_docs)]
 
 pub mod audit_shadow;
 pub mod error;

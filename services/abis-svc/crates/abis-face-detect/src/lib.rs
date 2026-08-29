@@ -2,6 +2,7 @@
 //!
 //! Reference: Viola, P. & Jones, M. (2001). "Rapid Object Detection using a
 //! Boosted Cascade of Simple Features." CVPR 2001.
+#![warn(missing_docs)]
 
 pub mod nms;
 pub mod baseline;

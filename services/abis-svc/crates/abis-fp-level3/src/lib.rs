@@ -6,6 +6,7 @@
 //! Reference: A. K. Jain, Y. Chen, M. Demirkus, "Pores and Ridges: High-Resolution
 //! Fingerprint Matching Using Level 3 Features," IEEE Trans. Pattern Anal. Mach.
 //! Intell., vol. 29, no. 1, pp. 15-27, Jan. 2007.
+#![warn(missing_docs)]
 
 pub mod incipient;
 pub mod matcher;

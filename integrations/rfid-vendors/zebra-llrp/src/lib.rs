@@ -3,6 +3,7 @@
 //! - `adapter::ZebraLlrpHandler` — HTTP client wrapping the py/rfid-reader-driver
 //!   endpoint that uses the LLRP-based zebra_llrp adapter.  No commercial SDK.
 //! - `double::MockZebraLlrp` — in-memory double with tamper injection.
+#![warn(missing_docs)]
 
 pub mod adapter;
 pub mod double;

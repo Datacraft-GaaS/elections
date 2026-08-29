@@ -1,3 +1,5 @@
+//! support-api crate.
+#![warn(missing_docs)]
 pub mod error;
 pub mod models;
 pub mod routes;

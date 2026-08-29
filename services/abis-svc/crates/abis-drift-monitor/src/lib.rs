@@ -2,6 +2,7 @@
 //!
 //! Computes PSI, KS statistic, Jensen-Shannon divergence, and Wasserstein distance
 //! across configurable rolling windows (24h, 7d, 30d) against a baseline snapshot.
+#![warn(missing_docs)]
 
 pub mod adaptive;
 pub mod alert;

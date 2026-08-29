@@ -5,6 +5,7 @@
 //! configured in `main.rs`). Missing identity returns `UNAUTHENTICATED`.
 //!
 //! Trust domain: `spiffe://eel.local/service/hsm-signer`.
+#![warn(missing_docs)]
 
 pub mod ceremony;
 pub mod keg_rotation_4of7;

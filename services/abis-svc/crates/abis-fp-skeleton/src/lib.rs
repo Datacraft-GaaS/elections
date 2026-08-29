@@ -6,6 +6,7 @@
 //! 3. Build a graph: nodes = ridge endpoints + bifurcations; edges = ridge segments with
 //!    geometric attributes (length, curvature, start/end orientation).
 //! 4. Match via approximate subgraph isomorphism (VF2 for small graphs, greedy for large).
+#![warn(missing_docs)]
 
 pub mod graph;
 pub mod matcher;

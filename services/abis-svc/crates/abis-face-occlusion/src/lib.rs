@@ -5,6 +5,7 @@
 //!   Mask Learning with Pairwise Differential Siamese Network." ICCV 2019.
 //! - Zhao, J. et al. (2018). "Towards Pose Invariant Face Recognition in the
 //!   Wild." CVPR 2018. (attention-weighted embedding approach)
+#![warn(missing_docs)]
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;

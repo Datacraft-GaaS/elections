@@ -7,6 +7,7 @@
 //! Reference: C. I. Watson, "NIST Special Database 4, Fingerprint Database,"
 //! NIST, 1992; C. Watson et al., "User's Guide to NIST Biometric Image Software
 //! (NBIS)," NISTIR 7392, 2007, describing the Bozorth3 algorithm.
+#![warn(missing_docs)]
 
 pub mod count;
 pub mod kplet;

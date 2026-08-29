@@ -2,6 +2,7 @@
 //!
 //! - `adapter::ZebraHandler` — HTTP client wrapping the py/rfid-reader-driver endpoint.
 //! - `double::MockZebra` — in-memory double with tamper injection.
+#![warn(missing_docs)]
 
 pub mod adapter;
 pub mod double;

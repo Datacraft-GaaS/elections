@@ -1,3 +1,5 @@
+//! abis-reports-adhoc crate.
+#![warn(missing_docs)]
 pub mod domain;
 pub mod error;
 pub mod repository;

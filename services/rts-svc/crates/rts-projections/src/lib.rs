@@ -1,3 +1,5 @@
+//! rts-projections crate.
+#![warn(missing_docs)]
 pub mod cro_view;
 pub mod iab_view;
 pub mod portal_snapshot;

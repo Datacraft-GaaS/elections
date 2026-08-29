@@ -3,6 +3,7 @@
 //! Fetches pulses from https://beacon.nist.gov/beacon/2.0/pulse/last and
 //! by-timestamp queries. Verifies the outputValue chaining hash.
 //! Caches recent pulses in memory.
+#![warn(missing_docs)]
 
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;

@@ -7,6 +7,7 @@
 //!   landmark positions used here.
 //! - Cootes, T. F. et al. (1992). "Active Shape Models." Springer. (68-point
 //!   landmark convention.)
+#![warn(missing_docs)]
 
 pub mod canonical;
 pub mod landmarks;

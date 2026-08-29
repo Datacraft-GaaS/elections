@@ -17,6 +17,7 @@
 //! # Key roles (ADR-0005)
 //!
 //! The [`KeyRole`] enum names every HSM-managed key purpose.
+#![warn(missing_docs)]
 
 pub mod blake3;
 pub mod constant_time;

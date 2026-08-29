@@ -6,6 +6,7 @@
 //!
 //!   Othman, N., Dorizzi, B., & Garcia-Salicetti, S. (2016). OSIRIS: An open source iris recognition software.
 //!   Pattern Recognition Letters, 82, 124-131.
+#![warn(missing_docs)]
 
 pub mod daugman;
 pub mod mask;

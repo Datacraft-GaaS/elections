@@ -3,6 +3,7 @@
 //! Reference: Klare, B. & Jain, A. K. (2013). "Heterogeneous Face Recognition:
 //! Matching NIR to Visible Light Images." IEEE TPAMI 35(12):2800-2810.
 //! Linear subspace projection approach for cross-modality matching.
+#![warn(missing_docs)]
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;

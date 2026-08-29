@@ -1,3 +1,5 @@
+//! hello-api crate.
+#![warn(missing_docs)]
 use axum::{routing::get, Json, Router};
 use serde::Serialize;
 

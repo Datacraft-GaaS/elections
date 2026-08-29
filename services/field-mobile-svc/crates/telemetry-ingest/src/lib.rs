@@ -6,6 +6,7 @@
 //! alert engine, daily Merkle snapshots, and Prometheus metrics.
 //!
 //! Ref: docs/features/mobile-telemetry-and-observability.md
+#![warn(missing_docs)]
 
 pub mod alert_engine;
 pub mod api;

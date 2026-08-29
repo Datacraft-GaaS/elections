@@ -1,3 +1,5 @@
+//! threat-intel crate.
+#![warn(missing_docs)]
 pub mod api;
 pub mod correlator;
 pub mod dashboard_export;

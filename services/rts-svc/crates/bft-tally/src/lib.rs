@@ -20,6 +20,7 @@
 //! | Latency (happy) | O(1) Kafka round-trip| 3 message delays     |
 //! | Leader failure  | Consumer restart     | View change          |
 //! | Rewrite attack  | Possible at broker   | Cryptographically impossible |
+#![warn(missing_docs)]
 
 pub mod adapter;
 pub mod api;

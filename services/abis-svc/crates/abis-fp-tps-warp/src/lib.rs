@@ -6,6 +6,7 @@
 //! TPS is the minimum-bending interpolant between two sets of control points.
 //! Applied to fingerprints: fit TPS from matched minutia pairs (probe -> gallery),
 //! warp probe minutiae, then re-run minutiae matching on aligned data.
+#![warn(missing_docs)]
 
 pub mod matcher;
 pub mod register;

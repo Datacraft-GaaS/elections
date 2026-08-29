@@ -3,6 +3,7 @@
 //! Reference: R. Cappelli, M. Ferrara, D. Maltoni, "Minutia cylinder-code: a new
 //! representation and matching technique for fingerprint recognition," IEEE Trans.
 //! Pattern Anal. Mach. Intell., vol. 32, no. 12, pp. 2128-2141, 2010.
+#![warn(missing_docs)]
 
 pub mod build;
 pub mod consolidate;

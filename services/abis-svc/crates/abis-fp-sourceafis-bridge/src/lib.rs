@@ -13,6 +13,7 @@
 //!    compact descriptor.
 //! 4. Matching: seed-pair selection (highest descriptor similarity), radial extension
 //!    from seed, score aggregation from paired-minutia count and descriptor agreement.
+#![warn(missing_docs)]
 
 pub mod matcher;
 pub mod minutia;

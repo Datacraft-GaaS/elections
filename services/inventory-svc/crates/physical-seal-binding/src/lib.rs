@@ -3,6 +3,7 @@
 //! Cryptographic binding of a physical seal photo to a custody-chain event.
 //! The kit HSM signs a SHA-256 hash of the photo bytes bound to the seal serial,
 //! then this crate verifies the signature before a CustodyEvent is accepted.
+#![warn(missing_docs)]
 
 pub mod api;
 pub mod bind;

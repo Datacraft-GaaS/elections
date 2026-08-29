@@ -7,6 +7,7 @@
 //! WORM storage: MinIO Object Lock is configured via bucket policy (s3:PutObjectLegalHold,
 //! COMPLIANCE mode, 15-year retention). This is enforced at the storage layer and is not
 //! modeled in this domain.
+#![warn(missing_docs)]
 
 pub mod domain;
 pub mod error;

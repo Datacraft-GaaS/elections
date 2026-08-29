@@ -14,6 +14,7 @@
 //!
 //!   Jain, A. K., Nandakumar, K., Ross, A. "Score normalization in multimodal
 //!   biometric systems," Pattern Recognition, vol. 38, no. 12, pp. 2270-2285, 2005.
+#![warn(missing_docs)]
 
 pub mod api;
 pub mod calibration;

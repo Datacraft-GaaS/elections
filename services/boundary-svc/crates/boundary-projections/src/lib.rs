@@ -2,6 +2,7 @@
 //!
 //! These are the flat DTOs returned by the HTTP API. They are separate from
 //! the domain aggregate so that the read path stays thin and allocation-cheap.
+#![warn(missing_docs)]
 
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};

@@ -2,6 +2,7 @@
 //!
 //! Provides ISO/IEC 19794-2 parsing, Bozorth3-style matching, and zone-weighted
 //! quality scoring for full and partial palm prints.
+#![warn(missing_docs)]
 
 pub mod domain;
 pub mod matcher;

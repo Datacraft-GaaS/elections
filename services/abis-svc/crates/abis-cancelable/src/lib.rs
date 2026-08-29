@@ -2,6 +2,7 @@
 //!
 //! Implements BioHashing, random projection (Johnson-Lindenstrauss), fuzzy
 //! vault, fuzzy commitment, revocation, and renewal primitives.
+#![warn(missing_docs)]
 
 pub mod biohash;
 pub mod fuzzy_commit;

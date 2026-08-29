@@ -6,6 +6,7 @@
 //! - Timeout: per-request timeout wrapper
 //! - Idempotency: deduplication by (subject, key) with body-hash conflict detection
 //! - Degradation mode: Normal / Degraded / ReadOnlyLockdown shared flag
+#![warn(missing_docs)]
 
 pub mod error;
 pub mod degradation;

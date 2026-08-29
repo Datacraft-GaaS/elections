@@ -1,3 +1,5 @@
+//! abis-render-docx crate.
+#![warn(missing_docs)]
 pub mod error;
 pub mod render;
 

@@ -4,6 +4,7 @@
 //! Conventions per ADR-0011: Idempotency-Key on all writes with a 24 hour
 //! response snapshot replay, RFC 9457 problem+json errors, x-eel-tier aware
 //! auth posture (internal mTLS terminated at the Envoy sidecar, tier 2/3 JWT).
+#![warn(missing_docs)]
 
 pub mod error;
 pub mod idem;

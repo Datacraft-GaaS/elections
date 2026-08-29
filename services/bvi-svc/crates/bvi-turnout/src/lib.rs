@@ -2,6 +2,7 @@
 //!
 //! Scope resolution is pure logic; aggregation runs runtime sqlx queries so
 //! nothing here depends on compile-time database state.
+#![warn(missing_docs)]
 
 use chrono::{DateTime, Utc};
 use serde::Serialize;

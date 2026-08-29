@@ -2,6 +2,7 @@
 //!
 //! Accepts Play Integrity, App Attest, TPM quote, or legacy software
 //! attestation payloads and returns an AttestationVerdict.
+#![warn(missing_docs)]
 pub mod verdict;
 pub mod verify;
 

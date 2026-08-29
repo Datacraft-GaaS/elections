@@ -10,6 +10,7 @@
 //! - `quality`  -- quality gates (NFIQ2 / ICAO / ISO 29794)
 //! - `fairness` -- per-demographic FMR/FNMR harness (ISO 19795-10)
 //! - `pad`      -- presentation attack detection interface
+#![warn(missing_docs)]
 
 pub mod adjudication;
 pub mod batch;

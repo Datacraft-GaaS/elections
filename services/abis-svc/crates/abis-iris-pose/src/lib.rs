@@ -2,6 +2,7 @@
 //!
 //! Estimates gaze angle from pupil/limbus displacement and warps the iris
 //! image to compensate for off-axis capture up to approximately +/-20 degrees.
+#![warn(missing_docs)]
 
 pub mod correction;
 pub mod pose;

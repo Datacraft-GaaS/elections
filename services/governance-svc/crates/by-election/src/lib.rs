@@ -1,3 +1,5 @@
+//! by-election crate.
+#![warn(missing_docs)]
 pub mod cost_report;
 pub mod handlers;
 pub mod kit_plan;

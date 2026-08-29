@@ -1,3 +1,5 @@
+//! inspection crate.
+#![warn(missing_docs)]
 pub mod api;
 pub mod auto_referral;
 pub mod domain;

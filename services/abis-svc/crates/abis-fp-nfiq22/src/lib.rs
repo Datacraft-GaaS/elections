@@ -5,6 +5,7 @@
 //! F. Schwaiger et al., 2021.
 //!
 //! The quality score is a non-negative integer in [0, 100] where higher is better.
+#![warn(missing_docs)]
 
 pub mod calibrator;
 pub mod features;

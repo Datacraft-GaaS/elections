@@ -1,3 +1,5 @@
+//! voter-card crate.
+#![warn(missing_docs)]
 pub mod blacklist;
 pub mod error;
 pub mod models;

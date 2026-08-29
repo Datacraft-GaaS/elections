@@ -1,6 +1,7 @@
 //! eel-adapter-satellite: Starlink/VSAT fallback bearer adapter for edge kits
 //!
 //! Wire: Starlink gRPC API + VSAT AT-command bridge; satellite link status, bandwidth, latency metrics.
+#![warn(missing_docs)]
 
 use axum::{extract::State, http::StatusCode, response::Json, routing::{get, post}, Router};
 use serde::{Deserialize, Serialize};

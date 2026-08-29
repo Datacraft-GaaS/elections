@@ -1,3 +1,5 @@
+//! abis-attest crate.
+#![warn(missing_docs)]
 pub mod attestation;
 pub mod error;
 pub mod nonce;

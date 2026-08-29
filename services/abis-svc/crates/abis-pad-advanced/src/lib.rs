@@ -5,6 +5,7 @@
 //! and voice (replay, synthesis, conversion) modalities.
 //!
 //! Enforces iBeta Level 1 and Level 2 PAI coverage via `PadPolicy`.
+#![warn(missing_docs)]
 
 pub mod challenge_response;
 pub mod deepfake;

@@ -1,3 +1,5 @@
+//! abis-watchlist crate.
+#![warn(missing_docs)]
 pub mod domain;
 pub mod index;
 pub mod manager;

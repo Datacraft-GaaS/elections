@@ -1,3 +1,5 @@
+//! eel-api-server-rs crate.
+#![warn(missing_docs)]
 pub mod builder;
 pub mod error;
 pub mod middleware;

@@ -25,6 +25,7 @@
 //! set of shares yields *some* 32-byte value, just not the right key.
 //! Authentication comes from the payload tag: opening a sealed payload with
 //! such a wrong key fails the tag check ([`ThresholdError::TagMismatch`]).
+#![warn(missing_docs)]
 
 use ark_bls12_381::Fr;
 use ark_ff::{BigInteger, Field, One, PrimeField, UniformRand, Zero};

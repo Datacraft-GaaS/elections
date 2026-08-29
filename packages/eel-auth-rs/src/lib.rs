@@ -4,6 +4,7 @@
 //! - Subject extraction with roles and purpose scopes
 //! - SpiceDB ReBAC check with in-memory cache and fail-closed semantics
 //! - Audit event emission via the `AuditSink` trait
+#![warn(missing_docs)]
 
 pub mod error;
 pub mod subject;

@@ -1,3 +1,5 @@
+//! intl-observer crate.
+#![warn(missing_docs)]
 pub mod engine;
 pub mod handlers;
 pub mod models;

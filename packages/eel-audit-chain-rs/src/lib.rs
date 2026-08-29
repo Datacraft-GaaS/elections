@@ -33,6 +33,7 @@
 //! `x-client-spiffe-id` header, operation `"{method} {path}"`, params hash =
 //! BLAKE3 of the raw query string — the body is never read). File-flush errors
 //! are logged at warn level and never fail the request.
+#![warn(missing_docs)]
 
 use std::fs::OpenOptions;
 use std::io::Write;

@@ -1,4 +1,5 @@
 //! tlog-domain — aggregate types for the eel transparency log (WP-2.1, ADR-0017).
+#![warn(missing_docs)]
 
 pub mod domain;
 pub mod error;

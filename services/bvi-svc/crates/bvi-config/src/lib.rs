@@ -2,6 +2,7 @@
 //!
 //! Read once at process start (`DATABASE_URL`, `BIND_ADDR`, `EEL_ELECTION_ID`).
 //! Deliberately dependency-free so it stays trivially testable.
+#![warn(missing_docs)]
 
 use std::env;
 

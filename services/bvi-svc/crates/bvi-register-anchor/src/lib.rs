@@ -10,6 +10,7 @@
 //! registry cached at startup (`EEL_REGISTER_BUNDLES`), so it remains
 //! answerable even when upstream services are unreachable (views are flagged
 //! `from_cache` rather than hidden).
+#![warn(missing_docs)]
 
 use blake3::Hasher;
 use serde::{Deserialize, Serialize};

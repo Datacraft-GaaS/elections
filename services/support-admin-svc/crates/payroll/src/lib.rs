@@ -2,6 +2,7 @@
 //!
 //! WP-5.6 — M55 HR-Payroll service: job applications, staff contracts,
 //! payroll runs, payslip lines, and statutory deductions.
+#![warn(missing_docs)]
 
 pub mod domain;
 pub mod error;

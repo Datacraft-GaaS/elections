@@ -22,6 +22,7 @@
 //! assert_eq!(envelope.specversion, "1.0");
 //! # }
 //! ```
+#![warn(missing_docs)]
 
 pub mod audit_chain;
 pub mod builder;

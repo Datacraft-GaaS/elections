@@ -2,6 +2,7 @@
 //!
 //! Builds a match graph from adjudication-confirmed pairs, then finds connected
 //! components to identify duplicate clusters. Runs nightly over the last 30 days.
+#![warn(missing_docs)]
 
 pub mod api;
 pub mod cluster;

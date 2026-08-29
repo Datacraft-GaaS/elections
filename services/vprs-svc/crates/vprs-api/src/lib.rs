@@ -1,3 +1,5 @@
+//! vprs-api crate.
+#![warn(missing_docs)]
 pub mod error;
 pub mod routes;
 pub mod state;

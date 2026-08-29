@@ -2,6 +2,7 @@
 //!
 //! Supports SPDZ, BGW, GMW, Yao, and AB+ protocols with Shamir secret sharing.
 //! Tests use a 3-party local simulation.
+#![warn(missing_docs)]
 
 pub mod match_dot;
 pub mod policy;

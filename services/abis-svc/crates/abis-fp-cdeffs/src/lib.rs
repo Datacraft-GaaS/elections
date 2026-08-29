@@ -2,6 +2,7 @@
 //!
 //! Reference: NIST SP 500-290 e3 Annex A, "CDEFFS -- Candidate Definition of
 //! Extended Feature Set for Fingerprints"; ANSI/NIST-ITL 1-2011 Type-9 fields 300-999.
+#![warn(missing_docs)]
 
 pub mod features;
 pub mod matcher;

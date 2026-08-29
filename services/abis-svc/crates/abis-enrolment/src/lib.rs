@@ -2,6 +2,7 @@
 //!
 //! Drives biometric enrolment jobs from Received through quality check,
 //! 1:N deduplication, adjudication routing, and final gallery placement.
+#![warn(missing_docs)]
 
 pub mod domain;
 pub mod error;

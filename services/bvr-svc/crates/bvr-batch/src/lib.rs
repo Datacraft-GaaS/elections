@@ -1,3 +1,5 @@
+//! bvr-batch crate.
+#![warn(missing_docs)]
 pub mod ingest;
 pub mod export;
 pub mod sar;

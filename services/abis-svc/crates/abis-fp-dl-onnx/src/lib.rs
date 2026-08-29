@@ -9,6 +9,7 @@
 //! When the `onnx` feature is disabled or the model file is absent, a deterministic
 //! hash-based pseudo-embedding is used so the crate remains testable without a GPU
 //! or model artefact.
+#![warn(missing_docs)]
 
 pub mod embed;
 pub mod fusion;

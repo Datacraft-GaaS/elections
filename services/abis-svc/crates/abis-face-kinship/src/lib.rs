@@ -9,6 +9,7 @@
 //! Kinship is estimated purely from embedding cosine similarity here, which is
 //! a baseline; a full system would use a dedicated kinship metric learned from
 //! family photo datasets.
+#![warn(missing_docs)]
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;

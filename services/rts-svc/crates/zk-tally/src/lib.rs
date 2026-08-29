@@ -33,6 +33,7 @@
 //! let vk = params.vk();
 //! assert!(TallyVerifier::verify(&proof, &vk, &published).unwrap());
 //! ```
+#![warn(missing_docs)]
 
 pub mod circuit;
 pub mod error;

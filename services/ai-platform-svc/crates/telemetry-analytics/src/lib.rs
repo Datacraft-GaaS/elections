@@ -2,6 +2,7 @@
 //!
 //! Mobile-telemetry analytics and anomaly detection for the eel platform.
 //! Implements the nine detectors specified in mobile-observability spec §7.
+#![warn(missing_docs)]
 
 pub mod api;
 pub mod backtest;

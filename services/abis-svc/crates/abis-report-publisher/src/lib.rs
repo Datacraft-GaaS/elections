@@ -2,6 +2,7 @@
 //!
 //! Orchestrates delivery of generated report artefacts to subscribers via:
 //! email, webhook, kafka, sftp, gov_printer, kbc_sftp, and api_pull channels.
+#![warn(missing_docs)]
 
 pub mod domain;
 pub mod repository;

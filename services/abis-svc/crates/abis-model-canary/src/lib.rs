@@ -2,6 +2,7 @@
 //!
 //! Supports progressive traffic shifting 0->10->25->50->100% with 15-min hold
 //! periods between steps. Deterministic per-subject assignment via FNV-1a hash.
+#![warn(missing_docs)]
 
 pub mod canary;
 pub mod dispatcher;

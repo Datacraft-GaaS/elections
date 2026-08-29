@@ -52,6 +52,7 @@
 //!     Ok(())
 //! }
 //! ```
+#![warn(missing_docs)]
 
 pub mod envelope;
 pub mod error;

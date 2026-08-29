@@ -7,6 +7,7 @@
 //!   definition; Gaussian mechanism used here)
 //! - Gross, R. et al. (2009). "Face de-identification." Protection of
 //!   Privacy in Surveillance Systems. Springer. (composite-face approach)
+#![warn(missing_docs)]
 
 pub mod kanon;
 pub mod dp;

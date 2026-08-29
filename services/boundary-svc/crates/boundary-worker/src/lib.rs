@@ -7,6 +7,7 @@
 //!    VRA-analog metrics for every active boundary kind every 15 minutes.
 //! 3. `geojson_tarball` - signs and publishes a GeoJSON tarball to MinIO every
 //!    15 minutes; consumers verify via verifier-rs.
+#![warn(missing_docs)]
 
 pub mod fairness;
 pub mod geojson_producer;

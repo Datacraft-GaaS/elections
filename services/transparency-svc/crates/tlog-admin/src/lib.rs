@@ -1,4 +1,5 @@
 //! tlog-admin — operational CLI for the eel transparency log.
+#![warn(missing_docs)]
 
 pub mod attestation;
 pub mod bulk_ingest;

@@ -6,6 +6,7 @@
 //! platform binds capture behind the [`BiometricSensorDriver`] trait. Any
 //! vendor hardware that exposes the required featureset plugs in as an
 //! adapter; CI and local dev use the [`MockSensorDriver`] synthetic double.
+#![warn(missing_docs)]
 pub mod sensor_driver;
 
 pub use sensor_driver::{

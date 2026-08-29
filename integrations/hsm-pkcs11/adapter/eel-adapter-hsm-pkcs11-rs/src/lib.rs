@@ -4,6 +4,7 @@
 //! vendor-specific slot/label conventions.
 //!
 //! Vendors: Thales Luna 7, Utimaco CryptoServer, SoftHSMv2 (dev/test).
+#![warn(missing_docs)]
 
 use thiserror::Error;
 

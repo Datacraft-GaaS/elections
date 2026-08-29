@@ -9,6 +9,7 @@
 //!   NISTIR 7123, 2004.
 //! - P. Grother, M. Indovina, "Proprietary Fingerprint Template Evaluation III,"
 //!   NIST IR 8307, 2020.
+#![warn(missing_docs)]
 
 pub mod corpus;
 pub mod harness;

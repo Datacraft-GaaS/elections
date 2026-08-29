@@ -7,6 +7,7 @@
 //!   and Illumination Invariant Face Recognition." AVSS 2009.
 //! - Deng, Y. et al. (2019). "Accurate 3D Face Reconstruction with Weakly-
 //!   Supervised Learning." CVPRW 2019. (BFM parameter shapes)
+#![warn(missing_docs)]
 
 pub mod bfm;
 pub mod spoof;

@@ -1,3 +1,5 @@
+//! abis-explainability crate.
+#![warn(missing_docs)]
 pub mod overlay;
 pub mod saliency;
 pub mod shap;

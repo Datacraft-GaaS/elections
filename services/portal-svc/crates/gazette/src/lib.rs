@@ -1,3 +1,5 @@
+//! gazette crate.
+#![warn(missing_docs)]
 pub mod api;
 pub mod domain;
 pub mod events;

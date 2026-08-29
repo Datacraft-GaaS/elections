@@ -1,3 +1,5 @@
+//! parallel-manual-count crate.
+#![warn(missing_docs)]
 pub mod api;
 pub mod divergence;
 pub mod ingest;

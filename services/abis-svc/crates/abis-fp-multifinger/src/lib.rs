@@ -6,6 +6,7 @@
 //!   - Thumbs (right, left)
 //!
 //! Reference: ISO/IEC 29109-2:2018 fingerprint slap segmentation conformance testing.
+#![warn(missing_docs)]
 
 pub mod dpr;
 pub mod matcher;

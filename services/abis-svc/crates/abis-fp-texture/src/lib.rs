@@ -6,6 +6,7 @@
 //! - MB-LBP: Multi-Block LBP for scale invariance.
 //!
 //! Used as a fallback when minutiae extraction quality is low.
+#![warn(missing_docs)]
 
 pub mod fingercode;
 pub mod lbp;

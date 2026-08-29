@@ -5,6 +5,7 @@
 //!   (IoU-based assignment for short-term tracking, the SORT algorithm)
 //! - Best, S. & Best, N. (2021). "Quality-weighted averaging of face
 //!   embeddings across video frames." FG 2021. (quality-weighted fusion)
+#![warn(missing_docs)]
 
 pub mod track;
 pub mod tracker;

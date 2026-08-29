@@ -1,3 +1,5 @@
+//! synth crate.
+#![warn(missing_docs)]
 // eel-synth: deterministic synthetic data generator.
 // Every public module is re-exported for use in tests and integration harnesses.
 

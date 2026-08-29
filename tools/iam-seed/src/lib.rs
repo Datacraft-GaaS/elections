@@ -1,3 +1,5 @@
+//! iam-seed crate.
+#![warn(missing_docs)]
 /// Compute a diff between two JSON values.
 /// Returns human-readable change descriptions:
 ///   `+ key: value`    -- key present in desired but not in current

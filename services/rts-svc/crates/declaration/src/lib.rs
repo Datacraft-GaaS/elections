@@ -1,6 +1,7 @@
 //! Declaration crate: event-sourced Declaration, CertificateOfElection,
 //! PetitionWindowTracker, and the presidential run-off/tie rules engine.
 //! Part of rts-svc WP-3.3 (M51).
+#![warn(missing_docs)]
 
 pub mod aggregate;
 pub mod api;

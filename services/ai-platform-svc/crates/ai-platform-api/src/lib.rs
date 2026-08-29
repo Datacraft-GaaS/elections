@@ -2,6 +2,7 @@
 //!
 //! The HTTP surface (handlers/router) is being built out; the persistence
 //! contract below is complete with Pg and in-memory implementations.
+#![warn(missing_docs)]
 
 pub mod store;
 

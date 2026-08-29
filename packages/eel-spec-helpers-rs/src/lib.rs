@@ -1,5 +1,6 @@
 //! Shared helpers for spec contract handlers.
 //! Extracted from duplicated boilerplate across 31 `spec.rs` files (TD-08).
+#![warn(missing_docs)]
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};

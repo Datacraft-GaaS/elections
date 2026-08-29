@@ -7,6 +7,7 @@
 //!   Recognition." CVPR 2022. (adaptive margin based on image quality)
 //! - Wang, H. et al. (2018). "CosFace: Large Margin Cosine Loss for Deep Face
 //!   Recognition." CVPR 2018. (cosine softmax margin)
+#![warn(missing_docs)]
 
 pub mod hash_embedder;
 pub mod model;

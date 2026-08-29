@@ -1,4 +1,5 @@
 //! tlog-witness — witness cosign API and IAB witness client.
+#![warn(missing_docs)]
 
 pub mod gossip;
 pub mod handler;

@@ -2,6 +2,7 @@
 //!
 //! Re-exports the public API for external callers. Internal modules are
 //! `pub(crate)` unless they are part of the public surface.
+#![warn(missing_docs)]
 
 pub mod api;
 pub mod audit;

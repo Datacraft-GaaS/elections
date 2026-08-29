@@ -16,6 +16,7 @@
 //! References:
 //! - RFC 6962: Ben Laurie, Adam Langley, Emilia Kasper (2013)
 //! - Google Trillian: https://github.com/google/trillian
+#![warn(missing_docs)]
 
 pub mod api;
 pub mod entry;
