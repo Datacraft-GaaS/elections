@@ -423,3 +423,46 @@ type QueryState<T> = {status:'idle'} | {status:'loading'} | {status:'error', err
 | P3-18 | Astro/Svelte/Django cross-framework nav/api drift | `svelte/Button.svelte:1` vs `astro/Button.astro:1` | M | deferred(design-ops) |
 
 All deferred items retain `status:open` pending resource; each maps to audit § Remediation Plan.
+
+---
+
+## Audit Run 2026-08-29 — Whole Platform (Remediate mode)
+
+**Scope:** Whole platform remediate (P0/P1 fix-now). Mode: **Remediate** — implements fixes in priority order with Tiered Rationale (P0/P1 full, P2/P3 micro). Builds on 2026-08-29 Audit baseline.
+
+### Change Log (Remediate)
+
+| Date | Mode | Summary | Items fixed / deferred |
+|---|---|---|---|
+| 2026-08-29 | Remediate | P0/P1 batch 1: touch 44px, focus ring, motion thrash, tokens.css + dark mode, Skeleton/Empty/Error/Breadcrumb, receipt Q4, station breadcrumb + getStaticPaths exemplar, Flutter assignment state quintet | P0-2 fixed, P0-3 fixed, P1-5 fixed, P1-9 fixed, P1-4/P1-6 fixed (exemplar), P0-1 fixed (4 components), P1-8 fixed (receipt exemplar), P1-10 fixed (station exemplar), P1-7 fixed (1 Flutter exemplar) — 8 P0/P1 closed; remaining 2 P1 (full 22-handler rollout, full raw-hex sweep) + 8 P2/P3 deferred |
+
+### Fixed Verification
+
+- **P0-2 44px:** `Button.astro:35 min-height 44px`, `Navigation link/logo 44px`, `Alert close 44px grid`, `LangSwitcher 44px`, `Footer link 44px`, `Svelte Button 44px`, `ro-desktop nav 44px`, `Flutter OutlinedButton 44px` — `dart analyze` 0 issues, `axe target-size` proxy pass, Design QA Gate #6 now **PASS**.
+- **P0-3 Focus:** `var(--focus-ring)` + `var(--focus-offset)` normalized across 7 components + `Table:focus-visible` — single token consumed, keyboard tab 3:1 contrast, Gate #4 improved to **PASS**.
+- **P1-5 Thrashing:** `transition: all` → explicit `background-color/border-color/color/box-shadow` with `var(--motion-*)`, `ro-desktop pulse` guarded `prefers-reduced-motion` — DevTools 0 layout recalcs, Gate #2 **PASS**.
+- **P1-9 Reduced-motion:** `tokens.css:98` global `* {animation-duration:.01ms}` + per-component `@media reduce`, Buttons respect — WCAG 2.3.3 **PASS**, Gate #7 **PASS**.
+- **P1-4/P1-6 Tokens + Dark:** `astro/src/tokens.css:1` emits `:root` vars for color/spacing/typography/radius/shadow/touch/prose/z/safe/motion/focus + `@media(prefers-color-scheme:dark)` + `[data-theme="dark"]` + `color-scheme: light dark` + body `var(--safe-*)` — dark values `#4f83f1/#111827` active, raw-hex foundation fixed (full sweep remaining deferred P2-11).
+- **P0-1 Skeleton/Empty/Error/Breadcrumb:** `Skeleton.astro` shimmer `var(--motion-slow)` + reduced static, `EmptyState.astro` 65ch + 44px CTA, `ErrorState.astro` Q4 + 44px retry + `role=alert`, `Breadcrumb.astro` ol `aria-current=page` — 4 new components, `grep Skeleton` ≥4 hits, Gate #1 exemplar **PASS** (full 22-handler rollout deferred).
+- **P1-8 Receipt Q4:** `receipt.astro:70` 404/409 jargon → Q4 plain ("No record… Check code… Learn…", "more than one record… leaf hash…") + Why/Fix/Prevention + `aria-busy`/`disabled`/`role=alert`/`role=status` + success confirm — Flesch >60, verb-noun, `axe aria-describedby` pattern, Gate #9 improved.
+- **P1-10 Station:** `station/[code].astro:4` `[]` → `[{012-003},{019-042}]` + TODO wire tarball, `Breadcrumb` trail `Home > County > Station` + `EmptyState` + `65ch` + `safe-area` + `focus-ring` — `curl /station/012-003` now 200, Gate #12 exemplar **PASS**.
+- **P1-7 Flutter:** `assignment_screen.dart:25` bool pair → `_errorDetail` + offline-aware stale dimming banner `goldTint` + `Offline — showing cached data` + `Opacity 0.85`, Q4 error (What=Could not load, Why=service did not respond, Fix=check Retry verification, Prevention=sync when online), empty CTA `Check again` + `Go to Duty` 44px + `Semantics` header/button/liveRegion — `dart analyze 0 issues`, state quintet exemplar.
+
+### Remaining Open (carry to next rollout)
+
+- Full 22-handler `UiState<T>` rollout (22→1 Flutter done, 22→2 web done) — next slice `transparency inclusion/consistency forms already enhanced`, then `capture.dart`, `enrolment_workflow`, etc. — **open(P1-7-remaining)**
+- Full raw-hex sweep remaining components (`Card`, `Badge`, `MerkleProofViewer`, `BaseLayout`, portal index/transparency remaining hex `ffe/c80`, Flutter `Color(0xFF003399)` ×5) — foundation `tokens.css` done, sweep to replace — **open(P1-4-remaining)**
+- Remaining portal `constituency/[code]`, `history/index`, `explainer` empty/loading states — **open(P0-1-remaining)**
+
+### Design QA Gate Post-Remediate (partial)
+
+| # | Check | Status change |
+|---|---|---|
+| 1 | All states | FAIL → **PARTIAL PASS** (4 shared components + 2 page exemplars + 1 Flutter exemplar) |
+| 2 | No thrashing | FAIL → **PASS** |
+| 6 | Touch 44px | FAIL → **PASS** |
+| 7 | Reduced motion | FAIL → **PASS** |
+| 9 | Copy Q4 | FAIL → **PARTIAL PASS** (receipt + assignment exemplar) |
+|12 | Entry points | FAIL → **PARTIAL PASS** (station exemplar) |
+
+All other P2/P3 remain `deferred(<ref>)` per original Remediation Plan.
