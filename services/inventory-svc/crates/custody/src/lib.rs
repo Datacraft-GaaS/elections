@@ -8,8 +8,10 @@ pub mod handlers;
 pub mod router;
 /// Typed models for `custody/openapi.yaml`.
 pub mod spec;
-/// In-memory application state — swap boundary: replace `Mutex<HashMap>` with `sqlx::PgPool` + `Store` trait when persistence lands.
+/// Postgres-backed application state (no in-memory). `Store::Mem` only behind `#[cfg(test)]`.
 pub mod state;
+/// Postgres + memory store (Store enum).
+pub mod store;
 /// Domain events.
 pub mod events;
 /// Geo RBAC helpers.

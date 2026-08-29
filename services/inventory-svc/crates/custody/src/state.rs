@@ -33,34 +33,35 @@
 
 use std::sync::Arc;
 
-use eel_spec_helpers_rs::SharedMap;
+use sqlx::PgPool;
 
-use crate::spec::{Asset, CustodyTransfer, ReconcileReport, Reserve, Seal, SealBreak};
+use crate::store::{MemStore, Store};
 
-/// Shared application state.
+/// Shared application state — postgres-backed (no purely in-memory).
 ///
-/// Uses [`SharedMap`] (thin wrapper over `Arc<Mutex<HashMap>>`) from
-/// `eel-spec-helpers-rs` to deduplicate the `Arc<Mutex<HashMap>>` boilerplate
-/// duplicated across ~21 handler state files (TD-03 / TD-08 exemplar).
-#[derive(Clone, Default)]
+/// Production (`Store::Pg`) uses `PgPool` against `custody_api_*` tables
+/// (`migrations/V052__custody_api_surface.sql`). Hermetic tests use
+/// `Store::Mem` (SharedMap) behind `#[cfg(test)]` only.
+#[derive(Clone)]
 pub struct AppState {
-    /// assets.
-    pub assets: SharedMap<String, Asset>,
-    /// transfers.
-    pub transfers: SharedMap<String, Vec<CustodyTransfer>>,
-    /// seals.
-    pub seals: SharedMap<String, Seal>,
-    /// seal_breaks.
-    pub seal_breaks: SharedMap<String, Vec<SealBreak>>,
-    /// reserves.
-    pub reserves: SharedMap<String, Reserve>,
-    /// reconciles.
-    pub reconciles: SharedMap<String, ReconcileReport>,
+    /// store.
+    pub store: Store,
+}
+
+impl Default for AppState {
+    fn default() -> Self {
+        Self { store: Store::Mem(MemStore::default()) }
+    }
 }
 
 impl AppState {
-    /// new.
+    /// new in-memory (tests, hermetic).
     pub fn new() -> Arc<Self> {
         Arc::new(Self::default())
+    }
+
+    /// new from postgres pool (production).
+    pub fn from_pool(pool: PgPool) -> Arc<Self> {
+        Arc::new(Self { store: Store::Pg(pool) })
     }
 }
