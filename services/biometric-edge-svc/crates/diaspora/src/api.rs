@@ -23,16 +23,41 @@ use crate::roll::roll_from_voter_ids;
 use crate::transmission::{BatchStatus, TransmissionBatch, batch_transmit};
 
 /// In-memory state for development / testing. Replace with sqlx pool in prod.
-#[derive(Default)]
+/// Postgres-backed for embassies/ballot_dispatches/return_dispatches via `Store` (no in-memory).
 pub struct DiasporaState {
     pub stations: Mutex<Vec<EmbassyStation>>,
     pub rolls: Mutex<Vec<DiasporaRoll>>,
     pub forms: Mutex<Vec<Form34ADiaspora>>,
     pub pouches: Mutex<Vec<PouchCustody>>,
     pub batches: Mutex<Vec<TransmissionBatch>>,
-    pub embassies: Mutex<HashMap<String, serde_json::Value>>,
-    pub ballot_dispatches: Mutex<HashMap<String, serde_json::Value>>,
-    pub return_dispatches: Mutex<HashMap<String, serde_json::Value>>,
+    pub diaspora_store: crate::store::Store,
+}
+
+impl Default for DiasporaState {
+    fn default() -> Self {
+        Self {
+            stations: Mutex::new(Vec::new()),
+            rolls: Mutex::new(Vec::new()),
+            forms: Mutex::new(Vec::new()),
+            pouches: Mutex::new(Vec::new()),
+            batches: Mutex::new(Vec::new()),
+            diaspora_store: crate::store::Store::mem(),
+        }
+    }
+}
+
+impl DiasporaState {
+    /// Create with postgres pool (production — no in-memory).
+    pub fn from_pool(pool: sqlx::PgPool) -> Self {
+        Self {
+            stations: Mutex::new(Vec::new()),
+            rolls: Mutex::new(Vec::new()),
+            forms: Mutex::new(Vec::new()),
+            pouches: Mutex::new(Vec::new()),
+            batches: Mutex::new(Vec::new()),
+            diaspora_store: crate::store::Store::pg(pool),
+        }
+    }
 }
 
 pub type SharedState = Arc<DiasporaState>;

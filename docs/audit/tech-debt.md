@@ -211,3 +211,33 @@ Density = findings ÷ file count (approx, `cloc` unavailable for full workspace;
 |---|---|---|---|
 | 2026-08-30 | Remediate | voter-card postgres (Store enum, V055, handlers, state). | 1 fixed (voter-card P0 partial), 0 deferred |
 
+---
+
+## Audit Run 2026-08-30 — Remediate (diaspora postgres, P0 partial)
+
+**Scope:** `services/biometric-edge-svc/crates/diaspora` (TD-03-P0-01 next) + `services/biometric-edge-svc/migrations/V5__diaspora_api.sql`. Build mode.
+
+**Changes:**
+
+- `services/biometric-edge-svc/migrations/V5__diaspora_api.sql:1` — `diaspora_api_embassies` (`embassy_code TEXT PK`, `data JSONB`), `diaspora_api_ballot_dispatches` (`dispatch_id TEXT PK`, `data JSONB`), `diaspora_api_return_dispatches` (`return_id TEXT PK`, `data JSONB`), `INDEX`, reversible `DROP`.
+- `services/biometric-edge-svc/crates/diaspora/src/store.rs:1` — new `Store` enum (`Pg(PgPool)`/`Mem(MemStore {embassies, ballot_dispatches, return_dispatches})`) 6 async methods `sqlx` (`list_embassies` `SELECT data`, `get_embassy` `SELECT`, `create_ballot_dispatch` `INSERT ... ON CONFLICT DO UPDATE`, `list_ballot_dispatches` `SELECT`, `get_ballot_dispatch` `SELECT`, `confirm_ballot_delivery` `UPDATE`, `list_return_dispatches` `SELECT`) against `diaspora_api_*`, `Mem` via `Arc<Mutex<HashMap>>`, `StoreError::NotFound/Db`, `#![allow(missing_docs)]`.
+- `services/biometric-edge-svc/crates/diaspora/src/lib.rs:1` — `pub mod store`.
+- `services/biometric-edge-svc/crates/diaspora/src/api.rs:1` — `DiasporaState { stations, rolls, forms, pouches, batches, diaspora_store: Store }` (`Default→Mem`, `from_pool(PgPool)→Pg`), `pub type SharedState = Arc<DiasporaState>`.
+- `services/biometric-edge-svc/crates/diaspora/src/spec.rs:1` — 6 handlers `async` via `s.diaspora_store.*.await` (`list_embassies` `list_embassies`, `get_embassy` `get_embassy`, `create_ballot_dispatch` `create_ballot_dispatch`, `list_ballot_dispatches` `list_ballot_dispatches`, `get_ballot_dispatch` `get_ballot_dispatch`, `confirm_ballot_delivery` `confirm_ballot_delivery`, `list_return_dispatches` `list_return_dispatches`) + `store_err` `500` + `tracing::error` + `page`.
+
+**Verification:** `cargo check -p eel-diaspora` clean (110 `missing_docs` warnings only), `cargo check --workspace` clean (0 errors), `completeness 0 errors`.
+
+**Finding status update:**
+
+| # | Title | Before | After |
+|---|---|---|---|
+| TD-03-P0-01 | In-memory contract stores (diaspora) | open (`Mutex<HashMap<String, Value>>` ×3) | **fixed(2026-08-30) for `diaspora` spec** — `diaspora/src/store.rs:1` + `api.rs:1` + `spec.rs:1` + `V5` now postgres; other `DiasporaState` vectors (`stations`/`rolls`/`forms`/`pouches`/`batches`) remain `Mutex<Vec>` (domain aggregates, not contract P0, deferred `manual`). |
+
+**Remaining P0 (open, next):** `rla` (`Mutex<HashMap>`), `reporting`, `court-interface`, `crms-api` (`public_*`), `intent`, `special-voter`, `ai-gateway` — each `Mutex<HashMap>` → `Store` enum + migration (next: `rla` `V056`).
+
+### Change Log (append)
+
+| Date | Mode | Summary | Items fixed / deferred |
+|---|---|---|---|
+| 2026-08-30 | Remediate | diaspora postgres (Store enum, V5, handlers, state). | 1 fixed (diaspora P0 partial), 0 deferred |
+

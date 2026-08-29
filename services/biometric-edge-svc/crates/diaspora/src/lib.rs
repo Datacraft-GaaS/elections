@@ -11,6 +11,7 @@
 
 pub mod api;
 pub mod spec;
+pub mod store;
 pub mod domain;
 pub mod events;
 pub mod import;
