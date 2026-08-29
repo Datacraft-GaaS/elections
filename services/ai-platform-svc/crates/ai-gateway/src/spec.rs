@@ -49,8 +49,7 @@ pub fn router() -> Router<AppState> {
 }
 
 fn page(items: &Value) -> Value {
-    let n = items.as_array().map_or(0, |a| a.len());
-    json!({ "items": items, "meta": { "page": 1, "page_size": n, "total": n, "total_pages": 1 } })
+    eel_spec_helpers_rs::page_value(items)
 }
 
 // --- registry ---

@@ -125,6 +125,7 @@ dependencies = [
  "axum 0.8.9",
  "bytes",
  "chrono",
+ "eel-spec-helpers-rs",
  "futures",
  "hex",
  "rstest",
