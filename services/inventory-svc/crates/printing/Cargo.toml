@@ -23,6 +23,7 @@ uuid       = { workspace = true }
 thiserror  = { workspace = true }
 tracing    = { workspace = true }
 tracing-subscriber = { workspace = true }
+eel-spec-helpers-rs = { path = "../../../../packages/eel-spec-helpers-rs" }
 axum              = { workspace = true }
 tokio             = { workspace = true }
 async-trait       = "0.1"

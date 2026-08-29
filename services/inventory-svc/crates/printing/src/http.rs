@@ -1,8 +1,7 @@
 //! HTTP server + public contract handlers for M39 ballot printing chain
 //! (printing/chain.yaml).
 
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use axum::{
     extract::{Path, State},
@@ -18,16 +17,17 @@ use uuid::Uuid;
 use crate::spec::{AuditEvent, DeliveryRecord, DeliveryRecordRequest, PrintOrder, PrintOrderRequest, QCDecision};
 
 /// In-memory store for printing contract handlers.
-/// Swap boundary: replace `Mutex<HashMap>` with `sqlx::PgPool` + `Store` trait
+/// Swap boundary: replace `SharedMap` with `sqlx::PgPool` + `Store` trait
 /// (see `governance-svc/crates/rla/src/store.rs` pattern) when persistence lands.
+/// Uses `eel-spec-helpers-rs::SharedMap` to deduplicate `Arc<Mutex<HashMap>>` boilerplate (TD-03/TD-08).
 #[derive(Clone, Default)]
 pub struct AppState {
     /// orders.
-    pub orders: Arc<Mutex<HashMap<Uuid, PrintOrder>>>,
+    pub orders: eel_spec_helpers_rs::SharedMap<Uuid, PrintOrder>,
     /// deliveries.
-    pub deliveries: Arc<Mutex<HashMap<Uuid, DeliveryRecord>>>,
+    pub deliveries: eel_spec_helpers_rs::SharedMap<Uuid, DeliveryRecord>,
     /// audit.
-    pub audit: Arc<Mutex<Vec<AuditEvent>>>,
+    pub audit: Arc<std::sync::Mutex<Vec<AuditEvent>>>,
 }
 
 /// SharedState.
@@ -69,11 +69,7 @@ async fn create_print_order(
         created_at: now,
         updated_at: now,
     };
-    state
-        .orders
-        .lock()
-        .expect("lock poisoned")
-        .insert(order.order_id, order.clone());
+    state.orders.insert(order.order_id, order.clone());
     state.audit.lock().expect("lock poisoned").push(AuditEvent {
         event_id: Uuid::now_v7(),
         event_type: "order_created".to_string(),
@@ -86,9 +82,7 @@ async fn create_print_order(
 }
 
 async fn list_print_orders(State(state): State<SharedState>) -> impl IntoResponse {
-    let guard = state.orders.lock().expect("lock poisoned");
-    let mut items: Vec<PrintOrder> = guard.values().cloned().collect();
-    drop(guard);
+    let mut items = state.orders.values();
     items.sort_by(|a, b| a.order_id.cmp(&b.order_id));
     Json(json!({ "orders": items }))
 }
@@ -97,8 +91,7 @@ async fn get_print_order(
     State(state): State<SharedState>,
     Path(order_id): Path<Uuid>,
 ) -> impl IntoResponse {
-    let guard = state.orders.lock().expect("lock poisoned");
-    match guard.get(&order_id) {
+    match state.orders.get(&order_id) {
         Some(o) => Json(o.clone()).into_response(),
         None => (StatusCode::NOT_FOUND, Json(json!({ "detail": "order not found" }))).into_response(),
     }
@@ -109,13 +102,18 @@ async fn submit_qc_decision(
     Path(order_id): Path<Uuid>,
     Json(req): Json<QCDecision>,
 ) -> impl IntoResponse {
-    let mut guard = state.orders.lock().expect("lock poisoned");
-    match guard.get_mut(&order_id) {
-        Some(o) => {
-            o.status = if req.passed { "qc".to_string() } else { "ordered".to_string() };
-            o.updated_at = Utc::now();
-            Json(o.clone()).into_response()
+    let res = state.orders.with_lock(|m| {
+        match m.get_mut(&order_id) {
+            Some(o) => {
+                o.status = if req.passed { "qc".to_string() } else { "ordered".to_string() };
+                o.updated_at = Utc::now();
+                Some(o.clone())
+            }
+            None => None,
         }
+    });
+    match res {
+        Some(o) => Json(o).into_response(),
         None => (StatusCode::NOT_FOUND, Json(json!({ "detail": "order not found" }))).into_response(),
     }
 }
@@ -136,11 +134,7 @@ async fn record_ballot_delivery(
         status: "received".to_string(),
         created_at: now,
     };
-    state
-        .deliveries
-        .lock()
-        .expect("lock poisoned")
-        .insert(delivery.delivery_id, delivery.clone());
+    state.deliveries.insert(delivery.delivery_id, delivery.clone());
     state.audit.lock().expect("lock poisoned").push(AuditEvent {
         event_id: Uuid::now_v7(),
         event_type: "delivery_recorded".to_string(),
