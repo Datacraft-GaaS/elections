@@ -122,7 +122,7 @@ async fn create_batch(
     .bind(batch_status_str(&batch.status))
     .bind(batch.ordered_at)
     .bind(batch.received_at)
-    .execute(&state.pool)
+    .execute(state.pool())
     .await
     .map_err(|e| ApiError::Internal(e.to_string()))?;
 
@@ -142,7 +142,7 @@ async fn get_batch(
     let row: Option<BatchRow> =
         sqlx::query_as(&format!("SELECT {BATCH_COLUMNS} FROM card_batches WHERE id = $1"))
             .bind(id)
-            .fetch_optional(&state.pool)
+            .fetch_optional(state.pool())
             .await
             .map_err(|e| ApiError::Internal(e.to_string()))?;
 

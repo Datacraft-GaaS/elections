@@ -11,7 +11,7 @@ async fn add_blacklist(
     Json(entry): Json<BlacklistEntry>,
 ) -> Result<StatusCode, ApiError> {
     let svc = BlacklistService;
-    svc.add_entry(&state.pool, entry)
+    svc.add_entry(state.pool(), entry)
         .await
         .map_err(|e| ApiError::Internal(e.to_string()))?;
     Ok(StatusCode::CREATED)

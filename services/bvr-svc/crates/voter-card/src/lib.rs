@@ -1,10 +1,12 @@
-//! voter-card crate.
+//! voter-card crate — postgres-backed (no in-memory).
 #![warn(missing_docs)]
 pub mod blacklist;
 pub mod error;
 pub mod models;
 pub mod routes;
 pub mod state;
+/// Postgres + memory store (Store enum).
+pub mod store;
 
 use axum::Router;
 

@@ -180,3 +180,34 @@ Density = findings ÷ file count (approx, `cloc` unavailable for full workspace;
 |---|---|---|---|
 | 2026-08-30 | Remediate | credential postgres (Store enum, V054, handlers, main). | 1 fixed (credential P0 partial), 0 deferred |
 
+---
+
+## Audit Run 2026-08-30 — Remediate (voter-card postgres, P0 partial)
+
+**Scope:** `services/bvr-svc/crates/voter-card` (TD-03-P0-01 next) + `services/bvr-svc/migrations/V055__voter_card_api.sql`. Build mode.
+
+**Changes:**
+
+- `services/bvr-svc/migrations/V055__voter_card_api.sql:1` — `voter_card_api_requests` (`TEXT PK`, `voter_id_hash`, `request_type`, `reason`, `preferred_collection_centre`, `status CHECK`, `submitted_at`, `collected_at`, `collection_centre_code`, `officer_hash`, `INDEX`) + `voter_card_api_centres` (`centre_code PK`, `name`, `county_code`, `address`, `operating_hours`, `open`, `INDEX`).
+- `services/bvr-svc/crates/voter-card/src/store.rs:1` — new `Store` enum (`Pg(PgPool)`/`Mem(MemStore {requests, centres})`) 4 async methods `sqlx` (`create_request` `INSERT`, `get_request` `SELECT`, `confirm_collection` `UPDATE`, `list_centres` `SELECT`) against `voter_card_api_*`, `Mem` via `Arc<Mutex<HashMap>>`, `StoreError::NotFound/Db`, `#![allow(missing_docs)]`.
+- `services/bvr-svc/crates/voter-card/src/state.rs:1` — `AppState { store: Store }` (`new(pool)→Pg`, `new_mem()→Mem`, `pool()` accessor for legacy `batches`/`blacklist`/`status` routes that still do direct `sqlx` via `state.pool()`).
+- `services/bvr-svc/crates/voter-card/src/lib.rs:1` — `pub mod store`.
+- `services/bvr-svc/crates/voter-card/src/routes/spec.rs:1` — remove `SpecState` `HashMap`, add `store_err` `404`/`500` + `tracing::error`, 4 handlers `async` via `state.store.*.await` (`request_voter_card` `store.create_request`, `get_voter_card_request` `store.get_request`, `confirm_voter_card_collection` `store.confirm_collection`, `list_collection_centres` `store.list_centres`).
+- `services/bvr-svc/crates/voter-card/src/routes/batches.rs:125` / `status.rs:36` / `blacklist.rs:14` — `&state.pool` → `state.pool()` (now via `Store::Pg`).
+
+**Verification:** `cargo check -p voter-card` clean (94 `missing_docs` warnings only), `cargo check --workspace` clean (0 errors), `completeness 0 errors`.
+
+**Finding status update:**
+
+| # | Title | Before | After |
+|---|---|---|---|
+| TD-03-P0-01 | In-memory contract stores (voter-card spec) | open (`Arc<Mutex<HashMap<String, VoterCardRequest>>>`) | **fixed(2026-08-30) for `voter-card` spec** — `voter-card/src/store.rs:1` + `state.rs:1` + `routes/spec.rs:1` + `V055` now postgres; test via `Mem`. |
+
+**Remaining P0 (open, next):** `diaspora` (`Mutex<HashMap<String, Value>>`), `rla` (`Mutex<HashMap>`), `reporting`, `court-interface`, `crms-api` (`public_*`), `intent`, `special-voter`, `ai-gateway` — each `Mutex<HashMap>` → `Store` enum + migration (next: `diaspora` `V056`).
+
+### Change Log (append)
+
+| Date | Mode | Summary | Items fixed / deferred |
+|---|---|---|---|
+| 2026-08-30 | Remediate | voter-card postgres (Store enum, V055, handlers, state). | 1 fixed (voter-card P0 partial), 0 deferred |
+

@@ -33,7 +33,7 @@ async fn card_status(
         "SELECT reason, blacklisted_at, source FROM card_blacklist WHERE card_number = $1",
     )
     .bind(&card_number)
-    .fetch_optional(&state.pool)
+    .fetch_optional(state.pool())
     .await
     .map_err(|e| crate::error::ApiError::Internal(e.to_string()))?;
 
