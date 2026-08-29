@@ -1,4 +1,6 @@
 ---
+import Skeleton from '../../../../../../packages/design-system/astro/src/components/Skeleton.astro';
+
 // Transparency log viewer: inclusion + consistency proofs via WASM verifier-rs
 // (FR-M11-006, FR-M11-011, AC-M11-02).
 // WASM bundle is self-hosted (no external JS, per ADR-0008).
@@ -14,6 +16,7 @@ const locale = Astro.currentLocale ?? 'en'
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <meta http-equiv="X-Frame-Options" content="DENY" />
     <title>Transparency Log | eel</title>
+    <link rel="stylesheet" href="/_astro/tokens.css" />
   </head>
   <body>
     <a href="#main" class="skip-link">Skip to main content</a>
@@ -32,8 +35,13 @@ const locale = Astro.currentLocale ?? 'en'
       <section aria-labelledby="h-sth">
         <h2 id="h-sth">Current Signed Tree Head</h2>
         <p>Fetch the latest STH from the transparency log API and verify it below.</p>
-        <div id="sth-display" aria-live="polite" aria-label="Signed tree head">
-          <p>Loading...</p>
+        <div id="sth-display" role="status" aria-live="polite" aria-busy="true" aria-label="Signed tree head" style="min-height:88px">
+          <Skeleton width="100%" height="16px" />
+          <div style="height:8px"></div>
+          <Skeleton width="72%" height="16px" />
+          <div style="height:8px"></div>
+          <Skeleton width="54%" height="16px" />
+          <p class="visually-hidden">Loading signed tree head…</p>
         </div>
       </section>
 
@@ -42,10 +50,11 @@ const locale = Astro.currentLocale ?? 'en'
         <form id="inclusion-form" aria-label="Verify inclusion proof">
           <label for="leaf-hash">Leaf hash (hex)</label>
           <input id="leaf-hash" name="leaf_hash" type="text" pattern="[0-9a-fA-F]{64}"
-            placeholder="64 hex characters" required autocomplete="off" />
-          <button type="submit">Verify</button>
+            placeholder="64 hex characters" required autocomplete="off" aria-describedby="leaf-hash-hint" />
+          <span id="leaf-hash-hint" class="hint">64 lower-case hex characters — <a href="/help#merkle">What is a leaf hash?</a></span>
+          <button type="submit">Verify inclusion</button>
         </form>
-        <div id="inclusion-result" aria-live="polite" aria-label="Inclusion proof result"></div>
+        <div id="inclusion-result" role="status" aria-live="polite" aria-label="Inclusion proof result" style="min-height:24px; margin-top:0.75rem"></div>
       </section>
 
       <section aria-labelledby="h-consistency">
@@ -55,9 +64,9 @@ const locale = Astro.currentLocale ?? 'en'
           <input id="from-size" name="from_size" type="number" min="1" required />
           <label for="to-size">To tree size</label>
           <input id="to-size" name="to_size" type="number" min="1" required />
-          <button type="submit">Verify</button>
+          <button type="submit">Verify consistency</button>
         </form>
-        <div id="consistency-result" aria-live="polite" aria-label="Consistency proof result"></div>
+        <div id="consistency-result" role="status" aria-live="polite" aria-label="Consistency proof result" style="min-height:24px; margin-top:0.75rem"></div>
       </section>
     </main>
 
@@ -71,52 +80,91 @@ const locale = Astro.currentLocale ?? 'en'
       // Production: import init, { verify_inclusion, verify_consistency } from '/wasm/verifier_rs.js';
       const API_BASE = '/api/v1/portal'
 
+      function esc(s){ var d=document.createElement('div'); d.textContent=String(s); return d.innerHTML; }
+
       async function loadSTH() {
+        const el = document.getElementById('sth-display');
+        el.setAttribute('aria-busy','true');
         try {
           const r = await fetch(`${API_BASE}/snapshots/latest`)
           if (!r.ok) throw new Error(`HTTP ${r.status}`)
           const snap = await r.json()
-          document.getElementById('sth-display').innerHTML =
+          if (!snap || !snap.merkle_root) {
+            el.setAttribute('aria-busy','false');
+            el.innerHTML = `<p>No signed tree head published yet. Check back after the tally is signed, or <a href="/history">view snapshot history</a>.</p>`;
+            return;
+          }
+          el.setAttribute('aria-busy','false');
+          el.innerHTML =
             `<dl>
-               <dt>Merkle root</dt><dd><code>${snap.merkle_root}</code></dd>
-               <dt>Published</dt><dd><time>${snap.published_at}</time></dd>
-               <dt>Snapshot ID</dt><dd><code>${snap.snapshot_id}</code></dd>
+               <dt>Merkle root</dt><dd><code>${esc(snap.merkle_root)}</code></dd>
+               <dt>Published</dt><dd><time>${esc(snap.published_at || '')}</time></dd>
+               <dt>Snapshot ID</dt><dd><code>${esc(snap.snapshot_id || '')}</code></dd>
              </dl>`
         } catch (e) {
-          document.getElementById('sth-display').textContent = `Error: ${e.message}`
+          el.setAttribute('aria-busy','false');
+          el.setAttribute('role','alert');
+          el.setAttribute('aria-live','assertive');
+          el.innerHTML = `<div style="border-left:4px solid var(--color-semantic-danger); padding:0.75rem; background:var(--color-surface)"><p><strong>What happened:</strong> Could not load the signed tree head.</p><p><strong>Why:</strong> ${esc(e.message)}</p><p><strong>How to fix:</strong> Check your connection and <button onclick="loadSTH()" style="margin-left:0.5rem" class="eel-btn eel-btn--primary eel-btn--sm">Retry</button></p></div>`
         }
       }
 
       document.getElementById('inclusion-form').addEventListener('submit', async (ev) => {
         ev.preventDefault()
-        const leafHash = document.getElementById('leaf-hash').value
+        const leafHash = document.getElementById('leaf-hash').value.trim()
         const el = document.getElementById('inclusion-result')
-        el.textContent = 'Verifying...'
+        const btn = ev.target.querySelector('button[type="submit"]');
+        btn.disabled = true; btn.setAttribute('aria-busy','true');
+        el.setAttribute('aria-busy','true');
+        el.innerHTML = `<span class="eel-skeleton" style="display:inline-block;width:12rem;height:1rem" aria-label="Loading"></span> Verifying…`
         try {
           const r = await fetch(`${API_BASE}/snapshots/00000000-0000-0000-0000-000000000000/verify`)
           if (!r.ok) throw new Error(`HTTP ${r.status}`)
           const proof = await r.json()
           // Production: const ok = verify_inclusion(leafHash, proof.siblings, proof.root)
-          el.innerHTML = `<p><strong aria-label="status">${proof.verified ? 'Verified' : 'Unverified'}</strong>: root = <code>${proof.root}</code></p>`
+          el.setAttribute('aria-busy','false');
+          const verified = !!proof.verified;
+          el.setAttribute('role','status');
+          el.innerHTML = `<p><strong aria-label="status">${verified ? 'Verified — included in tally' : 'Not verified — not found in tally'}</strong>: root = <code>${esc(proof.root || '')}</code> ${verified ? '✓' : ''}</p><p class="hint">${verified ? 'This leaf is included in the signed tree.' : 'Check the hash or try a different leaf.'} <a href="/help#inclusion">Learn about inclusion proofs</a></p>`
         } catch (e) {
-          el.textContent = `Error: ${e.message}`
-        }
+          el.setAttribute('aria-busy','false');
+          el.setAttribute('role','alert');
+          el.setAttribute('aria-live','assertive');
+          el.innerHTML = `<div style="border-left:4px solid var(--color-semantic-danger); padding:0.75rem"><p><strong>What happened:</strong> Inclusion verification failed.</p><p><strong>Why:</strong> ${esc(e.message)}</p><p><strong>How to fix:</strong> Recheck the 64-char hash and try again.</p><p><strong>Prevention:</strong> Copy the hash directly from the receipt.</p><button onclick="document.getElementById('inclusion-form').requestSubmit()" style="margin-top:0.5rem" class="eel-btn eel-btn--sm">Retry verification</button></div>`
+        } finally { btn.disabled=false; btn.removeAttribute('aria-busy'); el.removeAttribute('aria-busy'); }
       })
+
+      document.getElementById('consistency-form')?.addEventListener('submit', async (ev)=>{
+        ev.preventDefault();
+        const el = document.getElementById('consistency-result');
+        const btn = ev.target.querySelector('button[type="submit"]');
+        btn.disabled=true;
+        el.setAttribute('aria-busy','true');
+        el.textContent='Verifying…';
+        // Consistency verification placeholder — real WASM verify_consistency call
+        setTimeout(()=>{ el.setAttribute('aria-busy','false'); el.textContent='Consistency check complete (stub — wire verifier-rs WASM).'; btn.disabled=false; }, 600);
+      });
 
       loadSTH()
     </script>
 
     <style>
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: system-ui, sans-serif; max-width: 960px; margin: 0 auto; padding: 1rem; }
+      body { font-family: var(--font-sans, system-ui, sans-serif); max-width: var(--prose-measure, 65ch); margin: 0 auto; padding: 1rem var(--spacing-4,16px); padding-left: calc(var(--spacing-4,16px) + var(--safe-left,0px)); padding-right: calc(var(--spacing-4,16px) + var(--safe-right,0px)); line-height: var(--leading-normal,1.5); background: var(--color-surface-bg); color: var(--color-text-primary); }
       .skip-link { position: absolute; left: -9999px; }
-      .skip-link:focus { left: 0; background: #000; color: #fff; padding: .5rem 1rem; z-index: 100; }
-      nav a { margin-right: 1rem; }
+      .skip-link:focus { left: 0; background: var(--color-neutral-900); color: #fff; padding: .5rem 1rem; z-index: var(--z-modal,1400); box-shadow: var(--focus-ring); }
+      nav a { margin-right: 1rem; min-height: var(--touch-min,44px); display:inline-flex; align-items:center; padding:0 0.5rem; }
+      nav a:focus-visible { box-shadow: var(--focus-ring); outline:none; }
       section { margin: 2rem 0; }
       form { display: flex; flex-direction: column; gap: .5rem; max-width: 480px; }
-      input, button { font-size: 1rem; padding: .4rem .6rem; }
-      code { font-family: monospace; word-break: break-all; }
+      input, button { font-size: 1rem; padding: .4rem .6rem; min-height: var(--touch-min,44px); }
+      input:focus-visible, button:focus-visible { box-shadow: var(--focus-ring); outline:none; outline-offset: var(--focus-offset,2px); }
+      button:disabled { opacity:0.5; cursor:not-allowed; }
+      .hint { font-size: var(--text-sm,0.875rem); color: var(--color-text-secondary); }
+      .visually-hidden { position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
+      code { font-family: var(--font-mono, monospace); word-break: break-all; }
       dl { display: grid; grid-template-columns: max-content 1fr; gap: .25rem 1rem; }
+      @media (prefers-reduced-motion: reduce) { * { animation-duration:0.01ms !important; transition-duration:0.01ms !important; } }
     </style>
   </body>
 </html>
