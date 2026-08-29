@@ -94,8 +94,8 @@ const snapshot = {
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: var(--font-sans, system-ui, sans-serif); max-width: var(--prose-measure, 65ch); margin: 0 auto; padding: 1rem var(--spacing-4,16px); padding-left: calc(var(--spacing-4,16px) + var(--safe-left,0px)); padding-right: calc(var(--spacing-4,16px) + var(--safe-right,0px)); line-height: var(--leading-normal,1.5); background: var(--color-surface-bg); color: var(--color-text-primary); }
   .skip-link { position: absolute; left: -9999px; }
-  .skip-link:focus { left: 0; background: var(--color-neutral-900); color: #fff; padding: .5rem 1rem; z-index: var(--z-modal,1400); box-shadow: var(--focus-ring); }
-  .stale-warning { background: #ffe; border: 2px solid #c80; padding: 1rem; border-radius: var(--radius-md,4px); }
+  .skip-link:focus { left: 0; background: var(--color-neutral-900); color: var(--color-text-inverse, #fff); padding: .5rem 1rem; z-index: var(--z-modal,1400); box-shadow: var(--focus-ring); }
+  .stale-warning { background: #fffbe6; border: 2px solid var(--color-semantic-warning, #92400e); padding: 1rem; border-radius: var(--radius-md,4px); }
   nav a { margin-right: 1rem; min-height: var(--touch-min,44px); display:inline-flex; align-items:center; padding:0 0.5rem; }
   nav a:focus-visible { box-shadow: var(--focus-ring); outline:none; }
   dl { display: grid; grid-template-columns: max-content 1fr; gap: .25rem 1rem; }

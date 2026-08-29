@@ -42,8 +42,39 @@ class ModulesScreen extends HookConsumerWidget {
         ],
       ),
       body: cachedAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, st) => Center(child: Text('Error: $e')),
+        loading: () => Semantics(
+          liveRegion: true,
+          label: 'Loading training modules',
+          child: const Center(child: CircularProgressIndicator()),
+        ),
+        error: (e, st) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.cloud_off, size: 48, color: Colors.black54),
+                const SizedBox(height: 16),
+                Semantics(header: true, child: Text('Could not load modules', style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center)),
+                const SizedBox(height: 8),
+                Text('Why: offline or server error. Fix: check connection and retry. If it persists, open Sync.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+                const SizedBox(height: 8),
+                Text('Prevention: sync modules before going offline.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.black54)),
+                const SizedBox(height: 20),
+                Semantics(
+                  button: true,
+                  label: 'Retry loading modules',
+                  child: ElevatedButton.icon(
+                    onPressed: () => ref.invalidate(_cachedModulesProvider),
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                    style: ElevatedButton.styleFrom(minimumSize: const Size(44, 44)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         data: (modules) => _ModuleList(
           modules: modules,
           onDownload: (id) async {
@@ -61,10 +92,15 @@ class ModulesScreen extends HookConsumerWidget {
             try {
               await repo.downloadModule(id);
               ref.invalidate(_cachedModulesProvider);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Module downloaded — ${modules.length + 1}/5 used'), action: SnackBarAction(label: 'View', onPressed: () => context.go('/modules/$id'))),
+                );
+              }
             } catch (e) {
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Download failed: $e')),
+                  SnackBar(content: Text('Download failed: $e. Why: network or storage. Fix: check connection and free space, then retry.')),
                 );
               }
             }
@@ -84,8 +120,31 @@ class _ModuleList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (modules.isEmpty) {
-      return const Center(
-        child: Text('No modules downloaded. Connect to download modules.'),
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.menu_book_outlined, size: 48, color: Colors.black54),
+              const SizedBox(height: 16),
+              Semantics(header: true, child: Text('No modules yet', style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center)),
+              const SizedBox(height: 8),
+              Text('Connect and download modules for offline study. Up to 5 modules can be stored.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+              const SizedBox(height: 20),
+              Semantics(
+                button: true,
+                label: 'Go to sync to download modules',
+                child: ElevatedButton.icon(
+                  onPressed: () => context.go('/sync'),
+                  icon: const Icon(Icons.download),
+                  label: const Text('Browse modules'),
+                  style: ElevatedButton.styleFrom(minimumSize: const Size(44, 44)),
+                ),
+              ),
+            ],
+          ),
+        ),
       );
     }
     return ListView.builder(
@@ -98,16 +157,23 @@ class _ModuleList extends StatelessWidget {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Chip(
-                label: Text(m.moduleType.name),
-                backgroundColor: _typeColor(m.moduleType),
+              Semantics(
+                label: 'Module type ${m.moduleType.name}',
+                child: Chip(
+                  label: Text(m.moduleType.name),
+                  backgroundColor: _typeColor(m.moduleType),
+                ),
               ),
               const SizedBox(width: 8),
-              IconButton(
-                icon: const Icon(Icons.quiz),
-                tooltip: 'Take assessment',
-                onPressed: () =>
-                    context.go('/assessment/${m.id}'),
+              Semantics(
+                button: true,
+                label: 'Take assessment for ${m.title}',
+                child: IconButton(
+                  icon: const Icon(Icons.quiz),
+                  tooltip: 'Take assessment',
+                  onPressed: () => context.go('/assessment/${m.id}'),
+                  style: IconButton.styleFrom(minimumSize: const Size(44, 44)),
+                ),
               ),
             ],
           ),

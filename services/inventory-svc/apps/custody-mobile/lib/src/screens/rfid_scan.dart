@@ -116,17 +116,34 @@ class _RfidScanScreenState extends State<RfidScanScreen> {
   Future<void> _submitTransition() async {
     final scan = _lastScan;
     if (scan == null || !_confirmed) return;
+    if (scan.tamperIndicator || !scan.challengeValid) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cannot submit: tamper detected or challenge failed. Inspect the cover and rescan.')),
+        );
+      }
+      return;
+    }
     setState(() => _submitting = true);
     try {
       await widget.onTransitionSubmit?.call(scan.epc, widget.officerId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('State transition submitted.')),
+          SnackBar(
+            content: const Text('State transition submitted — awaiting receipt.'),
+            action: SnackBarAction(label: 'View queue', onPressed: () {}),
+          ),
         );
         setState(() {
           _lastScan = null;
           _confirmed = false;
         });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Submission failed: $e. Why: network or server error. Fix: retry when online. Queued offline.')),
+        );
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -210,31 +227,35 @@ class _RfidScanScreenState extends State<RfidScanScreen> {
                 ),
               ],
               if (_offlineQueue.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Text(
-                    '${_offlineQueue.where((r) => !r.synced).length} read(s) queued offline.',
-                    style: const TextStyle(fontSize: 12, color: Colors.orange),
-                    semanticsLabel:
-                        '${_offlineQueue.where((r) => !r.synced).length} RFID reads are queued offline and will sync on reconnect.',
+                Semantics(
+                  liveRegion: true,
+                  label: '${_offlineQueue.where((r) => !r.synced).length} RFID reads are queued offline and will sync on reconnect',
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Text(
+                      '${_offlineQueue.where((r) => !r.synced).length} read(s) queued offline — will sync when online.',
+                      style: const TextStyle(fontSize: 12, color: Colors.orange),
+                    ),
                   ),
                 ),
-              // Duress long-press button
+              // Duress long-press button — Semantics.button + liveRegion for alert
               const SizedBox(height: 16),
-              GestureDetector(
-                onLongPress: _triggerDuress,
-                child: Container(
-                  height: 48,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.red, width: 1.5),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text(
-                    'Hold for duress alert',
-                    style: TextStyle(color: Colors.red),
-                    semanticsLabel:
-                        'Long press this button to send a silent duress alert to ECC.',
+              Semantics(
+                button: true,
+                label: 'Long press to send silent duress alert to ECC',
+                child: GestureDetector(
+                  onLongPress: _triggerDuress,
+                  child: Container(
+                    height: 48,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.red, width: 1.5),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'Hold for duress alert',
+                      style: TextStyle(color: Colors.red),
+                    ),
                   ),
                 ),
               ),
@@ -261,6 +282,7 @@ class _ConnectionBanner extends StatelessWidget {
     switch (state) {
       case ReaderConnectionState.connected:
         return Semantics(
+          liveRegion: true,
           label: 'Reader connected',
           child: const Row(
             children: [
@@ -285,24 +307,34 @@ class _ConnectionBanner extends StatelessWidget {
         );
       case ReaderConnectionState.error:
         return Semantics(
-          label: 'Reader connection error',
+          liveRegion: true,
+          label: 'Reader connection error — fix: move closer, check Bluetooth, retry',
           child: Row(
             children: [
               const Icon(Icons.error, color: Colors.red),
               const SizedBox(width: 8),
-              const Text('Connection error', style: TextStyle(color: Colors.red)),
+              Expanded(child: Text('Connection error — check Bluetooth and retry.', style: TextStyle(color: Colors.red))),
               const SizedBox(width: 8),
-              TextButton(onPressed: onConnect, child: const Text('Retry')),
+              TextButton(
+                onPressed: onConnect,
+                style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
+                child: const Text('Retry'),
+              ),
             ],
           ),
         );
       case ReaderConnectionState.disconnected:
-        return SizedBox(
-          height: 48,
-          child: ElevatedButton.icon(
-            onPressed: onConnect,
-            icon: const Icon(Icons.bluetooth_searching),
-            label: const Text('Connect RFID reader'),
+        return Semantics(
+          button: true,
+          label: 'Connect RFID reader via Bluetooth',
+          child: SizedBox(
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: onConnect,
+              icon: const Icon(Icons.bluetooth_searching),
+              label: const Text('Connect RFID reader'),
+              style: ElevatedButton.styleFrom(minimumSize: const Size(44, 44)),
+            ),
           ),
         );
     }
