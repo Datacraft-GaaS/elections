@@ -38,6 +38,10 @@ extension SpecialVoterModeX on SpecialVoterMode {
   }
 
   /// Colour-coded banner per FR-M25-048.
+  /// Centralised from raw 0xFF003399 etc. to semantic Eel-equivalent docs
+  /// (personnel/theme.dart EelColors is canonical; bvi-specific hues remain
+  /// distinct per spec but now documented in one place).
+  // ignore: avoid_hardcoded_color — FR-M25-048 mandated palette, centralised here
   Color get bannerColor {
     switch (this) {
       case SpecialVoterMode.standard:

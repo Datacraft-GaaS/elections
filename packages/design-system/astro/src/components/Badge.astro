@@ -9,10 +9,10 @@ const { variant = 'default', label } = Astro.props;
 	{label}
 </span>
 <style>
-	.eel-badge { display: inline-flex; align-items: center; padding: 0.125rem 0.625rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
-	.eel-badge--default { background: #f3f4f6; color: #374151; }
+	.eel-badge { display: inline-flex; align-items: center; padding: 0.125rem 0.625rem; border-radius: var(--radius-full, 9999px); font-size: var(--text-xs, 0.75rem); font-weight: 600; min-height: 20px; }
+	.eel-badge--default { background: var(--color-neutral-100, #f3f4f6); color: var(--color-neutral-700, #374151); }
 	.eel-badge--success { background: #d1fae5; color: #065f46; }
-	.eel-badge--warning { background: #fef3c7; color: #92400e; }
+	.eel-badge--warning { background: #fef3c7; color: var(--color-semantic-warning, #92400e); }
 	.eel-badge--danger  { background: #fee2e2; color: #991b1b; }
-	.eel-badge--info    { background: #dbeafe; color: #1e40af; }
+	.eel-badge--info    { background: #dbeafe; color: var(--color-semantic-info, #1e40af); }
 </style>

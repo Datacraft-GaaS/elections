@@ -1,4 +1,7 @@
 ---
+import EmptyState from '../../../../../../packages/design-system/astro/src/components/EmptyState.astro';
+import Skeleton from '../../../../../../packages/design-system/astro/src/components/Skeleton.astro';
+
 // Historical snapshots index (FR-M11-007): append-only; no overwrites.
 const locale = Astro.currentLocale ?? 'en'
 ---
@@ -9,6 +12,7 @@ const locale = Astro.currentLocale ?? 'en'
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Historical Snapshots | eel</title>
+    <link rel="stylesheet" href="/_astro/tokens.css" />
   </head>
   <body>
     <a href="#main" class="skip-link">Skip to main content</a>
@@ -20,14 +24,28 @@ const locale = Astro.currentLocale ?? 'en'
         Snapshots are also available for bulk download:
         <a href="/api/v1/portal/snapshots/bulk.tar.gz">signed Parquet + CSV</a>.
       </p>
-      <ul id="snapshot-list">
-        <li>No snapshots published yet.</li>
-      </ul>
+      <section aria-labelledby="h-list" aria-busy="false">
+        <h2 id="h-list" class="visually-hidden">Snapshot list</h2>
+        <ul id="snapshot-list" role="list">
+          <li><EmptyState title="No snapshots published yet" guidance="Snapshots will appear here once the first tally is signed. Check the transparency log or try the latest snapshot." actionLabel="View transparency log" actionHref="/transparency" /></li>
+        </ul>
+        <!-- Skeleton exemplar for loading state (JS toggles aria-busy) -->
+        <div id="snapshot-skeleton" hidden aria-hidden="true" style="display:flex; flex-direction:column; gap:12px; margin-top:1rem">
+          <Skeleton width="100%" height="20px" />
+          <Skeleton width="86%" height="20px" />
+          <Skeleton width="64%" height="20px" />
+        </div>
+      </section>
+      <p style="margin-top:1.5rem"><a href="/transparency">Verify in transparency log</a></p>
     </main>
     <style>
-      body { font-family: system-ui, sans-serif; max-width: 960px; margin: 0 auto; padding: 1rem; }
+      body { font-family: var(--font-sans, system-ui, sans-serif); max-width: var(--prose-measure,65ch); margin: 0 auto; padding: 1rem var(--spacing-4,16px); padding-left: calc(var(--spacing-4,16px) + var(--safe-left,0px)); padding-right: calc(var(--spacing-4,16px) + var(--safe-right,0px)); line-height: var(--leading-normal,1.5); background: var(--color-surface-bg); color: var(--color-text-primary); }
       .skip-link { position: absolute; left: -9999px; }
-      .skip-link:focus { left: 0; background: #000; color: #fff; padding: .5rem 1rem; z-index: 100; }
+      .skip-link:focus { left: 0; background: var(--color-neutral-900); color: #fff; padding: .5rem 1rem; z-index: var(--z-modal,1400); box-shadow: var(--focus-ring); }
+      header nav a { min-height: var(--touch-min,44px); display:inline-flex; align-items:center; padding:0 0.5rem; margin-right:1rem; }
+      header nav a:focus-visible { box-shadow: var(--focus-ring); outline:none; }
+      .visually-hidden { position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
+      @media (prefers-reduced-motion: reduce) { * { animation-duration:0.01ms !important; } }
     </style>
   </body>
 </html>

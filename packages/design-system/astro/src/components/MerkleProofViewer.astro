@@ -27,12 +27,12 @@ const { snapshotId, signedBy, signedAt, proofDepth, verified } = Astro.props;
 	<div class="eel-merkle__body"><slot /></div>
 </aside>
 <style>
-	.eel-merkle { border: 1px solid #d1d5db; border-radius: 8px; padding: 1rem; background: #f9fafb; }
-	.eel-merkle__header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
-	.eel-merkle__icon { font-size: 1.25rem; color: #057a55; }
-	.eel-merkle__title { margin: 0; font-size: 0.875rem; font-weight: 600; color: #374151; }
-	.eel-merkle__details { display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1rem; font-size: 0.8125rem; margin: 0 0 0.75rem; }
-	.eel-merkle__details dt { color: #6b7280; font-weight: 500; }
-	.eel-merkle__details dd { margin: 0; color: #111827; }
-	.eel-merkle__code { font-family: monospace; font-size: 0.75rem; background: #e5e7eb; padding: 0.125rem 0.375rem; border-radius: 2px; word-break: break-all; }
+	.eel-merkle { border: 1px solid var(--color-neutral-300, #d1d5db); border-radius: var(--radius-lg, 8px); padding: var(--spacing-4, 16px); background: var(--color-surface, #f9fafb); }
+	.eel-merkle__header { display: flex; align-items: center; gap: var(--spacing-2, 8px); margin-bottom: var(--spacing-3, 12px); }
+	.eel-merkle__icon { font-size: var(--text-xl, 1.25rem); color: var(--color-semantic-success, #057a55); }
+	.eel-merkle__title { margin: 0; font-size: var(--text-sm, 0.875rem); font-weight: 600; color: var(--color-neutral-700, #374151); line-height: var(--leading-tight, 1.25); }
+	.eel-merkle__details { display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1rem; font-size: 0.8125rem; margin: 0 0 var(--spacing-3, 12px); }
+	.eel-merkle__details dt { color: var(--color-neutral-500, #6b7280); font-weight: 500; }
+	.eel-merkle__details dd { margin: 0; color: var(--color-text-primary, #111827); }
+	.eel-merkle__code { font-family: var(--font-mono, monospace); font-size: var(--text-xs, 0.75rem); background: var(--color-neutral-200, #e5e7eb); padding: 0.125rem 0.375rem; border-radius: var(--radius-sm, 2px); word-break: break-all; }
 </style>

@@ -1,16 +1,24 @@
 ---
+import Breadcrumb from '../../../../../../packages/design-system/astro/src/components/Breadcrumb.astro';
+import EmptyState from '../../../../../../packages/design-system/astro/src/components/EmptyState.astro';
+
 // Constituency results view (FR-M11-002).
 // [code] is the IEBC constituency code, e.g. 001 for Garissa Township.
 // Pre-rendered statically from signed tarball at build time.
 
 export async function getStaticPaths() {
-  // In production: load constituency list from signed tarball via eel-web-astro loader.
-  // Stub: return empty so cargo/astro build passes without real data.
-  return []
+  // Production: load constituency list from signed tarball via eel-web-astro loader.
+  // Exemplar enables static generation for sample constituencies (real loader enumerates 290).
+  // TODO: replace sample list with tarball enumeration.
+  return [{ params: { code: '001' } }, { params: { code: '019' } }, { params: { code: '290' } }];
 }
 
 const { code } = Astro.params
 const locale = Astro.currentLocale ?? 'en'
+const breadcrumbItems = [
+  { label: 'Home', href: '/' },
+  { label: `Constituency ${code}`, current: true },
+];
 ---
 
 <!doctype html>
@@ -19,19 +27,25 @@ const locale = Astro.currentLocale ?? 'en'
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Constituency {code} Results | eel</title>
+    <link rel="stylesheet" href="/_astro/tokens.css" />
   </head>
   <body>
     <a href="#main" class="skip-link">Skip to main content</a>
     <header><nav><a href="/">Home</a></nav></header>
+    <Breadcrumb items={breadcrumbItems} />
     <main id="main" tabindex="-1">
       <h1>Constituency <code>{code}</code> Results</h1>
-      <p>Results for this constituency will appear once published.</p>
-      <p><a href="/transparency">View transparency log</a></p>
+      <EmptyState title="Results not yet published" guidance="This constituency has not published a Form 34B yet. Check back after constituency tally, or view the national tally." actionLabel="View national tally" actionHref="/" />
+      <p style="margin-top:1rem"><a href="/transparency">View transparency log</a> · <a href="/history">Snapshots history</a></p>
     </main>
     <style>
-      body { font-family: system-ui, sans-serif; max-width: 960px; margin: 0 auto; padding: 1rem; }
+      body { font-family: var(--font-sans, system-ui, sans-serif); max-width: var(--prose-measure, 65ch); margin: 0 auto; padding: 1rem var(--spacing-4,16px); padding-left: calc(var(--spacing-4,16px) + var(--safe-left,0px)); padding-right: calc(var(--spacing-4,16px) + var(--safe-right,0px)); line-height: var(--leading-normal,1.5); background: var(--color-surface-bg); color: var(--color-text-primary); }
       .skip-link { position: absolute; left: -9999px; }
-      .skip-link:focus { left: 0; background: #000; color: #fff; padding: .5rem 1rem; z-index: 100; }
+      .skip-link:focus { left: 0; background: var(--color-neutral-900); color: #fff; padding: .5rem 1rem; z-index: var(--z-modal,1400); box-shadow: var(--focus-ring); }
+      header nav a { min-height: var(--touch-min,44px); display:inline-flex; align-items:center; padding:0 0.5rem; }
+      header nav a:focus-visible { box-shadow: var(--focus-ring); outline:none; }
+      code { font-family: var(--font-mono, monospace); word-break: break-all; }
+      @media (prefers-reduced-motion: reduce) { * { animation-duration:0.01ms !important; transition-duration:0.01ms !important; } }
     </style>
   </body>
 </html>

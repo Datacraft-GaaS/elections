@@ -71,12 +71,16 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
               const SizedBox(height: 24),
 
               if (_isProcessing)
-                const Column(
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Processing certificate...'),
-                  ],
+                Semantics(
+                  liveRegion: true,
+                  label: 'Processing certificate',
+                  child: const Column(
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text('Processing certificate… Please wait.'),
+                    ],
+                  ),
                 )
               else ...[
                 const Icon(Icons.camera_alt, size: 80),
@@ -127,6 +131,11 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
 
       if (xfile == null) {
         setState(() => _isProcessing = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No image captured — try again when ready.')),
+          );
+        }
         return;
       }
 
@@ -137,12 +146,13 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
       // to detect on-disk corruption.
       final certSha256 = _sha256Hex(imageBytes);
 
-      // Geo stamp
+      // Geo stamp — Q4: actionable location guidance
       GeoStampResult? geo;
       try {
         geo = await GeoStamp.stamp();
       } on GeoStampException catch (e) {
-        setState(() => _errorMessage = e.message);
+        setState(() => _errorMessage =
+            'Location unavailable: ${e.message}. Why: GPS not fixed. Fix: move outdoors, enable location, and retry. Prevention: start capture where you have sky visibility.');
         setState(() => _isProcessing = false);
         return;
       }
@@ -181,7 +191,8 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
         ),
       );
     } on Exception catch (e) {
-      setState(() => _errorMessage = e.toString());
+      setState(() => _errorMessage =
+          'Capture failed: $e. Why: unexpected error. Fix: retry capture. If it persists, restart the kit or contact support.');
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }

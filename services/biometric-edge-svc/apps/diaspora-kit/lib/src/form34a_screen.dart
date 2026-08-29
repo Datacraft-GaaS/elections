@@ -123,16 +123,39 @@ class _Form34AScreenState extends ConsumerState<Form34AScreen> {
               ),
               const SizedBox(height: 24),
               if (_queued)
-                const Text(
-                  'Form queued for deferred transmission.',
-                  style: TextStyle(color: Colors.green),
+                Semantics(
+                  liveRegion: true,
+                  label: 'Form queued for transmission',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Form queued for deferred transmission (2 hours).',
+                        style: TextStyle(color: Colors.green),
+                      ),
+                      const SizedBox(height: 8),
+                      Text('It will transmit automatically when online. Bring the device to the embassy network.', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.black54) ?? const TextStyle(color: Colors.black54, fontSize: 12)),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: () => Navigator.of(context).maybePop(),
+                        icon: const Icon(Icons.check),
+                        label: const Text('Done'),
+                        style: OutlinedButton.styleFrom(minimumSize: const Size(44, 44)),
+                      ),
+                    ],
+                  ),
                 )
               else
-                FilledButton.icon(
-                  key: const Key('submit-form34a'),
-                  icon: const Icon(Icons.send),
-                  label: const Text('Sign and Queue'),
-                  onPressed: _submit,
+                Semantics(
+                  button: true,
+                  label: 'Sign and queue form 34A',
+                  child: FilledButton.icon(
+                    key: const Key('submit-form34a'),
+                    icon: const Icon(Icons.send),
+                    label: const Text('Sign and Queue'),
+                    onPressed: _submit,
+                    style: FilledButton.styleFrom(minimumSize: const Size(44, 44)),
+                  ),
                 ),
             ],
           ),

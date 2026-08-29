@@ -50,14 +50,21 @@ class _EnrolmentWorkflowState extends State<EnrolmentWorkflowScreen> {
 
   Future<void> _captureWithRetry(SensorModality modality) async {
     for (var attempt = 0; attempt < QualityGate.maxRetries; attempt++) {
-      final result = await _sensor.capture(modality);
-      if (result.quality == CaptureQuality.pass) {
-        _captures.add(result);
-        setState(() => _step = _nextStep(modality));
-        await _continueWorkflow();
+      try {
+        final result = await _sensor.capture(modality);
+        if (result.quality == CaptureQuality.pass) {
+          _captures.add(result);
+          setState(() => _step = _nextStep(modality));
+          await _continueWorkflow();
+          return;
+        }
+      } catch (e) {
+        setState(() {
+          _step = EnrolmentStep.error;
+          _error = 'Capture failed (${modality.name}): $e. Check sensor connection.';
+        });
         return;
       }
-
     }
     // Quality gate exhausted for primary modality.
     await _handleDegradedPath(modality);
@@ -67,11 +74,19 @@ class _EnrolmentWorkflowState extends State<EnrolmentWorkflowScreen> {
     if (failed == SensorModality.fingerprint) {
       // Try additional fingers, then face, then s.44A.
       setState(() => _step = EnrolmentStep.degradedFinger);
-      final faceResult = await _sensor.capture(SensorModality.face);
-      if (faceResult.quality == CaptureQuality.pass) {
-        _captures.add(faceResult);
-        setState(() => _step = EnrolmentStep.mrzScan);
-        await _continueWorkflow();
+      try {
+        final faceResult = await _sensor.capture(SensorModality.face);
+        if (faceResult.quality == CaptureQuality.pass) {
+          _captures.add(faceResult);
+          setState(() => _step = EnrolmentStep.mrzScan);
+          await _continueWorkflow();
+          return;
+        }
+      } catch (e) {
+        setState(() {
+          _step = EnrolmentStep.error;
+          _error = 'Face fallback failed: $e. Try again or use s.44A.';
+        });
         return;
       }
     }
@@ -98,26 +113,134 @@ class _EnrolmentWorkflowState extends State<EnrolmentWorkflowScreen> {
     return EnrolmentStep.mrzScan;
   }
 
+  bool get _isLoading => switch (_step) {
+        EnrolmentStep.capturingFingerprint => true,
+        EnrolmentStep.capturingIris => true,
+        EnrolmentStep.capturingFace => true,
+        EnrolmentStep.mrzScan => true,
+        EnrolmentStep.iprsVerify => true,
+        EnrolmentStep.signing => true,
+        EnrolmentStep.uploading => true,
+        _ => false,
+      };
+
   @override
   Widget build(BuildContext context) {
+    final isLoading = _isLoading;
+    final isError = _step == EnrolmentStep.error;
+    final isComplete = _step == EnrolmentStep.complete;
+    final isIdle = _step == EnrolmentStep.idle;
+
     return Scaffold(
       appBar: AppBar(title: const Text('BVR Enrolment')),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(_stepLabel(_step), style: Theme.of(context).textTheme.headlineSmall),
-            if (_error != null) ...[
-              const SizedBox(height: 8),
-              Text(_error!, style: const TextStyle(color: Colors.red)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (isLoading) ...[
+                Semantics(
+                  label: 'Loading enrolment step',
+                  liveRegion: true,
+                  child: const CircularProgressIndicator(),
+                ),
+                const SizedBox(height: 16),
+                Semantics(
+                  header: true,
+                  liveRegion: true,
+                  child: Text(_stepLabel(_step), style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
+                ),
+                const SizedBox(height: 8),
+                Text('Please wait — do not remove the device.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+              ] else if (isError) ...[
+                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const SizedBox(height: 16),
+                Semantics(header: true, child: Text('Enrolment failed', style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center)),
+                const SizedBox(height: 8),
+                Text(_error ?? 'An unexpected error occurred during enrolment.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+                const SizedBox(height: 8),
+                Text('Check the sensor connection and try again. If it persists, request dual-officer assistance (s.44A).', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.black54)),
+                const SizedBox(height: 8),
+                Text('Prevention: keep fingers clean and dry; align face in frame.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.black54)),
+                const SizedBox(height: 20),
+                Semantics(
+                  button: true,
+                  label: 'Retry enrolment',
+                  child: ElevatedButton.icon(
+                    onPressed: _startEnrolment,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry enrolment'),
+                    style: ElevatedButton.styleFrom(minimumSize: const Size(44, 44)),
+                  ),
+                ),
+              ] else if (isComplete) ...[
+                const Icon(Icons.verified, size: 56, color: Color(0xFF0E7A3A)),
+                const SizedBox(height: 16),
+                Semantics(header: true, liveRegion: true, child: Text('Enrolment complete — signed and queued for upload', style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center)),
+                const SizedBox(height: 8),
+                Text('${_captures.length} captures accepted. You will be notified when the record is anchored.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+                const SizedBox(height: 20),
+                Semantics(
+                  button: true,
+                  label: 'Start new enrolment',
+                  child: ElevatedButton.icon(
+                    onPressed: _startEnrolment,
+                    icon: const Icon(Icons.person_add),
+                    label: const Text('New Enrolment'),
+                    style: ElevatedButton.styleFrom(minimumSize: const Size(44, 44)),
+                  ),
+                ),
+              ] else if (isIdle) ...[
+                const Icon(Icons.fingerprint, size: 48, color: Color(0xFF0E7A3A)),
+                const SizedBox(height: 16),
+                Semantics(header: true, child: Text(_stepLabel(_step), style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center)),
+                const SizedBox(height: 8),
+                Text('Place the finger on the sensor to begin. Dual-officer path available for exceptions (s.44A).', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+                const SizedBox(height: 24),
+                Semantics(
+                  button: true,
+                  label: 'Start enrolment',
+                  child: ElevatedButton.icon(
+                    onPressed: _startEnrolment,
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Text('Start Enrolment'),
+                    style: ElevatedButton.styleFrom(minimumSize: const Size(44, 44)),
+                  ),
+                ),
+              ] else ...[
+                // degradedFinger / dualOfficer / amputation — informative state with action
+                Icon(
+                  _step == EnrolmentStep.dualOfficer ? Icons.groups : Icons.hearing,
+                  size: 48,
+                  color: const Color(0xFF7A5718),
+                ),
+                const SizedBox(height: 16),
+                Semantics(header: true, liveRegion: true, child: Text(_stepLabel(_step), style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center)),
+                const SizedBox(height: 8),
+                Text(
+                  _step == EnrolmentStep.dualOfficer
+                      ? 'Two officers must sign to proceed. Bring the witness to the device.'
+                      : _step == EnrolmentStep.amputation
+                          ? 'No-finger workflow selected. Continue with face and document verification.'
+                          : 'Fingerprint quality low — switched to face capture fallback.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 20),
+                Semantics(
+                  button: true,
+                  label: 'Continue enrolment',
+                  child: OutlinedButton.icon(
+                    onPressed: _continueWorkflow,
+                    icon: const Icon(Icons.arrow_forward),
+                    label: const Text('Continue'),
+                    style: OutlinedButton.styleFrom(minimumSize: const Size(44, 44)),
+                  ),
+                ),
+              ],
             ],
-            const SizedBox(height: 24),
-            if (_step == EnrolmentStep.idle || _step == EnrolmentStep.complete)
-              ElevatedButton(
-                onPressed: _startEnrolment,
-                child: Text(_step == EnrolmentStep.complete ? 'New Enrolment' : 'Start Enrolment'),
-              ),
-          ],
+          ),
         ),
       ),
     );

@@ -42,9 +42,12 @@ const title = "Referendum Explainer";
     <main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
       <h2 class="text-lg font-semibold mb-4">Referendum Questions</h2>
 
-      {questions.length === 0 && (
-        <p>No questions available yet.</p>
-      )}
+      {questions.length === 0 ? (
+        <div role="status" aria-live="polite" style="padding:1.25rem; border:1px solid var(--color-neutral-200, #e5e7eb); border-radius:var(--radius-md,4px); background:var(--color-surface, #f9fafb);">
+          <p style="margin:0; font-weight:600">No questions available yet</p>
+          <p style="margin:0.5rem 0 0; color:var(--color-text-secondary, #4b5563)">Questions will appear here once the referendum is published. Check back after the gazette notice, or browse the <a href="/transparency">transparency log</a>.</p>
+        </div>
+      ) : null}
 
       <ul class="space-y-4 list-none p-0">
         {questions.map((q) => (

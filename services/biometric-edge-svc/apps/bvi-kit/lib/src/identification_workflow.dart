@@ -73,37 +73,114 @@ class _IdentificationWorkflowState
     setState(() => _step = IdentificationStep.dualOfficerClose);
   }
 
+  bool get _isLoading => _step == IdentificationStep.timeFenceCheck ||
+      _step == IdentificationStep.gnssCheck ||
+      _step == IdentificationStep.capture ||
+      _step == IdentificationStep.matching ||
+      _step == IdentificationStep.ballotIssue;
+
   @override
   Widget build(BuildContext context) {
+    final isLoading = _isLoading;
+    final isError = _step == IdentificationStep.error;
+    final isRefused = _step == IdentificationStep.timeFenceRefused ||
+        _step == IdentificationStep.gnssSpoof ||
+        _step == IdentificationStep.dualOfficerClose;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('BVI Identification'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.warning),
-            tooltip: 'Emergency Close (EC-OPS-04)',
-            onPressed: _emergencyClose,
+          Semantics(
+            button: true,
+            label: 'Emergency close, requires two officers',
+            child: IconButton(
+              icon: const Icon(Icons.warning),
+              tooltip: 'Emergency Close (EC-OPS-04)',
+              onPressed: _emergencyClose,
+            ),
           ),
         ],
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(_stepLabel(_step),
-                style: Theme.of(context).textTheme.headlineSmall),
-            if (_error != null) ...[
-              const SizedBox(height: 8),
-              Text(_error!, style: const TextStyle(color: Colors.red)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (isLoading) ...[
+                Semantics(liveRegion: true, label: 'Verifying identification', child: const CircularProgressIndicator()),
+                const SizedBox(height: 16),
+                Semantics(header: true, liveRegion: true, child: Text(_stepLabel(_step), style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center)),
+                const SizedBox(height: 8),
+                Text('Please wait — do not remove the card.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+              ] else if (isRefused) ...[
+                const Icon(Icons.block, size: 48, color: Colors.red),
+                const SizedBox(height: 16),
+                Semantics(header: true, liveRegion: true, child: Text(_stepLabel(_step), style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center)),
+                const SizedBox(height: 8),
+                Text(
+                  _step == IdentificationStep.timeFenceRefused
+                      ? 'Why: device clock differs by more than five minutes from the network. Fix: connect to network and allow time sync, then retry.'
+                      : _step == IdentificationStep.gnssSpoof
+                          ? 'Why: satellite signals look spoofed. Fix: move outdoors with clear sky view and retry. If it persists, request dual-officer override.'
+                          : 'Emergency close requires two officer PINs. Bring the witness and retry.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 8),
+                Text('Prevention: ensure network time and GNSS before opening the session.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.black54)),
+                const SizedBox(height: 20),
+                Semantics(
+                  button: true,
+                  label: 'Retry identification',
+                  child: ElevatedButton.icon(
+                    onPressed: _startIdentification,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                    style: ElevatedButton.styleFrom(minimumSize: const Size(44, 44)),
+                  ),
+                ),
+              ] else if (isError) ...[
+                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const SizedBox(height: 16),
+                Semantics(header: true, child: Text('Identification failed', style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center)),
+                const SizedBox(height: 8),
+                Text(_error ?? 'An unexpected error occurred.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+                const SizedBox(height: 8),
+                Text('Fix: retry. If it persists, use the emergency close or contact support.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.black54)),
+                const SizedBox(height: 20),
+                Semantics(
+                  button: true,
+                  label: 'Retry identification',
+                  child: ElevatedButton.icon(
+                    onPressed: _startIdentification,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry identification'),
+                    style: ElevatedButton.styleFrom(minimumSize: const Size(44, 44)),
+                  ),
+                ),
+              ] else ...[
+                Semantics(header: true, child: Text(_stepLabel(_step), style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center)),
+                if (_step == IdentificationStep.complete) ...[
+                  const SizedBox(height: 8),
+                  Text('Voter identified — ballot issued. Proceed to next voter.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+                ],
+                const SizedBox(height: 24),
+                if (_step == IdentificationStep.idle || _step == IdentificationStep.complete)
+                  Semantics(
+                    button: true,
+                    label: 'Identify voter',
+                    child: ElevatedButton.icon(
+                      onPressed: _startIdentification,
+                      icon: const Icon(Icons.fingerprint),
+                      label: Text(_step == IdentificationStep.complete ? 'Next Voter' : 'Identify Voter'),
+                      style: ElevatedButton.styleFrom(minimumSize: const Size(44, 44)),
+                    ),
+                  ),
+              ],
             ],
-            const SizedBox(height: 24),
-            if (_step == IdentificationStep.idle ||
-                _step == IdentificationStep.complete)
-              ElevatedButton(
-                onPressed: _startIdentification,
-                child: const Text('Identify Voter'),
-              ),
-          ],
+          ),
         ),
       ),
     );
