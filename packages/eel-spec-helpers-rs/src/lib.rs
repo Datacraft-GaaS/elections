@@ -1,6 +1,9 @@
 //! Shared helpers for spec contract handlers.
 //! Extracted from duplicated boilerplate across 31 `spec.rs` files (TD-08).
 
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+
 use serde::Serialize;
 use serde_json::{json, Value};
 
@@ -36,6 +39,84 @@ pub fn page_total_cursor_value(items: &Value) -> Value {
     let n = items.as_array().map_or(0, |a| a.len());
     json!({ "items": items, "total": n, "next_cursor": Value::Null })
 }
+
+// ---------------------------------------------------------------------------
+// Shared in-memory store helpers (TD-03 / TD-08)
+// ---------------------------------------------------------------------------
+
+/// Thread-safe in-memory map mirroring the `Arc<Mutex<HashMap>>` pattern
+/// duplicated across `AppState` / `spec_state.rs` files.
+/// Swap boundary: replace inner `Mutex<HashMap>` with `sqlx::PgPool` + `Store` trait
+/// when persistence lands (see `rla` and `custody/src/state.rs`).
+#[derive(Debug, Clone)]
+pub struct SharedMap<K, V> {
+    inner: Arc<Mutex<HashMap<K, V>>>,
+}
+
+impl<K, V> Default for SharedMap<K, V> {
+    fn default() -> Self {
+        Self {
+            inner: Arc::new(Mutex::new(HashMap::new())),
+        }
+    }
+}
+
+impl<K, V> SharedMap<K, V>
+where
+    K: Eq + std::hash::Hash + Clone,
+    V: Clone,
+{
+    /// Create an empty store.
+    pub fn new() -> Self {
+        Self {
+            inner: Arc::new(Mutex::new(HashMap::new())),
+        }
+    }
+
+    /// Insert a value.
+    pub fn insert(&self, key: K, value: V) {
+        self.inner.lock().expect("lock poisoned").insert(key, value);
+    }
+
+    /// Get a cloned value.
+    pub fn get(&self, key: &K) -> Option<V> {
+        self.inner.lock().expect("lock poisoned").get(key).cloned()
+    }
+
+    /// List all values.
+    pub fn values(&self) -> Vec<V> {
+        self.inner.lock().expect("lock poisoned").values().cloned().collect()
+    }
+
+    /// Current length.
+    pub fn len(&self) -> usize {
+        self.inner.lock().expect("lock poisoned").len()
+    }
+
+    /// Whether empty.
+    pub fn is_empty(&self) -> bool {
+        self.inner.lock().expect("lock poisoned").is_empty()
+    }
+
+    /// Run a closure with exclusive access to the underlying map.
+    /// Use for `entry` / `get_mut` patterns that need mutation.
+    pub fn with_lock<F, R>(&self, f: F) -> R
+    where
+        F: FnOnce(&mut HashMap<K, V>) -> R,
+    {
+        let mut g = self.inner.lock().expect("lock poisoned");
+        f(&mut g)
+    }
+}
+
+/// Example of the legacy `OnceLock<Mutex<HashMap>>` static pattern:
+/// ```ignore
+/// fn store() -> &'static Mutex<HashMap<String, Value>> {
+///     static STORE: OnceLock<Mutex<HashMap<String, Value>>> = OnceLock::new();
+///     STORE.get_or_init(|| Mutex::new(HashMap::new()))
+/// }
+/// ```
+/// Prefer `SharedMap` in `AppState`; keep statics only for truly global singletons.
 
 #[cfg(test)]
 mod tests {
@@ -76,5 +157,24 @@ mod tests {
         let v = json!([]);
         let p = page_total_cursor_value(&v);
         assert_eq!(p["total"], 0);
+    }
+
+    #[test]
+    fn shared_map_insert_get() {
+        let m: SharedMap<String, i32> = SharedMap::new();
+        m.insert("a".to_string(), 1);
+        assert_eq!(m.get(&"a".to_string()), Some(1));
+        assert_eq!(m.len(), 1);
+        assert!(!m.is_empty());
+    }
+
+    #[test]
+    fn shared_map_values() {
+        let m: SharedMap<String, i32> = SharedMap::new();
+        m.insert("a".to_string(), 1);
+        m.insert("b".to_string(), 2);
+        let mut v = m.values();
+        v.sort();
+        assert_eq!(v, vec![1, 2]);
     }
 }

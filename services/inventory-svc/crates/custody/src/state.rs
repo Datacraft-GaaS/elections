@@ -31,26 +31,31 @@
 //! -- + custody_transfers, custody_seals, custody_seal_breaks, custody_reserves, custody_reconciles
 //! ```
 
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+
+use eel_spec_helpers_rs::SharedMap;
 
 use crate::spec::{Asset, CustodyTransfer, ReconcileReport, Reserve, Seal, SealBreak};
 
 /// Shared application state.
+///
+/// Uses [`SharedMap`] (thin wrapper over `Arc<Mutex<HashMap>>`) from
+/// `eel-spec-helpers-rs` to deduplicate the `Arc<Mutex<HashMap>>` boilerplate
+/// duplicated across ~21 handler state files (TD-03 / TD-08 exemplar).
 #[derive(Clone, Default)]
 pub struct AppState {
     /// assets.
-    pub assets: Arc<Mutex<HashMap<String, Asset>>>,
+    pub assets: SharedMap<String, Asset>,
     /// transfers.
-    pub transfers: Arc<Mutex<HashMap<String, Vec<CustodyTransfer>>>>,
+    pub transfers: SharedMap<String, Vec<CustodyTransfer>>,
     /// seals.
-    pub seals: Arc<Mutex<HashMap<String, Seal>>>,
+    pub seals: SharedMap<String, Seal>,
     /// seal_breaks.
-    pub seal_breaks: Arc<Mutex<HashMap<String, Vec<SealBreak>>>>,
+    pub seal_breaks: SharedMap<String, Vec<SealBreak>>,
     /// reserves.
-    pub reserves: Arc<Mutex<HashMap<String, Reserve>>>,
+    pub reserves: SharedMap<String, Reserve>,
     /// reconciles.
-    pub reconciles: Arc<Mutex<HashMap<String, ReconcileReport>>>,
+    pub reconciles: SharedMap<String, ReconcileReport>,
 }
 
 impl AppState {

@@ -1,7 +1,14 @@
+//! AI gateway aggregating registry, anomaly, forecast, and red-team APIs.
+#![warn(missing_docs)]
+/// Error types for AI gateway.
 pub mod error;
+/// Domain models.
 pub mod models;
+/// PII stripping utilities.
 pub mod pii_strip;
+/// Route definitions.
 pub mod routes;
+/// Typed spec handlers for public contract.
 pub mod spec;
 
 use std::sync::Arc;
