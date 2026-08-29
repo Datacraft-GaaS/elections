@@ -22,7 +22,7 @@ const { locales, current } = Astro.props;
 </div>
 <style>
 	.eel-lang { display: flex; align-items: center; gap: 0.5rem; }
-	.eel-lang__label { font-size: 0.875rem; color: #6b7280; }
-	.eel-lang__select { padding: 0.375rem 2rem 0.375rem 0.75rem; border: 1px solid #d1d5db; border-radius: 4px; background: #fff; font-size: 0.875rem; color: #374151; cursor: pointer; min-height: 44px; }
-	.eel-lang__select:focus-visible { outline: none; border-color: #1a56db; box-shadow: var(--focus-ring, 0 0 0 3px rgba(26, 86, 219, 0.5)); outline-offset: var(--focus-offset, 2px); }
+	.eel-lang__label { font-size: var(--text-sm, 0.875rem); color: var(--color-neutral-500, #6b7280); }
+	.eel-lang__select { padding: 0.375rem 2rem 0.375rem 0.75rem; border: 1px solid var(--color-neutral-300, #d1d5db); border-radius: var(--radius-md, 4px); background: var(--color-surface-bg, #fff); font-size: var(--text-sm, 0.875rem); color: var(--color-neutral-700, #374151); cursor: pointer; min-height: var(--touch-min, 44px); }
+	.eel-lang__select:focus-visible { outline: none; border-color: var(--color-brand-primary); box-shadow: var(--focus-ring, 0 0 0 3px rgba(26, 86, 219, 0.5)); outline-offset: var(--focus-offset, 2px); }
 </style>

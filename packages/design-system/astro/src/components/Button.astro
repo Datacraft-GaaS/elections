@@ -60,14 +60,14 @@ const Tag = href ? 'a' : 'button';
 	.eel-btn--sm { padding: 0.25rem 0.75rem; font-size: 0.875rem; min-height: 44px; }
 	.eel-btn--md { padding: 0.5rem 1rem; font-size: 1rem; min-height: 44px; }
 	.eel-btn--lg { padding: 0.75rem 1.5rem; font-size: 1.125rem; min-height: 44px; }
-	.eel-btn--primary { background: #1a56db; color: #fff; border-color: #1a56db; }
-	.eel-btn--primary:hover:not(:disabled) { background: #1e429f; border-color: #1e429f; }
-	.eel-btn--secondary { background: #f3f4f6; color: #374151; border-color: #d1d5db; }
-	.eel-btn--secondary:hover:not(:disabled) { background: #e5e7eb; }
-	.eel-btn--danger { background: #b91c1c; color: #fff; border-color: #b91c1c; }
-	.eel-btn--danger:hover:not(:disabled) { background: #991b1b; }
-	.eel-btn--ghost { background: transparent; color: #1a56db; border-color: transparent; }
-	.eel-btn--ghost:hover:not(:disabled) { background: #eff6ff; }
+	.eel-btn--primary { background: var(--color-brand-primary); color: var(--color-text-inverse); border-color: var(--color-brand-primary); }
+	.eel-btn--primary:hover:not(:disabled) { background: var(--color-brand-primary-hover); border-color: var(--color-brand-primary-hover); }
+	.eel-btn--secondary { background: var(--color-neutral-100); color: var(--color-neutral-700); border-color: var(--color-neutral-300); }
+	.eel-btn--secondary:hover:not(:disabled) { background: var(--color-neutral-200); }
+	.eel-btn--danger { background: var(--color-semantic-danger); color: var(--color-text-inverse); border-color: var(--color-semantic-danger); }
+	.eel-btn--danger:hover:not(:disabled) { background: var(--color-semantic-danger-hover); }
+	.eel-btn--ghost { background: transparent; color: var(--color-brand-primary); border-color: transparent; }
+	.eel-btn--ghost:hover:not(:disabled) { background: var(--color-alert-info-bg); }
 	.eel-btn:disabled,
 	.eel-btn[aria-disabled='true'] {
 		opacity: 0.5;

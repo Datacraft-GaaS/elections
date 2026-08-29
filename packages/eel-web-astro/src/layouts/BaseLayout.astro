@@ -45,6 +45,9 @@ const canonicalHref = canonical ?? new URL(Astro.url.pathname, siteUrl).href;
     {ogImage && <meta property="og:image" content={ogImage} />}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400&display=swap" as="style" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400&display=swap" media="print" onload="this.media='all'" />
+    <style>/* font-display:swap via Google Fonts display=swap; preload avoids CLS */</style>
     <slot name="head" />
   </head>
   <body>
@@ -52,20 +55,20 @@ const canonicalHref = canonical ?? new URL(Astro.url.pathname, siteUrl).href;
     <slot />
     <style>
       *, *::before, *::after { box-sizing: border-box; }
-      html { font-family: 'Noto Sans', 'Segoe UI', system-ui, sans-serif; }
-      body { margin: 0; background: #fff; color: #111827; }
+      html { font-family: var(--font-sans, 'Noto Sans', 'Segoe UI', system-ui, sans-serif); color-scheme: light dark; }
+      body { margin: 0; background: var(--color-surface-bg); color: var(--color-text-primary); padding-top: var(--safe-top); padding-left: var(--safe-left); padding-right: var(--safe-right); }
       .eel-skip-link {
         position: absolute;
         left: -9999px;
         top: 1rem;
-        background: #1a56db;
-        color: #fff;
+        background: var(--color-brand-primary);
+        color: var(--color-text-inverse);
         padding: 0.5rem 1rem;
-        border-radius: 4px;
+        border-radius: var(--radius-md, 4px);
         text-decoration: none;
-        z-index: 9999;
+        z-index: var(--z-modal, 9999);
       }
-      .eel-skip-link:focus { left: 1rem; }
+      .eel-skip-link:focus { left: 1rem; box-shadow: var(--focus-ring); outline: none; }
     </style>
   </body>
 </html>

@@ -2,17 +2,20 @@
    Systemic fix for P1-4 (raw hex drift) + P1-6 (dark mode) + P2 missing tokens.
    Style-Dictionary should eventually emit this; this hand-authored layer is the
    correctness baseline and is lint-enforceable (eel/no-raw-color).
-   WCAG 2.2 AA, colour-blind safe, dark-mode ready. OKLCH migration tracked P2-11. */
+   WCAG 2.2 AA, colour-blind safe, dark-mode ready. OKLCH migration exemplar below (P2-11). */
 :root {
   color-scheme: light dark;
 
   /* brand / semantic — semantic polymorphism: light defaults, dark overrides below */
   --color-brand-primary: #1a56db;
+  --color-brand-primary-oklch: oklch(0.55 0.22 264);
   --color-brand-primary-hover: #1e429f;
   --color-brand-secondary: #0e9f6e;
+  --color-brand-secondary-oklch: oklch(0.62 0.16 164);
   --color-semantic-success: #057a55;
   --color-semantic-warning: #92400e;
   --color-semantic-danger: #b91c1c;
+  --color-semantic-danger-hover: #991b1b;
   --color-semantic-info: #1e40af;
 
   --color-surface-bg: #ffffff;
@@ -24,6 +27,19 @@
   --color-text-disabled: #9ca3af;
   --color-text-inverse: #ffffff;
   --color-text-link: #1a56db;
+
+  --color-alert-info-bg: #eff6ff;
+  --color-alert-info-border: #1a56db;
+  --color-alert-info-text: #1e40af;
+  --color-alert-success-bg: #ecfdf5;
+  --color-alert-success-border: #057a55;
+  --color-alert-success-text: #065f46;
+  --color-alert-warning-bg: #fffbeb;
+  --color-alert-warning-border: #d97706;
+  --color-alert-warning-text: #92400e;
+  --color-alert-danger-bg: #fef2f2;
+  --color-alert-danger-border: #dc2626;
+  --color-alert-danger-text: #991b1b;
 
   --color-neutral-50: #f9fafb;
   --color-neutral-100: #f3f4f6;

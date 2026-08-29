@@ -18,11 +18,11 @@ const { year = new Date().getFullYear(), links = [] } = Astro.props;
 	</div>
 </footer>
 <style>
-	.eel-footer { background: #111827; color: #9ca3af; padding: 2rem 1rem; }
-	.eel-footer__inner { max-width: 80rem; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
-	.eel-footer__copy { margin: 0; font-size: 0.875rem; }
-	.eel-footer__links { display: flex; gap: 1.5rem; list-style: none; margin: 0; padding: 0; }
-	.eel-footer__link { color: #9ca3af; text-decoration: none; font-size: 0.875rem; min-height: 44px; display: inline-flex; align-items: center; padding: 0.25rem 0.5rem; border-radius: 4px; }
-	.eel-footer__link:hover { color: #f9fafb; text-decoration: underline; }
-	.eel-footer__link:focus-visible { box-shadow: var(--focus-ring, 0 0 0 3px rgba(26, 86, 219, 0.5)); outline: none; outline-offset: var(--focus-offset, 2px); background: #1f2937; }
+	.eel-footer { background: var(--color-neutral-900, #111827); color: var(--color-neutral-400, #9ca3af); padding: var(--spacing-8, 2rem) var(--spacing-4, 1rem); padding-left: calc(var(--spacing-4,1rem) + var(--safe-left,0px)); padding-right: calc(var(--spacing-4,1rem) + var(--safe-right,0px)); }
+	.eel-footer__inner { max-width: var(--content-max, 80rem); margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--spacing-4, 1rem); }
+	.eel-footer__copy { margin: 0; font-size: var(--text-sm, 0.875rem); }
+	.eel-footer__links { display: flex; gap: var(--spacing-6, 1.5rem); list-style: none; margin: 0; padding: 0; }
+	.eel-footer__link { color: var(--color-neutral-400, #9ca3af); text-decoration: none; font-size: var(--text-sm, 0.875rem); min-height: var(--touch-min, 44px); display: inline-flex; align-items: center; padding: 0.25rem 0.5rem; border-radius: var(--radius-md, 4px); }
+	.eel-footer__link:hover { color: var(--color-neutral-50, #f9fafb); text-decoration: underline; }
+	.eel-footer__link:focus-visible { box-shadow: var(--focus-ring, 0 0 0 3px rgba(26, 86, 219, 0.5)); outline: none; outline-offset: var(--focus-offset, 2px); background: var(--color-neutral-800, #1f2937); }
 </style>

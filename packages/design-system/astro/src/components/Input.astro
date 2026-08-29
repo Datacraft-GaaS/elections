@@ -1,0 +1,49 @@
+---
+export interface Props {
+  label: string;
+  id: string;
+  type?: string;
+  value?: string;
+  placeholder?: string;
+  required?: boolean;
+  hint?: string;
+  error?: string;
+  autocomplete?: string;
+  pattern?: string;
+  minlength?: number;
+  maxlength?: number;
+}
+const { label, id, type = 'text', value, placeholder, required, hint, error, autocomplete, pattern, minlength, maxlength } = Astro.props;
+const describedBy = [hint ? `${id}-hint` : null, error ? `${id}-error` : null].filter(Boolean).join(' ') || undefined;
+const invalid = !!error;
+---
+<div class="eel-field">
+  <label for={id} class="eel-field__label">{label}{required && <span aria-hidden="true"> *</span>}</label>
+  {hint && <span id={`${id}-hint`} class="eel-field__hint">{hint}</span>}
+  <input
+    id={id}
+    name={id}
+    type={type}
+    value={value}
+    placeholder={placeholder}
+    required={required}
+    aria-describedby={describedBy}
+    aria-invalid={invalid ? 'true' : undefined}
+    autocomplete={autocomplete}
+    pattern={pattern}
+    minlength={minlength}
+    maxlength={maxlength}
+    class:list={['eel-field__input', invalid && 'eel-field__input--error']}
+  />
+  {error && <span id={`${id}-error`} class="eel-field__error" role="alert">{error}</span>}
+</div>
+<style>
+  .eel-field { display:flex; flex-direction:column; gap: var(--spacing-1, 4px); }
+  .eel-field__label { font-size: var(--text-sm, 0.875rem); font-weight: 600; color: var(--color-text-primary, #111827); }
+  .eel-field__hint { font-size: var(--text-xs, 0.75rem); color: var(--color-text-secondary, #4b5563); line-height: var(--leading-normal, 1.5); }
+  .eel-field__input { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid var(--color-neutral-300, #d1d5db); border-radius: var(--radius-md, 4px); font: inherit; background: var(--color-surface-bg, #fff); color: var(--color-text-primary, #111827); min-height: var(--touch-min, 44px); }
+  .eel-field__input:focus-visible { box-shadow: var(--focus-ring); outline: none; outline-offset: var(--focus-offset, 2px); border-color: var(--color-brand-primary); }
+  .eel-field__input--error { border-color: var(--color-semantic-danger, #b91c1c); background: var(--color-alert-danger-bg, #fef2f2); }
+  .eel-field__error { font-size: var(--text-sm, 0.875rem); color: var(--color-semantic-danger, #b91c1c); line-height: var(--leading-normal, 1.5); }
+  @media (prefers-reduced-motion: reduce) { .eel-field__input { transition:none; } }
+</style>
