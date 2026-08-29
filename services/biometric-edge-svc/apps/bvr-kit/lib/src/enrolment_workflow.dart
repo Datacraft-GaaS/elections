@@ -27,14 +27,18 @@ enum EnrolmentStep {
 ///   - Amputee / assisted path: no-finger workflow (EC-HUM-02, EC-HUM-05)
 ///   - Distress finger: covert alert via edge-api /distress (EC-IDN-08)
 class EnrolmentWorkflowScreen extends StatefulWidget {
-  const EnrolmentWorkflowScreen({super.key});
+  const EnrolmentWorkflowScreen({super.key, this.sensor});
+
+  /// Injected driver — `Fap60SensorDriver` for hardware, `MockSensorDriver` for tests.
+  /// Defaults to mock in non-Android / CI; production `main.dart` injects `Fap60SensorDriver`.
+  final SensorDriver? sensor;
 
   @override
   State<EnrolmentWorkflowScreen> createState() => _EnrolmentWorkflowState();
 }
 
 class _EnrolmentWorkflowState extends State<EnrolmentWorkflowScreen> {
-  final SensorDriver _sensor = const MockSensorDriver();
+  late final SensorDriver _sensor = widget.sensor ?? const MockSensorDriver();
   EnrolmentStep _step = EnrolmentStep.idle;
   String? _error;
   final List<CaptureResult> _captures = [];

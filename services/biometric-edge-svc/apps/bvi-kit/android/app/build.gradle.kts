@@ -63,4 +63,6 @@ dependencies {
     // AntIris USB iris scanner SDK (vendor JARs + native libs in jniLibs/).
     implementation(files("libs/antiris.antusbcamera.jar"))
     implementation(files("libs/serenegiant.jar"))
+    // FAP60 fingerprint SDK (FUFingerSDK + FPAPI + FingerAlgo + native libs).
+    implementation(project(":libUvcFinger"))
 }

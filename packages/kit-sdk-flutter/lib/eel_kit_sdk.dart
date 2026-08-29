@@ -13,5 +13,6 @@ export 'src/a11y.dart';
 export 'src/bundle_security.dart';
 export 'src/verifier_ffi.dart';
 export 'src/iris_scanner.dart';
+export 'src/fingerprint_scanner.dart';
 export 'src/abis_kit_client.dart';
 export 'telemetry.dart';
