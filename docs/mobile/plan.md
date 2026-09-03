@@ -608,7 +608,7 @@ Hard rules:
 
 Current execution position (update the §0 tracker, not this section):
 
-> **NEXT ACTION: M0.4 — create `scripts/mobile/*`, justfile recipes, `.woodpecker/mobile.yaml`, extend `.woodpecker/test.yaml`.**
+> **NEXT ACTION: M0 EXIT GATE — pilot migration of cvr-field-officer (first consumer of M0.1–M0.3; proves foundation is consumable before mass migration). Then M1 backend closure.**
 
 ### Wave M0 — Foundations (≈ 10 ED)
 
