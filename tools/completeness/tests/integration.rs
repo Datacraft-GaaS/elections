@@ -112,6 +112,30 @@ fn todo_comment_triggers_in_rust() {
 }
 
 #[test]
+fn dart_stub_ui_triggers() {
+    let d = scratch();
+    mk(
+        &d,
+        "lib/screens/stub_screen.dart",
+        "class StubScreen extends StatelessWidget {\n  @override\n  Widget build(BuildContext context) {\n    return Scaffold(body: const Center(child: Text('GPS station visit log stub')));\n  }\n}\n",
+    );
+    let ks = kinds(&d);
+    assert!(ks.contains(&"dart_stub_ui".to_owned()), "got: {ks:?}");
+}
+
+#[test]
+fn dart_dead_handler_triggers() {
+    let d = scratch();
+    mk(
+        &d,
+        "lib/screens/dead_screen.dart",
+        "class DeadScreen extends StatelessWidget {\n  @override\n  Widget build(BuildContext context) {\n    return Scaffold(floatingActionButton: FloatingActionButton(onPressed: () {}, child: const Icon(Icons.add)));\n  }\n}\n",
+    );
+    let ks = kinds(&d);
+    assert!(ks.contains(&"dart_dead_handler".to_owned()), "got: {ks:?}");
+}
+
+#[test]
 fn http_501_triggers() {
     let d = scratch();
     mk(

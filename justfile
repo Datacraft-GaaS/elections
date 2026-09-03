@@ -298,6 +298,74 @@ check-release:
 # Housekeeping
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Mobile (Flutter) — Wave M0.4 scripts + justfile recipes
+# ---------------------------------------------------------------------------
+
+# One-time dev/CI env setup: Flutter, Android SDK, JDK, cosign, syft, fastlane
+mobile-bootstrap:
+    @scripts/mobile/bootstrap.sh
+
+# Codegen for one or all apps (pub get + build_runner + gen-l10n)
+mobile-codegen app="all":
+    @scripts/mobile/codegen.sh {{app}}
+
+# Analyze one or all apps (flutter analyze --fatal-infos)
+mobile-analyze app="all":
+    @scripts/mobile/analyze.sh {{app}}
+
+# Test one or all apps (flutter test)
+mobile-test app="all":
+    @scripts/mobile/test.sh {{app}}
+
+# Build one app, staging flavor by default
+mobile-build app FLAVOR="staging":
+    @scripts/mobile/build.sh {{app}} --flavor {{FLAVOR}}
+
+# Sign one app (Android: apksigner + cosign)
+mobile-sign app:
+    @scripts/mobile/sign.sh {{app}}
+
+# Verify reproducible build (3× build, SHA-256 compare)
+mobile-verify-repro app:
+    @scripts/mobile/verify-reproducible.sh {{app}}
+
+# Deploy to MDM / managed Play Store
+mobile-deploy env="staging" app="all":
+    @scripts/mobile/deploy.sh --env {{env}} --app {{app}}
+
+# Install on physical device(s)
+mobile-install app device:
+    @scripts/mobile/install.sh {{app}} --device {{device}}
+
+# Cold-launch smoke test on device
+mobile-smoke app device:
+    @scripts/mobile/smoke.sh {{app}} --device {{device}}
+
+# Fleet health monitoring
+mobile-monitor env="staging":
+    @scripts/mobile/monitor.sh --env {{env}}
+
+# A11y/i18n sweep on one app
+mobile-a11y app:
+    @scripts/mobile/a11y-sweep.sh {{app}}
+
+# Kill-drill + offline-drill on device
+mobile-drills app device:
+    @scripts/mobile/kill-drill.sh {{app}} --device {{device}}
+    @scripts/mobile/offline-drill.sh {{app}} --device {{device}}
+
+# Full mobile CI: analyze + test + build(staging) + sbom for all apps
+mobile-ci:
+    @echo "[mobile-ci] running mobile CI for all apps..."
+    @scripts/mobile/analyze.sh all
+    @scripts/mobile/test.sh all
+    @for app in hello-flutter cvr-field-officer; do \
+      scripts/mobile/build.sh $$app --flavor staging; \
+      scripts/mobile/sbom.sh $$app; \
+    done
+    @echo "[mobile-ci] done"
+
 # Remove build artifacts
 clean:
     @echo "[clean] removing build artifacts..."
@@ -306,4 +374,5 @@ clean:
     @find services packages -name ".ruff_cache" -type d -exec rm -rf {} + 2>/dev/null || true
     @find services -path "*/ex/*/_build" -type d -exec rm -rf {} + 2>/dev/null || true
     @find services -path "*/ex/*/deps" -type d -exec rm -rf {} + 2>/dev/null || true
+    @rm -rf dist/mobile
     @echo "[clean] done"

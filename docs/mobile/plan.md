@@ -12,6 +12,45 @@ their own estimates.
 
 ---
 
+## 0. How to use this plan — read this first (prevents the known misreads)
+
+Two misreads have already cost agents time. Internalize both before working:
+
+1. **Do NOT abort because foundation artifacts are missing.** The Wave M0
+   packages and scripts (`eel_design`, `eel-core-flutter`, `scripts/mobile/*`,
+   the justfile recipes, `.woodpecker/mobile.yaml`) do not all exist yet.
+   **They are not missing prerequisites — they ARE the work items.** Create
+   them at the exact paths given in §11 Wave M0. Searching for them and
+   concluding "the repo cannot fulfil the plan" is wrong.
+2. **Do NOT re-scaffold the apps.** All 17 existing Flutter app projects
+   (pubspec.yaml verified) already exist under `services/*/apps/`. Only
+   `citizen-verify` must be created from scratch (Wave M4). Work happens
+   inside the existing projects.
+
+Verified ground truth (file-inspected 2026-09-03):
+
+| Artifact | State | Action |
+|---|---|---|
+| 17 app projects under `services/*/apps/*` (poll-clerk, observer, party-agent, field-support, personnel, cvr-field-officer, custody-mobile, bvr-kit, bvi-kit, diaspora-kit, rts-kit, lms-offline, accred-scanner, kit-l1, legacy-android, hello-flutter) | **exist** | migrate/complete per wave; never recreate |
+| `services/field-mobile-svc/apps/citizen-verify` | **does not exist** | Wave M4 creates it |
+| `packages/kit-sdk-flutter` (+ example) | exists, production-grade | Wave M0.3 extends it |
+| `packages/design-system/tokens.json` | exists | input for `eel_design` codegen (no flutter/ dir was present) |
+| `packages/design-system/flutter/` (`eel_design`) | **was missing → Wave M0.1** | ✅ DONE 2026-09-03 (see status tracker in §11) |
+| `packages/eel-core-flutter/` | **was missing → Wave M0.2** | 🔄 in progress (see tracker) |
+| `scripts/mobile/*`, justfile `mobile-*` recipes, `.woodpecker/mobile.yaml` | **missing → Wave M0.4** | create all |
+| `tools/completeness` `dart_stub_ui` rule | **missing → Wave M0.5** | create |
+| `mobile-bff` echo handlers + 18 unbound OpenAPI paths | exists as stubs | Wave M1 replaces/binds |
+
+Wave status tracker (agents MUST update this line as work completes):
+
+> **M0.1 ✅ · M0.2 ✅ · M0.3 ✅ · M0.4 ✅ · M0.5 ✅ · M1 ⬜ · M2 ⬜ · M3 ⬜ · M4 ⬜ · M5 ⬜** (⬜ not started · 🔄 in progress · ✅ done with gates green)
+
+Definition of "done" for a plan work item is always: the named verification
+command passes in this repo, and the tracker above is updated. Never mark
+done on intent.
+
+---
+
 ## 1. Ground truth: what exists and what must change
 
 18 Flutter apps under `services/*/apps/` plus the SDK. Current verdicts (evidence
@@ -525,72 +564,265 @@ Dependency order: foundations first, then backends, then apps, then hardening.
 Apps inside a wave are parallelizable. Estimates are sequential EDs for one
 agent; scale by parallelizing across apps.
 
+### 11.0 Mandatory execution order (violations = wasted work)
+
+Waves are strictly sequential. Within a wave, follow the numbered item order
+exactly. The full order, with the reason each edge exists:
+
+```
+M0.1 eel_design          ← every app UI and M2 depend on these components
+  → M0.2 eel-core-flutter← imports eel_design? no — imports kit-sdk; but apps
+                            import BOTH, so both must exist before app work
+  → M0.3 kit-sdk extend  ← M0.2's session/upload consume kit-sdk APIs (EelSecureStore,
+                           EelHttpClient, EelOfflineQueue); pinning lands here
+                           because eel-core api_client (app layer) depends on it
+  → M0.4 scripts/CI      ← wraps ALL M0 packages + pilot; needs them to exist
+  → M0.5 scanner rule    ← CI enforcement (mobile-ci) references the rule
+  → M0 EXIT: pilot migration of cvr-field-officer (first consumer of M0.1+M0.2+M0.3;
+             proves the foundation is consumable before mass migration)
+  → M1 backend closure   ← apps must NOT start real handler work until endpoints +
+                           contracts exist (contract-first repo policy; Pact mocks
+                           only as bridge while M1 runs)
+  → M2 persona apps      ← needs M0 packages + M1 endpoints/contracts
+  → M3 kits              ← needs M0.3 attestation/pinning + M1 bff paths; sequenced
+                           AFTER M2 so shared persona patterns are proven
+  → M4 citizen-verify + long tail ← needs M1 bff + M2 patterns settled
+  → M5 hardening/rollout ← needs ALL apps existing; sweeps everything at once
+```
+
+Hard rules:
+1. Do not start wave M(n+1) item 1 until wave M(n) exit gate passes.
+2. Within M0, order is M0.1 → M0.2 → M0.3 → M0.4 → M0.5 → pilot. Do not
+   parallelize M0.3 with M0.2 (eel-core consumes kit-sdk types; changing the
+   SDK concurrently breaks eel-core's compile).
+3. Within M2, app order is poll-clerk → party-agent → observer →
+   field-support → personnel (poll-clerk first: its module spec M31 is the
+   reference implementation the others copy; personnel last because it is a
+   completion, not a rebuild).
+4. Within M1, contracts (item 2) may be authored in parallel with handlers
+   (item 1) ONLY if authored first — apps blocked on both otherwise.
+5. If blocked by external dependency (device farm, GCP project, Keycloak in
+   CI), stop that item, record the exact blocker in the §0 tracker line for
+   that item, and move to the next independent item — never skip a
+   verification.
+
+Current execution position (update the §0 tracker, not this section):
+
+> **NEXT ACTION: M0.4 — create `scripts/mobile/*`, justfile recipes, `.woodpecker/mobile.yaml`, extend `.woodpecker/test.yaml`.**
+
 ### Wave M0 — Foundations (≈ 10 ED)
 
-1. `packages/design-system/flutter` (eel_design) + tokens codegen + 20 core
-   widgets + golden rig.
-2. `packages/eel-core-flutter`: bootstrap FSM, session/OIDC+PKCE, config,
-   connectivity, outbox drain, evidence upload, problem+json, tamper.
-3. kit-sdk: SPKI pinning adapter; `EelEncryptedIsarStore`; push abstraction;
-   real Play Integrity/App Attest clients (backend verdict endpoint stubbed
-   until M1 lands — dev flavor only).
-4. `scripts/mobile/*` + justfile recipes + `.woodpecker/mobile.yaml`.
-5. Scanner: `dart_stub_ui` rule; CI analyze step.
+Execute strictly in the order M0.1 → M0.2 → M0.3 → M0.4 → M0.5 → M0 pilot
+(§11.0). Every item lists: exact path to create/modify, what goes inside, and
+the verification command that proves it. Do not skip ahead.
 
-**Exit**: `just mobile-ci` green for hello-flutter + one migrated app
-(cvr-field-officer as pilot); reproducible-build gate green; scanner rule live.
+**M0.1 — `packages/design-system/flutter/` (package name `eel_design`) — ✅ DONE 2026-09-03**
+
+- Create `pubspec.yaml` (name `eel_design`, sdk ≥3.3.0, no deps beyond flutter/flutter_test/flutter_lints).
+- Create `tool/codegen_tokens.dart` reading `../tokens.json` → emits `lib/src/theme/tokens.dart` (raw token maps: colors, dimensions, font sizes rem→px @16, motion, easing, focus).
+- Create `lib/src/theme/eel_colors.dart` (typed `EelColors` ThemeExtension light+dark, `EelSpacing`, `EelRadius`, `EelSizing` [minTouch 44, enforcedTouch 48], `EelMotion`, `EelTypography`, `EelFocus`) and `lib/src/theme/eel_theme.dart` (`EelTheme.light()/dark()` ThemeData + `context.eelColors` accessor).
+- Create the §5.2 widgets in `lib/src/widgets/`: `eel_scaffold.dart`, `eel_button.dart`, `eel_text_field.dart` (incl. `EelPinField`), `eel_inputs.dart` (`EelSelect`, `EelSearchField`), `eel_chips.dart` (`EelStatusChip`, `EelSlaTimerChip`, `EelSyncIndicator`), `eel_banner.dart`, `eel_connectivity.dart`, `eel_states.dart` (`EelEmptyState`, `EelLoadingState`, `EelErrorState`, `EelOfflineState`, `EelPermissionRationale`, `EelProblem`), `eel_secure_screen.dart`, `eel_step_flow.dart`, `eel_result_card.dart`, `eel_seal_stamp.dart`, `eel_voice_guide_button.dart`, `eel_min_hit_target.dart`. All exported from `lib/eel_design.dart`.
+- Tests: `test/token_parity_test.dart` (generated maps vs tokens.json), `test/widgets_test.dart` (incl. 48 dp hit-target + semantics assertions), `test/golden_test.dart` (light+dark goldens per widget in `test/goldens/`, text-scale-2.0 overflow check).
+- **Verification (all must pass):** `cd packages/design-system/flutter && flutter analyze` → 0 issues; `flutter test` → all green. **Status: ✅ complete (analyze clean, 21 tests + 42 goldens pass).**
+
+**M0.2 — `packages/eel-core-flutter/` (package name `eel_core_flutter`) — 🔄 IN PROGRESS**
+
+- Create `pubspec.yaml` (path-dep on `../../packages/kit-sdk-flutter`; deps: riverpod, oauth2_client, local_auth, connectivity_plus, package_info_plus, dio, uuid, crypto; dev: freezed/json_serializable if used).
+- Create, under `lib/src/`:
+  - `bootstrap/bootstrap_fsm.dart` — the §2.4 FSM: `BootstrapStage` enum (cold, integrityCheck, attestation, config, auth, roleRoute, ready, blockedRasp/blockAttest/blockConfig/blockAuth/blockVersion), immutable `BootstrapState` (stage, supportCode, detail, attempt), `StepResult` sealed class (StepOk/StepBlock), `BootstrapFsm` runner with listener emission. **✅ written**
+  - `errors/problem_json.dart` — `ApiProblem` (RFC 9457: type/title/status/detail/instance/extra), `ApiProblemException`, `parseProblem(body, fallbackStatus)`, `supportId` getter. **✅ written**
+  - `connectivity/connectivity_probe.dart` — `ConnectivityState` enum (online/degraded/offline/captivePortal/untrusted), `ConnectivityProbe` (HEAD `{bff}/healthz` via pinned client), `stateFromProbeError` mapping (cert/handshake/pin → untrusted; redirect/dns → captivePortal; else offline). **✅ written**
+  - `config/app_config.dart` — `AppConfig` model (app_id, feature_flags, pin_set_id, version_floor, rate_limit_policy, station/cluster binding), `ConfigFetcher` interface, `AppConfigService` (fetch → cache in secure store; offline → last-good cache), `isVersionBlocked(current, floor)` semver gate. **✅ written**
+  - `outbox/outbox.dart` — `OutboxState` enum, hash-chained `OutboxRecord` (id, idempotencyKey, type, payload, hlc, previousHash, hash), `OutboxStore` interface + `InMemoryOutboxStore`, `OutboxDrainer` (2xx→synced, 4xx-except-408/429→failed, network/5xx/408/429→pending, 8 attempts→dead; full-jitter backoff base 1 s factor 2 cap 60 s), `enforceQueueBounds` (per-type capacity, never evict audit types). **✅ written**
+  - `outbox/events.dart` — `chainHash` (SHA-256 prev|payload|hlc), `HlcSource` interface, `buildCloudEvent` (specversion 1.0 + eel_hlc), `sha256Hex`. **✅ written**
+  - `tamper/tamper.dart` — `TamperKind` enum, `TamperEvent` (`eel.field_mobile.device_tamper_detected.v1` payload), `RaspinChecker`/`TamperEventSink` interfaces, `tamperKindFromChecks` reducer, `detectAndReport` composite. **✅ written**
+  - `session/session.dart` — `SessionPhase` enum, immutable `SessionState` (tokens, role, attestationBound, pinFailures, lockedUntil), PIN policy constants (5 fails → 30 min), pure reducers `reducePinFailure/Success`, `isLockoutActive`, `OidcFlow` interface (authorize w/ attestation verdict, refresh), `StepUpGate` interface (local_auth biometric + PIN). **✅ written**
+  - `upload/evidence_upload.dart` — **✅ DONE 2026-09-03**: multipart upload with SHA-256 integrity, consent gate for large uploads on degraded (EC-CON-03), storage-full refusal (EC-MOB-02). 20 tests green, analyze clean.
+  - `search/search_index.dart` — **⬜ TODO (may defer to app need)**: simple inverted-index over content bundles; ≤ 1 s first result budget.
+- Tests mirroring each module (FSM transitions incl. blocked paths, outbox retry/dead-letter/bounds, problem parsing, version gate, lockout math, probe error mapping).
+- **Verification (all must pass):** `cd packages/eel-core-flutter && flutter pub get && flutter analyze` → 0 issues; `flutter test` → green.
+
+**M0.3 — extend `packages/kit-sdk-flutter/` — ✅ DONE 2026-09-03**
+
+Modify the EXISTING package (do not recreate):
+- `lib/src/http_client.dart`: add SPKI-pinning `HttpClientAdapter` (pin set from config + `assets/config/pins-<set>.json`; dual-pin rotation window; pin failure → connection refused + `connectivity.untrusted`).
+- New `lib/src/isar_store.dart`: `EelEncryptedIsarStore` wrapping Isar 3.x open with AES-256 key from `EelSecureStore`, key lifecycle + N-1 migration test.
+- New `lib/src/push.dart`: push notification abstraction (register/unregister, payload = event type + record id only, no PII).
+- New `lib/src/attestation_play_integrity.dart` + `attestation_app_attest.dart`: real clients behind existing `EelAttestationClient` (backend verdict endpoint `POST /api/v1/mobile/bff/attestation/verdict` stubbed until M1 — dev flavor only). Keep `EelAttestationClientStub` compiled only into dev flavor.
+- Polygon geo utils over existing geolocator dep.
+- Tests for pinning (mitmproxy rogue-CA pattern in test double), store key lifecycle, push payload shape.
+- **Verification:** `cd packages/kit-sdk-flutter && flutter analyze && flutter test` → green (existing tests stay green).
+
+**M0.4 — `scripts/mobile/*` + justfile + Woodpecker — ⬜ NOT STARTED**
+
+- Create `scripts/mobile/` with the 16 scripts in §10.1 (bootstrap, codegen, analyze, test, build, sbom, sign, verify-reproducible, install, smoke, deploy, rotate-pins, monitor, a11y-sweep, kill-drill, offline-drill) + `lib/common.sh` + `apps.txt` registry. All bash `set -euo pipefail`.
+- Append the `mobile-*` recipes from §10.2 to the root `justfile`.
+- Create `.woodpecker/mobile.yaml` per §10.3 (mobile-build matrix, mobile-sign on tag, mobile-device-nightly, mobile-a11y).
+- Extend `.woodpecker/test.yaml` `test-flutter` step with `flutter analyze --fatal-infos`.
+- **Verification:** `just mobile-ci` runs and is green for `hello-flutter` + `cvr-field-officer` (analyze+test+build staging+sbom).
+
+**M0.5 — Completeness scanner Dart rule — ⬜ NOT STARTED**
+
+- `tools/completeness`: add `dart_stub_ui` finding class matching `Text('... stub')` / `Center(child: Text('... stub'))` literals in `.dart` files (closes the audit blind spot).
+- Allowlist any current findings with expiry; new findings → red build.
+- **Verification:** scanner flags a seeded fixture and passes on clean code; `just ci` unaffected elsewhere.
+
+**Wave M0 exit gate (all four must hold, in this order):**
+1. Pilot migration of cvr-field-officer complete (first consumer of M0.1–M0.3;
+   §11.0 order step after M0.5): uses eel_design theme + eel_core bootstrap +
+   kit-sdk pinned client; `flutter analyze` + `flutter test` green.
+2. `just mobile-ci` green for hello-flutter + cvr-field-officer.
+3. Reproducible-build gate green (`verify-reproducible.sh` on pilot).
+4. §0 tracker updated: all M0 items ✅. Only then may M1 item 1 start.
 
 ### Wave M1 — Backend closure (≈ 12 ED)
 
-1. mobile-bff real handlers (§4.1) + push-router crate + Keycloak/SpiceDB
-   wiring + idempotency store.
-2. Contracts: field/*.yaml authored; bff.yaml bindings as handlers land.
-3. training-api CRL + LMS path fixes; inventory custody bindings.
-4. k6 profiles for BFF endpoints; Grafana dashboards + alerts.
+Every item: exact file, what changes, verification.
+
+1. **mobile-bff handlers** — replace echo stubs in
+   `services/field-mobile-svc/crates/mobile-bff/src/spec.rs` with real
+   handlers for the 11 endpoint groups in §4.1, **in this order** (most
+   apps blocked on earliest items):
+   1. `/config` (every app's bootstrap needs it),
+   2. `/sessions` + `/refresh` (auth path),
+   3. `/attestation/verdict` (new path; unblocks M0.3 client completion),
+   4. `/incidents`, 5. `/voter/verification`, 6. `/station/status`,
+   7. `/forms/sync`, 8. `/dispatch/assignments[/{id}]`,
+   9. `/observer/access-pass|observations`, 10. `/tamper-events`,
+   11. `/push-tokens` (new path) + push-router crate.
+   Each handler: SpiceDB permission check, UUID7 idempotency store
+   [Postgres, 72 h], problem+json errors, OTel spans, PII tier wrappers,
+   rate limits from policy bundle.
+   New crate `services/field-mobile-svc/crates/push-router/` (FCM/APNs
+   senders, topic per role, no-PII schema-validated payloads).
+   - New BFF paths to add to `bff.yaml`: `POST /api/v1/mobile/bff/attestation/verdict`,
+     `POST /api/v1/mobile/bff/push-tokens`.
+   - **Verification:** `cargo test -p mobile-bff -p push-router` green;
+     `cargo clippy -- -D warnings` clean; Pact contract tests per path green;
+     DAST pass logged (audit step 9.5).
+2. **Contracts** — author `packages/openapi-contracts/field/{poll-clerk,party-agent,observer,field-support,citizen-verify}.yaml`
+   per §4.2 (path counts: 9/10/11/10/M13-M29); bind the 18 BFF paths in
+   `packages/openapi-contracts/field-mobile-bff/{openapi,bff}.yaml` **only as
+   handlers land**; delete allowlist rows with expiry. Bind 9 custody paths
+   (`custody/openapi.yaml`) and 4 cvr paths (`cvr/register.yaml`).
+   Never fabricate bindings (status.md item 14).
+   - **Verification:** `just ci` contract-validation step green; Karapace
+     schema check green; allowlist row count for bff = 0.
+3. **Other backends** per §4.3: training-api `GET /api/v1/training/accreditation/crl`
+   + LMS submission path fix; inventory-svc custody endpoints + spares
+   lookup; rts-device-api diaspora-batch endpoint + real SMS status; bvi-svc
+   kiosk register lookup + station polygons.
+   - **Verification:** each service `cargo test` green; its OpenAPI bound.
+4. **Load + dashboards** — k6 profiles in `loadtest/` for BFF endpoints
+   (AC-M31-10 for check-in + incidents); author the 6 Grafana dashboards +
+   `*-slo-alerts.yaml` under `platform/observability/field-mobile-svc/` (§10.4).
+   - **Verification:** `k6 run <profile>` smoke pass; dashboards JSON valid.
 
 **Exit**: Pact suite green for all persona-app endpoints; 18 bff paths bound
-(allowlist cleared); AC-M31-10 style load evidence for check-in + incidents.
+(allowlist cleared); AC-M31-10 style load evidence for check-in + incidents;
+§0 tracker updated (M1 ✅).
 
 ### Wave M2 — Persona apps (≈ 45 ED; the biggest wave)
 
-poll-clerk (12), party-agent (10), observer (10), field-support (8),
-personnel-completion (5). Full FR coverage per app plan; all DoD items.
+For each app, read `docs/mobile/<app>.md` first, then the module spec. The
+migration recipe is identical for every app:
+
+1. Read the app's plan file + module spec + OpenAPI contract (mandated order,
+   top of this file).
+2. Restructure to the §2.1 layout (`lib/src/core/*`, `features/*`, delete
+   bare `Dio()`/`http.post` usage — cvr-field-officer, accred-scanner,
+   lms-offline, field-support currently violate this).
+3. Delete the app-local `AttestationService` stub (always-pass) → wire
+   kit-sdk real client (§3.1; security P0). Applies to poll-clerk, observer,
+   party-agent.
+4. Replace every `Text('... stub')` screen with real feature screens built
+   ONLY from eel_design components (§5.2 list — apps must not hand-roll
+   these).
+5. Implement the §5.3 state matrix on every screen
+   (`loading · loaded · empty · offline · error · permission-denied ·
+   unauthenticated · version-blocked · tamper-blocked`) with goldens.
+6. i18n per §6 (en+sw minimum; 11 Kenyan locales for persona apps; keys from
+   `packages/i18n`, no service duplication).
+7. Tests per §8 (unit ≥ 70 % on core/ + repositories; widget goldens per
+   state; Pact per endpoint; FR/AC tags in every test name).
+8. Tick the §9 DoD checklist with evidence links, in the app's plan file.
+
+Apps and EDs: poll-clerk (12), party-agent (10), observer (10),
+field-support (8), personnel-completion (5).
+**Order: poll-clerk → party-agent → observer → field-support → personnel**
+(rule 3 in §11.0; poll-clerk sets the pattern, personnel is a completion).
+Parallelizable only after poll-clerk is done.
+
+**Verification per app:** `flutter analyze` 0 issues; `flutter test` green;
+Pact green; `eel-completeness scan --fail-on-new` green.
 
 **Exit**: per-app DoD checklists signed with evidence; MDM staging rollout;
-UAT scripts for DPO/clerk/agent/observer roles.
+UAT scripts for DPO/clerk/agent/observer roles; §0 tracker updated (M2 ✅).
 
 ### Wave M3 — Kits (≈ 30 ED)
 
-bvr-kit (8), bvi-kit (10), diaspora-kit (5), rts-kit completion (4),
-custody-mobile backend binding + locales (3). Hardware-gated items follow the
-repo convention: everything testable in CI is tested; device-only items are
-listed with exact hardware prerequisite and a self-check script.
+Order: bvr-kit (8) → bvi-kit (10) → diaspora-kit (5) → rts-kit completion (4)
+→ custody-mobile backend binding + locales (3). bvr-kit first (largest stub
+surface: MRZ/IPRS/sign/upload); custody-mobile last because its binding
+depends on inventory-svc endpoints that may land late in M1.
 
+Hardware-gated items follow the repo convention: everything testable in CI is
+tested; device-only items are listed with the exact hardware prerequisite
+(FAP60, AntIris, RFID reader, printer) and a `--check-hardware` self-check
+script. Replace the known stubs: bvr-kit MRZ/IPRS/sign/upload; bvi-kit
+simulated NTS/GNSS/capture; diaspora-kit fabricated HSM signature → real
+device key + deferred batch upload; rts-kit SMS fallback real status.
+
+**Verification per kit:** as Wave M2 + kit-simulator ABIS round-trip where
+applicable; §9 DoD green except explicit device-gated rows.
 **Exit**: kit DoD lists green except explicit device-gated rows; ABIS ingest
-round-trip proven with kit-simulator.
+round-trip proven with kit-simulator; §0 tracker updated (M3 ✅).
 
 ### Wave M4 — citizen-verify (new app) + long tail (≈ 15 ED)
 
-citizen-verify app (M13/M29) per its plan (8); lms-offline completion (2);
-accred-scanner completion (2); kit-l1 integration into bvi/rts (2);
-legacy-android decision execution (1).
+Order: citizen-verify (8) → lms-offline completion (2) → accred-scanner
+completion (2) → kit-l1 integration into bvi/rts (2) → legacy-android
+decision execution (1). citizen-verify first: it is the only net-new app and
+its read-path contract tests feed the M5 gates; legacy-android last because
+its outcome (fix vs retire) depends on the other outcomes.
+
+- Create `services/field-mobile-svc/apps/citizen-verify/` from scratch per
+  `docs/mobile/citizen-verify.md` (M13/M29): scaffold with flutter create,
+  then §2.1 structure, eel_design + eel_core wiring, 10M-user read path
+  contract tests against BFF + CDN caching.
+- lms-offline completion (2): fix API path to
+  `/api/v1/training/lms/assessments/{assessment_id}/submissions`; offline
+  sync per plan.
+- accred-scanner completion (2): CRL endpoint integration.
+- kit-l1 integration into bvi/rts (2).
+- legacy-android decision execution (1).
+- **Verification:** citizen-verify DoD green incl. 10M-user read path
+  contract tests; each long-tail app `flutter analyze && flutter test` green;
+  §0 tracker updated (M4 ✅).
 
 **Exit**: citizen-verify DoD green incl. 10M-user read path contract tests
 against BFF + CDN caching; long-tail apps green.
 
 ### Wave M5 — Hardening & rollout (≈ 12 ED)
 
-1. 48 h offline drills, toxiproxy chaos, background-kill sweeps — all apps.
-2. Rooted-AVD security gate; mitmproxy captive gate.
-3. Reproducible-build verification all apps; SBOM + cosign in release pipeline.
-4. Full a11y/i18n sweep; fix findings.
+Order (each step's verification gates the next):
+1. 48 h offline drills (`scripts/mobile/offline-drill.sh`), toxiproxy chaos
+   profiles, background-kill sweeps (`kill-drill.sh`) — **all apps**.
+2. Rooted-AVD security gate; mitmproxy captive/pin gate — attestation
+   hard-fail, RASP, pinning, no-PII-logs evidence per app.
+3. Reproducible-build verification all apps (`verify-reproducible.sh`);
+   SBOM + cosign in release pipeline.
+4. Full a11y/i18n sweep (`a11y-sweep.sh` all apps); fix findings; pseudo-
+   locale pass.
 5. MDM production rollout runbook + staged cohort plan; monitor.sh dashboards
-   live; runbooks finalized.
+   live; runbooks finalized (`docs/runbooks/<svc>-mobile.md`).
+- **Verification:** `just ci` green; `eel-completeness scan --strict` zero
+  non-allowlisted findings in all `apps/` paths.
 
 **Exit**: `just ci` green; `eel-completeness scan --strict` zero
 non-allowlisted findings in all `apps/` paths; audit steps 9.2 (artefacts) and
 9.7 (SLA) evidenced for every app; gate-G7 style report
-(`docs/audit/mobile-completeness.md`) written.
+(`docs/audit/mobile-completeness.md`) written; §0 tracker updated (M5 ✅).
 
 ---
 

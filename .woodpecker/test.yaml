@@ -78,10 +78,14 @@ steps:
         LANG: flutter
     commands:
       - |
+        # flutter analyze --fatal-infos is the gate; test follows.
+        # Per-app matrix is in .woodpecker/mobile.yaml for full CI.
         find services -path '*/apps/*' -name 'pubspec.yaml' | while read f; do
           dir=$(dirname "$f")
+          echo "==> analyzing $dir"
+          (cd "$dir" && flutter analyze --fatal-infos) || { echo "ANALYZE FAILED: $dir"; exit 1; }
           echo "==> testing $dir"
-          (cd "$dir" && flutter test)
+          (cd "$dir" && flutter test) || { echo "TEST FAILED: $dir"; exit 1; }
         done
         if ! find services -path '*/apps/*' -name 'pubspec.yaml' | grep -q .; then
           echo "no Flutter sources, skip"

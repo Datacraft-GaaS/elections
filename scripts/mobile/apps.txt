@@ -1,0 +1,28 @@
+# App registry — Wave M0 pilot apps first, then full fleet.
+# Format: app_name|relative_path|flavors|targets|mdm_app_id
+# relative_path is relative to REPO_ROOT.
+#
+# M0 pilot apps (first consumers of M0.1+M0.2+M0.3):
+hello-flutter|services/hello-svc/apps/hello-flutter|dev,staging,production|android,ios|
+cvr-field-officer|services/bvr-svc/apps/cvr-field-officer|dev,staging,production|android,ios|
+#
+# Wave M2 persona apps:
+poll-clerk|services/field-mobile-svc/apps/poll-clerk|dev,staging,production|android|
+party-agent|services/field-mobile-svc/apps/party-agent|dev,staging,production|android|
+observer|services/field-mobile-svc/apps/observer|dev,staging,production|android|
+field-support|services/field-mobile-svc/apps/field-support|dev,staging,production|android|
+personnel|services/field-mobile-svc/apps/personnel|dev,staging,production|android,ios|
+#
+# Wave M3 kits:
+bvr-kit|services/biometric-edge-svc/apps/bvr-kit|dev,staging,production|android|
+bvi-kit|services/biometric-edge-svc/apps/bvi-kit|dev,staging,production|android|
+diaspora-kit|services/biometric-edge-svc/apps/diaspora-kit|dev,staging,production|android,ios|
+rts-kit|services/rts-svc/apps/rts-kit|dev,staging,production|android|
+custody-mobile|services/inventory-svc/apps/custody-mobile|dev,staging,production|android,ios|
+#
+# Wave M4 long tail:
+citizen-verify|services/field-mobile-svc/apps/citizen-verify|dev,staging,production|android,ios|
+lms-offline|services/training-svc/apps/lms-offline|dev,staging,production|android,ios|
+accred-scanner|services/training-svc/apps/accred-scanner|dev,staging,production|android|
+kit-l1|services/ai-platform-svc/apps/kit-l1|dev,staging,production|android|
+legacy-android|services/biometric-edge-svc/apps/legacy-android|dev,staging,production|android|

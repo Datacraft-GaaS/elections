@@ -4,7 +4,7 @@
 //!   Rust:   todo!(), unimplemented!(), #[ignore], empty match arms: _ => Unsupported
 //!   Python: TODO/FIXME/XXX comments, NotImplementedError, pass-only bodies, pytest.mark.skip
 //!   Elixir: TODO/FIXME/XXX, @tag :skip, UnimplementedError
-//!   Dart:   TODO/FIXME/XXX, it.skip/test.skip/xit
+//!   Dart:   TODO/FIXME/XXX, it.skip/test.skip/xit, UI stubs (Text('...stub...')), dead handlers (onPressed: () {})
 //!   TS/JS:  TODO/FIXME/XXX, it.skip/xit/test.skip, 501 handlers
 //!   OpenAPI: paths without x-handler-bound annotation
 //!   Kotlin: TODO(), NotImplementedError
@@ -128,6 +128,22 @@ fn build_patterns() -> Vec<Pattern> {
             re: Regex::new(r"\b(?:it\.skip|xit|test\.skip)\s*\(").unwrap(),
             severity: Severity::Warning,
             message: "skipped Dart/Flutter test",
+            extensions: &["dart"],
+        },
+        // Dart/Flutter: UI stub — Text('...stub...') or Center(child: Text('...stub...'))
+        Pattern {
+            kind: "dart_stub_ui",
+            re: Regex::new(r"Text\s*\([^)]*[Ss]tub[^)]*\)").unwrap(),
+            severity: Severity::Error,
+            message: "UI stub (Text('...stub...')); replace with real screen",
+            extensions: &["dart"],
+        },
+        // Dart/Flutter: dead button handler — onPressed: () {}
+        Pattern {
+            kind: "dart_dead_handler",
+            re: Regex::new(r"onPressed\s*:\s*\(\)\s*\{\s*\}").unwrap(),
+            severity: Severity::Warning,
+            message: "dead button handler (onPressed: () {}); wire real action",
             extensions: &["dart"],
         },
         // JS/TS: it.skip, xit, test.skip, describe.skip
