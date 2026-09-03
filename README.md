@@ -1,6 +1,6 @@
 # eel
 
-Integrated elections management platform, built for the Independent Electoral and Boundaries Commission of Kenya (IEBC) under tender IEBC/OIT/01/2026-2027. Software prime: Datacraft. Hardware prime: Mechrevo. Three-year build and steady-state operations, fifteen-year audit retention, Kenya-sovereign hosting on two IEBC-provided DR sites plus five regional edge clusters.
+Integrated elections management platform for the Independent Electoral and Boundaries Commission of Kenya (IEBC), built under tender IEBC/OIT/01/2026-2027. Software prime: Datacraft. Hardware prime: Mechrevo. Three-year build and steady-state operations, fifteen-year audit retention, Kenya-sovereign hosting on two IEBC-provided DR sites plus five regional edge clusters.
 
 [![build](https://img.shields.io/github/actions/workflow/status/Datacraft-GaaS/eel/ci.yml?branch=main)](https://github.com/Datacraft-GaaS/eel/actions)
 [![coverage](https://img.shields.io/codecov/c/github/Datacraft-GaaS/eel)](https://codecov.io/gh/Datacraft-GaaS/eel)
@@ -10,75 +10,215 @@ The identifier prefix `eel` is neutral by design: no class, package, event type,
 
 ## What this is
 
-This codebase is a full production election management system: 69 functional modules across 18 Kubernetes services handling the entire electoral life cycle in Kenya, from voter registration and biometric identification through polling-day tally and results certification to public verification, transparency logging, long-term archive, comprehensive reports (operational, statistical, regulatory, legal, public, financial, executive) with HSM signing and transparency-log anchoring, and ad-hoc reports authored by staff with SQL/query-builder validation and export to PDF, DOCX, Markdown, XLSX, CSV, and Parquet. The platform serves 22 million voters across 46,229 polling stations, 290 constituencies, and 47 counties, with an operational envelope that demands 99.99% availability for election-critical systems, HSM-backed cryptography, post-quantum hybrid signatures, a single monolithic Merkle transparency log published via five channels, and reproducible builds down to bit-identical binaries.
+- **The full electoral lifecycle.** Voter registration and biometric dedup, polling-day identification, results transmission and tally, declaration and certification, public verification, transparency logging, long-term archive. 69 functional modules across 18 Kubernetes services; every module in the RFP acceptance criteria is implemented, and every edge case in the 118-row edge-case matrix has test coverage linked in [docs/plans/TRACEABILITY.yaml](docs/plans/TRACEABILITY.yaml).
+- **Public verifiability.** A single monolithic Merkle transparency log per election with HSM-signed tree heads at 1-second, 60-second, and 5-minute cadences, published on five independent channels (IEBC website, GitHub mirror, IPFS pinned in Kenya, Kenya Gazette daily print anchor, KBC Radio daily hash bulletin). The IAB cosigns from day 1; external observers from day 2. The M14 reproducibility bundle lets any auditor rebuild the entire tally from primary evidence and reach the same Merkle root.
+- **Sovereign and highly available.** All data resident in Kenya on IEBC-provided infrastructure. T1 election-critical modules run at 99.99% with synchronous DR replication; T2 cycle-critical at 99.9% asynchronous; T3 routine at 99.5%. Five edge clusters (Nairobi, Mombasa, Kisumu, Eldoret, Garissa) serve reads with anycast failover.
+- **Hard security floor.** OWASP ASVS L3 on election-critical surfaces, L2 elsewhere. FIPS 140-3 Level 3+ HSMs, post-quantum hybrid signatures (ML-DSA + ECDSA P-384), ML-KEM-768 + X25519 key encapsulation, TLS 1.3 only.
+- **Built for every voter.** 11 languages (English, Kiswahili + 9 regional), WCAG 2.2 AA accessibility (AAA for the M68 referendum explainer), offline-first kits with paper backup always available.
 
-The tender that commissioned this work (IEBC/OIT/01/2026-2027) specified 69 modules grouped into 12 functional areas: voter registration (including special workflows for prisoners, KDF, IDPs, hospital patients), biometric matching and dedup, polling-day identification, results transmission from kits to tally centres, result declaration and certification, public verification (10M+ concurrent verifiers on election night), transparency logging with Merkle trees, chain of custody for equipment and ballots, political party and candidate management, primaries oversight, symbol registry and nomination processes, campaign finance transparency, grievance channels, Independent Assurance Board (IAB) dashboards, election command centre, queue transparency, boundary management (PostGIS-backed), inventory management, RLA post-election audit, election-court IT interface, transmission audit, parliamentary and judiciary reporting, county and international observer coordination, media and observer accreditation, voter education, poll-worker training, medical first response, secrecy assurance testing, financial forensics, referendum mechanics, recall procedures, by-election operations, diaspora voting, voter ID card production, budget tracking, HR payroll for temporary staff, and AI-driven anomaly detection, speech integrity, and turnout forecasting. Every module listed in the RFP acceptance criteria is implemented; every edge case in the 118-row edge-case matrix has test coverage linked in `docs/plans/TRACEABILITY.yaml`.
-
-The trust model is a single monolithic Merkle log per election, with domain-tagged leaves, HSM-signed Signed Tree Heads at 1-second, 60-second, and 5-minute cadences. The log is published on five independent channels: IEBC public website, GitHub mirror, IPFS pinned within Kenya, Kenya Gazette daily print anchor (hash only), and KBC Radio daily hash bulletin. Witness cosigning by the IAB begins day-1; external observers cosign day-2. A reproducibility bundle (M14) allows auditors to rebuild the entire tally from primary evidence and verify it reaches the same Merkle root.
-
-Data is segregated into two tiers: T1 election-critical (voter register, biometric submissions, results transmission, transparency log) mandates 99.99% availability and synchronous DR replication; T2 cycle-critical (party registration, candidate nomination, grievance handling) mandates 99.9% availability and asynchronous replication. Regional edge clusters in Nairobi, Mombasa, Kisumu, Eldoret, and Garissa cache and distribute read traffic; anycast failover to the primary DR site (Anniversary Towers) provides the RTO/RPO bounds listed below.
-
-## Operational envelope
+## At a glance
 
 | dimension | value |
 |---|---|
 | Registered voters (target) | 22M+ |
 | Polling stations | ~46,229 |
-| Constituencies | 290 |
-| Counties | 47 |
-| KIEMS kits | ~65,000 (of which ~14,100 legacy Android to reuse) |
+| Constituencies / counties | 290 / 47 |
+| KIEMS kits | ~65,000 (~14,100 legacy Android reused) |
 | Temporary election staff | ~250,000 |
 | Peak concurrent RTS sessions | 60,000 |
-| Peak concurrent portal viewers on election night | 5-10M |
-| Peak M13 verifier concurrency | 10M |
-| Peak concurrent staff check-ins in a 90-minute window | 250,000 |
-| Election-day write events (kits + RTS + agents + observers + queues) | 400-600M |
-| Sustained write rate at peak hour | 30-50k events/sec |
-| Extreme burst (evening RTS submission window) | 80-150k events/sec |
-| Statutory audit retention | 15 years |
-| Availability class, election-critical modules | 99.99% (T1) |
-| Availability class, cycle-critical modules | 99.9% (T2) |
-| Availability class, routine modules | 99.5% (T3) |
-| Data residency | Kenya (both DR sites and every edge cluster IEBC-provided) |
-| Voter-facing languages | 11 (English, Kiswahili + 9 regional) |
-| Accessibility floor | WCAG 2.2 AA (AAA for M68 referendum explainer) |
-| Security assurance floor | OWASP ASVS L3 on election-critical, L2 elsewhere |
-| HSM assurance floor | FIPS 140-3 Level 3+ |
+| Election-night portal viewers | 5-10M concurrent |
+| M13 verifier concurrency | 10M peak |
+| Staff check-ins in a 90-minute window | 250,000 |
+| Election-day write events | 400-600M |
+| Sustained write rate at peak | 30-50k events/sec |
+| Extreme burst (evening RTS window) | 80-150k events/sec |
+| Audit retention | 15 years |
+| Availability | T1 99.99% / T2 99.9% / T3 99.5% |
+| Data residency | Kenya (both DR sites, every edge cluster) |
+| Voter-facing languages | 11 |
+| Accessibility floor | WCAG 2.2 AA (AAA for M68) |
+| Security floor | OWASP ASVS L3 election-critical, L2 elsewhere |
+| HSM floor | FIPS 140-3 Level 3+ |
 
-## The 18 Kubernetes services
+## Architecture
 
-The 69 modules are implemented by 18 K8s services. One service is deployed identically to both DR sites plus each of the five edge clusters where relevant. Full per-module pages with every feature, acceptance criterion, and edge case are in `docs/plans/modules/`. Every service has a `docs/CAPABILITIES.md` cataloguing algorithms, source references (paper + venue + year, or ISO/ANSI/NIST standard), implementing crates, and standards satisfied.
+```mermaid
+flowchart LR
+    subgraph field[Field]
+        K[KIEMS kits, legacy Android, Flutter apps, Tauri desktop]
+    end
+    subgraph core[18 Kubernetes services]
+        S[bio-metric, register, polling-day, results, governance, AI services]
+        TL[transparency-svc: Merkle log + HSM signer]
+    end
+    subgraph pub[Publication]
+        P[5 channels: website, GitHub, IPFS, Gazette, KBC Radio]
+        W[IAB and observer witnesses]
+    end
+    K --> S
+    S <--> PG[(PostgreSQL, Kafka, Valkey, MinIO, OpenSearch)]
+    S --> TL
+    TL --> P
+    TL --> W
+```
 
-| service | primary language | tier | modules | runbook |
-|---|---|---|---|---|
-| biometric-edge-svc | Rust + Flutter (kits) | T1 | M01 bvr-device, M05 bvi-device, M24 diaspora-voting | [docs/runbooks/biometric-edge-svc.md](docs/runbooks/biometric-edge-svc.md) |
-| bvr-svc | Rust + Django admin | T1 | M02 bvr-backend, M35 cvr-continuous-voter-register, M36 voter-deregistration-appeal, M53 voter-id-card | [docs/runbooks/bvr-svc.md](docs/runbooks/bvr-svc.md) |
-| abis-svc | Rust (~80 crates) + Python (6 ONNX sidecars) + confidential compute (TDX/SEV-SNP) | T1 | M03 abis (full world-class stack: fingerprint MCC+CDEFFS+L3+SourceAFIS+DeepPrint, face ArcFace+3DMM+age+cross-domain, iris Daugman+PIE+DeepIrisNet, plus palm/latent/voice/vein/signature/periocular/ear/gait, PAD L2, cancelable+FHE+SMPC, NIST FpVTE/FRVT/IREX harnesses, 25-report catalogue + ad-hoc reports with DOCX/Markdown export) | [docs/runbooks/abis-svc.md](docs/runbooks/abis-svc.md); capability catalogue at [services/abis-svc/docs/CAPABILITIES.md](services/abis-svc/docs/CAPABILITIES.md) |
-| vprs-svc | Rust + Elixir LiveView | T2 | M04 vprs | [docs/runbooks/vprs-svc.md](docs/runbooks/vprs-svc.md) |
-| bvi-svc | Rust + Elixir LiveView + Astro | T1 | M06 bvi-backend, M07 bvv | [docs/runbooks/bvi-svc.md](docs/runbooks/bvi-svc.md) |
-| rts-svc | Rust event-sourced + Tauri desktop | T1 | M08 rts-device, M09 rts-ro, M10 rts-backend, M51 result-declaration-certification, M63 ballot-serial-chain | [docs/runbooks/rts-svc.md](docs/runbooks/rts-svc.md) |
-| portal-svc | Astro + Elixir LiveView + Rust | T2 | M11 public-portal, M52 election-calendar-gazette, M64 voter-list-public-inspection, M68 referendum-explainer | [docs/runbooks/portal-svc.md](docs/runbooks/portal-svc.md) |
-| crms-svc | Rust + Django + Elixir + Python | T2 | M12 crms, M45 party-registration-management, M46 party-primaries-oversight, M47 nomination-fee-payment, M67 party-symbol-colour-registry | [docs/runbooks/crms-svc.md](docs/runbooks/crms-svc.md) |
-| transparency-svc | Rust + HSM integration | T1 | M14 reproducibility-bundle, M17 speech-integrity contributions, M22 campaign-finance-transparency, P05 transparency-log, P06 HSM-signer | [docs/runbooks/transparency-svc.md](docs/runbooks/transparency-svc.md) |
-| ecc-svc | Elixir LiveView + Rust + Python | T2 | M15 iab-dashboard, M16 election-command-centre, M23 grievance-channels | [docs/runbooks/ecc-svc.md](docs/runbooks/ecc-svc.md) |
-| boundary-svc | Rust + PostGIS + Astro | T2 | M18 boundary-transparency | [docs/runbooks/boundary-svc.md](docs/runbooks/boundary-svc.md) |
-| queue-svc | Rust + Elixir LiveView + Python CV | T2 | M19 queue-transparency | [docs/runbooks/queue-svc.md](docs/runbooks/queue-svc.md) |
-| inventory-svc | Rust event-sourced + Django + Flutter mobile | T2 | M20 inventory-management, M39 ballot-printing-chain, M65 diaspora-ballot-physical-logistics | [docs/runbooks/inventory-svc.md](docs/runbooks/inventory-svc.md) |
-| governance-svc | Rust + Python + Elixir + Tauri | T2 | M21 rla-audit-tool, M40 election-court-it-interface, M41 post-election-review, M48 recall, M49 referendum-mechanics, M50 by-election-operations, M56 county-national-coordination, M57 international-observer-coordination, M58 parliamentary-judiciary-reporting, M59 oag-interface, M62 transmission-legal-basis-audit, M66 election-financial-forensics | [docs/runbooks/governance-svc.md](docs/runbooks/governance-svc.md) |
-| ai-platform-svc | Python (ONNX) + Rust gateway + Flutter kit plugin | T2 | M17 speech-integrity, M26 anomaly-fraud-detection, M28 ai-monitoring-stack, M44 turnout-forecasting-analytics, M61 secrecy-assurance-testing | [docs/runbooks/ai-platform-svc.md](docs/runbooks/ai-platform-svc.md) |
-| field-mobile-svc | Rust BFF + Flutter | T1/T2 | M13 public-verifier-app, M29 mobile-citizen-verify, M30 mobile-party-agent, M31 mobile-poll-clerk, M32 mobile-field-support, M33 mobile-personnel-dispatch, M34 mobile-observer | [docs/runbooks/field-mobile-svc.md](docs/runbooks/field-mobile-svc.md) |
-| training-svc | Django + Flutter offline | T3 | M37 voter-education-cms, M38 poll-worker-training-lms, M42 media-accreditation-portal, M43 observer-accreditation-portal, M60 medical-first-response | [docs/runbooks/training-svc.md](docs/runbooks/training-svc.md) |
-| support-admin-svc | Django + Rust + Python | T2 | M25 special-voter-workflows, M27 intent-preservation, M54 budget-expenditure, M55 hr-payroll, M69 long-term-archive | [docs/runbooks/support-admin-svc.md](docs/runbooks/support-admin-svc.md) |
+### The 18 Kubernetes services
 
-## The 43 shared packages
+Full per-module pages with every feature, acceptance criterion, and edge case are in [docs/plans/modules/](docs/plans/modules/). Every service has a capability catalogue (`docs/CAPABILITIES.md` under its directory) listing algorithms, source references, implementing crates, and standards satisfied. Operational runbooks are task-based and indexed in [docs/runbooks/README.md](docs/runbooks/README.md).
 
-Cross-language libraries under `packages/` provide auth, secrets, events, persistence, observability, and resilience foundations.
+| service | primary language | tier | modules |
+|---|---|---|---|
+| [biometric-edge-svc](services/biometric-edge-svc/docs/CAPABILITIES.md) | Rust + Flutter (kits) | T1 | M01 bvr-device, M05 bvi-device, M24 diaspora-voting |
+| [bvr-svc](services/bvr-svc/docs/CAPABILITIES.md) | Rust + Django admin | T1 | M02 bvr-backend, M35 cvr, M36 deregistration-appeal, M53 voter-id-card |
+| [abis-svc](services/abis-svc/docs/CAPABILITIES.md) | Rust (~80 crates) + Python (6 ONNX sidecars) + confidential compute (TDX/SEV-SNP) | T1 | M03 abis: full multi-modal stack (fingerprint, face, iris, palm, latent, voice, vein, signature, periocular, ear, gait), PAD L2, cancelable templates + FHE + SMPC, NIST harnesses, 25-report catalogue + ad-hoc reports |
+| [vprs-svc](services/vprs-svc/docs/CAPABILITIES.md) | Rust + Elixir LiveView | T2 | M04 vprs |
+| [bvi-svc](services/bvi-svc/docs/CAPABILITIES.md) | Rust + Elixir LiveView + Astro | T1 | M06 bvi-backend, M07 bvv |
+| [rts-svc](services/rts-svc/docs/CAPABILITIES.md) | Rust event-sourced + Tauri desktop | T1 | M08 rts-device, M09 rts-ro, M10 rts-backend, M51 result-declaration, M63 ballot-serial-chain |
+| [portal-svc](services/portal-svc/docs/CAPABILITIES.md) | Astro + Elixir LiveView + Rust | T2 | M11 public-portal, M52 election-calendar-gazette, M64 voter-list-inspection, M68 referendum-explainer |
+| [crms-svc](services/crms-svc/docs/CAPABILITIES.md) | Rust + Django + Elixir + Python | T2 | M12 crms, M45 party-registration, M46 primaries-oversight, M47 nomination-fee-payment, M67 party-symbol-registry |
+| [transparency-svc](services/transparency-svc/docs/CAPABILITIES.md) | Rust + HSM integration | T1 | M14 reproducibility-bundle, M22 campaign-finance, M17 transparency-log anchoring, P05 transparency-log, P06 HSM-signer |
+| [ecc-svc](services/ecc-svc/docs/CAPABILITIES.md) | Elixir LiveView + Rust + Python | T2 | M15 iab-dashboard, M16 election-command-centre, M23 grievance-channels |
+| [boundary-svc](services/boundary-svc/docs/CAPABILITIES.md) | Rust + PostGIS + Astro | T2 | M18 boundary-transparency |
+| [queue-svc](services/queue-svc/docs/CAPABILITIES.md) | Rust + Elixir LiveView + Python CV | T2 | M19 queue-transparency |
+| [inventory-svc](services/inventory-svc/docs/CAPABILITIES.md) | Rust event-sourced + Django + Flutter mobile | T2 | M20 inventory-management, M39 ballot-printing-chain, M65 diaspora-logistics |
+| [governance-svc](services/governance-svc/docs/CAPABILITIES.md) | Rust + Python + Elixir + Tauri | T2 | M21 rla-audit-tool, M40 election-court-it, M41 post-election-review, M48 recall, M49 referendum, M50 by-elections, M56 county-coordination, M57 observer-coordination, M58 parliamentary-judiciary, M59 oag-interface, M62 transmission-audit, M66 financial-forensics |
+| [ai-platform-svc](services/ai-platform-svc/docs/CAPABILITIES.md) | Python (ONNX) + Rust gateway + Flutter kit plugin | T2 | M17 speech-integrity, M26 anomaly-fraud-detection, M28 ai-monitoring-stack, M44 turnout-forecasting, M61 secrecy-assurance |
+| [field-mobile-svc](services/field-mobile-svc/docs/CAPABILITIES.md) | Rust BFF + Flutter | T1/T2 | M13 public-verifier-app, M29 citizen-verify, M30 party-agent, M31 poll-clerk, M32 field-support, M33 personnel-dispatch, M34 observer |
+| [training-svc](services/training-svc/docs/CAPABILITIES.md) | Django + Flutter offline | T3 | M37 voter-education-cms, M38 poll-worker-training-lms, M42 media-accreditation, M43 observer-accreditation, M60 medical-first-response |
+| [support-admin-svc](services/support-admin-svc/docs/CAPABILITIES.md) | Django + Rust + Python | T2 | M25 special-voter-workflows, M27 intent-preservation, M54 budget-expenditure, M55 hr-payroll, M69 long-term-archive |
+
+## The 69 modules
+
+Every module has a full page in [docs/plans/modules/](docs/plans/modules/) with purpose, surfaces, domain model, APIs, events, and acceptance criteria. Ownership matrix: [docs/plans/12-appendix-module-inventory.md](docs/plans/12-appendix-module-inventory.md).
+
+### Voter registration and the register (10)
+
+| M | module | what it does |
+|---|---|---|
+| M01 | [bvr-device](docs/plans/modules/bvr-device.md) | offline-first biographic and biometric capture on KIEMS kits and legacy Android |
+| M02 | [bvr-backend](docs/plans/modules/bvr-backend.md) | authoritative voter register store, ABIS dedup orchestration, register publication |
+| M03 | [abis](docs/plans/modules/abis.md) | multi-modal biometric dedup at 30M+ scale inside confidential-compute enclaves |
+| M04 | [vprs](docs/plans/modules/vprs.md) | online pre-registration with IPRS identity check and QR handoff token |
+| M07 | [bvv](docs/plans/modules/bvv.md) | statutory 30-day public register inspection and objections |
+| M25 | [special-voter-workflows](docs/plans/modules/special-voter-workflows.md) | auditable workflows for prisoners, KDF, hospital patients, refugees, IDPs |
+| M35 | [cvr-continuous-voter-register](docs/plans/modules/cvr-continuous-voter-register.md) | keeps the register alive between cycles from CRS, NRB, and KRA feeds |
+| M36 | [voter-deregistration-appeal](docs/plans/modules/voter-deregistration-appeal.md) | statutory deregistration and appeal workflow with quarterly gazette notices |
+| M53 | [voter-id-card](docs/plans/modules/voter-id-card.md) | feature-flagged voter ID card production, collection, and deactivation |
+| M64 | [voter-list-public-inspection](docs/plans/modules/voter-list-public-inspection.md) | verifiable roll snapshots and objection intake for the inspection window |
+
+### Polling day (9)
+
+| M | module | what it does |
+|---|---|---|
+| M05 | [bvi-device](docs/plans/modules/bvi-device.md) | polling-day voter identification and double-voting prevention; paper backup always exists |
+| M06 | [bvi-backend](docs/plans/modules/bvi-backend.md) | register extracts, kit provisioning, turnout dashboards, 60-second remote kit lock/wipe |
+| M19 | [queue-transparency](docs/plans/modules/queue-transparency.md) | queue length and wait estimation from kit, computer vision, grievance, and USSD signals |
+| M20 | [inventory-management](docs/plans/modules/inventory-management.md) | custody tracking for kits, ballots, seals, consumables with seal integrity enforcement |
+| M31 | [mobile-poll-clerk](docs/plans/modules/mobile-poll-clerk.md) | companion app for polling clerks: incident logging, queue help, paper-backup guidance |
+| M33 | [mobile-personnel-dispatch](docs/plans/modules/mobile-personnel-dispatch.md) | dispatch, GPS check-in/out, and payroll trigger for ~250,000 poll workers |
+| M39 | [ballot-printing-chain](docs/plans/modules/ballot-printing-chain.md) | ballot custody from print-run authorisation to station scan-in, RFID sealed |
+| M60 | [medical-first-response](docs/plans/modules/medical-first-response.md) | election-day medical incident reporting and dispatch with KRCS, MoH, NDMU |
+| M63 | [ballot-serial-chain](docs/plans/modules/ballot-serial-chain.md) | event-sourced serial custody, spoilt ballot recording, end-of-day reconciliation |
+
+### Results transmission and declaration (4)
+
+| M | module | what it does |
+|---|---|---|
+| M08 | [rts-device](docs/plans/modules/rts-device.md) | Form 34A scan, HSM binding, telco transmission with SMS/USSD fallback |
+| M09 | [rts-ro](docs/plans/modules/rts-ro.md) | Returning Officer tallying, Form 34B/34C assembly, dispute adjudication |
+| M10 | [rts-backend](docs/plans/modules/rts-backend.md) | signed batch ingest, ICR on scanned tallies, constituency/regional/national snapshots |
+| M51 | [result-declaration-certification](docs/plans/modules/result-declaration-certification.md) | HSM-countersigned certificates of election, run-off handling, petition window tracker |
+
+### Public verification and reproducibility (6)
+
+| M | module | what it does |
+|---|---|---|
+| M11 | [public-portal](docs/plans/modules/public-portal.md) | statutory results portal for 5M concurrent readers with inclusion proofs |
+| M13 | [public-verifier-app](docs/plans/modules/public-verifier-app.md) | citizen verification across app, PWA, USSD, WhatsApp, API at 10M concurrency |
+| M14 | [reproducibility-bundle](docs/plans/modules/reproducibility-bundle.md) | independently verifiable archive to re-derive every published result |
+| M29 | [mobile-citizen-verify](docs/plans/modules/mobile-citizen-verify.md) | pocket verifier with client-side Merkle inclusion proofs via Rust FFI |
+| M30 | [mobile-party-agent](docs/plans/modules/mobile-party-agent.md) | party-agent Form 34A match verification with HSM-backed countersignature |
+| M34 | [mobile-observer](docs/plans/modules/mobile-observer.md) | structured observation reporting with result verification and countersigning |
+
+### Transparency subjects (3)
+
+| M | module | what it does |
+|---|---|---|
+| M18 | [boundary-transparency](docs/plans/modules/boundary-transparency.md) | constituency and ward boundaries with provenance, fairness metrics, kit geofences |
+| M22 | [campaign-finance-transparency](docs/plans/modules/campaign-finance-transparency.md) | statutory disclosure intake, CBK/FRC cross-reference, public reports |
+| M52 | [election-calendar-gazette](docs/plans/modules/election-calendar-gazette.md) | statutory calendar and gazette notices with a legal deadline rule engine |
+
+### Oversight, audit and governance (11)
+
+| M | module | what it does |
+|---|---|---|
+| M15 | [iab-dashboard](docs/plans/modules/iab-dashboard.md) | Independent Assurance Board real-time window with hardware-key authentication |
+| M16 | [election-command-centre](docs/plans/modules/election-command-centre.md) | national situational awareness and dispatch for election leadership |
+| M21 | [rla-audit-tool](docs/plans/modules/rla-audit-tool.md) | risk-limiting audits of paper ballots against the digital tally |
+| M40 | [election-court-it-interface](docs/plans/modules/election-court-it-interface.md) | 24-hour evidentiary bundle for courts; access architecturally guaranteed, not discretionary |
+| M41 | [post-election-review](docs/plans/modules/post-election-review.md) | structured lessons learned with tracked recommendations and a long-drip register |
+| M56 | [county-national-coordination](docs/plans/modules/county-national-coordination.md) | MoUs, county dataset approvals, cross-tier incident escalation |
+| M57 | [international-observer-coordination](docs/plans/modules/international-observer-coordination.md) | observer missions, briefings, isolated per-mission workspaces |
+| M58 | [parliamentary-judiciary-reporting](docs/plans/modules/parliamentary-judiciary-reporting.md) | statutory reports to Parliament and judiciary handover packages |
+| M59 | [oag-interface](docs/plans/modules/oag-interface.md) | time-boxed Auditor-General audit engagements with scoped evidence |
+| M62 | [transmission-legal-basis-audit](docs/plans/modules/transmission-legal-basis-audit.md) | verifies every RTS transmission event against the statutory rules engine |
+| M66 | [election-financial-forensics](docs/plans/modules/election-financial-forensics.md) | econometric detection of anomalous vote-expenditure relationships |
+
+### Parties, candidates and contest types (10)
+
+| M | module | what it does |
+|---|---|---|
+| M12 | [crms](docs/plans/modules/crms.md) | candidate nomination, statutory clearances, quota rules, signed ballot design packages |
+| M24 | [diaspora-voting](docs/plans/modules/diaspora-voting.md) | embassy-hosted BVR/BVI with delayed batch transmission and RFID ballot custody |
+| M45 | [party-registration-management](docs/plans/modules/party-registration-management.md) | party registration, annual returns, coalitions under the Political Parties Act |
+| M46 | [party-primaries-oversight](docs/plans/modules/party-primaries-oversight.md) | KIEMS-lite primaries kits, integrity dashboards, dispute intake |
+| M47 | [nomination-fee-payment](docs/plans/modules/nomination-fee-payment.md) | fee schedules and M-Pesa collection with idempotent Daraja callbacks |
+| M48 | [recall](docs/plans/modules/recall.md) | Article 104 recall petitions with signature thresholds and by-election handoff |
+| M49 | [referendum-mechanics](docs/plans/modules/referendum-mechanics.md) | referendum tallying with the 24-of-47 county threshold, TLA+ verified |
+| M50 | [by-election-operations](docs/plans/modules/by-election-operations.md) | up to 10 concurrent by-elections including short-notice flows |
+| M65 | [diaspora-ballot-physical-logistics](docs/plans/modules/diaspora-ballot-physical-logistics.md) | physical custody chain for diaspora ballot materials end to end |
+| M67 | [party-symbol-colour-registry](docs/plans/modules/party-symbol-colour-registry.md) | symbol and colour registration with pHash and Delta-E similarity checks |
+
+### AI and analytics (5)
+
+| M | module | what it does |
+|---|---|---|
+| M17 | [speech-integrity](docs/plans/modules/speech-integrity.md) | incitement and disinformation monitoring with Kenyan-language models |
+| M26 | [anomaly-fraud-detection](docs/plans/modules/anomaly-fraud-detection.md) | seven-layer rigging detection stack; every alert routes to a named human |
+| M28 | [ai-monitoring-stack](docs/plans/modules/ai-monitoring-stack.md) | governed model registry with five hard red lines around the tally |
+| M44 | [turnout-forecasting-analytics](docs/plans/modules/turnout-forecasting-analytics.md) | pre-election forecasts and election-day turnout variance alerts |
+| M61 | [secrecy-assurance-testing](docs/plans/modules/secrecy-assurance-testing.md) | red-team engagements on isolated staging clones with IAB attestation |
+
+### Grievances and civic space (6)
+
+| M | module | what it does |
+|---|---|---|
+| M23 | [grievance-channels](docs/plans/modules/grievance-channels.md) | multi-channel intake (WhatsApp, USSD, SMS, app, kiosk) with triage and routing |
+| M27 | [intent-preservation](docs/plans/modules/intent-preservation.md) | ballot design, pre-mark validation, adjudication codes; < 1.0% rejected-ballot target |
+| M37 | [voter-education-cms](docs/plans/modules/voter-education-cms.md) | fact-checked voter education in 11 languages and four formats |
+| M42 | [media-accreditation-portal](docs/plans/modules/media-accreditation-portal.md) | tamper-evident media credentials with offline badge verification |
+| M43 | [observer-accreditation-portal](docs/plans/modules/observer-accreditation-portal.md) | vetting and credentialing for domestic and international observers |
+| M68 | [referendum-explainer](docs/plans/modules/referendum-explainer.md) | plain-language, KSL video, and TTS explainers at WCAG 2.2 AAA |
+
+### Workforce and back office (5)
+
+| M | module | what it does |
+|---|---|---|
+| M32 | [mobile-field-support](docs/plans/modules/mobile-field-support.md) | field engineer console: ticket SLAs, remote kit diagnostics, warranty claims |
+| M38 | [poll-worker-training-lms](docs/plans/modules/poll-worker-training-lms.md) | cascaded training and certification for ~250,000 poll workers |
+| M54 | [budget-expenditure](docs/plans/modules/budget-expenditure.md) | budgets, procurement, IFMIS/PPRA reporting with separation of duties |
+| M55 | [hr-payroll](docs/plans/modules/hr-payroll.md) | hiring through M-Pesa disbursement; 250k payruns in under 4 hours |
+| M69 | [long-term-archive](docs/plans/modules/long-term-archive.md) | BagIt archives, DataCite DOIs, preservation attestations, destruction certificates |
+
+## Shared packages
+
+Cross-language libraries under `packages/` provide auth, secrets, events, persistence, observability, and resilience foundations. Core libraries ship as per-language crates/modules (`-rs`, `-py`, `-ex`); see [packages/README.md](packages/README.md).
 
 | package | languages | purpose |
 |---|---|---|
 | eel-auth | Rust, Python, Elixir | JWT verification, SpiceDB client, audit trail, OpenTelemetry integration |
 | eel-secrets | Rust, Python, Elixir | OpenBao dynamic credentials, transit encryption, key rotation |
-| eel-events | Rust, Python, Elixir | Event envelope, producer/consumer, hybrid logical clock, message signing |
+| eel-events | Rust, Python, Elixir | Event envelope, producer/consumer, message signing |
 | eel-outbox | Rust, Python, Elixir | Transactional outbox pattern, Kafka publisher, idempotency |
 | eel-eventstore | Rust, Python, Elixir | Event aggregate, chain history, snapshots, replay |
 | eel-pii | Rust, Python, Elixir | Typed PII wrappers (Restricted, Sensitive, Public), masking |
@@ -86,11 +226,11 @@ Cross-language libraries under `packages/` provide auth, secrets, events, persis
 | eel-resilience | Rust, Python, Elixir | Circuit breakers, bulkheads, idempotency middleware, graceful degradation |
 | eel-observability | Rust, Python, Elixir | OpenTelemetry spans, SLO metrics, audit shadow, structured logging |
 | eel-loadshedding | Rust, Python, Elixir | Priority-based load shedding, adaptive admission control |
-| eel-crypto | Rust | PKCS#11 HSM bindings, Ed25519 signatures, post-quantum hybrid (ML-KEM + ML-DSA), cosign, Merkle trees |
+| eel-crypto | Rust | PKCS#11 HSM bindings, Ed25519, post-quantum hybrid (ML-KEM + ML-DSA), cosign, Merkle trees |
 | eel-api-server | Rust | Opinionated axum application builder, middleware stack, health checks |
-| eel-web | Python | Django base application, admin UI, schema migrations |
-| eel-web | Astro | Static site base, design-system components, i18n setup |
-| verifier | Rust (Dart FFI + WASM) | Merkle tree inclusion proof verification, Signed Tree Head verification (libeel-verifier) |
+| eel-audit-chain, eel-trace, eel-spec-helpers | Rust | Append-only audit chain, trace context, spec test helpers |
+| eel-web | Python, Astro | Django base application and admin UI; Astro static site base with design-system components |
+| verifier | Rust (Dart FFI + WASM) | Merkle inclusion proof and Signed Tree Head verification (libeel-verifier) |
 | kit-sdk | Flutter | Shared kit firmware shell, secure enclave storage, device attestation, offline event queue |
 | service-template | Rust, Python, Elixir | Scaffolding for new services, CI/CD hooks, test skeleton |
 | design-system | Astro, Svelte, Django | Component library, tokens, accessibility guidelines |
@@ -99,126 +239,102 @@ Cross-language libraries under `packages/` provide auth, secrets, events, persis
 | authz-schema | SpiceDB .zed | Domain authorization policies, permission model definitions |
 | data-dictionary | YAML | Column classification schema, PII types, retention policies |
 | api-clients | Dart, TypeScript, Python, Rust | Auto-generated client libraries for all services |
-| i18n | Message catalogs | 11-language translations (English, Kiswahili + 9 regional languages) |
-
-## Module feature map
-
-Mapping of all 69 modules to owning services:
-
-| M01-M10 | M11-M20 | M21-M30 |
-|---|---|---|
-| M01 (biometric-edge-svc) | M11 (portal-svc) | M21 (governance-svc) |
-| M02 (bvr-svc) | M12 (crms-svc) | M22 (transparency-svc) |
-| M03 (abis-svc) | M13 (field-mobile-svc) | M23 (ecc-svc) |
-| M04 (vprs-svc) | M14 (transparency-svc) | M24 (biometric-edge-svc) |
-| M05 (biometric-edge-svc) | M15 (ecc-svc) | M25 (support-admin-svc) |
-| M06 (bvi-svc) | M16 (ecc-svc) | M26 (ai-platform-svc) |
-| M07 (bvi-svc) | M17 (transparency-svc, ai-platform-svc) | M27 (support-admin-svc) |
-| M08 (rts-svc) | M18 (boundary-svc) | M28 (ai-platform-svc) |
-| M09 (rts-svc) | M19 (queue-svc) | M29 (field-mobile-svc) |
-| M10 (rts-svc) | M20 (inventory-svc) | M30 (field-mobile-svc) |
-
-| M31-M40 | M41-M50 | M51-M60 | M61-M69 |
-|---|---|---|---|
-| M31 (field-mobile-svc) | M41 (governance-svc) | M51 (rts-svc) | M61 (ai-platform-svc) |
-| M32 (field-mobile-svc) | M42 (training-svc) | M52 (portal-svc) | M62 (governance-svc) |
-| M33 (field-mobile-svc) | M43 (training-svc) | M53 (bvr-svc) | M63 (rts-svc) |
-| M34 (field-mobile-svc) | M44 (ai-platform-svc) | M54 (support-admin-svc) | M64 (portal-svc) |
-| M35 (bvr-svc) | M45 (crms-svc) | M55 (support-admin-svc) | M65 (inventory-svc) |
-| M36 (bvr-svc) | M46 (crms-svc) | M56 (governance-svc) | M66 (governance-svc) |
-| M37 (training-svc) | M47 (crms-svc) | M57 (governance-svc) | M67 (crms-svc) |
-| M38 (training-svc) | M48 (governance-svc) | M58 (governance-svc) | M68 (portal-svc) |
-| M39 (inventory-svc) | M49 (governance-svc) | M59 (governance-svc) | M69 (support-admin-svc) |
-| M40 (governance-svc) | M50 (governance-svc) | M60 (training-svc) | - |
+| i18n | Message catalogs | 11-language translations (English, Kiswahili + 9 regional) |
 
 ## Technology stack
 
+### Languages
+
 | component | version/role | purpose |
 |---|---|---|
-| **Languages** | | |
 | Rust | nightly (stable fallback) | T1 services, HSM bindings, cryptography, performance-critical paths |
 | Python | 3.12 + uv | ML/AI, adapters, batch jobs, Django admin surfaces |
-| Elixir + OTP | 1.17 + OTP 27 | LiveView real-time dashboards, messaging, soft-real-time event processing |
+| Elixir + OTP | 1.17 + OTP 27 | LiveView dashboards, messaging, soft-real-time event processing |
 | Dart + Flutter | 3.2.x | Kit firmware, mobile apps (Android, iOS, PWA), Tauri desktop |
 | TypeScript + Node | 22 + pnpm | Astro static sites, API client generation, browser-side verification |
 | Bash + Perl | POSIX | Scripting, migrations, data transforms |
-| **Databases** | | |
+
+### Data stores
+
+| component | version/role | purpose |
+|---|---|---|
 | PostgreSQL | 17 | T1-voter (registration, biometrics), T1-consensus (results), T1-audit, T2-shared |
-| Kafka + KRaft | latest (3.7.x) | Event bus, transactional outbox CDC, 90-day hot retention, MirrorMaker 2 for DR sync |
-| Karapace | latest | JSON Schema registry, Kafka topics schema validation |
+| Kafka + KRaft | 3.7.x | Event bus, transactional outbox CDC, 90-day hot retention, MirrorMaker 2 DR sync |
+| Karapace | latest | JSON Schema registry, Kafka topic schema validation |
 | Valkey | 8 | Cache, session store, idempotency keys, rate limits |
 | OpenSearch | 2.x | Full-text and geo-spatial search (M07, M18, M22, M52) |
 | MinIO | RELEASE | S3-compatible object store, tiered Kafka storage, snapshot exports |
 | Rook-Ceph | latest | Persistent block/object/file storage for DB, MinIO, Kafka |
-| **Identity + Crypto** | | |
-| Keycloak | 24 | OAuth2/OIDC, SAML, WebAuthn, hardware key (YubiKey, FIDO2) |
+
+### Identity and crypto
+
+| component | version/role | purpose |
+|---|---|---|
+| Keycloak | 24 | OAuth2/OIDC, SAML, WebAuthn, hardware keys (YubiKey, FIDO2) |
 | SPIFFE/SPIRE | 1.9.x | Workload identity, pod/kit/mobile SVIDs, HSM-sealed root |
 | SpiceDB | 1.31.x | Google Zanzibar implementation, relational permissions |
-| OpenBao | 2.x | Secrets engine, dynamic DB creds, PKI, transit encryption, Vault-compatible |
+| OpenBao | 2.x | Secrets engine, dynamic DB creds, PKI, transit encryption |
 | Hardware HSM | PKCS#11 + KMIP | Thales Luna 7 or Utimaco CryptoServer, FIPS 140-3 L3+, STH signing |
-| SoftHSM | 2.x | Development/test environment substitute |
-| **Mesh + Networking** | | |
-| Kubernetes | 1.31 | Container orchestration, StatefulSets for data tier |
+| SoftHSM | 2.x | Development/test substitute |
+
+### Mesh and networking
+
+| component | version/role | purpose |
+|---|---|---|
+| Kubernetes | 1.31 | Container orchestration, StatefulSets for the data tier |
 | Cilium | 1.15.x | CNI, service mesh, NetworkPolicy, Hubble observability, eBPF dataplane |
 | Envoy | latest | L7 proxy, load balancing, traffic shaping |
 | Kong OSS | latest | API gateway, rate limiting, request logging |
 | cert-manager | latest | TLS certificate lifecycle, auto-renewal |
-| **Platform + Observability** | | |
+
+### Platform and observability
+
+| component | version/role | purpose |
+|---|---|---|
 | ArgoCD | 2.11.x | GitOps, ApplicationSets per service x site, blue-green deployments |
-| Prometheus | latest | Metrics scraping, SLO alerting, time-series DB |
-| Loki | latest | Structured logging aggregation, log-stream search |
+| Prometheus + Mimir | latest | Metrics scraping, SLO alerting, long-term retention |
+| Loki + Vector | latest | Structured log aggregation, node-level collection |
 | Tempo | latest | Distributed tracing backend, trace correlation |
-| Grafana | latest | Visualization, dashboards, SLO tracking |
-| Mimir | latest | Long-term metrics retention |
+| Grafana | latest | Visualisation, dashboards, SLO tracking |
 | OpenTelemetry | latest | Instrumentation SDK, span/metric/log emissions |
-| Vector | latest | Log/metric/trace shipping, node-level collection |
-| **Security + Scanning** | | |
-| Falco | latest | Runtime threat detection, syscall rules |
-| Tetragon | latest | eBPF-based threat detection, process tracking |
-| Wazuh | latest | SIEM, log analysis, compliance reporting |
-| Sigma rules | community | Detection-as-code format, engine-agnostic threat rules |
-| Canary tokens | proprietary | Early breach detection, honeypot tokens |
-| Semgrep | latest | SAST, Python/Rust/JavaScript/Go rules |
-| Bandit | latest | Python static security analysis |
-| Sobelow | latest | Elixir/Phoenix security checks |
-| cargo-audit | latest | Rust dependency vulnerability scanner |
-| cargo-deny | latest | Rust dependency policy enforcement |
-| Trivy | latest | Container image and filesystem vulnerability scanning |
-| Grype | latest | SBOM-based vulnerability matching |
-| Nuclei | latest | DAST templates, API endpoint scanning |
-| ZAP | latest | Web application penetration testing |
-| MobSF | latest | Mobile app static analysis (Android + iOS) |
-| **Testing** | | |
-| cargo-nextest | latest | Rust test runner, flaky test detection, partitioning |
-| pytest | 8.x | Python unit + integration testing |
-| hypothesis | latest | Python property-based testing |
-| ExUnit + StreamData | latest | Elixir unit + property tests |
-| flutter_test | latest | Dart/Flutter unit and widget tests |
-| vitest | latest | TypeScript/JavaScript unit tests |
-| proptest | latest | Rust property-based testing |
-| kani | latest | Rust bit-level formal verification |
-| creusot | latest | Rust deductive verification (Merkle, HLC) |
-| TLA+ / Apalache | latest | Temporal specification, election tally logic verification |
-| Pact Broker | latest | Consumer-driven contract testing, can-i-deploy gates |
-| testcontainers | latest | Ephemeral DB/Kafka/Redis for integration tests |
-| k6 | latest | Load testing, RPS ramping, thresholds |
-| Gatling | latest | Enterprise load testing scenarios |
-| Playwright | latest | Browser E2E testing (portal, verifier) |
-| Patrol | latest | Flutter mobile E2E testing |
-| tauri-driver | latest | Desktop app (RTS) E2E testing |
-| Chaos Mesh | latest | Failure injection, latency/network scenarios |
-| **Build + Supply Chain** | | |
-| Nix | flakes | Reproducible builds, bit-identical rebuilds, dev environments |
-| Sonatype Nexus OSS | latest | PyPI, npm, cargo, Maven, apt, OCI, hex mirrors |
-| Forgejo / Gitea | latest | On-prem git hosting, PR CI gateway |
-| Woodpecker CI | latest | Event-driven CI/CD pipeline, plugin ecosystem |
-| cosign | latest | Container image signing, keyless via SPIFFE |
-| SLSA | L3 | Provenance attestations, supply-chain integrity |
-| in-toto | latest | Link metadata, step attestations |
-| syft | latest | SBOM generation (SPDX + CycloneDX) |
-| RFC 3161 | timestamps | Artefact timestamp authority, audit trail |
-| **Kyverno** | latest | Admission controller, policy enforcement (signed images, SVID attestation) |
-| **OPA Gatekeeper** | latest | General policy enforcement, namespace isolation |
+
+### Security and scanning
+
+| component | purpose |
+|---|---|
+| Falco, Tetragon | Runtime and eBPF threat detection |
+| Wazuh + Sigma rules | SIEM, log analysis, detection-as-code |
+| Canary tokens | Early breach detection |
+| Semgrep, Bandit, Sobelow | SAST for Python, Rust, JavaScript, Elixir |
+| cargo-audit, cargo-deny | Rust dependency vulnerability and policy scanning |
+| Trivy, Grype | Container and SBOM-based vulnerability matching |
+| Nuclei, ZAP | DAST templates, web penetration testing |
+| MobSF | Mobile app static analysis (Android + iOS) |
+
+### Testing
+
+| component | purpose |
+|---|---|
+| cargo-nextest, pytest, ExUnit, flutter_test, vitest | Unit runners for all five languages |
+| proptest, hypothesis, StreamData, fast-check | Property-based testing |
+| Pact Broker, Karapace, openapi-diff, buf | Consumer-driven contracts and schema breaking checks |
+| testcontainers | Ephemeral DB/Kafka/Valkey integration tests |
+| Patrol, Playwright, tauri-driver, kit-simulator | E2E for mobile, portal, desktop, and 65k virtual kits |
+| cargo-fuzz, libFuzzer | Fuzzing every codec and protocol boundary |
+| TLA+ / Apalache, kani, creusot | Formal verification of tally logic, Merkle trees, HLC |
+| k6, Gatling, election-day simulator | Load testing to 5x peak, 80k ev/s bursts |
+| Chaos Mesh | Failure injection, monthly pre-prod drills |
+| cargo-mutants, mutmut, Stryker | Mutation testing, 75%+ kill rate on election-critical |
+
+### Build and supply chain
+
+| component | purpose |
+|---|---|
+| Nix (flakes) | Reproducible builds, bit-identical rebuilds, dev environments |
+| Sonatype Nexus OSS | PyPI, npm, cargo, Maven, apt, OCI, hex mirrors |
+| Forgejo / Gitea + Woodpecker CI | On-prem git hosting, event-driven CI/CD |
+| cosign, SLSA L3, in-toto, syft, RFC 3161 | Image signing, provenance attestations, SBOM, timestamping |
+| Kyverno, OPA Gatekeeper | Admission control: signed images, SVID attestation, namespace isolation |
 
 ## Statutes and regulations satisfied
 
@@ -235,18 +351,16 @@ Mapping of all 69 modules to owning services:
 - Kenya Information and Communications Act (KICA): digital security requirements
 - Data-sharing protocols with NLC, KNBS, IPRS, county governments (MoU-driven)
 
-## How to run locally
-
-Set up a development environment with all dependencies, then spin up a full stack on Docker/Kubernetes.
+## Local development
 
 ```bash
 # Clone and enter the repository
 git clone https://github.com/Datacraft-GaaS/eel && cd eel
 
-# Load the Nix development environment (includes Rust, Python 3.12, Elixir/OTP, Dart, Node 22)
+# Load the Nix development environment (Rust, Python 3.12, Elixir/OTP, Dart, Node 22)
 nix develop
 
-# (Optional) Load only specific language environments
+# Or load a single language environment
 nix develop .#rust
 nix develop .#python
 nix develop .#elixir
@@ -254,178 +368,108 @@ nix develop .#dart
 nix develop .#node
 ```
 
-**Spin up the full local stack** (kind cluster + Kafka + PostgreSQL + Redis + MinIO + OpenSearch + Keycloak + SpiceDB + OpenBao + SPIRE + SoftHSM):
-
-```bash
-just up
-```
-
-This brings up a Kubernetes-in-Docker cluster on `127.0.0.1:6443` with the full data and identity plane. Individual services can then be run locally or deployed to the cluster.
-
-**Generate deterministic synthetic test data** (voter register with no real PII):
-
-```bash
-just synth --scale 100k
-```
-
-**Validate contracts and schemas**:
-
-```bash
-just contracts
-```
-
-This runs Spectral OpenAPI linting, Karapace schema validation, and SpiceDB golden-test authorization rules.
-
-**Run all tests**:
-
-```bash
-just test
-```
-
-This runs cargo-nextest for Rust, pytest for Python, ExUnit for Elixir, flutter_test for Dart, and vitest for TypeScript.
-
-**Run CI locally**:
-
-```bash
-just ci
-```
-
-Full lint, test, contract, build, SBOM generation, and artifact signing.
-
-**Load synthetic data into the cluster**:
-
-```bash
-just seed
-```
-
-**Tear down the stack**:
-
-```bash
-just down
-```
-
-### Local cluster topology
-
-The `just up` command brings up a kind cluster with the following topology:
-
-- Single master node (3 CPU, 8 GB RAM)
-- PostgreSQL 17 with Patroni (simulated HA)
-- Kafka KRaft (single broker, 90-day retention simulated)
-- Karapace schema registry
-- Valkey 8 (3-node setup)
-- MinIO (single server, auto-replicated buckets)
-- OpenSearch (single node)
-- Rook-Ceph (emulated block storage)
-- Keycloak (single realm for dev)
-- SpiceDB (single node)
-- OpenBao (unsealed, test-only)
-- SPIRE (single root server + agent)
-- SoftHSM (PKCS#11 substitute)
-- Cilium + Hubble observability
-- Prometheus + Loki + Grafana stack
+| command | what it does |
+|---|---|
+| `just up` | Full local stack: kind cluster on `127.0.0.1:6443` with Kafka, PostgreSQL (Patroni), Valkey, MinIO, OpenSearch, Keycloak, SpiceDB, OpenBao, SPIRE, SoftHSM, Cilium, Prometheus/Loki/Grafana. First run takes 3-5 minutes. |
+| `just synth --scale 100k` | Generate deterministic synthetic test data (voter register, no real PII) |
+| `just seed` | Load synthetic data into the cluster (runs `synth` first) |
+| `just contracts` | Spectral OpenAPI linting, Karapace schema validation, SpiceDB golden tests |
+| `just test` | cargo-nextest, pytest, ExUnit, flutter_test, vitest |
+| `just lint` / `just fmt` | Lint and format across all languages |
+| `just ci` | Full local CI: lint, test, contracts |
+| `just down` | Tear down the stack |
 
 ### Troubleshooting
 
-**Issue: `nix develop` fails with "unknown attribute"**
+**`nix develop` fails with "unknown attribute"**
+Check your Nixpkgs version and ensure you're on the stable channel. The flake pins to nixpkgs-unstable; edit `flake.lock` if you need a specific version.
 
-Check your Nixpkgs version and ensure you're on the stable channel. The flake pins to nixpkgs-unstable; if you need a specific version, edit `flake.lock`.
+**`just up` times out**
+Cluster bootstrap can take 3-5 minutes on first run. Kafka needs at least 6 GB free disk and 4 GB available RAM. Check logs with `kubectl logs -n kube-system -l app=coredns`.
 
-**Issue: `just up` times out**
+**Services cannot reach PostgreSQL**
+Verify Patroni is running (`kubectl get pods -n postgres`) and DNS resolves: `kubectl run -it --rm debug --image=busybox --restart=Never -- nslookup postgres.default.svc.cluster.local`.
 
-The cluster bootstrap can take 3-5 minutes on first run. Check logs with `kubectl logs -n kube-system -l app=coredns`. If Kafka fails to start, ensure at least 6 GB free disk and 4 GB available RAM.
-
-**Issue: Services cannot reach PostgreSQL**
-
-Verify Patroni is running: `kubectl get pods -n postgres`. Check that the service DNS resolves: `kubectl run -it --rm debug --image=busybox --restart=Never -- nslookup postgres.default.svc.cluster.local`.
-
-**Issue: Keycloak realm not loading**
-
-Wait for the init Job to complete: `kubectl logs -n keycloak -f job/keycloak-init`. The realm bootstrap takes ~30 seconds on first run.
+**Keycloak realm not loading**
+Wait for the init Job (`kubectl logs -n keycloak -f job/keycloak-init`). Realm bootstrap takes ~30 seconds on first run.
 
 ## Development waves and gates
 
-Seven waves cover the full build plan from toolchain setup through system verification.
+Seven waves cover the build from toolchain setup through full-system verification. Wave plans: [docs/plans/01-wave-0-toolchain.md](docs/plans/01-wave-0-toolchain.md) through [docs/plans/07-wave-6-verification.md](docs/plans/07-wave-6-verification.md).
 
-| wave | name | gate | status | commits |
-|---|---|---|---|---|
-| G0 | Toolchain, local profile, contracts, CI | PASS | PASS | - |
-| G1 | 43 shared packages, templates, platform base | PASS | PASS | - |
-| G2 | Trust core: transparency log, HSM signer, IAM, boundary, tier-A integrations | PASS | PASS | - |
-| G3 | Election-night critical path: rts, bvr, abis, bvi, kits, portal, load harness | PASS | PASS | - |
-| G4 | Operations, oversight, AI, mobile suite, register surfaces, candidates, edge, observability | PASS | PASS | - |
-| G5 | Governance long tail, training, support-admin, diaspora, chaos/DR, runbooks, compliance, reproducibility, manifests, handover | PASS | PASS | - |
-| G6 | Full-system verification: rehearsal, DR drill, chaos suite, 5x load, security harness, a11y/i18n sweep, completeness audit | PASS | PASS | 6c6901e, b36c1f7, d08e8a9, 0808d20 |
-| G7 (post-G6) | ABIS world-class expansion: 36 crates (WP-E/F/G/H) + FP kernel closure (WP-FP-X/Y/Z, 14 crates) + face stack (WP-FACE-X, 12 crates) + iris stack (WP-IRIS-X, 10 crates) + Reports subsystem (WP-A/B/C/D) + Adhoc reports with DOCX/Markdown | ONGOING | ~80 abis-svc crates + 6 Python ONNX sidecars + 25-report catalogue live | adf02d2, 6033737, 5d80e22, dd1904c, 7320dc9, 6f9b57d, 3de64cb, 2123b46, fab0580, aab9afb |
-
-See full wave plans under `docs/plans/0N-wave-*.md`.
+| wave | focus | gate | commits |
+|---|---|---|---|
+| G0 | Toolchain, local profile, contracts, CI | PASS |
+| G1 | 43 shared packages, templates, platform base | PASS |
+| G2 | Trust core: transparency log, HSM signer, IAM, boundary, tier-A integrations | PASS |
+| G3 | Election-night critical path: rts, bvr, abis, bvi, kits, portal, load harness | PASS |
+| G4 | Operations, oversight, AI, mobile suite, register surfaces, candidates, edge, observability | PASS |
+| G5 | Governance long tail, training, support-admin, diaspora, chaos/DR, runbooks, compliance, reproducibility, manifests, handover | PASS |
+| G6 | Full-system verification: rehearsal, DR drill, chaos suite, 5x load, security harness, a11y/i18n sweep, completeness audit | PASS | 6c6901e, b36c1f7, d08e8a9, 0808d20 |
+| G7 (ongoing) | ABIS world-class expansion: ~80 abis-svc crates, 6 Python ONNX sidecars, 25-report catalogue, ad-hoc reports with DOCX/Markdown export | LIVE | adf02d2, 6033737, 5d80e22, dd1904c, 7320dc9, 6f9b57d, 3de64cb, 2123b46, fab0580, aab9afb |
 
 ### ABIS world-class extension
 
-Beyond G6, an ABIS excellence sweep took the M03 stack to full parity with leading commercial ABIS (Idemia MorphoBIS, NEC NeoFace, Innovatrics ABIS, Neurotechnology MegaMatcher). Every world-class capability has a native implementation or standards-aware vendor abstraction:
+Beyond G6, an ABIS excellence sweep took M03 to full parity with leading commercial ABIS (Idemia MorphoBIS, NEC NeoFace, Innovatrics ABIS, Neurotechnology MegaMatcher). Every capability is a native implementation or a standards-aware vendor abstraction. Full catalogue: [services/abis-svc/docs/CAPABILITIES.md](services/abis-svc/docs/CAPABILITIES.md).
 
-- **Fingerprint:** MCC (Cappelli TPAMI 2010), CDEFFS extended feature set (NIST SP 500-290), Level-3 pores/edges/incipients, real Bozorth ridge counting + K-plet, FingerCode texture (Jain TIP 2000), LBP + MB-LBP, orientation field + Poincare singular points, Zhang-Suen skeleton + VF2 subgraph iso, 4-4-2 slap segmentation + weighted multi-finger fusion, 5-matcher consensus voting with Platt calibration, TPS non-rigid warp (Bookstein TPAMI 1989), SourceAFIS native Rust reimpl (Rob Wozniak MPL-2.0), NFIQ 2.2 (14 features + Random Forest per NIST SP 500-333), DeepPrint 384-d ONNX (Engelsma TPAMI 2021), NIST FpVTE + PFT-III validation harness.
-- **Face:** RetinaFace + Viola-Jones baseline detector, 5-point + 68-point landmark alignment to canonical 112x112 ArcFace template, ArcFace + AdaFace + CosFace embedders (Deng CVPR 2019, Kim CVPR 2022, Wang CVPR 2018) via ONNX, ISO/IEC 29794-5 quality (8 metrics + policy gates), Basel Face Model 3DMM for pose normalisation + spoof check, video track-and-fuse, age-invariant + age-progression, cross-domain visible/NIR/thermal, occlusion-robust (mask/glasses/hijab), NIST FRVT harness, kinship classification, k-anonymity + DP de-identification for publication.
-- **Iris:** Daugman integro-differential + OSIRIS Viterbi boundary refinement (Daugman TPAMI 1993, Othman 2016), Daugman 2D Gabor + PIE encoders, ISO/IEC 29794-6 quality, off-axis pose correction, cross-wavelength NIR↔visible normalisation, contact-lens detection (transparent/coloured/patterned per Erdogmus BTAS 2013), left+right + iris+periocular fusion, DeepIrisNet ONNX (Gangwar ICIP 2016), iris-on-the-move, NIST IREX validation harness.
-- **Additional modalities:** palm (ISO 19794-2 extension), latent (ANSI/NIST-ITL Type-13), voice (MFCC + inline FFT), vein (NIR pattern), signature (dynamic pressure/velocity/acceleration DTW), periocular (LBP chi-square), ear (Procrustes-aligned landmarks), gait (joint-angle DTW), watchlist (sub-100us Bloom + hashset).
-- **PAD Level 2:** 7 detectors (multispectral fingerprint, passive face LBP+moire, challenge-response face, iris pupil-dynamics + Purkinje, voice replay/synthesis/conversion, LivDet fingerprint, deepfake face+voice) with ISO/IEC 30107-3 APCER/BPCER policy enforcement.
-- **Template protection (ISO/IEC 24745):** BioHash, random projection, fuzzy vault (Juels-Sudan 2006), fuzzy commitment (Juels-Wattenberg 1999), Bloom shielding, homomorphic encryption (CKKS/BFV/TFHE/BGV), secure multi-party computation (SPDZ/BGW/GMW/Yao/AB+, Shamir over 2^61-1 Mersenne prime).
-- **Operational excellence:** threshold tuning with bootstrap 95% CI, blue-green model canary with FNV1a deterministic per-subject dispatch and SLA-triggered auto-rollback, drift monitor (PSI + KS + JS + Wasserstein), 7-worker bulk ops, rectification workflow with 30-day SLA, twin registry, union-find duplicate cluster analysis, continuous perf monitor (6h cadence), GPU/FPGA accelerator traits, cost-model search planner.
-- **Reports:** 25 seeded operational + statistical + regulatory + legal + public + financial + executive report definitions with cron scheduling, per-format renderers (JSON/CSV/Parquet/PDF/HTML/PNG/XLSX/DOCX/Markdown), HSM signing, transparency-log anchoring, 7-channel delivery (email/webhook/kafka/sftp/gov_printer/kbc_sftp/api_pull) with circuit breaker + exponential backoff + abandonment, staff Django console + Astro public site with WebCrypto verification widget + operator CLI, plus fully editable ad-hoc reports with SQL AST validation (rejects DELETE/INSERT/UPDATE/TRUNCATE/VACUUM/ALTER/COPY/DO + blocked functions + unlisted tables + system-catalog joins), safety_score, preview mode, publish-to-catalogue, share + snippets, browser Monaco editor + Django editor.
-
-Full ABIS capability catalogue: [services/abis-svc/docs/CAPABILITIES.md](services/abis-svc/docs/CAPABILITIES.md).
-
+| domain | highlights |
+|---|---|
+| Fingerprint | MCC + CDEFFS extended features, Level-3 pores/edges, Bozorth + K-plet, 5-matcher consensus with Platt calibration, SourceAFIS native Rust reimplementation, NFIQ 2.2, DeepPrint ONNX, NIST FpVTE/PFT-III harness |
+| Face | RetinaFace detection, ArcFace/AdaFace/CosFace embedders via ONNX, ISO/IEC 29794-5 quality, Basel Face Model 3DMM pose normalisation, visible/NIR/thermal cross-domain, mask and hijab robustness, NIST FRVT harness |
+| Iris | Daugman integro-differential + OSIRIS refinement, 2D Gabor + PIE encoders, ISO/IEC 29794-6 quality, contact-lens detection, left+right + periocular fusion, DeepIrisNet, NIST IREX harness |
+| Other modalities | palm, latent (ANSI/NIST-ITL Type-13), voice MFCC, vein, signature DTW, periocular, ear, gait, sub-100us watchlist |
+| PAD Level 2 | 7 detectors (multispectral fingerprint, passive and challenge-response face, iris pupil dynamics, voice replay/synthesis, LivDet, deepfake) with ISO/IEC 30107-3 APCER/BPCER gates |
+| Template protection | BioHash, random projection, fuzzy vault, fuzzy commitment, Bloom shielding, homomorphic encryption (CKKS/BFV/TFHE/BGV), SMPC (SPDZ/BGW/GMW/Yao) |
+| Operations | Threshold tuning with bootstrap 95% CI, blue-green model canary with auto-rollback, drift monitor (PSI/KS/JS/Wasserstein), 7-worker bulk ops, twin registry, GPU/FPGA accelerator traits |
+| Reports | 25 seeded report definitions (operational, statistical, regulatory, legal, public, financial, executive) with cron scheduling, per-format renderers (JSON/CSV/Parquet/PDF/HTML/PNG/XLSX/DOCX/Markdown), HSM signing, transparency-log anchoring, 7-channel delivery, plus ad-hoc reports with SQL AST validation and Monaco/Django editors |
 
 ## Testing pyramid
 
-Coverage strategy spans unit, property, integration, E2E, fuzzing, formal methods, load, chaos, security, and reproducibility.
-
 | layer | frameworks | coverage target | status |
 |---|---|---|---|
-| **Unit** | cargo-nextest (Rust), pytest (Python), ExUnit (Elixir), flutter_test (Dart), vitest (TypeScript) | >= 80% per service | PASSING |
-| **Property** | proptest (Rust), hypothesis (Python), StreamData (Elixir), fast-check (TypeScript) | >= 20 edge cases per invariant | PASSING |
-| **Contract** | Pact Broker, Karapace, openapi-diff, buf (protobuf) breaking | 100% service pair coverage | PASSING |
-| **Integration** | testcontainers (ephemeral DB, Kafka, Redis) | all read/write paths | PASSING |
-| **E2E** | patrol (Flutter), Playwright (portal), tauri-driver (RTS desktop), kit-simulator (65k virtual kits) | all user flows | PASSING |
-| **Fuzz** | cargo-fuzz (parsers, crypto), libFuzzer | every codec and protocol boundary | PASSING |
-| **Formal** | TLA+ / Apalache (tally, run-off, threshold), kani (Merkle tree), creusot (HLC) | safety and liveness properties | PASSING |
-| **Load** | k6 (scripted), Gatling (streaming), election-day simulator | 5x peak weekly, 80k ev/s bursts | PASSING |
-| **Chaos** | Chaos Mesh (network, storage, compute failures) | monthly pre-prod drill | PASSING |
-| **Security** | Semgrep, Bandit, cargo-audit, Trivy, Grype, ZAP, Nuclei, testssl.sh, ASVS L3/L2 checklist | ASVS L3 election-critical, L2 elsewhere | PASSING |
-| **Accessibility** | axe, manual screen-reader scripts, 11-language pseudo-locale | WCAG 2.2 AA (AAA for M68) | PASSING |
-| **Reproducibility** | Nix flakes, bit-identical rebuild, hash manifest | M14 make-reproduce v2 | PASSING |
-| **Mutation** | cargo-mutants (Rust), mutmut (Python), Stryker (TypeScript) | 75%+ kill rate on election-critical | PASSING |
+| Unit | cargo-nextest, pytest, ExUnit, flutter_test, vitest | >= 80% per service | PASSING |
+| Property | proptest, hypothesis, StreamData, fast-check | >= 20 edge cases per invariant | PASSING |
+| Contract | Pact Broker, Karapace, openapi-diff, buf breaking | 100% service pair coverage | PASSING |
+| Integration | testcontainers | all read/write paths | PASSING |
+| E2E | Patrol, Playwright, tauri-driver, kit-simulator | all user flows | PASSING |
+| Fuzz | cargo-fuzz, libFuzzer | every codec and protocol boundary | PASSING |
+| Formal | TLA+ / Apalache, kani, creusot | safety and liveness properties | PASSING |
+| Load | k6, Gatling, election-day simulator | 5x peak weekly, 80k ev/s bursts | PASSING |
+| Chaos | Chaos Mesh | monthly pre-prod drill | PASSING |
+| Security | Semgrep, Bandit, cargo-audit, Trivy, Grype, ZAP, Nuclei, testssl.sh, ASVS checklist | ASVS L3 election-critical, L2 elsewhere | PASSING |
+| Accessibility | axe, manual screen-reader scripts, 11-language pseudo-locale | WCAG 2.2 AA (AAA for M68) | PASSING |
+| Reproducibility | Nix flakes, bit-identical rebuild, hash manifest | M14 make-reproduce v2 | PASSING |
+| Mutation | cargo-mutants, mutmut, Stryker | 75%+ kill rate on election-critical | PASSING |
 
 ## Security and trust model
 
-Election-critical systems (T1, rated 99.99%) are built to OWASP ASVS Level 3; others to Level 2. Cryptography uses FIPS 140-3 Level 3+ HSMs, post-quantum hybrid signatures (ML-DSA + ECDSA P-384), and MLKem-768 + X25519 for key encapsulation. TLS 1.3 only, HSTS, DANE, and ECH where supported.
+Election-critical systems (T1, 99.99%) are built to OWASP ASVS Level 3; others to Level 2. Cryptography uses FIPS 140-3 Level 3+ HSMs, post-quantum hybrid signatures (ML-DSA + ECDSA P-384), and ML-KEM-768 + X25519 key encapsulation. TLS 1.3 only, with HSTS, DANE, and ECH where supported.
 
-The transparency model is a single monolithic Merkle log per election. Leaves are domain-tagged; Signed Tree Heads (STHs) are HSM-signed at 1-second, 60-second, and 5-minute cadences. STHs are published on five channels: IEBC website, GitHub mirror, IPFS pinned in Kenya, Kenya Gazette daily print, and KBC Radio hash bulletin. The Independent Assurance Board (IAB) cosigns day-1; external observers cosign day-2. Reproducibility bundle (M14) allows bit-identical rebuild.
+The transparency model is a single monolithic Merkle log per election. Leaves are domain-tagged; Signed Tree Heads are HSM-signed at 1-second, 60-second, and 5-minute cadences and published on five channels: IEBC website, GitHub mirror, IPFS pinned in Kenya, Kenya Gazette daily print, and KBC Radio hash bulletin. The IAB cosigns from day 1; external observers from day 2. The M14 reproducibility bundle allows a bit-identical rebuild.
 
-For details, see `docs/architecture/cross-cutting/trust-model.md`.
+Details: [docs/architecture/cross-cutting/trust-model.md](docs/architecture/cross-cutting/trust-model.md).
 
 ## Reproducibility
 
-Every build is reproducible. The M14 reproducibility bundle contains a Nix flake that can rebuild the entire system from source to a bit-identical binary.
+Every build is reproducible. The M14 bundle lets builders, auditors, and courts independently re-derive and verify the tally without access to the source repository. Pipeline: fetch bundle, Nix rebuild, diffoscope compare, tally replay, transparency-log attestation. See [reproducibility/README.md](reproducibility/README.md).
 
 ```bash
-cd reproducibility/
-make reproduce v2
-```
+# Full reproduction pipeline against a release bundle
+cd reproducibility/make-reproduce
+make reproduce BUNDLE=/path/to/eel-release.tar.gz
 
-This downloads the original signed manifests, rebuilds every service, verifies the Merkle root matches, and generates a completeness audit. Builders, auditors, and courts can independently re-derive and verify the tally without access to the source code repository.
+# Replay the tally only (fast path for auditing results)
+make replay-tally BUNDLE=/path/to/eel-release.tar.gz
+```
 
 ## Contributing
 
-Contributions follow these rules:
-
-- **No client names in code**: Use the `eel` prefix for packages, events, topics, headers, and trust domains. IEBC appears only in prose.
-- **No em/en dashes**: Use commas, colons, or periods. This file and all documentation enforce this.
-- **Commit conventions**: Follow conventional commits (feat, fix, docs, refactor, test, chore). Include module IDs and ticket refs where applicable.
-- **DCO sign-off**: All commits must include `Signed-off-by: Your Name <your.email@example.com>`. Use `git commit -s`.
-- **PR checklist**: Link relevant module pages, include acceptance criteria, declare breaking changes, add test IDs to the PR body.
-- **Code of conduct**: Follow the [Contributor Covenant](https://www.contributor-covenant.org/) Code of Conduct.
-
-See `CONTRIBUTING.md` for full details.
+- **No client names in code**: use the `eel` prefix for packages, events, topics, headers, and trust domains. IEBC appears only in prose.
+- **No em/en dashes**: use commas, colons, or periods. This file and all documentation enforce this.
+- **Commit conventions**: conventional commits (feat, fix, docs, refactor, test, chore). Include module IDs and ticket refs where applicable.
+- **DCO sign-off**: all commits must include `Signed-off-by: Your Name <your.email@example.com>` (`git commit -s`).
+- **PR checklist**: link relevant module pages, include acceptance criteria, declare breaking changes, add test IDs to the PR body.
+- **Code of conduct**: follow the [Contributor Covenant](https://www.contributor-covenant.org/).
 
 ## Licence
 
@@ -447,8 +491,8 @@ limitations under the License.
 
 ## Contact and support
 
-Operational on-call rotations, break-glass custodians, and escalation contacts are in `docs/runbooks/break-glass.md`.
+Operational on-call rotations, break-glass custodians, and escalation contacts: [docs/runbooks/break-glass.md](docs/runbooks/break-glass.md).
 
-For module-specific ownership and wave assignment, see `docs/plans/module-owners.md`.
+Module ownership and wave assignment: [docs/plans/12-appendix-module-inventory.md](docs/plans/12-appendix-module-inventory.md).
 
 For general inquiries about the IEBC Electoral Technology Programme, contact the IEBC ICT directorate.
