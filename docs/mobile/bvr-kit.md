@@ -128,4 +128,14 @@ test/..., integration_test/..., golden/...
 
 Master §9; FR-M01-001…018 tested (device-gated rows listed with hardware
 prereq + self-check); workflow FSM has zero `Future.delayed` stubs; README
-updated; MDM kit profile install verified.
+updated; MDM kit profile install verified.Updating docs/mobile/bvr-kit.md -> BVR-KIT (expanded reference with functions, capabilities, design-system usage, testing)
+
+---
+# Audit Reference (5 axes: where / when / who / why / how)
+Every action now logs via `AuditService` (encrypted Isar + outbox replay):
+- **where**: GPS (LocationService) or station-bound coordinate
+- **when**: ISO 8601 UTC timestamp (per entry UUID7)
+- **who**: Actor identity + SpiceDB role (actorId, actorRole)
+- **why**: Justification / reason / dispute reason (reason field)
+- **how**: Method (biometric_attestation_fingerprint / iris / HSM_Ed25519 / OTP / PIN) + SHA-256 proof hash + Ed25519 signature
+Offline events queued via outbox; replayed on reconnect with full 5-axis verification.

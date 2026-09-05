@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:eel_core_flutter/src/audit/audit_model.dart';
 import 'package:eel_core_flutter/src/audit/audit_service.dart';
 import 'package:eel_core_flutter/src/location/location_service.dart';
+import 'package:eel_core_flutter/src/biometric/biometric_policy.dart';
 import 'fap60/fap60_driver.dart';
 import 'bvi_driver.dart';
 
