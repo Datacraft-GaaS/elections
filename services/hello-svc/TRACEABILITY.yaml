@@ -1,0 +1,6 @@
+service: hello-svc
+version: 0.1.0
+trace_abstraction: demo (no production audit)
+audit_integration: none (development only)
+security: basic (demo endpoint, not production-critical)
+db_persistence: none (demo service, no database required)

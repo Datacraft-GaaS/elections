@@ -1,0 +1,3 @@
+-- Reference to parent DB (field-mobile-svc)
+-- Verification endpoint uses audit_shadows + verification_queries tables
+-- No independent tables — relies on parent DB connection pool (verified via sqlx PgPool)

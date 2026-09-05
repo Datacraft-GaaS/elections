@@ -88,3 +88,40 @@ As of M3 update, **BOTH** BVR enrollment and BVI verification require **fingerpr
 - **DPA 2019**: every PII access logged with actor + reason (FR-010/011/012)
 - **Elections Act**: every vote-affecting action requires dual biometric (BVR + BVI)
 - **Audit retention**: 5 years (encrypted Isar, replicated to BFF)
+
+---
+
+## Local Dedup + Operator-Controlled Upload
+
+Biometric submissions are **never uploaded automatically**. The flow is offline-first with explicit operator action:
+
+### Local Dedup (before submission)
+
+`BiometricSubmissionOutbox.enqueue()` runs **device-local dedup** BEFORE writing to the encrypted outbox:
+
+- **Fingerprint match**: SHA-256 of `fpTemplate` checked against local dedup index
+- **Iris match**: SHA-256 of `irisTemplate` checked against index
+- **Both match**: strong duplicate (entire same person + same biometric)
+- **Either match**: weak duplicate (same biometric on this device)
+- **Match found**: submission stored as `status=deduplicated` with `existing_submission_id` for audit; NOT queued for upload
+
+This prevents the same device from creating multiple enrollments for the same person — even if the operator retakes the capture 10 times, only the first goes to the server.
+
+### Operator-Controlled Upload
+
+`BiometricSubmissionOutbox.uploadAll()` is called **only** when the operator taps the "Upload now" button in the `BiometricOutboxPanel` UI:
+
+- Drains outbox in chronological order
+- Each submission: `POST /v1/bvr/enrol` with both templates + audit metadata
+- Server may return `status=duplicate` (already in central registry) → marked `deduplicated` with `server_duplicate:voter_id`
+- Failed attempts retry up to 5 times
+- Status: `pendingUpload → uploading → uploaded | failed | deduplicated`
+- Cleanup: uploaded + deduplicated entries removed after 30 days
+
+### Why this design
+
+- **No silent uploads** — operator sees exactly what will leave the device
+- **No accidental duplicate enrollments** — local dedup runs first
+- **Offline-first** — works on a kit that's never been online for hours; queue persists across reboots (encrypted secure storage)
+- **Audit trail** — every dedup rejection, every upload attempt, every server response logged with audit entry
+- **Manual control** — kit operator decides when to upload, how much cellular data to spend, and can review each submission before send

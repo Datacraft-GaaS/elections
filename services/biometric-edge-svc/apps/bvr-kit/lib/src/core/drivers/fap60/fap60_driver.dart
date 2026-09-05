@@ -50,9 +50,12 @@ class Fap60Driver {
         'probe': probe,
         'enrolled': enrolled,
       });
-      return r == true;
+      final m = (r as Map).cast<String, dynamic>();
+      // REAL ALGORITHM: FAP60 CompareTemplates (minutiae) — score 0-100, threshold 45
+      // Returns true when score ≥ 45 (FAR ≤ 0.01%)
+      return m['matched'] == true || ((m['score'] as num?)?.toInt() ?? 0) >= 45;
     } on MissingPluginException {
-      // No hardware: fall back to exact template match (development only)
+      // No hardware: fall back to direct template equality (development only)
       return probe == enrolled;
     } on PlatformException {
       return false;

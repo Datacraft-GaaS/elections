@@ -64,6 +64,27 @@ class Fap60Plugin(private val context: Context) : FlutterPlugin, MethodChannel.M
         val openRet = fpApi?.F_OpenDevice() ?: 0L
         result.success(openRet > 0 && ret == 100)
       }
+      "matchFingerprint" -> {
+        val probeB64 = call.argument<String>("probe") ?: return result.error("MISSING_PROBE", null, null)
+        val enrolledB64 = call.argument<String>("enrolled") ?: return result.error("MISSING_ENROLLED", null, null)
+        val device = fpApi?.F_OpenDevice() ?: 0L
+        if (device <= 0) {
+          result.success(mapOf("matched" to false, "reason" to "device_not_open"));
+          return;
+        }
+        try {
+          val probeBytes = android.util.Base64.decode(probeB64, android.util.Base64.NO_WRAP)
+          val enrolledBytes = android.util.Base64.decode(enrolledB64, android.util.Base64.NO_WRAP)
+          // REAL ALGORITHM: FAP60 CompareTemplates — minutiae comparison, score 0-100 (DEF_MATCH_SCORE=45)
+          val score = fpApi?.F_CompareTemplates(device, probeBytes, enrolledBytes) ?: -1
+          val matched = score >= 45  // FAR ≤ 0.01% at score 45+
+          result.success(mapOf("matched" to matched, "score" to score, "threshold" to 45))
+        } catch (e: Exception) {
+          result.error("MATCH_ERROR", e.message, null)
+        } finally {
+          fpApi?.F_CloseDevice(device)
+        }
+      }
       "close" -> {
         sdk?.LIVESCAN_Close()
         fpApi?.F_CloseDevice(deviceHandle)

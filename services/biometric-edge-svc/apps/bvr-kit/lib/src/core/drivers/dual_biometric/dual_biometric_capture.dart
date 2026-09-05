@@ -9,6 +9,7 @@ import 'package:eel_core_flutter/src/biometric/biometric_policy.dart';
 import 'package:kit_sdk_flutter/kit_sdk_flutter.dart' hide EelSigningKey;
 import 'package:kit_sdk_flutter/src/bundle_security.dart';
 import 'package:crypto/crypto.dart' as crypto;
+import 'package:eel_core_flutter/lib/src/outbox/biometric_submission_outbox.dart';
 import 'fap60/fap60_driver.dart';
 import 'bvi_driver.dart';
 
@@ -39,16 +40,19 @@ class DualBiometricCapture {
 	final AntIrisDriver _iris;
 	final AuditService _audit;
 	final LocationService _location;
+	late final BiometricSubmissionOutbox _outbox;
 
 	DualBiometricCapture({
+		BiometricSubmissionOutbox? outbox,
 		Fap60Driver? fp,
 		AntIrisDriver? iris,
 		required AuditService audit,
 		LocationService? location,
-	})  : _fp = fp ?? Fap60Driver(),
-				_iris = iris ?? AntIrisDriver(),
-				_audit = audit,
-				_location = location ?? LocationService();
+	})  : _outbox = outbox ?? BiometricSubmissionOutbox(),
+			_fp = fp ?? Fap60Driver(),
+			_iris = iris ?? AntIrisDriver(),
+			_audit = audit,
+			_location = location ?? LocationService();
 
 	/// 2-factor enrollment: capture fingerprint THEN iris.
 	/// Returns DualBiometricResult with auditId, proofHash, and both biometrics.
@@ -112,6 +116,20 @@ class DualBiometricCapture {
 			howProofHash: proofHash,
 			howSignature: signature,
 			isOffline: isOffline,
+		);
+
+		// ── Submit to outbox: local dedup + operator-controlled upload ──
+		final outboxResult = await _outbox.enqueue(
+			actorId: actorId,
+			actorRole: actorRole,
+			fpTemplate: fpResult.templateBase64,
+			irisTemplate: irisResult.templateBase64,
+			fpQualityScore: fpResult.qualityScore,
+			irisQualityScore: irisResult.qualityScore,
+			whereGps: whereGps,
+			auditId: auditId,
+			proofHash: proofHash,
+			signature: signature,
 		);
 
 		return DualBiometricResult(

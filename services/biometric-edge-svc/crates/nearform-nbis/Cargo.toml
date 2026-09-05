@@ -1,0 +1,24 @@
+[package]
+name = "nearform-nbis"
+version = "0.1.0"
+edition = "2021"
+description = "NIST NBIS-compatible fingerprint extraction and matching, pure Rust"
+license = "Unlicense"
+
+[lib]
+name = "nearform_nbis"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
+rayon = "1.7"      # parallel 1:N gallery search
+image = "0.24"     # PGM/PPM/PBM image loading
+
+[dev-dependencies]
+tempfile = "3"
+
+# Build-time: compiles vendored NBIS v5.0.0 C source
+[build-dependencies]
+cc = "1"

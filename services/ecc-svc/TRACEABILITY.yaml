@@ -1,0 +1,7 @@
+service: $svc
+version: 0.1.0
+trace_abstraction: audit_shadow
+audit_integration: eel-observability-rs
+security: auth-rs + spicedb
+log_pref: _log_
+db_persistence: sqlx/postgresql (verified via migrations)

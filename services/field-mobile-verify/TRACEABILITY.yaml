@@ -1,0 +1,7 @@
+service: field-mobile-verify
+version: 0.1.0
+trace_abstraction: audit_shadow (via field-mobile-svc parent DB)
+audit_integration: eel-observability-rs
+security: auth-rs + EelAttestationClient
+log_pref: _log_
+db_persistence: sqlx/postgresql (uses parent DB via connection pool)
