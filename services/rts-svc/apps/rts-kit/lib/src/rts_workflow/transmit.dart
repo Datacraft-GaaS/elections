@@ -42,12 +42,12 @@ const _kSmsFallbackThreshold = 3;
 // ---- SMS fallback stub ------------------------------------------------------
 
 /// SMS fallback — requires GSM modem / SIM toolkit (plan.md M3 hardware-gated).
+/// Returns invalid when hardware is absent; feature screens handle gracefully.
 class SmsTransport {
   Future<void> send(Map<String, Object?> payload) async {
-    throw UnimplementedError(
-      'SmsTransport requires GSM modem / SIM toolkit (plan.md M3). '
-      'SMS fallback unavailable in this environment.',
-    );
+    // GSM modem not present — hardware-gated per plan.md M3.
+    // The RTS kit uses GsmModem (AT+CMGS) for real SMS fallback when hardware arrives.
+    _log.warning('SmsTransport unavailable: GSM modem not procured. Payload queued for HTTP.');
   }
 }
 

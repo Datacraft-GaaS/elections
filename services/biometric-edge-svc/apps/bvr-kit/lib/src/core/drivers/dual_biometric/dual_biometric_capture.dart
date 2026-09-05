@@ -6,6 +6,9 @@ import 'package:eel_core_flutter/src/audit/audit_model.dart';
 import 'package:eel_core_flutter/src/audit/audit_service.dart';
 import 'package:eel_core_flutter/src/location/location_service.dart';
 import 'package:eel_core_flutter/src/biometric/biometric_policy.dart';
+import 'package:kit_sdk_flutter/kit_sdk_flutter.dart' hide EelSigningKey;
+import 'package:kit_sdk_flutter/src/bundle_security.dart';
+import 'package:crypto/crypto.dart' as crypto;
 import 'fap60/fap60_driver.dart';
 import 'bvi_driver.dart';
 
@@ -155,9 +158,9 @@ class DualBiometricCapture {
 			);
 		}
 
-		// Match: 1:1 fingerprint + 1:1 iris
-		final fpMatch = await _fp.match(fpResult.templateBase64!, fpResult.templateBase64!); // TODO: use enrolled template
-		final irisMatch = await _iris.match(irisResult.isoBase64!, irisResult.isoBase64!);  // TODO: use enrolled template
+		// Match: 1:1 fingerprint + 1:1 iris (templates passed in from prior enrollment)
+		final fpMatch = await _fp.match(fpResult.templateBase64!, enrolledFpTemplate);
+		final irisMatch = await _iris.match(irisResult.isoBase64!, enrolledIrisTemplate);
 
 		if (!fpMatch || !irisMatch) {
 			return _logAndReturn(
@@ -222,13 +225,14 @@ class DualBiometricCapture {
 		'{"auditId":"$auditId","fp":"$fpTemplate","iris":"$irisTemplate","when":"$whenUtc","where":"$whereGps","actor":"$actorId"}';
 
 	String sha256(String input) {
-		// SHA-256 hash — use crypto package in real implementation
-		return input; // stub
+		final bytes = utf8.encode(input);
+		return crypto.sha256.convert(bytes).toString();
 	}
 
 	Future<String> _sign(String payload) async {
-		// EelSigningKey (device-bound Ed25519, TEE-backed)
-		return ''; // stub
+		final key = await EelSigningKey.loadOrCreate();
+		final sig = await key.sign(utf8.encode(payload));
+		return sig;
 	}
 }
 

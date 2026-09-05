@@ -28,24 +28,9 @@ class DiasporaBatchUpload {
 
 /// Diaspora driver — HSM-gated per plan.md M3.
 class DiasporaDriver {
-  Future<HsmKeyResult> generateRealKey() async {
-    throw UnimplementedError(
-      'DiasporaDriver.generateRealKey requires HSM device. '
-      'Per plan.md M3: HSM hardware + PKCS#11 module required.',
-    );
-  }
+  Future<HsmKeyResult> generateRealKey() async => HsmKeyResult.invalid('HSM device not present — hardware-gated per plan.md M3');
 
-  Future<DiasporaBatchUpload> queueDeferredBatch() async {
-    throw UnimplementedError(
-      'DiasporaDriver.queueDeferredBatch requires diaspora batch upload service. '
-      'Per plan.md M3: diaspora back-end integration required.',
-    );
-  }
+  Future<DiasporaBatchUpload> queueDeferredBatch() async => DiasporaBatchUpload.invalid('Diaspora batch upload service unavailable — back-end integration not present');
 
-  Future<bool> selfCheck() async {
-    throw UnimplementedError(
-      'DiasporaDriver.selfCheck requires HSM self-test routine. '
-      'Per plan.md M3: HSM hardware required before use.',
-    );
-  }
+  Future<bool> selfCheck() async => false; // HSM self-test unavailable — hardware not procured
 }

@@ -18,26 +18,10 @@ class SmsStatus {
 /// RTS driver — GSM-gated per plan.md M3.
 class RtsDriver {
   /// Send SMS status fallback when no data connection
-  Future<SmsStatus> sendSmsFallback(String phone, String statusCode) async {
-    throw UnimplementedError(
-      'RtsDriver.sendSmsFallback requires GSM modem. '
-      'Per plan.md M3: GSM hardware + SIM card required.',
-    );
-  }
+  Future<SmsStatus> sendSmsFallback(String phone, String statusCode) async =>
+      SmsStatus.invalid('gsm_modem_not_procured — hardware-gated per plan.md M3');
 
-  /// Check if SMS path is available
-  Future<bool> isSmsAvailable() async {
-    throw UnimplementedError(
-      'RtsDriver.isSmsAvailable requires GSM modem. '
-      'Per plan.md M3: GSM hardware required before use.',
-    );
-  }
+  Future<bool> isSmsAvailable() async => false; // no GSM modem attached
 
-  /// Self-check hardware
-  Future<bool> selfCheck() async {
-    throw UnimplementedError(
-      'RtsDriver.selfCheck requires GSM self-test routine. '
-      'Per plan.md M3: GSM hardware required before use.',
-    );
-  }
+  Future<bool> selfCheck() async => false; // no GSM modem to test
 }

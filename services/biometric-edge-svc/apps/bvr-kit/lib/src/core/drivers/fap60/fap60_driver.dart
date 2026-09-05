@@ -40,6 +40,25 @@ class Fap60Driver {
     }
   }
 
+  /// 1:1 fingerprint match — matches captured [probe] against [enrolled] template.
+  /// Returns true if FAR ≤ 0.01 % (FMR ≤ 1 in 10,000 per ICAO LDS1).
+  /// When FAP60 plugin not registered, falls back to direct template equality check.
+  Future<bool> match(String probe, String enrolled) async {
+    if (probe.isEmpty || enrolled.isEmpty) return false;
+    try {
+      final r = await _channel.invokeMethod('matchFingerprint', {
+        'probe': probe,
+        'enrolled': enrolled,
+      });
+      return r == true;
+    } on MissingPluginException {
+      // No hardware: fall back to exact template match (development only)
+      return probe == enrolled;
+    } on PlatformException {
+      return false;
+    }
+  }
+
   Future<void> close() async {
     try { await _channel.invokeMethod('close'); } on MissingPluginException {}
   }

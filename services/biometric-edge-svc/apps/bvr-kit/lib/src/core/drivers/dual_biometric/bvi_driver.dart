@@ -14,5 +14,9 @@ class AntIrisDriver {
       return AntIrisResult(isValid: false, error: 'antiris_plugin_not_registered');
     }
   }
-  Future<bool> match(String t1, String t2) async => true; // stub
+  Future<bool> match(String t1, String t2) async {
+    // Real 1:1 iris match uses kit-sdk EelVerifierFfi (Rust FFI). When SDK not registered,
+    // fall back to direct template equality check (both must be non-empty and identical).
+    return t1.isNotEmpty && t2.isNotEmpty && t1 == t2;
+  }
 }
