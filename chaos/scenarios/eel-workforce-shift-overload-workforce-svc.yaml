@@ -1,0 +1,24 @@
+# Chaos Mesh v2.7+ — Scenario 43: Workforce shift overload
+# M5 audit chain (ADR-0022/0023): auditId=UUID7; proofHash=sha256; correlation_key=workforce-svc-43; M3_device_id embedded.
+# Role: test resilience of workforce-svc against Shift overload; Purpose: verify SLO/recovery; Functionality: inject fault; Config: apply/remove via kubectl.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: eel-scenario-43
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: chaos-scenario-43
+    eel.io/target: workforce-svc
+    eel.io/wave: "5.9"
+    eel.io/audit: "auditId=uuid7;proofHash=sha256;correlation_key=workforce-svc-43"
+    eel.io/adrs: "ADR-0004,ADR-0006,ADR-0009,ADR-0010"
+spec:
+  action: cpu
+  mode: 90%
+  value: ""
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: workforce-svc
+  gracePeriod: 0

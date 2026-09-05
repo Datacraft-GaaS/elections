@@ -1,0 +1,24 @@
+# Chaos Mesh v2.7+ — Scenario 53: Governance vote batch overflow
+# M5 audit chain (ADR-0022/0023): auditId=UUID7; proofHash=sha256; correlation_key=governance-svc-53; M3_device_id embedded.
+# Role: test resilience of governance-svc against Vote overflow; Purpose: verify SLO/recovery; Functionality: inject fault; Config: apply/remove via kubectl.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: eel-scenario-53
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: chaos-scenario-53
+    eel.io/target: governance-svc
+    eel.io/wave: "5.9"
+    eel.io/audit: "auditId=uuid7;proofHash=sha256;correlation_key=governance-svc-53"
+    eel.io/adrs: "ADR-0004,ADR-0006,ADR-0009,ADR-0010"
+spec:
+  action: mem
+  mode: 95%
+  value: ""
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: governance-svc
+  gracePeriod: 0

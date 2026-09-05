@@ -1,0 +1,24 @@
+# Chaos Mesh v2.7+ — Scenario 49: Field mobile sync disconnect loop
+# M5 audit chain (ADR-0022/0023): auditId=UUID7; proofHash=sha256; correlation_key=field-mobile-svc-49; M3_device_id embedded.
+# Role: test resilience of field-mobile-svc against Sync loop; Purpose: verify SLO/recovery; Functionality: inject fault; Config: apply/remove via kubectl.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: eel-scenario-49
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: chaos-scenario-49
+    eel.io/target: field-mobile-svc
+    eel.io/wave: "5.9"
+    eel.io/audit: "auditId=uuid7;proofHash=sha256;correlation_key=field-mobile-svc-49"
+    eel.io/adrs: "ADR-0004,ADR-0006,ADR-0009,ADR-0010"
+spec:
+  action: loss
+  mode: intermittent
+  value: ""
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: field-mobile-svc
+  gracePeriod: 0

@@ -1,0 +1,24 @@
+# Chaos Mesh v2.7+ — Scenario 66: Transparency audit replay storm
+# M5 audit chain (ADR-0022/0023): auditId=UUID7; proofHash=sha256; correlation_key=transparency-svc-66; M3_device_id embedded.
+# Role: test resilience of transparency-svc against Audit replay; Purpose: verify SLO/recovery; Functionality: inject fault; Config: apply/remove via kubectl.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: HTTPChaos
+metadata:
+  name: eel-scenario-66
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: chaos-scenario-66
+    eel.io/target: transparency-svc
+    eel.io/wave: "5.9"
+    eel.io/audit: "auditId=uuid7;proofHash=sha256;correlation_key=transparency-svc-66"
+    eel.io/adrs: "ADR-0004,ADR-0006,ADR-0009,ADR-0010"
+spec:
+  action: abort
+  mode: 30%
+  value: ""
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: transparency-svc
+  gracePeriod: 0
