@@ -1,10 +1,11 @@
-/// API client: HTTP client with SPIRE SVID header injection and
-/// Idempotency-Key generation per request.
+/// API client: kit-sdk SPKI-pinned HTTP (Dio) with SPIRE SVID header
+/// injection and Idempotency-Key generation per request.
 library;
 
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
+import 'package:eel_kit_sdk/eel_kit_sdk.dart' show EelAttestationClientStub, EelHttpClient;
 
 import '../models/capture.dart';
 
@@ -12,15 +13,14 @@ class ApiClient {
   final Uri baseUri;
   final String Function() svidProvider; // provided by kit-sdk boot attestation
 
-  const ApiClient({
-    required this.baseUri,
-    required this.svidProvider,
-  });
+  late final EelHttpClient _http = EelHttpClient(
+    baseUrl: baseUri.toString(),
+    attestation: EelAttestationClientStub(),
+  )..interceptors.add(_SvidInterceptor(svidProvider));
 
   /// POST /v1/cvr/field-notifications
   Future<SubmitCaptureResponse> submitCapture(CaptureRecord record) async {
     final idempotencyKey = _generateIdempotencyKey(record.captureId);
-    final svid = svidProvider();
 
     final payload = {
       'nationalId': '', // populated from extracted fields in production
@@ -39,26 +39,21 @@ class ApiClient {
         'offlineQueuedAt': record.offlineQueuedAt!.toIso8601String(),
     };
 
-    final response = await http.post(
-      baseUri.resolve('/v1/cvr/field-notifications'),
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Spiffe-Svid': svid,
-        'X-Eel-Role': 'COMMISSION_FIELD_OFFICER',
-        'Idempotency-Key': idempotencyKey,
-      },
-      body: jsonEncode(payload),
+    final response = await _http.post<dynamic>(
+      '/v1/cvr/field-notifications',
+      data: payload,
+      idempotencyKey: idempotencyKey,
     );
 
     if (response.statusCode == 201 || response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final json = (response.data as Map<String, dynamic>?) ?? const {};
       return SubmitCaptureResponse(
         captureId: json['captureId'] as String,
         eventId: json['eventId'] as String,
         queuePosition: (json['queuePosition'] as num?)?.toInt() ?? 0,
       );
     }
-    throw ApiException(response.statusCode, response.body);
+    throw ApiException(response.statusCode, _bodyText(response));
   }
 
   /// GET /v1/cvr/field-notifications?officer_id=&status=&page=&page_size=
@@ -68,28 +63,22 @@ class ApiClient {
     int page = 1,
     int pageSize = 20,
   }) async {
-    final svid = svidProvider();
-    final uri = baseUri.resolve('/v1/cvr/field-notifications').replace(
-      queryParameters: {
-        'officer_id': officerId,
-        if (status != null) 'status': status,
-        'page': '$page',
-        'page_size': '$pageSize',
-      },
-    );
-
-    final response = await http.get(uri, headers: {
-      'X-Spiffe-Svid': svid,
-      'X-Eel-Role': 'COMMISSION_FIELD_OFFICER',
+    final response = await _http.get<dynamic>('/v1/cvr/field-notifications',
+        queryParameters: {
+      'officer_id': officerId,
+      if (status != null) 'status': status,
+      'page': '$page',
+      'page_size': '$pageSize',
     });
 
     if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return (json['captures'] as List<dynamic>)
-          .map((e) => e as Map<String, dynamic>)
-          .toList();
+      final json = (response.data as Map<String, dynamic>?) ?? const {};
+      return (json['captures'] as List<dynamic>?)
+          ?.map((e) => e as Map<String, dynamic>)
+          .toList() ??
+          const [];
     }
-    throw ApiException(response.statusCode, response.body);
+    throw ApiException(response.statusCode, _bodyText(response));
   }
 
   String _generateIdempotencyKey(String captureId) {
@@ -115,6 +104,23 @@ class ApiClient {
       if (f.gender != null) 'gender': f.gender,
       if (f.county != null) 'county': f.county,
     };
+  }
+
+  String _bodyText(dynamic response) => response.data?.toString() ?? '';
+}
+
+/// Injects the SPIRE SVID workload identity + role headers on every request.
+class _SvidInterceptor extends Interceptor {
+  const _SvidInterceptor(this._svidProvider);
+
+  final String Function() _svidProvider;
+
+  @override
+  Future<void> onRequest(
+      RequestOptions options, RequestInterceptorHandler handler) async {
+    options.headers['X-Spiffe-Svid'] = _svidProvider();
+    options.headers['X-Eel-Role'] = 'COMMISSION_FIELD_OFFICER';
+    await handler.next(options);
   }
 }
 

@@ -35,6 +35,19 @@ chrono            = { workspace = true }
 thiserror         = { workspace = true }
 anyhow            = { workspace = true }
 
+# BFF handlers
+eel-api-server-rs  = { workspace = true }
+eel-crypto-rs      = { workspace = true }
+eel-auth-rs        = { workspace = true }
+eel-outbox-rs      = { workspace = true }
+eel-events-rs      = { workspace = true }
+eel-hlc-rs         = { workspace = true }
+
+# Service clients
+bvr-api           = { path = "../../../bvr-svc/crates/bvr-api" }
+dispatch-api      = { path = "../dispatch-api" }
+training-api      = { path = "../../../training-svc/crates/training-api" }
+
 [dev-dependencies]
 tokio  = { workspace = true }
 tower  = { workspace = true }

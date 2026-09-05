@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <shape > <!--圆形按压效果-->
+            <solid android:color="#33ffffff" />
+        </shape>
+    </item>
+
+    <!-- 去掉下面这个item，不按压时，背景透明 -->
+    <item android:state_pressed="false">
+        <shape
+            android:shape="rectangle">
+            <gradient android:startColor="#D3D3D3" android:endColor="#D3D3D3" />
+            <corners android:radius="5dp" />
+        </shape>
+    </item>
+
+</selector>

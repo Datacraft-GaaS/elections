@@ -1,0 +1,268 @@
+// GENERATED FILE - do not edit by hand.
+// Regenerate with: dart run tool/codegen_tokens.dart (from this directory)
+// Source of truth: packages/design-system/tokens.json
+// ignore_for_file: type=lint
+
+import 'package:flutter/material.dart';
+
+import 'tokens.dart';
+
+/// Resolved color set for one brightness, generated from tokens.json.
+class EelColors extends ThemeExtension<EelColors> {
+  const EelColors({
+    required this.brightness,
+    required this.brandPrimary,
+    required this.brandPrimaryHover,
+    required this.brandSecondary,
+    required this.success,
+    required this.warning,
+    required this.danger,
+    required this.info,
+    required this.background,
+    required this.surface,
+    required this.border,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.textDisabled,
+    required this.textInverse,
+    required this.textLink,
+  });
+
+  final Brightness brightness;
+  final Color brandPrimary;
+  final Color brandPrimaryHover;
+  final Color brandSecondary;
+  final Color success;
+  final Color warning;
+  final Color danger;
+  final Color info;
+  final Color background;
+  final Color surface;
+  final Color border;
+  final Color textPrimary;
+  final Color textSecondary;
+  final Color textDisabled;
+  final Color textInverse;
+  final Color textLink;
+
+  factory EelColors.light() => const EelColors(
+        brightness: Brightness.light,
+        brandPrimary: Color(0xFF1A56DB),
+        brandPrimaryHover: Color(0xFF1E429F),
+        brandSecondary: Color(0xFF0E9F6E),
+        success: Color(0xFF057A55),
+        warning: Color(0xFF92400E),
+        danger: Color(0xFFB91C1C),
+        info: Color(0xFF1E40AF),
+        background: Color(0xFFFFFFFF),
+        surface: Color(0xFFF9FAFB),
+        border: Color(0xFFE5E7EB),
+        textPrimary: Color(0xFF111827),
+        textSecondary: Color(0xFF4B5563),
+        textDisabled: Color(0xFF9CA3AF),
+        textInverse: Color(0xFFFFFFFF),
+        textLink: Color(0xFF1A56DB),
+      );
+
+  factory EelColors.dark() => const EelColors(
+        brightness: Brightness.dark,
+        brandPrimary: Color(0xFF4F83F1),
+        brandPrimaryHover: Color(0xFF6B9EFF),
+        brandSecondary: Color(0xFF31C48D),
+        success: Color(0xFF31C48D),
+        warning: Color(0xFFFBBF24),
+        danger: Color(0xFFF87171),
+        info: Color(0xFF60A5FA),
+        background: Color(0xFF111827),
+        surface: Color(0xFF1F2937),
+        border: Color(0xFF374151),
+        textPrimary: Color(0xFFF9FAFB),
+        textSecondary: Color(0xFF9CA3AF),
+        textDisabled: Color(0xFF4B5563),
+        textInverse: Color(0xFF111827),
+        textLink: Color(0xFF4F83F1),
+      );
+
+  /// Colour-blind safe categorical palette (fixed across brightness).
+  static const colorblindSafe = <String, Color>{
+    'blue': Color(0xFF0072B2),
+    'orange': Color(0xFFE69F00),
+    'sky': Color(0xFF56B4E9),
+    'green': Color(0xFF009E73),
+    'yellow': Color(0xFFF0E442),
+    'red': Color(0xFFD55E00),
+    'purple': Color(0xFFCC79A7),
+    'black': Color(0xFF000000),
+  };
+
+  static const neutral = <int, Color>{
+    50: Color(0xFFF9FAFB),
+    100: Color(0xFFF3F4F6),
+    200: Color(0xFFE5E7EB),
+    300: Color(0xFFD1D5DB),
+    400: Color(0xFF9CA3AF),
+    500: Color(0xFF6B7280),
+    600: Color(0xFF4B5563),
+    700: Color(0xFF374151),
+    800: Color(0xFF1F2937),
+    900: Color(0xFF111827),
+  };
+
+  @override
+  EelColors copyWith({
+    Brightness? brightness,
+    Color? brandPrimary,
+    Color? brandPrimaryHover,
+    Color? brandSecondary,
+    Color? success,
+    Color? warning,
+    Color? danger,
+    Color? info,
+    Color? background,
+    Color? surface,
+    Color? border,
+    Color? textPrimary,
+    Color? textSecondary,
+    Color? textDisabled,
+    Color? textInverse,
+    Color? textLink,
+  }) {
+    return EelColors(
+      brightness: brightness ?? this.brightness,
+      brandPrimary: brandPrimary ?? this.brandPrimary,
+      brandPrimaryHover: brandPrimaryHover ?? this.brandPrimaryHover,
+      brandSecondary: brandSecondary ?? this.brandSecondary,
+      success: success ?? this.success,
+      warning: warning ?? this.warning,
+      danger: danger ?? this.danger,
+      info: info ?? this.info,
+      background: background ?? this.background,
+      surface: surface ?? this.surface,
+      border: border ?? this.border,
+      textPrimary: textPrimary ?? this.textPrimary,
+      textSecondary: textSecondary ?? this.textSecondary,
+      textDisabled: textDisabled ?? this.textDisabled,
+      textInverse: textInverse ?? this.textInverse,
+      textLink: textLink ?? this.textLink,
+    );
+  }
+
+  @override
+  EelColors lerp(ThemeExtension<EelColors>? other, double t) {
+    if (other is! EelColors) return this;
+    return EelColors(
+      brightness: t < 0.5 ? brightness : other.brightness,
+      brandPrimary: Color.lerp(brandPrimary, other.brandPrimary, t)!,
+      brandPrimaryHover:
+          Color.lerp(brandPrimaryHover, other.brandPrimaryHover, t)!,
+      brandSecondary: Color.lerp(brandSecondary, other.brandSecondary, t)!,
+      success: Color.lerp(success, other.success, t)!,
+      warning: Color.lerp(warning, other.warning, t)!,
+      danger: Color.lerp(danger, other.danger, t)!,
+      info: Color.lerp(info, other.info, t)!,
+      background: Color.lerp(background, other.background, t)!,
+      surface: Color.lerp(surface, other.surface, t)!,
+      border: Color.lerp(border, other.border, t)!,
+      textPrimary: Color.lerp(textPrimary, other.textPrimary, t)!,
+      textSecondary: Color.lerp(textSecondary, other.textSecondary, t)!,
+      textDisabled: Color.lerp(textDisabled, other.textDisabled, t)!,
+      textInverse: Color.lerp(textInverse, other.textInverse, t)!,
+      textLink: Color.lerp(textLink, other.textLink, t)!,
+    );
+  }
+}
+
+/// Spacing / radius / sizing constants generated from tokens.json.
+abstract final class EelSpacing {
+  static const s0 = 0.0;
+  static const s1 = 4.0;
+  static const s2 = 8.0;
+  static const s3 = 12.0;
+  static const s4 = 16.0;
+  static const s5 = 20.0;
+  static const s6 = 24.0;
+  static const s7 = 28.0;
+  static const s8 = 32.0;
+  static const s9 = 36.0;
+  static const s10 = 40.0;
+  static const s11 = 44.0;
+  static const s12 = 48.0;
+  static const s13 = 52.0;
+  static const s14 = 56.0;
+  static const s15 = 60.0;
+  static const s16 = 64.0;
+  static const s20 = 80.0;
+  static const s24 = 96.0;
+}
+
+abstract final class EelRadius {
+  static const none = 0.0;
+  static const sm = 2.0;
+  static const md = 4.0;
+  static const lg = 8.0;
+  static const xl = 12.0;
+  static const full = 9999.0;
+}
+
+abstract final class EelSizing {
+  /// Minimum touch target from tokens (`touch.min` = 44 px); the plan
+  /// enforces 48 dp for interactive elements (plan §5.1).
+  static const minTouch = 44.0;
+
+  /// Enforced interactive minimum per module FRs (48 dp).
+  static const enforcedTouch = 48.0;
+}
+
+/// Motion tokens: durations + standard easing. No decorative animation on
+/// capture/verification flows (plan §5.2).
+abstract final class EelMotion {
+  static const fastMs = 100;
+  static const normalMs = 200;
+  static const slowMs = 300;
+
+  static const fast = Duration(milliseconds: fastMs);
+  static const normal = Duration(milliseconds: normalMs);
+  static const slow = Duration(milliseconds: slowMs);
+
+  /// cubic-bezier(0.4, 0, 0.2, 1) — the token `motion.easing.default`.
+  static const Cubic standard = Cubic(0.4, 0.0, 0.2, 1.0);
+
+  /// cubic-bezier(0.4, 0, 1, 1) — the token `motion.easing.in`.
+  static const Cubic easeIn = Cubic(0.4, 0.0, 1.0, 1.0);
+
+  /// cubic-bezier(0, 0, 0.2, 1) — the token `motion.easing.out`.
+  static const Cubic easeOut = Cubic(0.0, 0.0, 0.2, 1.0);
+}
+
+/// Typography scale generated from tokens.json.
+abstract final class EelTypography {
+  static const fontFamily = 'Noto Sans';
+  static const fontFamilyMono = 'JetBrains Mono';
+
+  static const xs = 12.0;
+  static const sm = 14.0;
+  static const base = 16.0;
+  static const lg = 18.0;
+  static const xl = 20.0;
+  static const xl2 = 24.0;
+  static const xl3 = 30.0;
+  static const xl4 = 36.0;
+}
+
+/// Focus ring spec from tokens (blur 0, spread 3, brand blue @ 50 %).
+abstract final class EelFocus {
+  static const ringWidth = 3.0;
+  static const ringColor = Color(0x801A56DB);
+}
+
+/// Convenience lookups over the raw generated token maps.
+EelColors eelColorsOf(Brightness brightness) =>
+    brightness == Brightness.dark ? EelColors.dark() : EelColors.light();
+
+Color eelTokenColor(String path) {
+  final hex = eelColorTokens[path];
+  if (hex == null) {
+    throw ArgumentError('Unknown colour token: $path');
+  }
+  return Color(int.parse(hex.replaceFirst('#', '0xFF')));
+}

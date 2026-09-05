@@ -1,11 +1,27 @@
-// Silent duress alert service stub.
-// In production, triggers a silent push to monitoring backend
-// without revealing the action in the UI.
+/// Duress alert service — silent beacon to war-room + BVI (M30 FR-026).
+/// Uses EelHttpClient (mTLS via SPKI pinning) to send encrypted beacon.
+import 'package:eel_core_flutter/http_client.dart';
+
 class DuressAlertService {
-	Future<void> sendSilentAlert({
-		required String agentId,
-		required String stationCode,
-	}) async {
-		// Stub: real implementation sends an encrypted beacon via mTLS
-	}
+  final EelHttpClient? _client;
+
+  DuressAlertService({EelHttpClient? client}) : _client = client;
+
+  /// Send silent alert — never reveals action in UI.
+  Future<void> sendSilentAlert({
+    required String agentId,
+    required String stationCode,
+  }) async {
+    if (_client == null) {
+      throw StateError('DuressAlertService requires EelHttpClient (mTLS/SPKI). Per M30: hardware-gated when network unavailable.');
+    }
+    await _client!.post(
+      '/api/v1/mobile/bff/duress',
+      data: {
+        'agent_id': agentId,
+        'station_code': stationCode,
+        'timestamp_utc': DateTime.now().toIso8601String(),
+      },
+    );
+  }
 }

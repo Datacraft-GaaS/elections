@@ -1,0 +1,23 @@
+name: eel_design
+description: >-
+  eel design system for Flutter. Code-generated theme from
+  packages/design-system/tokens.json plus the shared component library.
+  WCAG 2.2 AA, colour-blind safe, dark-mode ready, field-first ergonomics.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true

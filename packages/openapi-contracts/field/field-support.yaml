@@ -1,0 +1,1001 @@
+openapi: 3.1.0
+info:
+  title: eel-field-field-support
+  version: 0.1.0
+  description: >
+    Module M32 - Field support (DATACRAFT_ENGINEER) mobile app API. Served by
+    field-mobile-svc BFF gateway. All operations require a short-lived JWT
+    (5-15 min) plus the X-Eel-Attest device attestation header per ADR-0021.
+    Mutating operations are idempotent on Idempotency-Key (UUIDv7, 72 h dedup
+    window). Remote kit actions are signed, audited, and require prior kit
+    consent. Contract-first: handlers land in Wave M1/M2 (docs/mobile/plan.md);
+    unbound paths are allowlisted with expiry in .completeness-allowlist.yaml.
+    Design of record: docs/mobile/field-contracts-design.md.
+  contact:
+    name: eel platform team
+    url: https://eel.local/support
+
+servers:
+  - url: https://api.eel.local
+    description: production
+  - url: https://staging.api.eel.local
+    description: staging
+
+tags:
+  - name: tickets
+    description: Live ticket queue, take, escalate
+  - name: kits
+    description: Kit health telemetry and remote diagnostic actions
+  - name: warranty
+    description: Warranty claims
+  - name: logistics
+    description: Spares availability and on-call schedule
+  - name: shift
+    description: Handoff and end-of-shift reports
+
+security:
+  - bearerAuth: []
+
+paths:
+  /v1/support/tickets:
+    get:
+      tags: [tickets]
+      operationId: supportListTickets
+      summary: Live ticket queue filtered by cluster and severity
+      description: >
+        The engineer's working queue. Filters are optional; results are
+        ordered by SLA deadline ascending.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 60
+        p95: 250
+        p99: 600
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: cluster_code
+          in: query
+          description: Restrict to one cluster
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [LOW, MEDIUM, HIGH, CRITICAL]
+            x-eel-data-class: D
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [OPEN, TAKEN, ESCALATED, CLOSED]
+            x-eel-data-class: D
+      responses:
+        '200':
+          description: Ticket queue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketList'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/TicketList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /v1/support/tickets/{id}/take:
+    post:
+      tags: [tickets]
+      operationId: supportTakeTicket
+      summary: Take (assign) a ticket
+      description: >
+        Claims an open ticket for the calling engineer. A ticket already
+        taken by another engineer yields 409. Idempotent on Idempotency-Key.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TakeTicketRequest'
+      responses:
+        '200':
+          description: Ticket taken
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TakeTicketResponse'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/TakeTicketResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/support/tickets/{id}/escalate:
+    post:
+      tags: [tickets]
+      operationId: supportEscalateTicket
+      summary: Escalate a ticket to L2/L3/Mechrevo/IEBC ICT
+      description: >
+        Escalates the ticket up the support chain with a mandatory reason.
+        The escalation event is audited and notified to the target tier's
+        on-call channel. Idempotent on Idempotency-Key.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EscalateRequest'
+      responses:
+        '200':
+          description: Ticket escalated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EscalateResponse'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/EscalateResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/support/kits/{serial}:
+    get:
+      tags: [kits]
+      operationId: supportKitHealth
+      summary: Kit health telemetry
+      description: >
+        Latest telemetry snapshot for a kit: battery, storage, connectivity,
+        firmware, and recent anomalies.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: serial
+          in: path
+          required: true
+          description: Kit hardware serial number
+          schema:
+            type: string
+            maxLength: 64
+            x-eel-data-class: E
+      responses:
+        '200':
+          description: Kit health snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KitHealth'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/KitHealth'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/support/kits/{serial}/action:
+    post:
+      tags: [kits]
+      operationId: supportKitAction
+      summary: Remote diagnostic action (signed, audited, kit-consent required)
+      description: >
+        Issues a signed remote action to the kit. Requires a prior kit-consent
+        record (`kit_consent_ref`); the action is queued on the kit and
+        acknowledged asynchronously (202). Every action is written to the
+        audit log with the engineer's identity. Idempotent on
+        Idempotency-Key.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 80
+        p95: 300
+        p99: 700
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+        - name: serial
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 64
+            x-eel-data-class: E
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KitActionRequest'
+      responses:
+        '202':
+          description: Action accepted and queued on the kit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KitActionResponse'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/KitActionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/support/warranty:
+    post:
+      tags: [warranty]
+      operationId: supportWarrantyClaim
+      summary: Initiate a warranty claim for a kit
+      description: >
+        Opens a warranty claim with issue description and evidence references.
+        The claim is routed to the vendor portal per kit model. Idempotent on
+        Idempotency-Key.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 80
+        p95: 300
+        p99: 700
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WarrantyClaimRequest'
+      responses:
+        '201':
+          description: Warranty claim opened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WarrantyClaimResponse'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/WarrantyClaimResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /v1/support/spares:
+    get:
+      tags: [logistics]
+      operationId: supportSpares
+      summary: Spares availability in cluster (via M20 inventory)
+      description: >
+        Current spare-part stock for the engineer's cluster, sourced from the
+        M20 inventory service. Optional part-type filter.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 60
+        p95: 250
+        p99: 600
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: cluster_code
+          in: query
+          description: "Cluster to check stock for (default: engineer's cluster)"
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+        - name: part_type
+          in: query
+          description: Restrict to one part type
+          schema:
+            type: string
+            maxLength: 64
+            x-eel-data-class: D
+      responses:
+        '200':
+          description: Spares availability
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SparesList'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/SparesList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /v1/support/oncall:
+    get:
+      tags: [logistics]
+      operationId: supportOncall
+      summary: On-call rotation schedule
+      description: >
+        Support on-call shifts for a date range (default: next 7 days).
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 40
+        p95: 150
+        p99: 400
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: from
+          in: query
+          description: Start date (YYYY-MM-DD, inclusive)
+          schema:
+            type: string
+            format: date
+            x-eel-data-class: D
+        - name: to
+          in: query
+          description: End date (YYYY-MM-DD, inclusive)
+          schema:
+            type: string
+            format: date
+            x-eel-data-class: D
+      responses:
+        '200':
+          description: On-call schedule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OncallSchedule'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/OncallSchedule'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /v1/support/handoff:
+    post:
+      tags: [shift]
+      operationId: supportHandoff
+      summary: Shift-boundary handoff (sign-off required)
+      description: >
+        Transfers open tickets from the outgoing engineer to the incoming one
+        at a shift boundary. Both identities are recorded; the outgoing
+        engineer's signature is mandatory. Idempotent on Idempotency-Key.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 80
+        p95: 300
+        p99: 700
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HandoffRequest'
+      responses:
+        '201':
+          description: Handoff recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HandoffResponse'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/HandoffResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/support/shift-report:
+    post:
+      tags: [shift]
+      operationId: supportShiftReport
+      summary: Submit signed end-of-shift report
+      description: >
+        The engineer's end-of-shift summary with ticket counts and a free-text
+        summary. Ed25519-signed on device; signature verified server-side.
+        Idempotent on Idempotency-Key.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 80
+        p95: 300
+        p99: 700
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShiftReportRequest'
+      responses:
+        '201':
+          description: Shift report accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShiftReportResponse'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/ShiftReportResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Short-lived JWT (5-15 min) issued by the BFF session endpoint
+
+  responses:
+    BadRequest:
+      description: Request body or parameters failed validation
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Missing or invalid JWT or attestation token
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Role or SpiceDB authorization denied
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Idempotency-Key collision or state conflict (e.g. ticket already taken)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+  schemas:
+    ProblemDetail:
+      type: object
+      description: RFC 9457 problem detail
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: E
+        title:
+          type: string
+          x-eel-data-class: E
+        status:
+          type: integer
+          x-eel-data-class: E
+        detail:
+          type: string
+          x-eel-data-class: E
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: E
+        trace_id:
+          type: string
+          x-eel-data-class: E
+
+    Ticket:
+      type: object
+      required: [ticket_id, kit_serial, cluster_code, severity, status, created_at]
+      properties:
+        ticket_id:
+          type: string
+          format: uuid
+        kit_serial:
+          type: string
+          maxLength: 64
+          x-eel-data-class: E
+        cluster_code:
+          type: string
+          x-eel-data-class: C
+        severity:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+          x-eel-data-class: D
+        status:
+          type: string
+          enum: [OPEN, TAKEN, ESCALATED, CLOSED]
+          x-eel-data-class: D
+        created_at:
+          type: string
+          format: date-time
+        sla_deadline:
+          type: string
+          format: date-time
+
+    TicketList:
+      type: object
+      required: [tickets, total]
+      properties:
+        tickets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ticket'
+        total:
+          type: integer
+
+    TakeTicketRequest:
+      type: object
+      required: [engineer_id]
+      properties:
+        engineer_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        note:
+          type: string
+          maxLength: 512
+          x-eel-data-class: D
+
+    TakeTicketResponse:
+      type: object
+      required: [ticket_id, assigned_to, taken_at]
+      properties:
+        ticket_id:
+          type: string
+          format: uuid
+        assigned_to:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        taken_at:
+          type: string
+          format: date-time
+
+    EscalateRequest:
+      type: object
+      required: [engineer_id, target_level, reason]
+      properties:
+        engineer_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        target_level:
+          type: string
+          enum: [L2, L3, MECHREVO, IEBC_ICT]
+          x-eel-data-class: D
+        reason:
+          type: string
+          maxLength: 1024
+          x-eel-data-class: D
+
+    EscalateResponse:
+      type: object
+      required: [ticket_id, escalated_to, escalated_at]
+      properties:
+        ticket_id:
+          type: string
+          format: uuid
+        escalated_to:
+          type: string
+          enum: [L2, L3, MECHREVO, IEBC_ICT]
+          x-eel-data-class: D
+        escalated_at:
+          type: string
+          format: date-time
+
+    KitHealth:
+      type: object
+      required: [kit_serial, battery_level, storage_used_pct, connectivity, last_heartbeat_at]
+      properties:
+        kit_serial:
+          type: string
+          maxLength: 64
+          x-eel-data-class: E
+        battery_level:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          x-eel-data-class: E
+        storage_used_pct:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          x-eel-data-class: E
+        connectivity:
+          type: string
+          enum: [online, degraded, offline]
+          x-eel-data-class: D
+        firmware_version:
+          type: string
+          maxLength: 32
+          x-eel-data-class: E
+        last_heartbeat_at:
+          type: string
+          format: date-time
+        anomalies:
+          type: array
+          items:
+            type: string
+          x-eel-data-class: D
+
+    KitActionRequest:
+      type: object
+      required: [engineer_id, action, signature, kit_consent_ref]
+      properties:
+        engineer_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        action:
+          type: string
+          enum: [reboot, wipe_cache, sync_now, factory_reset]
+          x-eel-data-class: D
+        signature:
+          type: string
+          description: Base64 Ed25519 engineer signature over the action record
+          x-eel-data-class: E
+        kit_consent_ref:
+          type: string
+          format: uuid
+          description: Reference to the prior kit-consent record (mandatory)
+          x-eel-data-class: E
+
+    KitActionResponse:
+      type: object
+      required: [action_id, status, accepted_at]
+      properties:
+        action_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [ACCEPTED]
+          x-eel-data-class: D
+        accepted_at:
+          type: string
+          format: date-time
+
+    WarrantyClaimRequest:
+      type: object
+      required: [kit_serial, issue_description, engineer_id]
+      properties:
+        kit_serial:
+          type: string
+          maxLength: 64
+          x-eel-data-class: E
+        issue_description:
+          type: string
+          maxLength: 2048
+          x-eel-data-class: D
+        evidence_refs:
+          type: array
+          items:
+            type: string
+            format: uuid
+          x-eel-data-class: E
+        engineer_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+
+    WarrantyClaimResponse:
+      type: object
+      required: [claim_id, status, created_at]
+      properties:
+        claim_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [OPEN]
+          x-eel-data-class: D
+        created_at:
+          type: string
+          format: date-time
+
+    SparesList:
+      type: object
+      required: [spares, as_of]
+      properties:
+        spares:
+          type: array
+          items:
+            type: object
+            required: [part_type, quantity, location_code]
+            properties:
+              part_type:
+                type: string
+                x-eel-data-class: D
+              quantity:
+                type: integer
+                x-eel-data-class: E
+              location_code:
+                type: string
+                x-eel-data-class: C
+        as_of:
+          type: string
+          format: date-time
+
+    OncallSchedule:
+      type: object
+      required: [shifts]
+      properties:
+        shifts:
+          type: array
+          items:
+            type: object
+            required: [date, engineer_id, role]
+            properties:
+              date:
+                type: string
+                format: date
+                x-eel-data-class: D
+              engineer_id:
+                type: string
+                format: uuid
+                x-eel-data-class: D
+              role:
+                type: string
+                x-eel-data-class: D
+              contact_ref:
+                type: string
+                description: Indirect contact reference (no raw phone numbers in API)
+                x-eel-data-class: D
+
+    HandoffRequest:
+      type: object
+      required: [outgoing_engineer_id, incoming_engineer_id, open_tickets, signature]
+      properties:
+        outgoing_engineer_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        incoming_engineer_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        open_tickets:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Ticket ids transferred by this handoff
+          x-eel-data-class: E
+        notes:
+          type: string
+          maxLength: 2048
+          x-eel-data-class: D
+        signature:
+          type: string
+          description: Base64 Ed25519 signature of the outgoing engineer (sign-off)
+          x-eel-data-class: E
+
+    HandoffResponse:
+      type: object
+      required: [handoff_id, created_at]
+      properties:
+        handoff_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+
+    ShiftReportRequest:
+      type: object
+      required: [engineer_id, shift, tickets_closed, signature]
+      properties:
+        engineer_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        shift:
+          type: object
+          required: [started_at, ended_at]
+          properties:
+            started_at:
+              type: string
+              format: date-time
+            ended_at:
+              type: string
+              format: date-time
+        tickets_closed:
+          type: integer
+        summary:
+          type: string
+          maxLength: 2048
+          x-eel-data-class: D
+        signature:
+          type: string
+          description: Base64 Ed25519 signature over the canonicalized report
+          x-eel-data-class: E
+
+    ShiftReportResponse:
+      type: object
+      required: [report_id, submitted_at]
+      properties:
+        report_id:
+          type: string
+          format: uuid
+        submitted_at:
+          type: string
+          format: date-time

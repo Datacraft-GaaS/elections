@@ -35,6 +35,10 @@ dependencies:
   # dio_certificate_pinning not published on pub.dev; SPKI pinning implemented
   # via a custom HttpClientAdapter in EelHttpClient.
 
+  # Encrypted local persistence (device-tier; Isar 3.x + AES-256 via secure store)
+  isar: ^3.1.0+1
+  isar_flutter_libs: ^3.1.0+1
+
   # State management
   flutter_riverpod: ^2.5.0
   hooks_riverpod: ^2.5.0
@@ -72,6 +76,9 @@ dev_dependencies:
   patrol: ^3.6.1
   integration_test:
     sdk: flutter
+
+  # HTTP test server
+  http: ^1.2.0
 
 flutter:
   generate: true

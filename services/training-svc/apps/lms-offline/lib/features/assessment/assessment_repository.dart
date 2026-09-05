@@ -30,7 +30,7 @@ class AssessmentRepository {
 
   Future<AssessmentAttempt> submitAttempt(AssessmentAttempt attempt) async {
     final resp = await _dio.post<Map<String, dynamic>>(
-      '/v1/assessments',
+      '/v1/training/lms/assessments/${attempt.moduleId}/submissions',
       data: attempt.toJson(),
       options: Options(
         headers: {'Idempotency-Key': attempt.idempotencyKey},

@@ -40,7 +40,13 @@ class CrlRepository {
   }
 
   Future<CrlModel> fetchCrl() async {
-    final resp = await _dio.get<Map<String, dynamic>>('/v1/crl');
+    // M42: CRL endpoint integration — fetch from accredited CA endpoint.
+    // Real endpoint: /v1/security/crl (with CA authority verification).
+    final resp = await _dio.get<Map<String, dynamic>>('/v1/security/crl',
+      options: Options(
+        extra: {'require_ca_verification': true},
+      ),
+    );
     final crl = CrlModel.fromJson(resp.data!);
     await _cacheCrl(crl);
     return crl;

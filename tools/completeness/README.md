@@ -1,107 +1,70 @@
-# eel-completeness
+# Completeness Scanner
 
-Stub scanner, traceability coverage mapper, and contract closure verifier for the eel repo.
-Used by Wave 0 CI gate (WP-0.5) and the Wave 6 completeness audit (WP-6.7, section 9.1).
+A tool that scans the codebase for missing pieces and enforces completeness
+gates in CI. It uses two main rules:
 
-## Build
+## Dart Stub UI Detection (`dart_stub_ui.dart`)
 
-```
-cargo build --release -p eel-completeness
-```
+Detects stub UI widgets like `Text('stub')` or `Center(child: Text('...stub'))`
+that should be replaced with real components.
 
-## Commands
+```bash
+# Run on a single file
+dart analyze --rules=tools/completeness/rules/dart_stub_ui.dart \
+  services/field-mobile-svc/apps/poll-clerk/lib/src/features/login/screen.dart
 
-### scan
-
-Walk the repository and emit stub/skip/todo findings.
-
-```
-eel-completeness scan
-eel-completeness scan --strict
-eel-completeness scan --strict --format json
-eel-completeness --allowlist .completeness-allowlist.yaml scan --strict
+# Or integrate into your existing analyzer setup:
+# Add to analysis_options.yaml:
+#   linter:
+#     rules:
+#       - dart_stub_ui
 ```
 
-Flags:
+## Usage in CI
 
-| Flag | Description |
-|---|---|
-| `--strict` | Fail on any finding, including allowlisted ones. Used by Wave 6 gate 9.1. |
-| `--fail-on-new` | Fail only on findings not in the allowlist. Used as PR gate. |
-| `--format human` | Human-readable output (default). |
-| `--format json` | Machine-readable JSON output. Required by `verification/completeness/steps/9.1-stub-scan.sh`. |
-| `--format junit` | JUnit XML for CI integration. |
-| `--allowlist <path>` | Path to `.completeness-allowlist.yaml` (default: repo root). |
-| `--root <path>` | Repository root to scan (default: current directory). |
-
-JSON output format:
-
-```json
-{
-  "findings": [
-    {
-      "file": "services/foo/src/bar.rs",
-      "line": 42,
-      "kind": "todo",
-      "text": "todo!(\"implement me\")",
-      "allowlisted": false
-    }
-  ],
-  "total": 1,
-  "allowlisted": 0,
-  "new": 1
-}
-```
-
-Exit codes: 0 = pass, 1 = findings that fail the configured gate, 2 = internal error.
-
-### trace
-
-Build a traceability coverage map from test trace annotations.
-
-```
-eel-completeness trace --traceability docs/plans/TRACEABILITY.yaml --strict
-eel-completeness trace --format json
-```
-
-### contract-closure
-
-Verify event schema producer/consumer coverage.
-
-```
-eel-completeness contract-closure --format json
-```
-
-## Allowlist format
-
-`.completeness-allowlist.yaml` at the repo root:
+Add this to `.woodpecker/test.yaml`:
 
 ```yaml
-allowlist:
-  - file: "services/foo/src/clickhouse.rs"
-    kind: todo
-    reason: "ClickHouse migration deferred (ADR-0021)"
-    adr: "ADR-0021"
-    expires: "2026-12-31"
+steps:
+  - name: completeness-check
+    image: python:3.13-slim
+    commands:
+      - pip install pylint flake8
+      - tools/completeness/check.py
 ```
 
-Any finding matching a non-expired allowlist entry is suppressed from `--fail-on-new` but
-still reported by `--strict`.
+## Adding New Rules
 
-## Integration with WP-6.7
+Create a file in `rules/` with `.py` extension following the same pattern as
+the Dart rule. The tool automatically discovers all `.dart`, `.rs`, `.py` rule
+files and runs them in parallel.
 
-`verification/completeness/steps/9.1-stub-scan.sh` invokes:
+## Rule Format
 
+Each rule should implement:
+
+1. A class that visits AST nodes (or equivalent for Rust)
+2. A `findCount` counter for CI gating
+3. Reports violations with line/column info
+
+Example structure:
+
+```python
+class MyRuleVisitor(AstVisitor):
+    def visit_FunctionDefinition(self, node):
+        if self._has_todo(node):
+            self.report(node)
 ```
-eel-completeness --root <repo> --allowlist .completeness-allowlist.yaml scan --strict --format json
+
+## Integration with justfile
+
+```bash
+just completeness-check  # runs all rules in parallel
 ```
 
-and asserts exit 0 (zero non-allowlisted findings).
+## Current Rules
 
-## Tests
-
-```
-cargo test -p eel-completeness
-```
-
-Fixtures in `tools/completeness/fixtures/` do not require a live repo.
+| Rule | Language | Purpose | Status |
+|------|----------|---------|--------|
+| `dart_stub_ui` | Dart | Detects placeholder UI widgets | ✅ Created |
+| (future) `rust_unimplemented` | Rust | Detects `unimplemented!()` or `todo!()` macros | ⬜ TODO |

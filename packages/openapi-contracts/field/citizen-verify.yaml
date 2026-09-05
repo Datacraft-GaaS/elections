@@ -1,0 +1,985 @@
+openapi: 3.1.0
+info:
+  title: eel-field-citizen-verify
+  version: 0.1.0
+  description: >
+    Module M29 - Citizen verify app API (M13 verifier read path). Served by
+    field-mobile-svc BFF gateway with CDN caching on public tier-1 reads.
+    Public endpoints are unauthenticated and rate-limited; register lookups
+    require an OTP-verified JWT. Tier-1 responses carry cosign signature,
+    Merkle proof, and snapshot-id headers for client-side verification.
+    Mutating operations are idempotent on Idempotency-Key (UUIDv7, 72 h dedup
+    window). Contract-first: handlers land in Wave M1/M4 (docs/mobile/plan.md);
+    unbound paths are allowlisted with expiry in .completeness-allowlist.yaml.
+    Design of record: docs/mobile/field-contracts-design.md.
+  contact:
+    name: eel platform team
+    url: https://eel.local/support
+
+servers:
+  - url: https://api.eel.local
+    description: production
+  - url: https://staging.api.eel.local
+    description: staging
+
+tags:
+  - name: register
+    description: Own register entry lookup and objections (OTP-verified JWT)
+  - name: results
+    description: Public station results, Merkle proofs, bulk download
+  - name: directory
+    description: Candidate directory and civic content bundle
+  - name: reports
+    description: Citizen reports with optional evidence
+  - name: notifications
+    description: Push notification subscription (no PII in payloads)
+  - name: app
+    description: App signing-key fingerprint and build info
+
+paths:
+  /v1/citizen/register:
+    get:
+      tags: [register]
+      operationId: citizenRegisterLookup
+      summary: Own register entry lookup (OTP-verified JWT; rate 20/day/session)
+      description: >
+        Looks up the caller's own register entry using a salted ID hash.
+        Returns non-PII fields only: registration status, polling station
+        name/code, ward, constituency. Rate limit is 20 lookups per day per
+        session; 429 carries a Retry-After problem detail.
+      x-eel-tier: 2
+      x-eel-auth: JWT
+      x-eel-sla:
+        p50: 100
+        p95: 350
+        p99: 800
+      parameters:
+        - name: id_hash
+          in: query
+          required: true
+          description: SHA-256(salt || national_id); never the raw ID
+          schema:
+            type: string
+            pattern: '^[0-9a-f]{64}$'
+            x-eel-data-class: B
+      responses:
+        '200':
+          description: Register lookup result (no PII)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterLookupResponse'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/RegisterLookupResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /v1/citizen/register/objection:
+    post:
+      tags: [register]
+      operationId: citizenRegisterObjection
+      summary: File rectification / transfer / removal objection via BVR
+      description: >
+        Files a register objection on behalf of the OTP-verified caller. The
+        objection is routed to bvr-svc for processing; evidence references
+        point to already-uploaded artifacts. Idempotent on Idempotency-Key.
+      x-eel-tier: 2
+      x-eel-auth: JWT
+      x-eel-sla:
+        p50: 100
+        p95: 350
+        p99: 800
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Client-generated UUIDv7 for idempotent request deduplication (TTL 72 h)
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterObjectionRequest'
+      responses:
+        '201':
+          description: Objection filed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterObjectionResponse'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/RegisterObjectionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/citizen/polling-station:
+    get:
+      tags: [register]
+      operationId: citizenPollingStation
+      summary: Voter's polling station details (public, cached)
+      description: >
+        Public read of the polling station for a salted ID hash. CDN-cached;
+        responses carry integrity headers for client-side verification.
+      x-eel-tier: 1
+      x-eel-auth: public
+      x-eel-sla:
+        p50: 40
+        p95: 150
+        p99: 400
+      security: []
+      parameters:
+        - name: id_hash
+          in: query
+          required: true
+          description: SHA-256(salt || national_id); never the raw ID
+          schema:
+            type: string
+            pattern: '^[0-9a-f]{64}$'
+            x-eel-data-class: B
+      responses:
+        '200':
+          description: Polling station details
+          headers:
+            X-Eel-Signature:
+              description: Sigstore cosign signature over the response body
+              schema:
+                type: string
+                x-eel-data-class: E
+            X-Eel-Merkle-Proof:
+              description: Merkle proof anchoring this response to the audit ledger
+              schema:
+                type: string
+                x-eel-data-class: E
+            X-Eel-Snapshot-Id:
+              description: Snapshot identifier for response reproducibility
+              schema:
+                type: string
+                format: uuid
+                x-eel-data-class: E
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PollingStationResponse'
+
+  /v1/citizen/results/{station_code}:
+    get:
+      tags: [results]
+      operationId: citizenStationResults
+      summary: Per-station results with signed Form 34A image reference (public)
+      description: >
+        Public read of certified station results plus a reference to the
+        signed Form 34A image. CDN-cached; integrity headers allow
+        client-side verification against the transparency ledger.
+      x-eel-tier: 1
+      x-eel-auth: public
+      x-eel-sla:
+        p50: 50
+        p95: 200
+        p99: 500
+      security: []
+      parameters:
+        - name: station_code
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Station results with signed form reference
+          headers:
+            X-Eel-Signature:
+              description: Sigstore cosign signature over the response body
+              schema:
+                type: string
+                x-eel-data-class: E
+            X-Eel-Merkle-Proof:
+              description: Merkle proof anchoring this response to the audit ledger
+              schema:
+                type: string
+                x-eel-data-class: E
+            X-Eel-Snapshot-Id:
+              description: Snapshot identifier for response reproducibility
+              schema:
+                type: string
+                format: uuid
+                x-eel-data-class: E
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CitizenResults'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/citizen/results/{station_code}/proof:
+    get:
+      tags: [results]
+      operationId: citizenResultsProof
+      summary: Merkle-inclusion proof for client-side verification (public)
+      description: >
+        Public read of the Merkle root, leaf index, and sibling hashes for a
+        station's results. The client verifies inclusion; the server never
+        asserts validity. CDN-cached with integrity headers.
+      x-eel-tier: 1
+      x-eel-auth: public
+      x-eel-sla:
+        p50: 40
+        p95: 150
+        p99: 400
+      security: []
+      parameters:
+        - name: station_code
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Merkle-inclusion proof
+          headers:
+            X-Eel-Signature:
+              description: Sigstore cosign signature over the response body
+              schema:
+                type: string
+                x-eel-data-class: E
+            X-Eel-Merkle-Proof:
+              description: Merkle proof anchoring this response to the audit ledger
+              schema:
+                type: string
+                x-eel-data-class: E
+            X-Eel-Snapshot-Id:
+              description: Snapshot identifier for response reproducibility
+              schema:
+                type: string
+                format: uuid
+                x-eel-data-class: E
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MerkleProof'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/citizen/results/bulk/{constituency_code}:
+    get:
+      tags: [results]
+      operationId: citizenBulkResults
+      summary: All stations in a constituency (public, rate-limited bulk)
+      description: >
+        Public bulk read of every station's results for a constituency.
+        Rate-limited to bound CDN origin load; 429 carries a Retry-After
+        problem detail.
+      x-eel-tier: 4
+      x-eel-auth: public
+      x-eel-sla:
+        p50: 300
+        p95: 1200
+        p99: 2000
+      security: []
+      parameters:
+        - name: constituency_code
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: All station results for the constituency
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkResults'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /v1/citizen/candidates:
+    get:
+      tags: [directory]
+      operationId: citizenCandidates
+      summary: Candidate directory per election, position, area (public)
+      description: >
+        Public read of the candidate directory scoped to an election,
+        position, and area. CDN-cached with integrity headers.
+      x-eel-tier: 1
+      x-eel-auth: public
+      x-eel-sla:
+        p50: 40
+        p95: 150
+        p99: 400
+      security: []
+      parameters:
+        - name: election_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+        - name: position
+          in: query
+          description: Position slug (e.g. mp, senator, governor)
+          schema:
+            type: string
+            maxLength: 64
+            x-eel-data-class: D
+        - name: area_code
+          in: query
+          required: true
+          description: Constituency/county code scoping the directory
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Candidate directory
+          headers:
+            X-Eel-Signature:
+              description: Sigstore cosign signature over the response body
+              schema:
+                type: string
+                x-eel-data-class: E
+            X-Eel-Merkle-Proof:
+              description: Merkle proof anchoring this response to the audit ledger
+              schema:
+                type: string
+                x-eel-data-class: E
+            X-Eel-Snapshot-Id:
+              description: Snapshot identifier for response reproducibility
+              schema:
+                type: string
+                format: uuid
+                x-eel-data-class: E
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CandidateDirectory'
+
+  /v1/citizen/civic:
+    get:
+      tags: [directory]
+      operationId: citizenCivicBundle
+      summary: Signed civic-information content bundle (public)
+      description: >
+        Public read of the signed civic-information bundle (how to vote,
+        polling station etiquette, objection process). The bundle is signed
+        and Merkle-anchored; `content_refs` point to immutable artifacts.
+        CDN-cached with integrity headers.
+      x-eel-tier: 1
+      x-eel-auth: public
+      x-eel-sla:
+        p50: 40
+        p95: 150
+        p99: 400
+      security: []
+      parameters:
+        - name: locale
+          in: query
+          description: BCP-47 locale tag for the bundle (default en)
+          schema:
+            type: string
+            maxLength: 16
+            x-eel-data-class: D
+      responses:
+        '200':
+          description: Signed civic content bundle manifest
+          headers:
+            X-Eel-Signature:
+              description: Sigstore cosign signature over the response body
+              schema:
+                type: string
+                x-eel-data-class: E
+            X-Eel-Merkle-Proof:
+              description: Merkle proof anchoring this response to the audit ledger
+              schema:
+                type: string
+                x-eel-data-class: E
+            X-Eel-Snapshot-Id:
+              description: Snapshot identifier for response reproducibility
+              schema:
+                type: string
+                format: uuid
+                x-eel-data-class: E
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CivicBundle'
+
+  /v1/citizen/reports:
+    post:
+      tags: [reports]
+      operationId: citizenReport
+      summary: Submit citizen report with optional evidence
+      description: >
+        Submits a citizen report. Primary channel is JWT-authenticated; a
+        public fallback channel accepts `captcha_token` instead (Spectral's
+        x-eel-auth enum has no composite, so the stronger default is
+        declared here and the fallback documented). Idempotent on
+        Idempotency-Key.
+      x-eel-tier: 2
+      x-eel-auth: JWT
+      x-eel-sla:
+        p50: 100
+        p95: 350
+        p99: 800
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Client-generated UUIDv7 for idempotent request deduplication (TTL 72 h)
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CitizenReportRequest'
+      responses:
+        '201':
+          description: Report received
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CitizenReportResponse'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/CitizenReportResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/citizen/reports/{id}:
+    get:
+      tags: [reports]
+      operationId: citizenReportStatus
+      summary: Report status (own reports only)
+      description: >
+        Status of a previously submitted report. The caller must be the
+        report's author (JWT sub match); otherwise 403.
+      x-eel-tier: 2
+      x-eel-auth: JWT
+      x-eel-sla:
+        p50: 40
+        p95: 150
+        p99: 400
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Report status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CitizenReportStatus'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/CitizenReportStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/citizen/notifications/subscribe:
+    post:
+      tags: [notifications]
+      operationId: citizenSubscribeNotifications
+      summary: Subscribe to push notifications (no PII in payloads)
+      description: >
+        Registers a device push token for the caller. Push payloads carry
+        only event type + record id; content is fetched authenticated on tap
+        (FR-M30-025 pattern). Idempotent on Idempotency-Key.
+      x-eel-tier: 2
+      x-eel-auth: JWT
+      x-eel-sla:
+        p50: 60
+        p95: 200
+        p99: 500
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Client-generated UUIDv7 for idempotent request deduplication (TTL 72 h)
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscribeRequest'
+      responses:
+        '201':
+          description: Subscription registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscribeResponse'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/SubscribeResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/citizen/app/verify:
+    get:
+      tags: [app]
+      operationId: citizenAppVerify
+      summary: App signing-key fingerprint and build info (public)
+      description: >
+        Public read of the app's expected signing-key SHA-256 and build
+        metadata. Clients compare against their own binary at startup to
+        detect tampered builds; CDN-cached with integrity headers.
+      x-eel-tier: 1
+      x-eel-auth: public
+      x-eel-sla:
+        p50: 20
+        p95: 80
+        p99: 250
+      security: []
+      responses:
+        '200':
+          description: App verification metadata
+          headers:
+            X-Eel-Signature:
+              description: Sigstore cosign signature over the response body
+              schema:
+                type: string
+                x-eel-data-class: E
+            X-Eel-Merkle-Proof:
+              description: Merkle proof anchoring this response to the audit ledger
+              schema:
+                type: string
+                x-eel-data-class: E
+            X-Eel-Snapshot-Id:
+              description: Snapshot identifier for response reproducibility
+              schema:
+                type: string
+                format: uuid
+                x-eel-data-class: E
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppVerifyResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: OTP-verified citizen JWT (5-15 min) issued by the BFF session endpoint
+
+  responses:
+    BadRequest:
+      description: Request body or parameters failed validation
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Missing or invalid JWT (or missing captcha on public channel)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Authorization denied (e.g. not the report's author)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    TooManyRequests:
+      description: Rate limit (policy bundle) exceeded
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+  schemas:
+    ProblemDetail:
+      type: object
+      description: RFC 9457 problem detail
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: E
+        title:
+          type: string
+          x-eel-data-class: E
+        status:
+          type: integer
+          x-eel-data-class: E
+        detail:
+          type: string
+          x-eel-data-class: E
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: E
+        trace_id:
+          type: string
+          x-eel-data-class: E
+
+    Gps:
+      type: object
+      required: [lat, lon]
+      properties:
+        lat:
+          type: number
+          format: double
+          x-eel-data-class: C
+        lon:
+          type: number
+          format: double
+          x-eel-data-class: C
+
+    RegisterLookupResponse:
+      type: object
+      required: [registered, verified_at]
+      properties:
+        registered:
+          type: boolean
+        polling_station_name:
+          type: string
+          x-eel-data-class: C
+        polling_station_code:
+          type: string
+          x-eel-data-class: C
+        ward:
+          type: string
+          x-eel-data-class: C
+        constituency:
+          type: string
+          x-eel-data-class: C
+        verified_at:
+          type: string
+          format: date-time
+
+    RegisterObjectionRequest:
+      type: object
+      required: [id_hash, objection_type, statement]
+      properties:
+        id_hash:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+          description: SHA-256(salt || national_id); never the raw ID
+          x-eel-data-class: B
+        objection_type:
+          type: string
+          enum: [rectification, transfer, removal]
+          x-eel-data-class: D
+        statement:
+          type: string
+          maxLength: 2048
+          description: Free-text statement of the objection
+          x-eel-data-class: D
+        evidence_refs:
+          type: array
+          items:
+            type: string
+            format: uuid
+          x-eel-data-class: E
+
+    RegisterObjectionResponse:
+      type: object
+      required: [objection_id, status, created_at]
+      properties:
+        objection_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [FILED]
+          x-eel-data-class: D
+        created_at:
+          type: string
+          format: date-time
+
+    PollingStationResponse:
+      type: object
+      required: [polling_station_name, polling_station_code, ward, constituency]
+      properties:
+        polling_station_name:
+          type: string
+          x-eel-data-class: C
+        polling_station_code:
+          type: string
+          x-eel-data-class: C
+        ward:
+          type: string
+          x-eel-data-class: C
+        constituency:
+          type: string
+          x-eel-data-class: C
+        address:
+          type: string
+          x-eel-data-class: C
+
+    CitizenResults:
+      type: object
+      required: [station_code, results, form_34a_image_ref, signature, generated_at]
+      properties:
+        station_code:
+          type: string
+          x-eel-data-class: C
+        results:
+          type: object
+          additionalProperties: true
+          description: Certified vote counts per candidate/position
+        form_34a_image_ref:
+          type: string
+          format: uri
+          description: Reference to the signed Form 34A image artifact
+          x-eel-data-class: E
+        signature:
+          type: string
+          description: Base64 Ed25519 signature over the canonicalized results
+          x-eel-data-class: E
+        generated_at:
+          type: string
+          format: date-time
+
+    MerkleProof:
+      type: object
+      required: [station_code, merkle_root, leaf_index, proof]
+      properties:
+        station_code:
+          type: string
+          x-eel-data-class: C
+        merkle_root:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: E
+        leaf_index:
+          type: integer
+          x-eel-data-class: E
+        proof:
+          type: array
+          items:
+            type: string
+            pattern: '^[0-9a-f]{64}$'
+          description: Sibling hashes; client verifies inclusion
+          x-eel-data-class: E
+
+    BulkResults:
+      type: object
+      required: [constituency_code, stations, generated_at]
+      properties:
+        constituency_code:
+          type: string
+          x-eel-data-class: C
+        stations:
+          type: array
+          items:
+            $ref: '#/components/schemas/CitizenResults'
+        generated_at:
+          type: string
+          format: date-time
+
+    CandidateDirectory:
+      type: object
+      required: [candidates]
+      properties:
+        candidates:
+          type: array
+          items:
+            type: object
+            required: [candidate_id, name, position]
+            properties:
+              candidate_id:
+                type: string
+                format: uuid
+                x-eel-data-class: E
+              name:
+                type: string
+                x-eel-data-class: D
+              party_name:
+                type: string
+                x-eel-data-class: D
+              symbol_ref:
+                type: string
+                format: uri
+                description: Reference to the registered party symbol image
+                x-eel-data-class: E
+              position:
+                type: string
+                x-eel-data-class: D
+
+    CivicBundle:
+      type: object
+      required: [bundle_id, version, content_refs, signature, merkle_root]
+      properties:
+        bundle_id:
+          type: string
+          format: uuid
+          x-eel-data-class: E
+        version:
+          type: string
+          maxLength: 32
+          x-eel-data-class: E
+        content_refs:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: Immutable artifact URIs composing the bundle
+          x-eel-data-class: E
+        signature:
+          type: string
+          description: Base64 Ed25519 signature over the bundle manifest
+          x-eel-data-class: E
+        merkle_root:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: E
+
+    CitizenReportRequest:
+      type: object
+      required: [category, description]
+      properties:
+        category:
+          type: string
+          enum: [PROCEDURAL, SECURITY, EQUIPMENT, MISINFORMATION, OTHER]
+          x-eel-data-class: D
+        description:
+          type: string
+          maxLength: 4096
+          x-eel-data-class: D
+        gps:
+          $ref: '#/components/schemas/Gps'
+        evidence_refs:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: References to already-uploaded evidence artifacts
+          x-eel-data-class: E
+        captcha_token:
+          type: string
+          description: Required only on the public (non-JWT) channel
+          x-eel-data-class: E
+
+    CitizenReportResponse:
+      type: object
+      required: [report_id, status, created_at]
+      properties:
+        report_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [RECEIVED]
+          x-eel-data-class: D
+        created_at:
+          type: string
+          format: date-time
+
+    CitizenReportStatus:
+      type: object
+      required: [report_id, status, created_at, updated_at]
+      properties:
+        report_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [RECEIVED, UNDER_REVIEW, PUBLISHED, DISMISSED]
+          x-eel-data-class: D
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    SubscribeRequest:
+      type: object
+      required: [platform, device_token]
+      properties:
+        platform:
+          type: string
+          enum: [android, ios]
+          x-eel-data-class: E
+        device_token:
+          type: string
+          maxLength: 512
+          description: FCM or APNs device token
+          x-eel-data-class: E
+        topics:
+          type: array
+          items:
+            type: string
+          description: Event-type topics to subscribe to (no PII)
+          x-eel-data-class: E
+
+    SubscribeResponse:
+      type: object
+      required: [subscription_id, created_at]
+      properties:
+        subscription_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+
+    AppVerifyResponse:
+      type: object
+      required: [app_signing_key_sha256, build_version, min_supported_version, attestation_required]
+      properties:
+        app_signing_key_sha256:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: E
+        build_version:
+          type: string
+          maxLength: 32
+          x-eel-data-class: E
+        min_supported_version:
+          type: string
+          maxLength: 32
+          description: Force-update floor; older builds must update
+          x-eel-data-class: E
+        attestation_required:
+          type: boolean
+          x-eel-data-class: E

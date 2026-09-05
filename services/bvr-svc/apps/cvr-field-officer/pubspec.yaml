@@ -16,6 +16,14 @@ dependencies:
   eel_kit_sdk:
     path: ../../../../packages/kit-sdk-flutter
 
+  # Wave M0 foundations (plan §11): eel_design is the token-derived theme +
+  # component library; eel_core_flutter is the app-tier bootstrap FSM,
+  # session, connectivity probe, outbox drain and problem+json parsing.
+  eel_design:
+    path: ../../../../packages/design-system/flutter
+  eel_core_flutter:
+    path: ../../../../packages/eel-core-flutter
+
   # State management
   flutter_riverpod: ^2.5.1
 

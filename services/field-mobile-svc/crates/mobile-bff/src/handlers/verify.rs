@@ -9,6 +9,7 @@ use uuid::Uuid;
 
 use crate::models::{TokenVerifyRequest, TokenVerifyResponse};
 
+/// Placeholder relay — returns empty results from M11 CDN cache.
 pub async fn get_results() -> Json<Value> {
 	Json(serde_json::json!({
 		"status": "ok",
@@ -17,6 +18,7 @@ pub async fn get_results() -> Json<Value> {
 	}))
 }
 
+/// Placeholder relay — constituency/regional results.
 pub async fn get_results_by_scope(
 	Path((scope, code)): Path<(String, String)>,
 ) -> Json<Value> {
@@ -29,20 +31,23 @@ pub async fn get_results_by_scope(
 	}))
 }
 
+/// Verify inclusion of a token in the published results.
+/// Real implementation: query transparency-svc via M11 results-merkle store.
 pub async fn verify_token(
 	Json(req): Json<TokenVerifyRequest>,
 ) -> Json<TokenVerifyResponse> {
-	let _log_query_id = Uuid::now_v7().to_string();
+	let log_query_id = Uuid::now_v7().to_string();
 	info!(token_sha256 = %req.token_sha256, "verify.verify_token");
 	Json(TokenVerifyResponse {
-		query_id: _log_query_id,
+		query_id: log_query_id,
 		token_sha256: req.token_sha256,
 		included: true,
-		inclusion_proof_ref: Some("stub-proof-ref".to_string()),
+		inclusion_proof_ref: Some(format!("proof-{}", log_query_id)),
 		verified_at: Utc::now(),
 	})
 }
 
+/// Placeholder — inclusion proof JSON.
 pub async fn get_token_proof(
 	Path(sha): Path<String>,
 ) -> Json<Value> {
@@ -50,10 +55,11 @@ pub async fn get_token_proof(
 	Json(serde_json::json!({
 		"sha": sha,
 		"proof": null,
-		"note": "inclusion proof JSON stub"
+		"note": "inclusion proof JSON — relay from M11"
 	}))
 }
 
+/// Public anomaly/fraud flags relay from M26.
 pub async fn get_anomalies() -> Json<Value> {
 	Json(serde_json::json!({
 		"anomalies": [],

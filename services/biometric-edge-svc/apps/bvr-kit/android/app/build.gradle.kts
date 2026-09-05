@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.eel.eel_bvr_kit"
+    namespace = "com.eel.bvr_kit"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.eel.eel_bvr_kit"
+        applicationId = "com.eel.bvr_kit"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -27,17 +27,6 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-
-        // The AntIris SDK ships native libs for these two ABIs only.
-        ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
-        }
-    }
-
-    sourceSets {
-        getByName("main") {
-            jniLibs.srcDir("src/main/jniLibs")
-        }
     }
 
     buildTypes {
@@ -57,12 +46,4 @@ kotlin {
 
 flutter {
     source = "../.."
-}
-
-dependencies {
-    // AntIris USB iris scanner SDK (vendor JARs + native libs in jniLibs/).
-    implementation(files("libs/antiris.antusbcamera.jar"))
-    implementation(files("libs/serenegiant.jar"))
-    // FAP60 fingerprint SDK (FUFingerSDK + FPAPI + FingerAlgo + native libs).
-    implementation(project(":libUvcFinger"))
 }

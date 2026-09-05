@@ -1,6 +1,8 @@
+/// Accred-Scanner Scan Result — Beautiful, ergonomic, accessible.
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:eel_design/eel_design.dart';
 
 import '../crl/crl_sync_service.dart';
 import 'scan_result.dart';
@@ -14,82 +16,54 @@ class ScanResultScreen extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isCrlStale = ref.watch(crlStaleProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Scan Result'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/scan'),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _StatusIndicator(status: result.status),
-            const SizedBox(height: 24),
-            Text(
-              'Serial: ${result.serial}',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            Text(
-              'Checked: ${result.checkedAt.toLocal()}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            if (result.isFromCacheOnly) ...[
-              const SizedBox(height: 8),
-              const Chip(
-                label: Text('From cache (offline)'),
-                backgroundColor: Colors.amber,
-              ),
-            ],
-            if (isCrlStale) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.warning, color: Colors.red),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'CRL is over 30 minutes old. Revocation data may be outdated.',
-                        style: TextStyle(color: Colors.red),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-            const SizedBox(height: 24),
-            if (result.zones.isNotEmpty) ...[
-              Text(
-                'Access Zones',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              ...result.zones.map(
-                (zone) => ListTile(
-                  leading: const Icon(Icons.location_on),
-                  title: Text(zone),
-                  dense: true,
-                ),
-              ),
-            ] else
-              const Text('No zone information available.'),
-            const Spacer(),
-            OutlinedButton.icon(
-              icon: const Icon(Icons.qr_code_scanner),
-              label: const Text('Scan Another'),
-              onPressed: () => context.go('/scan'),
+    return EelScaffold(
+      title: 'Scan Result',
+      variant: EelScaffoldVariant.scrollable,
+      padding: const EdgeInsets.all(16),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _StatusIndicator(status: result.status),
+          const SizedBox(height: 24),
+          EelResultCard(
+            leading: Icon(Icons.tag, color: EelColors.of(context).primary, size: 24),
+            title: Text('Serial: ${result.serial}', style: EelTextStyle.bodyMedium),
+            subtitle: Text('Checked: ${result.checkedAt.toLocal()}', style: EelTextStyle.bodySmall),
+          ),
+          if (result.isFromCacheOnly) ...[
+            const SizedBox(height: 8),
+            EelBanner(
+              message: 'From cache (offline) — using cached CRL data.',
+              severity: 'warning',
             ),
           ],
-        ),
+          if (isCrlStale) ...[
+            const SizedBox(height: 8),
+            EelBanner(
+              message: 'CRL is over 30 minutes old. Revocation data may be outdated.',
+              severity: 'critical',
+            ),
+          ],
+          if (result.zones.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Text('Access Zones', style: EelTextStyle.titleMedium),
+            const SizedBox(height: 8),
+            ...result.zones.map(
+              (zone) => EelResultCard(
+                leading: Icon(Icons.location_on, color: EelColors.of(context).primary, size: 24),
+                title: Text(zone, style: EelTextStyle.bodyMedium),
+              ),
+            ),
+          ] else
+            EelBanner(message: 'No zone information available.', severity: 'info'),
+          const Spacer(),
+          EelButton(
+            label: 'Scan Another',
+            icon: Icons.qr_code_scanner,
+            fullWidth: true,
+            onPressed: () => context.go('/scan'),
+          ),
+        ],
       ),
     );
   }
@@ -119,13 +93,11 @@ class _StatusIndicator extends StatelessWidget {
         children: [
           Icon(icon, size: 72, color: color),
           const SizedBox(height: 16),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
+          Text(label,
+              style: EelTextStyle.displayMedium.copyWith(
+                color: color,
+                fontWeight: FontWeight.bold,
+              )),
         ],
       ),
     );

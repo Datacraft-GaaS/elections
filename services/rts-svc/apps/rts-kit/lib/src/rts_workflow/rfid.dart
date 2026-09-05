@@ -125,8 +125,9 @@ class RfidReaderStub implements RfidReader {
 // ---- Provider ---------------------------------------------------------------
 
 final rfidReaderProvider = Provider<RfidReader>((ref) {
-  // In production, inject PlatformChannelRfidReader via DI or override.
-  return RfidReaderStub();
+  // Production: uses PlatformChannelRfidReader (native SDK).
+  // Dev/test override via DI; stub removed.
+  return PlatformChannelRfidReader();
 });
 
 // ---- Screen -----------------------------------------------------------------

@@ -1,0 +1,960 @@
+openapi: 3.1.0
+info:
+  title: eel-field-poll-clerk
+  version: 0.1.0
+  description: >
+    Module M31 - Poll clerk mobile app API (DPO/CLERK/KIOSK_OPERATOR roles).
+    Served by field-mobile-svc BFF gateway. All operations require a
+    short-lived JWT (5-15 min) plus the X-Eel-Attest device attestation
+    header per ADR-0021. Mutating operations are idempotent on
+    Idempotency-Key (UUIDv7, 72 h dedup window). Contract-first: handlers
+    land in Wave M1/M2 (docs/mobile/plan.md); unbound paths are allowlisted
+    with expiry in .completeness-allowlist.yaml. Design of record:
+    docs/mobile/field-contracts-design.md.
+  contact:
+    name: eel platform team
+    url: https://eel.local/support
+
+servers:
+  - url: https://api.eel.local
+    description: production
+  - url: https://staging.api.eel.local
+    description: staging
+
+tags:
+  - name: check-in
+    description: Station check-in and shift lifecycle
+  - name: dashboard
+    description: Read-only station kit dashboard mirror from BVI back-end
+  - name: voter-lookup
+    description: DPO-gated voter register lookup fallback (rate-limited, audited)
+  - name: incidents
+    description: Structured field incident reporting
+  - name: queue
+    description: Voter queue management
+  - name: end-of-day
+    description: Signed end-of-day report submission
+  - name: kiosk
+    description: Kiosk-mode BVV register lookup and staff-assisted objections
+
+security:
+  - bearerAuth: []
+
+paths:
+  /v1/clerk/check-in:
+    post:
+      tags: [check-in]
+      operationId: clerkCheckIn
+      summary: Biometric + device-attestation station check-in
+      description: >
+        Opens the clerk's shift at a polling station. Requires a fresh
+        platform attestation (X-Eel-Attest) and a biometric hash bound to the
+        officer identity. Emits eel.field.clerk.check_in.v1 via the BFF
+        transactional outbox. Idempotent on Idempotency-Key.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 80
+        p95: 250
+        p99: 600
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          description: Play Integrity verdict token or App Attest assertion (ADR-0021)
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Client-generated UUIDv7 for idempotent request deduplication (TTL 72 h)
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckInRequest'
+      responses:
+        '201':
+          description: Check-in recorded; shift open
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckInResponse'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/CheckInResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /v1/clerk/station/{code}/dashboard:
+    get:
+      tags: [dashboard]
+      operationId: clerkStationDashboard
+      summary: Read-only station kit dashboard mirror from BVI back-end
+      description: >
+        No-PII operational snapshot: turnout, queue depth, kit battery,
+        connectivity, forms sync state. Mirrors bvi-svc station telemetry;
+        the BFF caches for 10 s to bound upstream fan-out.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 60
+        p95: 200
+        p99: 500
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: code
+          in: path
+          required: true
+          description: Polling station code
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Station dashboard snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StationDashboard'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/StationDashboard'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/clerk/voter-lookup:
+    post:
+      tags: [voter-lookup]
+      operationId: clerkVoterLookup
+      summary: DPO-gated voter register lookup fallback (rate-limited, audited)
+      description: >
+        Fallback register lookup when the kiosk BVV path is unavailable.
+        Requires a DPO attestation hash and a free-text justification that is
+        stored with the audit event. Per-station token-bucket rate limit;
+        every call emits eel.field.voter_lookup_audit.v1 (EC-MOB-08). Returns
+        non-PII fields only: registration status, station name, ward,
+        constituency. Idempotent on Idempotency-Key.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 120
+        p95: 400
+        p99: 900
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoterLookupRequest'
+      responses:
+        '200':
+          description: Lookup result (no PII)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoterLookupResponse'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/VoterLookupResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /v1/clerk/incidents:
+    post:
+      tags: [incidents]
+      operationId: clerkIncident
+      summary: Submit structured incident report
+      description: >
+        Structured field incident (security, procedural, equipment). Evidence
+        references point to already-uploaded artifacts; the BFF emits
+        eel.field.incident_reported.v1 via the transactional outbox.
+        Idempotent on Idempotency-Key.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 80
+        p95: 300
+        p99: 700
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentRequest'
+      responses:
+        '201':
+          description: Incident accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncidentResponse'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/IncidentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /v1/clerk/queue:
+    post:
+      tags: [queue]
+      operationId: clerkQueueManage
+      summary: Manage voter queue (add, next, priority)
+      description: >
+        Mutates the station's local voter queue. `priority` requires a reason
+        (elderly, disability, first-time-voter assistance) which is audited.
+        Queue positions are opaque tokens; no voter identity leaves the
+        device except to the register service. Idempotent on Idempotency-Key.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 40
+        p95: 150
+        p99: 400
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueueManageRequest'
+      responses:
+        '200':
+          description: Queue mutation applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueManageResponse'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/QueueManageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/clerk/queue/{station_code}:
+    get:
+      tags: [queue]
+      operationId: clerkQueueStatus
+      summary: Queue status for a station
+      description: >
+        Current queue depth and service counters. No voter identities.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 30
+        p95: 120
+        p99: 300
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: station_code
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Queue status snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueStatus'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/QueueStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/clerk/end-of-day:
+    post:
+      tags: [end-of-day]
+      operationId: clerkEndOfDay
+      summary: Submit signed end-of-day report
+      description: >
+        Closes the shift. The report is Ed25519-signed on device with the
+        officer's key; the signature is verified server-side before
+        acceptance. Idempotent on Idempotency-Key.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 100
+        p95: 350
+        p99: 800
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EndOfDayRequest'
+      responses:
+        '201':
+          description: End-of-day report accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndOfDayResponse'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/EndOfDayResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /v1/clerk/kiosk/register:
+    get:
+      tags: [kiosk]
+      operationId: clerkKioskRegister
+      summary: BVV register lookup in kiosk mode (staff-assisted OTP)
+      description: >
+        Kiosk-mode voter lookup for the BVV adapter. Returns non-PII fields;
+        when the register entry requires OTP confirmation, `needs_otp` is set
+        and the officer completes the staff-assisted OTP flow on the device.
+        Rate-limited per station.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 100
+        p95: 350
+        p99: 800
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: id_hash
+          in: query
+          required: true
+          description: SHA-256(salt || national_id); never the raw ID
+          schema:
+            type: string
+            pattern: '^[0-9a-f]{64}$'
+            x-eel-data-class: B
+        - name: station_code
+          in: query
+          required: true
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Kiosk register lookup result (no PII)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KioskRegisterResponse'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/KioskRegisterResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /v1/clerk/kiosk/objection:
+    post:
+      tags: [kiosk]
+      operationId: clerkKioskObjection
+      summary: File objection on behalf of citizen with consent
+      description: >
+        Kiosk-mode rectification/transfer/removal objection filed by the
+        officer on the citizen's behalf. `consent_attested` must be true and
+        is backed by a consent evidence reference; the full event is audited.
+        Idempotent on Idempotency-Key.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 100
+        p95: 350
+        p99: 800
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KioskObjectionRequest'
+      responses:
+        '201':
+          description: Objection filed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KioskObjectionResponse'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/KioskObjectionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Short-lived JWT (5-15 min) issued by the BFF session endpoint
+
+  responses:
+    BadRequest:
+      description: Request body or parameters failed validation
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Missing or invalid JWT or attestation token
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Role or SpiceDB authorization denied
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Idempotency-Key collision or state conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Semantic validation error (e.g. signature verification failed)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    TooManyRequests:
+      description: Rate limit (policy bundle) exceeded
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+  schemas:
+    ProblemDetail:
+      type: object
+      description: RFC 9457 problem detail
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: E
+        title:
+          type: string
+          x-eel-data-class: E
+        status:
+          type: integer
+          x-eel-data-class: E
+        detail:
+          type: string
+          x-eel-data-class: E
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: E
+        trace_id:
+          type: string
+          x-eel-data-class: E
+
+    Gps:
+      type: object
+      required: [lat, lon]
+      properties:
+        lat:
+          type: number
+          format: double
+          x-eel-data-class: C
+        lon:
+          type: number
+          format: double
+          x-eel-data-class: C
+
+    CheckInRequest:
+      type: object
+      required: [station_code, officer_id, biometric_hash, gps]
+      properties:
+        station_code:
+          type: string
+          maxLength: 32
+          x-eel-data-class: C
+        officer_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        biometric_hash:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+          description: SHA-256 of the biometric template, salted per ADR-0014
+          x-eel-data-class: B
+        gps:
+          $ref: '#/components/schemas/Gps'
+        device_id_hash:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: E
+
+    CheckInResponse:
+      type: object
+      required: [check_in_id, station_code, shift_status, checked_in_at]
+      properties:
+        check_in_id:
+          type: string
+          format: uuid
+        station_code:
+          type: string
+          x-eel-data-class: C
+        shift_status:
+          type: string
+          enum: [OPEN]
+          x-eel-data-class: D
+        checked_in_at:
+          type: string
+          format: date-time
+
+    StationDashboard:
+      type: object
+      required: [station_code, turnout_count, queue_depth, connectivity_status, forms_synced, incidents_open, updated_at]
+      properties:
+        station_code:
+          type: string
+          x-eel-data-class: C
+        turnout_count:
+          type: integer
+        voters_expected:
+          type: integer
+        queue_depth:
+          type: integer
+        kit_battery_level:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        connectivity_status:
+          type: string
+          enum: [online, degraded, offline]
+          x-eel-data-class: D
+        forms_synced:
+          type: boolean
+        incidents_open:
+          type: integer
+        updated_at:
+          type: string
+          format: date-time
+
+    VoterLookupRequest:
+      type: object
+      required: [id_hash, station_code, dpo_attestation_hash, justification]
+      properties:
+        id_hash:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+          description: SHA-256(salt || national_id); never the raw ID
+          x-eel-data-class: B
+        station_code:
+          type: string
+          maxLength: 32
+          x-eel-data-class: C
+        dpo_attestation_hash:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+          description: Hash of the DPO's attestation credential for this lookup
+          x-eel-data-class: D
+        justification:
+          type: string
+          maxLength: 512
+          description: Free-text reason; stored with the audit event
+          x-eel-data-class: D
+
+    VoterLookupResponse:
+      type: object
+      required: [registered, lookup_audit_ref]
+      properties:
+        registered:
+          type: boolean
+        polling_station_name:
+          type: string
+          x-eel-data-class: C
+        ward:
+          type: string
+          x-eel-data-class: C
+        constituency:
+          type: string
+          x-eel-data-class: C
+        lookup_audit_ref:
+          type: string
+          format: uuid
+          description: Reference to the eel.field.voter_lookup_audit.v1 event
+          x-eel-data-class: E
+
+    QueueManageRequest:
+      type: object
+      required: [station_code, action]
+      properties:
+        station_code:
+          type: string
+          maxLength: 32
+          x-eel-data-class: C
+        action:
+          type: string
+          enum: [add, next, priority]
+          x-eel-data-class: D
+        position_token:
+          type: string
+          description: Opaque queue position token (no voter identity)
+          x-eel-data-class: E
+        priority_reason:
+          type: string
+          maxLength: 256
+          description: Required when action=priority; audited
+          x-eel-data-class: D
+
+    QueueManageResponse:
+      type: object
+      required: [station_code, queue_depth, applied_at]
+      properties:
+        station_code:
+          type: string
+          x-eel-data-class: C
+        queue_depth:
+          type: integer
+        position:
+          type: integer
+        applied_at:
+          type: string
+          format: date-time
+
+    QueueStatus:
+      type: object
+      required: [station_code, queue_depth, waiting, served_today, priority_waiters, updated_at]
+      properties:
+        station_code:
+          type: string
+          x-eel-data-class: C
+        queue_depth:
+          type: integer
+        waiting:
+          type: integer
+        served_today:
+          type: integer
+        priority_waiters:
+          type: integer
+        updated_at:
+          type: string
+          format: date-time
+
+    EndOfDayRequest:
+      type: object
+      required: [station_code, officer_id, report, signature]
+      properties:
+        station_code:
+          type: string
+          maxLength: 32
+          x-eel-data-class: C
+        officer_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        report:
+          $ref: '#/components/schemas/EodReport'
+        signature:
+          type: string
+          description: Base64 Ed25519 signature over the canonicalized report
+          x-eel-data-class: E
+        hlc:
+          type: string
+          description: Hybrid logical clock timestamp from the device
+          x-eel-data-class: E
+
+    EodReport:
+      type: object
+      required: [voters_served, incidents_count, forms_submitted]
+      properties:
+        voters_served:
+          type: integer
+        incidents_count:
+          type: integer
+        forms_submitted:
+          type: integer
+        anomalies:
+          type: object
+          additionalProperties: true
+
+    EndOfDayResponse:
+      type: object
+      required: [eod_id, station_code, status, submitted_at]
+      properties:
+        eod_id:
+          type: string
+          format: uuid
+        station_code:
+          type: string
+          x-eel-data-class: C
+        status:
+          type: string
+          enum: [ACCEPTED]
+          x-eel-data-class: D
+        submitted_at:
+          type: string
+          format: date-time
+
+    KioskRegisterResponse:
+      type: object
+      required: [registered, needs_otp]
+      properties:
+        registered:
+          type: boolean
+        polling_station_name:
+          type: string
+          x-eel-data-class: C
+        polling_station_code:
+          type: string
+          x-eel-data-class: C
+        ward:
+          type: string
+          x-eel-data-class: C
+        needs_otp:
+          type: boolean
+        otp_ref:
+          type: string
+          format: uuid
+          description: Opaque reference for the staff-assisted OTP flow
+          x-eel-data-class: E
+
+    KioskObjectionRequest:
+      type: object
+      required: [station_code, id_hash, objection_type, consent_attested, signature]
+      properties:
+        station_code:
+          type: string
+          maxLength: 32
+          x-eel-data-class: C
+        id_hash:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: B
+        objection_type:
+          type: string
+          enum: [rectification, transfer, removal]
+          x-eel-data-class: D
+        consent_attested:
+          type: boolean
+          description: Officer attests the citizen's explicit consent was obtained
+          x-eel-data-class: D
+        consent_evidence_ref:
+          type: string
+          format: uuid
+          x-eel-data-class: E
+        signature:
+          type: string
+          description: Base64 Ed25519 officer signature over the objection record
+          x-eel-data-class: E
+
+    KioskObjectionResponse:
+      type: object
+      required: [objection_id, status, created_at]
+      properties:
+        objection_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [FILED]
+          x-eel-data-class: D
+        created_at:
+          type: string
+          format: date-time
+
+    IncidentRequest:
+      type: object
+      required: [station_code, category, severity, description]
+      properties:
+        station_code:
+          type: string
+          maxLength: 32
+          x-eel-data-class: C
+        category:
+          type: string
+          enum: [SECURITY, PROCEDURAL, EQUIPMENT, OTHER]
+          x-eel-data-class: D
+        severity:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+          x-eel-data-class: D
+        description:
+          type: string
+          maxLength: 2048
+          x-eel-data-class: D
+        gps:
+          $ref: '#/components/schemas/Gps'
+        evidence_refs:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: References to already-uploaded evidence artifacts
+          x-eel-data-class: E
+
+    IncidentResponse:
+      type: object
+      required: [incident_id, status, created_at]
+      properties:
+        incident_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [OPEN]
+          x-eel-data-class: D
+        created_at:
+          type: string
+          format: date-time

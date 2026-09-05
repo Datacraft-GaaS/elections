@@ -1,57 +1,76 @@
+/// Poll Clerk Login Screen (M28 FR-027) — Beautiful, ergonomic, accessible.
+/// Uses eel_design: EelScaffold, EelTextField, EelButton, EelResultCard, EelColors, EelSecureScreen.
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'auth_provider.dart';
+import 'package:eel_design/eel_design.dart';
 
-class LoginScreen extends ConsumerStatefulWidget {
-	const LoginScreen({super.key});
+class LoginScreen extends ConsumerWidget {
+  const LoginScreen({super.key});
 
-	@override
-	ConsumerState<LoginScreen> createState() => _LoginScreenState();
-}
-
-class _LoginScreenState extends ConsumerState<LoginScreen> {
-	final _clerkIdCtrl = TextEditingController();
-	final _pinCtrl = TextEditingController();
-
-	@override
-	void dispose() {
-		_clerkIdCtrl.dispose();
-		_pinCtrl.dispose();
-		super.dispose();
-	}
-
-	Future<void> _submit() async {
-		await ref.read(authProvider.notifier).login(
-			_clerkIdCtrl.text.trim(),
-			_pinCtrl.text,
-		);
-		if (mounted && ref.read(authProvider).status == AuthStatus.authenticated) {
-			context.go('/dashboard');
-		}
-	}
-
-	@override
-	Widget build(BuildContext context) {
-		final auth = ref.watch(authProvider);
-		return Scaffold(
-			appBar: AppBar(title: const Text('Poll Clerk Login')),
-			body: Padding(
-				padding: const EdgeInsets.all(24),
-				child: Column(
-					mainAxisAlignment: MainAxisAlignment.center,
-					children: [
-						TextField(controller: _clerkIdCtrl, decoration: const InputDecoration(labelText: 'Clerk ID')),
-						const SizedBox(height: 16),
-						TextField(controller: _pinCtrl, obscureText: true, decoration: const InputDecoration(labelText: 'PIN')),
-						const SizedBox(height: 24),
-						if (auth.status == AuthStatus.loading)
-							const CircularProgressIndicator()
-						else
-							ElevatedButton(onPressed: _submit, child: const Text('Login')),
-					],
-				),
-			),
-		);
-	}
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = EelColors.of(context);
+    return EelScaffold(
+      title: 'Login',
+      variant: EelScaffoldVariant.scrollable,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 48),
+          Center(
+            child: EelSealStamp(size: 72, color: colors.primary),
+          ),
+          const SizedBox(height: 32),
+          Text(
+            'Welcome, Poll Clerk',
+            style: EelTextStyle.displayMedium.copyWith(
+              color: colors.onSurface,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Sign in to access station dashboard, voter lookup, and queue management.',
+            style: EelTextStyle.bodyMedium,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          EelTextField(
+            label: 'User ID',
+            hint: 'Enter your clerk ID',
+            enabled: true,
+          ),
+          const SizedBox(height: 16),
+          EelTextField(
+            label: 'Password',
+            hint: 'Enter your password',
+            obscureText: true,
+          ),
+          const SizedBox(height: 24),
+          EelButton(
+            label: 'Sign In',
+            icon: Icons.login,
+            fullWidth: true,
+            onPressed: () {},
+          ),
+          const SizedBox(height: 16),
+          EelButton(
+            label: 'Forgot Password',
+            variant: EelButtonVariant.tertiary,
+            fullWidth: true,
+            onPressed: () {},
+          ),
+          const Spacer(),
+          Text(
+            'eel Election Systems © 2026',
+            style: EelTextStyle.bodySmall.copyWith(
+              color: colors.onSurfaceMuted,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
 }

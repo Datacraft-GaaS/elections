@@ -1,0 +1,120 @@
+---
+# Mobile CI pipeline
+# Runs analyze + test + build + sbom for changed Flutter apps
+when:
+  - event: [push, pull_request]
+
+matrix:
+  include:
+    - APP: hello-flutter
+    - APP: cvr-field-officer
+    - APP: poll-clerk
+    - APP: party-agent
+    - APP: observer
+    - APP: field-support
+    - APP: personnel
+    - APP: bvr-kit
+    - APP: bvi-kit
+    - APP: diaspora-kit
+    - APP: rts-kit
+    - APP: lms-offline
+    - APP: accred-scanner
+    - APP: custody-mobile
+    - APP: kit-l1
+    - APP: legacy-android
+    - APP: citizen-verify
+
+services:
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: eel
+      POSTGRES_PASSWORD: eel
+      POSTGRES_DB: eel_mobile
+
+steps:
+  - name: mobile-analyze-{{APP}}
+    image: eel/build-image:latest
+    when:
+      matrix:
+        APP: "{{APP}}"
+    commands:
+      - cd services/$(echo {{APP}} | sed 's/-/ /g; s/\([^ ]*\) \([^ ]*\).*/\1/')/apps/{{APP}} || true
+      - flutter analyze --fatal-infos
+
+  - name: mobile-test-{{APP}}
+    image: eel/build-image:latest
+    when:
+      matrix:
+        APP: "{{APP}}"
+    commands:
+      - cd services/$(echo {{APP}} | sed 's/-/ /g; s/\([^ ]*\) \([^ ]*\).*/\1/')/apps/{{APP}} || true
+      - flutter test
+
+  - name: mobile-build-staging
+    image: eel/build-image:latest
+    when:
+      matrix:
+        APP: "{{APP}}"
+    commands:
+      - scripts/mobile/build.sh {{APP}} --flavor staging --target-platform android
+    files:
+      - "dist/mobile/{{APP}}/*.apk"
+
+  - name: mobile-sbom
+    image: eel/build-image:latest
+    when:
+      matrix:
+        APP: "{{APP}}"
+    commands:
+      - scripts/mobile/sbom.sh {{APP}}
+    files:
+      - "dist/mobile/{{APP}}/sbom/*"
+
+---
+# Mobile sign pipeline — runs on tags
+when:
+  - event: tag
+
+steps:
+  - name: mobile-sign
+    image: eel/build-image:latest
+    commands:
+      - scripts/mobile/sign.sh hello-flutter
+      - scripts/mobile/verify-reproducible.sh hello-flutter
+    secrets:
+      - COSIGN_PRIVATE_KEY
+
+---
+# Mobile device nightly — runs on main branch nightly
+when:
+  - event: push
+    branch: main
+  - event: schedule
+    schedule: "0 2 * * *"
+
+steps:
+  - name: mobile-device-nightly
+    image: eel/build-image:latest
+    when:
+      # Only run if device farm is available
+      environment:
+        DEVICE_FARM: true
+    commands:
+      - scripts/mobile/install.sh hello-flutter --device $DEVICE_SERIAL
+      - scripts/mobile/smoke.sh hello-flutter --device $DEVICE_SERIAL
+      - scripts/mobile/kill-drill.sh hello-flutter --device $DEVICE_SERIAL
+      - scripts/mobile/offline-drill.sh hello-flutter --device $DEVICE_SERIAL
+
+---
+# Mobile a11y pipeline
+when:
+  - event: [push, pull_request]
+
+steps:
+  - name: mobile-a11y
+    image: eel/build-image:latest
+    commands:
+      - scripts/mobile/a11y-sweep.sh hello-flutter
+      - scripts/mobile/a11y-sweep.sh cvr-field-officer
+      - scripts/mobile/a11y-sweep.sh poll-clerk

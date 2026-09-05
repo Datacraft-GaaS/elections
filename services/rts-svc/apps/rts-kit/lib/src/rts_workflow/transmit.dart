@@ -27,6 +27,7 @@ import 'package:logging/logging.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../a11y/workflow_semantics.dart';
+import '../core/at_command/gsm_modem.dart';
 import 'queue.dart';
 import 'sign.dart';
 
@@ -40,16 +41,13 @@ const _kSmsFallbackThreshold = 3;
 
 // ---- SMS fallback stub ------------------------------------------------------
 
-class SmsTransmitStub {
+/// SMS fallback — requires GSM modem / SIM toolkit (plan.md M3 hardware-gated).
+class SmsTransport {
   Future<void> send(Map<String, Object?> payload) async {
-    final json = const JsonEncoder().convert(payload);
-    // Real impl: CBOR-encode, zstd-compress, segment into 160-char frames,
-    // dispatch via AT+CMGS or carrier SDK.
-    _log.info(
-      'SMS-FALLBACK STUB: would send ${json.length} chars (CBOR+zstd in prod)',
+    throw UnimplementedError(
+      'SmsTransport requires GSM modem / SIM toolkit (plan.md M3). '
+      'SMS fallback unavailable in this environment.',
     );
-    // Simulate 500 ms telco round-trip.
-    await Future<void>.delayed(const Duration(milliseconds: 500));
   }
 }
 
@@ -82,14 +80,14 @@ class RtsTransmitter {
   RtsTransmitter({
     required EelOfflineQueue queue,
     Dio? dio,
-    SmsTransmitStub? sms,
+    SmsTransport? sms,
   })  : _queue = queue,
         _dio = dio ?? Dio(),
-        _sms = sms ?? SmsTransmitStub();
+        _sms = sms ?? SmsTransport();
 
   final EelOfflineQueue _queue;
   final Dio _dio;
-  final SmsTransmitStub _sms;
+  final SmsTransport _sms;
 
   /// Transmit [signed] form, returning the transmit result.
   ///

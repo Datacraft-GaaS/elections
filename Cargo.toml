@@ -171,6 +171,11 @@ eel-hlc-rs        = { path = "packages/eel-hlc-rs" }
 eel-resilience-rs = { path = "packages/eel-resilience-rs" }
 eel-api-server-rs = { path = "packages/eel-api-server-rs" }
 eel-outbox-rs     = { path = "packages/eel-outbox-rs" }
+# field-mobile-svc crates (mobile-bff, telemetry-ingest, dispatch-api,
+# support-api) reference these via { workspace = true } from the root glob.
+eel-auth-rs       = { path = "packages/eel-auth-rs" }
+eel-crypto-rs     = { path = "packages/eel-crypto-rs" }
+eel-spec-helpers-rs = { path = "packages/eel-spec-helpers-rs" }
 
 # Test-trace marker (WP-0.5 completeness): no-op #[trace(...)] attribute so the
 # trace audit can map tests to requirements without altering behavior.

@@ -1,0 +1,967 @@
+openapi: 3.1.0
+info:
+  title: eel-field-observer
+  version: 0.1.0
+  description: >
+    Module M34 - International/domestic observer mobile app API (OBSERVER /
+    OBSERVER_CHIEF roles). Served by field-mobile-svc BFF gateway. All
+    operations require a short-lived JWT (5-15 min) plus the X-Eel-Attest
+    device attestation header per ADR-0021. Mutating operations are
+    idempotent on Idempotency-Key (UUIDv7, 72 h dedup window). Results and
+    proofs are served for client-side verification: the server never asserts
+    proof validity to the client. Contract-first: handlers land in Wave
+    M1/M2 (docs/mobile/plan.md); unbound paths are allowlisted with expiry in
+    .completeness-allowlist.yaml. Design of record:
+    docs/mobile/field-contracts-design.md.
+  contact:
+    name: eel platform team
+    url: https://eel.local/support
+
+servers:
+  - url: https://api.eel.local
+    description: production
+  - url: https://staging.api.eel.local
+    description: staging
+
+tags:
+  - name: results
+    description: Per-station results, Merkle proofs, bulk download
+  - name: visits
+    description: GPS check-in / sign-off at visited stations
+  - name: verification
+    description: Verification records and countersigns
+  - name: incidents
+    description: Structured incident reporting incl. systemic flags
+  - name: mission
+    description: End-of-mission report data and PDF
+
+security:
+  - bearerAuth: []
+
+paths:
+  /v1/observer/portal/results/{station_code}:
+    get:
+      tags: [results]
+      operationId: observerStationResults
+      summary: Per-station results with signed Form 34A image reference
+      description: >
+        Returns the station's certified results plus a reference to the
+        signed Form 34A image. The `signature` field allows client-side
+        verification against the transparency ledger.
+      x-eel-tier: 3
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 100
+        p95: 400
+        p99: 1000
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: station_code
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Station results with signed form reference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StationResults'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/observer/portal/results/{station_code}/proof:
+    get:
+      tags: [results]
+      operationId: observerResultsProof
+      summary: Merkle-inclusion proof for a station's results
+      description: >
+        Merkle root, leaf index, and sibling hashes so the client can verify
+        inclusion of the station's results in the transparency ledger. The
+        server never asserts validity; verification is client-side.
+      x-eel-tier: 3
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 80
+        p95: 300
+        p99: 800
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: station_code
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Merkle-inclusion proof
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MerkleProof'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/observer/portal/results/bulk/{constituency}:
+    get:
+      tags: [results]
+      operationId: observerBulkResults
+      summary: Bulk results download per constituency (rate-limited)
+      description: >
+        All station results for a constituency in one payload. Rate-limited
+        to bound bandwidth on constrained links; 429 carries a Retry-After
+        problem detail.
+      x-eel-tier: 4
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 400
+        p95: 1500
+        p99: 2000
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: constituency
+          in: path
+          required: true
+          description: Constituency code
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: All station results for the constituency
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkResults'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /v1/observer/stations/{code}/visit:
+    post:
+      tags: [visits]
+      operationId: observerVisitCheckIn
+      summary: GPS check-in at a visited station
+      description: >
+        Opens an observation session at the station. The GPS fix is checked
+        against the station polygon (422 on mismatch). Idempotent on
+        Idempotency-Key.
+      x-eel-tier: 3
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 80
+        p95: 300
+        p99: 700
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VisitCheckInRequest'
+      responses:
+        '201':
+          description: Observation session opened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisitCheckInResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /v1/observer/stations/{code}/visit/sign-off:
+    post:
+      tags: [visits]
+      operationId: observerVisitSignOff
+      summary: Sign off an observation session on leaving
+      description: >
+        Closes the observation session opened by the visit check-in. Requires
+        the observer's Ed25519 signature over the visit record. Idempotent on
+        Idempotency-Key.
+      x-eel-tier: 3
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 80
+        p95: 300
+        p99: 700
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VisitSignOffRequest'
+      responses:
+        '200':
+          description: Observation session signed off
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisitSignOffResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/observer/stations/{code}/verify:
+    post:
+      tags: [verification]
+      operationId: observerSubmitVerification
+      summary: Submit verification record (proof verified client-side)
+      description: >
+        Records that the observer verified the station's Merkle proof on
+        device. The client sends the root/leaf it verified plus its own
+        signature; the server stores the attestation but does not re-derive
+        the proof. Idempotent on Idempotency-Key.
+      x-eel-tier: 3
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 80
+        p95: 300
+        p99: 700
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRecordRequest'
+      responses:
+        '201':
+          description: Verification record stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyRecordResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /v1/observer/stations/{code}/verify/countersign:
+    post:
+      tags: [verification]
+      operationId: observerCountersignVerification
+      summary: Countersign a verification record (accreditation-category gated)
+      description: >
+        A second observer (or the same, where accreditation category
+        permits) countersigns an existing verification record. 403 when the
+        caller's accreditation category does not allow countersigning.
+        Idempotent on Idempotency-Key.
+      x-eel-tier: 3
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 80
+        p95: 300
+        p99: 700
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CountersignRequest'
+      responses:
+        '200':
+          description: Verification countersigned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CountersignResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/observer/incidents:
+    post:
+      tags: [incidents]
+      operationId: observerIncident
+      summary: Submit structured incident report
+      description: >
+        Structured field incident observed at a station. Evidence references
+        point to already-uploaded artifacts; the BFF emits
+        eel.field.incident_reported.v1 via the transactional outbox.
+        Idempotent on Idempotency-Key.
+      x-eel-tier: 3
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 80
+        p95: 300
+        p99: 700
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentRequest'
+      responses:
+        '201':
+          description: Incident accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncidentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /v1/observer/incidents/{id}/systemic:
+    post:
+      tags: [incidents]
+      operationId: observerFlagSystemic
+      summary: Flag an incident as systemic (immediate IEBC response)
+      description: >
+        Escalates an existing incident to systemic status, triggering the
+        immediate-response workflow with IEBC. Requires OBSERVER_CHIEF role.
+        Idempotent on Idempotency-Key.
+      x-eel-tier: 3
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 80
+        p95: 300
+        p99: 700
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SystemicFlagRequest'
+      responses:
+        '200':
+          description: Incident flagged systemic and escalated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemicFlagResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/observer/end-of-mission:
+    get:
+      tags: [mission]
+      operationId: observerEndOfMission
+      summary: End-of-mission report data
+      description: >
+        Aggregates the observer's mission: stations visited, verifications
+        submitted, incidents filed. JSON payload mirrors the PDF content.
+      x-eel-tier: 3
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 120
+        p95: 500
+        p99: 1500
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+      responses:
+        '200':
+          description: End-of-mission report data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndOfMissionReport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /v1/observer/end-of-mission/pdf:
+    get:
+      tags: [mission]
+      operationId: observerEndOfMissionPdf
+      summary: End-of-mission PDF download
+      description: >
+        Server-rendered PDF of the end-of-mission report. Binary payload;
+        the JSON variant is at GET /v1/observer/end-of-mission.
+      x-eel-tier: 3
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 300
+        p95: 1200
+        p99: 2000
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+      responses:
+        '200':
+          description: End-of-mission report PDF
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Short-lived JWT (5-15 min) issued by the BFF session endpoint
+
+  responses:
+    BadRequest:
+      description: Request body or parameters failed validation
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Missing or invalid JWT or attestation token
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Role or SpiceDB authorization denied (incl. accreditation category)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Idempotency-Key collision or state conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Semantic validation error (e.g. GPS outside station polygon)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    TooManyRequests:
+      description: Rate limit (policy bundle) exceeded
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+  schemas:
+    ProblemDetail:
+      type: object
+      description: RFC 9457 problem detail
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: E
+        title:
+          type: string
+          x-eel-data-class: E
+        status:
+          type: integer
+          x-eel-data-class: E
+        detail:
+          type: string
+          x-eel-data-class: E
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: E
+        trace_id:
+          type: string
+          x-eel-data-class: E
+
+    Gps:
+      type: object
+      required: [lat, lon]
+      properties:
+        lat:
+          type: number
+          format: double
+          x-eel-data-class: C
+        lon:
+          type: number
+          format: double
+          x-eel-data-class: C
+
+    StationResults:
+      type: object
+      required: [station_code, results, form_34a_image_ref, signature, generated_at]
+      properties:
+        station_code:
+          type: string
+          x-eel-data-class: C
+        results:
+          type: object
+          additionalProperties: true
+          description: Certified vote counts per candidate/position
+        form_34a_image_ref:
+          type: string
+          format: uri
+          description: Reference to the signed Form 34A image artifact
+          x-eel-data-class: E
+        signature:
+          type: string
+          description: Base64 Ed25519 signature over the canonicalized results
+          x-eel-data-class: E
+        generated_at:
+          type: string
+          format: date-time
+
+    MerkleProof:
+      type: object
+      required: [station_code, merkle_root, leaf_index, proof]
+      properties:
+        station_code:
+          type: string
+          x-eel-data-class: C
+        merkle_root:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: E
+        leaf_index:
+          type: integer
+          x-eel-data-class: E
+        proof:
+          type: array
+          items:
+            type: string
+            pattern: '^[0-9a-f]{64}$'
+          description: Sibling hashes; client verifies inclusion
+          x-eel-data-class: E
+
+    BulkResults:
+      type: object
+      required: [constituency_code, stations, generated_at]
+      properties:
+        constituency_code:
+          type: string
+          x-eel-data-class: C
+        stations:
+          type: array
+          items:
+            $ref: '#/components/schemas/StationResults'
+        generated_at:
+          type: string
+          format: date-time
+
+    VisitCheckInRequest:
+      type: object
+      required: [observer_id, gps]
+      properties:
+        observer_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        gps:
+          $ref: '#/components/schemas/Gps'
+
+    VisitCheckInResponse:
+      type: object
+      required: [visit_id, checked_in_at]
+      properties:
+        visit_id:
+          type: string
+          format: uuid
+        checked_in_at:
+          type: string
+          format: date-time
+
+    VisitSignOffRequest:
+      type: object
+      required: [visit_id, observer_id, signature]
+      properties:
+        visit_id:
+          type: string
+          format: uuid
+        observer_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        signature:
+          type: string
+          description: Base64 Ed25519 signature over the visit record
+          x-eel-data-class: E
+
+    VisitSignOffResponse:
+      type: object
+      required: [visit_id, signed_off_at, duration_seconds]
+      properties:
+        visit_id:
+          type: string
+          format: uuid
+        signed_off_at:
+          type: string
+          format: date-time
+        duration_seconds:
+          type: integer
+
+    VerifyRecordRequest:
+      type: object
+      required: [observer_id, station_code, merkle_root_verified, leaf_index, proof_verified, signature]
+      properties:
+        observer_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        station_code:
+          type: string
+          maxLength: 32
+          x-eel-data-class: C
+        merkle_root_verified:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+          description: Root the client actually verified on device
+          x-eel-data-class: E
+        leaf_index:
+          type: integer
+          x-eel-data-class: E
+        proof_verified:
+          type: boolean
+          description: Client-side verification outcome
+          x-eel-data-class: E
+        findings:
+          type: object
+          additionalProperties: true
+          description: Optional structured observation notes
+          x-eel-data-class: D
+        signature:
+          type: string
+          description: Base64 Ed25519 observer signature over the record
+          x-eel-data-class: E
+
+    VerifyRecordResponse:
+      type: object
+      required: [verification_id, created_at]
+      properties:
+        verification_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+
+    CountersignRequest:
+      type: object
+      required: [observer_id, signature]
+      properties:
+        observer_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        signature:
+          type: string
+          description: Base64 Ed25519 countersignature over the verification record
+          x-eel-data-class: E
+
+    CountersignResponse:
+      type: object
+      required: [verification_id, countersigned_at]
+      properties:
+        verification_id:
+          type: string
+          format: uuid
+        countersigned_at:
+          type: string
+          format: date-time
+
+    SystemicFlagRequest:
+      type: object
+      required: [observer_id, reason]
+      properties:
+        observer_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        reason:
+          type: string
+          minLength: 8
+          maxLength: 1024
+          description: Why this incident is systemic
+          x-eel-data-class: D
+
+    SystemicFlagResponse:
+      type: object
+      required: [incident_id, flagged_systemic, escalated_at]
+      properties:
+        incident_id:
+          type: string
+          format: uuid
+        flagged_systemic:
+          type: boolean
+          enum: [true]
+          x-eel-data-class: D
+        escalated_at:
+          type: string
+          format: date-time
+
+    EndOfMissionReport:
+      type: object
+      required: [mission_id, stations_visited, verifications_count, incidents_count, report, generated_at]
+      properties:
+        mission_id:
+          type: string
+          format: uuid
+        stations_visited:
+          type: array
+          items:
+            type: string
+          x-eel-data-class: C
+        verifications_count:
+          type: integer
+        incidents_count:
+          type: integer
+        report:
+          type: object
+          additionalProperties: true
+          description: Full mission narrative and findings
+          x-eel-data-class: D
+        generated_at:
+          type: string
+          format: date-time
+
+    IncidentRequest:
+      type: object
+      required: [station_code, category, severity, description]
+      properties:
+        station_code:
+          type: string
+          maxLength: 32
+          x-eel-data-class: C
+        category:
+          type: string
+          enum: [SECURITY, PROCEDURAL, EQUIPMENT, OTHER]
+          x-eel-data-class: D
+        severity:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+          x-eel-data-class: D
+        description:
+          type: string
+          maxLength: 2048
+          x-eel-data-class: D
+        gps:
+          $ref: '#/components/schemas/Gps'
+        evidence_refs:
+          type: array
+          items:
+            type: string
+            format: uuid
+          x-eel-data-class: E
+
+    IncidentResponse:
+      type: object
+      required: [incident_id, status, created_at]
+      properties:
+        incident_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [OPEN]
+          x-eel-data-class: D
+        created_at:
+          type: string
+          format: date-time

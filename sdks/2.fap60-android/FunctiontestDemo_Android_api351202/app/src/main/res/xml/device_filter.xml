@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 636d:0C45  -> 十进制  25,453 : 3,141 -->
+    <usb-device vendor-id="25453" product-id="3141" />
+</resources>

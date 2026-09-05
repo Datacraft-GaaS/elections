@@ -1,0 +1,95 @@
+<?xml version="1.0"?>
+<resources>
+    <string name="app_name">Fingerprint Demo</string>
+    <string name="match">特征算法</string>
+    <string name="Init">打开设备</string>
+    <string name="Close">关闭设备</string>
+    <string name="Auto">连续采集</string>
+    <string name="Enrollfinger">注册指纹</string>
+    <string name="Verifyfinger">搜索指纹</string>
+    <string name="Enrollfoot">注册脚纹</string>
+    <string name="Verifyfoot">搜索脚纹</string>
+    <string name="SaveBMP">保存图像</string>
+    <string name="EncodeWSQ">编码WSQ</string>
+    <string name="DeviceInformation">设备信息</string>
+    <string name="enrollcount">获取注册列表</string>
+    <string name="Empty">清空注册列表</string>
+    <string name="firstopen">请先打开设备</string>
+    <string name="cancel">停止</string>
+    <string name="getimgstop">连续采集已停止</string>
+    <string name="closeok">关闭设备成功</string>
+    <string name="closefail">关闭设备失败</string>
+    <string name="start">采集开始</string>
+    <string name="searching">搜索指纹中，请耐心等待</string>
+    <string name="EnrollDummy">XAlg</string>
+   <string name="fingerlist">已注册指纹id：</string>
+    <string name="ExtendedFunction">拓展功能</string>
+    <string name="Preview">预览图像</string>
+    <string name="SaveRAW">保存RAW</string>
+    <string-array name="img_arrays">
+        <item>默认</item>
+        <item>垂直镜像</item>
+        <item>水平镜像</item>
+        <item>旋转180</item>
+    </string-array>
+    <string-array name="level_arrays">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+    </string-array>
+    <string name="sensitivity">灵敏度:</string>
+    <string name="security">安全等级:</string>
+    <string name="SaveWSQ">解码WSQ</string>
+    <string name="Save19794_4">保存19794_4</string>
+    <string name="Resolutionsettings">设置分辨率</string>
+    <string name="Imagesettings">设置图像</string>
+    <string name="Bright">  亮度</string>
+    <string name="Contrast">对比度</string>
+    <string name="roll">滚动指纹</string>
+    <string name="Collectorcode">Collector code:</string>
+    <string name="organizationcode">organization code:</string>
+    <string name="DeviceName">Device Name:</string>
+    <string name="SN">SN:</string>
+    <string name="Brand">Brand:</string>
+    <string name="function">基础功能</string>
+    <string name="Setting">设置</string>
+    <string name="DeviceConnected">打开设备成功</string>
+    <string name="Capturetimeout">采集时间结束</string>
+    <string name="SaveERROR">保存失败！ 请先采集图像</string>
+    <string name="CaptureSuccess">采集成功！图像质量： </string>
+    <string name="splitSuccess">采集成功！指纹数量：</string>
+    <string name="autostop">自动捕获停止</string>
+    <string name="wsqerr">解码失败！ 请先压缩WSQ图像</string>
+    <string name="getimageok">采集图像成功! LIVESCAN_GetFPRawData :</string>
+    <string name="getimageerr">采集图像失败! </string>
+    <string name="run">有其他进程尚未结束，请执行完再重试</string>
+    <string name="initfinger">初始化指纹算法失败</string>
+    <string name="Enrollok">注册成功! id：</string>
+    <string name="Emptyok">清空成功!</string>
+    <string name="Enrolllistnull">没有注册用户，请先注册</string>
+    <string name="UPERROR">保存失败，请先采图</string>
+    <string name="CreateTemplateerr">上传特征失败! Result:</string>
+    <string name="initfingerok">成功初始化 XAlg</string>
+    <string name="searchok">搜索成功! id：</string>
+    <string name="searchfail">没有搜索到对应指纹</string>
+    <string name="foot">脚纹</string>
+    <string name="Normal">正常</string>
+    <string name="Dry">干</string>
+    <string name="Wet">湿</string>
+    <string name="fingernum">手指个数：</string>
+    <string name="split">采集多指</string>
+    <string name="openfail">打开设备失败</string>
+    <string name="splitleftfp">采集左手四指</string>
+    <string name="splitRightfp">采集右手四指</string>
+    <string name="splittwo">采集双手拇指</string>
+    <string name="Single">采集单指</string>
+    <string name="timeout">采集超时</string>
+    <string name="fakefp">假手指</string>
+    <string name="notfakefp">真手指</string>
+    <string name="leftfinger">请摆正手指或放置左手四指</string>
+    <string name="rightfinger">请摆正手指或放置右手四指</string>
+</resources>

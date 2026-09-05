@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:eel_design/eel_design.dart' show EelTheme;
 
 import 'screens/home.dart';
 
@@ -12,20 +13,8 @@ class CvrFieldOfficerApp extends ConsumerWidget {
     return MaterialApp(
       title: 'CVR Field Officer',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF006B3C), // Kenya green
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF006B3C),
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
+      theme: EelTheme.light(),
+      darkTheme: EelTheme.dark(),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

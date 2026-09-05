@@ -1,0 +1,939 @@
+openapi: 3.1.0
+info:
+  title: eel-field-party-agent
+  version: 0.1.0
+  description: >
+    Module M30 - Party agent mobile app API (PARTY_AGENT /
+    PARTY_CHIEF_AGENT roles). Served by field-mobile-svc BFF gateway. All
+    operations require a short-lived JWT (5-15 min) plus the X-Eel-Attest
+    device attestation header per ADR-0021. Mutating operations are
+    idempotent on Idempotency-Key (UUIDv7, 72 h dedup window). Contract-first:
+    handlers land in Wave M1/M2 (docs/mobile/plan.md); unbound paths are
+    allowlisted with expiry in .completeness-allowlist.yaml. Design of record:
+    docs/mobile/field-contracts-design.md.
+  contact:
+    name: eel platform team
+    url: https://eel.local/support
+
+servers:
+  - url: https://api.eel.local
+    description: production
+  - url: https://staging.api.eel.local
+    description: staging
+
+tags:
+  - name: check-in
+    description: GPS-verified station check-in
+  - name: dashboard
+    description: Aggregate station dashboard (no PII)
+  - name: forms
+    description: Form 34A fetch, countersign, dispute
+  - name: rollup
+    description: Form 34B/34C chief-agent rollups and disputes
+  - name: incidents
+    description: Structured field incident reporting
+
+security:
+  - bearerAuth: []
+
+paths:
+  /v1/agent/check-in:
+    post:
+      tags: [check-in]
+      operationId: agentCheckIn
+      summary: GPS-verified station check-in
+      description: >
+        Opens the party agent's presence at a polling station. The GPS fix is
+        verified against the station polygon server-side; a mismatch yields
+        422. Notifies the BVI back-end of agent presence. Idempotent on
+        Idempotency-Key.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 80
+        p95: 250
+        p99: 600
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          description: Play Integrity verdict token or App Attest assertion (ADR-0021)
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Client-generated UUIDv7 for idempotent request deduplication (TTL 72 h)
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentCheckInRequest'
+      responses:
+        '201':
+          description: Check-in recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentCheckInResponse'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/AgentCheckInResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /v1/agent/station/{code}/dashboard:
+    get:
+      tags: [dashboard]
+      operationId: agentStationDashboard
+      summary: Aggregate station dashboard (no PII)
+      description: >
+        Station-level aggregates only: voters processed, incident count,
+        Form 34A status. No voter or officer identities.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 60
+        p95: 200
+        p99: 500
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: code
+          in: path
+          required: true
+          description: Polling station code
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Station dashboard snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentStationDashboard'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/AgentStationDashboard'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/agent/forms/34a/{id}:
+    get:
+      tags: [forms]
+      operationId: agentGetForm34a
+      summary: Fetch signed Form 34A with Merkle proof
+      description: >
+        Returns the station's Form 34A document with its Ed25519 signature
+        and Merkle-inclusion proof so the agent can verify the form against
+        the transparency ledger on device.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 80
+        p95: 300
+        p99: 700
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: id
+          in: path
+          required: true
+          description: Form 34A document id (UUIDv7)
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Form 34A document with proof
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Form34ADocument'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/Form34ADocument'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/agent/forms/34a/{id}/countersign:
+    post:
+      tags: [forms]
+      operationId: agentCountersignForm34a
+      summary: Attach party-agent countersignature to Form 34A
+      description: >
+        The agent attests the form's accuracy and attaches their Ed25519
+        countersignature. Signature is verified server-side; a form already
+        in DISPUTED state cannot be countersigned (409). Idempotent on
+        Idempotency-Key.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 80
+        p95: 300
+        p99: 700
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CountersignRequest'
+      responses:
+        '200':
+          description: Countersignature recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CountersignResponse'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/CountersignResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/agent/forms/34a/{id}/dispute:
+    post:
+      tags: [forms]
+      operationId: agentDisputeForm34a
+      summary: Flag Form 34A as disputed (mandatory reason; escalates to war room)
+      description: >
+        Disputing a form freezes its countersign flow and escalates to the
+        constituency war room. `reason` is mandatory (min 8 chars). Idempotent
+        on Idempotency-Key.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 80
+        p95: 300
+        p99: 700
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DisputeRequest'
+      responses:
+        '200':
+          description: Form disputed and escalated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisputeResponse'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/DisputeResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/agent/rollup/34b/{constituency}:
+    get:
+      tags: [rollup]
+      operationId: agentRollup34b
+      summary: Form 34B rollup for a constituency (chief agent)
+      description: >
+        Constituency-level Form 34B rollup. Requires PARTY_CHIEF_AGENT role.
+        The rollup carries its own signature over the aggregated totals.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 120
+        p95: 500
+        p99: 2000
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: constituency
+          in: path
+          required: true
+          description: Constituency code
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+      responses:
+        '200':
+          description: Form 34B rollup
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rollup34B'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/Rollup34B'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/agent/rollup/34c:
+    get:
+      tags: [rollup]
+      operationId: agentRollup34c
+      summary: Form 34C national rollup (chief agent)
+      description: >
+        National-level Form 34C rollup for the given election. Requires
+        PARTY_CHIEF_AGENT role.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 150
+        p95: 600
+        p99: 2000
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: election_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+      responses:
+        '200':
+          description: Form 34C rollup
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rollup34C'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/Rollup34C'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/agent/rollup/34b/{constituency}/dispute:
+    post:
+      tags: [rollup]
+      operationId: agentDisputeRollup34b
+      summary: Dispute a Form 34B rollup (chief agent)
+      description: >
+        Flags the constituency rollup as disputed with a mandatory reason;
+        freezes downstream certification for that constituency. Idempotent on
+        Idempotency-Key.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 80
+        p95: 300
+        p99: 700
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+        - name: constituency
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 32
+            x-eel-data-class: C
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DisputeRequest'
+      responses:
+        '200':
+          description: Rollup disputed and escalated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisputeResponse'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/DisputeResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/agent/incidents:
+    post:
+      tags: [incidents]
+      operationId: agentIncident
+      summary: Submit structured incident report
+      description: >
+        Structured field incident (security, procedural, equipment). Evidence
+        references point to already-uploaded artifacts; the BFF emits
+        eel.field.incident_reported.v1 via the transactional outbox.
+        Idempotent on Idempotency-Key.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 80
+        p95: 300
+        p99: 700
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-eel-data-class: E
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentRequest'
+      responses:
+        '201':
+          description: Incident accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncidentResponse'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/IncidentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /v1/agent/incidents/{id}:
+    get:
+      tags: [incidents]
+      operationId: agentIncidentStatus
+      summary: Incident status
+      description: Status of a previously submitted incident.
+      x-eel-tier: 2
+      x-eel-auth: JWT+SpiceDB
+      x-eel-sla:
+        p50: 30
+        p95: 120
+        p99: 300
+      parameters:
+        - name: X-Eel-Attest
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            x-eel-data-class: E
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Incident status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncidentStatus'
+            application/cbor:
+              schema:
+                $ref: '#/components/schemas/IncidentStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Short-lived JWT (5-15 min) issued by the BFF session endpoint
+
+  responses:
+    BadRequest:
+      description: Request body or parameters failed validation
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Missing or invalid JWT or attestation token
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Role or SpiceDB authorization denied
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Idempotency-Key collision or state conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Semantic validation error (e.g. GPS outside station polygon)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    TooManyRequests:
+      description: Rate limit (policy bundle) exceeded
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+  schemas:
+    ProblemDetail:
+      type: object
+      description: RFC 9457 problem detail
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          x-eel-data-class: E
+        title:
+          type: string
+          x-eel-data-class: E
+        status:
+          type: integer
+          x-eel-data-class: E
+        detail:
+          type: string
+          x-eel-data-class: E
+        instance:
+          type: string
+          format: uri
+          x-eel-data-class: E
+        trace_id:
+          type: string
+          x-eel-data-class: E
+
+    Gps:
+      type: object
+      required: [lat, lon]
+      properties:
+        lat:
+          type: number
+          format: double
+          x-eel-data-class: C
+        lon:
+          type: number
+          format: double
+          x-eel-data-class: C
+
+    AgentCheckInRequest:
+      type: object
+      required: [station_code, agent_id, party_code, gps]
+      properties:
+        station_code:
+          type: string
+          maxLength: 32
+          x-eel-data-class: C
+        agent_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        party_code:
+          type: string
+          maxLength: 16
+          x-eel-data-class: D
+        gps:
+          $ref: '#/components/schemas/Gps'
+        device_id_hash:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: E
+
+    AgentCheckInResponse:
+      type: object
+      required: [check_in_id, checked_in_at, bvi_notified]
+      properties:
+        check_in_id:
+          type: string
+          format: uuid
+        checked_in_at:
+          type: string
+          format: date-time
+        bvi_notified:
+          type: boolean
+          description: Whether the BVI back-end was notified of agent presence
+          x-eel-data-class: E
+
+    AgentStationDashboard:
+      type: object
+      required: [station_code, voters_processed, incident_count, status, updated_at]
+      properties:
+        station_code:
+          type: string
+          x-eel-data-class: C
+        voters_processed:
+          type: integer
+        incident_count:
+          type: integer
+        status:
+          type: string
+          enum: [OPEN, CLOSED, ADJOURNED]
+          x-eel-data-class: D
+        form_34a_status:
+          type: string
+          enum: [DRAFT, COUNTERSIGNED, DISPUTED]
+          x-eel-data-class: D
+        updated_at:
+          type: string
+          format: date-time
+
+    Form34ADocument:
+      type: object
+      required: [id, station_code, presiding_officer_id, created_at, status, signature]
+      properties:
+        id:
+          type: string
+          format: uuid
+        station_code:
+          type: string
+          x-eel-data-class: C
+        presiding_officer_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        created_at:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [DRAFT, COUNTERSIGNED, DISPUTED]
+          x-eel-data-class: D
+        data:
+          type: object
+          additionalProperties: true
+          description: Form fields (vote counts per candidate, etc.)
+        signature:
+          type: string
+          description: Base64 Ed25519 signature over the canonicalized form
+          x-eel-data-class: E
+        merkle_proof:
+          type: array
+          items:
+            type: string
+            pattern: '^[0-9a-f]{64}$'
+          x-eel-data-class: E
+        snapshot_id:
+          type: string
+          format: uuid
+          x-eel-data-class: E
+
+    CountersignRequest:
+      type: object
+      required: [agent_id, signature]
+      properties:
+        agent_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        signature:
+          type: string
+          description: Base64 Ed25519 countersignature over the canonicalized form
+          x-eel-data-class: E
+
+    CountersignResponse:
+      type: object
+      required: [id, status, countersigned_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [COUNTERSIGNED]
+          x-eel-data-class: D
+        countersigned_at:
+          type: string
+          format: date-time
+
+    DisputeRequest:
+      type: object
+      required: [agent_id, reason]
+      properties:
+        agent_id:
+          type: string
+          format: uuid
+          x-eel-data-class: D
+        reason:
+          type: string
+          minLength: 8
+          maxLength: 1024
+          description: Mandatory dispute reason; escalated to the war room
+          x-eel-data-class: D
+        evidence_refs:
+          type: array
+          items:
+            type: string
+            format: uuid
+          x-eel-data-class: E
+
+    DisputeResponse:
+      type: object
+      required: [id, status, escalated_to, disputed_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [DISPUTED]
+          x-eel-data-class: D
+        escalated_to:
+          type: string
+          enum: [war_room]
+          x-eel-data-class: D
+        disputed_at:
+          type: string
+          format: date-time
+
+    Rollup34B:
+      type: object
+      required: [constituency_code, station_count, totals, signature, generated_at]
+      properties:
+        constituency_code:
+          type: string
+          x-eel-data-class: C
+        station_count:
+          type: integer
+        totals:
+          type: object
+          additionalProperties: true
+          description: Aggregated vote totals per candidate/position
+        signature:
+          type: string
+          description: Base64 Ed25519 signature over the aggregated totals
+          x-eel-data-class: E
+        generated_at:
+          type: string
+          format: date-time
+
+    Rollup34C:
+      type: object
+      required: [election_id, county_count, totals, signature, generated_at]
+      properties:
+        election_id:
+          type: string
+          format: uuid
+          x-eel-data-class: E
+        county_count:
+          type: integer
+        totals:
+          type: object
+          additionalProperties: true
+        signature:
+          type: string
+          x-eel-data-class: E
+        generated_at:
+          type: string
+          format: date-time
+
+    IncidentRequest:
+      type: object
+      required: [station_code, category, severity, description]
+      properties:
+        station_code:
+          type: string
+          maxLength: 32
+          x-eel-data-class: C
+        category:
+          type: string
+          enum: [SECURITY, PROCEDURAL, EQUIPMENT, OTHER]
+          x-eel-data-class: D
+        severity:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+          x-eel-data-class: D
+        description:
+          type: string
+          maxLength: 2048
+          x-eel-data-class: D
+        gps:
+          $ref: '#/components/schemas/Gps'
+        evidence_refs:
+          type: array
+          items:
+            type: string
+            format: uuid
+          x-eel-data-class: E
+
+    IncidentResponse:
+      type: object
+      required: [incident_id, status, created_at]
+      properties:
+        incident_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [OPEN]
+          x-eel-data-class: D
+        created_at:
+          type: string
+          format: date-time
+
+    IncidentStatus:
+      type: object
+      required: [incident_id, status, created_at, updated_at]
+      properties:
+        incident_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [OPEN, IN_REVIEW, RESOLVED, DISMISSED]
+          x-eel-data-class: D
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time

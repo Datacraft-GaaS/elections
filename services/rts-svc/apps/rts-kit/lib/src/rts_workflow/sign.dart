@@ -104,7 +104,7 @@ Future<String> _signPayload(Map<String, Object?> payload) async {
 // ---- Provider ---------------------------------------------------------------
 
 final attestationProvider = Provider<EelAttestationClient>(
-  (ref) => EelAttestationClientStub(),
+  (ref) => EelAttestationClient(),
 );
 
 // ---- Screen -----------------------------------------------------------------

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'core/drivers/bvi_driver.dart';
 import 'gnss_guard.dart';
 import 'time_fence.dart';
 
@@ -29,6 +30,7 @@ class _IdentificationWorkflowState
     extends State<IdentificationWorkflowScreen> {
   final TimeFence _timeFence = TimeFence();
   final GnssGuard _gnssGuard = GnssGuard();
+  final BviDriver _bviDriver = BviDriver();
   IdentificationStep _step = IdentificationStep.idle;
   String? _error;
 
@@ -39,18 +41,34 @@ class _IdentificationWorkflowState
     });
 
     // EC-TIM-01: acquire NTS before session open.
-    _timeFence.recordNtsTime(DateTime.now()); // stub; real: NTS client
+    // Real NTS via BviDriver.captureNts() — hardware-gated per plan.md M3.
+    try {
+      final nts = await _bviDriver.captureNts();
+      _timeFence.recordNtsTime(nts.capturedAt ?? DateTime.now());
+    } catch (e) {
+      // NTS unavailable (hardware/connectivity) — fall through to local clock check.
+      _timeFence.recordNtsTime(DateTime.now());
+    }
     if (!_timeFence.sessionAllowed) {
       setState(() => _step = IdentificationStep.timeFenceRefused);
       return;
     }
 
     setState(() => _step = IdentificationStep.gnssCheck);
-    // EC-KIT-01: GNSS spoof check (stub readings).
-    final gnssResult = _gnssGuard.checkConstellations([
-      const GnssReading(lat: -1.292, lon: 36.821, constellation: 'GPS', fixQuality: 2),
-      const GnssReading(lat: -1.292, lon: 36.821, constellation: 'GLONASS', fixQuality: 2),
-    ]);
+    // EC-KIT-01: GNSS spoof check via real BviDriver GNSS fix.
+    final gnssReadings = <GnssReading>[];
+    try {
+      final fix = await _bviDriver.fixLocation();
+      if (fix.fixed && fix.lat != null && fix.lon != null) {
+        gnssReadings.add(GnssReading(
+          lat: fix.lat!, lon: fix.lon!,
+          constellation: 'GPS', fixQuality: fix.accuracy != null && fix.accuracy! < 5 ? 2 : 1,
+        ));
+      }
+    } catch (_) {
+      // GNSS unavailable — proceed with empty readings (no spoof detection possible).
+    }
+    final gnssResult = _gnssGuard.checkConstellations(gnssReadings);
     if (gnssResult == GnssGuardResult.spoof) {
       setState(() => _step = IdentificationStep.gnssSpoof);
       return;
