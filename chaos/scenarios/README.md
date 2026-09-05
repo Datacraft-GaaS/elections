@@ -2,8 +2,7 @@
 
 # Chaos Scenario Catalogue
 
-34 scenarios covering network, compute, storage, identity, and application faults. Each scenario
-maps to one or more SLO thresholds from ADR-0009 and a service degradation mode from ADR-0019.
+118 scenarios covering network, compute, storage, identity, application faults, integration failures, and insider risks. Each scenario maps to one or more SLO thresholds from ADR-0009 and a service degradation mode from ADR-0019.
 
 ## How to read this table
 
@@ -116,3 +115,21 @@ Relevant references:
 | 66 | Transparency audit replay | transparency-svc | HTTPChaos | Replay handled; no duplicate audit entries | auditId+hash | 0023 |
 | 67 | Workforce attendance batch | workforce-svc | HTTPChaos | Batch handled; attendance integrity preserved | auditId+hash | 0019 |
 | 68 | Election-day composite stress | all | StressChaos + NetworkChaos + IOChaos | All services survive composite; M5 audit chain complete; no corruption | auditId+hash+sig+correlation | 0009,0019,0022,0023 |
+
+### Subfolder expansions (34 integration-failure + 16 insider-risk = 50 new)
+- `integration-failure/`: 34 adapter outage scenarios covering all 50+ external integrations (telco-sms, telco-ussd, SMTP, IPFS, printer, HSM-PKCS11, WhatsApp, M-Pesa, IPRS, NHIF-SHA, KBC-SFTP, NSSF, NRB, KPS-KDF-UNHCR, ODPC-breach, NIST-beacon, IFMIS, Datacite, eCourt, NLLB, LiteLLM, CBK, card-manufacturer, KEBS-warranty, MCK, Pantone, PPdt, IVR, airline-cargo, printer-MES, M-Pesa-standby, satellite, comprehensive-all). Tests that outbox drains, audit chain preserves, and no data is lost when any external adapter goes offline.
+- `insider-risk/`: 16 adversarial/privileged-abuse scenarios (adapter data manipulation, audit log deletion, privilege escalation, duplicate event injection, supply-chain adapter tamper, credential theft, vote manipulation, HSM key extraction, data exfiltration, session hijack, gallery poisoning, outbox tampering, observer tampering, audit replay attack, M-Pesa double-spend, whitelist bypass). Tests that M5 audit chain + HSM + falco + tetragon + deny.toml detect and block insider actions.
+- All 50 annotated with M5 audit chain: `auditId` (UUID7), `proofHash` (SHA-256), `correlation_key`, M3 device linkage, ADR-0022/0023 references.
+
+### Technical Explanation — Role / Purpose / Functionality / Configuration
+
+This folder defines chaos scenarios for M5 audit validation (ADR-0022, ADR-0023, ADR-0009, ADR-0019). Each `.yaml` applies a Chaos Mesh `v1alpha1` fault to `chaos-testing` namespace, with M5 audit chain labels (`auditId` UUID7, `proofHash` SHA-256, `correlation_key`, `M3_device_id`). `README.md` maps scenarios to SLO thresholds; `TECHNICAL_EXPLANATION.md` documents role/purpose/functionality/config; `TECHNICAL_EXPLANATION_INSIDER_INTEGRATION.md` covers integration failure + insider risk modeling in detail.
+
+### Related docs
+- `chaos/scenarios/TECHNICAL_EXPLANATION.md`
+- `chaos/scenarios/TECHNICAL_EXPLANATION_INSIDER_INTEGRATION.md`
+- `chaos/scenarios/integration-failure/`
+- `chaos/scenarios/insider-risk/`
+- `integrations/` — adapter/double/contract-tests structure for all 50+ integrations
+- `detection/` — falco-rules, sigma-rules, tetragon-policies, wazuh-config for detection
+- `docs/runbooks/chaos-recovery/`

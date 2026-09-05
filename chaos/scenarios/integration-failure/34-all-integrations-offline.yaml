@@ -1,0 +1,29 @@
+# Integration failure scenario 34: Comprehensive integration loss: all adapters partitioned; EEL operates offline with outbox
+# M5 audit chain: auditId=UUID7; proofHash=sha256; correlation_key=all-adapters-34; M3_device_id=N/A (integration).
+# Tests: all-adapters adapter unavailability; system fallback to all outbox; no data loss past sync commit.
+# Role: validate all-adapters adapter graceful degradation.
+# Purpose: prove EEL system does not lose signed events when all-adapters offline.
+# Functionality: apply chaos; observe adapter; verify outbox drains on recovery.
+# Config: chaos-testing namespace; PodChaos partition all on app=all-adapters.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: eel-int-34-all-adapters
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: integration-failure-34
+    eel.io/target: all-adapters
+    eel.io/dependent: all
+    eel.io/wave: "5.9"
+    eel.io/audit: "auditId=uuid7;proofHash=sha256;correlation_key=all-adapters-34"
+    eel.io/adrs: "ADR-0009,ADR-0019,ADR-0022"
+spec:
+  action: partition
+  mode: all
+  
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: all-adapters
+  gracePeriod: 0

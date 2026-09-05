@@ -1,0 +1,29 @@
+# Integration failure scenario 31: Printer MES down; ballot/badge printing pauses
+# M5 audit chain: auditId=UUID7; proofHash=sha256; correlation_key=printer-mes-31; M3_device_id=N/A (integration).
+# Tests: printer-mes adapter unavailability; system fallback to inventory-svc outbox; no data loss past sync commit.
+# Role: validate printer-mes adapter graceful degradation.
+# Purpose: prove EEL system does not lose signed events when printer-mes offline.
+# Functionality: apply chaos; observe adapter; verify outbox drains on recovery.
+# Config: chaos-testing namespace; PodChaos pod-kill all on app=printer-mes.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: eel-int-31-printer-mes
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: integration-failure-31
+    eel.io/target: printer-mes
+    eel.io/dependent: inventory-svc
+    eel.io/wave: "5.9"
+    eel.io/audit: "auditId=uuid7;proofHash=sha256;correlation_key=printer-mes-31"
+    eel.io/adrs: "ADR-0009,ADR-0019,ADR-0022"
+spec:
+  action: pod-kill
+  mode: all
+  
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: printer-mes
+  gracePeriod: 0

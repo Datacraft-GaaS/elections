@@ -1,0 +1,28 @@
+# Insider risk scenario 05: Adapter source modified by CI agent
+# M5 audit chain: auditId=UUID7; proofHash=sha256; correlation_key=abi-svc-insider-05; M3_device_id=N/A (insider).
+# Role: model adversarial/privileged-abuse conditions that could corrupt M1-M5 chain.
+# Purpose: prove audit chain + HSM + falco + tetragon + deny.toml detect and block insider actions.
+# Functionality: inject adversarial event; observe detection; confirm block/recovery.
+# Config: chaos-testing namespace; HTTPChaos/NetworkChaos/StressChaos; alert via falco + wazuh + tetragon.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: eel-insider-05-abi-svc
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: insider-risk-05
+    eel.io/target: abi-svc
+    eel.io/adversary: "insider-privileged"
+    eel.io/wave: "5.9"
+    eel.io/audit: "auditId=uuid7;proofHash=sha256;correlation_key=abi-svc-insider-05"
+    eel.io/adrs: "ADR-0022,ADR-0023,ADR-0009,ADR-0019"
+spec:
+  action: pod-kill
+  mode: all
+  
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: abi-svc
+  gracePeriod: 0

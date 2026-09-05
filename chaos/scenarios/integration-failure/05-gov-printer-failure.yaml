@@ -1,0 +1,29 @@
+# Integration failure scenario 05: Government printer unavailable; digital fallback activated
+# M5 audit chain: auditId=UUID7; proofHash=sha256; correlation_key=gov-printer-05; M3_device_id=N/A (integration).
+# Tests: gov-printer adapter unavailability; system fallback to inventory-svc outbox; no data loss past sync commit.
+# Role: validate gov-printer adapter graceful degradation.
+# Purpose: prove EEL system does not lose signed events when gov-printer offline.
+# Functionality: apply chaos; observe adapter; verify outbox drains on recovery.
+# Config: chaos-testing namespace; PodChaos pod-kill all on app=gov-printer.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: eel-int-05-gov-printer
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: integration-failure-05
+    eel.io/target: gov-printer
+    eel.io/dependent: inventory-svc
+    eel.io/wave: "5.9"
+    eel.io/audit: "auditId=uuid7;proofHash=sha256;correlation_key=gov-printer-05"
+    eel.io/adrs: "ADR-0009,ADR-0019,ADR-0022"
+spec:
+  action: pod-kill
+  mode: all
+  
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: gov-printer
+  gracePeriod: 0

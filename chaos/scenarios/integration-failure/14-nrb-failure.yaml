@@ -1,0 +1,29 @@
+# Integration failure scenario 14: NRB (National Records Bureau) API failure; manual ID verification
+# M5 audit chain: auditId=UUID7; proofHash=sha256; correlation_key=nrb-14; M3_device_id=N/A (integration).
+# Tests: nrb adapter unavailability; system fallback to support-admin-svc outbox; no data loss past sync commit.
+# Role: validate nrb adapter graceful degradation.
+# Purpose: prove EEL system does not lose signed events when nrb offline.
+# Functionality: apply chaos; observe adapter; verify outbox drains on recovery.
+# Config: chaos-testing namespace; PodChaos abort 100% on app=nrb.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: HTTPChaos
+metadata:
+  name: eel-int-14-nrb
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: integration-failure-14
+    eel.io/target: nrb
+    eel.io/dependent: support-admin-svc
+    eel.io/wave: "5.9"
+    eel.io/audit: "auditId=uuid7;proofHash=sha256;correlation_key=nrb-14"
+    eel.io/adrs: "ADR-0009,ADR-0019,ADR-0022"
+spec:
+  action: abort
+  mode: 100%
+  
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: nrb
+  gracePeriod: 0

@@ -1,0 +1,29 @@
+# Integration failure scenario 26: MCK (Media Council of Kenya) API down; media accreditation manual review
+# M5 audit chain: auditId=UUID7; proofHash=sha256; correlation_key=mck-26; M3_device_id=N/A (integration).
+# Tests: mck adapter unavailability; system fallback to training-svc outbox; no data loss past sync commit.
+# Role: validate mck adapter graceful degradation.
+# Purpose: prove EEL system does not lose signed events when mck offline.
+# Functionality: apply chaos; observe adapter; verify outbox drains on recovery.
+# Config: chaos-testing namespace; PodChaos abort 100% on app=mck.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: HTTPChaos
+metadata:
+  name: eel-int-26-mck
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: integration-failure-26
+    eel.io/target: mck
+    eel.io/dependent: training-svc
+    eel.io/wave: "5.9"
+    eel.io/audit: "auditId=uuid7;proofHash=sha256;correlation_key=mck-26"
+    eel.io/adrs: "ADR-0009,ADR-0019,ADR-0022"
+spec:
+  action: abort
+  mode: 100%
+  
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: mck
+  gracePeriod: 0

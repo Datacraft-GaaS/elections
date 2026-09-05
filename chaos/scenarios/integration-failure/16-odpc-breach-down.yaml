@@ -1,0 +1,29 @@
+# Integration failure scenario 16: ODPC breach service down; breach notifications queued
+# M5 audit chain: auditId=UUID7; proofHash=sha256; correlation_key=odpc-breach-16; M3_device_id=N/A (integration).
+# Tests: odpc-breach adapter unavailability; system fallback to ecc-svc outbox; no data loss past sync commit.
+# Role: validate odpc-breach adapter graceful degradation.
+# Purpose: prove EEL system does not lose signed events when odpc-breach offline.
+# Functionality: apply chaos; observe adapter; verify outbox drains on recovery.
+# Config: chaos-testing namespace; PodChaos pod-kill all on app=odpc-breach.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: eel-int-16-odpc-breach
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: integration-failure-16
+    eel.io/target: odpc-breach
+    eel.io/dependent: ecc-svc
+    eel.io/wave: "5.9"
+    eel.io/audit: "auditId=uuid7;proofHash=sha256;correlation_key=odpc-breach-16"
+    eel.io/adrs: "ADR-0009,ADR-0019,ADR-0022"
+spec:
+  action: pod-kill
+  mode: all
+  
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: odpc-breach
+  gracePeriod: 0

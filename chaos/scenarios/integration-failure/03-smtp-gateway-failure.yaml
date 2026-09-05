@@ -1,0 +1,29 @@
+# Integration failure scenario 03: SMTP gateway offline; outbox queues; reports delayed
+# M5 audit chain: auditId=UUID7; proofHash=sha256; correlation_key=smtp-gateway-03; M3_device_id=N/A (integration).
+# Tests: smtp-gateway adapter unavailability; system fallback to governance-svc outbox; no data loss past sync commit.
+# Role: validate smtp-gateway adapter graceful degradation.
+# Purpose: prove EEL system does not lose signed events when smtp-gateway offline.
+# Functionality: apply chaos; observe adapter; verify outbox drains on recovery.
+# Config: chaos-testing namespace; PodChaos loss all on app=smtp-gateway.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: eel-int-03-smtp-gateway
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: integration-failure-03
+    eel.io/target: smtp-gateway
+    eel.io/dependent: governance-svc
+    eel.io/wave: "5.9"
+    eel.io/audit: "auditId=uuid7;proofHash=sha256;correlation_key=smtp-gateway-03"
+    eel.io/adrs: "ADR-0009,ADR-0019,ADR-0022"
+spec:
+  action: loss
+  mode: all
+  
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: smtp-gateway
+  gracePeriod: 0

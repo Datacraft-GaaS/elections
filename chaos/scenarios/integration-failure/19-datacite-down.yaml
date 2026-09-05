@@ -1,0 +1,29 @@
+# Integration failure scenario 19: Datacite DOI minting unavailable; transparency reports use UUID instead
+# M5 audit chain: auditId=UUID7; proofHash=sha256; correlation_key=datacite-19; M3_device_id=N/A (integration).
+# Tests: datacite adapter unavailability; system fallback to transparency-svc outbox; no data loss past sync commit.
+# Role: validate datacite adapter graceful degradation.
+# Purpose: prove EEL system does not lose signed events when datacite offline.
+# Functionality: apply chaos; observe adapter; verify outbox drains on recovery.
+# Config: chaos-testing namespace; PodChaos loss all on app=datacite.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: eel-int-19-datacite
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: integration-failure-19
+    eel.io/target: datacite
+    eel.io/dependent: transparency-svc
+    eel.io/wave: "5.9"
+    eel.io/audit: "auditId=uuid7;proofHash=sha256;correlation_key=datacite-19"
+    eel.io/adrs: "ADR-0009,ADR-0019,ADR-0022"
+spec:
+  action: loss
+  mode: all
+  
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: datacite
+  gracePeriod: 0

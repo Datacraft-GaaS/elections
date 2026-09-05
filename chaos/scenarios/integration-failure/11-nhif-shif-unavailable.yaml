@@ -1,0 +1,29 @@
+# Integration failure scenario 11: NHIF/SHA health API down; payroll health deductions deferred
+# M5 audit chain: auditId=UUID7; proofHash=sha256; correlation_key=nhif-shif-11; M3_device_id=N/A (integration).
+# Tests: nhif-shif adapter unavailability; system fallback to support-admin-svc outbox; no data loss past sync commit.
+# Role: validate nhif-shif adapter graceful degradation.
+# Purpose: prove EEL system does not lose signed events when nhif-shif offline.
+# Functionality: apply chaos; observe adapter; verify outbox drains on recovery.
+# Config: chaos-testing namespace; PodChaos loss all on app=nhif-shif.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: eel-int-11-nhif-shif
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: integration-failure-11
+    eel.io/target: nhif-shif
+    eel.io/dependent: support-admin-svc
+    eel.io/wave: "5.9"
+    eel.io/audit: "auditId=uuid7;proofHash=sha256;correlation_key=nhif-shif-11"
+    eel.io/adrs: "ADR-0009,ADR-0019,ADR-0022"
+spec:
+  action: loss
+  mode: all
+  
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: nhif-shif
+  gracePeriod: 0

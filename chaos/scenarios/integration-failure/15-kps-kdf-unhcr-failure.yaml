@@ -1,0 +1,29 @@
+# Integration failure scenario 15: Security integrations unavailable; background screening pauses
+# M5 audit chain: auditId=UUID7; proofHash=sha256; correlation_key=kps-kdf-unhcr-15; M3_device_id=N/A (integration).
+# Tests: kps-kdf-unhcr adapter unavailability; system fallback to ecc-svc outbox; no data loss past sync commit.
+# Role: validate kps-kdf-unhcr adapter graceful degradation.
+# Purpose: prove EEL system does not lose signed events when kps-kdf-unhcr offline.
+# Functionality: apply chaos; observe adapter; verify outbox drains on recovery.
+# Config: chaos-testing namespace; PodChaos loss all on app=kps-kdf-unhcr.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: eel-int-15-kps-kdf-unhcr
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: integration-failure-15
+    eel.io/target: kps-kdf-unhcr
+    eel.io/dependent: ecc-svc
+    eel.io/wave: "5.9"
+    eel.io/audit: "auditId=uuid7;proofHash=sha256;correlation_key=kps-kdf-unhcr-15"
+    eel.io/adrs: "ADR-0009,ADR-0019,ADR-0022"
+spec:
+  action: loss
+  mode: all
+  
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: kps-kdf-unhcr
+  gracePeriod: 0

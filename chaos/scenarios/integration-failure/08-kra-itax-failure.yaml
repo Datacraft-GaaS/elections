@@ -1,0 +1,29 @@
+# Integration failure scenario 08: KRA iTax gateway slow; manual verification activates
+# M5 audit chain: auditId=UUID7; proofHash=sha256; correlation_key=kra-itax-08; M3_device_id=N/A (integration).
+# Tests: kra-itax adapter unavailability; system fallback to bvr-svc outbox; no data loss past sync commit.
+# Role: validate kra-itax adapter graceful degradation.
+# Purpose: prove EEL system does not lose signed events when kra-itax offline.
+# Functionality: apply chaos; observe adapter; verify outbox drains on recovery.
+# Config: chaos-testing namespace; PodChaos delay all on app=kra-itax.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: eel-int-08-kra-itax
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: integration-failure-08
+    eel.io/target: kra-itax
+    eel.io/dependent: bvr-svc
+    eel.io/wave: "5.9"
+    eel.io/audit: "auditId=uuid7;proofHash=sha256;correlation_key=kra-itax-08"
+    eel.io/adrs: "ADR-0009,ADR-0019,ADR-0022"
+spec:
+  action: delay
+  mode: all
+  value: 5s
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: kra-itax
+  gracePeriod: 0

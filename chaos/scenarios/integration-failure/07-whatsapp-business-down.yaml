@@ -1,0 +1,29 @@
+# Integration failure scenario 07: WhatsApp Business API down; SMS fallback
+# M5 audit chain: auditId=UUID7; proofHash=sha256; correlation_key=whatsapp-07; M3_device_id=N/A (integration).
+# Tests: whatsapp adapter unavailability; system fallback to voter-education-cms outbox; no data loss past sync commit.
+# Role: validate whatsapp adapter graceful degradation.
+# Purpose: prove EEL system does not lose signed events when whatsapp offline.
+# Functionality: apply chaos; observe adapter; verify outbox drains on recovery.
+# Config: chaos-testing namespace; PodChaos abort 100% on app=whatsapp.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: HTTPChaos
+metadata:
+  name: eel-int-07-whatsapp
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: integration-failure-07
+    eel.io/target: whatsapp
+    eel.io/dependent: voter-education-cms
+    eel.io/wave: "5.9"
+    eel.io/audit: "auditId=uuid7;proofHash=sha256;correlation_key=whatsapp-07"
+    eel.io/adrs: "ADR-0009,ADR-0019,ADR-0022"
+spec:
+  action: abort
+  mode: 100%
+  
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: whatsapp
+  gracePeriod: 0

@@ -1,0 +1,29 @@
+# Integration failure scenario 17: NIST randomness beacon slow; HSM seed refresh defers
+# M5 audit chain: auditId=UUID7; proofHash=sha256; correlation_key=nist-beacon-17; M3_device_id=N/A (integration).
+# Tests: nist-beacon adapter unavailability; system fallback to transparency-svc outbox; no data loss past sync commit.
+# Role: validate nist-beacon adapter graceful degradation.
+# Purpose: prove EEL system does not lose signed events when nist-beacon offline.
+# Functionality: apply chaos; observe adapter; verify outbox drains on recovery.
+# Config: chaos-testing namespace; PodChaos delay all on app=nist-beacon.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: HTTPChaos
+metadata:
+  name: eel-int-17-nist-beacon
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: integration-failure-17
+    eel.io/target: nist-beacon
+    eel.io/dependent: transparency-svc
+    eel.io/wave: "5.9"
+    eel.io/audit: "auditId=uuid7;proofHash=sha256;correlation_key=nist-beacon-17"
+    eel.io/adrs: "ADR-0009,ADR-0019,ADR-0022"
+spec:
+  action: delay
+  mode: all
+  value: 5s
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: nist-beacon
+  gracePeriod: 0

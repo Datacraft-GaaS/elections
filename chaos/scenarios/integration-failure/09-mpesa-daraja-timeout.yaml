@@ -1,0 +1,29 @@
+# Integration failure scenario 09: M-Pesa Daraja API timeout; outbox queues; no double-credit
+# M5 audit chain: auditId=UUID7; proofHash=sha256; correlation_key=mpesa-daraja-09; M3_device_id=N/A (integration).
+# Tests: mpesa-daraja adapter unavailability; system fallback to support-admin-svc outbox; no data loss past sync commit.
+# Role: validate mpesa-daraja adapter graceful degradation.
+# Purpose: prove EEL system does not lose signed events when mpesa-daraja offline.
+# Functionality: apply chaos; observe adapter; verify outbox drains on recovery.
+# Config: chaos-testing namespace; PodChaos delay all on app=mpesa-daraja.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: HTTPChaos
+metadata:
+  name: eel-int-09-mpesa-daraja
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: integration-failure-09
+    eel.io/target: mpesa-daraja
+    eel.io/dependent: support-admin-svc
+    eel.io/wave: "5.9"
+    eel.io/audit: "auditId=uuid7;proofHash=sha256;correlation_key=mpesa-daraja-09"
+    eel.io/adrs: "ADR-0009,ADR-0019,ADR-0022"
+spec:
+  action: delay
+  mode: all
+  value: 10s
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: mpesa-daraja
+  gracePeriod: 0

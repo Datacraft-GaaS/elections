@@ -1,0 +1,29 @@
+# Integration failure scenario 22: LiteLLM gateway down; inference falls back to local model
+# M5 audit chain: auditId=UUID7; proofHash=sha256; correlation_key=litellm-22; M3_device_id=N/A (integration).
+# Tests: litellm adapter unavailability; system fallback to ai-platform-svc outbox; no data loss past sync commit.
+# Role: validate litellm adapter graceful degradation.
+# Purpose: prove EEL system does not lose signed events when litellm offline.
+# Functionality: apply chaos; observe adapter; verify outbox drains on recovery.
+# Config: chaos-testing namespace; PodChaos pod-kill all on app=litellm.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: eel-int-22-litellm
+  namespace: chaos-testing
+  labels:
+    eel.io/scenario: integration-failure-22
+    eel.io/target: litellm
+    eel.io/dependent: ai-platform-svc
+    eel.io/wave: "5.9"
+    eel.io/audit: "auditId=uuid7;proofHash=sha256;correlation_key=litellm-22"
+    eel.io/adrs: "ADR-0009,ADR-0019,ADR-0022"
+spec:
+  action: pod-kill
+  mode: all
+  
+  selector:
+    namespaces:
+      - eel-prod
+    labelSelectors:
+      app: litellm
+  gracePeriod: 0
