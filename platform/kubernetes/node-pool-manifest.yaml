@@ -1,0 +1,87 @@
+# Node Pool Definitions — EEL Cluster (M5 Hardening)
+# References: ADR 0004 (Platform), ADR 0019 (Edge topology), M3-HARDWARE-INTEGRATION
+# All node pools use UUID7 (uuid7str) node IDs for audit correlation.
+# Audit chain reference: every node event (join, label change, taint) includes audit reference.
+
+---
+# System / Control Plane Nodes (6 + 3 per site)
+# Node ID format: system-{site}-{index} (e.g., system-nairobi-01 / system-mombasa-01)
+# Audit reference: node events include UUIDv7 node ID + timestamp + site + role
+# M5 requirement: MDM rollout (device policy), audit shadow replication, telemetry endpoint
+# All nodes must have audit agent registered (wazuh agent) before joining cluster.
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: node-pool-config
+  namespace: eel-system
+data:
+  node-pool-system.yaml: |
+    nodePool: system
+    nodes:
+      primary:
+        - name: system-nairobi-01
+          site: nairobi
+          role: control-plane
+          taints:
+            - key: node-role.kubernetes.io/control-plane
+              value: ""
+              effect: NoSchedule
+        - name: system-nairobi-02
+          site: nairobi
+          role: control-plane
+        - name: system-nairobi-03
+          site: nairobi
+          role: control-plane
+        - name: system-nairobi-04
+          site: nairobi
+          role: control-plane
+        - name: system-nairobi-05
+          site: nairobi
+          role: control-plane
+        - name: system-nairobi-06
+          site: nairobi
+          role: control-plane
+      mirror:
+        - name: system-mombasa-01
+          site: mombasa
+          role: control-plane
+        - name: system-mombasa-02
+          site: mombasa
+          role: control-plane
+        - name: system-mombasa-03
+          site: mombasa
+          role: control-plane
+    auditReference:
+      auditService: "https://audit.eel.local/v1/nodes"
+      correlationFormat: "node-{nodeId}-system-{site}-{index}"
+      auditIdFormat: "uuid7str()"
+      proofHashFormat: "sha256-canonical-json"
+      signatureFormat: "ed25519-128hex"
+      M3DeviceReference: "node-pool-system-{site}"
+
+---
+# Compute / General Workload Nodes (18 + 9 per site)
+# Node IDs: compute-{site}-{index} (e.g., compute-nairobi-01)
+# Audit reference: every pod event on compute nodes includes node UUIDv7 + audit chain reference
+# M5 requirement: MDM device policy applied (FLAG_SECURE equivalent for containers — seccomp profiles)
+# Telemetry endpoint: otel collector at https://otel.eel.local:4317
+# All compute nodes use PSS restricted profile.
+
+---
+# HSM / Biometric Isolation Nodes (taint: eel.internal/hsm=true:NoSchedule)
+# Node IDs: hsm-{site}-{index} (e.g., hsm-nairobi-01)
+# Audit reference: HSM events include HSM device UUIDv7 (from /dev/hsm) + node UUIDv7 + audit chain
+# M5 requirement: MDM device policy includes HSM isolation policy (ADR 0004, M3-HARDWARE-INTEGRATION)
+# Telemetry endpoint: audit service at https://audit.eel.local/v1/telemetry (with auth_token_ref)
+# All HSM nodes must have audit agent (wazuh agent) + tetragon agent + falco agent registered.
+# Node taint ensures only HSM signer pods (platform/hsm-svc/) can schedule on these nodes.
+
+---
+# Storage Nodes (Ceph OSD / Rook)
+# Node IDs: storage-{site}-{index}
+# Taint: ceph.rook.io/osd=true:NoSchedule
+# Audit reference: storage events include node UUIDv7 + audit chain (audit_service event for storage integrity)
+# M5 requirement: MDM device policy includes storage isolation (ADR 0009)
+# All storage nodes must have audit agent + falco + tetragon active (for file integrity monitoring of audit shadow files).

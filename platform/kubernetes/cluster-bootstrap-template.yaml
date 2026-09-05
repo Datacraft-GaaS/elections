@@ -1,0 +1,41 @@
+# Cluster Bootstrap Config Template (EEL — M5 Hardening)
+# WARNING: This is a template. Do NOT commit real node IPs, certificates, or secrets.
+# Generate on-site using kubeadm init / kubeadm join with certificates from Vault / OpenBao.
+# References: ADR 0004 (Platform), ADR 0019 (Edge topology), M5-SMS-USB-MANIFEST
+# All audit references use UUID7 (uuid7str()) via uuid6 package.
+
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
+kubernetesVersion: v1.29.3
+controlPlaneEndpoint: "https://k8s-primary.nairobi.eel.local:6443"
+dns:
+  imageRepository: registry.k8s.io/coredns
+  imageTag: v1.11.1
+networking:
+  serviceSubnet: "10.96.0.0/12"
+  podSubnet: "10.244.0.0/16"
+  dnsDomain: "eel.local"
+controllerManager:
+  extraArgs:
+    enable-hostpath-protection: "true"
+    terminate-pods: "true"
+scheduler:
+  extraArgs:
+    profiling: "false"
+apiServer:
+  extraArgs:
+    audit-log-path: "/var/log/kubernetes/audit.log"
+    audit-log-maxage: "30"
+    audit-log-maxbackups: "10"
+    audit-log-maxsize: "100"
+    audit-policy-file: "/etc/kubernetes/audit-policy.yaml"
+    audit-webhook-only: "false"
+    authentication-token-webhook-cache-ttl: "10s"
+    audit-event-ttl: "30"
+  certSANs:
+    - "k8s-primary.nairobi.eel.local"
+    - "k8s-primary"
+    - "localhost"
+    - "127.0.0.1"
+# Critical for M5 audit chain: audit log writes to /var/log/kubernetes/audit.log
+# with 30-day retention, 10 backups, 100MB max size — sufficient for M5 48h drill.

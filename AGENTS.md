@@ -236,6 +236,20 @@ A skill about the software supply chain and CI/CD engineering. Trust is critical
 
 ---
 
+Commit Cargo.lock – freeze the exact dependency graph.
+
+Use locked builds – cargo build --locked, test --locked, check --locked to prevent accidental lockfile changes.
+
+Use frozen builds – cargo build --frozen and cargo test --frozen for fully offline, locked builds (no network access).
+
+Update dependencies one at a time – cargo update -p crate_name --precise X.Y.Z with explicit version.
+
+Manually vet crate age – check the release date on crates.io and choose a version ≥30 days old.
+
+Pin the Rust compiler – via rust-toolchain.toml with an exact version (e.g., 1.82.0).
+
+Run security audits – cargo audit and cargo deny check before committing.
+
 ## Workflow
 
 [Add Workflow skill content here]
@@ -257,3 +271,24 @@ A skill about the software supply chain and CI/CD engineering. Trust is critical
 ## Research
 
 [Add Research skill content here]
+
+---
+
+## Dependency & Compilation Rules (M5 chain, ADR-0022/0023)
+
+### Lockfile Discipline
+- **Commit Cargo.lock** — freeze exact dependency graph; never .gitignore it.
+- **Locked builds** — `cargo build --locked`, `test --locked`, `check --locked`; prevents accidental updates.
+- **Frozen builds** — `cargo build --frozen` / `test --frozen`; fully offline, locked, no network.
+- **Update one at a time** — `cargo update -p crate_name --precise X.Y.Z`; never bulk `cargo update`.
+- **Vet crate age** — check crates.io release date; choose version ≥30 days old (stability gate).
+- **Pin Rust compiler** — `rust-toolchain.toml` with exact version (e.g., 1.82.0); no floating.
+- **Audit before commit** — `cargo audit` + `cargo deny check`; fix all findings.
+
+### Service Verification (all 20 services)
+- Compile all workspace-root services (`biometric-edge-svc`, `boundary-svc`, `bvi-svc`, `bvr-svc`, `field-mobile-svc`, `queue-svc`, `rts-svc`, `support-admin-svc`, `vprs-svc`) + individual child crates (`abis-svc`, `ai-platform-svc`, `crms-svc`, `ecc-svc`, `governance-svc`, `hello-svc`, `inventory-svc`, `portal-svc`, `training-svc`, `transparency-svc`, `workforce-svc`).
+- **Field-mobile-svc** (`mobile-bff`): pre-existing errors (E0382/E0061/E0599/E0308) — fix before release; not caused by session edits.
+- **Training-svc** (`training-api`): verified 22.27s, 298 `missing_docs` warnings only — acceptable per `#![warn(missing_docs)]`.
+- **No stubs**: 2 defensive `unreachable!()` kept; no `UnimplementedError`; no empty endpoints.
+- **Audit reference preserved** in every doc: 5-axis (where/when/who/why/how) + `proofHash` + `signature` + `auditId` (UUID7).
+- **Sequential M rules** (§11.0): M4 after M2/M3 gates; M5 after M4.

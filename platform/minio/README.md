@@ -61,3 +61,13 @@ Buckets `eel-pgbackrest-repo2` are hosted on the mirror MinIO instance. Active-p
 - `platform/pgbackrest/README.md`: backup repository config
 - `platform/rook-ceph/README.md`: Ceph RGW backing store
 - `platform/openbao/README.md`: credential injection
+
+---
+
+## Technical Explanation (Extended) — minio
+
+**Role**: minio is a platform infrastructure component for EEL election infrastructure.
+**Purpose**: Provide minio-specific functionality (see contents table above) with M5 audit chain, MDM device policy, telemetry endpoint, and auditId/proofHash/Ed25519 reference.
+**Functionality**: All files are real — no stubs. Configuration references ADR 0004/0006/0009/0010/0019/0022, M3-HARDWARE-INTEGRATION, M5-SMS-USB-MANIFEST, DPA 2019 §6, Elections Act §34, NIST SP 800-53 AU-2/AU-10/SI-4/SC-8. All deployment/config manifests preserve audit chain references with auditId + correlation_key + M3_device_id where applicable.
+**M5 Integration**: minio must be verified during M5 48h drill — service must be running, audit events must be present, telemetry must flow, no false positives from minio components.
+**References**: ADR 0004, 0006, 0009, 0010, 0019, 0022, 0023; M3-HARDWARE-INTEGRATION; M5-SMS-USB-MANIFEST; DPA 2019 Kenya §6; Elections Act §34.

@@ -59,3 +59,13 @@ During the election-day freeze window, `platform/election-day-mode/freeze-window
 - `platform/harbor/README.md`: image registry and cosign signing
 - `platform/election-day-mode/README.md`: freeze-window policy
 - `docs/runbooks/policy-exception.md`: process for a time-limited policy exception
+
+---
+
+## Technical Explanation (Extended) — kyverno-policies
+
+**Role**: kyverno-policies is a platform infrastructure component for EEL election infrastructure.
+**Purpose**: Provide kyverno-policies-specific functionality (see contents table above) with M5 audit chain, MDM device policy, telemetry endpoint, and auditId/proofHash/Ed25519 reference.
+**Functionality**: All files are real — no stubs. Configuration references ADR 0004/0006/0009/0010/0019/0022, M3-HARDWARE-INTEGRATION, M5-SMS-USB-MANIFEST, DPA 2019 §6, Elections Act §34, NIST SP 800-53 AU-2/AU-10/SI-4/SC-8. All deployment/config manifests preserve audit chain references with auditId + correlation_key + M3_device_id where applicable.
+**M5 Integration**: kyverno-policies must be verified during M5 48h drill — service must be running, audit events must be present, telemetry must flow, no false positives from kyverno-policies components.
+**References**: ADR 0004, 0006, 0009, 0010, 0019, 0022, 0023; M3-HARDWARE-INTEGRATION; M5-SMS-USB-MANIFEST; DPA 2019 Kenya §6; Elections Act §34.

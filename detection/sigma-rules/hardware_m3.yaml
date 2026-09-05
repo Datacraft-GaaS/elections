@@ -1,0 +1,151 @@
+title: EEL — Hardware M3 — Fingerprint Quality Below Threshold (FAP60)
+id: eel-hw-001
+status: warning
+description: FAP60 fingerprint sensor reports quality score below BiometricCapturePolicy fpMinQuality (50).
+references:
+  - M3-HARDWARE-INTEGRATION
+  - ICAO-9303
+  - ADR-0004
+logsource:
+  product: eel
+  service: biometric_capture
+detection:
+  selection:
+    BiometricType: 'fingerprint'
+    QualityScore: < 50
+    SensorType: 'FAP60'
+  condition: selection
+level: warning
+fields: [auditId, sessionId, qualityScore, fpMinQuality, environmentHint, deviceId, stationId]
+tags:
+  - hardware
+  - M3
+  - biometric.quality
+  - FAP60
+
+---
+title: EEL — Hardware M3 — Iris Quality Below Threshold (AntIris)
+id: eel-hw-002
+status: warning
+description: AntIris iris camera reports quality score below BiometricCapturePolicy irisMinQuality (40).
+references:
+  - M3-HARDWARE-INTEGRATION
+  - ICAO-9303
+logsource:
+  product: eel
+  service: biometric_capture
+detection:
+  selection:
+    BiometricType: 'iris'
+    QualityScore: < 40
+    SensorType: 'AntIris'
+  condition: selection
+level: warning
+fields: [auditId, sessionId, qualityScore, irisMinQuality, deviceId, stationId]
+tags:
+  - hardware
+  - M3
+  - biometric.quality
+  - AntIris
+
+---
+title: EEL — Hardware M3 — FAP60 Sensor Unexpected Access (Non-BVR Process)
+id: eel-hw-003
+status: critical
+description: FAP60 USB fingerprint sensor accessed by process other than BVR/BVI biometric app — potential hardware extraction.
+references:
+  - M3-HARDWARE-INTEGRATION
+  - ADR-0004
+  - DPA-2019-S6
+logsource:
+  product: linux
+  service: auditd
+detection:
+  selection:
+    EventType: 'file_open'
+    FilePath: contains '/dev/usb' or contains 'fap60' or contains 'FUFingerSDK'
+    ProcessName: not in ['com.eel.bvr', 'bvr-kit', 'fingerprint_driver', 'system_server']
+  condition: selection
+level: critical
+fields: [auditId, processName, filePath, deviceId, whenUtc]
+tags:
+  - hardware
+  - M3
+  - sensor-access
+  - DPA-2019-S6
+
+---
+title: EEL — Hardware M3 — AntIris Camera Unexpected Access (Non-BVI Process)
+id: eel-hw-004
+status: critical
+description: AntIris iris camera accessed by process other than BVI biometric app — potential image extraction.
+references:
+  - M3-HARDWARE-INTEGRATION
+  - ADR-0004
+logsource:
+  product: linux
+  service: auditd
+detection:
+  selection:
+    EventType: 'file_open'
+    FilePath: contains 'antiris' or contains 'AntUSBCamera' or contains 'irex'
+    ProcessName: not in ['com.eel.bvi', 'bvi-kit', 'iris_driver', 'system_server']
+  condition: selection
+level: critical
+fields: [auditId, processName, filePath, deviceId, whenUtc]
+tags:
+  - hardware
+  - M3
+  - sensor-access
+  - DPA-2019-S6
+
+---
+title: EEL — Hardware M3 — GSM Modem Access Outside RTS App
+id: eel-hw-005
+status: critical
+description: GSM serial modem (USB) opened by non-RTS process — SMS injection / command injection risk.
+references:
+  - M3-SMS-USB-MANIFEST
+  - M3-HARDWARE-INTEGRATION
+  - ADR-0010
+logsource:
+  product: linux
+  service: auditd
+detection:
+  selection:
+    EventType: 'file_open'
+    FilePath: startswith '/dev/ttyUSB' or startswith '/dev/ttyACM'
+    ProcessName: not in ['com.eel.rts', 'rts-kit', 'gsm_server', 'system_server']
+  condition: selection
+level: critical
+fields: [auditId, processName, filePath, deviceId, whenUtc]
+tags:
+  - hardware
+  - M3
+  - GSM
+  - SMS-injection
+
+---
+title: EEL — Hardware M3 — RTS Reader / RFID Access Outside Expected Process
+id: eel-hw-006
+status: alert
+description: RFID / USB HID reader accessed by non-inventory/non-RTS process — unauthorized tag reading.
+references:
+  - M3-HARDWARE-INTEGRATION
+  - Inventory integration spec
+logsource:
+  product: linux
+  service: auditd
+detection:
+  selection:
+    EventType: 'file_open'
+    FilePath: contains 'hidraw' or contains 'rfid' or contains 'ttyUSB'
+    ProcessName: not in ['com.eel.inventory', 'rts-kit', 'inventory_app', 'system_server']
+  condition: selection
+level: alert
+fields: [auditId, processName, filePath, deviceId, whenUtc]
+tags:
+  - hardware
+  - M3
+  - RFID
+  - unauthorized-access

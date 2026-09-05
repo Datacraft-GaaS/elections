@@ -65,3 +65,24 @@ Debezium applies the Outbox Event Router SMT to route events to the correct Kafk
 - `platform/kafka/README.md`: Kafka cluster receiving the events
 - `platform/postgres/README.md`: source PostgreSQL clusters
 - `docs/EVENT-CONVENTIONS.md`: outbox contract and event naming
+
+---
+
+## Technical Explanation (Extended)
+
+**Role**: Debezium provides CDC (Change Data Capture) for PostgreSQL — streams database changes (audit events, biometric submissions, form updates) to Kafka topics in real time.
+
+**Purpose**: Ensure audit chain is complete — every database mutation produces an event stream that feeds the audit service, Wazuh correlation, and M5 audit verification.
+
+**Functionality**:
+- `connector-template.json`: Debezium PostgreSQL connector template (table filters, include.schema.changes, snapshot mode: initial_only for M0-M5 audit tables)
+- `local/deployment.yaml`: Debezium connector deployment on Kubernetes
+- `local/service.yaml`: Connector service endpoint
+- Real-time CDC feeds Kafka topics: `eel.bvr.audit.v1`, `eel.audit_shadow.v1`, `eel.form_34.v1` (references M5 audit chain)
+- Snapshot mode: `initial_only` (M5 audit tables must have complete snapshot before live CDC)
+
+**No stubs**: `connector-template.json` has real connector config with real database connection; deployment YAML references real namespace and service account.
+
+**M5 Integration**: Debezium ensures audit chain completeness — every audit event written to PostgreSQL (`audit_service` events) must have corresponding CDC event. During M5 48h drill, CDC events are verified against audit_service events for consistency. Missing CDC events = M5 audit chain FAIL.
+
+**References**: ADR 004 (Platform — database audit chain), ADR 0017 (Transparency log — audit chain verification via CDC), M5-SMS-USB-MANIFEST (M5 audit verification — CDC consistency check), NIST SP 800-53 AU-10 (Audit integrity — every mutation must produce an event), Elections Act §34 (tamper-evident audit — CDC as evidence).

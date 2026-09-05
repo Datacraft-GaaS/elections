@@ -623,8 +623,11 @@ version = "0.1.0"
 dependencies = [
  "axum 0.8.9",
  "chrono",
+ "eel-outbox-rs",
  "serde",
  "serde_json",
+ "sqlx",
+ "thiserror 2.0.20",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -753,6 +756,7 @@ dependencies = [
  "axum 0.8.9",
  "bvr-domain",
  "chrono",
+ "eel-spec-helpers-rs",
  "eel-trace-rs",
  "rstest",
  "serde",
@@ -946,6 +950,14 @@ dependencies = [
  "tower",
  "tracing",
  "uuid",
+]
+
+[[package]]
+name = "eel-spec-helpers-rs"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

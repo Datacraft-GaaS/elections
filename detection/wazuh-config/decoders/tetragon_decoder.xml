@@ -1,0 +1,6 @@
+<decoder name="tetragon-decoder">
+  <prematch>^\{"process_krn":</prematch>
+  <plugin_decoder>SUSE</plugin_decoder>
+  <regex>process_krn</regex>
+  <order>process_krn,process_path,binary,binary_path,namespace</order>
+</decoder>

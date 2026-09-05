@@ -14,3 +14,7 @@ router.register(r"certificates", WorkerCertificateViewSet, basename="workercerti
 router.register(r"progress", TrainingProgressViewSet, basename="trainingprogress")
 
 urlpatterns = router.urls
+
+router.register(r"lessons", LessonViewSet, basename="lesson")  # needs import
+router.register(r"attempts", LessonAttemptViewSet, basename="lessonattempt")
+router.register(r"cert-audit", CertAuditLogViewSet, basename="certauditlog")

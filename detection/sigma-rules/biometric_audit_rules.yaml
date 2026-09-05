@@ -1,0 +1,308 @@
+title: EEL — Biometric Audit Log Tampering
+id: eel-bvr-0001
+status: production
+description: Audit log file deleted, truncated, or modified after enrollment session.
+references:
+  - DPA 2019 Kenya §6
+  - Elections Act §34
+  - NIST SP 800-53 AU-2
+tags:
+  - audit.tamper
+  - file.delete
+  - DPA-2019-S6
+logsource:
+  product: linux
+  service: syslog
+  category: file_audit
+detection:
+  selection:
+    - FileName|contains:
+      - '.audit'
+      - '.log'
+      - 'audit_shadow'
+      Directory|contains: '/data/data/com.eel.bvr' or '/data/data/com.eel.bvi' or '/data/local/eel/audit'
+  condition: selection
+level: critical
+fields:
+  - SubjectUserName
+  - SubjectDomainName
+  - FileName
+  - CommandLine
+  - IpAddress
+
+---
+title: EEL — Biometric Enrollment From Untrusted Location
+id: eel-bvr-0002
+status: production
+description: BVR enrollment attempted outside station polygon boundary.
+references:
+  - Elections Act §34
+  - DPA 2019 Kenya §6
+tags:
+  - election.integrity
+  - gps.spoof
+  - DPA-2019-S6
+logsource:
+  product: linux
+  service: auditd
+detection:
+  selection:
+    - Image|contains: 'com.eel.bvr' or 'bvr-kit'
+    - CommandLine|contains: 'enrol' or 'enrollment'
+  filter_location_mismatch:
+    - GpsCoordinates|contains: 'outside_polygon'
+  condition: selection and filter_location_mismatch
+level: warning
+
+---
+title: EEL — Proof Hash Mismatch on Enrollment
+id: eel-bvr-0003
+status: production
+description: Proof hash in audit entry does not match recomputed SHA-256 of payload — audit chain broken.
+references:
+  - RFC 8785 (canonical JSON)
+  - NIST SP 800-53 AU-10
+tags:
+  - audit.integrity
+  - hash.mismatch
+  - DPA-2019-S6
+logsource:
+  product: eel
+  service: audit_service
+detection:
+  selection:
+    EventType: 'enrollment'
+    ProofHashStatus: 'mismatch'
+  condition: selection
+level: critical
+fields:
+  - auditId
+  - actorId
+  - actorRole
+  - proofHash
+  - expectedProofHash
+
+---
+title: EEL — Ed25519 Signature Verification Failed
+id: eel-bvr-0004
+status: production
+description: Ed25519 signature on audit entry failed verification — tampering detected.
+references:
+  - NIST SP 800-53 AU-10
+  - DPA 2019 Kenya §6
+tags:
+  - crypto.integrity
+  - signature.fail
+  - DPA-2019-S6
+logsource:
+  product: eel
+  service: audit_service
+detection:
+  selection:
+    EventType: 'enrollment' or 'verification'
+    SignatureStatus: 'invalid'
+  condition: selection
+level: critical
+
+---
+title: EEL — Dual Biometric Capture Failed — Fingerprint Quality Below Threshold
+id: eel-bvr-0005
+status: production
+description: Fingerprint quality score below configured minimum (BiometricCapturePolicy fpMinQuality).
+references:
+  - M3 hardware integration spec
+  - ICAO 9303
+tags:
+  - biometric.quality
+  - FAP60
+  - enrollment.quality
+logsource:
+  product: eel
+  service: biometric_capture
+detection:
+  selection:
+    BiometricType: 'fingerprint'
+    QualityScore|lt: 50
+  condition: selection
+level: warning
+fields:
+  - sessionId
+  - qualityScore
+  - fpMinQuality
+  - environmentHint
+
+---
+title: EEL — Dual Biometric Capture Failed — Iris Quality Below Threshold
+id: eel-bvr-0006
+status: production
+description: Iris quality score below configured minimum (BiometricCapturePolicy irisMinQuality).
+references:
+  - M3 hardware integration spec
+tags:
+  - biometric.quality
+  - AntIris
+  - enrollment.quality
+logsource:
+  product: eel
+  service: biometric_capture
+detection:
+  selection:
+    BiometricType: 'iris'
+    QualityScore|lt: 40
+  condition: selection
+level: warning
+
+---
+title: EEL — Local Duplicate Enrollment Rejected
+id: eel-bvr-0007
+status: production
+description: BiometricSubmissionOutbox detected local duplicate (same fingerprint/iris template on same device).
+references:
+  - M3 local dedup spec
+tags:
+  - deduplication
+  - local.duplicate
+logsource:
+  product: eel
+  service: outbox
+detection:
+  selection:
+    EventType: 'local_dedup_rejection'
+    DedupResult: 'duplicate'
+  condition: selection
+level: info
+fields:
+  - submissionId
+  - existingSubmissionId
+  - matchType
+  - actorId
+
+---
+title: EEL — Operator-Controlled Upload Initiated
+id: eel-bvr-0008
+status: production
+description: Operator manually initiated biometric upload to BFF — network connectivity confirmed.
+references:
+  - M3 offline-first spec
+tags:
+  - audit.trail
+  - operator.action
+  - upload
+logsource:
+  product: eel
+  service: outbox
+detection:
+  selection:
+    EventType: 'upload_initiated'
+  condition: selection
+level: info
+
+---
+title: EEL — Partition Filter Selection for 1:N Search
+id: eel-bvr-0009
+status: production
+description: Operator selected partition filters before 1:N biometric search — audit logged.
+references:
+  - docs/mobile/PARTITION_BUCKETS.md
+tags:
+  - audit.trail
+  - operator.selection
+  - partition.search
+logsource:
+  product: eel
+  service: outbox
+detection:
+  selection:
+    EventType: 'partition_selection'
+  condition: selection
+level: info
+
+---
+title: EEL — BVR Enrollment Outside Registration Window
+id: eel-bvr-0010
+status: production
+description: Biometric enrollment attempted outside official registration hours.
+references:
+  - Elections Act
+tags:
+  - election.integrity
+  - off-hours
+logsource:
+  product: eel
+  service: audit_service
+detection:
+  selection:
+    EventType: 'enrollment'
+    UtcHour:
+      lt: 7
+      gt: 18
+  condition: selection
+level: warning
+fields:
+  - auditId
+  - actorId
+  - whenUtc
+
+---
+title: EEL — BVR Station ID Mismatch in Audit
+id: eel-bvr-0011
+status: production
+description: Station ID in audit entry does not match operator's authenticated station.
+references:
+  - DPA 2019 Kenya §6
+tags:
+  - audit.integrity
+  - station.mismatch
+  - DPA-2019-S6
+logsource:
+  product: eel
+  service: audit_service
+detection:
+  selection:
+    EventType: 'enrollment'
+    AuditStationId|contains: 'mismatch'
+  condition: selection
+level: critical
+
+---
+title: EEL — Duplicate Person ID in IPRS Response
+id: eel-bvr-0012
+status: production
+description: IPRS returned multiple records for single national ID — potential duplicate identity.
+references:
+  - Kenya IPRS integration
+  - Elections Act §12
+tags:
+  - election.integrity
+  - iprs.duplicate
+logsource:
+  product: eel
+  service: iprs_client
+detection:
+  selection:
+    EventType: 'iprs_verify'
+    ResponseRecordCount:
+      gt: 1
+  condition: selection
+level: critical
+
+---
+title: EEL — MRZ Check Digit Validation Failed
+id: eel-bvr-0013
+status: production
+description: Machine Readable Zone (ICAO 9303) check digit validation failed on document scan.
+references:
+  - ICAO 9303
+  - NIST SP 800-76
+tags:
+  - document.validation
+  - mrz
+logsource:
+  product: eel
+  service: mrz_scanner
+detection:
+  selection:
+    EventType: 'mrz_scan'
+    CheckDigitStatus: 'failed'
+  condition: selection
+level: warning

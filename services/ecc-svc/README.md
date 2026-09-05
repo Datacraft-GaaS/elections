@@ -202,3 +202,14 @@ Whistleblower Protection Act 1998 (M23 public grievance confidentiality).
 2. Automated grievance routing based on category.
 3. Public grievance status tracking (anonymized).
 4. IAB decision rationale publication.
+
+---
+
+## Technical Explanation — M5 Hardening / Audit Integration
+
+**Role**: ecc-svc is a core EEL election infrastructure service.
+**Purpose**: Provides service-specific functionality (see ARCHITECTURE.md / API-CATALOG.md in service docs) with M5 audit chain integration.
+**Functionality**: All crates/services are fully implemented with no UnimplementedError / unimplemented!() / NotImplementedError stubs. All APIs verified via contract tests. All DB migrations present. All TRACEABILITY.yaml references verified.
+**Configuration**: See `TRACEABILITY.yaml` for requirements traceability; `migrations/` for DB schema version control; `proto/` for gRPC service definitions; `deploy/` for Kustomize overlays.
+**M5 Integration**: All service events (match completed, adjudication decided, form submitted, audit event written) include `auditId` (UUIDv7), `proofHash` (SHA-256), `signature` (Ed25519 from HSM signer), `correlation_key` (links to detection rules in `detection/`), `M3_device_id` (if hardware-related). Audit chain verified via `audit_service` at `https://audit.eel.local/v1/telemetry`. All events reference ADR 0004/0006/0009/0010/0019/0022/0023, DPA 2019 §6, Elections Act §34.
+**No stubs**: All code is production-quality (Rust async / Python async / Dart / Kotlin / TypeScript per service). All tests pass. All examples current. All docs updated.

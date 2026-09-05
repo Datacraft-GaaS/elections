@@ -1,0 +1,6 @@
+<decoder name="operator-decoder">
+  <prematch>^\{"actorId":"</prematch>
+  <plugin_decoder>SUSE</plugin_decoder>
+  <regex>actorId</regex>
+  <order>actorId,actorRole,eventType,stationId,whenUtc</order>
+</decoder>

@@ -1,0 +1,120 @@
+title: EEL — Form Integrity — Form 34A Modified After Ed25519 Signature
+id: eel-fi-001
+status: critical
+description: Form 34A file modified after Ed25519 signature timestamp — tamper-evident chain broken.
+references:
+  - Elections Act §34
+  - ADR-0017-transparency-log
+logsource:
+  product: linux
+  service: syslog
+  category: file_access
+detection:
+  selection:
+    EventType: 'file_modify'
+    FilePath|contains: 'form34a' or '34A'
+  time_filter:
+    ModifyTime|gt: SignatureTime
+  condition: selection and time_filter
+level: critical
+fields: [auditId, filePath, signatureTime, modifyTime, signatureHash, actorId]
+tags:
+  - form.integrity
+  - tamper-evident
+  - Elections-Act-S34
+
+---
+title: EEL — Form Integrity — Form 34A / 34B / 34C Accessed by Unauthorized Process
+id: eel-fi-002
+status: alert
+description: Form 34A/B/C file accessed by process other than poll_clerk/observer/admin/form_service.
+references:
+  - Elections Act §34
+  - DPA-2019-S6
+logsource:
+  product: linux
+  service: auditd
+detection:
+  selection:
+    EventType: 'file_read'
+    FilePath|contains: 'form34a' or 'form34b' or 'form34c'
+    ProcessName: not in ['com.eel.poll_clerk', 'com.eel.observer', 'com.eel.admin', 'form_service', 'auditor']
+  condition: selection
+level: alert
+fields: [auditId, filePath, processName, actorId, whenUtc, stationId]
+tags:
+  - form.integrity
+  - unauthorized-access
+  - Elections-Act-S34
+
+---
+title: EEL — Form Integrity — Form 34A Upload Failure
+id: eel-fi-003
+status: warning
+description: Form 34A upload to central storage failed — possible data loss, requires manual intervention.
+references:
+  - Elections Act §34
+  - ADR-0019-edge-topology
+logsource:
+  product: eel
+  service: form_upload
+detection:
+  selection:
+    EventType: 'form_34a_upload'
+    Status: 'failed'
+  condition: selection
+level: warning
+fields: [auditId, formId, stationId, attemptCount, errorMessage, whenUtc]
+tags:
+  - form.integrity
+  - upload-failure
+  - audit.trail
+
+---
+title: EEL — Form Integrity — Form 34A Signature with Invalid Ed25519 Public Key
+id: eel-fi-004
+status: critical
+description: Form 34A signed with Ed25519 key not in approved operator key registry — possible impersonation.
+references:
+  - Elections Act §34
+  - ADR-0007-authn-authz-secrets
+logsource:
+  product: eel
+  service: form_signing
+detection:
+  selection:
+    EventType: 'form_sign'
+    SignatureStatus: 'unauthorized_key'
+    PublicKeyStatus: 'not_in_registry'
+  condition: selection
+level: critical
+fields: [auditId, formId, publicKeyFingerprint, actorId, stationId, whenUtc]
+tags:
+  - form.integrity
+  - signature.invalid
+  - Elections-Act-S34
+
+---
+title: EEL — Form Integrity — Form 34A Submission Outside Polling Hours
+id: eel-fi-005
+status: alert
+description: Form 34A submitted outside official polling hours (06:00-18:00) — possible premature/duplicate submission.
+references:
+  - Elections Act
+logsource:
+  product: eel
+  service: form_upload
+detection:
+  selection:
+    EventType: 'form_34a_submission'
+  time_filter:
+    UtcHour:
+      lt: 6
+      gt: 18
+  condition: selection and time_filter
+level: alert
+fields: [auditId, formId, stationId, whenUtc, actorId]
+tags:
+  - form.integrity
+  - off-hours
+  - audit.trail

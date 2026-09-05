@@ -1,0 +1,58 @@
+# Canary tokens — M5 hardening: detect unauthorized access to biometric/audit data.
+# References: ADR 0004 (Platform), ADR 0006 (Build supply chain)
+# Strategy: embedded honey-URLs, fake audit entries, fake biometric templates,
+# and HSM key files that should never be accessed outside attestation flow.
+#
+# Deployment: injected during build via build.rs / build.py; verified at M5 48h drill.
+# Each token includes a unique UUIDv7 (tetragon/falco correlation).
+#
+# Security notes:
+# - Tokens are non-functional (no valid biometric data, no real keys)
+# - Access triggers audit event via EelAttestationClient + Falco rule
+# - Correlation key links token event to audit entry (auditId + correlationId)
+
+---
+# 1. Fake HSM signing key (should never be read by non-attestation process)
+api_version: eel-v1
+token_type: hsm_key
+id: canary-hsm-key-001
+label: "fake-ed25519-key"
+path_target: "/data/local/eel/canary/fake-ed25519-key.bin"
+correlation_id: "tetragon-corr-001"
+trigger_action: audit_alert_critical
+reference: ADR-0004-ADR-0006-M5-hardening
+
+---
+# 2. Fake biometric audit entry (fake enrollment record — should never be queried by BFF)
+api_version: eel-v1
+token_type: fake_audit_record
+description: "Canary entry for audit log tampering detection. Any query of this auditId from non-attestation process = alert."
+id: canary-audit-001
+fake_audit_id: "c7d2a34e8a91b3c4d8e7f9210c3b5a6e"
+correlation_key: "audit-corr-001"
+payload_ref: "fake-payload-hash-c7d2a34e"
+trigger_on_access: true
+trigger_action: audit_alert_critical
+reference: ADR-0004-M5-hardening
+
+---
+# 3. Fake biometric template (fake fingerprint/iris — never matches real user)
+api_version: eel-v1
+token_type: fake_biometric_template
+description: "Canary biometric template stored in BVR outbox directory. Access = alert."
+id: canary-bio-tpl-001
+fake_template_path: "/data/user_de/0/com.eel.bvr/files/biometric/canary-tpl-001.bin"
+correlation_key: "bio-corr-001"
+trigger_action: audit_alert_critical
+reference: ADR-0004-M5-hardening
+
+---
+# 4. Fake IPRS endpoint (fake national ID record — should not exist)
+api_version: eel-v1
+token_type: fake_iprs_record
+id: canary-iprs-001
+fake_person_id: "IPRS-CANARY-001"
+correlation_key: "iprs-corr-001"
+description: "Fake IPRS response. Any BFF query returning this ID = canary triggered."
+trigger_action: audit_alert_critical
+reference: ADR-0006-M5-hardening

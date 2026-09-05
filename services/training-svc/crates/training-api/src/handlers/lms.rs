@@ -57,3 +57,8 @@ pub async fn confirm_briefing(Path(worker_id): Path<Uuid>) -> impl IntoResponse 
     info!(worker_id=%worker_id, "confirm_briefing");
     Json(serde_json::json!({ "worker_id": worker_id, "briefing_confirmed": true }))
 }
+
+pub async fn consume_crms_registered(Json(req): Json<serde_json::Value>) -> impl IntoResponse {
+    info!(party_id=?req.get("party_id"), "crms.party.registered -> enroll");
+    Json(serde_json::json!({"enrolled":true,"correlation_key":"crms-party-"}))
+}

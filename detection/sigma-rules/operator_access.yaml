@@ -1,0 +1,98 @@
+title: EEL — Operator — Role Escalation Attempt (Poll Clerk → Observer / Admin)
+id: eel-oa-001
+status: critical
+description: Operator attempts to change role from poll_clerk to observer or admin — privilege escalation.
+references:
+  - DPA-2019-S6
+  - Elections Act §34
+logsource:
+  product: eel
+  service: audit_service
+detection:
+  selection:
+    EventType: 'role_change'
+  filter_escalation:
+    CurrentRole: 'poll_clerk'
+    TargetRole: 'observer' or 'admin' or 'returning_officer'
+  condition: selection and filter_escalation
+level: critical
+fields: [auditId, actorId, currentRole, targetRole, stationId, whenUtc, reason]
+tags:
+  - operator.abuse
+  - privilege-escalation
+  - DPA-2019-S6
+
+---
+title: EEL — Operator — Authentication Retries Exceeded (Brute Force)
+id: eel-oa-002
+status: warning
+description: More than 3 failed authentication attempts within 60 seconds for same operator — brute force attack.
+references:
+  - DPA-2019-S6
+  - NIST-SP-800-63B
+logsource:
+  product: eel
+  service: auth_service
+detection:
+  selection:
+    EventType: 'auth_failure'
+  rate_filter:
+    Count: > 3
+    TimeWindow: 60s
+    ActorId: same
+  condition: selection and rate_filter
+level: warning
+fields: [auditId, actorId, attemptCount, timeWindow, stationId, whenUtc]
+tags:
+  - operator.abuse
+  - brute-force
+  - DPA-2019-S6
+
+---
+title: EEL — Operator — Unauthorized Access to Another Station's Audit Records
+id: eel-oa-003
+status: critical
+description: Operator accessed audit records for station they are not assigned to — cross-station data access.
+references:
+  - DPA-2019-S6 (data minimization)
+  - Elections Act §34
+logsource:
+  product: eel
+  service: audit_service
+detection:
+  selection:
+    EventType: 'audit_query'
+  filter_unauthorized_station:
+    AssignedStationId: not in [RequestedStationId]
+    ActorRole: not in ['admin', 'auditor', 'returning_officer']
+  condition: selection and filter_unauthorized_station
+level: critical
+fields: [auditId, actorId, assignedStationId, requestedStationId, whenUtc]
+tags:
+  - operator.abuse
+  - unauthorized-access
+  - DPA-2019-S6
+
+---
+title: EEL — Operator — Session Token Copied to Untrusted Location
+id: eel-oa-004
+status: critical
+description: Operator session token (JWT / bearer) copied to external storage or shared — session hijacking risk.
+references:
+  - ADR-0007-authn-authz-secrets
+  - DPA-2019-S6
+logsource:
+  product: linux
+  service: auditd
+detection:
+  selection:
+    EventType: 'file_copy'
+    FilePath|contains: 'session_token' or 'bearer' or '.token'
+    DestinationPath|contains: '/external/' or '/sdcard/' or '/tmp/'
+  condition: selection
+level: critical
+fields: [auditId, actorId, sourcePath, destinationPath, whenUtc]
+tags:
+  - operator.abuse
+  - session-hijacking
+  - DPA-2019-S6

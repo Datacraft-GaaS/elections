@@ -1,0 +1,101 @@
+title: EEL — Supply Chain — APK Signature Verification Failed at Runtime
+id: eel-sc-001
+status: critical
+description: APK integrity check (Ed25519 / SHA-256) failed at runtime — possible repackaging / tampering.
+references:
+  - ADR-0006-build-supply-chain
+  - NIST-SSDF
+  - DPA-2019-S6
+logsource:
+  product: eel
+  service: build_integrity
+detection:
+  selection:
+    EventType: 'apk_signature_check'
+    SignatureStatus: 'failed'
+  condition: selection
+level: critical
+fields:
+  - auditId
+  - apkPath
+  - expectedSha256
+  - actualSha256
+  - expectedSignature
+  - buildTimestamp
+  - actorId
+tags:
+  - supply-chain
+  - integrity
+  - ADR-0006
+
+---
+title: EEL — Supply Chain — Shared Library Replaced (Different Hash)
+id: eel-sc-002
+status: critical
+description: Native library (libflutter.so, libbvr.so) replaced — build injection or malicious replacement.
+references:
+  - ADR-0006-build-supply-chain
+  - M3-HARDWARE-INTEGRATION
+logsource:
+  product: eel
+  service: supply_chain
+detection:
+  selection:
+    EventType: 'library_integrity_check'
+    HashStatus: 'mismatch'
+    LibraryPath: exists
+  condition: selection
+level: critical
+fields: [auditId, libraryPath, expectedHash, actualHash, buildTimestamp, deviceId]
+tags:
+  - supply-chain
+  - library
+  - ADR-0006
+
+---
+title: EEL — Supply Chain — Binary Timestamp in Future (Backdated Injection)
+id: eel-sc-003
+status: critical
+description: Executable timestamp set to future date — indicates backdated supply-chain injection.
+references:
+  - ADR-0006
+  - NIST-SSDF
+logsource:
+  product: linux
+  service: syscall
+detection:
+  selection:
+    EventType: 'execution'
+    BinaryPath: exists
+    TimestampStatus: 'future'
+  condition: selection
+level: critical
+fields: [auditId, binaryPath, timestamp, expectedTimestamp, actorId, deviceId]
+tags:
+  - supply-chain
+  - backdate
+  - ADR-0006
+
+---
+title: EEL — Supply Chain — APK Modified After Installation but Before Launch
+id: eel-sc-004
+status: critical
+description: APK file modified after initial install but before verified launch — tampering window.
+references:
+  - ADR-0006
+  - Elections Act §34 (tamper-evident)
+logsource:
+  product: linux
+  service: file_integrity
+detection:
+  selection:
+    EventType: 'file_modify'
+    FilePath|contains: '/data/app/com.eel.'
+    TimeAfterInstall: true
+  condition: selection
+level: alert
+fields: [auditId, filePath, installTime, modifyTime, actorId, deviceId]
+tags:
+  - supply-chain
+  - integrity
+  - ADR-0006

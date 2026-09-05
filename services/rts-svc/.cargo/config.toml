@@ -1,0 +1,19 @@
+# EEL Supply-Chain Hardening — .cargo/config.toml
+# Imposes locked/frozen builds and runs audit/deny on every build.
+
+[build]
+# Require exact Cargo.lock match — no network updates during build
+rustflags = ["--deny=unused-variables", "--deny=unused-mut", "--deny=unsafe-code"]
+
+[target.'cfg(not())']
+# Future: per-target config
+
+# Aliases: enforce locked builds at repo level
+[alias]
+# frozen-check: abort if lockfile changed
+check-frozen = "check --frozen"
+build-locked = "build --locked"
+test-locked  = "test  --locked"
+audit        = "binstall cargo-audit && cargo audit"
+deny-check   = "binstall cargo-deny && cargo deny check"
+scan-advisories = "audit --advisories"

@@ -1,0 +1,136 @@
+# Tetragon eBPF policies — M5 security hardening for biometric/kit devices.
+# Installed via Tetragon agent on Android (user-space) / Linux (kit-server).
+# References: ADR 0004 (Platform), ADR 0009 (Resilience posture), ADR 0010 (Edge/DDoS)
+# Enables real-time process/file/network monitoring for BVR/BVI/RTS devices.
+
+---
+# Process execution policy — only allow biometric app binaries to execute from expected paths
+process_selector:
+  namespace: [host, container, kubernetes]
+  binary_selector:
+    operator: In
+    values:
+      - "/system/bin/app_process"
+      - "/data/data/com.eel.bvr/lib/libflutter.so"
+      - "/data/data/com.eel.bvi/lib/libflutter.so"
+      - "/data/app/com.eel.poll_clerk/lib/libflutter.so"
+  match_policies:
+    - match_download: true
+    - match_localhost_request: true
+
+---
+# File access policy — restrict biometric data access to expected directories
+file_selector:
+  namespace: [host, container]
+  file_selector:
+    namespace: [host, container, kubernetes]
+  path_selector:
+    operator: In
+    values:
+      - "/data/data/com.eel.bvr/"
+      - "/data/user_de/0/com.eel.bvr/"
+      - "/data/data/com.eel.bvi/"
+      - "/data/user_de/0/com.eel.bvi/"
+      - "/data/local/eel/biometric/"
+  match_policies:
+    - match_read_write: true
+    - match_delete: true
+
+---
+# Network access — only allow BFF and IPRS endpoints
+network_selector:
+  namespace: [host, container]
+  binary_selector:
+    operator: In
+    values:
+      - "/system/bin/app_process"
+      - "/data/data/com.eel.bvr/lib/libflutter.so"
+  cgroup_selector: {}
+  process_selector: {}
+  namespace_selector: [host]
+  match_policies:
+    - match_established: true
+    - match_listening: false
+  forbidden_network_policies:
+    - to: ["0.0.0.0/0"]
+      except:
+        - "bvr.eel.local/32"
+        - "bvi.eel.local/32"
+        - "iprs.go.ke/32"
+        - "api.eel.local/32"
+    - to_ports: ["22", "3389", "5900"]
+
+---
+# Capability drop — restrict biometric apps from dangerous capabilities
+process_capabilities:
+  - drop_capabilities: ["CAP_SYS_ADMIN", "CAP_SYS_PTRACE", "CAP_SYS_MODULE", "CAP_MKNOD"]
+  - add_capabilities: ["CAP_IPC_LOCK", "CAP_NET_BIND_SERVICE"]  # for secure storage + binding
+  - match_policies:
+    - match_read_write: true
+    - match_network: true
+
+---
+# Kernel module / syscall filtering
+syscall_filter:
+  namespace: [host]
+  syscall_selector:
+    operator: NotIn
+    values:
+      - "execve"
+      - "execveat"
+      - "openat"
+      - "connect"
+      - "bind"
+      - "delete_module"
+  exception_selector:
+    binary_selector:
+      operator: In
+      values:
+        - "/system/bin/app_process"
+        - "/data/app/com.eel.bvr/lib/libflutter.so"
+  match_policies:
+    - match_read_write: true
+    - match_network: true
+    - match_process: true
+
+---
+# File integrity — biometrics must not modify their own executable
+file_integrity:
+  namespace: [host, container]
+  binary_selector:
+    operator: In
+    values:
+      - "/data/app/com.eel.bvr/lib/libflutter.so"
+      - "/data/app/com.eel.bvi/lib/libflutter.so"
+  match_policies:
+    - match_read_write: true
+    - match_delete: true
+
+---
+# Audit event emission — every process/file/network event writes to audit
+audit_emission:
+  namespace: [host, container]
+  event_selector:
+    all: true
+  destination:
+    url: "https://audit.eel.local/v1/telemetry"
+    auth_token_ref: "eel-audit-token"
+  match_policies:
+    - match_read_write: true
+    - match_file_open: true
+    - match_process_exec: true
+    - match_network_connect: true
+
+---
+# Security event correlation — emit critical events to central detection
+security_events:
+  namespace: [host, container]
+  event_selector:
+    critical: true
+    alert: true
+    emergency: true
+  destination:
+    url: "https://falco.eel.local/v1/falco"
+    auth_token_ref: "falco-token"
+  match_policies:
+    - match_read_write: true

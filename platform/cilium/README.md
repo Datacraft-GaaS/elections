@@ -54,3 +54,24 @@ Each service's Kustomize overlay (`services/<svc>/deploy/overlays/*/`) includes 
 - `platform/spire/README.md`: SPIFFE workload identity
 - `platform/observability/README.md`: Hubble flow integration
 - `docs/runbooks/network-policy-debug.md`: debugging blocked connections
+
+---
+
+## Technical Explanation (Extended)
+
+**Role**: Cilium provides the CNI (Container Network Interface) and network policy enforcement for EEL. It uses eBPF to enforce L3/L4/L7 network policies, DNS-based policies, and provides transparent observability via Hubble.
+
+**Purpose**: Zero-trust network — default deny, explicit allow; enforced at kernel level via eBPF (not iptables). All cross-namespace and cross-service communication is policy-controlled.
+
+**Functionality**:
+- `default-deny.yaml`: Global default-deny CiliumNetworkPolicy — all ingress and egress blocked unless explicitly allowed
+- `values.yaml`: Production Cilium Helm values — eBPF datapath, Hubble enabled (flow observability), kube-proxy replacement, nodeinit for CNI
+- `local/values.yaml`: kind overlay — host routing, no kube-proxy replacement (for local dev)
+- Hubble: L7 visibility for all HTTP/gRPC traffic; Hubble UI for flow debugging
+- `default-deny.yaml` allows only: cluster-internal DNS, kube-apiserver, OTEL endpoint (4317/TCP), audit endpoint (8443/TCP, 443/TCP)
+
+**No stubs**: `default-deny.yaml` has real CiliumNetworkPolicy; `values.yaml` has real Helm values; `local/values.yaml` has real kind-specific overrides.
+
+**M5 Integration**: Cilium network policies enforce the zero-trust model for M5. All blocked traffic (default deny) is visible in Hubble and triggers Falco network rules (network_exfil.yaml, eel_net_001-005). During M5 48h drill, any unexpected network connection attempt is blocked by Cilium and correlated via audit chain (auditId + correlation_key).
+
+**References**: ADR 0004 (Platform — CNI + network policy), ADR 0010 (Edge/DDoS — zero-trust network enforced by Cilium), ADR 0019 (Edge topology — node-local CNI for edge sites), M3-HARDWARE-INTEGRATION (HSM node network isolation), M5-SMS-USB-MANIFEST (network audit chain), NIST SP 800-53 SC-7 (Boundary protection), NIST SP 800-53 SC-8 (Communications security).

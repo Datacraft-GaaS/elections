@@ -1,0 +1,6 @@
+<decoder name="falco-decoder">
+  <prematch>^\{"priority":"</prematch>
+  <plugin_decoder>SUSE</plugin_decoder>
+  <regex>priority</regex>
+  <order>priority,rule,output,proc.name,user.name,node,tag</order>
+</decoder>

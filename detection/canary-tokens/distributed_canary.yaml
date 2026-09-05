@@ -1,0 +1,334 @@
+# Distributed canary token deployment — M5 hardening extended.
+# References: ADR 0004 (Platform), ADR 0006 (Build & supply chain), ADR 0019 (Edge topology),
+#             ADR 0022 (Release & DR), ADR 0023 (RFP alignment), NIST SP 800-53 SI-4.
+# Strategy: each canary token has a unique UUIDv7 + correlation_key; trigger routes to
+# audit_service, falco, wazuh, tetragon, SRE alert, and central detection stack.
+# Deployment: build.rs (Rust), build.py (Python), build.dart (Dart) inject at M5 build.
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 1. AUDIT CHAIN CANARIES (tamper detection)
+# ──────────────────────────────────────────────────────────────────────────────
+
+api_version: eel-v1
+metadata:
+  namespace: canary-audit
+  description: |
+    Audit-chain canaries detect tampering/replay attempts on EEL audit entries.
+    Each entry mirrors a real audit schema but is identified as canary.
+    Real audit_service must never emit these; only the canary-injector does.
+    Any query that returns this audit_id from a non-attestation process = ALERT.
+  references: [ADR-0004, NIST-SP-800-53-AU-2, DPA-2019-S6, Elections-Act-S34]
+
+tokens:
+  - id: canary-audit-vote-001
+    type: fake_audit_record
+    label: "fake_voter_registration"
+    fake_audit_id: "c7d2a34e8a91b3c4d8e7f9210c3b5a6e"
+    correlation_key: "audit-corr-vote-001"
+    fields:
+      eventType: "voter_registration"
+      actorId: "canary-actor-001"
+      actorRole: "voter"
+      stationId: "station-canary-001"
+      whenUtc: "2024-08-09T07:00:00Z"
+      proofHash: "0000000000000000000000000000000000000000000000000000000000000000"
+      signature: "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    triggers:
+      - on_access: read
+        action: alert_critical
+        target: [falco, wazuh, audit_service]
+        correlation: correlation_key
+
+  - id: canary-audit-tally-001
+    type: fake_audit_record
+    label: "fake_tally_submission"
+    fake_audit_id: "d8e3b45f9b02c4d5e9f8a0321d4c6b7f"
+    correlation_key: "audit-corr-tally-001"
+    fields:
+      eventType: "tally_submission"
+      actorId: "canary-actor-002"
+      actorRole: "returning_officer"
+      stationId: "station-canary-002"
+      whenUtc: "2024-08-09T17:00:00Z"
+      proofHash: "1111111111111111111111111111111111111111111111111111111111111111"
+      signature: "1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+    triggers:
+      - on_access: read
+        action: alert_critical
+        target: [falco, wazuh, audit_service]
+
+  - id: canary-audit-form-001
+    type: fake_audit_record
+    label: "fake_form_34A_signed"
+    fake_audit_id: "e9f4c56a0c13d5e6f0a9b1432e5d7c8a"
+    correlation_key: "audit-corr-form-001"
+    fields:
+      eventType: "form_34a_signed"
+      actorId: "canary-actor-003"
+      actorRole: "presiding_officer"
+      stationId: "station-canary-003"
+      whenUtc: "2024-08-09T18:30:00Z"
+      proofHash: "2222222222222222222222222222222222222222222222222222222222222222"
+      signature: "2222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222"
+    triggers:
+      - on_access: read
+        action: alert_critical
+        target: [falco, wazuh, audit_service]
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 2. BIOMETRIC CANARIES (template + capture integrity)
+# ──────────────────────────────────────────────────────────────────────────────
+
+api_version: eel-v1
+metadata:
+  namespace: canary-biometric
+  description: |
+    Biometric canaries detect unauthorized fingerprint/iris template access.
+    Canary templates are stored in BVR outbox; access by non-attestation = ALERT.
+  references: [ADR-0004, M3-HARDWARE-INTEGRATION, NIST-SP-800-76]
+
+tokens:
+  - id: canary-bio-fp-001
+    type: fake_biometric_template
+    label: "fake_fingerprint_template_v1"
+    fake_template_path: "/data/user_de/0/com.eel.bvr/files/biometric/canary-fp-001.bin"
+    correlation_key: "bio-corr-fp-001"
+    format: "ANSI-378"  # standard fingerprint template format
+    fake_features: 32  # minutae count
+    quality_score: 99  # high quality (looks legitimate)
+    triggers:
+      - on_access: read
+        action: alert_critical
+        target: [falco, wazuh, audit_service]
+      - on_access: write
+        action: alert_emergency
+        target: [falco, wazuh, audit_service, sre_pager]
+
+  - id: canary-bio-fp-002
+    type: fake_biometric_template
+    label: "fake_fingerprint_template_v2"
+    fake_template_path: "/data/user_de/0/com.eel.bvr/files/biometric/canary-fp-002.bin"
+    correlation_key: "bio-corr-fp-002"
+    format: "ISO-19794-2"
+    fake_features: 48
+    quality_score: 95
+
+  - id: canary-bio-iris-001
+    type: fake_biometric_template
+    label: "fake_iris_template_v1"
+    fake_template_path: "/data/user_de/0/com.eel.bvi/files/biometric/canary-iris-001.bin"
+    correlation_key: "bio-corr-iris-001"
+    format: "ISO-19794-6"
+    fake_features: 256
+    quality_score: 98
+    triggers:
+      - on_access: read
+        action: alert_critical
+        target: [falco, wazuh, audit_service]
+      - on_access: write
+        action: alert_emergency
+        target: [falco, wazuh, audit_service, sre_pager]
+
+  - id: canary-bio-mrz-001
+    type: fake_document_scan
+    label: "fake_mrz_scanned_passport"
+    fake_template_path: "/data/user_de/0/com.eel.bvr/files/mrz/canary-mrz-001.bin"
+    correlation_key: "bio-corr-mrz-001"
+    format: "ICAO-9303-MRZ"
+    fake_document_number: "CANARY-PASSPORT-001"
+    fake_check_digits: "00000000"
+    triggers:
+      - on_access: read
+        action: alert_warning
+        target: [falco, wazuh]
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 3. CRYPTO / HSM CANARIES (key material)
+# ──────────────────────────────────────────────────────────────────────────────
+
+api_version: eel-v1
+metadata:
+  namespace: canary-crypto
+  description: |
+    Crypto canaries detect unauthorized access to HSM-backed Ed25519 keys
+    and AES-256 encrypted blobs. All keys are non-functional.
+    Any read/extract of these is treated as a key extraction attempt.
+  references: [ADR-0004, ADR-0005, FIPS-140-3, DPA-2019-S6]
+
+tokens:
+  - id: canary-crypto-ed25519-001
+    type: fake_hsm_key
+    label: "fake_ed25519_signing_key"
+    fake_key_path: "/data/local/eel/canary/fake-ed25519-key.bin"
+    correlation_key: "crypto-corr-ed25519-001"
+    key_algorithm: "Ed25519"
+    key_size_bits: 256
+    fake_fingerprint: "ab:cd:ef:01:23:45:67:89"
+    triggers:
+      - on_access: read
+        action: alert_emergency
+        target: [falco, wazuh, audit_service, sre_pager]
+      - on_access: write
+        action: alert_emergency
+        target: [falco, wazuh, audit_service, sre_pager]
+      - on_access: extract
+        action: alert_emergency
+        target: [falco, wazuh, audit_service, sre_pager, sre_escalation]
+
+  - id: canary-crypto-aes-001
+    type: fake_encrypted_blob
+    label: "fake_aes256_encrypted_blob"
+    fake_path: "/data/local/eel/canary/fake-aes-256-blob.bin"
+    correlation_key: "crypto-corr-aes-001"
+    encryption: "AES-256-GCM"
+    fake_iv: "000000000000000000000000"
+    fake_tag: "0000000000000000"
+    triggers:
+      - on_access: read
+        action: alert_critical
+        target: [falco, wazuh, audit_service]
+      - on_access: decrypt
+        action: alert_critical
+        target: [falco, wazuh, audit_service]
+
+  - id: canary-crypto-jwt-001
+    type: fake_jwt_token
+    label: "fake_jwt_bearer_token"
+    fake_token_path: "/data/local/eel/canary/fake-jwt-token.txt"
+    correlation_key: "crypto-corr-jwt-001"
+    claims:
+      sub: "canary-user-001"
+      iss: "https://canary.eel.local"
+      aud: "bvr.eel.local"
+      exp: 99999999999
+    triggers:
+      - on_access: read
+        action: alert_critical
+        target: [falco, wazuh, audit_service]
+      - on_use: present_token
+        action: alert_critical
+        target: [falco, wazuh, audit_service]
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 4. NETWORK CANARIES (C2 / exfil detection)
+# ──────────────────────────────────────────────────────────────────────────────
+
+api_version: eel-v1
+metadata:
+  namespace: canary-network
+  description: |
+    Network canaries detect command-and-control communication and exfil.
+    These are fake endpoints/credentials embedded in the build.
+    Any connection/use from real BVR/BVI = ALERT.
+  references: [ADR-0010, ADR-0019, TTP-T1071]
+
+tokens:
+  - id: canary-net-bff-001
+    type: fake_api_endpoint
+    label: "fake_bff_endpoint_url"
+    fake_url: "https://bff-canary.eel.local/canary-ping"
+    correlation_key: "net-corr-bff-001"
+    fake_response: "pong-canary"
+    triggers:
+      - on_request: any
+        action: alert_critical
+        target: [falco, wazuh, audit_service]
+
+  - id: canary-net-iprs-001
+    type: fake_iprs_record
+    label: "fake_iprs_national_id"
+    fake_person_id: "IPRS-CANARY-001"
+    fake_full_name: "Canary Person"
+    correlation_key: "net-corr-iprs-001"
+    triggers:
+      - on_query: any
+        action: alert_critical
+        target: [falco, wazuh, audit_service]
+
+  - id: canary-net-credential-001
+    type: fake_bff_credential
+    label: "fake_bff_api_key"
+    fake_credential_path: "/data/local/eel/canary/fake-bff-api-key.txt"
+    fake_value: "canary-api-key-001-do-not-use"
+    correlation_key: "net-corr-credential-001"
+    triggers:
+      - on_access: read
+        action: alert_critical
+        target: [falco, wazuh, audit_service]
+      - on_use: present_credential
+        action: alert_critical
+        target: [falco, wazuh, audit_service, sre_pager]
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 5. SUPPLY CHAIN CANARIES (build integrity)
+# ──────────────────────────────────────────────────────────────────────────────
+
+api_version: eel-v1
+metadata:
+  namespace: canary-supply-chain
+  description: |
+    Supply chain canaries detect APK/library replacement or build injection.
+    Canary libraries look legitimate (signed, dated) but contain unique identifiers.
+  references: [ADR-0006, NIST-SSDF]
+
+tokens:
+  - id: canary-sc-library-001
+    type: fake_shared_library
+    label: "fake_bvr_native_library"
+    fake_path: "/data/app/com.eel.bvr/lib/canary-libbvr.so"
+    correlation_key: "sc-corr-library-001"
+    fake_signature: "AB:CD:EF:01:23:45:67:89"
+    triggers:
+      - on_load: dynamic_link
+        action: alert_critical
+        target: [falco, wazuh, audit_service]
+      - on_replace: write
+        action: alert_emergency
+        target: [falco, wazuh, audit_service, sre_pager]
+
+  - id: canary-sc-apk-001
+    type: fake_apk
+    label: "fake_eel_bvr_apk"
+    fake_path: "/data/app/com.eel.bvr/base.apk"
+    correlation_key: "sc-corr-apk-001"
+    fake_sha256: "3333333333333333333333333333333333333333333333333333333333333333"
+    triggers:
+      - on_modify: write
+        action: alert_emergency
+        target: [falco, wazuh, audit_service, sre_pager]
+      - on_signature_mismatch
+        action: alert_emergency
+        target: [falco, wazuh, audit_service, sre_pager]
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 6. MDM / DEVICE-POLICY CANARIES
+# ──────────────────────────────────────────────────────────────────────────────
+
+api_version: eel-v1
+metadata:
+  namespace: canary-mdm
+  description: |
+    MDM canaries detect device policy / FLAG_SECURE / kiosk-mode violations.
+    These trigger when the OS protection layer is compromised.
+  references: [ADR-0004, M3-HARDWARE-INTEGRATION]
+
+tokens:
+  - id: canary-mdm-flag-secure-001
+    type: fake_flag_secure_disable
+    label: "fake_kiosk_mode_exit_signal"
+    fake_signal_path: "/data/local/eel/canary/fake-kiosk-disable.signal"
+    correlation_key: "mdm-corr-kiosk-001"
+    triggers:
+      - on_signal: SIGKILL
+        action: alert_critical
+        target: [falco, wazuh, audit_service]
+
+  - id: canary-mdm-policy-001
+    type: fake_device_policy
+    label: "fake_admin_policy_file"
+    fake_path: "/data/system/device_policy_canary.xml"
+    correlation_key: "mdm-corr-policy-001"
+    triggers:
+      - on_modify: write
+        action: alert_critical
+        target: [falco, wazuh, audit_service]

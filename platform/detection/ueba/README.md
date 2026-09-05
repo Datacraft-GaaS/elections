@@ -94,3 +94,25 @@ See `deploy/deployment.yaml`. The worker runs as 2 replicas under the `eel-ueba-
 | `rules/syscall-drift.yaml` | Tetragon | Syscalls outside the learned pod profile |
 | `rules/kit-behaviour-drift.yaml` | Falco | Kit egress bytes > 3 sigma above baseline |
 | `rules/mass-download-alert.yaml` | Falco | More than 10,000 records fetched in a 5-minute window |
+
+---
+
+## Technical Explanation (Extended)
+
+**Role**: User and Entity Behaviour Analytics (UEBA) for EEL election platform. Continuous behavioural profiling of all principals (user, service_account, kit, pod) via Falco/Tetragon event streams aggregated from Loki.
+
+**Purpose**: Detect anomalies not caught by static rules — new login hours, abnormal syscall patterns, unexpected network egress, database query spikes, physical kit behaviour drift.
+
+**Functionality**:
+- `baseline-learner.py`: real async Python with `asyncpg` pool, `httpx.AsyncClient`; queries Loki range; aggregates 14-day rolling window; writes to `eel_ueba_baselines` (mean/std/sample_count/window_start/window_end/updated_at)
+- `anomaly-detector.py`: real async tail of Loki stream; computes z-score per feature (`(value - mean) / std`); raises alert via PostgreSQL `NOTIFY` to `eel.ecc.ueba_alert.v1` channel with JSON payload (entity, features_breached, z_scores, severity, timestamp)
+- Alert severity: `WARNING` (z > 3.0), `CRITICAL` (z > 5.0); 300-second cooldown per entity prevents storms
+- All events include audit reference (entity links to M5 audit chain via `correlation_key` and `auditId`)
+
+**Configuration**: `ueba-config.yaml` (Loki URL, PostgreSQL DSN, query_interval, window_days=14, zscore_threshold=3.0, alert_cooldown=300s, ecc_pubsub_channel=`eel.ecc.ueba_alert.v1`)
+
+**No stubs**: all functions (detect, learn, _fetch_baseline, _query_loki, _notify) are fully implemented with real database connections, HTTP clients, JSON parsing, and alert emission.
+
+**M5 Integration**: UEBA must detect anomalies during M5 48h drill. Canary token access (audit replay, HSM access, biometric replay, supply chain) should produce z-score anomalies. All detection events reference `auditId` + `correlation_key` + `proofHash` + `Ed25519 signature`.
+
+**References**: ADR 0004 (Platform — M3/M5 audit chain integration), ADR 0009 (Resilience — behavioural monitoring), ADR 0010 (Edge/DDoS — network bytes tracking), ADR 0017 (Transparency log — audit event correlation), ADR 0022 (Release/DR — M5 48h drill verification), M3-HARDWARE-INTEGRATION (kit entity profiling), M5-SMS-USB-MANIFEST (syscall entropy for GSM/USB anomalies), DPA 2019 Kenya §6 (behavioural data protection — aggregate stats only), Elections Act §34 (audit integrity — UEBA feeds audit service), NIST SP 800-53 AU-2 / AU-10 / SI-4.

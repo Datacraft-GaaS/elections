@@ -1,0 +1,6 @@
+<decoder name="eel-audit-decoder">
+  <prematch>^\{"auditId"</prematch>
+  <plugin_decoder>SUSE</plugin_decoder>
+  <regex>auditId</regex>
+  <order>auditId,eventType,actorId,whenUtc,stationId</order>
+</decoder>

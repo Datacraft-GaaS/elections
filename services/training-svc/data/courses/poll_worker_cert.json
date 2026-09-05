@@ -1,0 +1,27 @@
+{
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "title": "Poll Worker Certification (M38)",
+  "version": 1,
+  "published_at": "2025-01-15T08:00:00Z",
+  "modules": [
+    "core-election-procedure",
+    "poll-day-setup",
+    "voter-verification",
+    "poll-day-sync",
+    "inventory-tracking",
+    "marshaller-station-management",
+    "station-management",
+    "medical-first-response"
+  ],
+  "target_audience": "PO,DPO,CLERK",
+  "language": "en",
+  "description": "Full certification for presiding officers, deputy presiding officers, clerks, and support staff covering election procedure, voter verification using biometric tools, poll-day security protocols, and medical first response.",
+  "procedural_lessons": [
+    "P1-equipment-check",
+    "P2-voter-verification",
+    "P3-data-upload",
+    "P4-inventory-tracking",
+    "P5-marshaller",
+    "P6-station-management"
+  ]
+}

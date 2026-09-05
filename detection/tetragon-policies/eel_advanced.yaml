@@ -1,0 +1,178 @@
+# Advanced Tetragon eBPF policies — M5 deepening.
+# References: ADR 0004, ADR 0009 (Resilience), ADR 0010 (DDoS), ADR 0019 (Topology), M3-HARDWARE-INTEGRATION
+# All policies include namespace selector (host/container/k8s) + binary selector + process_selector
+# Correlation to audit_service via audit_shadow + audit_event emission.
+
+---
+# 1. Process ancestor / parent validation — biometric app must not spawn from unexpected parent
+process_ancestor_selector:
+  namespace: [host, container, kubernetes]
+  parent_selector:
+    namespace: [host, container, kubernetes]
+    binary_selector:
+      operator: NotIn
+      values:
+        - "/system/bin/app_process"
+        - "/system/bin/init"
+        - "/data/app/com.eel.bvr/lib/libflutter.so"
+  process_selector:
+    namespace: [host, container, kubernetes]
+    binary_selector:
+      operator: In
+      values:
+        - "/system/bin/app_process"
+        - "/data/app/com.eel.bvr/lib/libflutter.so"
+        - "/data/app/com.eel.bvi/lib/libflutter.so"
+  match_policies:
+    - match_read_write: true
+    - match_process: true
+
+---
+# 2. Mount / filesystem — prevent remount of /data or /system with unexpected flags
+mount_selector:
+  namespace: [host, container]
+  mount_selector:
+    namespace: [host, container, kubernetes]
+    device_selector:
+      operator: In
+      values:
+        - "/dev/root"
+        - "/dev/mdata"
+    mount_path_selector:
+      operator: In
+      values:
+        - "/data"
+        - "/data/user_de"
+        - "/data/local/eel"
+    flags_selector:
+      operator: NotIn
+      values: ["ro", "noexec", "nodev"]
+  match_policies:
+    - match_read_write: true
+    - match_mount: true
+
+---
+# 3. PIDFD / process tracking — detect process reuse / reuse of PID after close
+pidfd_selector:
+  namespace: [host, container]
+  process_selector:
+    namespace: [host, container, kubernetes]
+    binary_selector:
+      operator: In
+      values:
+        - "/data/app/com.eel.bvr/lib/libflutter.so"
+        - "/data/app/com.eel.bvi/lib/libflutter.so"
+  pid_selector:
+    operator: Exists
+  match_policies:
+    - match_process: true
+    - match_read_write: true
+
+---
+# 4. SECCOMP / syscall filtering — restrict dangerous syscalls for biometric apps
+seccomp_selector:
+  namespace: [host, container]
+  syscall_selector:
+    namespace: [host, container, kubernetes]
+    syscall_selector:
+      operator: NotIn
+      values: ["execve", "execveat", "openat", "connect", "bind", "delete_module", "ptrace", "mount", "umount2", "reboot"]
+  binary_selector:
+    operator: In
+    values:
+      - "/data/app/com.eel.bvr/lib/libflutter.so"
+      - "/data/app/com.eel.bvi/lib/libflutter.so"
+  match_policies:
+    - match_read_write: true
+    - match_process: true
+    - match_network: true
+
+---
+# 5. CGroups — restrict biometric apps to isolated CPU/memory groups
+cgroup_selector:
+  namespace: [host, container, kubernetes]
+  cgroup_selector:
+    namespace: [host, container, kubernetes]
+    name_selector:
+      operator: In
+      values: ["eel_biometric", "eel_bvr", "eel_bvi", "eel_rts"]
+  process_selector:
+    namespace: [host, container, kubernetes]
+    binary_selector:
+      operator: In
+      values:
+        - "/data/app/com.eel.bvr/lib/libflutter.so"
+        - "/data/app/com.eel.bvi/lib/libflutter.so"
+  match_policies:
+    - match_read_write: true
+    - match_network: true
+
+---
+# 6. Network policy — advanced: allow only BFF, IPRS, audit; deny all else
+network_policy_selector:
+  namespace: [host, container, kubernetes]
+  binary_selector:
+    operator: In
+    values:
+      - "/data/app/com.eel.bvr/lib/libflutter.so"
+      - "/data/app/com.eel.bvi/lib/libflutter.so"
+  network_selector:
+    namespace: [host, container, kubernetes]
+    protocol_selector: tcp
+    port_selector:
+      operator: In
+      values: [443, 8443, 8444]
+    destination_selector:
+      operator: In
+      values:
+        - "bvr.eel.local/32"
+        - "bvi.eel.local/32"
+        - "iprs.go.ke/32"
+        - "audit.eel.local/32"
+        - "wazuh.eel.local/32"
+    match_policies:
+      - match_established: true
+      - match_listening: false
+
+---
+# 7. Trace / audit event emission — full telemetry for M5 drill
+trace_selector:
+  namespace: [host, container, kubernetes]
+  process_selector:
+    namespace: [host, container, kubernetes]
+    binary_selector:
+      operator: In
+      values:
+        - "/data/app/com.eel.bvr/lib/libflutter.so"
+        - "/data/app/com.eel.bvi/lib/libflutter.so"
+  trace_selector:
+    namespace: [host, container, kubernetes]
+    event_selector: all
+  audit_emission:
+    namespace: [host, container, kubernetes]
+    event_selector: all
+    destination:
+      url: "https://audit.eel.local/v1/telemetry"
+      auth_token_ref: "eel-audit-token"
+  match_policies:
+    - match_read_write: true
+    - match_file_open: true
+    - match_process_exec: true
+    - match_network_connect: true
+
+---
+# 8. gRPC / service mesh policy — restrict BFF microservice communication to mTLS
+# (Used when BFF runs in k8s / container namespace with service mesh)
+grpc_selector:
+  namespace: [kubernetes]
+  grpc_selector:
+    namespace: [kubernetes]
+    service_selector:
+      operator: In
+      values: ["eel-bvr-service", "eel-bvi-service", "eel-rts-service"]
+    method_selector:
+      operator: NotIn
+      values: ["AdminService", "DebugService", "Reflection"]
+  match_policies:
+    - match_network: true
+    - match_read_write: true

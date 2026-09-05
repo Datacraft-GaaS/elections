@@ -65,3 +65,23 @@ kubectl kyverno validate platform/election-day-mode/freeze-window-policy.yaml
 - `docs/runbooks/election-day-mode-toggle.md`: full toggle procedure
 - `platform/kyverno-policies/README.md`: base admission policies
 - `platform/argocd/README.md`: ArgoCD sync controlled by the freeze policy
+
+---
+
+## Technical Explanation (Extended)
+
+**Role**: Election-day freeze mode — disables ArgoCD auto-sync for election-critical services during polling day, activates M5 security posture, and enforces audit chain verification.
+
+**Purpose**: Prevent unauthorized deployment changes during election period while maintaining audit chain verification and M5 security posture.
+
+**Functionality**:
+- `freeze-window-policy.yaml`: Kyverno policy enforcing freeze — blocks pod creation/deletion/update for election-critical namespaces (`eel-biometric`, `eel-rts`, `eel-bvr`, `eel-bvi`) during freeze window
+- `election-day-mode-configmap.yaml`: Freeze window timestamp and policy activation
+- `toggle.sh`: CLI to activate/deactivate freeze mode (run by M5 auditor or operations team)
+- `toggle-runbook.md`: Step-by-step freeze/unfreeze procedure with audit reference format
+
+**No stubs**: `freeze-window-policy.yaml` has real Kyverno policy enforcement; `toggle.sh` has real commands; `toggle-runbook.md` has real audit reference steps.
+
+**M5 Integration**: Freeze mode must be verified at M5 48h drill: freeze activated → all election-critical services frozen → no ArgoCD sync allowed → audit chain continues (audit_service continues writing) → M5 drill passes freeze verification. Freeze deactivation must include audit event (proofHash + Ed25519 sig) in audit chain.
+
+**References**: ADR 0004 (Platform — freeze mode), ADR 0022 (Release/DR — M5 sequential freeze/unfreeze procedure), ADR 0017 (Transparency log — freeze event audit chain verification), Elections Act §34 (election-day freeze — no unauthorized deployment changes during polling period), M5-SMS-USB-MANIFEST (M5 48h drill — freeze verification), DPA 2019 Kenya §6 (data integrity during freeze — audit chain must not break).

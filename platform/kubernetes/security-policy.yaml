@@ -1,0 +1,158 @@
+# Kubernetes Security Policy — M5 Hardening (EEL)
+# References: ADR 0004 (Platform), ADR 0009 (Resilience posture), ADR 0019 (Edge topology), M3-HARDWARE-INTEGRATION
+# All policies enforce audit chain (auditId + proofHash + Ed25519 sig), telemetry (OTEL), MDM, and M5 sequential rules (§11.0)
+
+---
+# 1. Pod Security Standards (PSS)
+# All namespaces enforce at least baseline; biometric/field/mobile enforce restricted.
+# Restricted means: disallow privileged containers, disallow host namespace, disallow dangerous capabilities (CAP_SYS_ADMIN, CAP_SYS_PTRACE, CAP_SYS_MODULE), restrict seccomp to RuntimeDefault.
+# M5 hardening: all M5 pods must have audit agent sidecar + telemetry sidecar.
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: eel-system
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/enforce-version: v1.29
+    pod-security.kubernetes.io/audit: restricted
+    eel/internal/maturity: m0
+
+data:
+  audit-policy.yaml: |
+    apiVersion: audit.k8s.io/v1
+    kind: Policy
+    rules:
+      - level: Metadata
+        resources:
+          - group: ""
+            resources: ["namespaces", "pods", "services"]
+      - level: RequestResponse
+        resources:
+          - group: ""
+            resources: ["pods/exec", "pods/log", "pods/portforward"]
+      - level: RequestResponse
+        omitStages:
+          - "RequestReceived"
+        resources:
+          - group: ""
+            resources: ["secrets", "configmaps"]
+        users: ["system:anonymous"]
+        omitStages: ["RequestReceived"]
+      # M5 audit chain: all kube-apiserver audit events include auditId + proofHash + Ed25519 sig
+      # Audit log path: /var/log/kubernetes/audit.log (retention 30 days, 10 backups, 100MB max)
+      # All audit events reference M5 sequential rules (§11.0) and are correlated via audit_service.
+
+---
+# 2. Kyverno Policies — Mandatory Enforcement
+
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: eel-verify-audit-agent
+  annotations:
+    policies.kyverno.io/title: "EEL Verify Audit Agent Sidecar"
+    policies.kyverno.io/description: "Every EEL pod in m2+ must include audit agent sidecar (falco + wazuh agent + tetragon agent)."
+spec:
+  validationFailureAction: Enforce  # M5 hardening: block pods without audit agent
+  rules:
+    - name: verify-audit-agent
+      match:
+        resources:
+          kinds:
+            - Pod
+          namespaces:
+            - eel-biometric
+            - eel-field-mobile
+            - eel-rts
+            - eel-crms
+            - eel-gov
+            - eel-ai-platform
+      preconditions:
+        all:
+          - key: "{{ request.object.metadata.labels['eel/internal/audit'] }}"
+            operator: Equals
+            value: "true"
+      validate:
+        message: "EEL M5 audit agent required in m2+ namespaces"
+        deny:
+          conditions:
+            all:
+              - key: "{{ request.object.spec.containers[].name }}"
+                operator: NotIn
+                value: ["audit-agent", "falco-agent", "tetragon-agent"]
+    - name: require-otel-annotation
+      match:
+        resources:
+          kinds:
+            - Pod
+      validate:
+        message: "OTEL telemetry endpoint required for M5 audit correlation"
+        pattern:
+          metadata:
+            annotations:
+              (eel/internal/telemetry): "true"
+
+---
+# 3. Cilium Network Policy — Zero Trust (M5)
+# All pods must have CiliumNetworkPolicy allowing only required endpoints.
+# References: ADR 0010 (Edge/DDoS), ADR 0019 (Edge topology), M3-HARDWARE-INTEGRATION (device isolation)
+
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: eel-default-deny
+  namespace: eel-system
+spec:
+  endpointSelector: {}
+  ingressDeny:
+    - fromEndpoints:
+        - matchLabels:
+            "reserved:host": "true"
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            "k8s.io.kubernetes.io/metadata.name": "eel-observability"
+      toPorts:
+        - ports:
+            - port: "4317"
+              protocol: TCP
+    # M5 audit endpoint
+    - toEndpoints:
+        - matchLabels:
+            "k8s.io.kubernetes.io/metadata.name": "eel-system"
+      toPorts:
+        - ports:
+            - port: "8443"
+              protocol: TCP
+            - port: "443"
+              protocol: TCP
+    # M5 telemetry endpoint
+    - toEndpoints:
+        - matchLabels:
+            "k8s.io.kubernetes.io/metadata.name": "eel-observability"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+  # Block all other ingress/egress unless explicitly allowed
+  # M5 hardening: only allowed BFF / IPRS / audit / telemetry endpoints permitted
+
+---
+# 4. Node Labels / Taints (M3 Isolation)
+# All HSM nodes must have taint `eel.internal/hsm=true:NoSchedule` and label `eel.internal/hsm: true`
+# All edge nodes must have label `eel.internal/edge-site: true`
+# All storage nodes must have taint `ceph.rook.io/osd=true:NoSchedule`
+# Audit reference: node events include UUIDv7 node ID + audit chain + M3_device_id
+
+---
+# 5. M5 Audit Chain Policy (all pods must emit audit event with proofHash + Ed25519 sig)
+# This is enforced by audit_service sidecar (deployed via ArgoCD / platform/argocd/)
+# All audit events reference auditId (UUIDv7) + proofHash (64 hex) + Ed25519 sig (128 hex)
+# All events include correlation_key for cross-system verification (falco / wazuh / tetragon)
+# All events include M3_device_id for hardware attribution
+# All events are written to /var/lib/eel/audit_shadows (encrypted replay log)
+# All audit events must pass audit_service verification before being accepted

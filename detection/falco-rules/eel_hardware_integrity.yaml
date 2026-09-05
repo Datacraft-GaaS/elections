@@ -1,0 +1,229 @@
+# Hardware / device integrity rules — M5 M3 hardware integration hardening.
+# References: docs/mobile/M3_HARDWARE_INTEGRATION.md, docs/mobile/M3_SMS_USB_MANIFEST.md
+# Sensors: FAP60 (fingerprint), AntIris (iris), GSM modem (USB), RTS reader (RFID/USB).
+# All rules include M3_device_id + correlation_key for audit correlation.
+
+- macro: fap60_sensor_paths
+  condition: >
+    fd.name contains "fap60" or fd.name contains "FUFingerSDK" or
+    fd.name contains "USB0" or fd.name contains "USB1"
+
+- macro: antiris_paths
+  condition: >
+    fd.name contains "antiris" or fd.name contains "AntUSBCamera" or
+    fd.name contains "irex" or fd.name contains "iris"
+
+- macro: gsm_modem_paths
+  condition: >
+    fd.name startswith "/dev/ttyUSB" or fd.name startswith "/dev/ttyACM" or
+    fd.name contains "/dev/usb/"
+
+- macro: rts_reader_paths
+  condition: >
+    fd.name contains "ttyUSB" or fd.name contains "/dev/hidraw" or
+    fd.name contains "rfid"
+
+# ── FAP60 fingerprint sensor integrity ──────────────────────────────────────────
+
+- rule: FAP60 sensor disconnected unexpectedly
+  desc: FAP60 USB device removed without graceful shutdown — possible hardware swap
+  condition: >
+    delete_file and
+    (fd.name contains "fap60" or fd.name contains "FUFingerSDK" or fd.name contains "USB0")
+  output: >
+    FAP60 disconnected: proc=%proc.name pid=%proc.pid
+    device=%fd.name user=%user.name M3_device_id=%evt.device_id
+    correlation_key=fap60-disconnect-031 node=%hostname
+  priority: CRITICAL
+  tags: [hardware, sensor-disconnect, M3-M5, DPA-2019-S6]
+
+- rule: FAP60 sensor reconnected after enrollment
+  desc: FAP60 sensor reconnected after enrollment session — possible hardware swap attack
+  condition: >
+    openat and fap60_sensor_paths and
+    evt.time > session_end_time
+  output: >
+    FAP60 reconnect post-enrollment: proc=%proc.name pid=%proc.pid
+    device=%fd.name session_time=%session_end_time reconnect_time=%evt.time
+    M3_device_id=%evt.device_id correlation_key=fap60-reconnect-032
+  priority: CRITICAL
+  tags: [hardware, M3-M5, sensor-swap, DPA-2019-S6]
+
+- rule: FAP60 quality score below threshold logged
+  desc: FAP60 reported quality score below BiometricCapturePolicy fpMinQuality (50)
+  condition: >
+    open_write and fd.name contains "/biometric/" and
+    (evt.arg contains "quality=0" or evt.arg contains "quality=1" or
+     evt.arg contains "quality=2" or evt.arg contains "quality=3")
+  output: >
+    FAP60 low quality: proc=%proc.name pid=%proc.pid
+    device=%fd.name quality=%evt.quality threshold=%fpMinQuality
+    M3_device_id=%evt.device_id correlation_key=fap60-lowquality-033 node=%hostname
+  priority: WARNING
+  tags: [hardware, M3, quality, biometric]
+
+# ── AntIris iris sensor integrity ───────────────────────────────────────────────
+
+- rule: AntIris camera disconnected unexpectedly
+  desc: Iris camera device removed without graceful shutdown — possible hardware swap
+  condition: >
+    delete_file and
+    (fd.name contains "antiris" or fd.name contains "AntUSBCamera" or fd.name contains "irex")
+  output: >
+    AntIris disconnected: proc=%proc.name pid=%proc.pid
+    device=%fd.name user=%user.name M3_device_id=%evt.device_id
+    correlation_key=iris-disconnect-034 node=%hostname
+  priority: CRITICAL
+  tags: [hardware, sensor-disconnect, M3-M5, DPA-2019-S6]
+
+- rule: AntIris reconnected after iris capture
+  desc: Iris camera reconnected after capture session — possible capture swap
+  condition: >
+    openat and antiris_paths and
+    evt.time > iris_capture_end_time
+  output: >
+    AntIris reconnect post-capture: proc=%proc.name pid=%proc.pid
+    device=%fd.name session_time=%iris_capture_end_time
+    M3_device_id=%evt.device_id correlation_key=iris-reconnect-035
+  priority: CRITICAL
+  tags: [hardware, M3-M5, iris-swap, DPA-2019-S6]
+
+- rule: AntIris quality below threshold
+  desc: Iris quality score below BiometricCapturePolicy irisMinQuality (40)
+  condition: >
+    open_write and fd.name contains "/iris/" and
+    (evt.arg contains "quality=0" or evt.arg contains "quality=1" or evt.arg contains "quality=2")
+  output: >
+    AntIris low quality: proc=%proc.name pid=%proc.pid
+    device=%fd.name quality=%evt.quality threshold=%irisMinQuality
+    M3_device_id=%evt.device_id correlation_key=iris-lowquality-036 node=%hostname
+  priority: WARNING
+  tags: [hardware, M3, quality, iris]
+
+# ── GSM modem / SMS integrity ──────────────────────────────────────────────────
+
+- rule: GSM modem accessed outside RTS application
+  desc: Serial modem device opened by non-RTS process — possible SMS injection
+  condition: >
+    openat and gsm_modem_paths and
+    not proc.name in (rts_app, gsm_testing)
+  output: >
+    GSM modem unauthorized access: proc=%proc.name pid=%proc.pid
+    device=%fd.name user=%user.name M3_device_id=%evt.device_id
+    correlation_key=gsm-unauth-037 node=%hostname
+  priority: ALERT
+  tags: [hardware, M3, GSM, SMS-injection, DPA-2019-S6]
+
+- rule: SMS sent to non-whitelisted number
+  desc: SMS sent via GSM modem to number not in pre-approved whitelist
+  condition: >
+    open_write and gsm_modem_paths and
+    not evt.arg.to_number in (approved_sms_numbers)
+  output: >
+    SMS to non-whitelist: proc=%proc.name pid=%proc.pid
+    device=%fd.name to=%evt.arg.to_number message=%evt.arg.text
+    M3_device_id=%evt.device_id correlation_key=sms-nonwhitelist-038
+  priority: CRITICAL
+  tags: [hardware, M3, SMS, whitelist, DPA-2019-S6]
+
+- rule: SMS PDU malformed (AT command injection attempt)
+  desc: AT command injected into SMS PDU — possible command injection
+  condition: >
+    open_write and gsm_modem_paths and
+    (evt.arg contains "AT+" or evt.arg contains "AT\r" or evt.arg contains "+++")
+  output: >
+    AT command injection: proc=%proc.name pid=%proc.pid
+    device=%fd.name command=%evt.arg M3_device_id=%evt.device_id
+    correlation_key=at-injection-039
+  priority: CRITICAL
+  tags: [hardware, M3, command-injection, DPA-2019-S6]
+
+# ── RTS reader (RFID / USB) ─────────────────────────────────────────────────────
+
+- rule: RFID reader accessed outside expected process
+  desc: RFID reader (USB HID) accessed by non-RTS process
+  condition: >
+    openat and rts_reader_paths and
+    not proc.name in (rts_app, inventory_app)
+  output: >
+    RFID reader unauthorized access: proc=%proc.name pid=%proc.pid
+    device=%fd.name user=%user.name correlation_key=rfid-unauth-040
+  priority: ALERT
+  tags: [hardware, M3, RFID, unauthorized]
+
+- rule: RFID tag read from unexpected location
+  desc: RFID tag read but GPS location outside station polygon
+  condition: >
+    open_read and rts_reader_paths and
+    not evt.arg.gps in (station_polygon)
+  output: >
+    RFID location mismatch: proc=%proc.name pid=%proc.pid
+    tag=%evt.arg.tag_id gps=%evt.arg.gps expected_polygon=%station_polygon
+    correlation_key=rfid-location-mismatch-041
+  priority: WARNING
+  tags: [hardware, M3, RFID, gps-spoof, elections-integrity]
+
+# ── USB enumeration / device hotplug attacks ──────────────────────────────────────
+
+- rule: USB device plugged after enrollment session started
+  desc: New USB device connected after enrollment session begun — possible device injection
+  condition: >
+    open_write and fd.name contains "/dev/usb" and
+    evt.time > enrollment_start_time and
+    evt.time < enrollment_end_time
+  output: >
+    USB device hotplug mid-session: proc=%proc.name pid=%proc.pid
+    device=%fd.name session_start=%enrollment_start_time plug_time=%evt.time
+    correlation_key=usb-hotplug-042 node=%hostname
+  priority: ALERT
+  tags: [hardware, M3-M5, USB-hotplug, DPA-2019-S6]
+
+- rule: USB HID traffic observed on non-biometric device
+  desc: Human Interface Device traffic from unexpected USB port
+  condition: >
+    open_read and fd.name contains "/dev/hidraw" and
+    not proc.name in (fingerprint_driver, iris_driver, touchscreen_driver)
+  output: >
+    Unexpected HID device: proc=%proc.name pid=%proc.pid
+    device=%fd.name user=%user.name correlation_key=hid-unexpected-043
+  priority: WARNING
+  tags: [hardware, USB, HID, unknown-device]
+
+# ── Secure storage / TEE / HSM ─────────────────────────────────────────────────
+
+- rule: TEE / trusted execution environment accessed by unexpected process
+  desc: TEE device accessed by non-biometric app — possible key extraction
+  condition: >
+    openat and (fd.name contains "/dev/tee" or fd.name contains "/dev/optee" or fd.name contains "/dev/hw_random") and
+    not proc.name in (biometric_app, attestation_svc)
+  output: >
+    TEE unauthorized access: proc=%proc.name pid=%proc.pid
+    device=%fd.name user=%user.name correlation_key=tee-unauth-044 node=%hostname
+  priority: ALERT
+  tags: [hardware, TEE, key-access, DPA-2019-S6]
+
+- rule: HSM key reference accessed but key not found
+  desc: HSM key reference accessed but key slot empty — possible key withdrawal attack
+  condition: >
+    openat and fd.name contains "/dev/hsm" and
+    evt.retval < 0
+  output: >
+    HSM key not found: proc=%proc.name pid=%proc.pid
+    device=%fd.name error=%evt.retval user=%user.name
+    correlation_key=hsm-key-missing-045 node=%hostname
+  priority: ALERT
+  tags: [hardware, HSM, key-access, DPA-2019-S6]
+
+# ── Evidence upload / chain of custody ───────────────────────────────────────────
+
+- rule: Evidence file signed after capture but before upload
+  desc: Ed25519 signature applied to evidence before outbox upload — chain of custody break
+  condition: >
+    open_write and (fd.name contains "evidence" or fd.name contains ".sig") and
+    evt.arg contains "sign" and
+    not evt.arg contains "upload_initiated"
+  output: >
+    Evidence signing: proc=%proc.name pid=%proc.pid
+    file=%fd.name user=%user.name correlation_key=evidence-sign-046
+  priority: INFO
+  tags: [audit, evidence, chain-of-custody, elections-act-S34]

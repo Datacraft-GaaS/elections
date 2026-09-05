@@ -1,0 +1,218 @@
+# Kubernetes namespaces — EEL election infrastructure.
+# References: ADR 0004 (Platform), ADR 0019 (Edge topology), DPA 2019 Kenya §6
+# All namespaces require Pod Security Standards (PSS) baseline or restricted.
+# All namespaces must have:
+#   - audit.eel.local sidecar or annotation for audit chain
+#   - telemetry.eel.local endpoint for OTEL
+#   - security.eel.local annotation for Kyverno policy enforcement
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: eel-system
+  labels:
+    kubernetes.io/metadata.name: eel-system
+    pod-security.kubernetes.io/enforce: baseline
+    eel/internal/audit: "true"
+    eel/internal/telemetry: "true"
+    eel/internal/maturity: m0
+  annotations:
+    eel.internal/audit-endpoint: "https://audit.eel.local/v1/telemetry"
+    eel.internal/otel-endpoint: "https://otel.eel.local:4317"
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: eel-abis
+  labels:
+    kubernetes.io/metadata.name: eel-abis
+    pod-security.kubernetes.io/enforce: restricted
+    eel/internal/audit: "true"
+    eel/internal/telemetry: "true"
+    eel/internal/maturity: m1
+  annotations:
+    eel.internal/audit-endpoint: "https://audit.eel.local/v1/telemetry"
+    eel.internal/otel-endpoint: "https://otel.eel.local:4317"
+    eel.internal/service-account: "abis-svc"
+    eel.internal/spicedb-namespace: "eel-abis"
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: eel-biometric
+  labels:
+    kubernetes.io/metadata.name: eel-biometric
+    pod-security.kubernetes.io/enforce: restricted
+    eel/internal/audit: "true"
+    eel/internal/telemetry: "true"
+    eel/internal/maturity: m2
+  annotations:
+    eel.internal/audit-endpoint: "https://audit.eel.local/v1/telemetry"
+    eel.internal/otel-endpoint: "https://otel.eel.local:4317"
+    eel.internal/service-account: "bvr-svc"
+    eel.internal/m3-hardware: "true"
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: eel-field-mobile
+  labels:
+    kubernetes.io/metadata.name: eel-field-mobile
+    pod-security.kubernetes.io/enforce: restricted
+    eel/internal/audit: "true"
+    eel/internal/telemetry: "true"
+    eel/internal/maturity: m3
+  annotations:
+    eel.internal/audit-endpoint: "https://audit.eel.local/v1/telemetry"
+    eel.internal/otel-endpoint: "https://otel.eel.local:4317"
+    eel.internal/service-account: "field-mobile-svc"
+    eel/internal/m3-hardware: "true"
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: eel-rts
+  labels:
+    kubernetes.io/metadata.name: eel-rts
+    pod-security.kubernetes.io/enforce: restricted
+    eel/internal/audit: "true"
+    eel/internal/telemetry: "true"
+    eel/internal/maturity: m2
+  annotations:
+    eel.internal/audit-endpoint: "https://audit.eel.local/v1/telemetry"
+    eel.internal/otel-endpoint: "https://otel.eel.local:4317"
+    eel/internal/service-account: "rts-svc"
+    eel/internal/m3-hardware: "true"
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: eel-crms
+  labels:
+    kubernetes.io/metadata.name: eel-crms
+    pod-security.kubernetes.io/enforce: restricted
+    eel/internal/audit: "true"
+    eel/internal/telemetry: "true"
+    eel/internal/maturity: m1
+  annotations:
+    eel.internal/audit-endpoint: "https://audit.eel.local/v1/telemetry"
+    eel.internal/otel-endpoint: "https://otel.eel.local:4317"
+    eel.internal/service-account: "crms-svc"
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: eel-portal
+  labels:
+    kubernetes.io/metadata.name: eel-portal
+    pod-security.kubernetes.io/enforce: restricted
+    eel/internal/audit: "true"
+    eel/internal/telemetry: "true"
+    eel/internal/maturity: m1
+  annotations:
+    eel.internal/audit-endpoint: "https://audit.eel.local/v1/telemetry"
+    eel.internal/otel-endpoint: "https://otel.eel.local:4317"
+    eel/internal/service-account: "portal-svc"
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: eel-ai-platform
+  labels:
+    kubernetes.io/metadata.name: eel-ai-platform
+    pod-security.kubernetes.io/enforce: restricted
+    eel/internal/audit: "true"
+    eel/internal/telemetry: "true"
+    eel/internal/maturity: m1
+  annotations:
+    eel.internal/audit-endpoint: "https://audit.eel.local/v1/telemetry"
+    eel.internal/otel-endpoint: "https://otel.eel.local:4317"
+    eel/internal/service-account: "ai-platform-svc"
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: eel-governance
+  labels:
+    kubernetes.io/metadata.name: eel-governance
+    pod-security.kubernetes.io/enforce: restricted
+    eel/internal/audit: "true"
+    eel/internal/telemetry: "true"
+    eel/internal/maturity: m2
+  annotations:
+    eel.internal/audit-endpoint: "https://audit.eel.local/v1/telemetry"
+    eel/internal/otel-endpoint: "https://otel.eel.local:4317"
+    eel/internal/service-account: "governance-svc"
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: eel-observability
+  labels:
+    kubernetes.io/metadata.name: eel-observability
+    pod-security.kubernetes.io/enforce: baseline
+    eel/internal/audit: "true"
+    eel/internal/telemetry: "true"
+    eel/internal/maturity: m0
+  annotations:
+    eel.internal/audit-endpoint: "https://audit.eel.local/v1/telemetry"
+    eel.internal/otel-endpoint: "https://otel.eel.local:4317"
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: eel-platform
+  labels:
+    kubernetes.io/metadata.name: eel-platform
+    pod-security.kubernetes.io/enforce: baseline
+    eel/internal/audit: "true"
+    eel/internal/telemetry: "true"
+    eel/internal/maturity: m0
+  annotations:
+    eel.internal/audit-endpoint: "https://audit.eel.local/v1/telemetry"
+    eel.internal/otel-endpoint: "https://otel.eel.local:4317"
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: eel-edge
+  labels:
+    kubernetes.io/metadata.name: eel-edge
+    pod-security.kubernetes.io/enforce: baseline
+    eel/internal/audit: "true"
+    eel/internal/telemetry: "true"
+    eel/internal/maturity: m3
+    eel/internal/edge-site: "true"
+  annotations:
+    eel.internal/audit-endpoint: "https://audit.eel.local/v1/telemetry"
+    eel.internal/otel-endpoint: "https://otel.eel.local:4317"
+    eel.internal/edge-relay: "true"
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: eel-dr
+  labels:
+    kubernetes.io/metadata.name: eel-dr
+    pod-security.kubernetes.io/enforce: restricted
+    eel/internal/audit: "true"
+    eel/internal/telemetry: "true"
+    eel/internal/maturity: m5
+    eel/internal/dr-site: "true"
+  annotations:
+    eel.internal/audit-endpoint: "https://audit.eel.local/v1/telemetry"
+    eel.internal/otel-endpoint: "https://otel.eel.local:4317"
+    eel.internal/audit-replica: "mombasa-dc"

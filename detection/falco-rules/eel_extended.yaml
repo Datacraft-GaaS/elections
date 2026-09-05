@@ -1,0 +1,241 @@
+# Deep falco rules — M5 hardening extended.
+# References: ADR 0004 (Platform), ADR 0006 (Supply chain), ADR 0010 (DDoS/edge), ADR 0019 (Topology)
+# Correlation: auditId + correlationId to audit_service + hexproof + signature verification.
+# All output includes node, user, commandline, terminal, correlation_key for SIEM ingestion.
+
+- macro: audit_shadow_dirs
+  condition: >
+    fd.directory contains "/data/local/eel/audit" or
+    fd.directory contains "/var/lib/eel/audit" or
+    fd.directory contains "/data/user_de/0/com.eel.bvr/files/audit"
+
+- macro: outbox_dirs
+  condition: >
+    fd.directory contains "/data/local/eel/biometric" or
+    fd.directory contains "/data/user_de/0/com.eel.bvr/files/biometric" or
+    fd.directory contains "/data/user_de/0/com.eel.bvi/files/biometric"
+
+- macro: audit_replay_markers
+  condition: >
+    fd.name contains "replay" or fd.name contains "reconstruct" or
+    fd.name contains "proof_hash" or fd.name contains "audit_chain"
+
+# ── Audit replay / reconstruction (tamper recovery attempts) ───────────────────
+
+- rule: Audit replay script executed
+  desc: Script that reconstructs audit chain executed — possible replay attack
+  condition: >
+    spawned_process and suspicious_shell and
+    (evt.arg contains "reconstruct" or evt.arg contains "replay" or evt.arg contains "audit_chain")
+  output: >
+    Audit replay script executed: proc=%proc.name pid=%proc.pid
+    cmd=%proc.cmdline user=%user.name uid=%user.uid terminal=%proc.tty
+    correlation_key=audit-replay-001 node=%hostname
+  priority: CRITICAL
+  tags: [audit-replay, tamper-recovery, audit-integrity]
+
+- rule: Audit shadow file opened for reconstruction
+  desc: Audit shadow file opened in read-write reconstruction mode
+  condition: >
+    open_read and audit_shadow_dirs and
+    evt.arg.contains = "rebuild" or evt.arg.contains = "reconstruct"
+  output: >
+    Shadow reconstruction open: proc=%proc.name pid=%proc.pid
+    file=%fd.name user=%user.name correlation_key=audit-rebuild-002 node=%hostname
+  priority: ALERT
+  tags: [audit-rebuild, shadow, audit-integrity]
+
+# ── Outbox encryption / decryption events ───────────────────────────────────────
+
+- rule: Outbox encrypted bundle accessed by unexpected process
+  desc: AES-256 encrypted outbox bundle (biometric_submission) opened by non-bvr process
+  condition: >
+    open_read and outbox_dirs and
+    (fd.name contains ".aes" or fd.name contains ".enc" or fd.name contains "outbox") and
+    not proc.name in (biometric_app, attestation_svc)
+  output: >
+    Encrypted outbox accessed unexpectedly: proc=%proc.name pid=%proc.pid
+    file=%fd.name user=%user.name correlation_key=encryption-breach-003 node=%hostname
+  priority: CRITICAL
+  tags: [encryption, outbox-breach, DPA-2019-S6]
+
+- rule: Decryption attempt with wrong key
+  desc: Decryption called but key verification failed (AES-256)
+  condition: >
+    open_write and outbox_dirs and
+    evt.arg contains "decrypt" and
+    (proc.name contains "python" or proc.name contains "openssl")
+  output: >
+    Decryption attempt: proc=%proc.name pid=%proc.pid
+    file=%fd.name command=%proc.cmdline user=%user.name correlation_key=decrypt-fail-004
+  priority: ALERT
+  tags: [encryption, decryption-attack, crypto]
+
+# ── MDM / FLAG_SECURE / device policy violations ───────────────────────────────
+
+- rule: FLAG_SECURE disabled or cleared
+  desc: Android FLAG_SECURE (screen capture protection) disabled — capture possible
+  condition: >
+    (kill or signal) and proc.name in (biometric_app) and
+    evt.arg = 9  # SIGKILL / screen protection disable signal
+  output: >
+    FLAG_SECURE disabled: proc=%proc.name pid=%proc.pid
+    user=%user.name uid=%user.uid correlation_key=mdm-flag-005 node=%hostname
+  priority: CRITICAL
+  tags: [mdm, screen-capture, M3-M5-hardening]
+
+- rule: MDM policy file modified outside management
+  desc: MDM policy file in /data/system/modified with unexpected content
+  condition: >
+    open_write and fd.name contains "/data/system/" and
+    fd.name contains "device_policy" and
+    not proc.name in (mdm_agent, device_admin)
+  output: >
+    MDM policy modified: proc=%proc.name pid=%proc.pid
+    file=%fd.name user=%user.name correlation_key=mdm-modify-006 node=%hostname
+  priority: ALERT
+  tags: [mdm, device-policy, privilege-escalation]
+
+# ── Supply chain / build integrity ─────────────────────────────────────────────
+
+- rule: APK / library replaced with different hash
+  desc: Application binary replaced but not through official update mechanism
+  condition: >
+    open_write and fd.name contains "/data/app/com.eel."
+  output: >
+    APK binary modified: proc=%proc.name pid=%proc.pid
+    file=%fd.name user=%user.name correlation_key=supply-chain-007 node=%hostname
+  priority: CRITICAL
+  tags: [supply-chain, apk-integrity, ADR-0006]
+
+- rule: Build artifact with unexpected timestamp
+  desc: Binary has timestamp in future (possible backdated supply-chain injection)
+  condition: >
+    execve and fd.name contains "/data/app/com.eel." and
+    (evt.is_future_time or evt.time > now+3600)
+  output: >
+    Future-timestamp binary executed: proc=%proc.name pid=%proc.pid
+    file=%fd.name user=%user.name correlation_key=supply-chain-future-008
+  priority: ALERT
+  tags: [supply-chain, backdate, ADR-0006]
+
+# ── Session hijacking / replay ─────────────────────────────────────────────────
+
+- rule: Biometric session replay — same sessionId opens within 1s of close
+  desc: Same session ID reused immediately after close — session hijacking / replay
+  condition: >
+    spawned_process and proc.pname in (biometric_app) and
+    evt.arg contains session_id and
+    evt.time < 1  # replay within 1 second (simulated via time proximity)
+  output: >
+    Session replay detected: proc=%proc.name pid=%proc.pid
+    session_id=%evt.arg session_reuse=1s user=%user.name correlation_key=session-replay-009
+  priority: CRITICAL
+  tags: [session-hijack, replay, audit-integrity]
+
+- rule: Session token copied to unexpected process
+  desc: Biometric session token file copied/linked to non-app process
+  condition: >
+    (rename or link or copy) and fd.name contains "session_token" or fd.name contains ".token"
+  output: >
+    Session token copied: proc=%proc.name pid=%proc.pid
+    source=%evt.arg.source target=%evt.arg.dest correlation_key=token-copy-010
+  priority: ALERT
+  tags: [session-hijack, token-exfil, crypto]
+
+# ── BFF / API integrity — request/response tampering ───────────────────────────
+
+- rule: BFF request with altered JSON payload (signature mismatch at gateway)
+  desc: Request body altered between client and BFF — detected at gateway layer mapped to endpoint
+  condition: >
+    open_write and fd.name contains "/bff/" and
+    fd.name contains ".json" and
+    (evt.arg contains "altered" or evt.arg contains "tampered")
+  output: >
+    BFF payload altered: proc=%proc.name pid=%proc.pid
+    endpoint=%fd.name user=%user.name correlation_key=bff-tamper-011
+  priority: CRITICAL
+  tags: [bff-integrity, api-tamper, ADR-0004]
+
+- rule: BFF response modified after server returns — proxy layer manipulation
+  desc: HTTP response intercepted and modified by intermediate process
+  condition: >
+    open_write and fd.name contains "/proxy/" or fd.name contains "/gateway/" and
+    evt.arg.contains = "modify"
+  output: >
+    BFF response intercepted: proc=%proc.name pid=%proc.pid
+    proxy_path=%fd.name correlation_key=bff-proxy-012
+  priority: ALERT
+  tags: [bff-integrity, man-in-the-middle, ADR-0019]
+
+# ── Operator abuse / unauthorized actions ───────────────────────────────────────
+
+- rule: Operator role escalation attempt
+  desc: Operator attempts to change role from poll_clerk to observer/admin
+  condition: >
+    open_write and fd.name contains "/data/local/eel/operator/" and
+    evt.arg.contains = "role_change" or evt.arg.contains = "elevate"
+  output: >
+    Operator role change attempt: proc=%proc.name pid=%proc.pid
+    file=%fd.name user=%user.name role_attempt=%evt.arg correlation_key=role-esc-013
+  priority: ALERT
+  tags: [operator-abuse, privilege-escalation, DPA-2019-S6]
+
+- rule: Operator authentication retries exceeded (possible brute force)
+  desc: More than 3 failed authentication attempts within 60s by same operator
+  condition: >
+    open_read and fd.name contains "/auth/" and
+    evt.arg contains "failed"
+  output: >
+    Auth retries exceeded: proc=%proc.name pid=%proc.pid
+    user=%user.name attempts=%evt.arg correlation_key=auth-brute-014
+  priority: WARNING
+  tags: [auth, brute-force, audit-trail]
+
+# ── Form 34A / 34B / 34C integrity ─────────────────────────────────────────────
+
+- rule: Form 34A modified after Ed25519 signature
+  desc: Form 34A file modified after signing — tamper-evident chain broken
+  condition: >
+    open_write and (fd.name contains "form34a" or fd.name contains "34A") and
+    evt.time > evt.signature_time
+  output: >
+    Form 34A tampered: proc=%proc.name pid=%proc.pid
+    file=%fd.name time_after_sig=%evt.time correlation_key=form-tamper-015
+  priority: CRITICAL
+  tags: [form-integrity, tamper-evident, elections-act-S34]
+
+- rule: Form 34A accessed by non-operator process
+  desc: Form 34A file accessed by unexpected process (not poll_clerk/observer/admin)
+  condition: >
+    open_read and fd.name contains "form34a" and
+    not proc.name in (poll_clerk_app, observer_app, admin_app, form_service)
+  output: >
+    Form 34A unauthorized access: proc=%proc.name pid=%proc.pid
+    file=%fd.name user=%user.name correlation_key=form-unauth-016
+  priority: ALERT
+  tags: [form-integrity, unauthorized-access, audit-trail]
+
+# ── Biometric session replay / capture replay ──────────────────────────────────
+
+- rule: Same fingerprint template presented within 60s (replay of captured image)
+  desc: Same biometric template submitted twice in 60s — possible replay of captured image
+  condition: >
+    open_read and fd.name contains "/biometric/" and
+    evt.arg.contains = "fingerprint_template"
+  output: >
+    Biometric replay: proc=%proc.name pid=%proc.pid
+    template_ref=%evt.arg replay_window=60s correlation_key=bio-replay-017
+  priority: ALERT
+  tags: [biometric-replay, fingerprint, M3-M5]
+
+- rule: Same iris template presented within 60s
+  desc: Iris template replay within 60-second window
+  condition: >
+    open_read and fd.name contains "/biometric/" and
+    evt.arg.contains = "iris_template"
+  output: >
+    Iris replay: proc=%proc.name pid=%proc.pid
+    template_ref=%evt.arg replay_window=60s correlation_key=iris-replay-018
+  priority: ALERT
+  tags: [biometric-replay, iris, M3-M5]

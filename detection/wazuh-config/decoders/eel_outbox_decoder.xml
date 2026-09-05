@@ -1,0 +1,5 @@
+<decoder name="eel-outbox-decoder">
+  <prematch>^\{"submissionId"</prematch>
+  <regex>submissionId</regex>
+  <order>submissionId,eventType,status,retryCount</order>
+</decoder>

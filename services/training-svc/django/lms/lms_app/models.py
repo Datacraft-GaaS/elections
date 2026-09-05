@@ -35,6 +35,43 @@ class ProgressScope(models.TextChoices):
     CONSTITUENCY = "CONSTITUENCY", "Constituency"
 
 
+class Lesson(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid7str, editable=False)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="lessons")
+    module = models.ForeignKey(CourseModule, on_delete=models.CASCADE, related_name="lessons")
+    order_index = models.PositiveSmallIntegerField(default=0)
+    title = models.CharField(max_length=500)
+    content_markdown = models.TextField()
+    duration_minutes = models.PositiveSmallIntegerField(default=15)
+    class Meta:
+        db_table = "training_lms_lessons"
+        ordering = ["order_index"]
+        unique_together = [["course", "order_index"]]
+
+class LessonAttempt(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid7str, editable=False)
+    worker_id = models.UUIDField()
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="attempts")
+    attempted_at = models.DateTimeField(auto_now_add=True)
+    completed = models.BooleanField(default=False)
+    score_pct = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    idempotency_key = models.CharField(max_length=128, unique=True)
+    class Meta:
+        db_table = "training_lms_lesson_attempts"
+        ordering = ["-attempted_at"]
+
+class CertAuditLog(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid7str, editable=False)
+    event_type = models.CharField(max_length=30)
+    certificate_id = models.UUIDField(null=True, blank=True)
+    worker_id = models.UUIDField()
+    recorded_at = models.DateTimeField(auto_now_add=True)
+    proof_hash = models.CharField(max_length=64)
+    correlation_key = models.CharField(max_length=64)
+    class Meta:
+        db_table = "training_lms_cert_audit"
+        ordering = ["-recorded_at"]
+
 class CourseModule(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid7str, editable=False)
     title = models.CharField(max_length=500)

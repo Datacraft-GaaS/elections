@@ -1,0 +1,82 @@
+<!-- Wazuh rules for EEL-specific events. -->
+<group name="eel">
+
+  <!-- Audit chain integrity -->
+  <rule id="100100" level="14">
+    <decoded_as>eel-audit-decoder</decoded_as>
+    <field name="proofHashStatus">mismatch</field>
+    <description>EEL: Proof hash mismatch - audit chain broken</description>
+    <mitre>
+      <id>T1565.001</id>
+    </mitre>
+  </rule>
+
+  <rule id="100101" level="14">
+    <decoded_as>eel-audit-decoder</decoded_as>
+    <field name="signatureStatus">invalid</field>
+    <description>EEL: Ed25519 signature verification failed</description>
+  </rule>
+
+  <rule id="100102" level="14">
+    <decoded_as>eel-audit-decoder</decoded_as>
+    <field name="eventType">audit_tamper</field>
+    <description>EEL: Audit log tampering detected</description>
+  </rule>
+
+  <!-- Biometric quality -->
+  <rule id="100200" level="5">
+    <decoded_as>eel-biometric-decoder</decoded_as>
+    <field name="biometricType">fingerprint</field>
+    <field name="qualityScore" type="numeric">-50</field>
+    <description>EEL: Fingerprint quality below threshold</description>
+  </rule>
+
+  <rule id="100201" level="5">
+    <decoded_as>eel-biometric-decoder</decoded_as>
+    <field name="biometricType">iris</field>
+    <field name="qualityScore" type="numeric">-40</field>
+    <description>EEL: Iris quality below threshold</description>
+  </rule>
+
+  <!-- Outbox events -->
+  <rule id="100300" level="3">
+    <decoded_as>eel-outbox-decoder</decoded_as>
+    <field name="eventType">upload_initiated</field>
+    <description>EEL: Operator-initiated upload (audit trail)</description>
+  </rule>
+
+  <rule id="100301" level="5">
+    <decoded_as>eel-outbox-decoder</decoded_as>
+    <field name="eventType">local_dedup_rejection</field>
+    <description>EEL: Local duplicate enrollment rejected</description>
+  </rule>
+
+  <rule id="100302" level="10">
+    <decoded_as>eel-outbox-decoder</decoded_as>
+    <field name="eventType">upload_failed</field>
+    <description>EEL: Biometric upload failure (potential connectivity issue)</description>
+  </rule>
+
+  <rule id="100303" level="10">
+    <decoded_as>eel-outbox-decoder</decoded_as>
+    <field name="eventType">upload_critical_failure</field>
+    <description>EEL: Critical upload failure (3+ retries)</description>
+  </rule>
+
+  <!-- IPRS duplicate detection -->
+  <rule id="100400" level="14">
+    <decoded_as>eel-audit-decoder</decoded_as>
+    <field name="eventType">iprs_verify</field>
+    <field name="responseRecordCount" type="numeric">1</field>
+    <options>greater</options>
+    <description>EEL: IPRS returned multiple records for single national ID</description>
+  </rule>
+
+  <!-- Partition selection audit -->
+  <rule id="100500" level="3">
+    <decoded_as>eel-audit-decoder</decoded_as>
+    <field name="eventType">partition_selection</field>
+    <description>EEL: Partition filter selected for 1:N search</description>
+  </rule>
+
+</group>

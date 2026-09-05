@@ -1,0 +1,6 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Lesson 2 — Slides</title></head><body>
+<h1>Lesson 2: Voter Verification (Slides)</h1><h2>Slide 1 — Biometric Workflow</h2><p>Capture → Extract (NBIS Bozorth3) → Match (gallery shard) → Score → Decision</p>
+<h2>Slide 2 — Thresholds</h2><p>Pass: ≥82% (ADR-0006). Fail: <82% → Manual adjudication with PO + observer.</p>
+<h2>Slide 3 — Audit Chain</h2><p>Every event: auditId (UUID7), proofHash (SHA-256), Ed25519 HSM signature (ADR-0022). Correlation_key links to falco/wazuh detection.</p>
+<h2>Slide 4 — Security</h2><p>Canary tokens distributed (17 tokens, correlation_routing.md). M5 drill: 05_dr_report.md.</p>
+</body></html>

@@ -8,6 +8,8 @@ members = [
     "crates/bvi-api",
     "crates/bvi-config",
     "crates/bvi-turnout",
+    "crates/bvi-anomaly",
+    "crates/bvi-register-anchor",
 ]
 
 [workspace.package]
@@ -37,6 +39,7 @@ uuid              = { version = "1",    features = ["v4", "v7", "serde"] }
 thiserror         = { version = "2" }
 anyhow            = { version = "1" }
 chrono            = { version = "0.4",  features = ["serde"] }
+blake3 = "1"
 bytes             = "1"
 flate2            = "1"
 sha2              = "0.10"
@@ -55,6 +58,8 @@ rstest                  = { version = "0.23" }
 bvi-api     = { path = "crates/bvi-api" }
 bvi-config  = { path = "crates/bvi-config" }
 bvi-turnout = { path = "crates/bvi-turnout" }
+bvi-anomaly = { path = "crates/bvi-anomaly" }
+bvi-register-anchor = { path = "crates/bvi-register-anchor" }
 
 [profile.release]
 lto           = "thin"

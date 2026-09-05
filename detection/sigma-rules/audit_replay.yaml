@@ -1,0 +1,129 @@
+title: EEL — Audit Replay — Same Audit Event Replayed (Identical auditId, Different Timestamp)
+id: eel-ar-001
+status: critical
+description: Audit event with same auditId but different timestamp — replay or chain break.
+references:
+  - ADR-0017-transparency-log
+  - ADR-0022-release-dr
+  - NIST-SP-800-53-AU-2
+logsource:
+  product: eel
+  service: audit_service
+detection:
+  selection:
+    EventType: 'audit_replay' or 'audit_shadow_rebuild'
+  duplicate_filter:
+    AuditId|count: > 1
+    Timestamp|diff: > 0
+  condition: selection and duplicate_filter
+level: critical
+fields: [auditId, eventType, timestamp, originalTimestamp, actorId, stationId]
+tags:
+  - audit.replay
+  - chain-integrity
+  - ADR-0017
+  - ADR-0022
+
+---
+title: EEL — Audit Replay — Audit Chain Reconstruction Script Executed
+id: eel-ar-002
+status: critical
+description: Script that reconstructs/rebuilds audit chain executed — possible replay attack or recovery attempt.
+references:
+  - ADR-0022-release-dr
+  - M5-SMS-USB-MANIFEST
+logsource:
+  product: linux
+  service: auditd
+detection:
+  selection:
+    EventType: 'process_exec'
+    CommandLine|contains: ['reconstruct', 'replay', 'rebuild', 'audit_chain']
+    ProcessName: 'python' or 'python3' or 'bash' or 'sh'
+  filter_unauthorized:
+    UserName: not in ['attestation_service', 'audit_admin', 'system_admin']
+  condition: selection and filter_unauthorized
+level: critical
+fields: [auditId, commandLine, userName, pid, timestamp, deviceId]
+tags:
+  - audit.replay
+  - chain.rebuild
+  - ADR-0022
+  - M5
+
+---
+title: EEL — Audit Chain — Proof Hash Mismatch (Tampering Detected)
+id: eel-ar-003
+status: critical
+description: Proof hash in audit entry does not match SHA-256 of payload — audit chain broken / data tampered.
+references:
+  - ADR-0017-transparency-log
+  - RFC-8785-canonical-json
+  - NIST-SP-800-53-AU-10
+logsource:
+  product: eel
+  service: audit_service
+detection:
+  selection:
+    EventType: 'audit_integrity_check'
+    ProofHashStatus: 'mismatch'
+  condition: selection
+level: critical
+fields: [auditId, proofHash, expectedProofHash, eventType, actorId, whenUtc]
+tags:
+  - audit.integrity
+  - hash.mismatch
+  - ADR-0017
+
+---
+title: EEL — Audit Chain — Ed25519 Signature Verification Failed
+id: eel-ar-004
+status: critical
+description: Signature verification on audit entry failed — entry modified or forged.
+references:
+  - ADR-0017
+  - NIST-SP-800-53-AU-10
+  - DPA-2019-S6
+logsource:
+  product: eel
+  service: audit_service
+detection:
+  selection:
+    EventType: 'signature_verify'
+    SignatureStatus: 'invalid'
+    SignatureStatus: 'mismatch'
+  condition: selection
+level: critical
+fields: [auditId, eventType, signatureStatus, publicKey, expectedSignature, actorId]
+tags:
+  - audit.integrity
+  - crypto.signature
+  - ADR-0017
+
+---
+title: EEL — Audit Chain — Audit Shadow File Modified Outside Audit Service
+id: eel-ar-005
+status: critical
+description: Audit shadow file (encrypted replay log) modified by non-attestation/non-audit process.
+references:
+  - ADR-0017
+  - ADR-0022
+  - M3-HARDWARE-INTEGRATION
+logsource:
+  product: linux
+  service: syslog
+  category: file_access
+detection:
+  selection:
+    EventType: 'file_modify'
+    FilePath|contains: 'audit_shadow'
+  filter_unauthorized:
+    ProcessName: not in ['audit_service', 'attestation_service', 'system_server', 'mdm_agent']
+  condition: selection and filter_unauthorized
+level: critical
+fields: [auditId, filePath, processName, userName, whenUtc, deviceId]
+tags:
+  - audit.shadow
+  - chain.tamper
+  - ADR-0017
+  - ADR-0022

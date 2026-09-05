@@ -1,0 +1,5 @@
+<decoder name="eel-biometric-decoder">
+  <prematch>^\{"sessionId"</prematch>
+  <regex>sessionId</regex>
+  <order>sessionId,biometricType,qualityScore,status</order>
+</decoder>

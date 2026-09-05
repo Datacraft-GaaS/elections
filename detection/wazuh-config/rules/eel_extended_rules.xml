@@ -1,0 +1,322 @@
+<!--
+  Wazuh extended rules for EEL — M5 hardening extended.
+  References: ADR 0004, 0006, 0009, 0010, 0019, 0022, 0023
+  Sources: audit_service, falco, tetragon, biometric_capture, iprs_client,
+           supply_chain, mdm_policy, network, form_service
+  Rules 100110-101013 (aligned with sigma rules).
+-->
+<group name="eel_extended">
+
+  <!-- AUDIT REPLAY / INTEGRITY — 100110-100119 -->
+  <rule id="100110" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">Biometric audit log deleted or truncated</field>
+    <description>EEL: Audit log tampered</description>
+    <mitre><id>T1565.001</id></mitre>
+  </rule>
+  <rule id="100111" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">Audit shadow file opened for reconstruction</field>
+    <description>EEL: Audit shadow reconstruction attempt</description>
+  </rule>
+  <rule id="100112" level="14">
+    <decoded_as>eel-audit-decoder</decoded_as>
+    <field name="eventType">audit_replay</field>
+    <description>EEL: Audit event replay — same auditId used again</description>
+    <mitre><id>T1070.001</id></mitre>
+  </rule>
+  <rule id="100113" level="14">
+    <decoded_as>eel-audit-decoder</decoded_as>
+    <field name="eventType">audit_shadow_rebuild</field>
+    <description>EEL: Audit shadow rebuild attempted</description>
+  </rule>
+  <rule id="100114" level="14">
+    <decoded_as>eel-audit-decoder</decoded_as>
+    <field name="eventType">audit_integrity_check</field>
+    <field name="ProofHashStatus">mismatch</field>
+    <description>EEL: Proof hash mismatch — audit chain broken</description>
+    <mitre><id>T1565.001</id></mitre>
+  </rule>
+  <rule id="100115" level="14">
+    <decoded_as>eel-audit-decoder</decoded_as>
+    <field name="eventType">signature_verify</field>
+    <field name="SignatureStatus">invalid</field>
+    <description>EEL: Ed25519 signature verification failed</description>
+  </rule>
+  <rule id="100116" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">Audit log symlink created over audit directory</field>
+    <description>EEL: Symlink attack on audit directory</description>
+  </rule>
+  <rule id="100117" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">Audit replay script executed</field>
+    <description>EEL: Audit replay script executed</description>
+  </rule>
+
+  <!-- ELECTION INTEGRITY — 100210-100219 -->
+  <rule id="100210" level="7">
+    <decoded_as>eel-audit-decoder</decoded_as>
+    <field name="eventType">voter_registration</field>
+    <description>EEL: Biometric voter registration event</description>
+  </rule>
+  <rule id="100211" level="14">
+    <decoded_as>eel-audit-decoder</decoded_as>
+    <field name="eventType">enrollment</field>
+    <description>EEL: Bulk enrollment detected — voter stuffing</description>
+  </rule>
+  <rule id="100212" level="5">
+    <decoded_as>eel-audit-decoder</decoded_as>
+    <field name="eventType">enrollment</field>
+    <description>EEL: Enrollment outside operating hours</description>
+  </rule>
+  <rule id="100213" level="14">
+    <decoded_as>eel-audit-decoder</decoded_as>
+    <field name="eventType">iprs_verify</field>
+    <description>EEL: IPRS multiple records — duplicate identity</description>
+  </rule>
+  <rule id="100214" level="7">
+    <decoded_as>eel-audit-decoder</decoded_as>
+    <field name="eventType">vote_cast</field>
+    <description>EEL: Vote cast event — audit trail</description>
+  </rule>
+  <rule id="100215" level="7">
+    <decoded_as>eel-audit-decoder</decoded_as>
+    <field name="eventType">partition_selection</field>
+    <description>EEL: Partition filter selected for 1:N search</description>
+  </rule>
+  <rule id="100216" level="7">
+    <decoded_as>eel-audit-decoder</decoded_as>
+    <field name="eventType">mrz_scan</field>
+    <description>EEL: MRZ scan event</description>
+  </rule>
+
+  <!-- BIOMETRIC / HARDWARE M3 — 100310-100329 -->
+  <rule id="100310" level="5">
+    <decoded_as>eel-biometric-decoder</decoded_as>
+    <field name="biometricType">fingerprint</field>
+    <description>EEL: Fingerprint quality below threshold (50)</description>
+  </rule>
+  <rule id="100311" level="5">
+    <decoded_as>eel-biometric-decoder</decoded_as>
+    <field name="biometricType">iris</field>
+    <description>EEL: Iris quality below threshold (40)</description>
+  </rule>
+  <rule id="100312" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">Fingerprint sensor accessed by unexpected process</field>
+    <description>EEL: FAP60 sensor accessed unexpectedly</description>
+    <mitre><id>T1204.001</id></mitre>
+  </rule>
+  <rule id="100313" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">Iris camera accessed by unexpected process</field>
+    <description>EEL: AntIris camera accessed unexpectedly</description>
+  </rule>
+  <rule id="100314" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">GSM modem accessed outside RTS app</field>
+    <description>EEL: GSM modem accessed by non-RTS process</description>
+    <mitre><id>T1478</id></mitre>
+  </rule>
+  <rule id="100315" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">FAP60 sensor disconnected unexpectedly</field>
+    <description>EEL: FAP60 disconnected — possible hardware swap</description>
+  </rule>
+  <rule id="100316" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">AntIris camera disconnected unexpectedly</field>
+    <description>EEL: AntIris disconnected unexpectedly</description>
+  </rule>
+  <rule id="100317" level="10">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">FAP60 quality score below threshold logged</field>
+    <description>EEL: FAP60 low quality — M3 hardware issue</description>
+  </rule>
+  <rule id="100318" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">GSM modem reconnected after enrollment</field>
+    <description>EEL: GSM reconnect post-session — hardware swap</description>
+  </rule>
+  <rule id="100319" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">RTS reader accessed outside expected process</field>
+    <description>EEL: RFID reader accessed unexpectedly</description>
+  </rule>
+  <rule id="100320" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">TEE / trusted execution environment accessed by unexpected process</field>
+    <description>EEL: TEE accessed unexpectedly</description>
+  </rule>
+  <rule id="100321" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">HSM key reference accessed but key not found</field>
+    <description>EEL: HSM key slot empty — key withdrawal</description>
+  </rule>
+
+  <!-- MDM / DEVICE POLICY — 100410-100429 -->
+  <rule id="100410" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">FLAG_SECURE disabled or cleared</field>
+    <description>EEL: Screen protection disabled — kiosk violation</description>
+    <mitre><id>T1499</id></mitre>
+  </rule>
+  <rule id="100411" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">MDM policy file modified outside management</field>
+    <description>EEL: MDM policy modified by unexpected process</description>
+  </rule>
+  <rule id="100412" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">Root filesystem remounted read-write</field>
+    <description>EEL: Root remounted RW — device rooted</description>
+    <mitre><id>T1543.003</id></mitre>
+  </rule>
+  <rule id="100413" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">Binary with suid bit executed from /data directory</field>
+    <description>EEL: SUID from /data — privilege escalation</description>
+    <mitre><id>T1548.001</id></mitre>
+  </rule>
+  <rule id="100414" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">Falco kernel module unloaded</field>
+    <description>EEL: Falco kernel module unloaded</description>
+  </rule>
+  <rule id="100415" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">eBPF syscall hooked or modified</field>
+    <description>EEL: eBPF modified — possible rootkit</description>
+    <mitre><id>T1014</id></mitre>
+  </rule>
+
+  <!-- SUPPLY CHAIN — 100510-100519 -->
+  <rule id="100510" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">APK / library replaced with different hash</field>
+    <description>EEL: APK modified — supply chain compromised</description>
+    <mitre><id>T1474.001</id></mitre>
+  </rule>
+  <rule id="100511" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">Build artifact with unexpected timestamp</field>
+    <description>EEL: Future-timestamp binary — backdated injection</description>
+  </rule>
+  <rule id="100512" level="10">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">APK signature verification failed at runtime</field>
+    <description>EEL: APK signature check failed</description>
+  </rule>
+
+  <!-- SESSION / OPERATOR — 100610-100629 -->
+  <rule id="100610" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">Biometric app process replaced or ptraced</field>
+    <description>EEL: Process injection — code injection</description>
+    <mitre><id>T1055.008</id></mitre>
+  </rule>
+  <rule id="100611" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">execve of shell from biometric app directory</field>
+    <description>EEL: Shell spawned from biometric app — RCE</description>
+    <mitre><id>T1059.001</id></mitre>
+  </rule>
+  <rule id="100612" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">Biometric session replay — same sessionId opens within 1s of close</field>
+    <description>EEL: Session replay — session hijacking</description>
+  </rule>
+  <rule id="100613" level="14">
+    <decoded_as>operator-decoder</decoded_as>
+    <field name="eventType">role_change</field>
+    <description>EEL: Operator role escalation</description>
+  </rule>
+  <rule id="100614" level="7">
+    <decoded_as>operator-decoder</decoded_as>
+    <field name="eventType">auth_failure</field>
+    <description>EEL: Auth retry exceeded — brute force</description>
+  </rule>
+  <rule id="100615" level="14">
+    <decoded_as>operator-decoder</decoded_as>
+    <field name="eventType">audit_query</field>
+    <description>EEL: Cross-station audit record access</description>
+  </rule>
+  <rule id="100616" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">Session token copied to unexpected process</field>
+    <description>EEL: Session token copied — hijacking risk</description>
+  </rule>
+
+  <!-- NETWORK / DDoS / C2 — 100710-100729 -->
+  <rule id="100710" level="10">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">Excessive BFF requests from single device</field>
+    <description>EEL: BFF rate limit exceeded — DDoS</description>
+    <mitre><id>T1499.002</id></mitre>
+  </rule>
+  <rule id="100711" level="10">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">Biometric app makes outbound connection to unexpected IP</field>
+    <description>EEL: Unexpected outbound — exfiltration / C2</description>
+    <mitre><id>T1041</id></mitre>
+  </rule>
+  <rule id="100712" level="5">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">DNS query for biometric server not in allowlist</field>
+    <description>EEL: Non-allowlisted DNS — possible C2</description>
+  </rule>
+  <rule id="100713" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">TLS handshake with untrusted CA</field>
+    <description>EEL: Untrusted CA — possible MITM</description>
+    <mitre><id>T1553.004</id></mitre>
+  </rule>
+  <rule id="100714" level="7">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">Certificate expiration within 24h</field>
+    <description>EEL: TLS certificate expiring soon</description>
+  </rule>
+  <rule id="100715" level="10">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">Port scan from biometric device to internal subnet</field>
+    <description>EEL: Port scan from device — lateral movement</description>
+    <mitre><id>T1046</id></mitre>
+  </rule>
+  <rule id="100716" level="10">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">BFF request with altered JSON payload</field>
+    <description>EEL: BFF payload altered — API tampering</description>
+  </rule>
+  <rule id="100717" level="10">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">IPRS connection outside official client processes</field>
+    <description>EEL: IPRS direct connection by non-BFF</description>
+  </rule>
+
+  <!-- FORM INTEGRITY — 100810-100819 -->
+  <rule id="100810" level="14">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">Form 34A modified after Ed25519 signature</field>
+    <description>EEL: Form 34A tampered after signing</description>
+    <mitre><id>T1565.001</id></mitre>
+  </rule>
+  <rule id="100811" level="10">
+    <decoded_as>falco-decoder</decoded_as>
+    <field name="rule">Form 34A accessed by non-operator process</field>
+    <description>EEL: Form 34A unauthorized access</description>
+  </rule>
+  <rule id="100812" level="7">
+    <decoded_as>eel-audit-decoder</decoded_as>
+    <field name="eventType">form_34a_upload</field>
+    <description>EEL: Form 34A upload — audit trail</description>
+  </rule>
+
+  <!-- OUTBOX / UPLOAD — 100910-100929 -->
+  <rule id="100910" level="10">
+    <decoded_as>eel-outbox-decoder</decoded_as>
+    <field name="eventType">upload_failed</field>
+    <description>EEL: Biometric upload failure</description>
+  </rule>
+  <rule id="100911" level="14">
+    <decoded_as>eel-out

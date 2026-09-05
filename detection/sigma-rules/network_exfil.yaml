@@ -1,0 +1,135 @@
+title: EEL — Network — Unexpected Outbound Connection from Biometric App
+id: eel-net-001
+status: alert
+description: Biometric app connects to IP outside BFF / IPRS / audit allowlist — exfiltration / C2 indicator.
+references:
+  - ADR-0019-edge-topology
+  - ADR-0010-edge-ddos
+  - TTP-T1071 (C2)
+logsource:
+  product: linux
+  service: syslog
+detection:
+  selection:
+    EventType: 'network_connection'
+    ProcessName|contains: 'com.eel.bvr' or 'com.eel.bvi'
+  filter_unauthorized_ip:
+    DestinationIP:
+      not_in: ['bvr.eel.local/32', 'bvi.eel.local/32', 'iprs.go.ke/32', 'api.eel.local/32', 'audit.eel.local/32', 'wazuh.eel.local/32']
+  condition: selection and filter_unauthorized_ip
+level: alert
+fields: [auditId, destinationIP, destinationPort, processName, actorId, deviceId, whenUtc]
+tags:
+  - network
+  - exfiltration
+  - C2
+  - ADR-0019
+  - TTP-T1071
+
+---
+title: EEL — Network — BFF Rate Limit Exceeded (DDoS / Bulk Request)
+id: eel-net-002
+status: alert
+description: More than 100 requests to BFF endpoint within 10 seconds — DDoS or bulk stuffing attempt.
+references:
+  - ADR-0010-edge-ddos
+  - Elections Act §34 (service integrity)
+logsource:
+  product: linux
+  service: auditd
+detection:
+  selection:
+    EventType: 'http_request'
+    Endpoint|contains: '/bff'
+  rate_filter:
+    RequestCount: > 100
+    TimeWindow: 10s
+  condition: selection and rate_filter
+level: alert
+fields: [auditId, endpoint, requestCount, timeWindow, sourceIP, actorId, deviceId]
+tags:
+  - network
+  - ddos
+  - bulk-request
+  - ADR-0010
+
+---
+title: EEL — Network — IPRS Query Outside Operating Hours (07:00-18:00)
+id: eel-net-003
+status: warning
+description: IPRS verification request outside official operating hours — suspicious access.
+references:
+  - ADR-0019
+  - Elections Act (operating hours)
+logsource:
+  product: eel
+  service: audit_service
+detection:
+  selection:
+    EventType: 'iprs_verify'
+  time_filter:
+    UtcHour:
+      lt: 7
+      gt: 18
+  condition: selection and time_filter
+level: warning
+fields: [auditId, actorId, stationId, whenUtc, eventType]
+tags:
+  - network
+  - off-hours
+  - iprs
+  - ADR-0019
+
+---
+title: EEL — Network — TLS Handshake with Untrusted CA
+id: eel-net-004
+status: critical
+description: TLS connection using certificate from untrusted CA — MITM / interception attempt.
+references:
+  - ADR-0010
+  - NIST-SP-800-53-SC-8
+logsource:
+  product: linux
+  service: syslog
+detection:
+  selection:
+    EventType: 'tls_handshake'
+    TrustedCA: false
+  condition: selection
+level: critical
+fields: [auditId, destinationIP, destinationPort, caFingerprint, processName, actorId]
+tags:
+  - network
+  - tls
+  - MITM
+  - ADR-0010
+
+---
+title: EEL — Network — Non-Allowlisted DNS Resolution (Unknown Endpoint)
+id: eel-net-005
+status: warning
+description: DNS resolution for endpoint not in allowlist from biometric device.
+references:
+  - ADR-0019
+  - TTP-T1071
+logsource:
+  product: linux
+  service: syslog
+  category: dns
+detection:
+  selection:
+    EventType: 'dns_query'
+    ProcessName|contains: 'com.eel.bvr' or 'com.eel.bvi' or 'bvr-kit'
+    QueryName: exists
+  filter_unauthorized:
+    QueryName:
+      not_contains: ['bvr.eel.local', 'bvi.eel.local', 'iprs.go.ke', 'api.eel.local', 'audit.eel.local', 'wazuh.eel.local']
+  condition: selection and filter_unauthorized
+level: warning
+fields: [auditId, queryName, processName, actorId, deviceId, whenUtc]
+tags:
+  - network
+  - C2
+  - dns
+  - ADR-0019
+  - TTP-T1071

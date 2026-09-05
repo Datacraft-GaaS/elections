@@ -1,0 +1,301 @@
+# Falco rules for EEL election biometric infrastructure.
+# M5 hardening: kernel-level threat detection on BVR/BVI kit devices.
+# Sources: kernel syscalls via Falco kernel module / eBPF probe.
+#
+# Severity levels: EMERGENCY(0) | ALERT(1) | CRITICAL(2) | ERROR(3) | WARNING(4) | NOTICE(5) | INFO(6) | DEBUG(7)
+# Priority: matches above.
+#
+# References:
+#   - NIST SP 800-53: AU-2 (Audit Events), SI-4 (System Monitoring)
+#   - DPA 2019 Kenya: §6 — security of personal data
+#   - Elections Act: §34 — tamper-evident logging
+
+# ── Rule macro definitions ──────────────────────────────────────────────────────
+
+- macro: biometric_dirs
+  condition: >
+    fd.directory contains "/data/data/com.eel.bvr" or
+    fd.directory contains "/data/data/com.eel.bvi" or
+    fd.directory contains "/data/local/eel/biometric" or
+    fd.directory contains "/data/user_de/0/com.eel.bvr" or
+    fd.directory contains "/data/user_de/0/com.eel.bvi"
+
+- macro: audit_dirs
+  condition: >
+    fd.directory contains "/data/data/com.eel.bvr/files/audit" or
+    fd.directory contains "/data/data/com.eel.bvi/files/audit" or
+    fd.directory contains "/data/user_de/0/com.eel.bvr/files/audit" or
+    fd.directory contains "/data/local/eel/audit"
+
+- macro: hsm_device
+  condition: >
+    fd.name startswith "/dev/hsm" or
+    fd.name startswith "/dev/ttyUSB" or
+    fd.name startswith "/dev/bus/usb"
+
+- macro: biometric_app
+  condition: >
+    proc.name = "com.eel.bvr" or
+    proc.name = "com.eel.bvi" or
+    proc.name = "bvr-kit" or
+    proc.name = "bvi-kit"
+
+- macro: suspicious_shell
+  condition: >
+    proc.name in (shell_binaries) and
+    not proc.pname in (cron_binaries, backup_binaries, admin_binaries)
+
+- macro: fingerprint_sensor
+  condition: >
+    fd.name contains "fap60" or
+    fd.name contains "FUFingerSDK" or
+    fd.name startswith "/dev/usb"
+
+- macro: iris_sensor
+  condition: >
+    fd.name contains "antiris" or
+    fd.name contains "AntUSBCamera" or
+    fd.name contains "irex"
+
+# ── Audit log tampering ─────────────────────────────────────────────────────────
+
+- rule: Biometric audit log deleted or truncated
+  desc: Audit log file deleted or truncated — tamper-evident chain broken
+  condition: >
+    open_write and
+    audit_dirs and
+    (evt.arg.name endswith ".audit" or evt.arg.name endswith ".log" or evt.arg.name endswith ".json")
+  output: >
+    Audit log tampered: proc=%proc.name pid=%proc.pid file=%evt.arg.name
+    user=%user.name[%user.uid] terminal=%proc.tty
+    command=%proc.cmdline node=%hostname
+  priority: CRITICAL
+  tags: [file, audit-tamper, DPA-2019-S6, elections-act-S34]
+
+- rule: Audit log symlink created over audit directory
+  desc: Symlink created within audit directory — possible log injection
+  condition: >
+    create_symlink and
+    audit_dirs
+  output: >
+    Symlink created in audit directory: proc=%proc.name
+    pid=%proc.pid target=%evt.arg.target link=%evt.arg.link
+    user=%user.name command=%proc.cmdline node=%hostname
+  priority: CRITICAL
+  tags: [audit-tamper, symlink-attack, DPA-2019-S6]
+
+- rule: Audit log open with write after enrollment
+  desc: Audit log opened for write after enrollment session — suspicious post-enrollment modification
+  condition: >
+    open_write and
+    biometric_dirs and
+    (evt.arg.name contains "enrol" or evt.arg.name contains "capture" or evt.arg.name contains "audit")
+  output: >
+    Audit file write after enrollment: proc=%proc.name pid=%proc.pid
+    file=%evt.arg.name user=%user.name uid=%user.uid node=%hostname
+  priority: ALERT
+  tags: [file, audit-integrity, elections-act-S34]
+
+# ── Hardware device access ──────────────────────────────────────────────────────
+
+- rule: Fingerprint sensor accessed by unexpected process
+  desc: Fingerprint USB device opened by non-BVR process
+  condition: >
+    openat and
+    fingerprint_sensor and
+    not proc.name in (biometric_app, trusted_sensor_drivers)
+  output: >
+    Fingerprint sensor accessed unexpectedly: proc=%proc.name
+    pid=%proc.pid device=%fd.name user=%user.name node=%hostname
+  priority: CRITICAL
+  tags: [hardware, biometric-sensor, privilege-escalation]
+
+- rule: Iris camera accessed by unexpected process
+  desc: Iris USB camera opened by non-BVI process
+  condition: >
+    openat and
+    iris_sensor and
+    not proc.name in (biometric_app, trusted_sensor_drivers)
+  output: >
+    Iris camera accessed unexpectedly: proc=%proc.name
+    pid=%proc.pid device=%fd.name user=%user.name node=%hostname
+  priority: CRITICAL
+  tags: [hardware, biometric-sensor, privilege-escalation]
+
+- rule: GSM modem accessed outside RTS app
+  desc: Serial modem device opened by non-RTS process — possible SMS injection
+  condition: >
+    openat and
+    hsm_device and
+    not proc.name = "com.eel.rts" and
+    not proc.name = "rts-kit"
+  output: >
+    GSM modem accessed unexpectedly: proc=%proc.name
+    pid=%proc.pid device=%fd.name user=%user.name node=%hostname
+  priority: ALERT
+  tags: [hardware, gsm-modem, smi-injection]
+
+# ── Kernel module / eBPF tampering ──────────────────────────────────────────────
+
+- rule: Falco kernel module unloaded
+  desc: Falco kernel module unloaded — monitoring disabled
+  condition: >
+    delete_module and
+    evt.arg.name = "falco" and
+    not proc.name = "systemd" and
+    not proc.name = "containerd"
+  output: >
+    Falco kernel module unloaded: proc=%proc.name
+    pid=%proc.pid user=%user.name uid=%user.uid node=%hostname
+  priority: EMERGENCY
+  tags: [kernel, monitoring-disable, TTP-T0812]
+
+- rule: eBPF syscall hooked or modified
+  desc: eBPF syscall instrumentation modified — possible rootkit
+  condition: >
+    (delete_module or write_file) and
+    (fd.name contains "bpf" or fd.name contains "ebpf") and
+    not proc.name in (systemd_binaries, containerd_binaries)
+  output: >
+    eBPF modified/unloaded: proc=%proc.name pid=%proc.pid
+    file=%fd.name user=%user.name node=%hostname
+  priority: EMERGENCY
+  tags: [kernel, rootkit, TTP-T1014]
+
+# ── Credential / key access ──────────────────────────────────────────────────────
+
+- rule: Keystore accessed outside expected biometric app
+  desc: Android Keystore accessed by unexpected process — possible key extraction
+  condition: >
+    open_write and
+    (fd.name contains "keystore" or fd.name contains "/data/misc/keystore" or
+     fd.name contains "/data/user/0/com.eel.bvr/keychain") and
+    not proc.name in (biometric_app, android_framework)
+  output: >
+    Keystore accessed unexpectedly: proc=%proc.name
+    pid=%proc.pid file=%fd.name user=%user.name node=%hostname
+  priority: CRITICAL
+  tags: [credential, key-extraction, DPA-2019-S6]
+
+- rule: Ed25519 signing key accessed from device
+  desc: HSM-backed Ed25519 key accessed — possible key exfiltration attempt
+  condition: >
+    openat and
+    (fd.name contains ".ed25519" or fd.name contains "signing_key" or
+     fd.name contains "/dev/hsm") and
+    not proc.name in (biometric_app, attestation_svc)
+  output: >
+    Signing key accessed unexpectedly: proc=%proc.name
+    pid=%proc.pid device=%fd.name user=%user.name node=%hostname
+  priority: EMERGENCY
+  tags: [crypto, key-access, DPA-2019-S6]
+
+# ── Process injection ─────────────────────────────────────────────────────────────
+
+- rule: Biometric app process replaced or ptraced
+  desc: BVR/BVI app being ptraced or memory modified
+  condition: >
+    (ptrace or process_madvise or process_vm_writev) and
+    proc.name in (biometric_app)
+  output: >
+    Biometric app process instrumentation: tracer=%proc.name
+    pid=%proc.pid target=%proc.ppid action=%evt.type node=%hostname
+  priority: CRITICAL
+  tags: [process, injection, TTP-T1055]
+
+- rule: execve of shell from biometric app directory
+  desc: Shell spawned from within biometric app data directory
+  condition: >
+    spawned_process and
+    suspicious_shell and
+    proc.pname in (biometric_app)
+  output: >
+    Shell spawned from biometric app: proc=%proc.name
+    pid=%proc.pid parent=%proc.pname
+    command=%proc.cmdline user=%user.name node=%hostname
+  priority: CRITICAL
+  tags: [process, RCE, TTP-T1059]
+
+# ── Network anomalies ─────────────────────────────────────────────────────────────
+
+- rule: Biometric app makes outbound connection to unexpected IP
+  desc: BVR/BVI app connects to IP not in allowlist — data exfil risk
+  condition: >
+    outbound and
+    proc.name in (biometric_app) and
+    not fd.rip in (allowed_bff_ips, allowed_iprs_ips)
+  output: >
+    Unexpected outbound from biometric app: proc=%proc.name
+    pid=%proc.pid dest=%fd.rip:%fd.rport
+    user=%user.name node=%hostname
+  priority: ALERT
+  tags: [network, exfiltration, DPA-2019-S6]
+
+- rule: DNS query for biometric server not in allowlist
+  desc: DNS resolution for unknown biometric endpoint — possible C2
+  condition: >
+    dns_query and
+    proc.name in (biometric_app) and
+    not dns.query contains "bvr.eel.local" and
+    not dns.query contains "bvi.eel.local" and
+    not dns.query contains "iprs.go.ke"
+  output: >
+    Unexpected DNS from biometric app: proc=%proc.name
+    pid=%proc.pid query=%dns.query node=%hostname
+  priority: WARNING
+  tags: [network, C2, TTP-T1071]
+
+# ── Root / jailbreak detection ─────────────────────────────────────────────────
+
+- rule: Binary with suid bit executed from /data directory
+  desc: SUID binary executed from /data — possible privilege escalation
+  condition: >
+    execve and
+    suid_binary and
+    (proc.name startswith "/data/" or proc.cwd startswith "/data/")
+  output: >
+    SUID binary from /data: proc=%proc.name pid=%proc.pid
+    file=%proc.exepath user=%user.name node=%hostname
+  priority: CRITICAL
+  tags: [root, privilege-escalation, TTP-T1548]
+
+- rule: Root filesystem remounted read-write
+  desc: Root partition remounted RW — system compromise
+  condition: >
+    mount and
+    evt.arg.device contains "dev/root" and
+    evt.arg.flags contains "rw"
+  output: >
+    Root remounted RW: proc=%proc.name pid=%proc.pid
+    device=%evt.arg.device flags=%evt.arg.flags node=%hostname
+  priority: EMERGENCY
+  tags: [root, filesystem, TTP-T1526]
+
+# ── File integrity ──────────────────────────────────────────────────────────────
+
+- rule: APK signature verification failed at runtime
+  desc: APK integrity check failed — possible repackaging attack
+  condition: >
+    open_read and
+    fd.name contains ".apk" and
+    fd.name contains "base.apk" and
+    not proc.name = "pm" and
+    not proc.name = "app_process"
+  output: >
+    APK access for signature check: proc=%proc.name
+    pid=%proc.pid file=%fd.name node=%hostname
+  priority: WARNING
+  tags: [integrity, repackaging, supply-chain]
+
+# ── Tamper-evident chain ───────────────────────────────────────────────────────
+
+- rule: Audit shadow differs from expected proof hash
+  desc: Proof hash mismatch — audit chain broken
+  condition: >
+    open_write and
+    (fd.name contains "audit_shadow" or fd.name contains "proof_hash")
+  output: >
+    Audit shadow file modified: proc=%proc.name
+    pid=%proc.pid file=%fd.name user=%user.name node=%hostname
+  priority: CRITICAL
+  tags: [audit-integrity, hash-mismatch, DPA-2019-S6]

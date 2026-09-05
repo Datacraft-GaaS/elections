@@ -95,3 +95,13 @@ class TrainingProgressViewSet(viewsets.ModelViewSet):
     serializer_class = TrainingProgressSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["scope", "scope_code"]
+
+class LessonAttemptViewSet(viewsets.ModelViewSet):
+    queryset = LessonAttempt.objects.all()
+    serializer_class = LessonAttemptSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["worker_id","lesson","completed"]
+
+class CertAuditLogViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = CertAuditLog.objects.all()
+    serializer_class = CertAuditLogSerializer

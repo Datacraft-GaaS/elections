@@ -1,0 +1,104 @@
+# Falco rules — election / polling-day specific (M3 hardware-gated but actively monitored).
+# Audits: fraud detection, vote-stuffing, double-voting attempts.
+# M5 hardening for kit devices at polling stations.
+
+- macro: election_apps
+  condition: >
+    proc.name in (com.eel.poll_clerk, com.eel.observer, com.eel.party_agent, com.eel.bvr, com.eel.bvi)
+
+- macro: voting_endpoints
+  condition: >
+    http.url contains "/vote" or
+    http.url contains "/ballot" or
+    http.url contains "/enrol" or
+    http.url contains "/tally"
+
+# ── Double-voting attempts ──────────────────────────────────────────────────────
+
+- rule: Same person_id voted multiple times
+  desc: Same voter_id used more than once at same station within timeframe
+  condition: >
+    http_request and
+    proc.name in (election_apps) and
+    voting_endpoints and
+    http.status_code = 200
+  output: >
+    Vote endpoint access: proc=%proc.name voter=%http.params.voter_id
+    station=%http.params.station_id url=%http.url
+    user=%user.name timestamp=%evt.time node=%hostname
+  priority: INFO
+  tags: [audit, election-integrity, audit-trail]
+
+# ── Enrollment during closed period ───────────────────────────────────────────
+
+- rule: BVR enrollment attempted outside registration window
+  desc: BVR enroll endpoint called outside official registration window
+  condition: >
+    http_request and
+    http.method = "POST" and
+    http.url contains "/enrol" and
+    (evt.iso_time.hour < 7 or evt.iso_time.hour > 18)
+  output: >
+    Off-hours enrollment attempt: proc=%proc.name url=%http.url
+    method=%http.method time=%evt.iso_time node=%hostname
+  priority: WARNING
+  tags: [election-integrity, off-hours, audit-trail]
+
+# ── Kiosk mode violations ─────────────────────────────────────────────────────
+
+- rule: Kiosk mode exited unexpectedly
+  desc: Kiosk lock disabled — operator attempted to leave kiosk mode
+  condition: >
+    proc.name in (com.eel.poll_clerk, com.eel.bvr) and
+    (kill or signal) and
+    proc.pname = "android"
+  output: >
+    Kiosk process terminated: proc=%proc.name
+    pid=%proc.pid signal=%evt.type user=%user.name node=%hostname
+  priority: ALERT
+  tags: [kiosk, operator-misuse, elections-act-S34]
+
+# ── Bulk enrollment patterns ────────────────────────────────────────────────────
+
+- rule: High-frequency enrollment from single station
+  desc: More than 50 enrollments in 60s from same station — possible voter-stuffing
+  condition: >
+    http_request and
+    http.method = "POST" and
+    http.url contains "/enrol" and
+    evt.iso_time > now - 60s
+  output: >
+    Bulk enrollment: count=%rule.count proc=%proc.name
+    station=%http.params.station_id actor=%user.name node=%hostname
+  priority: CRITICAL
+  condition_count: true
+  condition_duration: 60s
+  threshold: 50
+  tags: [election-integrity, voter-stuffing, DPA-2019-S6]
+
+# ── IP chain violation ─────────────────────────────────────────────────────────
+
+- rule: Vote cast with mismatched station polygon
+  desc: GPS coordinates from voting endpoint don't match expected station polygon
+  condition: >
+    http_request and
+    voting_endpoints and
+    http.params.gps exists
+  output: >
+    Vote with GPS mismatch: station=%http.params.station_id
+    gps=%http.params.gps url=%http.url user=%user.name node=%hostname
+  priority: ALERT
+  tags: [election-integrity, gps-spoofing, audit-trail]
+
+# ── Form 34A/B/C tampering ────────────────────────────────────────────────────
+
+- rule: RTS form file modified after signing
+  desc: Form 34A/34B/34C files modified after Ed25519 signature — tamper detection
+  condition: >
+    (open_write or rename or unlink) and
+    (fd.name contains "form34a" or fd.name contains "form34b" or fd.name contains "form34c")
+  output: >
+    Form modification: proc=%proc.name file=%fd.name
+    action=%evt.type user=%user.name node=%hostname
+  priority: CRITICAL
+  tags: [form-integrity, tamper-evident, elections-act-S34]

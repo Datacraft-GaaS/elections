@@ -1,0 +1,166 @@
+# Network / DDoS / lateral movement rules — M5 hardening extended.
+# References: ADR 0010 (Edge DDoS), ADR 0019 (Edge topology), ADR 0023 (RFP alignment)
+# Targets: BFF endpoint, IPRS lookup, central audit ingestion, device-side channel.
+# Correlation: detection_event + audit_id + correlation_key.
+
+- macro: bff_endpoints
+  condition: >
+    fd.rip in (bff_load_balancer) or
+    (proc.pname in (biometric_app) and fd.l4proto = tcp and fd.rport = 443)
+
+- macro: iprs_endpoints
+  condition: >
+    fd.rip in (iprs_load_balancer) and fd.l4proto = tcp and fd.rport = 8443
+
+- macro: audit_endpoint
+  condition: >
+    fd.rip in (audit_collector) and fd.l4proto = tcp and fd.rport = 8443
+
+# ── BFF rate-limit / DDoS ─────────────────────────────────────────────────────
+
+- rule: Excessive BFF requests from single device — possible DDoS
+  desc: BFF receives >100 requests in 10s from one device
+  condition: >
+    open_write and fd.rip in (bff_endpoints) and
+    evt.time < 10  # window
+  output: >
+    BFF rate-limit exceeded: proc=%proc.name pid=%proc.pid
+    dest=%fd.rip:%fd.rport rate_per_10s=%rule.count user=%user.name
+    correlation_key=bff-ddos-019
+  priority: ALERT
+  tags: [network, ddos, ADR-0010]
+
+- rule: BFF request to non-standard path
+  desc: Request to BFF endpoint not in allowed URL allowlist
+  condition: >
+    open_write and fd.rip in (bff_endpoints) and
+    not fd.url in (allowed_bff_paths)
+  output: >
+    Non-standard BFF path: proc=%proc.name dest=%fd.rip
+    url=%fd.url correlation_key=bff-unauth-020
+  priority: WARNING
+  tags: [network, bff-unauth, ADR-0019]
+
+# ── IPRS integration abuse ─────────────────────────────────────────────────────
+
+- rule: IPRS connection outside official client processes
+  desc: Connection to IPRS endpoint by non-BFF process
+  condition: >
+    openat and iprs_endpoints and
+    not proc.name in (iprs_client, bff_service, iprs_testing)
+  output: >
+    IPRS direct connection: proc=%proc.name pid=%proc.pid
+    dest=%fd.rip:%fd.rport user=%user.name correlation_key=iprs-direct-021
+  priority: CRITICAL
+  tags: [network, iprs-abuse, elections-act-S12]
+
+- rule: IPRS lookup with malformed national ID
+  desc: IPRS lookup request with malformed national ID (wrong length, non-numeric)
+  condition: >
+    open_write and iprs_endpoints and
+    (evt.arg contains "id=" and not evt.arg matches "id=[0-9]{7,8}")
+  output: >
+    IPRS malformed lookup: proc=%proc.name pid=%proc.pid
+    request=%evt.arg dest=%fd.rip correlation_key=iprs-malformed-022
+  priority: WARNING
+  tags: [network, iprs-malformed, audit-trail]
+
+# ── Audit ingestion tampering / smuggling ──────────────────────────────────────
+
+- rule: Audit event with oversized payload
+  desc: Audit event payload > 64KB — possible smuggling or corruption
+  condition: >
+    open_write and audit_endpoint and
+    evt.size > 65536
+  output: >
+    Oversized audit event: proc=%proc.name pid=%proc.pid
+    dest=%fd.rip payload_size=%evt.size correlation_key=audit-oversize-023
+  priority: WARNING
+  tags: [audit, smuggling, integrity]
+
+- rule: Audit event with invalid proof_hash field format
+  desc: Proof hash field present but not 64 hex chars (SHA-256)
+  condition: >
+    open_write and audit_endpoint and
+    evt.arg.contains = "proof_hash" and
+    not evt.arg matches "proof_hash=[a-f0-9]{64}"
+  output: >
+    Invalid proof_hash format: proc=%proc.name pid=%proc.pid
+    dest=%fd.rip payload=%evt.arg correlation_key=audit-hash-malformed-024
+  priority: WARNING
+  tags: [audit, malformed, integrity]
+
+- rule: Audit event with invalid Ed25519 signature format
+  desc: Signature field present but not 128 hex chars (Ed25519)
+  condition: >
+    open_write and audit_endpoint and
+    evt.arg.contains = "signature" and
+    not evt.arg matches "signature=[a-f0-9]{128}"
+  output: >
+    Invalid signature format: proc=%proc.name pid=%proc.pid
+    dest=%fd.rip payload=%evt.arg correlation_key=audit-sig-malformed-025
+  priority: WARNING
+  tags: [audit, malformed, crypto]
+
+# ── Lateral movement / port scanning ───────────────────────────────────────────
+
+- rule: Port scan from biometric device to internal subnet
+  desc: Biometric device connecting to >20 unique ports in 60s on internal subnet
+  condition: >
+    open_write and fd.l4proto = tcp and
+    fd.rip in (internal_subnet) and
+    not fd.rport in (allowed_bff_ports, allowed_iprs_ports, allowed_audit_ports, ssh_port)
+  output: >
+    Port scan: proc=%proc.name pid=%proc.pid
+    dest=%fd.rip port=%fd.rport user=%user.name correlation_key=port-scan-026
+  priority: ALERT
+  tags: [network, lateral-movement, TTP-T1046]
+
+# ── DNS / C2 / exfil indicators ────────────────────────────────────────────────
+
+- rule: DNS query for IPRS outside operating window
+  desc: IPRS query outside official operating hours (07:00-18:00 local)
+  condition: >
+    open_write and fd.rip in (iprs_endpoints) and
+    (evt.iso_time.hour < 7 or evt.iso_time.hour > 18)
+  output: >
+    IPRS off-hours query: proc=%proc.name dest=%fd.rip
+    time=%evt.iso_time user=%user.name correlation_key=iprs-offhours-027
+  priority: WARNING
+  tags: [network, off-hours, audit-trail]
+
+- rule: Connection to non-allowlisted IP (suspicious)
+  desc: Outbound connection to IP not in allowlist from biometric device
+  condition: >
+    open_write and proc.name in (biometric_app) and
+    not fd.rip in (bff_endpoints, iprs_endpoints, audit_endpoint, ntp_servers)
+  output: >
+    Non-allowlisted outbound: proc=%proc.name pid=%proc.pid
+    dest=%fd.rip:%fd.rport user=%user.name correlation_key=unauth-outbound-028
+  priority: ALERT
+  tags: [network, exfil, TTP-T1071]
+
+# ── TLS / certificate validation failures ──────────────────────────────────────
+
+- rule: TLS handshake with untrusted CA
+  desc: TLS handshake with non-trusted certificate authority
+  condition: >
+    open_write and fd.l4proto = tcp and
+    evt.arg.contains = "tls_handshake" and
+    not evt.arg contains "trusted_ca"
+  output: >
+    Untrusted CA: proc=%proc.name pid=%proc.pid
+    dest=%fd.rip:%fd.rport fingerprint=%evt.arg correlation_key=tls-untrusted-029
+  priority: ALERT
+  tags: [network, tls, mitm]
+
+- rule: Certificate expiration within 24h
+  desc: Server certificate expires within 24h — renewals missed
+  condition: >
+    open_write and evt.arg.contains = "tls_cert" and
+    evt.arg.contains = "expires_within_24h"
+  output: >
+    Cert expiring: proc=%proc.name pid=%proc.pid
+    dest=%fd.rip cert=%evt.arg correlation_key=tls-expiry-030
+  priority: WARNING
+  tags: [network, tls, certificate]

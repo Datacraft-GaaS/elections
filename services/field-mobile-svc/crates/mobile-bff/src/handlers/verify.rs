@@ -39,7 +39,7 @@ pub async fn verify_token(
 	let log_query_id = Uuid::now_v7().to_string();
 	info!(token_sha256 = %req.token_sha256, "verify.verify_token");
 	Json(TokenVerifyResponse {
-		query_id: log_query_id,
+		query_id: log_query_id.clone(),
 		token_sha256: req.token_sha256,
 		included: true,
 		inclusion_proof_ref: Some(format!("proof-{}", log_query_id)),

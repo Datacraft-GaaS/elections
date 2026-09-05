@@ -815,6 +815,7 @@ dependencies = [
  "eel-crypto-rs",
  "eel-events-rs",
  "eel-outbox-rs",
+ "eel-spec-helpers-rs",
  "proptest",
  "rstest",
  "serde",
@@ -856,6 +857,7 @@ dependencies = [
 name = "eel-hlc-rs"
 version = "0.1.0"
 dependencies = [
+ "parking_lot",
  "serde",
  "sqlx",
  "thiserror",
@@ -875,6 +877,14 @@ dependencies = [
  "tokio",
  "tracing",
  "uuid",
+]
+
+[[package]]
+name = "eel-spec-helpers-rs"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

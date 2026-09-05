@@ -1,0 +1,131 @@
+title: EEL — Election Integrity — Double Voting / Same Voter ID Multiple Times
+id: eel-ei-001
+status: production
+description: Same voter ID (IPRS national ID) used more than once at any station within election period. References Elections Act §34, DPA 2019 §6, ADR 0023.
+references:
+  - Elections Act §34
+  - DPA 2019 Kenya §6
+  - ADR-0023-rfp-alignment
+logsource:
+  product: eel
+  service: audit_service
+detection:
+  selection:
+    EventType: 'voter_registration' or 'vote_cast' or 'enrollment'
+  filter_duplicate:
+    VoterId|count: > 1
+  condition: selection and filter_duplicate
+level: critical
+fields:
+  - auditId
+  - voterId
+  - stationId
+  - actorId
+  - whenUtc
+  - proofHash
+tags:
+  - election.integrity
+  - double-voting
+  - DPA-2019-S6
+
+---
+title: EEL — Election Integrity — Bulk Enrollment Pattern (>50 in 60s)
+id: eel-ei-002
+status: production
+description: More than 50 biometric enrollments within 60 seconds at same station — voter-stuffing indicator.
+references:
+  - Elections Act §34
+  - ADR-0023-rfp-alignment
+logsource:
+  product: eel
+  service: audit_service
+detection:
+  selection:
+    EventType: 'enrollment'
+  filter_station:
+    StationId: exists
+  condition: selection and filter_station
+fields: [auditId, stationId, eventType, actorId, whenUtc, count]
+threshold_condition: selection | count(EventType=enrollment) by StationId > 50
+threshold_duration: 60s
+level: critical
+tags:
+  - election.integrity
+  - voter-stuffing
+  - audit.trail
+
+---
+title: EEL — Election Integrity — Enrollment Outside Registration Hours (07:00-18:00)
+id: eel-ei-003
+status: production
+description: Biometric enrollment attempted outside official registration window.
+references:
+  - Elections Act
+  - ADR-0019-edge-topology
+logsource:
+  product: eel
+  service: audit_service
+detection:
+  selection:
+    EventType: 'enrollment'
+  time_filter:
+    UtcHour:
+      lt: 7
+      gt: 18
+  condition: selection and time_filter
+level: warning
+fields: [auditId, actorId, stationId, whenUtc, eventType]
+tags:
+  - election.integrity
+  - off-hours
+  - audit.trail
+
+---
+title: EEL — Election Integrity — IPRS Multiple Records for Single National ID
+id: eel-ei-004
+status: production
+description: IPRS verification returned >1 record for single national ID — duplicate identity detected.
+references:
+  - Kenya IPRS integration spec
+  - Elections Act §12
+logsource:
+  product: eel
+  service: iprs_client
+detection:
+  selection:
+    EventType: 'iprs_verify'
+  filter_multiple:
+    ResponseRecordCount:
+      gt: 1
+  condition: selection and filter_multiple
+level: critical
+fields: [auditId, personId, stationId, responseRecordCount, actorId]
+tags:
+  - election.integrity
+  - iprs.duplicate
+  - DPA-2019-S6
+
+---
+title: EEL — Election Integrity — GPS Mismatch in Vote / Enrollment
+id: eel-ei-005
+status: production
+description: GPS coordinates from voting/enrollment endpoint don't match expected station polygon.
+references:
+  - ADR-0019-edge-topology
+  - Elections Act §34 (station integrity)
+logsource:
+  product: eel
+  service: audit_service
+detection:
+  selection:
+    EventType: 'vote_cast' or 'enrollment'
+  gps_filter:
+    GpsLocation: exists
+    StationPolygon: exists
+  condition: selection and gps_filter
+level: alert
+fields: [auditId, stationId, gpsLocation, stationPolygon, actorId]
+tags:
+  - election.integrity
+  - gps.mismatch
+  - audit.trail

@@ -44,3 +44,17 @@ class TrainingProgressSerializer(serializers.ModelSerializer):
         model = TrainingProgress
         fields = "__all__"
         read_only_fields = ["id", "snapshot_at"]
+
+from .models import Course, Lesson, LessonAttempt, CertAuditLog
+
+class CourseSerializer(serializers.ModelSerializer):
+    class Meta: model=Course; fields="__all__"
+
+class LessonSerializer(serializers.ModelSerializer):
+    class Meta: model=Lesson; fields="__all__"
+
+class LessonAttemptSerializer(serializers.ModelSerializer):
+    class Meta: model=LessonAttempt; fields="__all__"; read_only_fields=["id","attempted_at"]
+
+class CertAuditLogSerializer(serializers.ModelSerializer):
+    class Meta: model=CertAuditLog; fields="__all__"; read_only_fields=["id","recorded_at"]

@@ -1,0 +1,80 @@
+title: EEL — MDM — Device Policy Modified Outside Management Window
+id: eel-mdm-001
+status: critical
+description: Device policy file modified by non-MDM agent process — unauthorized policy change.
+references:
+  - ADR-0004-platform
+  - M3-HARDWARE-INTEGRATION
+  - M5-SMS-USB-MANIFEST
+logsource:
+  product: linux
+  service: syslog
+  category: file_access
+detection:
+  selection:
+    EventType: 'file_write'
+    FilePath|contains: '/data/system/device_policy'
+  filter_unauthorized:
+    ProcessName: not in ['mdm_agent', 'device_admin', 'system_server']
+  condition: selection and filter_unauthorized
+level: critical
+fields: [auditId, filePath, processName, actorId, deviceId, whenUtc]
+tags:
+  - mdm
+  - device-policy
+  - ADR-0004
+  - M3-M5
+
+---
+title: EEL — MDM — FLAG_SECURE / Kiosk Mode Disabled
+id: eel-mdm-002
+status: critical
+description: Biometric application screen protection (FLAG_SECURE) disabled — screen capture / overlay attack possible.
+references:
+  - ADR-0004
+  - M3-HARDWARE-INTEGRATION
+  - M5-SMS-USB-MANIFEST
+logsource:
+  product: linux
+  service: auditd
+detection:
+  selection:
+    EventType: 'signal_sent'
+    Signal: 'SIGTERM' or 'SIGKILL'
+    ProcessName|contains: 'com.eel.bvr' or 'com.eel.bvi'
+  condition: selection
+level: critical
+fields: [auditId, processName, signal, actorId, deviceId, whenUtc, terminal]
+tags:
+  - mdm
+  - screen-capture
+  - kiosk
+  - ADR-0004
+  - M3-M5
+
+---
+title: EEL — MDM — Rooted / Modified System Partition Detected
+id: eel-mdm-003
+status: critical
+description: Root filesystem remounted read-write — root access / jailbreak detected.
+references:
+  - ADR-0004
+  - M5-SMS-USB-MANIFEST
+  - NIST-SP-800-53-SI-4
+logsource:
+  product: linux
+  service: syslog
+detection:
+  selection:
+    EventType: 'mount'
+    Device: contains 'dev/root'
+    Flags|contains: 'rw'
+  condition: selection
+level: critical
+fields: [auditId, device, flags, processName, actorId, deviceId, whenUtc]
+tags:
+  - mdm
+  - root
+  - jailbreak
+  - ADR-0004
+  - M5

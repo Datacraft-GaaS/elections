@@ -1,0 +1,80 @@
+# EEL Supply-Chain Policy — cargo-deny configuration
+# Blocks known-vulnerable, yanked, or unmaintained crates.
+# Reference: ADR-0022 (HSM attestation), ADR-0023 (audit chain), DPA 2019 §6.
+
+[version]
+range = "2"
+
+# Sources: only crates.io + git crates with known hashes
+# Block: unknown registries, unversioned deps, mirror abuse.
+[sources]
+unknown-git = "deny"
+unknown-registry = "deny"
+allow-registry = "https://github.com/rust-lang/crates.io-index"
+allow-git = []
+
+# Banlist: crates known to be vulnerable or abandoned.
+# Update with: cargo-deny check 2>&1 | grep "ban\|unmaintained"
+[[bans]]
+name = "RUSTSEC advisories"
+# deny = "all" # uncomment to block ALL advisory IDs (too strict; use warn+flag)
+skip = [
+    # Known advisories with mitigations already in place (verify before skipping)
+    # "RUSTSEC-XXXX-XXXX",  # add per advisory
+]
+skip-tree = []
+highlight = "all"
+
+# Multiple versions: warn, don't hard-fail (some overlap is unavoidable)
+multiple-versions = "warn"
+
+# Wildcard dependencies: deny (EEL requires pinned deps)
+wildcards = "deny"
+
+# Build scripts: warn and flag for review (build.rs can execute arbitrary code)
+wildcard-allowed = false
+
+# Unused dependencies: warn (can be auto-fixed with cargo-udeps)
+unused-allow = ["warn", "allow"]
+unused-packages = "warn"
+
+# Cycilc deps: deny (causes build flakiness)
+cycles = "deny"
+
+[licenses]
+# Uncomment to deny all non-permissive licenses
+# deny = ["NO-LICENSE", "UNKNOWN", "NON-CLOSED-SOURCE"]
+unmatched = "warn"
+version = ">= 1"
+allow = [
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "CC0-1.0",
+    "ISC",
+    "MIT",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+    "Unlicense",
+    "Zlib",
+]
+exceptions = []
+
+[[licenses.clarify]]
+name = "ring"
+expression = "ISC AND CC0-1.0"
+license-files = [{ path = "LICENSE", hash = 0x00000000 }]
+
+[advisories]
+db-path = "~/.cargo/advisory-db"
+db-urls = ["https://github.com/rustsec/advisory-db"]
+vulnerability = "deny"
+unmaintained = "warn"
+yanked = "deny"
+notice = "warn"
+ignore = [
+    # Example: ignore advisory while remediation is in progress
+    # "RUSTSEC-0000-0000",
+]
+ignore-date = ""

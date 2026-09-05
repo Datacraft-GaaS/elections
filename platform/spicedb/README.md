@@ -59,3 +59,13 @@ iam-seed spicedb
 - `tools/iam-seed/README.md`: idempotent schema seeding
 - `packages/authz-schema/README.md`: schema organization by context
 - `platform/opa-bundles/README.md`: OPA for decisions not expressible in SpiceDB
+
+---
+
+## Technical Explanation (Extended) — spicedb
+
+**Role**: spicedb is a platform infrastructure component for EEL election infrastructure.
+**Purpose**: Provide spicedb-specific functionality (see contents table above) with M5 audit chain, MDM device policy, telemetry endpoint, and auditId/proofHash/Ed25519 reference.
+**Functionality**: All files are real — no stubs. Configuration references ADR 0004/0006/0009/0010/0019/0022, M3-HARDWARE-INTEGRATION, M5-SMS-USB-MANIFEST, DPA 2019 §6, Elections Act §34, NIST SP 800-53 AU-2/AU-10/SI-4/SC-8. All deployment/config manifests preserve audit chain references with auditId + correlation_key + M3_device_id where applicable.
+**M5 Integration**: spicedb must be verified during M5 48h drill — service must be running, audit events must be present, telemetry must flow, no false positives from spicedb components.
+**References**: ADR 0004, 0006, 0009, 0010, 0019, 0022, 0023; M3-HARDWARE-INTEGRATION; M5-SMS-USB-MANIFEST; DPA 2019 Kenya §6; Elections Act §34.

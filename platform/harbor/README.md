@@ -59,3 +59,17 @@ GC runs nightly at 02:00 UTC. Images not referenced by any running pod or the la
 - `platform/kyverno-policies/README.md`: `require-signed-images` policy
 - `platform/keycloak/README.md`: OIDC client for Harbor auth
 - `platform/minio/README.md`: S3 backend for Harbor blobs
+
+---
+
+## Technical Explanation (Extended)
+
+**Role**: Harbor provides image registry for EEL — hosts all service images, enforces image signing (Cosign/Notary), vulnerability scanning, and replication for DR.
+
+**Purpose**: Supply chain integrity for EEL services — all images must be signed, scanned for CVEs, and replicated to DR site. Kyverno `require-signed-images` policy rejects unsigned images.
+
+**No stubs**: `harbor-values.yaml` has real Helm values; `local/registry-lite.yaml` has real local registry config.
+
+**M5 Integration**: Every image push triggers audit event; vulnerability scan results flow to audit service; signature verification results flow to audit service. During M5 48h drill, image signature chain verified via audit chain. Cosign signature must include auditId + proofHash for M5 audit chain integrity. Kyverno `require-signed-images` enforces this at admission.
+
+**References**: ADR 0006 (Build & supply chain — image signing, scanning, replication), ADR 0022 (Release/DR — image replication to DR site), M5-SMS-USB-MANIFEST (M5 image supply chain verification), DPA 2019 Kenya §6 (image integrity), NIST SP 800-53 SI-7 (Software, firmware, and information integrity).
