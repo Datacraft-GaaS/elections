@@ -1,5 +1,9 @@
 # Factory Pack
 
+> **Installers and testers: start with [`INSTALLER_TESTER_GUIDE.md`](INSTALLER_TESTER_GUIDE.md)**
+> (English + 中文 step-by-step instructions).
+> **安装和测试人员请先读 [`INSTALLER_TESTER_GUIDE.md`](INSTALLER_TESTER_GUIDE.md)**（中英文步骤说明）。
+
 This directory contains the artifacts needed for factory validation and testing of the Eel platform applications (BVI Kit, BVR Kit, RTS Kit) and the comprehensive test harness.
 
 ## Prerequisites
@@ -28,7 +32,20 @@ To use the contents of this factory pack, the following software must be install
 - `bvr-kit-debug.apk` – Debug build of the BVR Kit application.
 - `rts-kit-debug.apk` – Debug build of the RTS Kit application.
 
-These APKs can be installed on target devices for manual testing or used with the factory test scripts.
+These APKs can be installed on target devices for manual testing or used with the factory test scripts. Prefer debug builds for drill/test-harness flows (`run-as` report retrieval needs debuggable builds).
+
+### Release APKs (factory validation of the release path)
+
+- `bvi-kit-release.apk` (50.6 MB), `bvr-kit-release.apk` (50.6 MB),
+  `rts-kit-release.apk` (61.3 MB — 2% over the 60 MB kit budget, see
+  `compile_apks.md`).
+
+AOT-compiled, non-debuggable, v2-signed — but signed with the **debug key**
+(see `compile_apks.md`). They validate that the release build launches and
+runs; they are **not production-signed** and must not go to MDM/production.
+Install with `adb install -r -g <apk>` (`-g` pre-grants runtime permissions;
+without it, rts-kit's startup CAMERA/RECORD_AUDIO request blocks headless
+launches behind a system dialog).
 
 ### Test Harness APK
 
@@ -53,13 +70,15 @@ These APKs can be installed on target devices for manual testing or used with th
 - `factory_guidance.md` – Comprehensive guide on what to verify about an Android APK before release, including identity, cryptographic integrity, size, components, native libraries, resources, dependencies, security, testability, performance, and external native dependencies (e.g., Antiris SDK).
 - `compile_apks.md` – Instructions on how to compile the APKs for the three applications.
 
-### Scripts (under `scripts/mobile/`)
+### Scripts (in this directory — self-contained pack)
 
-- `factory_test.sh` – Master test script that runs smoke, kill-drill, offline-drill, and the test harness sequentially.
-- `smoke.sh` – Basic installation and launch test.
-- `kill-drill.sh` – Stress test that repeatedly opens and closes the application.
-- `offline-drill.sh` – Tests the application’s behavior when offline or with intermittent connectivity.
-- `test_harness.sh` – Installs and runs the test harness APK, retrieves the JSON report, and validates that all tests passed.
+- `factory_test.sh` – Master test script: runs smoke, kill-drill, offline-drill, and test_harness sequentially; writes `factory-report-<APP>-<serial>.json`.
+- `smoke.sh` – Cold-launch, assert process alive + crash-free, optional telemetry probe via `EEL_TELEMETRY_URL` (SKIP when unset, never faked).
+- `kill-drill.sh` – `force-stop` at each FSM stage; asserts new pid + no FATAL EXCEPTION. Any failed stage fails the drill.
+- `offline-drill.sh` – Verified airplane-mode toggle; app must stay alive offline and survive reconnect. Record-level dedup via `EEL_DEDUP_CHECK` hook (SKIP when unset, never a silent pass).
+- `test_harness.sh` – Installs and runs the test harness APK, retrieves the JSON report, fails on FAIL/ERROR statuses.
+- `package_test_harness.sh` – Rebuilds this zip (`--zip`), optionally with slimmed test-harness source (`--include-src`).
+- `lib/common.sh`, `lib/device.sh` – Shared logging + adb helpers sourced by the scripts above. Kill-drill/offline-drill/test_harness require `lib/device.sh` beside them — it is included in this pack and in the zip.
 
 ### Native Dependencies
 
@@ -74,8 +93,8 @@ These APKs can be installed on target devices for manual testing or used with th
 ### Quick Factory Test
 
 ```bash
-# From the project root:
-scripts/mobile/factory_test.sh <APP> --device <serial>
+# From this directory (factory_pack is self-contained):
+./factory_test.sh <APP> --device <serial>
 ```
 
 Replace `<APP>` with one of `bvi-kit`, `bvr-kit`, or `rts-kit` (the argument is currently ignored by the test harness script but required for interface consistency). Replace `<serial>` with the device’s ADB serial number (e.g., `emulator-5554` or a device ID from `adb devices`).
@@ -95,10 +114,10 @@ The script will:
 adb install -r factory_test_harness.apk
 
 # Launch the app (it will auto‑start the test sequence)
-adb shell monkey -p com.example.test_harness -c android.intent.category.LAUNCHER 1
+adb shell monkey -p com.eel.test_harness -c android.intent.category.LAUNCHER 1
 
 # Retrieve the JSON report after testing
-adb shell run-as com.example.test_harness cat files/test_report.json > test_report.json
+adb shell run-as com.eel.test_harness cat app_flutter/test_report.json > test_report.json
 ```
 
 The JSON report contains:
@@ -120,23 +139,24 @@ A status of `SKIP` indicates the required plugin or native library was not found
 To create a zip file containing everything needed for the factory (APKs, scripts, documentation, native dependencies, and optionally the test harness source):
 
 ```bash
-scripts/mobile/package_test_harness.sh --clean --zip --include-src
+./package_test_harness.sh --zip --include-src
 ```
 
 This will:
 
-- Build (or copy) the test harness APK.
-- Clean intermediate build artifacts (`flutter clean`).
-- Generate `factory_test_harness_package.zip` in this directory.
+- Build the debug test harness APK (debug keeps `run-as` report retrieval working).
+- Optionally clean intermediate build artifacts (`flutter clean` with `--clean`).
+- Generate `factory_test_harness_package.zip` in this directory plus a `SHA256SUMS` manifest.
 
 The zip includes:
 
 - All debug APKs (`bvi-kit-debug.apk`, `bvr-kit-debug.apk`, `rts-kit-debug.apk`)
 - The test harness APK (`factory_test_harness.apk`)
+- `SHA256SUMS` — verify with `shasum -c SHA256SUMS` after unzipping
 - Documentation (`factory_guidance.md`, `compile_apks.md`)
-- All relevant scripts (`factory_test.sh`, `smoke.sh`, `kill-drill.sh`, `offline-drill.sh`, `test_harness.sh`)
+- All scripts (`factory_test.sh`, `smoke.sh`, `kill-drill.sh`, `offline-drill.sh`, `test_harness.sh`, `lib/common.sh`, `lib/device.sh`)
 - The `antiris/` native dependencies
-- Optionally, the full `test_harness/` source (with build artifacts excluded)
+- Optionally, the slimmed `test_harness/` source (Android + shared sources; desktop/web/iOS platform dirs excluded)
 
 ## License
 

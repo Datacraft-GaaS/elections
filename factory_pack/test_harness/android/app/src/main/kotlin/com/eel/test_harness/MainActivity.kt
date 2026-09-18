@@ -1,4 +1,4 @@
-package com.example.test_harness
+package com.eel.test_harness
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter

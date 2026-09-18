@@ -25,6 +25,7 @@ _log_error() { echo "[ERROR] $*" >&2; }
 # ---------------------------------------------------------------------------
 get_app_path() {
   local app="$1"
+  [[ -f "$APP_REGISTRY" ]] || { _log_error "app registry not found: $APP_REGISTRY"; return 1; }
   awk -F'|' -v a="$app" '$1 == a {print $2; exit}' "$APP_REGISTRY"
 }
 
@@ -69,11 +70,10 @@ fetch_signing_material() {
     return 0
   fi
   _log_info "Fetching signing material for $env from OpenBao..."
-  local store_pass key_pass alias_name alias_pass
+  local store_pass key_pass alias_name
   store_pass="$(vault kv get -field=store_password "secret/eel/mobile/signing/$env" 2>/dev/null || echo "")"
   key_pass="$(vault kv get -field=key_password "secret/eel/mobile/signing/$env" 2>/dev/null || echo "")"
   alias_name="$(vault kv get -field=alias "secret/eel/mobile/signing/$env" 2>/dev/null || echo "")"
-  alias_pass="$(vault kv get -field=alias_password "secret/eel/mobile/signing/$env" 2>/dev/null || echo "")"
   if [[ -n "$store_pass" && -n "$key_pass" ]]; then
     cat > "$key_props" <<EOF
 storePassword=$store_pass

@@ -30,6 +30,25 @@ case "$TARGET_PLATFORM" in
       --dart-define=EEL_FLAVOR="$FLAVOR" \
       -t "$APP_PATH/lib/main.dart"
     cp "$APP_PATH/build/app/outputs/flutter-apk/app-${FLAVOR}-release.apk" "$BUILD_DIR/${APP}-${FLAVOR}-release.apk" 2>/dev/null || true
+    ARTIFACT="$BUILD_DIR/${APP}-${FLAVOR}-release.apk"
+    SIZE_MB=0
+    if [[ -f "$ARTIFACT" ]]; then
+      SIZE_BYTES=$(stat -f%z "$ARTIFACT" 2>/dev/null || stat -c%s "$ARTIFACT" 2>/dev/null || echo 0)
+      SIZE_MB=$(( (SIZE_BYTES + 1048575) / 1048576 ))
+      # Plan §7/§9 budgets: ≤ 40 MB per app, ≤ 60 MB for kits (native libs).
+      case "$APP" in
+        *kit*) BUDGET_MB=60 ;;
+        *) BUDGET_MB=40 ;;
+      esac
+      if [[ "${EEL_SIZE_BUDGET_MB:-}" =~ ^[0-9]+$ ]]; then BUDGET_MB="$EEL_SIZE_BUDGET_MB"; fi
+      _log_info "Artifact size: ${SIZE_MB} MB (budget ${BUDGET_MB} MB)"
+      if [[ "$SIZE_MB" -gt "$BUDGET_MB" ]]; then
+        _log_error "SIZE GATE FAILED: $ARTIFACT is ${SIZE_MB} MB, budget ${BUDGET_MB} MB (override: EEL_SIZE_BUDGET_MB)"
+        exit 1
+      fi
+    else
+      _log_warn "Release APK not found at $ARTIFACT — size gate skipped"
+    fi
     ;;
   ios)
     flutter build ios --flavor "$FLAVOR" \
@@ -41,6 +60,6 @@ case "$TARGET_PLATFORM" in
   *) _log_error "Unsupported target platform: $TARGET_PLATFORM"; exit 1 ;;
 esac
 cat > "$BUILD_DIR/manifest.json" <<EOF
-{"app":"$APP","flavor":"$FLAVOR","platform":"$TARGET_PLATFORM","git_sha":"$GIT_SHA","build_epoch":"$BUILD_EPOCH","sbom_path":"sbom/spdx.json","artifact_path":"${APP}-${FLAVOR}-release.apk"}
+{"app":"$APP","flavor":"$FLAVOR","platform":"$TARGET_PLATFORM","git_sha":"$GIT_SHA","build_epoch":"$BUILD_EPOCH","sbom_path":"sbom/spdx.json","artifact_path":"${APP}-${FLAVOR}-release.apk","size_mb":${SIZE_MB:-0}}
 EOF
 _log_info "Build complete: $BUILD_DIR"

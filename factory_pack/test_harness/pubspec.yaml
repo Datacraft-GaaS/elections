@@ -1,0 +1,27 @@
+name: test_harness
+description: A test harness APK to exercise all features for factory validation.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  battery_plus: ^6.2.3
+  geolocator: ^13.0.1
+  logging: ^1.2.0
+  http: ^1.2.0
+  path_provider: ^2.0.15
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/
