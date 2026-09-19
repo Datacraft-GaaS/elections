@@ -225,7 +225,7 @@ impl CeremonyStore {
         // Transition state.
         let new_state = match std::mem::replace(&mut ceremony.state, CeremonyState::Requested) {
             CeremonyState::Requested => {
-                let mut approvals = vec![approval.clone()];
+                let approvals = vec![approval.clone()];
                 if approvals.len() as u32 >= ceremony.quorum_m {
                     CeremonyState::Approved
                 } else {

@@ -37,8 +37,6 @@ pub fn encode_pie(norm: &NormalisedIris, norm_mask: &IrisMask) -> PieCode {
     let shifts: Vec<i32> = (-PIE_MAX_SHIFT..=PIE_MAX_SHIFT).collect();
     debug_assert_eq!(shifts.len(), PIE_OFFSETS);
 
-    let w = NormalisedIris::WIDTH as usize;
-
     // Collect vote tallies per bit (positive = how many offsets voted '1').
     let mut votes_one = vec![0i32; IRIS_CODE_BYTES * 8];
     let mut votes_valid = vec![0i32; IRIS_CODE_BYTES * 8];

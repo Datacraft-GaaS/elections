@@ -229,7 +229,7 @@ async fn verify_artifact(
 
 async fn schedule_preview(
 	State(_s): State<ApiState>,
-	Path(slug): Path<String>,
+	Path(_slug): Path<String>,
 	Json(body): Json<serde_json::Value>,
 ) -> Response {
 	let cron_expr = body

@@ -26,7 +26,6 @@ impl IrisTemplate {
     /// Rotation-robust comparison: tests integer-pixel shifts in [-7, 7] and returns
     /// the minimum HD (best alignment), per Daugman's standard protocol.
     pub fn hamming_distance(&self, other: &IrisTemplate, min_overlap: f32) -> Option<f32> {
-        let w = NORM_WIDTH as i32;
         let max_shift = 7i32;
         let bits = IRIS_CODE_BYTES * 8;
 

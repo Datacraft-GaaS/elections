@@ -11,6 +11,30 @@ use crate::handlers::{
 };
 use crate::spec::{BffState};
 use crate::sse::ShardedBroadcast;
+use axum::extract::FromRef;
+
+/// Combined router state: spec handlers extract `Arc<BffState>`, verify
+/// handlers extract `Arc<ShardedBroadcast>` — both via [`FromRef`], so all
+/// routes live in one merged `Router` with a single `with_state` call.
+#[derive(Clone)]
+pub struct AppState {
+    /// BFF state (config, idempotency store, rate limits).
+    pub bff: Arc<BffState>,
+    /// SSE broadcast for verify/dashboard streams.
+    pub broadcast: Arc<ShardedBroadcast>,
+}
+
+impl FromRef<AppState> for Arc<BffState> {
+    fn from_ref(state: &AppState) -> Self {
+        state.bff.clone()
+    }
+}
+
+impl FromRef<AppState> for Arc<ShardedBroadcast> {
+    fn from_ref(state: &AppState) -> Self {
+        state.broadcast.clone()
+    }
+}
 
 pub fn build_router() -> Router {
     let broadcast = ShardedBroadcast::new();
@@ -21,6 +45,7 @@ pub fn build_router_with_test_state(
     state: Arc<BffState>, 
     broadcast: Arc<ShardedBroadcast>
 ) -> Router {
+    let app_state = AppState { bff: state, broadcast };
     // Delegate to spec::router which has all the BFF routes.
     // The legacy /verify/v1/* and /health routes are also merged.
     Router::new()
@@ -38,11 +63,15 @@ pub fn build_router_with_test_state(
         .route("/verify/v1/anomalies", get(get_anomalies))
         .route("/verify/v1/clone-report", post(report_clone))
         .route("/verify/v1/binary-integrity", post(binary_integrity_check))
-        .merge(crate::spec::router(state))
-        .with_state(broadcast)
+        .merge(crate::spec::router(app_state.clone()))
+        .with_state(app_state)
 }
 
 pub fn build_router_with_state(broadcast: Arc<ShardedBroadcast>) -> Router {
+    let app_state = AppState {
+        bff: Arc::new(crate::spec::BffState::new(None).expect("in-memory BffState")),
+        broadcast,
+    };
     Router::new()
         .route("/health", get(health))
         .route("/verify/v1/results", get(get_results))
@@ -58,6 +87,6 @@ pub fn build_router_with_state(broadcast: Arc<ShardedBroadcast>) -> Router {
         .route("/verify/v1/anomalies", get(get_anomalies))
         .route("/verify/v1/clone-report", post(report_clone))
         .route("/verify/v1/binary-integrity", post(binary_integrity_check))
-        .merge(crate::spec::router(Arc::new(crate::spec::BffState::new())))
-        .with_state(broadcast)
+        .merge(crate::spec::router(app_state.clone()))
+        .with_state(app_state)
 }

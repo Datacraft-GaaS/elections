@@ -216,7 +216,7 @@ fn write_parquet(path: &PathBuf, rows: &[Row]) -> Result<String, BundleError> {
             true,
         )]));
         let file = std::fs::File::create(path)?;
-        let mut writer =
+        let writer =
             ArrowWriter::try_new(file, schema.clone(), None).map_err(BundleError::Parquet)?;
         writer.close().map_err(BundleError::Parquet)?;
         return Ok(hex::encode(Sha256::digest(b"")));

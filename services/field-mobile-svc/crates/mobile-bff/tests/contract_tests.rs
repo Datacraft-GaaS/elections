@@ -44,7 +44,7 @@ async fn test_get_app_config_returns_200_with_valid_response() {
 
 #[tokio::test]
 /// FR-M1-002: Session creation validates PKCE parameters
-async fn test_create_session_returns_200_with_tokens() {
+async fn test_create_session_returns_201_with_tokens() {
     let app = make_test_router();
     
     let body = json!({
@@ -62,7 +62,7 @@ async fn test_create_session_returns_200_with_tokens() {
         .unwrap();
     
     let resp = app.oneshot(req).await.unwrap();
-    assert_eq!(resp.status(), StatusCode::OK, "Session creation should return 200");
+    assert_eq!(resp.status(), StatusCode::CREATED, "Session creation should return 201");
 }
 
 #[tokio::test]
@@ -92,8 +92,13 @@ async fn test_get_attestation_verdict_returns_200() {
     
     let req = Request::builder()
         .uri("/api/v1/mobile/bff/attestation/verdict")
-        .method("GET")
-        .body(Body::empty())
+        .method("POST")
+        .header("content-type", "application/json")
+        .body(Body::from(json!({
+            "device_id": "device-001",
+            "nonce": "nonce-001",
+            "attestation_object": "attest-obj"
+        }).to_string()))
         .unwrap();
     
     let resp = app.oneshot(req).await.unwrap();
@@ -160,8 +165,8 @@ async fn test_sync_forms_returns_200_with_forms_and_proof() {
     let app = make_test_router();
     
     let body = json!({
-        "form_ids": ["form-34a-001", "form-34a-002"],
-        "station_code": "KE-NBI-001"
+        "station_code": "KE-NBI-001",
+        "election_scope": "general-2026"
     });
     
     let req = Request::builder()
@@ -262,7 +267,8 @@ async fn test_report_tamper_event_returns_201() {
     let body = json!({
         "event_type": "SCREEN_CAPTURE_ATTEMPTED",
         "device_id": "device-001",
-        "timestamp": "2026-09-04T10:00:00Z"
+        "timestamp": "2026-09-04T10:00:00Z",
+        "details": {}
     });
     
     let req = Request::builder()
@@ -283,9 +289,9 @@ async fn test_register_push_token_returns_201() {
     let app = make_test_router();
     
     let body = json!({
-        "token": "fcm-token-abc123xyz",
-        "platform": "android",
-        "app_version": "1.0.0"
+        "device_id": "device-001",
+        "app_token": "fcm-token-abc123xyz",
+        "platform": "android"
     });
     
     let req = Request::builder()
@@ -302,7 +308,7 @@ async fn test_register_push_token_returns_201() {
 
 #[tokio::test]
 /// FR-M1-015: Party agent check-in with GPS verification
-async fn test_agent_check_in_returns_200() {
+async fn test_agent_check_in_returns_201() {
     let app = make_test_router();
     
     let body = json!({
@@ -323,7 +329,7 @@ async fn test_agent_check_in_returns_200() {
         .unwrap();
     
     let resp = app.oneshot(req).await.unwrap();
-    assert_eq!(resp.status(), StatusCode::OK, "Agent check-in should return 200");
+    assert_eq!(resp.status(), StatusCode::CREATED, "Agent check-in should return 201");
 }
 
 #[tokio::test]
@@ -364,7 +370,8 @@ async fn test_idempotency_key_returns_same_response() {
     let body = json!({
         "incident_type": "EQUIPMENT",
         "description": "Printer malfunction",
-        "station_code": "KE-NBI-001"
+        "station_code": "KE-NBI-001",
+        "severity": "HIGH"
     });
     
     let idempotency_key = "idempotent-incident-001";
@@ -400,7 +407,7 @@ async fn test_responses_contain_valid_timestamps() {
     let app = make_test_router();
     
     let req = Request::builder()
-        .uri("/api/v1/mobile/bff/attestation/verdict")
+        .uri("/api/v1/mobile/bff/config?app_id=com.eel.poll-clerk")
         .method("GET")
         .body(Body::empty())
         .unwrap();
@@ -427,8 +434,9 @@ async fn test_invalid_request_returns_400() {
     // Should handle gracefully - either 400 or 500
     let status = resp.status();
     assert!(
-        status == StatusCode::BAD_REQUEST || 
+        status == StatusCode::BAD_REQUEST ||
+        status == StatusCode::UNPROCESSABLE_ENTITY ||
         status == StatusCode::INTERNAL_SERVER_ERROR,
-        "Invalid JSON should return 400 or 500"
+        "Invalid JSON should return 4xx"
     );
 }

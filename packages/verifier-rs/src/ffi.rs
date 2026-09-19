@@ -6,6 +6,13 @@
 //!
 //! All C symbols carry the `eel_verifier_` prefix (ADR-0005).
 
+// FFI boundary by definition: raw pointers, no_mangle exports, and unsafe
+// blocks are the entire purpose of this module. The workspace denies
+// `unsafe_code` via RUSTFLAGS; this scoped opt-out (in-source `allow`
+// overrides command-line `deny`) keeps the rest of the tree under the ban.
+// Every export documents its `# Safety` contract; see below.
+#![allow(unsafe_code)]
+
 use std::cell::RefCell;
 use std::ffi::{c_char, CString};
 use std::slice;
@@ -101,6 +108,12 @@ macro_rules! ffi_run {
 /// Verify Merkle inclusion.
 ///
 /// `json` must be `{"sth":{...},"proof":{...},"leaf_hex":"<hex>"}`.
+///
+/// # Safety
+///
+/// `json_ptr` must point to `json_len` readable bytes for the
+/// duration of the call; the buffer must remain valid and
+/// unmodified while this function runs.
 #[no_mangle]
 pub unsafe extern "C" fn eel_verifier_inclusion(json_ptr: *const u8, json_len: usize) -> i32 {
     let bytes = match unsafe { json_bytes(json_ptr, json_len) } {
@@ -120,6 +133,12 @@ pub unsafe extern "C" fn eel_verifier_inclusion(json_ptr: *const u8, json_len: u
 /// Verify Merkle consistency.
 ///
 /// `json` must be `{"from_sth":{...},"to_sth":{...},"proof":{...}}`.
+///
+/// # Safety
+///
+/// `json_ptr` must point to `json_len` readable bytes for the
+/// duration of the call; the buffer must remain valid and
+/// unmodified while this function runs.
 #[no_mangle]
 pub unsafe extern "C" fn eel_verifier_consistency(json_ptr: *const u8, json_len: usize) -> i32 {
     let bytes = match unsafe { json_bytes(json_ptr, json_len) } {
@@ -138,6 +157,12 @@ pub unsafe extern "C" fn eel_verifier_consistency(json_ptr: *const u8, json_len:
 /// Verify an STH Ed25519 signature.
 ///
 /// `json` must be `{"sth":{...}}`.
+///
+/// # Safety
+///
+/// `json_ptr` must point to `json_len` readable bytes for the
+/// duration of the call; the buffer must remain valid and
+/// unmodified while this function runs.
 #[no_mangle]
 pub unsafe extern "C" fn eel_verifier_sth_signature(json_ptr: *const u8, json_len: usize) -> i32 {
     let bytes = match unsafe { json_bytes(json_ptr, json_len) } {
@@ -156,6 +181,12 @@ pub unsafe extern "C" fn eel_verifier_sth_signature(json_ptr: *const u8, json_le
 /// Verify witness cosignatures.
 ///
 /// `json` must be `{"sth":{...},"witness_sigs":[...]}`.
+///
+/// # Safety
+///
+/// `json_ptr` must point to `json_len` readable bytes for the
+/// duration of the call; the buffer must remain valid and
+/// unmodified while this function runs.
 #[no_mangle]
 pub unsafe extern "C" fn eel_verifier_witness_cosign(json_ptr: *const u8, json_len: usize) -> i32 {
     let bytes = match unsafe { json_bytes(json_ptr, json_len) } {

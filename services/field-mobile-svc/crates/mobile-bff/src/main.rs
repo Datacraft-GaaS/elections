@@ -1,4 +1,5 @@
 use std::env;
+use std::sync::Arc;
 use tracing::info;
 
 #[tokio::main]
@@ -19,23 +20,21 @@ async fn main() {
 	info!(db_url, http_addr, "mobile-bff starting");
 
 	// Build PostgreSQL pool with connection pooling (10 max connections)
-	let pool = sqlx::PgPoolOptions::new()
+	let pool = sqlx::postgres::PgPoolOptions::new()
 		.max_connections(10)
 		.connect(&db_url)
 		.await
 		.expect("failed to connect to database");
 
-	let state = Arc::new(mobile_bff::spec::BffState::new(pool.clone()).unwrap());
+	let bff = Arc::new(
+		mobile_bff::spec::BffState::new(Some(pool.clone()))
+			.expect("BffState init"),
+	);
+	let broadcast = mobile_bff::sse::ShardedBroadcast::new();
 
-	// Build the router with all endpoints wired to real handlers
-	let app = mobile_bff::spec::router(state);
-
-	// Attach health check endpoint at root
-	axum::Router::new()
-		.route("/healthz", axum::routing::get(|| async {"ok"}))
-		.merge(app)
-		.with_state(state.clone())
-		.into_make_service();
+	// Full router: /verify/v1/* + /health (broadcast state) with the BFF
+	// routes nested under "/" carrying their own BffState.
+	let app = mobile_bff::router::build_router_with_test_state(bff, broadcast);
 
 	let listener = tokio::net::TcpListener::bind(&http_addr)
 		.await

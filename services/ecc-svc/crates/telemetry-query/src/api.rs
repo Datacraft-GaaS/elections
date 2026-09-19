@@ -582,7 +582,7 @@ async fn export_handler(
     .fetch_optional(&state.pool)
     .await;
 
-    let (q, executed_at, row_count) = match row {
+    let (q, executed_at, _row_count) = match row {
         Ok(Some(r)) => {
             use sqlx::Row as _;
             let dsl: serde_json::Value = r.try_get("query_dsl").unwrap_or_default();

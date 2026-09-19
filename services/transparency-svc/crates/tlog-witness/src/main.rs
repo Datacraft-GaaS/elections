@@ -50,6 +50,8 @@ async fn main() -> anyhow::Result<()> {
         .and_then(|v| v.parse().ok())
         .unwrap_or(5);
 
+    tlog_witness::gossip::spawn_gossip(peers, detector_for_gossip, gossip_interval);
+
 
     let iab = Arc::new(tlog_witness::iab_client::IabWitnessClient::from_env(
         api_base,
