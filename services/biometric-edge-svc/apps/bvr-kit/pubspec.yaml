@@ -11,6 +11,9 @@ dependencies:
   flutter:
     sdk: flutter
 
+  eel_drivers:
+    path: ../../../../packages/eel_drivers
+
   eel_kit_sdk:
     path: ../../../../packages/kit-sdk-flutter
 

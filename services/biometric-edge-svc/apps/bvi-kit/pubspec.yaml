@@ -11,6 +11,9 @@ dependencies:
   flutter:
     sdk: flutter
 
+  eel_drivers:
+    path: ../../../../packages/eel_drivers
+
   eel_kit_sdk:
     path: ../../../../packages/kit-sdk-flutter
 
@@ -18,6 +21,10 @@ dependencies:
     sdk: flutter
   intl: ^0.20.0
 
+  logging: any
+  flutter_secure_storage: any
+  uuid: any
+  dio: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

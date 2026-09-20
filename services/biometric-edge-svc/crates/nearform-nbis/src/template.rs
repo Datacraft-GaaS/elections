@@ -94,9 +94,9 @@ impl Template {
                 continue;
             }
             if parts.len() < 3 { continue; }
-            let x: u32 = parts[0].parse().map_err(|e| e.to_string())?;
-            let y: u32 = parts[1].parse().map_err(|e| e.to_string())?;
-            let theta_raw: i32 = parts[2].parse().map_err(|e| e.to_string())?;
+            let x: u32 = parts[0].parse().map_err(|e: std::num::ParseIntError| e.to_string())?;
+            let y: u32 = parts[1].parse().map_err(|e: std::num::ParseIntError| e.to_string())?;
+            let theta_raw: i32 = parts[2].parse().map_err(|e: std::num::ParseIntError| e.to_string())?;
             let quality: u32 = if parts.len() > 3 {
                 parts[3].parse().unwrap_or(0)
             } else {

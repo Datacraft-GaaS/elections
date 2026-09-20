@@ -76,3 +76,18 @@ __pycache__/
 .ruff_cache/
 .mypy_cache/
 .tox/
+
+# Factory-pack build artifacts (distributed out-of-band; see factory_pack/SHA256SUMS)
+factory_pack/*.apk
+factory_pack/*.zip
+factory_pack/antiris/
+
+# Gradle build caches (any depth)
+.gradle/
+
+# Scratch / backup files
+*.bak
+*.backup
+*.new
+*.tmp
+tmp_new_*.txt

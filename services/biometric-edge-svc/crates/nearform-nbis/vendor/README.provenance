@@ -1,0 +1,96 @@
+# VENDOR.md — Vendored NIST NBIS v5.0.0 C sources
+
+This directory is a **pinned, provenance-tracked vendor** of NIST Biometric
+Image Software (NBIS) v5.0.0, consumed by the `nearform-nbis` crate.
+Vendored code is compiled verbatim by `build.rs` — no vendored file is
+edited (see Patches below for the deliberate exceptions, which live outside
+the vendored trees).
+
+## 1. Pinned upstream
+
+- **Source**: https://github.com/biometric-technologies/nist-biometric-image-software-nbis
+  (community mirror of NIST NBIS; NIST's canonical distribution is at
+  https://www.nist.gov/services-resources/software/nist-biometric-image-software-nbis)
+- **Pinned commit**: `c946acc42dbfca7090d00b1098f2b93a04ba8914`
+  (master; mirror last pushed 2022-06-22; NBIS 5.0.0 is stable upstream)
+- **Vendored**: 2026-09-19
+- **Integrity**: all 396 vendored files verified byte-identical to the pinned
+  commit (`git show <sha>:<path>` SHA-256 comparison, 2026-09-20:
+  396 checked / 0 mismatched / 0 missing).
+
+Re-verify after any change with:
+
+```sh
+cd services/biometric-edge-svc/crates/nearform-nbis
+git clone --filter=blob:none https://github.com/biometric-technologies/nist-biometric-image-software-nbis /tmp/nbis-up
+git -C /tmp/nbis-up checkout c946acc42dbfca7090d00b1098f2b93a04ba8914
+# then hash-compare every file in vendor/nbis/ against `git -C /tmp/nbis-up show HEAD:<relpath>`
+```
+
+## 2. Included subdirectories (sparse — not all of NBIS)
+
+| Subdir | Files | Role |
+|---|---:|---|
+| `bozorth3/` | 14 | Bozorth3 minutiae matcher (match + score libraries only) |
+| `mindtct/` | 41 | Minutiae extraction (image → minutiae) |
+| `nfiq/` | 12 | NFIQ quality sub-libraries (readers, znorm, globals) |
+| `an2k/` | 47 | AN2K/ISO 19794-2 record I/O (required by mindtct headers) |
+| `commonnbis/` | 153 | Shared utilities: `util`, `ioutil`, `fet` (NIST record types) |
+| `ijg/` | 97 | IJG JPEG library (imgtools headers need `jpeglib.h`) |
+| `imgtools/` | 32 | Image I/O headers (ioutil) |
+| **Total** | **396** | |
+
+**Intentionally excluded** (present upstream, not vendored):
+- `*/src/bin/**` — all tool mains (bozorth3/mindtct/nfiq/... CLIs). We link
+  the libraries only; the tool-main globals they define are shimmed (§4).
+- `nfiq/runtimedata/` — trained NFIQ model blobs (multi-MB, not needed;
+  quality screening uses the documented estimator in `src/nfiq.rs`).
+- `cblas/`, `clapck/`, `f2c/`, `fft/` — dependencies of other NBIS tools,
+  not of the seven dirs above.
+
+## 3. Build integration
+
+- `build.rs` compiles the vendored `.c` set with the `cc` crate into
+  `libnbis_core.a`; `src/ffi.rs` + `src/mindtct_ffi.rs` bind it.
+- `an2k.h` is **generated at build time** from `an2k/include/an2k.h.src`
+  (substituting `SED_INSTALL_DATA_DIR_STRING`) into `OUT_DIR`, mirroring
+  upstream `setup.sh` — the vendored tree stays pristine.
+- Dev toolchain: `flake.nix` dev shell (`nix develop`) provides Rust
+  1.90.0 via rust-overlay (matches `rust-toolchain.toml`) plus
+  `cargo-fuzz` for the round-trip/fuzz tests.
+
+## 4. Patch list (all outside the vendored trees)
+
+| Patch | File | Why |
+|---|---|---|
+| Tool-main globals shim | `vendor/shim/nbis_shims.c` | Defines `verbose_bozorth`, `errorfp`, `m1_xyt`, `min_computable_minutiae` (upstream defaults) that the libraries reference but the excluded tool mains would have provided |
+| an2k PNG decode excluded | `build.rs` (`exclude: decode, dec_png`) | Need system libpng; nothing in the compiled set calls PNG decode (linker-verified) |
+| `nfiq/nfiq.c` excluded | `build.rs` (`add_dir_filter`) | Calls `runmlp2()`, whose implementation is absent upstream (declared in `mlp.h`, defined nowhere) |
+| IJG tool mains excluded | `build.rs` (exclusion list) | `cjpeg`/`djpeg`/... are CLIs, not library code |
+| `an2k.h` generation | `build.rs` | Build-time `sed` of `an2k.h.src` into `OUT_DIR` |
+
+**No vendored `.c`/`.h` file is modified** — the patch surface is limited to
+the shim and the `build.rs` selection rules.
+
+## 5. License / SBOM
+
+- **License**: NIST NBIS is a U.S. federal government work released into the
+  public domain (IJA license file in each upstream subtree). Verify against
+  the vendor agreement before redistribution outside this repository.
+- **SBOM**: recorded as a vendored component in
+  `compliance/ipr-handover/sbom-index.md` (§Vendored components) and carried
+  in the `biometric-edge-svc` image SBOM attestation
+  (`<registry>/biometric-edge-svc:<release>.sbom.spdx.json`, SPDX 2.3,
+  Syft + Cosign).
+
+## 6. Round-trip / smoke proof
+
+`tests/roundtrip.rs` (cargo test -p nearform-nbis) proves the vendored C
+works end-to-end, no pre-extracted data:
+
+- `mindtct_extracts_minutiae_from_synthetic_print` — real C `get_minutiae`
+  finds minutiae in a generated ridge image.
+- `bozorth_self_match_beats_cross_match` — real C `bozorth_main`
+  (mindtct → bozorth3): self-match 569 vs cross-match 24 (NIST-40 bar
+  cleared with margin).
+- `extraction_is_deterministic` — same image → identical minutiae set.

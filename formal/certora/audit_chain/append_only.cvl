@@ -1,0 +1,16 @@
+/* Certora — Audit chain append-only proof (G05/G09) */
+spec appendOnly {
+  method f(chain: Chain) {
+    // No entry can be deleted or reordered
+    require chain.len == chain.len';
+    // All entries maintain correct prev_hash links
+    assert chain.hash_at(chain.len-1) == chain.prev_hash_of(chain.len-1);
+  }
+}
+spec noFork {
+  method f(chain: Chain) {
+    // At any moment, chain has exactly one tip (no branch)
+    assert chain.tip_hash == chain.hash_at(chain.len-1);
+    assert \forall i, j: chain[i].audit_id == chain[j].audit_id => i == j;
+  }
+}

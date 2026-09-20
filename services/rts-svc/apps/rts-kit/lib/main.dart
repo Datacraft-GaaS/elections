@@ -28,8 +28,8 @@ void main() async {
 
   final modeBundle = await RtsModeBundle.loadCurrent();
 
-  runApp(
-    ProviderScope(
+  runEelGuardedApp(
+    app: ProviderScope(
       overrides: [
         outboxQueueProvider.overrideWithValue(queue),
         modeBundleProvider.overrideWith((ref) => modeBundle),

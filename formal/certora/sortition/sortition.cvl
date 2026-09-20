@@ -1,0 +1,20 @@
+/* Certora Verification Language (CVL) — VRF Sortition Proof (G02) */
+
+/* Rule: sortition must be deterministic for a given merkle root */
+spec deterministicSortition {
+  method f(spec: Spec) {
+    /* Verify: running sortition twice with same root gives same result */
+    require spec.merkle_root == spec.merkle_root_copy;
+    assert spec.selected_set == spec.selected_set_copy, "Determinism violated";
+  }
+}
+
+/* Rule: no single station dominates selection probability */
+spec fairSelection {
+  method f(station: Station, merkle: String) {
+    /* Statistical fairness property: every station has equal selection probability */
+    require station != null && merkle != "";
+    assert isIn(station, selected_stations) => probability(station) <= max_fraction,
+      "Fairness violated: station over-selected";
+  }
+}

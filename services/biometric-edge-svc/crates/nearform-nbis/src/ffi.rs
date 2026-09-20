@@ -8,7 +8,12 @@
 //! All calls are unsafe but the Rust wrappers below validate inputs and
 //! return safe types.
 
-use std::os::raw::{c_int, c_char, c_double};
+// Raw-pointer FFI to the linked `nbis_core` static library: same scoped
+// opt-out rationale as `packages/verifier-rs/src/ffi.rs` (workspace denies
+// `unsafe_code` via RUSTFLAGS; the C boundary cannot comply).
+#![allow(unsafe_code)]
+
+use std::os::raw::c_int;
 
 /// A minutia — NIST internal format. The template is an array of these
 /// (X, Y, Theta, Quality).
@@ -29,18 +34,52 @@ pub struct MinutiaXytHeader {
     pub n: c_int,
 }
 
-/// Bozorth3: compute match score between two .xyt byte arrays.
-/// Returns integer score. Higher = better match.
+/// Maximum minutiae Bozorth3 handles (bozorth.h MAX_BOZORTH_MINUTIAE).
+const MAX_BOZORTH_MINUTIAE: usize = 200;
+
+/// NBIS `struct xyt_struct` (bozorth3/include/bozorth.h).
+#[repr(C)]
+pub struct XytStruct {
+    pub nrows: c_int,
+    pub xcol: [c_int; MAX_BOZORTH_MINUTIAE],
+    pub ycol: [c_int; MAX_BOZORTH_MINUTIAE],
+    pub thetacol: [c_int; MAX_BOZORTH_MINUTIAE],
+}
+
+impl Default for XytStruct {
+    fn default() -> Self {
+        XytStruct {
+            nrows: 0,
+            xcol: [0; MAX_BOZORTH_MINUTIAE],
+            ycol: [0; MAX_BOZORTH_MINUTIAE],
+            thetacol: [0; MAX_BOZORTH_MINUTIAE],
+        }
+    }
+}
+
+impl XytStruct {
+    pub fn from_minutiae(minutiae: &[NbisMinutia]) -> Self {
+        let mut xy = XytStruct::default();
+        let n = minutiae.len().min(MAX_BOZORTH_MINUTIAE) as c_int;
+        xy.nrows = n;
+        for (i, m) in minutiae.iter().take(n as usize).enumerate() {
+            xy.xcol[i] = m.x;
+            xy.ycol[i] = m.y;
+            xy.thetacol[i] = m.theta;
+        }
+        xy
+    }
+}
+
+/// Bozorth3: compute match score between two sets of NBIS minutiae.
+///
+/// Wraps the real `bozorth_main(pstruct, gstruct)` which calls
+/// `bozorth_probe_init` + `bozorth_gallery_init` + `bz_match` +
+/// `bz_match_score` internally. Returns integer score; higher = better.
+/// Matches above ~40 are generally accepted as the same finger.
 #[link(name = "nbis_core", kind = "static")]
 extern "C" {
-    /// Legacy ANSI C entry: takes file paths.
-    /// `bozorth3(int argc, char **argv)` — but we use the direct call.
-    fn bz_match(
-        probe_x: *const c_int, probe_y: *const c_int, probe_theta: *const c_int,
-        probe_count: c_int,
-        enrolled_x: *const c_int, enrolled_y: *const c_int, enrolled_theta: *const c_int,
-        enrolled_count: c_int,
-    ) -> c_int;
+    fn bozorth_main(pstruct: *mut XytStruct, gstruct: *mut XytStruct) -> c_int;
 }
 
 pub fn bozorth_match(
@@ -50,26 +89,7 @@ pub fn bozorth_match(
     if probe.is_empty() || enrolled.is_empty() {
         return 0;
     }
-    unsafe {
-        let mut p_x = Vec::with_capacity(probe.len());
-        let mut p_y = Vec::with_capacity(probe.len());
-        let mut p_t = Vec::with_capacity(probe.len());
-        for m in probe {
-            p_x.push(m.x);
-            p_y.push(m.y);
-            p_t.push(m.theta);
-        }
-        let mut e_x = Vec::with_capacity(enrolled.len());
-        let mut e_y = Vec::with_capacity(enrolled.len());
-        let mut e_t = Vec::with_capacity(enrolled.len());
-        for m in enrolled {
-            e_x.push(m.x);
-            e_y.push(m.y);
-            e_t.push(m.theta);
-        }
-        bz_match(
-            p_x.as_ptr(), p_y.as_ptr(), p_t.as_ptr(), probe.len() as c_int,
-            e_x.as_ptr(), e_y.as_ptr(), e_t.as_ptr(), enrolled.len() as c_int,
-        )
-    }
+    let mut p = XytStruct::from_minutiae(probe);
+    let mut g = XytStruct::from_minutiae(enrolled);
+    unsafe { bozorth_main(&mut p, &mut g) }
 }

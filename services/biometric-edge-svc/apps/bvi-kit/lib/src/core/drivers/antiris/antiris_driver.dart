@@ -2,6 +2,7 @@
 /// Uses AntUSBCamera.jar (USBControl) for USB connection + capture.
 /// SDK source: /Users/nyimbiodero/src/pjs/eel/sdks/AntIris_Android_SDK/
 /// Hardware: AntIris iris scanner (K7 capture mode, JP2/ISO output).
+library;
 
 import 'package:flutter/services.dart';
 
@@ -30,7 +31,7 @@ class AntIrisDriver {
         error: m['error'] as String?,
       );
     } on MissingPluginException {
-      return AntIrisResult(isValid: false, error: 'antiris_plugin_not_registered');
+      return const AntIrisResult(isValid: false, error: 'antiris_plugin_not_registered');
     } on PlatformException catch (e) {
       return AntIrisResult(isValid: false, error: e.message ?? 'antiris_unknown');
     }

@@ -1,3 +1,4 @@
+import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +9,7 @@ import 'rts_workflow/sign.dart';
 import 'rts_workflow/transmit.dart';
 
 final _router = GoRouter(
+  navigatorKey: eelNavigatorKey,
   initialLocation: '/scan',
   routes: [
     GoRoute(

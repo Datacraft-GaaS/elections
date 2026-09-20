@@ -1,5 +1,6 @@
 /// RTS Kit driver (M08). Per plan.md M3: SMS fallback real status responses.
 /// Hardware: GSM modem for SMS.
+library;
 
 class SmsStatus {
   final bool sent;

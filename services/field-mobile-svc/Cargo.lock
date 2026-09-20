@@ -2172,6 +2172,8 @@ dependencies = [
  "eel-hlc-rs",
  "eel-outbox-rs",
  "futures",
+ "hex",
+ "hmac",
  "rstest",
  "serde",
  "serde_json",

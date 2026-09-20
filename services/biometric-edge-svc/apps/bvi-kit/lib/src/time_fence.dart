@@ -5,6 +5,7 @@
 ///   - Clock skew is <= [maxSkewSeconds] (5 min).
 /// If skew is exceeded, the session is refused and the kit shows a
 /// prominent error; no biometric capture proceeds.
+library;
 
 const int maxSkewSeconds = 300; // 5 minutes
 

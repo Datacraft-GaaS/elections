@@ -48,6 +48,16 @@ SBOMs are generated per release. The table below shows the SBOM path pattern; re
 
 All shared packages (eel-auth-*, eel-crypto-rs, eel-events-*, etc.) are included in the consuming service SBOM via Syft workspace scanning. Standalone SBOM attestations are also available for each package image.
 
+## Vendored components
+
+Non-registry code vendored into source trees. Syft records these as
+`vendored` files in the consuming service's SBOM; the table is the auditable
+index of *what* is vendored, where it is pinned, and under which license.
+
+| Component | Version / pinned SHA | License | Location | Consumed by |
+|---|---|---|---|---|
+| NIST Biometric Image Software (NBIS) | v5.0.0 @ `c946acc42dbfca7090d00b1098f2b93a04ba8914` | Public domain (US federal government work) | `services/biometric-edge-svc/crates/nearform-nbis/vendor/nbis/` (396 files, 7 subtrees; see `vendor/README.provenance`) | `nearform-nbis` → `biometric-edge-svc` (fingerprint extraction + Bozorth3 matching) |
+
 ## SBOM Tooling
 
 - Generator: Syft v1.x (pinned in `tools/supply-chain/Dockerfile`)

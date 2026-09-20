@@ -1,8 +1,8 @@
 /// GsmModem — complete SMS fallback integration using usb_serial + AT commands.
 /// Per plan.md M3 (M08): SMS fallback when HTTP fails 3× or network absent.
 /// Uses 3GPP AT commands (no vendor SDK needed) + USB serial transport.
+library;
 
-import 'package:usb_serial/usb_serial.dart';
 import 'at_command.dart';
 import 'usb_serial_transport.dart';
 import 'sms_pdu.dart';

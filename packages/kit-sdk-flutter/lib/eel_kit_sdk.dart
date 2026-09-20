@@ -20,4 +20,5 @@ export 'src/abis_kit_client.dart';
 export 'src/isar_store.dart';
 export 'src/push.dart';
 export 'src/polygon_geo.dart';
+export 'src/error_guard.dart';
 export 'telemetry.dart';

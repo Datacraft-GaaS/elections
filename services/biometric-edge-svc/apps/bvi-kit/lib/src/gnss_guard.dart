@@ -4,6 +4,7 @@
 /// GPS, GLONASS, and Galileo within [_maxConstellationDeltaM] metres.
 /// IMU sanity envelope: acceleration/rotation must be plausible for a
 /// stationary polling-station installation.
+library;
 
 import 'dart:math' as math;
 

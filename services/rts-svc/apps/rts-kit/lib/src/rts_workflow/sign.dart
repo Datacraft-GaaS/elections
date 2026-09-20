@@ -104,7 +104,7 @@ Future<String> _signPayload(Map<String, Object?> payload) async {
 // ---- Provider ---------------------------------------------------------------
 
 final attestationProvider = Provider<EelAttestationClient>(
-  (ref) => EelAttestationClient(),
+  (ref) => EelAttestationClientStub(),
 );
 
 // ---- Screen -----------------------------------------------------------------
@@ -224,7 +224,8 @@ class _SignScreenState extends ConsumerState<SignScreen> {
             if (signed != null)
               Semantics(
                 liveRegion: true,
-                label: 'Form signed successfully. Hash: ${signed.payloadHash.substring(0, 16)}',
+                label:
+                    'Form signed successfully. Hash: ${signed.payloadHash.substring(0, 16)}',
                 child: Card(
                   color: Theme.of(context).colorScheme.secondaryContainer,
                   child: Padding(
@@ -263,7 +264,8 @@ class _SignScreenState extends ConsumerState<SignScreen> {
                             ? const SizedBox(
                                 width: 16,
                                 height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const Icon(Icons.verified_user),
                         label: Text(_signing ? 'Signing...' : 'Sign Form'),

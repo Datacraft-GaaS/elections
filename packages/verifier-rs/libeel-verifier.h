@@ -22,6 +22,12 @@ const char *eel_verifier_last_error_message(void);
  * Verify Merkle inclusion.
  *
  * `json` must be `{"sth":{...},"proof":{...},"leaf_hex":"<hex>"}`.
+ *
+ * # Safety
+ *
+ * `json_ptr` must point to `json_len` readable bytes for the
+ * duration of the call; the buffer must remain valid and
+ * unmodified while this function runs.
  */
 int32_t eel_verifier_inclusion(const uint8_t *json_ptr, uintptr_t json_len);
 
@@ -29,6 +35,12 @@ int32_t eel_verifier_inclusion(const uint8_t *json_ptr, uintptr_t json_len);
  * Verify Merkle consistency.
  *
  * `json` must be `{"from_sth":{...},"to_sth":{...},"proof":{...}}`.
+ *
+ * # Safety
+ *
+ * `json_ptr` must point to `json_len` readable bytes for the
+ * duration of the call; the buffer must remain valid and
+ * unmodified while this function runs.
  */
 int32_t eel_verifier_consistency(const uint8_t *json_ptr, uintptr_t json_len);
 
@@ -36,6 +48,12 @@ int32_t eel_verifier_consistency(const uint8_t *json_ptr, uintptr_t json_len);
  * Verify an STH Ed25519 signature.
  *
  * `json` must be `{"sth":{...}}`.
+ *
+ * # Safety
+ *
+ * `json_ptr` must point to `json_len` readable bytes for the
+ * duration of the call; the buffer must remain valid and
+ * unmodified while this function runs.
  */
 int32_t eel_verifier_sth_signature(const uint8_t *json_ptr, uintptr_t json_len);
 
@@ -43,6 +61,12 @@ int32_t eel_verifier_sth_signature(const uint8_t *json_ptr, uintptr_t json_len);
  * Verify witness cosignatures.
  *
  * `json` must be `{"sth":{...},"witness_sigs":[...]}`.
+ *
+ * # Safety
+ *
+ * `json_ptr` must point to `json_len` readable bytes for the
+ * duration of the call; the buffer must remain valid and
+ * unmodified while this function runs.
  */
 int32_t eel_verifier_witness_cosign(const uint8_t *json_ptr, uintptr_t json_len);
 

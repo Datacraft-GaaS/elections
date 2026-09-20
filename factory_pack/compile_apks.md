@@ -99,21 +99,85 @@ build/app/outputs/flutter-apk/app-debug.apk
   - Changed `(ref) => EelAttestationClient()` to `(ref) => EelAttestationClientStub()` to use the concrete stub implementation for development.
 - Updated Kotlin version in `android/settings.gradle.kts` from `2.0.21` to `2.2.0` to resolve Kotlin metadata version conflicts.
 
-## Release builds (2026-09-18)
+## Release builds (2026-09-18, rebuilt with drivers — see eel_drivers below)
 
 Release (AOT, non-debuggable) APKs built with the same flags plus `--release`:
 
-| App | Size | Budget | Cold start (emulator) | Smoke |
-|---|---|---|---|---|
-| bvi-kit-release.apk | 50.6 MB | ≤ 60 MB ✅ | 450 ms | PASS, crash-free |
-| bvr-kit-release.apk | 50.6 MB | ≤ 60 MB ✅ | 485 ms | PASS, crash-free |
-| rts-kit-release.apk | 61.3 MB | ≤ 60 MB ⚠️ +2% over | 573 ms | PASS, crash-free |
+| App | Debug | Release | Budget | Cold start (emulator) | Smoke |
+|---|---|---|---|---|---|
+| bvi-kit | 195 MB | 57.8 MB | ≤ 60 MB ✅ | 576 ms (release) | PASS |
+| bvr-kit | 219 MB | 57.9 MB | ≤ 60 MB ✅ | 471 ms (release) | PASS |
+| rts-kit | 198 MB | 65.7 MB | ≤ 60 MB ⚠️ +9.5% over | 563 ms (release) | PASS |
 
-SHA-256:
+(Debug sizes exempt — JIT kernel + emulator ABI + validation layers.)
 
-- `bvi-kit-release.apk`: `836c5cb1…87b79b1f85`
-- `bvr-kit-release.apk`: `995d5b66…f3771426b`
-- `rts-kit-release.apk`: `813c1042…0414af958`
+SHA-256 (2026-09-18 error-guard builds):
+
+- `bvi-kit-debug.apk`: `cfbbb1fd…0a090c1d`
+- `bvr-kit-debug.apk`: `dcb403a9…4d2d00b0fe4`
+- `rts-kit-debug.apk`: `29b68714…5ab683d2be9`
+- `bvi-kit-release.apk`: `ae53a817…2b3ad1f77e`
+- `bvr-kit-release.apk`: `93337e0c…49d5e02aa8`
+- `rts-kit-release.apk`: `07248e64…c96d1a5d6`
+- `factory_test_harness.apk`: `6f923335…110c1f0` (includes drivers; GNSS
+  30 s timeout fix + `app_flutter` report path + `probeDetails` branches)
+
+## EelErrorGuard (2026-09-18) — informative errors in every kit
+
+New `EelErrorGuard` in `packages/kit-sdk-flutter` (`lib/src/error_guard.dart`,
+5 widget tests green, full kit-sdk suite 116 green), wired into all three
+`main()`s via `runEelGuardedApp` + `eelNavigatorKey` on every `MaterialApp`
+(incl. rts-kit's `GoRouter(navigatorKey:)`):
+
+- Framework errors (`FlutterError.onError`) → `EelFatalErrorScreen`
+  replaces the route stack: what happened, what to do, selectable
+  **Error ID** (`EEL-<base36 millis>-<4-hex>`), details toggle. Re-entrant
+  captures only record (no error loops).
+- Zone (async) errors → recorded in `EelErrorLog` ring (50) + dismissible
+  banner (tap opens details, auto-dismiss 8 s). App keeps running.
+- Every capture prints `EEL FATAL|ERROR <id> <type>` to logcat (type + ID
+  only — no PII) and fans out to an injectable reporter (telemetry-ingest
+  wiring is M2). Proven on-device: a transient startup framework error was
+  captured with ID instead of a silent gray screen.
+- `build.sh` release path gained `--split-debug-info=$BUILD_DIR/symbols`
+  (no obfuscation: symbols stay readable, traces gain file/line info;
+  archived next to the SBOM).
+
+Verified on emulator: debug smokes 2.0–2.2 s PASS ×3, release smokes
+471–576 ms PASS ×3; guard symbols present in `kernel_blob.bin` (debug) and
+`libapp.so` (release).
+
+## eel_drivers plugin (2026-09-18) — all drivers bundled
+
+New Flutter plugin `packages/eel_drivers/` (Dart + Kotlin, `flutter analyze`
+clean both sides, unit test green). One Android plugin class registers every
+channel; each channel also serves `probeDetails` → `{present, reason,
+devices}` so callers distinguish "no hardware attached" (SKIP) from
+"operation failed" (FAIL):
+
+| Channel | Native implementation | Emulator result |
+|---|---|---|
+| `eel.bvi/iris` (+ alias `eel/iris`) | Ported `AntIrisPlugin` (USBControl + IrisIso); vendor jars + both-ABI `.so` bundled in the plugin | SKIP (no UVC device) |
+| `eel/fingerprint` | FAP60 USB identity probe (VID 0x0507/PID 0x0581); **vendor SDK jars absent** → init always false, reason `fap60-sdk-missing` | SKIP |
+| `eel/bvi/printer` | Generic USB printer-class (7) ESC/POS (init + test page + cut over bulk-OUT) | SKIP (no printer) |
+| `eel/modem/sms` | Platform SmsManager; test-present = SIM ready + own number known + permission; sends to own number only | PASS (emulator radio accepted) |
+| `eel/bvi/document_scanner` | Vendor slot (known VID/PID table empty); HID enumeration in probe details | SKIP |
+| `eel/bvi/camera` | Camera2 still capture (back-preferred, JPEG, 10 s bound, permission-checked) | **PASS** (virtual-camera frame captured) |
+
+Wired (path dep) into `test_harness`, `bvi-kit`, `bvr-kit`, `rts-kit`;
+auto-registered via GeneratedPluginRegistrant (verified `com/eel/drivers`
+refs + `lib_Antiris`/`libUSBCamera` in all 7 APKs). Kit Dart drivers still use
+simulated transports — workflow integration is M3; this change proves
+packaging + registration + runtime availability checks.
+
+Porting notes: AGP 9 removed the Kotlin-DSL `android {}`/`kotlin {}` accessors
+for plugin modules (`Project.android` is now an error) — the plugin uses
+Groovy DSL. `USBControl.ANT_*` constants must be accessed statically (Kotlin
+rejects instance access) and `antIrisIrexCapture` timeout is Long. The
+harness had a latent `Map<String, dynamic>` cast bug that only surfaced once
+a real plugin answered (MissingPluginException used to short-circuit) —
+fixed with a `_strMap` normalizer. Harness manifest gained CAMERA + SEND_SMS
+(factory-test needs; RECORD_AUDIO deliberately omitted).
 
 Release notes and caveats:
 
@@ -134,11 +198,13 @@ Release notes and caveats:
   are unaffected (app-level linking covers it).
   An app-side `android.disableResourceValidation=true` was tried first and did
   NOT suppress the task on this AGP — reverted.
-- **rts-kit is 2% over budget** (61.3 MB decimal; 58.5 MiB). The delta vs the
-  other kits is `libapp.so` (rts bundles ~2× the Dart code). Remedies if the
-  gate must be strictly met: `--split-per-abi` release (arm64-only ≈ 35 MB)
-  or a libapp diet during M2. The `build.sh` size gate measures MiB and
-  currently passes rts (58 MiB) — the plan should state the unit explicitly.
+- **rts-kit is 9.5% over budget** (65.7 MB decimal; ~62.7 MiB — now also over
+  in MiB after the ~4.4 MB driver payload). The delta vs the
+  other kits is `libapp.so` (rts bundles ~2× the Dart code) plus drivers.
+  Remedies if the gate must be strictly met: `--split-per-abi` release
+  (arm64-only ≈ 35 MB) or a libapp diet during M2. The `build.sh` size gate
+  measures MiB and will now fail rts until one lands — the plan should state
+  the unit explicitly and pick the remedy.
 - **rts-kit requests CAMERA + RECORD_AUDIO at startup.** On a fresh install
   the system grant dialog wedged the task and swallowed all subsequent
   launches (indistinguishable from "app won't start" headlessly). Always
@@ -164,21 +230,14 @@ Uncommitted modifications at build time (verify with `git status --porcelain`):
 - `?? packages/eel_design/` (untracked stub package — see divergence note)
 
 SHA-256 of the shipped binaries (also in `SHA256SUMS` in the zip).
-Rebuilt 2026-09-18 from the same dirty tree (see mutations above) with
-Flutter 3.47.1, verified on a booted emulator (see validation log below):
+Driver builds of 2026-09-18 (see eel_drivers section above for SHAs).
+Earlier pre-driver SHAs are superseded — do not use.
 
-- `bvi-kit-debug.apk` (180 MB): `7b5467fb…5379da661`
-- `bvr-kit-debug.apk` (180 MB): `4968fcbc…ceae5878ad`
-- `rts-kit-debug.apk` (160 MB): `81d3320c…8911aa69d`
-- `factory_test_harness.apk` (166 MB): rebuilt 2026-09-18 from
-  `factory_pack/test_harness` with applicationId `com.eel.test_harness`
-  `factory_pack/test_harness` with applicationId `com.eel.test_harness`
-  (renamed from `com.example.test_harness`; MainActivity moved to
-  `com/eel/test_harness/`, namespace + applicationId updated in
-  `android/app/build.gradle.kts`). Debug-signed (v2 scheme), debuggable
-  (required for `run-as` report retrieval). SHA-256:
-  `6e3f8e20…0e25569`. iOS/desktop platform dirs still carry example bundle
-  IDs — out of scope (factory is Android-only; zip excludes those dirs).
+Harness lineage: `factory_test_harness.apk` uses applicationId
+`com.eel.test_harness` (renamed from `com.example.test_harness`).
+Debug-signed (v2 scheme), debuggable (required for `run-as` report
+retrieval). iOS/desktop platform dirs still carry example bundle IDs —
+out of scope (factory is Android-only; zip excludes those dirs).
 
 Known divergences to resolve (Wave M2 app-migration work, not factory fixes):
 

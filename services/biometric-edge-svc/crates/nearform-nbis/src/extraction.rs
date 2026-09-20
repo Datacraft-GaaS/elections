@@ -178,10 +178,16 @@ mod tests {
         let w = 64u32;
         let h = 64u32;
         let mut pixels = vec![128u8; (w * h) as usize];
-        // Draw a diagonal ridge
-        for i in 0..w.min(h) {
-            for d in 0..3 {
-                pixels[(i + d * w) as usize] = 255;
+        // Draw a 3px horizontal ridge across the MIDDLE of the frame,
+        // inset from the borders: thinning/detection exclude the outermost
+        // pixel ring, so ridge endpoints must lie in the interior to be
+        // found (as on a real fingerprint, where ridges end mid-image).
+        // (A bar glued to the y=0 edge is eaten by border exclusion;
+        // a full-width bar hides its endpoints exactly on the border.)
+        for x in 8..w - 8 {
+            for dy in 0..3 {
+                let y = h / 2 - 1 + dy;
+                pixels[(y * w + x) as usize] = 255;
             }
         }
         let img = FingerprintImage::from_grayscale(w, h, pixels).unwrap();

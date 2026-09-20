@@ -11,23 +11,36 @@ import 'package:eel_kit_sdk/src/fingerprint_scanner.dart';
 /// (sdks/2.fap60-android). The Dart side is `packages/kit-sdk-flutter`
 /// `FingerprintScanner` speaking `eel/fingerprint`; the native side is
 /// `FingerprintPlugin.kt` wrapping `FUFingerSDK + FPAPI + FingerAlgo`.
-enum SensorModality { fingerprint, iris, face }
+enum SensorModality { fingerprint, iris, face, mrz }
 
 enum CaptureQuality { pass, retry, fail }
 
 class CaptureResult {
   final SensorModality modality;
   final CaptureQuality quality;
+
   /// Content-address of the biometric bundle in secure local storage.
   final String? biometricRef;
   final double qualityScore;
+  final String? error;
 
   const CaptureResult({
     required this.modality,
     required this.quality,
     this.biometricRef,
     this.qualityScore = 0.0,
+    this.error = null,
   });
+  factory CaptureResult.failure(String modalityName, String errorMessage) {
+    return CaptureResult(
+      modality: SensorModality.values.firstWhere((m) => m.name == modalityName,
+          orElse: () => SensorModality.face),
+      quality: CaptureQuality.fail,
+      biometricRef: null,
+      qualityScore: 0.0,
+      error: errorMessage,
+    );
+  }
 }
 
 abstract class SensorDriver {
@@ -143,7 +156,8 @@ class Fap60SensorDriver implements SensorDriver {
 
     try {
       await _scanner.captureFlat().timeout(const Duration(seconds: 10));
-      return await completer.future.timeout(const Duration(seconds: 12), onTimeout: () {
+      return await completer.future.timeout(const Duration(seconds: 12),
+          onTimeout: () {
         sub.cancel();
         return const CaptureResult(
           modality: SensorModality.fingerprint,
@@ -153,7 +167,9 @@ class Fap60SensorDriver implements SensorDriver {
         );
       });
     } catch (_) {
-      try { sub.cancel(); } catch (_) {}
+      try {
+        sub.cancel();
+      } catch (_) {}
       return const CaptureResult(
         modality: SensorModality.fingerprint,
         quality: CaptureQuality.retry,
@@ -163,5 +179,3 @@ class Fap60SensorDriver implements SensorDriver {
     }
   }
 }
-
-

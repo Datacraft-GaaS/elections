@@ -1,4 +1,5 @@
 pub mod clone_detect;
+pub mod form_quality_gate;
 pub mod grievance;
 pub mod queue;
 pub mod sse_handler;

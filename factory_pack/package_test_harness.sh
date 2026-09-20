@@ -76,6 +76,7 @@ if [[ "$CREATE_ZIP" = true ]]; then
   INCLUDES=(
     "README.md"
     "INSTALLER_TESTER_GUIDE.md"
+    "ENGINEERING_FAQ.md"
     "factory_guidance.md"
     "compile_apks.md"
     "SHA256SUMS"
@@ -116,7 +117,7 @@ if [[ "$CREATE_ZIP" = true ]]; then
   _log_info "Generating SHA256SUMS..."
   rm -f SHA256SUMS
   {
-    for f in README.md INSTALLER_TESTER_GUIDE.md factory_guidance.md compile_apks.md \
+    for f in README.md INSTALLER_TESTER_GUIDE.md ENGINEERING_FAQ.md factory_guidance.md compile_apks.md \
              bvi-kit-debug.apk bvr-kit-debug.apk rts-kit-debug.apk \
              bvi-kit-release.apk bvr-kit-release.apk rts-kit-release.apk \
              factory_test_harness.apk factory_test.sh smoke.sh \

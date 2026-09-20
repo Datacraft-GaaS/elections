@@ -1,3 +1,4 @@
+import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -25,6 +26,7 @@ class BvrKitApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'eel BVR Kit',
+      navigatorKey: eelNavigatorKey,
       localizationsDelegates: eelLocalizationDelegates,
       supportedLocales: eelSupportedLocales,
       theme: ThemeData(

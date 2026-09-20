@@ -142,7 +142,8 @@ Each check prints a JSON line with `"result":"PASS"` or `"FAIL"` plus a
 |---|---|---|---|
 | Emulator, test harness | GNSS → FAIL | No satellite fix indoors/emulator (30 s timeout, by design) | PASS on real hardware with sky view |
 | Anywhere without NTS server | NTS → ERROR | `time.eel.local` unreachable in this environment | PASS where the NTS endpoint exists |
-| Emulator / no peripherals | Iris, Fingerprint, Printer, SMS, Scanner, Camera → SKIP | No vendor plugin on device | PASS on factory hardware with peripherals + Antiris libs |
+| No such hardware attached | Iris, Fingerprint, Printer, Scanner → SKIP (`No ... hardware attached`) | Plugin bundled since 2026-09-18; SKIP now means no peripheral, not missing code | PASS on hardware with the peripheral attached (iris needs Antiris UVC camera; fingerprint/scanner need vendor SDKs — see ENGINEERING_FAQ) |
+| Emulator virtual camera / radio | Camera, SMS → PASS | Real Camera2 capture / SmsManager send through emulator virtual devices | Confirms driver works; re-verify on hardware |
 | No `EEL_TELEMETRY_URL` | telemetry → SKIP | Nothing configured to probe | Configure it for backend-connected runs |
 | No `EEL_DEDUP_CHECK` | dedup → SKIP | No backend hook provided | Provide the hook for sign-off runs |
 | Emulator cold start > 2000 ms | WARN only | The 2 s budget targets physical mid-tier phones, not emulators | Measure on reference hardware |
@@ -331,7 +332,8 @@ adb -s <序列号> install -r -g bvi-kit-debug.apk
 |---|---|---|---|
 | 模拟器，硬件测试 | GNSS → FAIL | 室内/模拟器无卫星定位（30 秒超时是设计行为） | 在有天空视野的真机上会 PASS |
 | 无 NTS 服务器的环境 | NTS → ERROR | `time.eel.local` 不可达 | 在有 NTS 服务的环境会 PASS |
-| 模拟器/无外设 | 虹膜、指纹、打印机、短信、扫描、相机 → SKIP | 设备上没有厂商插件 | 在带外设 + Antiris 库的工厂设备上会 PASS |
+| 没接相应硬件 | 虹膜、指纹、打印机、扫描仪 → SKIP（`No ... hardware attached`）| 2026-09-18 起插件已打包；SKIP 表示没外设，不是缺代码 | 接上外设会 PASS（虹膜需 AntIris UVC 相机；指纹/扫描仪还需厂商 SDK——见 ENGINEERING_FAQ）|
+| 模拟器虚拟相机/无线电 | 相机、短信 → PASS | 经模拟器虚拟设备真实抓拍/发短信 | 证明驱动可用；在真机上复验 |
 | 未设 `EEL_TELEMETRY_URL` | telemetry → SKIP | 没有可探测的地址 | 接后端联调时配置该变量 |
 | 未设 `EEL_DEDUP_CHECK` | dedup → SKIP | 没有后端钩子 | 放行测试时提供钩子 |
 | 模拟器冷启动 > 2000 ms | 仅 WARN | 2 秒预算针对实体中端机，不是模拟器 | 在基准真机上复测 |

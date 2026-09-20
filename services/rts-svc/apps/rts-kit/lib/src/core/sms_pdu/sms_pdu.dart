@@ -2,6 +2,7 @@
 /// Encodes Form 34A CBOR+zstd payload into SMS segments (7-bit GSM alphabet or 8-bit binary).
 /// Each segment: 140 bytes payload max (160 chars × 7 bits / 8 bits per SMS frame).
 /// For multi-segment: UDH (User Data Header) with 6-byte concatenated-SMS IEI.
+library;
 
 /// Segment a CBOR+zstd payload into SMS-SUBMIT PDU frames.
 List<String> encodeSmsSubmit({

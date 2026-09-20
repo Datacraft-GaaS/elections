@@ -1,9 +1,8 @@
-/// UsbSerialTransport — bridges Dart AT command library to native USB serial.
-/// Uses `usb_serial` package (USB device enumeration + open + read/write).
-/// Hardware: GSM modem via USB (ACM / ttyUSB0 / ttyACM0).
+library;
 
+import 'dart:async';
+import 'dart:typed_data';
 import 'package:usb_serial/usb_serial.dart';
-import 'package:usb_serial/usb_serial_for_android_plugin.dart' if (dart.library.html) '';
 import 'at_command.dart';
 
 class UsbSerialTransport implements AtSerialTransport {
@@ -12,29 +11,34 @@ class UsbSerialTransport implements AtSerialTransport {
 
   @override
   Future<void> open({String port = '/dev/ttyUSB0', int baud = 115200}) async {
-    // usb_serial discovers devices by VID/PID; default picks first available.
     final devices = await UsbSerial.listDevices();
-    if (devices.isEmpty) throw StateError('No USB serial devices found (modem not connected?)');
+    if (devices.isEmpty) {
+      throw StateError('No USB serial devices found (modem not connected?)');
+    }
     final device = devices.firstWhere(
-      (d) => d.productName?.toLowerCase().contains('sim') == true ||
-             d.productName?.toLowerCase().contains('quectel') == true ||
-             d.productName?.toLowerCase().contains('telit') == true ||
-             d.productId != null,
+      (d) =>
+          d.productName?.toLowerCase().contains('sim') == true ||
+          d.productName?.toLowerCase().contains('quectel') == true ||
+          d.productName?.toLowerCase().contains('telit') == true,
       orElse: () => devices.first,
     );
     _port = await device.createPort();
-    if (_port == null) throw StateError('Failed to open USB port for device ${device.productName}');
+    if (_port == null) {
+      throw StateError(
+          'Failed to open USB port for device ${device.productName}');
+    }
     await _port!.open();
     await _port!.setDTR(true);
     await _port!.setRTS(true);
-    await _port!.setPortParameters(baud, UsbPort.DATABITS_8, UsbPort.STOPBITS_1, UsbPort.PARITY_NONE);
+    await _port!.setPortParameters(
+        baud, UsbPort.DATABITS_8, UsbPort.STOPBITS_1, UsbPort.PARITY_NONE);
     _open = true;
   }
 
   @override
   Future<void> send(String data) async {
     if (!_open || _port == null) throw StateError('Serial port not open');
-    await _port!.write(Uint8List.fromList('$_data\r\n'.codeUnits));
+    await _port!.write(Uint8List.fromList('$data\r\n'.codeUnits));
   }
 
   @override
@@ -42,8 +46,8 @@ class UsbSerialTransport implements AtSerialTransport {
     if (!_open || _port == null) throw StateError('Serial port not open');
     final completer = Completer<String>();
     final buffer = StringBuffer();
-    late StreamSubscription<Uint8List> sub;
-    sub = _port!.inputStream.listen((Uint8List event) {
+    late final StreamSubscription<Uint8List> sub;
+    sub = _port!.inputStream!.listen((Uint8List event) {
       final s = String.fromCharCodes(event);
       buffer.write(s);
       final line = buffer.toString();
@@ -70,7 +74,8 @@ class UsbSerialTransport implements AtSerialTransport {
   }
 
   @override
-  Future<List<String>> readUntil(String terminator, {int timeoutMs = 5000}) async {
+  Future<List<String>> readUntil(String terminator,
+      {int timeoutMs = 5000}) async {
     if (!_open || _port == null) throw StateError('Serial port not open');
     final lines = <String>[];
     final buffer = StringBuffer();

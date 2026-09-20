@@ -108,6 +108,39 @@ impl OperatorSelectableFilters {
         let candidates = total_fingerprints as f64 / self.partition_count() as f64;
         candidates / total_fingerprints as f64
     }
+
+    /// Dimension totals of the partition model (empty filter = all values).
+    /// Kept in sync with `Default` above: gender 3, age 5, geo 47 counties,
+    /// fingers 10, hands 3, qualities 3, diaspora 3, eras 4.
+    const TOTALS: [usize; 8] = [3, 5, 47, 10, 3, 3, 3, 4];
+
+    /// Estimated TOTAL search time across all matching partitions.
+    ///
+    /// Unlike [`Self::estimated_search_time`] (cost of scanning one
+    /// partition), this scales with the fraction of the partition space the
+    /// filter selects — so narrower filters are strictly faster. Assumes
+    /// uniform enrollment distribution and 0.5 ms per candidate comparison.
+    pub fn estimated_total_search_time(&self, total_fingerprints: usize) -> Duration {
+        let selected = [
+            Self::selected_or_total(self.gender.len(), Self::TOTALS[0]),
+            Self::selected_or_total(self.age_buckets.len(), Self::TOTALS[1]),
+            Self::selected_or_total(self.geo_partitions.len(), Self::TOTALS[2]),
+            Self::selected_or_total(self.fingers.len(), Self::TOTALS[3]),
+            Self::selected_or_total(self.hands.len(), Self::TOTALS[4]),
+            Self::selected_or_total(self.qualities.len(), Self::TOTALS[5]),
+            Self::selected_or_total(self.diaspora_statuses.len(), Self::TOTALS[6]),
+            Self::selected_or_total(self.enrollment_eras.len(), Self::TOTALS[7]),
+        ];
+        let matching: usize = selected.iter().product();
+        let total_space: usize = Self::TOTALS.iter().product();
+        let ms =
+            total_fingerprints as f64 * (matching as f64 / total_space as f64) * 0.5;
+        Duration::from_millis(ms as u64)
+    }
+
+    fn selected_or_total(selected: usize, total: usize) -> usize {
+        if selected == 0 { total } else { selected.min(total) }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -203,14 +236,17 @@ mod tests {
 
     #[test]
     fn narrow_filters_are_faster() {
+        // Total-work semantics: narrower filters select fewer partitions.
+        // (Per-partition cost in `estimated_search_time` is intentionally
+        // separate — fewer partitions trivially hold more candidates each.)
         let wide = OperatorSelectableFilters::default();
         let narrow = OperatorSelectableFilters {
             fingers: vec![FingerPosition::RightIndex],
             geo_partitions: vec!["NairobiWest".to_string()],
             ..Default::default()
         };
-        let wide_t = wide.estimated_search_time(100_000_000);
-        let narrow_t = narrow.estimated_search_time(100_000_000);
+        let wide_t = wide.estimated_total_search_time(100_000_000);
+        let narrow_t = narrow.estimated_total_search_time(100_000_000);
         assert!(narrow_t < wide_t);
     }
 

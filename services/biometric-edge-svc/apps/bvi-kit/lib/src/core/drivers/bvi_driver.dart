@@ -1,3 +1,49 @@
+import 'package:dio/dio.dart';
+import 'antiris/antiris_driver.dart';
+
+class NtsCaptureResult {
+  final bool captured;
+  final String? error;
+  final String? serverTimestamp;
+  final String? serverSignature;
+  DateTime? get capturedAt {
+    if (serverTimestamp == null) return null;
+    try {
+      return DateTime.parse(serverTimestamp!);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  const NtsCaptureResult({
+    required this.captured,
+    this.error,
+    this.serverTimestamp,
+    this.serverSignature,
+  });
+}
+
+class GnssFixResult {
+  final double? lat;
+  final double? lng;
+  final double? accuracyMeters;
+  final bool? stationMatched;
+  final bool? polygonValidated;
+  final String? error;
+
+  const GnssFixResult({
+    this.lat,
+    this.lng,
+    this.accuracyMeters,
+    this.stationMatched,
+    this.polygonValidated,
+    this.error,
+  });
+  double? get accuracy => accuracyMeters;
+  double? get lon => lng;
+  bool get fixed => lat != null && lng != null && error == null;
+}
+
 /// BVI driver — real AntIris SDK call.
 class BviDriver {
   final AntIrisDriver? _iris;
@@ -40,8 +86,11 @@ class BviDriver {
       // If station polygon available, validate point-in-polygon (ray-casting)
       // Return lat/lng/accuracy for audit GPS logging
       return const GnssFixResult(
-        lat: -1.2345, lng: 36.9876, accuracyMeters: 8.0,
-        stationMatched: true, polygonValidated: true,
+        lat: -1.2345,
+        lng: 36.9876,
+        accuracyMeters: 8.0,
+        stationMatched: true,
+        polygonValidated: true,
       );
     } catch (_) {
       return const GnssFixResult(error: 'GNSS unavailable');
@@ -49,9 +98,11 @@ class BviDriver {
   }
 
   /// Iris capture — real AntIris SDK call.
-  Future<AntIrisResult> captureIris({String userName = 'user', int eyeIndex = 0}) async {
+  Future<AntIrisResult> captureIris(
+      {String userName = 'user', int eyeIndex = 0}) async {
     try {
-      return await _iris?.captureIris(userName: userName, eyeIndex: eyeIndex, irexType: 7) ??
+      return await _iris?.captureIris(
+              userName: userName, eyeIndex: eyeIndex, irexType: 7) ??
           const AntIrisResult(isValid: false, error: 'antiris_not_initialized');
     } catch (e) {
       return AntIrisResult(isValid: false, error: e.toString());
@@ -59,6 +110,10 @@ class BviDriver {
   }
 
   Future<bool> selfCheck() async {
-    try { return await _iris?.selfCheck() ?? false; } catch (_) { return false; }
+    try {
+      return await _iris?.selfCheck() ?? false;
+    } catch (_) {
+      return false;
+    }
   }
 }

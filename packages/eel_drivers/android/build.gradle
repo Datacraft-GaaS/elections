@@ -1,0 +1,29 @@
+// eel_drivers Android library module. Groovy DSL (not Kotlin DSL): immune to
+// the AGP 9 Kotlin-accessor removals that break `android {}` / `kotlin {}`
+// blocks in plugin modules. Versions (AGP, Kotlin) are inherited from the
+// consuming app's settings.gradle pluginManagement.
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+android {
+    namespace "com.eel.drivers"
+    compileSdk 36
+
+    defaultConfig {
+        minSdk 24
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+dependencies {
+    // Vendored AntIris SDK; .so files under src/main/jniLibs auto-package.
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+}

@@ -17,7 +17,6 @@
 library;
 
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:eel_kit_sdk/eel_kit_sdk.dart';
@@ -27,7 +26,6 @@ import 'package:logging/logging.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../a11y/workflow_semantics.dart';
-import '../core/at_command/gsm_modem.dart';
 import 'queue.dart';
 import 'sign.dart';
 

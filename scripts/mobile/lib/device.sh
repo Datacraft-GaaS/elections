@@ -92,10 +92,14 @@ eel_logcat_crashcheck() {
 
 # --- launch ------------------------------------------------------------------
 
-# Cold-launch PKG. Prints am start TotalTime ms on success (empty otherwise).
+# Cold-launch PKG: force-stop first (clears stale tasks/permission dialogs
+# that would otherwise swallow the launch), then start. Prints am start
+# TotalTime ms on success (empty otherwise).
 # Uses the resolved launcher when available, monkey as fallback.
 eel_launch() {
   local device="$1" pkg="$2" component out ms
+  adb -s "$device" shell am force-stop "$pkg" >/dev/null 2>&1 || true
+  sleep 1
   component=$(eel_resolve_launcher "$device" "$pkg")
   if [[ -n "$component" ]]; then
     out=$(adb -s "$device" shell am start -W -n "$component" 2>&1 | tr -d '\r' || true)

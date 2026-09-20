@@ -35,6 +35,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
 
+use super::bozorth::Bozorth3;
+use super::template::Template;
+
 /// One enrolled fingerprint template, tagged with partition metadata.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GalleryEntry {
@@ -73,7 +76,7 @@ pub enum FingerPosition {
 
 impl FingerPosition {
     pub fn from_str(s: &str) -> Option<Self> {
-        match s.to_upperCase().as_str() {
+        match s.to_uppercase().as_str() {
             "LEFT_THUMB" | "LT" => Some(Self::LeftThumb),
             "LEFT_INDEX" | "LI" => Some(Self::LeftIndex),
             "LEFT_MIDDLE" | "LM" => Some(Self::LeftMiddle),
@@ -111,7 +114,7 @@ pub enum Gender {
 
 impl Gender {
     pub fn from_str(s: &str) -> Option<Self> {
-        match s.to_upperCase().as_str() {
+        match s.to_uppercase().as_str() {
             "MALE" | "M" | "M" => Some(Self::Male),
             "FEMALE" | "F" => Some(Self::Female),
             _ => Some(Self::Other),
@@ -164,12 +167,12 @@ impl MissingDigits {
     /// Returns the best available finger for enrollment, excluding missing ones.
     /// Priority: dominant hand index → other index → middle.
     pub fn best_available(&self, dominant: DominantHand) -> Option<FingerPosition> {
-        let preferred = match dominant {
-            DominantHand::Right => [FingerPosition::RightIndex, FingerPosition::LeftIndex, FingerPosition::RightMiddle],
-            DominantHand::Left => [FingerPosition::LeftIndex, FingerPosition::RightIndex, FingerPosition::LeftMiddle],
-            DominantHand::Ambidextrous => [FingerPosition::RightIndex, FingerPosition::LeftIndex],
+        let preferred: &[FingerPosition] = match dominant {
+            DominantHand::Right => &[FingerPosition::RightIndex, FingerPosition::LeftIndex, FingerPosition::RightMiddle],
+            DominantHand::Left => &[FingerPosition::LeftIndex, FingerPosition::RightIndex, FingerPosition::LeftMiddle],
+            DominantHand::Ambidextrous => &[FingerPosition::RightIndex, FingerPosition::LeftIndex],
         };
-        preferred.into_iter().find(|f| !self.is_missing(*f))
+        preferred.iter().copied().find(|f| !self.is_missing(*f))
     }
 }
 
@@ -249,7 +252,9 @@ pub struct Partition {
 impl Partition {
     /// Binary search by person_id — O(log n).
     pub fn find_person(&self, person_id: &str) -> Option<usize> {
-        self.person_ids.binary_search(person_id).ok()
+        self.person_ids
+            .binary_search_by(|p| p.as_str().cmp(person_id))
+            .ok()
     }
 }
 
@@ -368,7 +373,7 @@ impl PartitionedGallery {
 
         for key_str in candidate_keys {
             if let Some(part) = self.partitions.get(&key_str) {
-                let mut part_matches = self._search_partition(
+                let part_matches = self._search_partition(
                     part, probe_template, &bozorth_match, threshold,
                 );
                 all_candidates.extend(part_matches);
@@ -410,11 +415,13 @@ impl PartitionedGallery {
         &self,
         probe_template: &[u8],
         bozorth_match: impl Fn(&[u8], &[u8]) -> u32,
-        finger: FingerPosition,
+        _finger: FingerPosition,
         station_id: &str,
-        max_km: f64,
+        _max_km: f64,
         threshold: u32,
     ) -> Vec<CandidateMatch> {
+        // NOTE: exact station-prefix match only. True radius filtering needs
+        // a geo coordinate index on partitions (not yet built).
         let keys = self.geo_index.get(station_id).cloned().unwrap_or_default();
         let mut all = Vec::new();
         for key_str in keys {
@@ -566,15 +573,36 @@ mod tests {
     #[test]
     fn partitions_reduce_search_space() {
         let mut g = PartitionedGallery::new();
-        for i in 0..100_000 {
-            let gender = if i % 2 == 0 { Gender::Male } else { Gender::Female };
-            let geo = match i % 5 {
-                0 => "NairobiWest", 1 => "Kisumu", 2 => "Mombasa",
-                3 => "NairobiEast", _ => "Nakuru",
-            };
-            g.enroll(entry(&format!("p{i}"), FingerPosition::RightIndex, gender, 30, geo, 80));
+        // Span enough dimension values to exceed 100 partitions:
+        // 5 fingers x 2 genders x 5 age buckets x 4 geos = 200 partitions.
+        let fingers = [
+            FingerPosition::RightIndex,
+            FingerPosition::LeftIndex,
+            FingerPosition::RightMiddle,
+            FingerPosition::LeftMiddle,
+            FingerPosition::RightThumb,
+        ];
+        let ages = [10u32, 25, 40, 60, 80];
+        let geos = ["NairobiWest", "Kisumu", "Mombasa", "Nakuru"];
+        let mut i = 0;
+        for finger in fingers {
+            for gender in [Gender::Male, Gender::Female] {
+                for age in ages {
+                    for geo in geos {
+                        g.enroll(entry(
+                            &format!("p{i}"),
+                            finger,
+                            gender,
+                            age,
+                            geo,
+                            80,
+                        ));
+                        i += 1;
+                    }
+                }
+            }
         }
-        assert_eq!(g.total_count(), 100_000);
+        assert_eq!(g.total_count(), 200);
         let rf = g.reduction_factor();
         assert!(rf < 0.01, "should reduce by >100x, got {rf}");
     }
@@ -585,5 +613,72 @@ mod tests {
         m.0.insert("LeftIndex".to_string(), true);
         let right = DominantHand::Right;
         assert_eq!(m.best_available(right), Some(FingerPosition::RightIndex));
+    }
+}
+
+/// Simple in-memory gallery used by [`crate::FingerprintEngine::match_1_to_n`].
+///
+/// Stores decoded [`Template`]s keyed by person id and scores them with the
+/// in-process [`Bozorth3`] matcher (real `bz_match` over the linked NBIS
+/// static library). For partitioned large-scale search see
+/// [`PartitionedGallery`].
+#[derive(Debug, Default)]
+pub struct Gallery {
+    entries: Vec<(String, Template)>,
+}
+
+impl Gallery {
+    /// Empty gallery.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Enroll a decoded template under `person_id`.
+    pub fn enroll(&mut self, person_id: String, template: Template) {
+        self.entries.push((person_id, template));
+    }
+
+    /// Number of enrolled templates.
+    pub fn len(&self) -> usize {
+        self.entries.len()
+    }
+
+    /// True when no templates are enrolled.
+    pub fn is_empty(&self) -> bool {
+        self.entries.is_empty()
+    }
+
+    /// 1:N search: score every entry, keep `score >= threshold`,
+    /// highest first.
+    pub fn search(&self, probe: &Template, threshold: u32) -> Vec<CandidateMatch> {
+        let matcher = Bozorth3::default();
+        let mut out: Vec<CandidateMatch> = self
+            .entries
+            .iter()
+            .map(|(person_id, enrolled)| {
+                let verdict = matcher.match_templates(probe, enrolled, threshold);
+                CandidateMatch {
+                    person_id: person_id.clone(),
+                    score: verdict.score,
+                    matched: verdict.matched,
+                    partition_key: String::new(),
+                }
+            })
+            .filter(|c| c.matched)
+            .collect();
+        out.sort_by(|a, b| b.score.cmp(&a.score));
+        out
+    }
+}
+
+#[cfg(test)]
+mod simple_gallery_tests {
+    use super::*;
+
+    #[test]
+    fn empty_gallery_matches_nothing() {
+        let g = Gallery::new();
+        let t = Template::new(300, 300);
+        assert!(g.search(&t, 40).is_empty());
     }
 }

@@ -1,0 +1,13 @@
+/* Certora — Ballot chain HMAC integrity + sequential order (G13) */
+spec hmacIntegrity {
+  method f(b: BallotHandover, key: Bytes) {
+    assert hmac_sha256(b, key) == b.hmac;
+    assert b.verified == (hmac_sha256(b, key) == b.hmac);
+  }
+}
+spec sequentialOrder {
+  method f(chain: Chain) {
+    orall i, j: i < j => chain[i].seq_no < chain[j].seq_no;
+    assert chain[i].prev_hash == chain[i-1].entry_hash;
+  }
+}

@@ -67,6 +67,9 @@ launches behind a system dialog).
 
 ### Documentation
 
+- `INSTALLER_TESTER_GUIDE.md` – step-by-step for installers/testers (EN + 中文).
+- `ENGINEERING_FAQ.md` – mass-production readiness Q&A for the engineering
+  team (preinstalls, release signing, HAL/plugin delivery, Antiris placement).
 - `factory_guidance.md` – Comprehensive guide on what to verify about an Android APK before release, including identity, cryptographic integrity, size, components, native libraries, resources, dependencies, security, testability, performance, and external native dependencies (e.g., Antiris SDK).
 - `compile_apks.md` – Instructions on how to compile the APKs for the three applications.
 

@@ -104,6 +104,26 @@ class _TestHarnessHomeState extends State<TestHarnessHome> {
     });
   }
 
+
+  /// Hardware-presence probe (eel_drivers `probeDetails`). Returns true when
+  /// the check should keep FAIL semantics: hardware present but unusable, or
+  /// a foreign plugin without the probe method. Returns false only when the
+  /// plugin positively reports no such hardware attached (harness SKIP).
+  /// Native maps arrive as Map<Object?, Object?>; the test bodies below
+  /// historically cast to Map<String, dynamic>, which throws once a real
+  /// plugin answers (previously MissingPluginException short-circuited).
+  static Map<String, dynamic>? _strMap(Object? o) =>
+      (o as Map?)?.map((k, v) => MapEntry(k.toString(), v));
+
+  Future<bool> _present(MethodChannel channel) async {
+    try {
+      final probe = _strMap(await channel.invokeMethod('probeDetails'));
+      return (probe ?? {})['present'] == true;
+    } catch (_) {
+      return true;
+    }
+  }
+
   Future<Map<String, dynamic>> _runTestWithTiming(
       Future<Map<String, dynamic>> Function() testFn,
       String featureName) async {
@@ -134,13 +154,12 @@ class _TestHarnessHomeState extends State<TestHarnessHome> {
       final result = await _irisChannel.invokeMethod<bool>('init');
       if (result == true) {
         // Attempt capture
-        final captureResult = await _irisChannel
-            .invokeMethod<Map<String, dynamic>>('captureIris', {
+        final captureResult = _strMap(await _irisChannel.invokeMethod('captureIris', {
           'userName': 'test',
           'eyeIndex': 0,
           'irexType': 7,
           'timeoutMs': 5000
-        });
+        }));
         if (captureResult != null && captureResult['isValid'] == true) {
           return {
             'feature': 'Iris',
@@ -156,8 +175,16 @@ class _TestHarnessHomeState extends State<TestHarnessHome> {
             'data': captureResult
           };
         }
-      } else {
-        return {
+            } else {
+        if (!await _present(_irisChannel)) {
+          return {
+            'feature': 'Iris',
+            'status': 'SKIP',
+            'details': 'No iris hardware attached',
+            'data': null
+          };
+        }
+   return {
           'feature': 'Iris',
           'status': 'FAIL',
           'details': 'AntIris init failed',
@@ -193,9 +220,8 @@ class _TestHarnessHomeState extends State<TestHarnessHome> {
       final initResult = await _fingerprintChannel.invokeMethod<bool>('init');
       if (initResult == true) {
         // Attempt capture
-        final captureResult = await _fingerprintChannel
-            .invokeMethod<Map<String, dynamic>>('captureFingerprint',
-                {'position': 'left_index', 'timeoutMs': 5000});
+        final captureResult = _strMap(await _fingerprintChannel.invokeMethod('captureFingerprint',
+                {'position': 'left_index', 'timeoutMs': 5000}));
         if (captureResult != null &&
             captureResult['isValid'] == true &&
             captureResult['quality'] != null &&
@@ -214,8 +240,16 @@ class _TestHarnessHomeState extends State<TestHarnessHome> {
             'data': captureResult
           };
         }
-      } else {
-        return {
+            } else {
+        if (!await _present(_fingerprintChannel)) {
+          return {
+            'feature': 'Fingerprint',
+            'status': 'SKIP',
+            'details': 'No fingerprint hardware attached',
+            'data': null
+          };
+        }
+   return {
           'feature': 'Fingerprint',
           'status': 'FAIL',
           'details': 'Fingerprint init failed',
@@ -268,8 +302,16 @@ class _TestHarnessHomeState extends State<TestHarnessHome> {
             'data': null
           };
         }
-      } else {
-        return {
+            } else {
+        if (!await _present(_printerChannel)) {
+          return {
+            'feature': 'Printer',
+            'status': 'SKIP',
+            'details': 'No printer hardware attached',
+            'data': null
+          };
+        }
+   return {
           'feature': 'Printer',
           'status': 'FAIL',
           'details': 'Printer not available',
@@ -321,8 +363,16 @@ class _TestHarnessHomeState extends State<TestHarnessHome> {
             'data': null
           };
         }
-      } else {
-        return {
+            } else {
+        if (!await _present(_smsChannel)) {
+          return {
+            'feature': 'SMS Modem',
+            'status': 'SKIP',
+            'details': 'No SMS modem hardware attached',
+            'data': null
+          };
+        }
+   return {
           'feature': 'SMS Modem',
           'status': 'FAIL',
           'details': 'SMS modem not available',
@@ -358,9 +408,8 @@ class _TestHarnessHomeState extends State<TestHarnessHome> {
       final result = await _scannerChannel.invokeMethod<bool>('isAvailable');
       if (result == true) {
         // Attempt a scan
-        final scanResult = await _scannerChannel
-            .invokeMethod<Map<String, dynamic>>('scanDocument',
-                {'source': 'flatbed', 'resolution': 300, 'format': 'pdf'});
+        final scanResult = _strMap(await _scannerChannel.invokeMethod('scanDocument',
+                {'source': 'flatbed', 'resolution': 300, 'format': 'pdf'}));
         if (scanResult != null && scanResult['success'] == true) {
           return {
             'feature': 'Document Scanner',
@@ -376,8 +425,16 @@ class _TestHarnessHomeState extends State<TestHarnessHome> {
             'data': scanResult
           };
         }
-      } else {
-        return {
+            } else {
+        if (!await _present(_scannerChannel)) {
+          return {
+            'feature': 'Document Scanner',
+            'status': 'SKIP',
+            'details': 'No scanner hardware attached',
+            'data': null
+          };
+        }
+   return {
           'feature': 'Document Scanner',
           'status': 'FAIL',
           'details': 'Document scanner not available',
@@ -413,9 +470,8 @@ class _TestHarnessHomeState extends State<TestHarnessHome> {
       final result = await _cameraChannel.invokeMethod<bool>('isAvailable');
       if (result == true) {
         // Try to capture a preview frame
-        final captureResult = await _cameraChannel
-            .invokeMethod<Map<String, dynamic>>('captureImage',
-                {'width': 640, 'height': 480, 'format': 'jpeg'});
+        final captureResult = _strMap(await _cameraChannel.invokeMethod('captureImage',
+                {'width': 640, 'height': 480, 'format': 'jpeg'}));
         if (captureResult != null &&
             captureResult['success'] == true &&
             captureResult['imageBytes'] != null) {
@@ -437,8 +493,16 @@ class _TestHarnessHomeState extends State<TestHarnessHome> {
             'data': captureResult
           };
         }
-      } else {
-        return {
+            } else {
+        if (!await _present(_cameraChannel)) {
+          return {
+            'feature': 'Camera',
+            'status': 'SKIP',
+            'details': 'No camera hardware attached',
+            'data': null
+          };
+        }
+   return {
           'feature': 'Camera',
           'status': 'FAIL',
           'details': 'Camera not available',

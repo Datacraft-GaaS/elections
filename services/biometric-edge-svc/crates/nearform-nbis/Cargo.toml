@@ -14,6 +14,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "1"
 rayon = "1.7"      # parallel 1:N gallery search
+libc = "0.2"         # free() for C-allocated mindtct maps
 image = "0.24"     # PGM/PPM/PBM image loading
 
 [dev-dependencies]

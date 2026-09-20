@@ -1,0 +1,14 @@
+/* Certora — CCB 2-of-3 multi-signature proof (G24) */
+spec multiSig2of3 {
+  method f(entry: CCBEntry) {
+    require count(entry.signatures) >= 2;
+    assert entry.approvers.contains(entry.signer_1) || entry.approvers.contains(entry.signer_2);
+    assert entry.approved == (count(entry.signatures) >= 2);
+  }
+}
+spec previousHashChain {
+  method f(entry: CCBEntry, prev: CCBEntry) {
+    require entry.seq == prev.seq + 1;
+    assert entry.prev_hash == hash(prev);
+  }
+}

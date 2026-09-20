@@ -11,9 +11,10 @@
 /// Boot target: <= 90 s.
 /// Emergency paths: dual-control close (EC-OPS-04), s.44A (EC-LEG-03).
 /// 11-language UI + a11y.
+library;
 
 import 'package:flutter/material.dart';
-import 'package:eel_kit_sdk/telemetry.dart';
+import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 
 import 'src/app.dart';
 
@@ -23,5 +24,5 @@ void main() async {
     appId: 'bvi-kit',
     personaRole: 'identification_officer',
   );
-  runApp(const BviKitApp());
+  runEelGuardedApp(app: const BviKitApp());
 }

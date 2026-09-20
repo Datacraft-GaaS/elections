@@ -28,6 +28,7 @@ Numbered, immutable-after-acceptance. Amendments come as new ADRs that supersede
 | [0022](0022-release-dr.md) | Release process & DR: blue-green with 15-min rollback, RTO/RPO SLAs, election-day mode | accepted |
 | [0023](0023-rfp-alignment.md) | RFP-alignment reconciliation: amendments to 0004/0005/0006/0007/0008/0012/0015/0016/0017/0018 | accepted |
 | [0024](0024-app-placement.md) | App placement (kit/mobile/desktop under services/&lt;svc&gt;/apps/); P06 hsm-signer inside transparency-svc | accepted |
+| [0025](0025-factory-distribution-hosting.md) | Factory distribution & offshore build: stripped eel-factory repo, spare-3 authoritative + linode mirror, pull-only, self-hosted code Q&A | proposed |
 | ~~[0002 (app-stacks)](0002-app-stacks-superseded.md)~~ | phase-1 draft retained for history | superseded by 0002-languages and 0008-portal-stack |
 
 Amended ADRs: 0004, 0005, 0006, 0007, 0008, 0012, 0015, 0016, 0017, 0018, see ADR-0023 for the amendment delta. Original ADR text remains the canonical decision record for its subject; amendments are captured in one auditable location.

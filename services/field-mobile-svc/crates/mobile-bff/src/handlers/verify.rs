@@ -7,7 +7,11 @@ use serde_json::Value;
 use tracing::info;
 use uuid::Uuid;
 
+use crate::handlers::form_quality_gate::QualityGate;
 use crate::models::{TokenVerifyRequest, TokenVerifyResponse};
+/// Quality gate: invoke before accepting any form submission.
+/// M5 audit event emitted on every accept/reject.
+
 
 /// Placeholder relay — returns empty results from M11 CDN cache.
 pub async fn get_results() -> Json<Value> {

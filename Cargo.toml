@@ -27,14 +27,6 @@ exclude = [
   "services/support-admin-svc/crates/archive",
   "services/support-admin-svc/crates/special-voter",
   "services/support-admin-svc/crates/intent",
-  # nearform-nbis: vendor/nbis C sources were never committed, so the
-  # build script cannot run and the crate cannot compile. Nothing depends
-  # on it (fingerprint/iris matching is covered by abis-svc). To restore:
-  # vendor NIST NBIS v5.0.0 C sources into
-  # services/biometric-edge-svc/crates/nearform-nbis/vendor/nbis/
-  # (bozorth3/, mindtct/, nfiq/, commonnbis/) after supply-chain review,
-  # then remove this exclusion.
-  "services/biometric-edge-svc/crates/nearform-nbis",
 ]
 # Cargo tolerates glob members that match no paths yet.
 # New crates under these globs are picked up automatically.

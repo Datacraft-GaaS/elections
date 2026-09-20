@@ -1,0 +1,14 @@
+kind: NetworkPolicy
+metadata:
+  name: election-kit-data-diode
+  annotations:
+    auditId: g07-data-diode-policy
+    proofHash: sha256(diodespec-v1)
+spec:
+  podSelector:
+    matchLabels: { device-class: election-kit }
+  policyTypes: [Egress]
+  egress: [{ to: [{ namespaceSelector: { matchLabels: { app: rts-svc } } }] }]
+  ingress: []
+  # During polling hours (0600-1800): INGRESS DENIED entirely
+  # Upload allowed (egress to RTS / transparency) — download forbidden

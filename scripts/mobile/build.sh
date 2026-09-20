@@ -24,10 +24,14 @@ GIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 _log_info "Building $APP (flavor=$FLAVOR, platform=$TARGET_PLATFORM)..."
 case "$TARGET_PLATFORM" in
   android)
+    # --split-debug-info emits symbol maps so production stack traces get
+    # file/line info (no --obfuscate: symbols stay readable). Archived next
+    # to the SBOM in dist (symbols/<app>/).
     flutter build apk --flavor "$FLAVOR" \
       --dart-define=EEL_BUILD_EPOCH="$BUILD_EPOCH" \
       --dart-define=EEL_BUILD_SHA="$GIT_SHA" \
       --dart-define=EEL_FLAVOR="$FLAVOR" \
+      --split-debug-info="$BUILD_DIR/symbols" \
       -t "$APP_PATH/lib/main.dart"
     cp "$APP_PATH/build/app/outputs/flutter-apk/app-${FLAVOR}-release.apk" "$BUILD_DIR/${APP}-${FLAVOR}-release.apk" 2>/dev/null || true
     ARTIFACT="$BUILD_DIR/${APP}-${FLAVOR}-release.apk"

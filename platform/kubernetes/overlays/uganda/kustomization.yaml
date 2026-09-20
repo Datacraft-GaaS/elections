@@ -1,0 +1,13 @@
+# G18 — Uganda region overlay (FULL)
+# Region: uganda-east-1 (Kampala)
+# Database: Postgres primary for East Africa region
+# Storage: S3-compatible (Liquid Telecom Kampala)
+# Replication: async streaming replication from nairobi
+# Monitoring: same stack, region-specific alert rules
+# M5 audit: overlay deployment emits auditId=g18-uganda-deploy, proofHash, signature
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+bases:
+- ../../base
+patchesStrategicMerge:
+- region-uganda.yaml

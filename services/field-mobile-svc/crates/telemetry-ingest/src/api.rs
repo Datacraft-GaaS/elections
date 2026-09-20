@@ -377,7 +377,7 @@ async fn revoke_device(
 }
 
 async fn list_snapshots(
-    State(state): State<AppState>,
+    State(_state): State<AppState>,
     Query(_q): Query<SnapshotQuery>,
 ) -> Result<impl IntoResponse, TelemetryError> {
     // Stub: returns empty list. Full implementation queries with date/device_id filters.

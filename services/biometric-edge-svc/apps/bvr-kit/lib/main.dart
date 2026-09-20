@@ -14,7 +14,7 @@
 /// 11-language UI via packages/i18n.
 
 import 'package:flutter/material.dart';
-import 'package:eel_kit_sdk/telemetry.dart';
+import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 
 import 'src/app.dart';
 
@@ -24,5 +24,5 @@ void main() async {
     appId: 'bvr-kit',
     personaRole: 'enrolment_officer',
   );
-  runApp(const BvrKitApp());
+  runEelGuardedApp(app: const BvrKitApp());
 }
