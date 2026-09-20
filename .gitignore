@@ -78,9 +78,10 @@ __pycache__/
 .tox/
 
 # Factory-pack build artifacts (distributed out-of-band; see factory_pack/SHA256SUMS)
+# NOTE: factory_pack/antiris/ is intentionally TRACKED — it is a driver input
+# for the factory test harness build, not a build artifact.
 factory_pack/*.apk
 factory_pack/*.zip
-factory_pack/antiris/
 
 # Gradle build caches (any depth)
 .gradle/
