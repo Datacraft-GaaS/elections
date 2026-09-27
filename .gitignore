@@ -92,3 +92,6 @@ factory_pack/*.zip
 *.new
 *.tmp
 tmp_new_*.txt
+
+# zvec-grep local workspace index
+.zvec-grep/
