@@ -35,3 +35,10 @@ eel-spec-helpers-rs = { path = "../../../../packages/eel-spec-helpers-rs" }
 tokio = { workspace = true }
 tower = { workspace = true }
 reqwest = { workspace = true }
+
+[features]
+# Gates the live cross-service LMS tests in tests/lms_integration.rs, which need
+# the Rust LMS on :8080 and the Django LMS on :8000. Off by default so a plain
+# `cargo test` reports them as ignored with their prerequisite rather than
+# failing on a refused connection.
+integration-tests = []

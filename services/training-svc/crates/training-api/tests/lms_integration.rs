@@ -1,6 +1,12 @@
 //! Integration test: Rust LMS handler ↔ Django LMS API
 //! Verifies Rust's `submit_assessment` produces the same `proofHash` and
 //! `correlation_key` that Django's `CertAuditLog` records.
+//!
+//! These are live cross-service tests: they need the Rust LMS listening on
+//! :8080 and the Django LMS on :8000. Without both they cannot pass, so they
+//! are ignored by default and name their prerequisite. Run with
+//! `just up` then:
+//! `cargo test -p training-api --features integration-tests -- --include-ignored`.
 
 use reqwest::StatusCode;
 use serde_json::json;
@@ -10,6 +16,10 @@ const DJANGO_BASE: &str = "http://localhost:8000/api";
 const RUST_BASE: &str = "http://localhost:8080/v1/training/lms";
 
 #[tokio::test]
+#[cfg_attr(
+    not(feature = "integration-tests"),
+    ignore = "requires live Rust LMS on :8080 and Django LMS on :8000;               run the stack and pass --features integration-tests -- --include-ignored"
+)]
 async fn lesson_submitted_rust_calls_django_attempt_endpoint() {
     // 1. Rust receives assessment submission
     let module_id = Uuid::new_v4();
@@ -67,6 +77,10 @@ async fn lesson_submitted_rust_calls_django_attempt_endpoint() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(feature = "integration-tests"),
+    ignore = "requires live Rust LMS on :8080 and Django LMS on :8000;               run the stack and pass --features integration-tests -- --include-ignored"
+)]
 async fn crms_party_registered_routes_to_lms_enroll() {
     // Rust consumer wires crms.party.registered -> LMS enroll
     let resp = reqwest::Client::new()
