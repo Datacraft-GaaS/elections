@@ -141,7 +141,7 @@ fn test_segment_bounding_boxes_non_overlapping() {
 fn test_segment_crops_have_correct_height() {
     let img = slap_image(400, 100, 4);
     let segs = segment_slap(&img, SlapKind::RightFour).unwrap();
-    for (_, bb, crop) in &segs {
+    for (_, _bb, crop) in &segs {
         assert_eq!(crop.height, 100, "cropped height must equal slap height");
     }
 }

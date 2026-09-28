@@ -52,13 +52,32 @@ fn hash_station(vrf_secret: &[u8; 32], station_id: &str) -> [u8; 32] {
 	let result = hasher.finalize(); let mut out = [0u8; 32]; out.copy_from_slice(&result); out
 }
 
+/// 2^53, exactly representable as an f64 (the largest exact power of two for
+/// the 53-bit significand).
+const TWO_POW_53: f64 = 9_007_199_254_740_992.0;
+
+/// Maps a 32-byte hash to a value in [0, 1) for threshold comparison.
+///
+/// Reads the leading 8 bytes big-endian, keeps the top 53 bits, and divides by
+/// 2^53. A SHA-256 output is uniform, so this is uniform over [0, 1). 53 bits is
+/// the most entropy an f64 can distinguish, so nothing is lost.
+///
+/// Using exactly 53 bits (rather than 64) also guarantees the result is strictly
+/// below 1.0 for every input: `u64::MAX as f64` rounds up to 2^64, which would
+/// make the all-0xff hash return exactly 1.0. At a 0.0 or 1.0 threshold that
+/// would invert the comparison and leak into selection results.
+///
+/// The previous implementation accumulated all 32 bytes into a `u128`, which
+/// cannot hold 256 bits. Two independent overflows resulted: `val << 240`
+/// overflowed (panicking in debug, masking to garbage in release), and the
+/// `den` accumulator overflowed to 0, after which the `den == 0` guard returned
+/// 0.0 for *every* station. Since selection is `normalised < threshold`, that
+/// silently selected all stations, defeating audit sampling.
 fn normalise_hash(hash: &[u8; 32]) -> f64 {
-	let mut num: u128 = 0; let mut den: u128 = 1;
-	for (i, chunk) in hash.chunks(2).take(16).enumerate() {
-		let val = u16::from_be_bytes([chunk[0], chunk[1]]) as u128;
-		num = num.wrapping_add(val << (i * 16)); den = den.wrapping_shl(16);
-	}
-	if den == 0 { 0.0 } else { num as f64 / den as f64 }
+	let leading = u64::from_be_bytes([
+		hash[0], hash[1], hash[2], hash[3], hash[4], hash[5], hash[6], hash[7],
+	]);
+	(leading >> 11) as f64 / TWO_POW_53
 }
 
 fn selection_threshold(fraction: f64) -> f64 { fraction.clamp(0.0, 1.0) }
@@ -141,9 +160,34 @@ mod tests {
 	}
 	#[test] fn minimum_stations_enforced() {
 		let stations = make_stations(1000);
-		let config = SortitionConfig { audit_fraction: 0.001, min_stations: 20, max_stations: None };
+		let config = SortitionConfig { audit_fraction: 0.001, min_stations: 20, max_stations: None, ..Default::default() };
 		let result = run_sortition(&stations, "test", &config);
 		assert!(result.selected_count >= 20);
+	}
+
+	/// Regression: the old u128 accumulator overflowed to 0 and every station
+	/// normalised to 0.0, so `normalised < threshold` selected everything.
+	#[test] fn normalise_hash_is_in_unit_range_and_not_constant() {
+		let zero = [0u8; 32];
+		let max = [0xffu8; 32];
+		assert!(normalise_hash(&zero) >= 0.0 && normalise_hash(&zero) < 1.0);
+		assert!(normalise_hash(&max) >= 0.0 && normalise_hash(&max) < 1.0);
+		// 0xff..ff is the largest representable value and must stay strictly below 1.
+		assert!(normalise_hash(&max) > 0.999);
+		// Distinct inputs must not collapse to a single value.
+		assert_ne!(normalise_hash(&zero), normalise_hash(&max));
+	}
+
+	#[test] fn normalise_hash_spreads_over_station_hashes() {
+		let vrf = derive_vrf_secret("test", "datacraft-eel-sortition-v1");
+		let mut values: Vec<f64> = (0..200)
+			.map(|i| normalise_hash(&hash_station(&vrf, &format!("0101010101-{i:03}"))))
+			.collect();
+		assert!(values.iter().all(|v| (0.0..1.0).contains(v)), "values must be in [0,1)");
+		values.sort_by(|a, b| a.partial_cmp(b).unwrap());
+		// With a 0.5 threshold, a uniform spread must put stations on both sides.
+		let below = values.iter().filter(|v| **v < 0.5).count();
+		assert!(below > 50 && below < 150, "expected a roughly even split, got {below}/200 below 0.5");
 	}
 }
 

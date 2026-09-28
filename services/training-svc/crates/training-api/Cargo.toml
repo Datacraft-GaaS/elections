@@ -34,3 +34,4 @@ eel-spec-helpers-rs = { path = "../../../../packages/eel-spec-helpers-rs" }
 [dev-dependencies]
 tokio = { workspace = true }
 tower = { workspace = true }
+reqwest = { workspace = true }

@@ -296,7 +296,6 @@ mod tests {
     fn boundary_24_counties_declares() {
         // Exactly 24 counties at >= 25%.
         let county_total = 100u64;
-        let total_valid = 47 * county_total;
         let alice_county_votes = 26u64; // 26% each in counties 0..24
         let alice_national = alice_county_votes * 24;
         let alice = CandidateDistribution {

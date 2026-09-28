@@ -287,7 +287,7 @@ fn enrolment_received_event_has_spec_version_1_0() {
 #[test]
 fn all_events_have_eel_stream_id() {
     let job = make_job();
-    let (state, env) = ingest(job).unwrap();
+    let (_state, env) = ingest(job).unwrap();
     // stream_id is non-empty
     assert!(!env.eel_stream_id.is_empty());
 }

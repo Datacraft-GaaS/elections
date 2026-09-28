@@ -229,8 +229,8 @@ fn test_matcher_same_class_no_penalty() {
 
 #[test]
 fn test_matcher_class_mismatch_whorl_vs_arch_returns_zero() {
-    let mut probe = ExtendedFeatureSet::new(PatternClass::Whorl);
-    let mut gallery = ExtendedFeatureSet::new(PatternClass::Arch);
+    let probe = ExtendedFeatureSet::new(PatternClass::Whorl);
+    let gallery = ExtendedFeatureSet::new(PatternClass::Arch);
     let m = CdeffsMatcher::new();
     let score = m.fuse(0.8, &probe, &gallery);
     assert_eq!(

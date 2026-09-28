@@ -97,7 +97,7 @@ fn tampered_photo_rejected_at_verify() {
 #[test]
 fn photo_sha256_field_tampered_after_bind_detected() {
     let photo = photo_bytes();
-    let mut sig = make_photo_sig(SEAL, KIT, &photo);
+    let sig = make_photo_sig(SEAL, KIT, &photo);
     let ts = Utc::now().timestamp_millis();
     let event = make_event(SEAL, KIT, ts);
     let mut bound = bind_custody_event(event, sig.clone()).unwrap();
@@ -105,7 +105,6 @@ fn photo_sha256_field_tampered_after_bind_detected() {
     bound.photo_sig.photo_sha256 = "deadbeef".repeat(8);
     let err = verify_bound_event(&bound, &photo).unwrap_err();
     assert!(matches!(err, SealBindError::PhotoHashMismatch { .. }));
-    let _ = sig; // suppress warning
 }
 
 // ---- kit sig mismatch ----

@@ -123,8 +123,6 @@ fn f_equals_one_crashed_replica_still_commits() {
         .map(|(i, k)| (i as u64, k.verifying_key()))
         .collect();
 
-    let mut leader_cfg = ReplicaConfig::new(0, keys[0].clone(), peer_keys.clone());
-    let _ = leader_cfg; // used below
     let mut leader = Replica::new(ReplicaConfig::new(0, keys[0].clone(), peer_keys.clone()));
 
     let block = Block::new(1, [0u8; 32], b"data".to_vec());

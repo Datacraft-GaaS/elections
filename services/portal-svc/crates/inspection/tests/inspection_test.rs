@@ -74,7 +74,6 @@ async fn daily_cap_enforced_after_limit() {
 fn auto_referral_idempotent_under_double_fire() {
     let mut scheduler = AutoReferralScheduler::new("https://ecourt.internal");
     let claim = approved_claim();
-    let polling_day = Utc::now() + Duration::days(30); // within 60-day window
 
     let first = scheduler.refer(&claim);
     assert!(first.is_some(), "first referral should succeed");

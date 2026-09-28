@@ -118,8 +118,32 @@ mod props {
         /// TiePending must never produce a Declared outcome; certificate blocked.
         #[trace("FR-M51-013", "EC-LEG-06")]
         #[test]
-        fn tie_pending_blocks_certificate(county_total in 1u64..1_000u64) {
+        fn tie_pending_blocks_certificate(county_total in 100u64..1_000u64) {
             use crate::aggregate::{Declaration, DeclarationStatus};
+            // Drive a genuine tie through evaluate(), then carry the resulting
+            // status into the aggregate and confirm the certificate is blocked.
+            let candidates: Vec<CandidateDistribution> = (0..2)
+                .map(|i| CandidateDistribution {
+                    candidate_id: format!("c{i}"),
+                    national_votes: 47 * (county_total / 2),
+                    county_votes: (0..47)
+                        .map(|j| CountyVotes {
+                            county_code: format!("{:02}", j + 1),
+                            votes: county_total / 2,
+                            county_total_valid: county_total,
+                        })
+                        .collect(),
+                })
+                .collect();
+            let tally = PresidentialTally {
+                total_valid_votes: 47 * county_total,
+                candidates,
+            };
+            prop_assert!(
+                matches!(evaluate(&tally), DeclarationOutcome::TiePending { .. }),
+                "identical distributions must evaluate to TiePending"
+            );
+
             let mut decl = Declaration::new(uuid::Uuid::now_v7());
             // Simulate tie event applied.
             decl.status = DeclarationStatus::TiePending;
