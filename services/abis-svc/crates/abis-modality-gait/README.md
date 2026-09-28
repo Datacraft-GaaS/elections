@@ -4,7 +4,17 @@ Gait (walking pattern) biometric modality crate for the EEL ABIS stack.
 
 ## Standard
 
-Aligned with ISO/IEC 19794-6 (iris, adapted) joint-trajectory conventions. Uses 17 joints (COCO keypoint convention) with pitch/yaw/roll angles per frame, cycle-normalised.
+Aligned with **ISO/IEC 39794-17:2021**, *Extensible biometric data interchange
+formats — Part 17: Gait image sequence data*, which is the binding standard for
+gait data interchange. This README previously cited ISO/IEC 19794-6, which is the
+*iris* standard and was incorrect. See
+`services/biometric-edge-svc/crates/sensor-driver` (`Modality::Gait`) for the
+capture side.
+
+Uses 17 joints (COCO keypoint convention) with pitch/yaw/roll angles per frame,
+cycle-normalised. Note that 39794-17 specifies gait *image sequence* data, so
+this crate's joint-trajectory representation is an application-specific form
+within that standard's framework rather than the standard's own record layout.
 
 ## Parser
 

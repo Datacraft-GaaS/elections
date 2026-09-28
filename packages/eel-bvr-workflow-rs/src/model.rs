@@ -27,12 +27,24 @@ pub enum CaptureKind {
     PalmVein,
     /// Near-infrared wrist vascular pattern, ISO/IEC 19794-9.
     WristVein,
+    /// Contact palm print, ISO/IEC 19794-2.
+    PalmPrint,
     /// Face image, ISO/IEC 19794-5.
     Face,
     /// Face image with an active liveness challenge, ISO/IEC 30107-3 PAD.
     LivePhotograph,
+    /// Periocular eye-region image, captured with the face, ISO/IEC 19794-5.
+    Periocular,
     /// Iris image, ISO/IEC 19794-6.
     Iris,
+    /// External ear image.
+    Ear,
+    /// Speaker voice recording, ISO/IEC 19794-13.
+    Voiceprint,
+    /// Gait sequence or joint trajectory, ISO/IEC 39794-17.
+    Gait,
+    /// Handwritten signature, ISO/IEC 19794-7.
+    Signature,
     /// Optical document scan with an ICAO 9303 machine-readable zone.
     DocumentMrz,
 }
@@ -43,6 +55,24 @@ impl CaptureKind {
     pub fn is_biometric(self) -> bool {
         !matches!(self, CaptureKind::DocumentMrz)
     }
+
+    /// Every capture kind, mirroring `sensor_driver::Modality::ALL`.
+    pub const ALL: &'static [CaptureKind] = &[
+        CaptureKind::Fingerprint,
+        CaptureKind::FingerVein,
+        CaptureKind::PalmVein,
+        CaptureKind::WristVein,
+        CaptureKind::PalmPrint,
+        CaptureKind::Face,
+        CaptureKind::LivePhotograph,
+        CaptureKind::Periocular,
+        CaptureKind::Iris,
+        CaptureKind::Ear,
+        CaptureKind::Voiceprint,
+        CaptureKind::Gait,
+        CaptureKind::Signature,
+        CaptureKind::DocumentMrz,
+    ];
 }
 
 /// How many of a capture step's kinds must succeed.

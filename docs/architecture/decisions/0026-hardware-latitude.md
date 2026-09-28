@@ -84,15 +84,33 @@ Each row: component | OSS driver stack (or none) | licence | standards/featurese
 
 Per component, the contract that any vendor adapter must implement.
 
-1. **Biometric sensors (fingerprint, face, iris)**. Trait `BiometricSensorDriver`
-   in `services/biometric-edge-svc/crates/sensor-driver/src/sensor_driver.rs`.
-   Methods: `capture_fingerprint(timeout) -> Result<BiometricCapture, SensorError>`,
-   `capture_face(timeout)`, `capture_iris(timeout)`; provided helpers
-   `quality_gate(quality)` and `capture_fingerprint_degraded(timeout)` for
-   degraded-finger fallback. Ships `MockSensorDriver` (synthetic double) with
-   per-modality present/absent/timeout behaviour. Vendor adapters (optical,
-   capacitive, multispectral; RGB/NIR/3D face; NIR iris) each implement the
-   trait.
+1. **Sensors (biometric and document)**. Trait `BiometricSensorDriver` in
+   `services/biometric-edge-svc/crates/sensor-driver/src/sensor_driver.rs`.
+
+   An adapter implements **one** required method,
+   `capture(modality, timeout) -> Result<BiometricCapture, SensorError>`. Every
+   per-modality method (`capture_fingerprint`, `capture_palm_vein`,
+   `capture_live_photograph`, `capture_document_mrz`, and so on) is a provided
+   wrapper over it. This was revised 2026-09-28: with fourteen modalities,
+   requiring one method each would have made every new vendor adapter fourteen
+   near-identical methods and turned any future modality into a breaking change
+   for the whole fleet. One required method keeps vendor selection a build-time
+   choice. An adapter that cannot serve a modality returns
+   `SensorError::UnsupportedModality` rather than fabricating a sample;
+   `supported_modalities` lets a client grey out a step it cannot run.
+
+   Provided helpers: `quality_gate(quality)` and
+   `capture_fingerprint_degraded(timeout)` for degraded-finger fallback.
+
+   The `Modality` taxonomy covers fourteen captures: `fingerprint`,
+   `finger_vein`, `palm_vein`, `wrist_vein`, `palm_print`, `face`,
+   `live_photograph`, `periocular`, `iris`, `ear`, `voiceprint`, `gait`,
+   `signature`, and `document_mrz`. `Modality::is_biometric` is false only for
+   `document_mrz`, whose output is document text rather than a template.
+
+   Ships `MockSensorDriver` (synthetic double) with per-modality
+   present/absent/timeout behaviour and a configurable supported set, so CI never
+   needs physical hardware.
 
 2. **RFID readers**. Shared LLRP client `LlrpCommonClient` plus `CipherLab` BLE
    adapter in `services/inventory-svc/py/rfid-reader-driver/src/eel_rfid_reader/`.

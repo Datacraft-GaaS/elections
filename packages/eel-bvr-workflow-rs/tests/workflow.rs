@@ -1130,3 +1130,53 @@ fn all_five_pii_tiers_are_accepted() {
         assert_eq!(compiled.is_ok(), ok, "data class {class:?} should be ok={ok}");
     }
 }
+
+// ---- capture taxonomy parity -------------------------------------------------
+
+#[test]
+fn the_dsl_capture_kinds_match_the_sensor_driver_taxonomy() {
+    // The DSL and the capture trait must agree on the set of things a workflow
+    // can ask for, or a workflow can name a capture the client cannot perform.
+    // Both sides are asserted here by count and by wire name; the names are the
+    // contract that crosses the C ABI.
+    use eel_bvr_workflow_rs::CaptureKind;
+    assert_eq!(
+        CaptureKind::ALL.len(),
+        14,
+        "capture taxonomy grew; keep this in step with sensor-driver::Modality::ALL"
+    );
+    let wire: Vec<String> = CaptureKind::ALL
+        .iter()
+        .map(|k| serde_json::to_value(k).unwrap().as_str().unwrap().to_owned())
+        .collect();
+    for expected in [
+        "fingerprint",
+        "finger_vein",
+        "palm_vein",
+        "wrist_vein",
+        "palm_print",
+        "face",
+        "live_photograph",
+        "periocular",
+        "iris",
+        "ear",
+        "voiceprint",
+        "gait",
+        "signature",
+        "document_mrz",
+    ] {
+        assert!(wire.contains(&expected.to_owned()), "missing capture kind {expected}");
+    }
+}
+
+#[test]
+fn only_the_document_scan_is_not_biometric() {
+    use eel_bvr_workflow_rs::CaptureKind;
+    for kind in CaptureKind::ALL {
+        assert_eq!(
+            kind.is_biometric(),
+            *kind != CaptureKind::DocumentMrz,
+            "{kind:?} classification is wrong"
+        );
+    }
+}
