@@ -1,5 +1,5 @@
-import 'package:eel_kit_sdk/src/isar_store.dart';
-import 'package:eel_kit_sdk/src/push.dart';
+import 'package:eel_kit_sdk/eel_kit_sdk.dart';
+import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

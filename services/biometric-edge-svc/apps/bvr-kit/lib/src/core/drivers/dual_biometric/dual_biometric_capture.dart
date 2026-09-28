@@ -9,7 +9,7 @@ import 'package:eel_core_flutter/src/biometric/biometric_policy.dart';
 import 'package:kit_sdk_flutter/kit_sdk_flutter.dart' hide EelSigningKey;
 import 'package:kit_sdk_flutter/src/bundle_security.dart';
 import 'package:crypto/crypto.dart' as crypto;
-import 'package:eel_core_flutter/lib/src/outbox/biometric_submission_outbox.dart';
+import 'package:eel_core_flutter/src/outbox/biometric_submission_outbox.dart';
 import 'fap60/fap60_driver.dart';
 import 'bvi_driver.dart';
 

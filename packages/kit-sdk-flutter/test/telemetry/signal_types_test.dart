@@ -1,7 +1,7 @@
 // ignore_for_file: avoid_redundant_argument_values
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:eel_kit_sdk/telemetry.dart';
+import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 
 void main() {
   const deviceId = 'test-device-001';

@@ -1,7 +1,7 @@
 /// Outbox panel — UI component for operator-controlled biometric upload.
 /// Shows count of pending/failed/uploaded/deduplicated submissions.
 /// Operator taps "Upload now" to drain the queue (when network available).
-import 'package:eel_core_flutter/lib/src/outbox/biometric_submission_outbox.dart';
+import 'package:eel_core_flutter/src/outbox/biometric_submission_outbox.dart';
 import 'package:eel_design/eel_design.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverprovider.dart';

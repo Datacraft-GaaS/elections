@@ -1,4 +1,4 @@
-import 'package:eel_kit_sdk/telemetry.dart';
+import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'src/app_router.dart';

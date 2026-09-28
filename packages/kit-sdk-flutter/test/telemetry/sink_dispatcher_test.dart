@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:eel_kit_sdk/telemetry.dart';
+import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 
 BatterySignal _signal(int counter, String prevHash) => BatterySignal(
       deviceId: 'dev-001',

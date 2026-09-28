@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:eel_kit_sdk/src/fingerprint_scanner.dart';
+import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeTransport implements FingerprintTransport {

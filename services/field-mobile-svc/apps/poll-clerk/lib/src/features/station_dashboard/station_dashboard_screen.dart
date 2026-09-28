@@ -7,9 +7,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:eel_design/widgets/eel_scaffold.dart';
-import 'package:eel_design/widgets/eel_chips.dart';
-import 'package:eel_design/theme/eel_colors.dart';
+import 'package:eel_design/eel_design.dart';
+import 'package:eel_design/eel_design.dart';
+import 'package:eel_design/eel_design.dart';
 
 /// Dashboard state matrix (per §5.3)
 enum DashboardState { loading, loaded, empty, offline, error, unauthenticated, versionBlocked, tamperBlocked }

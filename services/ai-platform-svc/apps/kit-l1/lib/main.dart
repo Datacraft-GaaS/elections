@@ -5,7 +5,7 @@ library;
 /// The main() here is the standalone test/dev runner; in production the plugin
 /// is initialised by the host app.
 
-import 'package:eel_kit_sdk/telemetry.dart';
+import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 import 'package:flutter/material.dart';
 
 void main() async {

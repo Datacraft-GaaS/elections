@@ -1,7 +1,7 @@
 /// Field-support bootstrap FSM (M32). Roles: DATACRAFT_ENGINEER
 /// Per plan.md M32: ticket management, kit diagnostics, shift reports
 
-import 'package:eel_core_flutter/bootstrap/bootstrap_fsm.dart';
+import 'package:eel_core_flutter/src/bootstrap/bootstrap_fsm.dart';
 
 enum FieldSupportBootstrapStage {
   cold, integrityCheck, attestation, config, auth, roleRoute, ready,

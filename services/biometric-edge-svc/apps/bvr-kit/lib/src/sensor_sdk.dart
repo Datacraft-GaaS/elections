@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:eel_kit_sdk/src/fingerprint_scanner.dart';
+import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 
 /// Sensor SDK abstraction layer.
 ///

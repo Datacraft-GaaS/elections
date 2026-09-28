@@ -6,7 +6,7 @@
 /// States: cold, integrityCheck, attestation, config, auth, roleRoute, ready
 /// Blocked states: blockedRasp, blockedAttest, blockedConfig, blockedAuth, blockedVersion
 
-import 'package:eel_core_flutter/bootstrap/bootstrap_fsm.dart';
+import 'package:eel_core_flutter/src/bootstrap/bootstrap_fsm.dart';
 
 /// Bootstrap stage enum matching the FSM spec
 enum PollClerkBootstrapStage {

@@ -1,5 +1,5 @@
 // Real attestation via kit-sdk (ADR-0021: hard-fail MDM attestation before any auth).
-import 'package:eel_kit_sdk/attestation.dart';
+import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 
 class AttestationService {
   final EelAttestationClient _client;

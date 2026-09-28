@@ -1,7 +1,7 @@
 /// Public barrel for the eel telemetry sub-module.
 ///
 /// Apps import this single file:
-///   import 'package:eel_kit_sdk/telemetry.dart';
+///   import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 library eel_kit_sdk_telemetry;
 
 export 'src/telemetry/signal_sink.dart';

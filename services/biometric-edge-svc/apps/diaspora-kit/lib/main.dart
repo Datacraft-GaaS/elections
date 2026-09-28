@@ -7,7 +7,7 @@
 ///   4. Sign with kit Ed25519 key and queue for delayed transmission.
 ///   5. Manage physical pouches: seal, transfer, receive.
 
-import 'package:eel_kit_sdk/telemetry.dart';
+import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

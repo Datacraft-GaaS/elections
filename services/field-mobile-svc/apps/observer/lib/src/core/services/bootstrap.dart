@@ -1,7 +1,7 @@
 /// Observer bootstrap FSM (M34). Roles: OBSERVER / OBSERVER_CHIEF
 /// Per plan.md M34: station results access, observation ingest, accreditation
 
-import 'package:eel_core_flutter/bootstrap/bootstrap_fsm.dart';
+import 'package:eel_core_flutter/src/bootstrap/bootstrap_fsm.dart';
 
 enum ObserverBootstrapStage {
   cold, integrityCheck, attestation, config, auth, roleRoute, ready,
