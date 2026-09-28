@@ -19,6 +19,7 @@ pub mod validate;
 
 pub use compile::{CompileError, CompiledWorkflow, compile};
 pub use model::{
-    BiometricModality, Constraints, DataItem, DataKind, Step, StepKind, WorkflowSpec,
+    CaptureKind, CapturePolicy, CaptureRequirement, Constraints, DataItem, DataKind, Step,
+    StepKind, WorkflowSpec,
 };
 pub use validate::{SubmissionError, ValidationError, validate_submission};

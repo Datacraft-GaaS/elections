@@ -70,25 +70,83 @@ data_items:
     label: Citizen consents to biometric enrolment
     required: true
     data_class: A
+capture_requirements:
+  # Named so several steps can share one definition, and so a dangling
+  # reference is caught at compile time like a missing data item.
+  - id: fingerprints
+    label: Left and right fingerprints
+    kinds: [fingerprint]
+    policy: all_of          # all_of | any_of | { at_least: N }
+    optional: false
+  # "In any combination, or individually": one step, several acceptable
+  # captures, and a policy saying how many are actually needed.
+  - id: vascular
+    label: Palm or finger vein
+    kinds: [palm_vein, finger_vein, wrist_vein]
+    policy: { at_least: 1 }
+    optional: false
 steps:
   - id: identity
     kind: data_entry
     items: [full_name, gender, dob]
-  - id: left_fingers
-    kind: biometric_capture
-    modality: fingerprint   # fingerprint | face | iris
-    required: true
+  - id: prints
+    kind: capture
+    capture: fingerprints
+  - id: vessel
+    kind: capture
+    capture: vascular
   - id: review
     kind: review
   - id: submit
     kind: submit
 ```
 
+### Capture kinds
+
+Capture is modelled separately from biometric *matching* modality, because a
+capture need not produce a biometric template and because a matching modality
+does not imply a capture path exists.
+
+| Kind | Produces | Standard | Capture path |
+|---|---|---|---|
+| `fingerprint` | biometric | ISO/IEC 19794-2 | optical contact sensor |
+| `finger_vein` | biometric | ISO/IEC 19794-9 | NIR vascular sensor |
+| `palm_vein` | biometric | ISO/IEC 19794-9 | NIR vascular sensor |
+| `wrist_vein` | biometric | ISO/IEC 19794-9 | NIR vascular sensor |
+| `face` | biometric | ISO/IEC 19794-5 | RGB/NIR camera |
+| `live_photograph` | biometric | ISO/IEC 30107-3 PAD | camera with liveness challenge |
+| `iris` | biometric | ISO/IEC 19794-6 | NIR iris sensor |
+| `document_mrz` | **document data** | ICAO 9303 | optical document reader |
+
+`document_mrz` is deliberately not a biometric: its output is MRZ text, so it
+must not be routed through biometric template handling.
+`CaptureKind::is_biometric` encodes that distinction.
+
+`face` and `live_photograph` are separate kinds so a workflow can demand a
+liveness-proven capture, not just an image.
+
+### Capture policies
+
+- `all_of` -- every declared kind must be captured.
+- `any_of` -- at least one.
+- `{"at_least": N}` -- N or more, where `N` must not exceed the number of
+  declared kinds.
+
+`at_least` exists because a registration drive cannot always complete a full
+acquisition on one citizen, and the platform already supports degraded capture
+through `BiometricSensorDriver::capture_fingerprint_degraded`. A workflow with no
+`capture_requirements` at all is valid, for a document-only pre-registration
+review.
+
 ## Guarantees the compiler enforces
 
 - Duplicate data-item names and duplicate step ids.
 - Steps referencing data items that do not exist.
 - Data items declared but collected by no step (dead form fields).
+- Capture requirements never referenced by a step; steps referencing a
+  requirement that does not exist; duplicate requirement ids.
+- Capture requirements with no kinds, repeated kinds, `at_least: 0` (vacuous),
+  and `at_least` demanding more captures than the requirement lists.
 - Inverted length and age bounds; length bounds on non-text kinds; age bounds on
   non-date kinds; `choice` without options; duplicate options.
 - Data classes outside `A` / `B` / `C`.
@@ -102,11 +160,20 @@ patterns in one place.
 
 ## Biometric capture
 
-Capture steps name a modality; they do not talk to hardware. The client binds
+Capture steps name a requirement; they do not talk to hardware. The client binds
 them to the existing `BiometricSensorDriver` trait
 (`services/biometric-edge-svc/crates/sensor-driver/src/sensor_driver.rs`) per
 ADR-0026, so vendor selection stays a build-time choice and CI runs against
 `MockSensorDriver`.
+
+Note the honest limit: that trait currently exposes only `capture_fingerprint`,
+`capture_face`, and `capture_iris`. Palm, finger vein, wrist vein, live
+photograph, and document MRZ have **no capture method yet**, so a client binding
+this model to the trait today would have to stub them. Their *matching* support
+exists (`abis-modality-vein` for vascular patterns, `integrations/mrz` for
+document parsing); the capture methods do not. Extending the trait is a
+prerequisite for those capture kinds, and the DSL deliberately does not pretend
+otherwise.
 
 ## Scope
 

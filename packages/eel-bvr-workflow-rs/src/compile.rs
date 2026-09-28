@@ -107,6 +107,56 @@ pub enum CompileError {
         /// The offending value.
         class: String,
     },
+    /// Two capture requirements share an id.
+    #[error("duplicate capture requirement id {id:?}")]
+    DuplicateCaptureId {
+        /// The repeated id.
+        id: String,
+    },
+    /// A step referenced a capture requirement that does not exist.
+    #[error("step {step:?} references unknown capture requirement {capture:?}")]
+    UnknownCapture {
+        /// The referring step.
+        step: String,
+        /// The unresolvable requirement id.
+        capture: String,
+    },
+    /// A capture requirement is never used by any step.
+    #[error("capture requirement {id:?} is declared but never used by a step")]
+    UnreferencedCapture {
+        /// The orphaned requirement.
+        id: String,
+    },
+    /// A capture requirement lists no kinds.
+    #[error("capture requirement {id:?} declares no capture kinds")]
+    CaptureWithoutKinds {
+        /// The offending requirement.
+        id: String,
+    },
+    /// A capture requirement repeats a kind.
+    #[error("capture requirement {id:?} lists kind {kind:?} more than once")]
+    DuplicateCaptureKind {
+        /// The offending requirement.
+        id: String,
+        /// The repeated kind.
+        kind: crate::model::CaptureKind,
+    },
+    /// `at_least` demands more captures than the requirement lists.
+    #[error("capture requirement {id:?} demands at least {wanted} captures but lists only {have}")]
+    CapturePolicyUnsatisfiable {
+        /// The offending requirement.
+        id: String,
+        /// The demanded count.
+        wanted: u16,
+        /// The listed count.
+        have: usize,
+    },
+    /// `at_least` demands zero, which makes the step vacuous.
+    #[error("capture requirement {id:?} demands at least 0 captures, which can never fail")]
+    CapturePolicyVacuous {
+        /// The offending requirement.
+        id: String,
+    },
 }
 
 /// A data item paired with its declared name, ready for form generation.
@@ -142,8 +192,10 @@ pub struct CompiledWorkflow {
     pub data_item_order: Vec<String>,
     /// Steps in execution order.
     pub steps: Vec<CompiledStep>,
-    /// True when the workflow acquires at least one biometric modality.
-    pub has_biometric_capture: bool,
+    /// Named capture requirements indexed by id.
+    pub captures: HashMap<String, CompiledCapture>,
+    /// Capture requirement ids in declaration order.
+    pub capture_order: Vec<String>,
 }
 
 impl CompiledWorkflow {
@@ -151,6 +203,20 @@ impl CompiledWorkflow {
     pub fn data_item(&self, name: &str) -> Option<&CompiledDataItem> {
         self.data_items.get(name)
     }
+
+    /// Returns the compiled capture requirement named `id`, if present.
+    pub fn capture(&self, id: &str) -> Option<&CompiledCapture> {
+        self.captures.get(id)
+    }
+}
+
+/// A capture requirement paired with whether any step uses it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CompiledCapture {
+    /// The requirement as declared.
+    pub requirement: crate::model::CaptureRequirement,
+    /// Whether any step references this requirement.
+    pub referenced: bool,
 }
 
 /// Checks `spec` and resolves it into an executable form.
@@ -194,64 +260,101 @@ pub fn compile(spec: &WorkflowSpec) -> Result<CompiledWorkflow, Vec<CompileError
         );
     }
 
-    // Walk steps, resolving data-entry references and tracking reachability.
-    let mut steps: Vec<CompiledStep> = Vec::new();
-    let mut seen_step_ids: BTreeSet<&str> = BTreeSet::new();
-    let mut has_biometric_capture = false;
-    for step in &spec.steps {
-        if !seen_step_ids.insert(step.id.as_str()) {
-            errors.push(CompileError::DuplicateStepId { id: step.id.clone() });
-            continue;
+    // Index named capture requirements, rejecting duplicates.
+        let mut captures: HashMap<String, CompiledCapture> = HashMap::new();
+        let mut capture_order: Vec<String> = Vec::new();
+        for capture in &spec.capture_requirements {
+            check_capture(capture, &mut errors);
+            if captures.contains_key(&capture.id) {
+                errors.push(CompileError::DuplicateCaptureId { id: capture.id.clone() });
+                continue;
+            }
+            capture_order.push(capture.id.clone());
+            captures.insert(
+                capture.id.clone(),
+                CompiledCapture { requirement: capture.clone(), referenced: false },
+            );
         }
-        let mut items: Vec<String> = Vec::new();
-        let display_label = match &step.kind {
-            StepKind::DataEntry { items: names } => {
-                for name in names {
-                    match data_items.get_mut(name) {
-                        Some(entry) => {
-                            entry.reachable = true;
-                            items.push(name.clone());
+
+        let mut steps: Vec<CompiledStep> = Vec::new();
+        let mut seen_step_ids: BTreeSet<&str> = BTreeSet::new();
+        for step in &spec.steps {
+            if !seen_step_ids.insert(step.id.as_str()) {
+                errors.push(CompileError::DuplicateStepId { id: step.id.clone() });
+                continue;
+            }
+            let mut items: Vec<String> = Vec::new();
+            let display_label = match &step.kind {
+                StepKind::DataEntry { items: names } => {
+                    for name in names {
+                        match data_items.get_mut(name) {
+                            Some(entry) => {
+                                entry.reachable = true;
+                                items.push(name.clone());
+                            }
+                            None => errors.push(CompileError::UnknownDataItem {
+                                step: step.id.clone(),
+                                item: name.clone(),
+                            }),
                         }
-                        None => errors.push(CompileError::UnknownDataItem {
-                            step: step.id.clone(),
-                            item: name.clone(),
-                        }),
+                    }
+                    step.label.clone().unwrap_or_else(|| "Details".to_owned())
+                }
+                StepKind::Capture { capture: capture_id } => {
+                    match captures.get_mut(capture_id) {
+                        Some(entry) => {
+                            entry.referenced = true;
+                            let requirement = &entry.requirement;
+                            step.label.clone().unwrap_or_else(|| {
+                                if requirement.kinds.len() == 1 {
+                                    format!("Capture {:?}", requirement.kinds[0])
+                                } else {
+                                    format!("{} ({} options)", requirement.label, requirement.kinds.len())
+                                }
+                            })
+                        }
+                        None => {
+                            errors.push(CompileError::UnknownCapture {
+                                step: step.id.clone(),
+                                capture: capture_id.clone(),
+                            });
+                            String::new()
+                        }
                     }
                 }
-                step.label.clone().unwrap_or_else(|| "Details".to_owned())
-            }
-            StepKind::BiometricCapture { modality, .. } => {
-                has_biometric_capture = true;
-                step.label
-                    .clone()
-                    .unwrap_or_else(|| format!("Capture {modality:?}"))
-            }
-            StepKind::Review => step.label.clone().unwrap_or_else(|| "Review".to_owned()),
-            StepKind::Submit => step.label.clone().unwrap_or_else(|| "Submit".to_owned()),
-        };
-        steps.push(CompiledStep { step: step.clone(), items, display_label });
-    }
-
-    // Any data item no step collects is dead weight in the form.
-    for name in &data_item_order {
-        if !data_items[name].reachable {
-            errors.push(CompileError::UnreachableDataItem { name: name.clone() });
+                StepKind::Review => step.label.clone().unwrap_or_else(|| "Review".to_owned()),
+                StepKind::Submit => step.label.clone().unwrap_or_else(|| "Submit".to_owned()),
+            };
+            steps.push(CompiledStep { step: step.clone(), items, display_label });
         }
-    }
 
-    if !errors.is_empty() {
-        return Err(errors);
-    }
+        // Any data item no step collects, and any capture requirement no step
+        // uses, are dead configuration.
+        for name in &data_item_order {
+            if !data_items[name].reachable {
+                errors.push(CompileError::UnreachableDataItem { name: name.clone() });
+            }
+        }
+        for id in &capture_order {
+            if !captures[id].referenced {
+                errors.push(CompileError::UnreferencedCapture { id: id.clone() });
+            }
+        }
 
-    Ok(CompiledWorkflow {
-        id: spec.id.clone(),
-        label: spec.label.clone(),
-        data_items,
-        data_item_order,
-        steps,
-        has_biometric_capture,
-    })
-}
+        if !errors.is_empty() {
+            return Err(errors);
+        }
+
+        Ok(CompiledWorkflow {
+            id: spec.id.clone(),
+            label: spec.label.clone(),
+            data_items,
+            data_item_order,
+            steps,
+            captures,
+            capture_order,
+        })
+    }
 
 /// Validates one data item's constraints, appending any violations.
 fn check_constraints(item: &DataItem, errors: &mut Vec<CompileError>) {
@@ -310,6 +413,39 @@ fn check_constraints(item: &DataItem, errors: &mut Vec<CompileError>) {
                     }
                 }
             }
+        }
+    }
+}
+
+/// Validates one capture requirement, appending any violations.
+fn check_capture(capture: &crate::model::CaptureRequirement, errors: &mut Vec<CompileError>) {
+    use crate::model::CapturePolicy;
+
+    if capture.kinds.is_empty() {
+        errors.push(CompileError::CaptureWithoutKinds { id: capture.id.clone() });
+        return;
+    }
+
+    let mut seen = BTreeSet::new();
+    for kind in &capture.kinds {
+        if !seen.insert(kind) {
+            errors.push(CompileError::DuplicateCaptureKind {
+                id: capture.id.clone(),
+                kind: *kind,
+            });
+        }
+    }
+
+    if let CapturePolicy::AtLeast(n) = capture.policy {
+        if n == 0 {
+            errors.push(CompileError::CapturePolicyVacuous { id: capture.id.clone() });
+        }
+        if usize::from(n) > capture.kinds.len() {
+            errors.push(CompileError::CapturePolicyUnsatisfiable {
+                id: capture.id.clone(),
+                wanted: n,
+                have: capture.kinds.len(),
+            });
         }
     }
 }

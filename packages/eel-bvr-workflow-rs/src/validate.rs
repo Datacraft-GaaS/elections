@@ -79,11 +79,19 @@ pub enum ValidationError {
         /// The offending field.
         item: String,
     },
-    /// The workflow requires biometric capture but none was reported.
-    #[error("workflow requires {modality:?} capture but none was reported")]
-    CaptureMissing {
-        /// The modality that was expected.
-        modality: &'static str,
+    /// A required capture step was not satisfied.
+    #[error("capture step {step:?} needs {needed} of {{{available}}}, only {got} captured")]
+    CaptureUnsatisfied {
+        /// The step whose requirement failed.
+        step: String,
+        /// The requirement id.
+        capture: String,
+        /// How many captures the policy demands.
+        needed: String,
+        /// The kinds the requirement accepts, formatted.
+        available: String,
+        /// The kinds actually captured.
+        got: String,
     },
 }
 
@@ -102,7 +110,7 @@ impl SubmissionError {
 }
 
 /// A submission is a map of data-item name to raw string value, plus the
-/// biometric modalities reported as captured.
+/// capture kinds reported as acquired.
 ///
 /// Values are strings deliberately: the client collects text from widgets and
 /// the server owns typed parsing, so validation must not depend on a local
@@ -111,13 +119,14 @@ pub type Submission = serde_json::Map<String, serde_json::Value>;
 
 /// Validates `submission` against `workflow`.
 ///
-/// The `captured` slice lists biometric modalities the operator reported
-/// acquiring; a workflow with a required capture step must find its modality
-/// present there.
+/// The `captured` slice lists the capture kinds the operator reported
+/// acquiring. Each step's named capture requirement is then checked against its
+/// policy, so a workflow demanding every listed capture and one demanding only
+/// a subset are both expressible without extra steps.
 pub fn validate_submission(
     workflow: &CompiledWorkflow,
     submission: &Submission,
-    captured: &[crate::model::BiometricModality],
+    captured: &[crate::model::CaptureKind],
 ) -> SubmissionError {
     let mut violations = Vec::new();
 
@@ -175,26 +184,50 @@ pub fn validate_submission(
     }
 
     for step in &workflow.steps {
-        if let StepKind::BiometricCapture { modality, required: true } = &step.step.kind {
-            if !captured.contains(modality) {
-                violations.push(ValidationError::CaptureMissing {
-                    modality: modality_str(*modality),
-                });
+        if let StepKind::Capture { capture: capture_id } = &step.step.kind {
+            let Some(entry) = workflow.capture(capture_id) else {
+                continue;
+            };
+            let requirement = &entry.requirement;
+            if requirement.optional || requirement.is_satisfied_by(captured) {
+                continue;
             }
+            violations.push(ValidationError::CaptureUnsatisfied {
+                step: step.step.id.clone(),
+                capture: capture_id.clone(),
+                needed: describe_policy(requirement.policy),
+                available: format_kinds(&requirement.kinds),
+                got: format_kinds(captured),
+            });
         }
     }
 
     SubmissionError { violations }
 }
 
-/// Name a modality for use in error messages.
-fn modality_str(modality: crate::model::BiometricModality) -> &'static str {
-    use crate::model::BiometricModality as M;
-    match modality {
-        M::Fingerprint => "fingerprint",
-        M::Face => "face",
-        M::Iris => "iris",
+/// Human-readable form of a capture policy, for error messages.
+fn describe_policy(policy: crate::model::CapturePolicy) -> String {
+    use crate::model::CapturePolicy;
+    match policy {
+        CapturePolicy::AllOf => "all".to_owned(),
+        CapturePolicy::AnyOf => "any".to_owned(),
+        CapturePolicy::AtLeast(n) => format!("at least {n}"),
     }
+}
+
+/// Renders capture kinds as a stable, sorted, comma-separated list.
+///
+/// Uses each kind's serialized form rather than its `Debug` form, so a message
+/// names the kind the way it appears in the workflow document (`palm_vein`)
+/// instead of the Rust spelling (`PalmVein`).
+fn format_kinds(kinds: &[crate::model::CaptureKind]) -> String {
+    let mut names: Vec<String> = kinds
+        .iter()
+        .filter_map(|k| serde_json::to_value(k).ok())
+        .filter_map(|v| v.as_str().map(str::to_owned))
+        .collect();
+    names.sort();
+    if names.is_empty() { "none".to_owned() } else { names.join(", ") }
 }
 
 fn check_length(

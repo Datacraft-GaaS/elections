@@ -2,16 +2,109 @@
 
 use serde::{Deserialize, Serialize};
 
-/// Biometric modality a capture step acquires.
+/// Something a capture step can acquire.
+///
+/// Capture is deliberately modelled separately from biometric *matching*
+/// modality. Two reasons:
+///
+/// - A capture need not produce a biometric template at all. A passport scan
+///   produces MRZ text, and a liveness-proven photograph produces a face image,
+///   so neither fits a "modality" enumeration.
+/// - Palm and finger vein already exist as *matching* modalities in
+///   `services/abis-svc/crates/abis-modality-vein` (ISO/IEC 19794-9), but the
+///   capture trait in `sensor-driver` has no method for them, because NIR
+///   vascular capture is a different sensor class from optical contact
+///   capture. Conflating the two would imply a capture path that does not
+///   exist.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CaptureKind {
+    /// Contact fingerprint image set, ISO/IEC 19794-2.
+    Fingerprint,
+    /// Near-infrared finger vascular pattern, ISO/IEC 19794-9.
+    FingerVein,
+    /// Near-infrared palm vascular pattern, ISO/IEC 19794-9.
+    PalmVein,
+    /// Near-infrared wrist vascular pattern, ISO/IEC 19794-9.
+    WristVein,
+    /// Face image, ISO/IEC 19794-5.
+    Face,
+    /// Face image with an active liveness challenge, ISO/IEC 30107-3 PAD.
+    LivePhotograph,
+    /// Iris image, ISO/IEC 19794-6.
+    Iris,
+    /// Optical document scan with an ICAO 9303 machine-readable zone.
+    DocumentMrz,
+}
+
+impl CaptureKind {
+    /// Returns `true` when this capture yields a biometric template or image
+    /// subject to the biometric handling rules, as opposed to a document scan.
+    pub fn is_biometric(self) -> bool {
+        !matches!(self, CaptureKind::DocumentMrz)
+    }
+}
+
+/// How many of a capture step's kinds must succeed.
+///
+/// This is what lets a workflow say "individually or in any combination"
+/// without a combinatorial explosion of steps: one step lists the acceptable
+/// captures and the policy says how many are needed. [`CapturePolicy::AtLeast`]
+/// exists because a registration drive cannot always complete a full
+/// acquisition on one citizen, and the platform already supports degraded
+/// capture via `BiometricSensorDriver::capture_fingerprint_degraded`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum BiometricModality {
-    /// ISO/IEC 19794-2 fingerprint image set.
-    Fingerprint,
-    /// ISO/IEC 19794-5 face image.
-    Face,
-    /// ISO/IEC 19794-6 iris image.
-    Iris,
+pub enum CapturePolicy {
+    /// Every declared kind must be captured.
+    AllOf,
+    /// At least one declared kind must be captured.
+    AnyOf,
+    /// At least this many declared kinds must be captured.
+    AtLeast(u16),
+}
+
+/// A named, reusable capture definition that steps reference by id.
+///
+/// Naming them separately from steps lets a workflow share one definition
+/// across several steps, and lets a missing reference be caught at compile time
+/// the same way a missing data item is.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CaptureRequirement {
+    /// Stable identifier referenced by capture steps.
+    pub id: String,
+    /// Human-readable name, e.g. "Left palm and fingerprints".
+    pub label: String,
+    /// Acceptable capture kinds for this step.
+    pub kinds: Vec<CaptureKind>,
+    /// How many of them are needed.
+    pub policy: CapturePolicy,
+    /// Whether the step can be skipped entirely.
+    #[serde(default)]
+    pub optional: bool,
+}
+
+impl CaptureRequirement {
+    /// Returns `true` when `captured` satisfies this requirement's policy.
+    pub fn is_satisfied_by(&self, captured: &[CaptureKind]) -> bool {
+        let present = |k: &CaptureKind| captured.contains(k);
+        match self.policy {
+            CapturePolicy::AllOf => self.kinds.iter().all(present),
+            CapturePolicy::AnyOf => self.kinds.iter().any(present),
+            CapturePolicy::AtLeast(n) => {
+                self.kinds.iter().filter(|k| present(k)).count() as u16 >= n
+            }
+        }
+    }
+
+    /// Returns the declared kinds not present in `captured`.
+    pub fn missing_from(&self, captured: &[CaptureKind]) -> Vec<CaptureKind> {
+        self.kinds
+            .iter()
+            .copied()
+            .filter(|k| !captured.contains(k))
+            .collect()
+    }
 }
 
 /// Widget and validator selected for a data item.
@@ -97,12 +190,10 @@ pub enum StepKind {
         /// Names of the data items this step edits.
         items: Vec<String>,
     },
-    /// Acquire biometric samples through the sensor driver abstraction.
-    BiometricCapture {
-        /// Modality to capture.
-        modality: BiometricModality,
-        /// Whether capture must succeed before advancing.
-        required: bool,
+    /// Acquire the named capture requirement.
+    Capture {
+        /// Id of the [`CaptureRequirement`] to perform.
+        capture: String,
     },
     /// Present the accumulated record for officer confirmation.
     Review,
@@ -134,6 +225,10 @@ pub struct WorkflowSpec {
     pub label: String,
     /// Collectable data items.
     pub data_items: Vec<DataItem>,
+    /// Named capture definitions. May be empty for a workflow that collects no
+    /// biometrics, such as a document-only pre-registration review.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub capture_requirements: Vec<CaptureRequirement>,
     /// Ordered steps.
     pub steps: Vec<Step>,
 }
