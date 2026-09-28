@@ -115,8 +115,19 @@ does not imply a capture path exists.
 | `wrist_vein` | biometric | ISO/IEC 19794-9 | NIR vascular sensor |
 | `face` | biometric | ISO/IEC 19794-5 | RGB/NIR camera |
 | `live_photograph` | biometric | ISO/IEC 30107-3 PAD | camera with liveness challenge |
+| `periocular` | biometric | ISO/IEC 19794-5 | camera, with the face |
 | `iris` | biometric | ISO/IEC 19794-6 | NIR iris sensor |
+| `ear` | biometric | none | — |
+| `retina` | biometric | none | — |
+| `voiceprint` | biometric | ISO/IEC 19794-13 | microphone |
+| `gait` | biometric | ISO/IEC 39794-17 | camera, walking path |
+| `signature` | biometric | ISO/IEC 19794-7 | signature pad |
+| `keystroke_dynamics` | biometric | none | passive, over a session |
+| `mouse_dynamics` | biometric | none | passive, over a session |
+| `dna` | biometric | none | sample kit, analysed ex vivo |
 | `document_mrz` | **document data** | ICAO 9303 | optical document reader |
+
+Eighteen kinds, mirroring `sensor_driver::Modality::ALL`.
 
 `document_mrz` is deliberately not a biometric: its output is MRZ text, so it
 must not be routed through biometric template handling.
@@ -124,6 +135,17 @@ must not be routed through biometric template handling.
 
 `face` and `live_photograph` are separate kinds so a workflow can demand a
 liveness-proven capture, not just an image.
+
+### Collection modes and behavioural modalities
+
+`keystroke_dynamics` and `mouse_dynamics` accumulate during a session and `dna`
+is analysed away from the subject, so a timed `capture` call is the wrong shape
+for them. The capture trait exposes `Modality::collection_mode` (`Active`,
+`Passive`, `ExVivo`) and the client uses it to choose the right UI.
+
+`is_behavioural()` enumerates `voiceprint`, `gait`, `signature`,
+`keystroke_dynamics`, and `mouse_dynamics` so a consent and retention review can
+list the behavioural set from one place rather than auditing eighteen variants.
 
 ### Capture policies
 
@@ -138,11 +160,19 @@ through `BiometricSensorDriver::capture_fingerprint_degraded`. A workflow with n
 `capture_requirements` at all is valid, for a document-only pre-registration
 review.
 
+## Documentation
+
+- [`docs/dsl-reference.md`](docs/dsl-reference.md) — complete language reference:
+  every field, every enum value, every rejection, both error enums.
+- [`docs/training.md`](docs/training.md) — course for configuring workflows and
+  for developers extending them, with runnable exercises.
+
 ## Guarantees the compiler enforces
 
 - Duplicate data-item names and duplicate step ids.
 - Steps referencing data items that do not exist.
 - Data items declared but collected by no step (dead form fields).
+- Data classes outside the five platform PII tiers `A`-`E`.
 - Capture requirements never referenced by a step; steps referencing a
   requirement that does not exist; duplicate requirement ids.
 - Capture requirements with no kinds, repeated kinds, `at_least: 0` (vacuous),

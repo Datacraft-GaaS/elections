@@ -1346,3 +1346,72 @@ fn behavioural_kinds_are_distinguished_in_the_dsl_too() {
         assert!(!kind.is_behavioural(), "{kind:?} is physiological");
     }
 }
+
+// ---- documentation is kept honest -------------------------------------------
+
+/// Every enum variant must appear in the reference, or the reference is wrong.
+///
+/// The reference was written after the code, so it is exactly the kind of
+/// document that silently drifts. Cheap to check, and the failure mode it
+/// prevents is an officer looking up a rejection code that is not there.
+#[test]
+fn the_reference_documents_every_enum_variant() {
+    let reference = std::fs::read_to_string(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/dsl-reference.md"),
+    )
+    .expect("docs/dsl-reference.md must exist; the DSL reference is a deliverable");
+
+    let compile_errors: Vec<&str> = vec![
+        "UnsupportedVersion", "NoDataItems", "NoSteps", "DuplicateDataItem",
+        "DuplicateStepId", "UnknownDataItem", "UnreachableDataItem",
+        "LengthBoundsInverted", "AgeBoundsInverted", "ChoiceWithoutOptions",
+        "DuplicateOption", "AgeBoundOnNonDate", "LengthBoundOnNonText",
+        "InvalidDataClass", "DuplicateCaptureId", "UnknownCapture",
+        "UnreferencedCapture", "CaptureWithoutKinds", "DuplicateCaptureKind",
+        "CapturePolicyUnsatisfiable", "CapturePolicyVacuous",
+    ];
+    for name in &compile_errors {
+        assert!(reference.contains(name), "reference does not document {name}");
+    }
+
+    for name in [
+        "MissingRequired", "ConsentNotGiven", "PatternMismatch", "TooShort",
+        "TooLong", "NotAnOption", "NotADate", "AgeOutOfRange", "UndeclaredItem",
+        "CaptureUnsatisfied",
+    ] {
+        assert!(reference.contains(name), "reference does not document {name}");
+    }
+
+    // Capture kinds are documented by their wire names.
+    for kind in CaptureKind::ALL {
+        let wire = serde_json::to_value(kind).unwrap();
+        let name = wire.as_str().unwrap();
+        assert!(reference.contains(name), "reference does not document capture kind {name}");
+    }
+
+    // The shipped documents must be listed in the reference too.
+    for doc in ["standard-enrolment.json", "extended-enrolment.json"] {
+        assert!(reference.contains(doc), "reference does not mention {doc}");
+    }
+}
+
+#[test]
+fn the_training_material_links_to_the_reference() {
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("docs");
+    let training = std::fs::read_to_string(dir.join("training.md"))
+        .expect("docs/training.md must exist; the training material is a deliverable");
+    assert!(
+        training.contains("dsl-reference.md"),
+        "training must link to the reference"
+    );
+    // The training material is worthless without something to practise on.
+    assert!(
+        training.contains("standard-enrolment.json"),
+        "training must point at a real workflow document"
+    );
+    assert!(
+        training.len() > 4000,
+        "training material should be substantive, got {} bytes",
+        training.len()
+    );
+}

@@ -11,4 +11,11 @@
 - `api/`, HTTP/gRPC/protobuf/OpenAPI contracts
 - `modules/`, index of the 69 modules, home services, owners
 - `guides/`, how-to for contributors (setup, workflow, release)
+
+Package-level references live with the code they describe. Notably
+`packages/eel-bvr-workflow-rs/docs/`, which holds the **BVR enrolment workflow
+DSL reference** and its **training course**: the declarative language that
+generates the voter registration form, so a new data item is a document edit
+rather than a client release. See
+[ADR-0027](architecture/decisions/0027-desktop-bvr-client.md).
 - `runbooks/`, on-call / operational procedures
