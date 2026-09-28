@@ -82,7 +82,6 @@ fn make_ingest_request(
     secret: &[u8],
 ) -> IngestRequest {
     let payload = make_payload();
-    let canonical = serde_json::to_vec(&payload).unwrap();
     let hmac_sig = compute_hmac(secret, &payload).unwrap();
     let nonce = vec![counter as u8, 0x01, 0x02, 0x03];
 
