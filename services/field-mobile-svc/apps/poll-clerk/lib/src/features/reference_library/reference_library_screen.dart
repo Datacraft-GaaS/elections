@@ -15,7 +15,8 @@ class ReferenceLibraryScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: [
           const EelBanner(
-            message: 'Quick access to election procedures, forms, and legal references.',
+            message:
+                'Quick access to election procedures, forms, and legal references.',
             severity: EelSeverity.info,
           ),
           const SizedBox(height: 16),
@@ -23,25 +24,31 @@ class ReferenceLibraryScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           EelChips(
             options: const [
-              'Procedures',
-              'Forms',
-              'Legal References',
-              'Training Materials',
-              'Incident Guides'
+              ChipOption(label: 'Procedures'),
+              ChipOption(label: 'Forms'),
+              ChipOption(label: 'Legal References'),
+              ChipOption(label: 'Training Materials'),
+              ChipOption(label: 'Incident Guides'),
             ],
             onSelected: (chip) {},
           ),
           const SizedBox(height: 24),
           EelResultCard(
-            leading: Icon(Icons.book, color: EelColors.of(context).primary, size: 32),
-            title: Text('Polling Station Procedures (v2.1)', style: EelTextStyle.titleMedium),
-            subtitle: Text('Updated: 2026-08-15 • 42 pages', style: EelTextStyle.bodyMedium),
+            leading: Icon(Icons.book,
+                color: EelColors.of(context).primary, size: 32),
+            title: Text('Polling Station Procedures (v2.1)',
+                style: EelTextStyle.titleMedium),
+            subtitle: Text('Updated: 2026-08-15 • 42 pages',
+                style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 12),
           EelResultCard(
-            leading: Icon(Icons.description, color: EelColors.of(context).primaryMuted, size: 32),
-            title: Text('Voter Registration Form (FRM-007)', style: EelTextStyle.titleMedium),
-            subtitle: Text('Current version • Available in 11 languages', style: EelTextStyle.bodyMedium),
+            leading: Icon(Icons.description,
+                color: EelColors.of(context).primaryMuted, size: 32),
+            title: Text('Voter Registration Form (FRM-007)',
+                style: EelTextStyle.titleMedium),
+            subtitle: Text('Current version • Available in 11 languages',
+                style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 12),
           EelButton(

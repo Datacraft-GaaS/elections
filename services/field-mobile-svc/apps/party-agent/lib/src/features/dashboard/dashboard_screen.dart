@@ -19,18 +19,24 @@ class AgentDashboardScreen extends ConsumerWidget {
           // Hero — party agent identity with seal.
           EelResultCard(
             leading: EelSealStamp(size: 56, color: colors.primary),
-            title: Text('Party Agent — Station KE-NBI-001', style: EelTextStyle.titleLarge),
-            subtitle: Text('GPS-verified check-in • BVI notified', style: EelTextStyle.bodyMedium),
+            title: Text('Party Agent — Station KE-NBI-001',
+                style: EelTextStyle.titleLarge),
+            subtitle: Text('GPS-verified check-in • BVI notified',
+                style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 16),
           // Status chips.
-          EelStatusChip(label: 'Check-in: 06:42', severity: EelSeverity.success),
+          EelStatusChip(
+              label: 'Check-in: 06:42', severity: EelSeverity.success),
           const SizedBox(height: 8),
-          EelStatusChip(label: 'GPS verified: Yes', severity: EelSeverity.success),
+          EelStatusChip(
+              label: 'GPS verified: Yes', severity: EelSeverity.success),
           const SizedBox(height: 8),
-          EelStatusChip(label: 'BVI notified: Yes', severity: EelSeverity.success),
+          EelStatusChip(
+              label: 'BVI notified: Yes', severity: EelSeverity.success),
           const SizedBox(height: 8),
-          EelStatusChip(label: 'Forms synced: Complete', severity: EelSeverity.success),
+          EelStatusChip(
+              label: 'Forms synced: Complete', severity: EelSeverity.success),
           const SizedBox(height: 16),
           // Quick actions.
           EelBanner(
@@ -40,7 +46,13 @@ class AgentDashboardScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           // Counter chips (example).
           EelChips(
-            options: const ['Turnout', 'Incidents', 'Tally', 'Rollup', 'Dispute'],
+            options: const [
+              ChipOption(label: 'Turnout'),
+              ChipOption(label: 'Incidents'),
+              ChipOption(label: 'Tally'),
+              ChipOption(label: 'Rollup'),
+              ChipOption(label: 'Dispute'),
+            ],
             onSelected: (chip) {},
           ),
           const SizedBox(height: 16),

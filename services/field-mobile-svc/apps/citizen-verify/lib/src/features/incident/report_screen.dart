@@ -14,10 +14,12 @@ class IncidentReportScreen extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       body: ListView(
         children: [
-          const Text('Anonymous Incident Report', style: EelTextStyle.titleLarge),
+          const Text('Anonymous Incident Report',
+              style: EelTextStyle.titleLarge),
           const SizedBox(height: 8),
           const EelBanner(
-            message: 'Your report is anonymous. No identity is linked to this submission.',
+            message:
+                'Your report is anonymous. No identity is linked to this submission.',
             severity: EelSeverity.info,
           ),
           const SizedBox(height: 16),
@@ -28,7 +30,12 @@ class IncidentReportScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           EelChips(
-            options: const ['Intimidation', 'Bribery', 'Turned Away', 'Other'],
+            options: const [
+              ChipOption(label: 'Intimidation'),
+              ChipOption(label: 'Bribery'),
+              ChipOption(label: 'Turned Away'),
+              ChipOption(label: 'Other'),
+            ],
             onSelected: (chip) {},
           ),
           const SizedBox(height: 16),
@@ -37,7 +44,8 @@ class IncidentReportScreen extends ConsumerWidget {
             icon: Icons.send,
             fullWidth: true,
             onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Report queued (anonymous, GPS optional)')),
+              const SnackBar(
+                  content: Text('Report queued (anonymous, GPS optional)')),
             ),
           ),
         ],

@@ -19,13 +19,20 @@ class AssessmentScreen extends ConsumerWidget {
           const Text('Module Assessment', style: EelTextStyle.titleLarge),
           const SizedBox(height: 16),
           EelResultCard(
-            leading: Icon(Icons.quiz, color: EelColors.of(context).primary, size: 32),
+            leading: Icon(Icons.quiz,
+                color: EelColors.of(context).primary, size: 32),
             title: Text('Question 1 of 10', style: EelTextStyle.titleMedium),
-            subtitle: Text('Select the best answer', style: EelTextStyle.bodyMedium),
+            subtitle:
+                Text('Select the best answer', style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 16),
           EelChips(
-            options: const ['A', 'B', 'C', 'D'],
+            options: const [
+              ChipOption(label: 'A'),
+              ChipOption(label: 'B'),
+              ChipOption(label: 'C'),
+              ChipOption(label: 'D'),
+            ],
             onSelected: (chip) {},
           ),
           const SizedBox(height: 24),

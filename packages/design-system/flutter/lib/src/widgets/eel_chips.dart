@@ -171,3 +171,75 @@ class EelSyncIndicator extends StatelessWidget {
     );
   }
 }
+
+/// One selectable chip in an [EelChips] group.
+class ChipOption {
+  const ChipOption({required this.label, this.selected = false, this.icon});
+
+  /// Text shown in the chip.
+  final String label;
+
+  /// Whether this option is currently selected.
+  final bool selected;
+
+  /// Optional leading glyph, for options that are not plain words.
+  final IconData? icon;
+}
+
+/// A group of toggleable chips, wrapping onto as many lines as needed.
+///
+/// Selection state is owned by the caller: the chips report intent through
+/// [onToggle] (by index, for callers holding an enum list) or [onSelected]
+/// (by label, for everything else) and re-render with the new state. Nothing
+/// here holds state, so the same component serves a filter bar and a
+/// multi-select partition selector.
+class EelChips extends StatelessWidget {
+  const EelChips({
+    super.key,
+    required this.options,
+    this.onToggle,
+    this.onSelected,
+    this.spacing = EelSpacing.s2,
+  });
+
+  final List<ChipOption> options;
+
+  /// Called with the index of the tapped option.
+  final ValueChanged<int>? onToggle;
+
+  /// Called with the label of the tapped option.
+  final ValueChanged<String>? onSelected;
+
+  final double spacing;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.eelColors;
+    return Wrap(
+      spacing: spacing,
+      runSpacing: spacing,
+      children: [
+        for (var i = 0; i < options.length; i++)
+          Builder(builder: (context) {
+            final option = options[i];
+            return FilterChip(
+              label: Text(option.label),
+              avatar: option.icon == null ? null : Icon(option.icon, size: 18),
+              selected: option.selected,
+              showCheckmark: false,
+              onSelected: (_) {
+                onToggle?.call(i);
+                onSelected?.call(option.label);
+              },
+              selectedColor: c.brandPrimary.withValues(alpha: 0.14),
+              backgroundColor: c.surface,
+              side: BorderSide(
+                  color: option.selected ? c.brandPrimary : c.border),
+              // Same enforced touch target as EelButton (plan §5.2).
+              materialTapTargetSize: MaterialTapTargetSize.padded,
+            );
+          }),
+      ],
+    );
+  }
+}

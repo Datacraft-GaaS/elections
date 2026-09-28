@@ -17,13 +17,19 @@ class MissionExportScreen extends ConsumerWidget {
           const Text('Export Mission Data', style: EelTextStyle.titleLarge),
           const SizedBox(height: 16),
           EelResultCard(
-            leading: Icon(Icons.export, color: EelColors.of(context).primary, size: 32),
+            leading: Icon(Icons.export,
+                color: EelColors.of(context).primary, size: 32),
             title: Text('Export Options', style: EelTextStyle.titleMedium),
-            subtitle: Text('Choose the data format and scope', style: EelTextStyle.bodyMedium),
+            subtitle: Text('Choose the data format and scope',
+                style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 16),
           EelChips(
-            options: const ['CSV', 'PDF', 'JSON'],
+            options: const [
+              ChipOption(label: 'CSV'),
+              ChipOption(label: 'PDF'),
+              ChipOption(label: 'JSON'),
+            ],
             onSelected: (chip) {},
           ),
           const SizedBox(height: 16),

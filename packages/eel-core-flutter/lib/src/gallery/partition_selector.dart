@@ -51,7 +51,9 @@ class PartitionSelection {
   int partitionCount(int totalPartitions) {
     final ratio = (genders.length / Gender.values.length) *
         (ageBuckets.length / AgeBucket.values.length) *
-        (geoPartitions.isEmpty ? 1.0 : geoPartitions.length / 47.0) * // 47 Kenya counties
+        (geoPartitions.isEmpty
+            ? 1.0
+            : geoPartitions.length / 47.0) * // 47 Kenya counties
         (fingers.length / FingerPosition.values.length) *
         (hands.length / DominantHand.values.length) *
         (qualities.length / RidgeQuality.values.length) *
@@ -63,7 +65,8 @@ class PartitionSelection {
   /// Estimated 1:N search time given a total fingerprint count.
   /// Assumes 0.5ms per comparison (FAP60 + bozorth3 on device CPU).
   Duration estimatedSearchTime(int totalFingerprints) {
-    final candidates = (totalFingerprints / partitionCount(totalPartitions: totalFingerprints)).round();
+    final candidates =
+        (totalFingerprints / partitionCount(totalFingerprints)).round();
     final ms = candidates * 0.5;
     return Duration(milliseconds: ms.round());
   }
@@ -82,27 +85,45 @@ class PartitionSelection {
   }
 
   /// Compound key (debug / display).
-  String toKey(Gender g, AgeBucket a, String geo, FingerPosition f, DominantHand h, RidgeQuality q) =>
+  String toKey(Gender g, AgeBucket a, String geo, FingerPosition f,
+          DominantHand h, RidgeQuality q) =>
       '$g|$a|$geo|${f.name}|${h.name}|$q';
 }
 
 enum Gender { male, female, other }
+
 enum AgeBucket { minor, youngAdult, middleAged, senior, elderly }
+
 enum FingerPosition {
-  leftThumb, leftIndex, leftMiddle, leftRing, leftLittle,
-  rightThumb, rightIndex, rightMiddle, rightRing, rightLittle
+  leftThumb,
+  leftIndex,
+  leftMiddle,
+  leftRing,
+  leftLittle,
+  rightThumb,
+  rightIndex,
+  rightMiddle,
+  rightRing,
+  rightLittle
 }
+
 enum DominantHand { left, right, ambidextrous }
+
 enum RidgeQuality { high, medium, low }
+
 enum DiasporaStatus { inCountry, diaspora, newcomer }
+
 enum EnrollmentEra { e2017_2019, e2020_2022, e2023_2025, e2026_plus }
 
 extension GenderX on Gender {
   String get label {
     switch (this) {
-      case Gender.male: return 'Male';
-      case Gender.female: return 'Female';
-      case Gender.other: return 'Other';
+      case Gender.male:
+        return 'Male';
+      case Gender.female:
+        return 'Female';
+      case Gender.other:
+        return 'Other';
     }
   }
 }
@@ -110,11 +131,16 @@ extension GenderX on Gender {
 extension AgeBucketX on AgeBucket {
   String get label {
     switch (this) {
-      case AgeBucket.minor: return '0-17';
-      case AgeBucket.youngAdult: return '18-35';
-      case AgeBucket.middleAged: return '36-55';
-      case AgeBucket.senior: return '56-75';
-      case AgeBucket.elderly: return '76+';
+      case AgeBucket.minor:
+        return '0-17';
+      case AgeBucket.youngAdult:
+        return '18-35';
+      case AgeBucket.middleAged:
+        return '36-55';
+      case AgeBucket.senior:
+        return '56-75';
+      case AgeBucket.elderly:
+        return '76+';
     }
   }
 }
@@ -122,16 +148,26 @@ extension AgeBucketX on AgeBucket {
 extension FingerPositionX on FingerPosition {
   String get label {
     switch (this) {
-      case FingerPosition.leftThumb: return 'Left Thumb';
-      case FingerPosition.leftIndex: return 'Left Index';
-      case FingerPosition.leftMiddle: return 'Left Middle';
-      case FingerPosition.leftRing: return 'Left Ring';
-      case FingerPosition.leftLittle: return 'Left Little';
-      case FingerPosition.rightThumb: return 'Right Thumb';
-      case FingerPosition.rightIndex: return 'Right Index';
-      case FingerPosition.rightMiddle: return 'Right Middle';
-      case FingerPosition.rightRing: return 'Right Ring';
-      case FingerPosition.rightLittle: return 'Right Little';
+      case FingerPosition.leftThumb:
+        return 'Left Thumb';
+      case FingerPosition.leftIndex:
+        return 'Left Index';
+      case FingerPosition.leftMiddle:
+        return 'Left Middle';
+      case FingerPosition.leftRing:
+        return 'Left Ring';
+      case FingerPosition.leftLittle:
+        return 'Left Little';
+      case FingerPosition.rightThumb:
+        return 'Right Thumb';
+      case FingerPosition.rightIndex:
+        return 'Right Index';
+      case FingerPosition.rightMiddle:
+        return 'Right Middle';
+      case FingerPosition.rightRing:
+        return 'Right Ring';
+      case FingerPosition.rightLittle:
+        return 'Right Little';
     }
   }
 }
@@ -139,9 +175,12 @@ extension FingerPositionX on FingerPosition {
 extension DominantHandX on DominantHand {
   String get label {
     switch (this) {
-      case DominantHand.left: return 'Left';
-      case DominantHand.right: return 'Right';
-      case DominantHand.ambidextrous: return 'Ambidextrous';
+      case DominantHand.left:
+        return 'Left';
+      case DominantHand.right:
+        return 'Right';
+      case DominantHand.ambidextrous:
+        return 'Ambidextrous';
     }
   }
 }
@@ -149,9 +188,12 @@ extension DominantHandX on DominantHand {
 extension RidgeQualityX on RidgeQuality {
   String get label {
     switch (this) {
-      case RidgeQuality.high: return 'High (NFIQ 1-2)';
-      case RidgeQuality.medium: return 'Medium (NFIQ 3)';
-      case RidgeQuality.low: return 'Low (NFIQ 4-5)';
+      case RidgeQuality.high:
+        return 'High (NFIQ 1-2)';
+      case RidgeQuality.medium:
+        return 'Medium (NFIQ 3)';
+      case RidgeQuality.low:
+        return 'Low (NFIQ 4-5)';
     }
   }
 }
@@ -159,9 +201,12 @@ extension RidgeQualityX on RidgeQuality {
 extension DiasporaStatusX on DiasporaStatus {
   String get label {
     switch (this) {
-      case DiasporaStatus.inCountry: return 'In-Country';
-      case DiasporaStatus.diaspora: return 'Diaspora';
-      case DiasporaStatus.newcomer: return 'Newcomer';
+      case DiasporaStatus.inCountry:
+        return 'In-Country';
+      case DiasporaStatus.diaspora:
+        return 'Diaspora';
+      case DiasporaStatus.newcomer:
+        return 'Newcomer';
     }
   }
 }
@@ -169,10 +214,14 @@ extension DiasporaStatusX on DiasporaStatus {
 extension EnrollmentEraX on EnrollmentEra {
   String get label {
     switch (this) {
-      case EnrollmentEra.e2017_2019: return '2017-2019';
-      case EnrollmentEra.e2020_2022: return '2020-2022';
-      case EnrollmentEra.e2023_2025: return '2023-2025';
-      case EnrollmentEra.e2026_plus: return '2026+';
+      case EnrollmentEra.e2017_2019:
+        return '2017-2019';
+      case EnrollmentEra.e2020_2022:
+        return '2020-2022';
+      case EnrollmentEra.e2023_2025:
+        return '2023-2025';
+      case EnrollmentEra.e2026_plus:
+        return '2026+';
     }
   }
 }
@@ -195,10 +244,12 @@ class DeduplicationEstimateCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final time = selection.humanReadableEstimate(totalFingerprints);
-    final partitions = selection.partitionCount(totalPartitions: totalFingerprints);
+    final partitions = selection.partitionCount(totalFingerprints);
     return EelResultCard(
-      leading: Icon(Icons.timer, color: EelColors.of(context).primary, size: 32),
-      title: Text('Estimated dedup time: $time', style: EelTextStyle.titleMedium),
+      leading:
+          Icon(Icons.timer, color: EelColors.of(context).primary, size: 32),
+      title:
+          Text('Estimated dedup time: $time', style: EelTextStyle.titleMedium),
       subtitle: Text(
         'Searching $partitions partition(s) out of ~6,300 total.\n'
         'Lower partitions = faster search, narrower scope.\n'
@@ -246,11 +297,15 @@ class PartitionSelector extends ConsumerWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          DeduplicationEstimateCard(selection: selection, totalFingerprints: totalFingerprints),
+          DeduplicationEstimateCard(
+              selection: selection, totalFingerprints: totalFingerprints),
           const SizedBox(height: 16),
           Text('Gender', style: EelTextStyle.titleSmall),
           EelChips(
-            options: Gender.values.map((g) => ChipOption(label: g.label, selected: selection.genders.contains(g))).toList(),
+            options: Gender.values
+                .map((g) => ChipOption(
+                    label: g.label, selected: selection.genders.contains(g)))
+                .toList(),
             onToggle: (i) => toggleGender(Gender.values[i]),
           ),
           // ... more dimensions

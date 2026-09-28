@@ -24,28 +24,41 @@ class ShiftReportScreen extends ConsumerWidget {
               children: [
                 // Summary overview.
                 EelResultCard(
-                  leading: Icon(Icons.check_circle, color: colors.primary, size: 32),
-                  title: Text('Shift Complete', style: EelTextStyle.titleMedium),
-                  subtitle: Text('12 electors processed, all signatures verified', style: EelTextStyle.bodyMedium),
+                  leading:
+                      Icon(Icons.check_circle, color: colors.primary, size: 32),
+                  title:
+                      Text('Shift Complete', style: EelTextStyle.titleMedium),
+                  subtitle: Text(
+                      '12 electors processed, all signatures verified',
+                      style: EelTextStyle.bodyMedium),
                 ),
                 const SizedBox(height: 16),
                 // Diagnostics card.
                 EelResultCard(
-                  leading: Icon(Icons.diagnostics, color: colors.primaryMuted, size: 32),
+                  leading: Icon(Icons.diagnostics,
+                      color: colors.primaryMuted, size: 32),
                   title: Text('Diagnostics', style: EelTextStyle.titleMedium),
-                  subtitle: Text('Kit health: OK • Battery: 78% • Firmware current', style: EelTextStyle.bodyMedium),
+                  subtitle: Text(
+                      'Kit health: OK • Battery: 78% • Firmware current',
+                      style: EelTextStyle.bodyMedium),
                 ),
                 const SizedBox(height: 16),
                 // Open tickets / incidents.
                 EelResultCard(
-                  leading: Icon(Icons.task_alt, color: colors.primaryMuted, size: 32),
+                  leading: Icon(Icons.task_alt,
+                      color: colors.primaryMuted, size: 32),
                   title: Text('Open Items', style: EelTextStyle.titleMedium),
-                  subtitle: Text('3 tickets pending — 1 standard, 2 urgent', style: EelTextStyle.bodyMedium),
+                  subtitle: Text('3 tickets pending — 1 standard, 2 urgent',
+                      style: EelTextStyle.bodyMedium),
                 ),
                 const SizedBox(height: 16),
                 // Quick actions.
                 EelChips(
-                  options: const ['Finalize Report', 'Submit to BFF', 'Cancel'],
+                  options: const [
+                    ChipOption(label: 'Finalize Report'),
+                    ChipOption(label: 'Submit to BFF'),
+                    ChipOption(label: 'Cancel'),
+                  ],
                   onSelected: (_) {},
                 ),
                 const SizedBox(height: 16),

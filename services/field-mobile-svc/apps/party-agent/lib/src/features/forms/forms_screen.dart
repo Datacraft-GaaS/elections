@@ -15,16 +15,23 @@ class FormsScreen extends ConsumerWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Form Library', style: EelTextStyle.titleLarge, textAlign: TextAlign.center),
+          const Text('Form Library',
+              style: EelTextStyle.titleLarge, textAlign: TextAlign.center),
           const SizedBox(height: 24),
           EelResultCard(
-            leading: Icon(Icons.description, color: EelColors.of(context).primary, size: 32),
+            leading: Icon(Icons.description,
+                color: EelColors.of(context).primary, size: 32),
             title: Text('Available Forms', style: EelTextStyle.titleMedium),
-            subtitle: Text('Select a form to fill or view', style: EelTextStyle.bodyMedium),
+            subtitle: Text('Select a form to fill or view',
+                style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 16),
           EelChips(
-            options: const ['Voter\'s Register', 'Candidate Application', 'Dispute Form'],
+            options: const [
+              ChipOption(label: 'Voter\'s Register'),
+              ChipOption(label: 'Candidate Application'),
+              ChipOption(label: 'Dispute Form'),
+            ],
             onSelected: (chip) {},
           ),
           const SizedBox(height: 16),

@@ -1,68 +1,104 @@
 /// OTP service implementation (G01)
 /// Integrates with integrations/telco-sms/ adapter for actual SMS/voice OTP delivery.
-/// Calls: sendOtp(phone_number) → SMS/voice via telco-sms adapter, logs audit event.
-/// M5 auditId: otp-{timestamp}
+/// Calls: sendOtp(phoneNumber) -> SMS/voice via telco-sms adapter, logs an audit entry.
+///
+/// Every call writes a 5-axis audit entry (where / when / who / why / how) via
+/// [AuditService], per AGENTS.md and ADR-0021.
 
 import 'dart:async';
 import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
+
 import 'package:eel_core_flutter/src/audit/audit_service.dart';
 
 class OtpService {
-  static const String _baseUrl = 'https://api.telco-sms.internal/v1/otp';
-  static const Duration _timeout = Duration(seconds: 10);
+  OtpService({
+    required this.audit,
+    this.appName = 'eel',
+    this.baseUrl = _defaultBaseUrl,
+    this.timeout = _defaultTimeout,
+  });
 
-  /// Send OTP to phone number using telco-sms adapter.
-  /// M5 audit event emitted on every call.
-  static Future<OtpResponse> sendOtp(String phoneNumber) async {
-    final String auditId = 'otp-${Uuid().v7()}';
-    final Map<String, dynamic> request = {'phoneNumber': phoneNumber};
-    final String payload = jsonEncode(request);
+  static const String _defaultBaseUrl = 'https://api.telco-sms.internal/v1/otp';
+  static const Duration _defaultTimeout = Duration(seconds: 10);
+
+  final AuditService audit;
+  final String appName;
+  final String baseUrl;
+  final Duration timeout;
+
+  /// Send OTP to phone number using the telco-sms adapter.
+  /// An audit entry is emitted on every outcome: sent, failed, or exception.
+  Future<OtpResponse> sendOtp(String phoneNumber) async {
+    final auditId = 'otp-${const Uuid().v7()}';
+    final payload = jsonEncode(<String, dynamic>{'phoneNumber': phoneNumber});
 
     try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/send'),
-        headers: {'Content-Type': 'application/json'},
-        body: payload,
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/send'),
+            headers: {'Content-Type': 'application/json'},
+            body: payload,
+          )
+          .timeout(timeout);
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> responseJson = jsonDecode(response.body);
-        final auditEvent = AuditEvent(
-          auditId: auditId,
-          timestamp: DateTime.now(),
-          eventType: 'otp_sent',
-          userId: phoneNumber,
-          details: responseJson,
-          proofHash: sha256(response.body).toString(),
+        final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+        await _log(
+          action: 'otp_sent',
+          target: phoneNumber,
+          reason: 'user requested an OTP',
+          method: 'telco-sms',
+          proof: response.body,
         );
-        await AuditService.instance.emitEvent(auditEvent);
-        return OtpResponse.success(responseJson['token']?.toString());
-      } else {
-        final auditEvent = AuditEvent(
-          auditId: auditId,
-          timestamp: DateTime.now(),
-          eventType: 'otp_send_failed',
-          userId: phoneNumber,
-          details: {'error': response.statusCode, 'body': response.body},
-          proofHash: sha256('${response.statusCode}${response.body}').toString(),
-        );
-        await AuditService.instance.emitEvent(auditEvent);
-        return OtpResponse.failure('HTTP ${response.statusCode}');
+        return OtpResponse.ok(decoded['token']?.toString() ?? '');
       }
-    } on Exception catch (e) {
-      final auditEvent = AuditEvent(
-        auditId: auditId,
-        timestamp: DateTime.now(),
-        eventType: 'otp_send_exception',
-        userId: phoneNumber,
-        details: {'exception': e.toString()},
-        proofHash: sha256(e.toString()).toString(),
+
+      await _log(
+        action: 'otp_send_failed',
+        target: phoneNumber,
+        reason: 'adapter returned HTTP ${response.statusCode}',
+        method: 'telco-sms',
+        proof: '${response.statusCode}${response.body}',
       );
-      await AuditService.instance.emitEvent(auditEvent);
-      return OtpResponse.failure(e.toString());
+      return OtpResponse.err('HTTP ${response.statusCode}');
+    } on Exception catch (e) {
+      await _log(
+        action: 'otp_send_exception',
+        target: phoneNumber,
+        reason: e.toString(),
+        method: 'telco-sms',
+        proof: e.toString(),
+      );
+      return OtpResponse.err(e.toString());
     }
+  }
+
+  Future<void> _log({
+    required String action,
+    required String target,
+    required String reason,
+    required String method,
+    required String proof,
+  }) {
+    return audit.log(
+      actorId: target,
+      actorRole: 'CLERK',
+      action: action,
+      target: target,
+      reason: reason,
+      // The adapter call is server-side; the station's location is not known to
+      // this layer. Left explicit rather than invented.
+      whereGps: 'unknown',
+      howMethod: method,
+      howProofHash: sha256.convert(utf8.encode(proof)).toString(),
+      // This layer holds no signing key; the adapter signs its own receipt.
+      howSignature: 'unsigned',
+      isOffline: false,
+    );
   }
 }
 
@@ -74,6 +110,9 @@ class OtpResponse {
 
   OtpResponse._(this.success, {this.token, this.error});
 
-  static OtpResponse success(String token) => OtpResponse._(true, token: token);
-  static OtpResponse failure(String error) => OtpResponse._(false, error: error);
+  /// Named ok/err rather than success/failure: the class already has an
+  /// instance field `success`, and Dart forbids a static and an instance
+  /// member of the same name on one class.
+  static OtpResponse ok(String token) => OtpResponse._(true, token: token);
+  static OtpResponse err(String error) => OtpResponse._(false, error: error);
 }
