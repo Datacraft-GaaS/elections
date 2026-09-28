@@ -18,6 +18,8 @@ dependencies:
   eel_drivers:
     path: ../../../../packages/eel_drivers
 
+  eel_bvi_kit:
+    path: ../bvi-kit
   eel_kit_sdk:
     path: ../../../../packages/kit-sdk-flutter
 

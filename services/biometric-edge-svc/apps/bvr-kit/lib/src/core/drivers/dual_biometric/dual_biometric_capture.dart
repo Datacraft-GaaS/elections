@@ -2,16 +2,20 @@
 /// Captures BOTH fingerprint (FAP60) AND iris (AntIris) in a single flow.
 /// Logs every capture to AuditService with all 5 axes: where/when/who/why/how.
 import 'dart:convert';
-import 'package:eel_core_flutter/src/audit/audit_model.dart';
 import 'package:eel_core_flutter/src/audit/audit_service.dart';
 import 'package:eel_core_flutter/src/location/location_service.dart';
-import 'package:eel_core_flutter/src/biometric/biometric_policy.dart';
-import 'package:eel_kit_sdk/kit_sdk_flutter.dart' hide EelSigningKey;
+import 'package:eel_kit_sdk/eel_kit_sdk.dart'
+    hide EelSigningKey, LocationService;
 import 'package:eel_kit_sdk/src/bundle_security.dart';
 import 'package:crypto/crypto.dart' as crypto;
+import 'package:uuid/uuid.dart';
 import 'package:eel_core_flutter/src/outbox/biometric_submission_outbox.dart';
-import 'fap60/fap60_driver.dart';
+import '../fap60/fap60_driver.dart';
 import 'bvi_driver.dart';
+// AntIrisResult only; this package has its own AntIrisDriver, which shadows
+// the bvi-kit one, so the imported driver is hidden to keep it unambiguous.
+import 'package:eel_bvi_kit/src/core/drivers/antiris/antiris_driver.dart'
+    hide AntIrisDriver;
 
 /// Result of a dual biometric capture (fingerprint + iris).
 class DualBiometricResult {
@@ -48,11 +52,19 @@ class DualBiometricCapture {
 		AntIrisDriver? iris,
 		required AuditService audit,
 		LocationService? location,
-	})  : _outbox = outbox ?? BiometricSubmissionOutbox(),
-			_fp = fp ?? Fap60Driver(),
+	})  : _fp = fp ?? Fap60Driver(),
 			_iris = iris ?? AntIrisDriver(),
 			_audit = audit,
-			_location = location ?? LocationService();
+			_location = location ?? LocationService() {
+		// The outbox runs local dedup, which means matching, so it needs the
+		// drivers' match functions. They cannot be passed in an initialiser
+		// list because _fp and _iris are being assigned in the same list.
+		_outbox = outbox ??
+			BiometricSubmissionOutbox(
+				matchFingerprint: _fp.match,
+				matchIris: _iris.match,
+			);
+	}
 
 	/// 2-factor enrollment: capture fingerprint THEN iris.
 	/// Returns DualBiometricResult with auditId, proofHash, and both biometrics.
@@ -62,9 +74,11 @@ class DualBiometricCapture {
 		required String target,        // station_id or form_id
 		required String reason,        // Justification (FR-010 etc.)
 		required String sessionId,
+		required String enrolledFpTemplate,
+		required String enrolledIrisTemplate,
 		bool isOffline = false,
 	}) async {
-		final auditId = str(uuid7());
+		final auditId = const Uuid().v7();
 		final whenUtc = DateTime.now().toUtc().toIso8601String();
 		final whereGps = _location.capture();
 
@@ -123,14 +137,32 @@ class DualBiometricCapture {
 			actorId: actorId,
 			actorRole: actorRole,
 			fpTemplate: fpResult.templateBase64,
-			irisTemplate: irisResult.templateBase64,
+			irisTemplate: irisResult.isoBase64,
 			fpQualityScore: fpResult.qualityScore,
-			irisQualityScore: irisResult.qualityScore,
+			irisQualityScore: irisResult.quality ?? 0,
 			whereGps: whereGps,
 			auditId: auditId,
 			proofHash: proofHash,
 			signature: signature,
 		);
+
+		// Local dedup ran but its verdict was discarded, so a duplicate capture
+		// was reported as a fresh valid enrollment. A duplicate is not a new
+		// enrollment: report it as such, keeping the captured biometrics and
+		// pointing at the submission that already exists.
+		if (outboxResult.dedupResult.isDuplicate) {
+			return DualBiometricResult(
+				fp: FingerprintResult.fromFap60(fpResult),
+				iris: IrisResult.fromAntIris(irisResult),
+				isValid: false,
+				auditId: auditId,
+				proofHash: proofHash,
+				error: 'duplicate_submission:'
+					'${outboxResult.dedupResult.matchType.name}'
+					'${outboxResult.dedupResult.existingSubmissionId == null ? '' : ' '
+						'existing=${outboxResult.dedupResult.existingSubmissionId}'}',
+			);
+		}
 
 		return DualBiometricResult(
 			fp: FingerprintResult.fromFap60(fpResult),
@@ -148,9 +180,11 @@ class DualBiometricCapture {
 		required String target,
 		required String reason,
 		required String sessionId,
+		required String enrolledFpTemplate,
+		required String enrolledIrisTemplate,
 		bool isOffline = false,
 	}) async {
-		final auditId = str(uuid7());
+		final auditId = const Uuid().v7();
 		final whenUtc = DateTime.now().toUtc().toIso8601String();
 		final whereGps = _location.capture();
 

@@ -1,6 +1,6 @@
 /// BVI standalone driver (re-exported for dual biometric flow).
 import 'package:flutter/services.dart';
-import 'antiris/antiris_driver.dart';
+import 'package:eel_bvi_kit/src/core/drivers/antiris/antiris_driver.dart';
 
 class AntIrisDriver {
   static const _channel = MethodChannel('eel.bvi/iris');

@@ -5,6 +5,8 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
+import 'fap60/fap60_driver.dart';
 
 /// MRZ (Machine Readable Zone) scan result
 class MrzScanResult {

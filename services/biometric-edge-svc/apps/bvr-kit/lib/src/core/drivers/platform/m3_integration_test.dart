@@ -3,8 +3,8 @@
 /// Uses mock drivers that return valid results (not errors) to verify feature-screen logic.
 
 import 'package:flutter_test/flutter_test.dart';
-import '../drivers/bvr_driver.dart';
-import '../session/m3_session.dart';
+import '../bvr_driver.dart';
+import '../../session/m3_session.dart';
 
 /// Mock driver for test environments — simulates hardware success.
 class MockBvrDriver implements BvrDriver {
@@ -27,7 +27,9 @@ class MockBvrDriver implements BvrDriver {
   Future<String> captureSignature() async => 'SIGNATURE_DATA';
 
   @override
-  Future<String> uploadEvidence(String filePath, {void Function(double)? onProgress}) async => 'EVIDENCE_ID_001';
+  Future<EvidenceUploadResult> uploadEvidence(String filePath,
+      {void Function(double)? onProgress}) async =>
+      const EvidenceUploadResult(evidenceId: 'EVIDENCE_ID_001', uploaded: true);
 
   @override
   Future<bool> selfCheck() async => true;
