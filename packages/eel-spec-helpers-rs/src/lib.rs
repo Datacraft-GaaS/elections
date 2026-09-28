@@ -3,10 +3,50 @@
 #![warn(missing_docs)]
 
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, LazyLock, Mutex};
 
 use serde::Serialize;
 use serde_json::{json, Value};
+
+/// Character predicates mirroring the anchored patterns on the BVR contract's
+/// `Voter` schema (`packages/openapi-contracts/bvr/openapi.yaml`):
+/// - `national_id`: `^[0-9]{8}$`
+/// - `phone`: `^\+254[0-9]{9}$`
+/// - `polling_station_code`: `^[A-Z0-9]{6,12}$`
+///
+/// The workspace dependency set has no regex crate, so these are hand-rolled and
+/// must be kept in step with the contract by hand. `tests/bvr_validation.rs`
+/// asserts each against the literals in the spec.
+static BVR_PATTERNS: LazyLock<[(&'static str, fn(&str) -> bool); 3]> = LazyLock::new(|| {
+    [
+        ("national_id", |s: &str| {
+            s.len() == 8 && s.bytes().all(|b| b.is_ascii_digit())
+        }),
+        ("phone", |s: &str| {
+            // "+254" is 4 bytes, leaving 9 digits for the 13-character E.164 form.
+            s.len() == 13
+                && s.as_bytes().starts_with(b"+254")
+                && s.as_bytes()[4..].iter().all(u8::is_ascii_digit)
+        }),
+        ("polling_station_code", |s: &str| {
+            (6..=12).contains(&s.len())
+                && s.bytes()
+                    .all(|b| b.is_ascii_uppercase() || b.is_ascii_digit())
+        }),
+    ]
+});
+
+/// Returns `true` when `value` satisfies the BVR contract pattern for `field`.
+///
+/// Unknown fields return `true`, so a caller validating only the fields it cares
+/// about need not enumerate the whole contract. This validates the three anchored
+/// patterns on `Voter` and nothing else; it is not a schema engine.
+pub fn matches_bvr_pattern(field: &str, value: &str) -> bool {
+    BVR_PATTERNS
+        .iter()
+        .find(|(name, _)| *name == field)
+        .is_none_or(|(_, check)| check(value))
+}
 
 /// Build a paginated response envelope `{"items": [...], "meta": {...}}`.
 /// Mirrors the `page` helper duplicated across spec handlers.
