@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:eel_kit_sdk_example/main.dart';
+import 'package:eel_kit_sdk/main.dart';
 
 void main() {
   testWidgets('example app renders the SDK demo screen', (tester) async {

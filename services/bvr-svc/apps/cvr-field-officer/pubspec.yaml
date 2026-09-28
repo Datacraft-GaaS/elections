@@ -53,6 +53,8 @@ dependencies:
   # Time zones
   timezone: ^0.9.4
 
+
+  dio: ^5.4.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

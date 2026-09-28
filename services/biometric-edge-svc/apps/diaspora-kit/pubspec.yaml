@@ -14,8 +14,7 @@ dependencies:
   # Shared design system (EelScaffold, EelColors, EelTextStyle). Imported
   # across lib/, so it is a real dependency rather than a stray import.
   eel_design:
-    path: ../../../../packages/eel_design
-
+    path: ../../../../packages/design-system/flutter
   eel_kit_sdk:
     path: ../../../../packages/kit-sdk-flutter
 
@@ -35,6 +34,12 @@ dependencies:
   isar: ^3.1.0
   isar_flutter_libs: ^3.1.0
 
+
+  flutter_secure_storage: ^9.0.0
+
+  hooks_riverpod: ^2.5.0
+
+  uuid: ^4.5.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -4,6 +4,7 @@
 // these (docs/mobile/plan.md §5.2).
 
 export 'src/theme/eel_colors.dart';
+export 'src/theme/eel_type.dart';
 export 'src/theme/eel_theme.dart';
 export 'src/theme/tokens.dart';
 export 'src/widgets/eel_banner.dart';

@@ -21,8 +21,7 @@ dependencies:
   # Shared design system (EelScaffold, EelColors, EelTextStyle). Imported by
   # lib/src/gallery, so it is a real dependency rather than a stray import.
   eel_design:
-    path: ../eel_design
-
+    path: ../design-system/flutter
   # State
   flutter_riverpod: ^2.5.0
   hooks_riverpod: ^2.5.0
@@ -45,6 +44,12 @@ dependencies:
   mockito: ^5.4.6
   equatable: ^2.1.0
 
+
+  flutter_hooks: ^0.20.5
+
+  flutter_secure_storage: ^9.0.0
+
+  http: ^1.2.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
