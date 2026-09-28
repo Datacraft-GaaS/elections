@@ -921,3 +921,71 @@ fn a_workflow_with_no_captures_compiles() {
     let result = validate_submission(&workflow, &valid_submission(), &[]);
     assert!(result.is_ok(), "got {:?}", result.violations);
 }
+
+// ---- single-sided age bounds ------------------------------------------------
+
+#[test]
+fn min_age_alone_is_enforced() {
+    // Regression: a workflow declaring only `min_age_years` used to compile and
+    // then enforce nothing, because the check required both bounds to be set.
+    let mut spec = standard_ke_workflow();
+    spec.data_items[2].constraints.max_age_years = None;
+    let workflow = compile(&spec).expect("a single age bound must compile");
+    assert_eq!(workflow.capture_order.len(), 2);
+
+    let mut submission = valid_submission();
+    submission.insert("dob".to_owned(), json!(under_18_dob()));
+    let result = validate_submission(&workflow, &submission, &both_modalities());
+    assert!(
+        result
+            .violations
+            .iter()
+            .any(|v| matches!(v, ValidationError::AgeOutOfRange { item, .. } if item == "dob")),
+        "min_age alone must be enforced, got {:?}",
+        result.violations
+    );
+}
+
+#[test]
+fn max_age_alone_is_enforced() {
+    let mut spec = standard_ke_workflow();
+    spec.data_items[2].constraints.min_age_years = None;
+    let workflow = compile(&spec).expect("a single age bound must compile");
+    let mut submission = valid_submission();
+    // Someone over 130 is not a plausible citizen; max_age alone must catch it.
+    submission.insert("dob".to_owned(), json!("1800-01-01"));
+    let result = validate_submission(&workflow, &submission, &both_modalities());
+    assert!(
+        result
+            .violations
+            .iter()
+            .any(|v| matches!(v, ValidationError::AgeOutOfRange { item, .. } if item == "dob")),
+        "max_age alone must be enforced, got {:?}",
+        result.violations
+    );
+}
+
+#[test]
+fn a_date_with_no_age_bounds_is_still_parsed() {
+    // No bounds means no age rule, but the value must still be a real date.
+    let mut spec = standard_ke_workflow();
+    spec.data_items[2].constraints.min_age_years = None;
+    spec.data_items[2].constraints.max_age_years = None;
+    let workflow = compile(&spec).unwrap();
+    let mut submission = valid_submission();
+    submission.insert("dob".to_owned(), json!("1990-06-15"));
+    assert!(validate_submission(&workflow, &submission, &both_modalities()).is_ok());
+
+    submission.insert("dob".to_owned(), json!("1990-13-45"));
+    assert!(!validate_submission(&workflow, &submission, &both_modalities()).is_ok());
+}
+
+/// A date of birth that is unambiguously under 18 years old.
+fn under_18_dob() -> String {
+    chrono::Utc::now()
+        .date_naive()
+        .checked_sub_signed(chrono::Duration::days(17 * 365))
+        .expect("subtracting 17 years must succeed")
+        .format("%Y-%m-%d")
+        .to_string()
+}

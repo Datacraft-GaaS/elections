@@ -285,7 +285,13 @@ fn check_options(
     }
 }
 
-/// Validates a date item: parse, then apply age bounds.
+/// Validates a date item.
+///
+/// The value must always parse as a real ISO 8601 calendar date, whatever the
+/// age bounds say -- an earlier version returned early when no bounds were
+/// declared and so accepted values like `1990-13-45`. Age checks then apply
+/// individually, so a workflow declaring only `min_age_years` is enforced on
+/// that bound alone.
 fn check_age(
     name: &str,
     text: &str,
@@ -296,18 +302,15 @@ fn check_age(
     if item.kind != K::Date {
         return;
     }
-    let Some((min_age, max_age)) = item
-        .constraints
-        .min_age_years
-        .zip(item.constraints.max_age_years)
-    else {
-        return;
-    };
 
     let Ok(date) = text.parse::<chrono::NaiveDate>() else {
         out.push(ValidationError::NotADate { item: name.to_owned() });
         return;
     };
+
+    if item.constraints.min_age_years.is_none() && item.constraints.max_age_years.is_none() {
+        return;
+    }
 
     // Whole years elapsed, truncating rather than rounding, so an age band
     // admits someone on the day before their birthday and excludes them the
@@ -318,6 +321,8 @@ fn check_age(
         return;
     };
 
+    let min_age = item.constraints.min_age_years.unwrap_or(0);
+    let max_age = item.constraints.max_age_years.unwrap_or(u16::MAX);
     if years < min_age || years > max_age {
         out.push(ValidationError::AgeOutOfRange {
             item: name.to_owned(),
