@@ -238,6 +238,29 @@ void main() {
     expect(find.text('Wait a minute before retrying.'), findsOneWidget);
     expect(find.textContaining('429'), findsOneWidget);
   });
+
+  // `expand` was accepted and never rendered, so a button asking to be
+  // full-width silently came out natural-width. Assert rendered geometry.
+  //
+  // The parent must pass LOOSE constraints, or the test proves nothing: a
+  // tight SizedBox(width: 300) forces the button to 300 whether or not the
+  // flag is honoured. Center under a 390-wide surface gives the button room to
+  // be narrow, which is the only way the two cases differ.
+  testWidgets('EelButton fullWidth fills the available width',
+      (tester) async {
+    await pumpEel(tester, const Center(child: EelButton(
+      label: 'Submit',
+      fullWidth: true,
+      onPressed: _noop,
+    )));
+    expect(tester.getSize(find.byType(FilledButton)).width, 390);
+  });
+
+  testWidgets('EelButton is natural width without fullWidth', (tester) async {
+    await pumpEel(
+        tester, const Center(child: EelButton(label: 'Submit', onPressed: _noop)));
+    expect(tester.getSize(find.byType(FilledButton)).width, lessThan(390));
+  });
 }
 
 void _noop() {}

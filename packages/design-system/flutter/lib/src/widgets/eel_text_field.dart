@@ -8,7 +8,8 @@ class EelTextField extends StatelessWidget {
     super.key,
     required this.label,
     this.controller,
-    this.hint,
+    this.hintText,
+    @Deprecated('Use hintText') this.hint,
     this.helper,
     this.errorText,
     this.obscureText = false,
@@ -23,6 +24,12 @@ class EelTextField extends StatelessWidget {
 
   final String label;
   final TextEditingController? controller;
+  /// Placeholder shown while the field is empty.
+  final String? hintText;
+
+  /// Deprecated alias for [hintText], which is the name Flutter's own
+  /// [TextField] uses. Reads [hintText] when both are given.
+  @Deprecated('Use hintText, to match TextField.hintText')
   final String? hint;
   final String? helper;
   final String? errorText;
@@ -53,7 +60,7 @@ class EelTextField extends StatelessWidget {
         TextField(
           controller: controller,
           decoration: InputDecoration(
-            hintText: hint,
+            hintText: hintText ?? hint,
             errorText: errorText,
             helperText: helper,
             enabled: enabled,
