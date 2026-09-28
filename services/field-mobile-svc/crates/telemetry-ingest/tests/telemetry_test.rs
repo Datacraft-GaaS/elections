@@ -361,10 +361,30 @@ fn test_batch_all_accepted() {
 // Activity frame downsampler tests
 // ---------------------------------------------------------------------------
 
-fn make_sample(device_id: Uuid, offset_ms: i64, accel_x: f32, accel_y: f32, accel_z: f32) -> MovementSample {
+/// Fixed base instant for the movement-frame tests.
+///
+/// `downsample` buckets samples by truncated second, so a test that derives each
+/// sample from its own `Utc::now()` straddles a second boundary whenever the
+/// loop happens to cross one, and then produces two frames instead of one. The
+/// failure is a property of the wall clock, not of the downsampler. Anchoring to
+/// a fixed instant makes the bucket assertions deterministic.
+fn frame_base() -> chrono::DateTime<Utc> {
+    chrono::DateTime::parse_from_rfc3339("2026-08-01T10:00:00Z")
+        .expect("static base instant")
+        .with_timezone(&Utc)
+}
+
+fn make_sample_at(
+    base: chrono::DateTime<Utc>,
+    device_id: Uuid,
+    offset_ms: i64,
+    accel_x: f32,
+    accel_y: f32,
+    accel_z: f32,
+) -> MovementSample {
     MovementSample {
         device_id,
-        sampled_at: Utc::now() + Duration::milliseconds(offset_ms),
+        sampled_at: base + Duration::milliseconds(offset_ms),
         accel_x,
         accel_y,
         accel_z,
@@ -379,14 +399,35 @@ fn make_sample(device_id: Uuid, offset_ms: i64, accel_x: f32, accel_y: f32, acce
     }
 }
 
+fn make_sample(device_id: Uuid, offset_ms: i64, accel_x: f32, accel_y: f32, accel_z: f32) -> MovementSample {
+    make_sample_at(frame_base(), device_id, offset_ms, accel_x, accel_y, accel_z)
+}
+
 #[test]
 fn test_downsample_single_second_produces_one_frame() {
     let device_id = Uuid::now_v7();
-    // 5 samples all within the same second (< 1000ms apart).
-    let samples: Vec<_> = (0..5).map(|i| make_sample(device_id, i * 100, 0.1, 0.0, 9.81)).collect();
+    // 5 samples all within the same second (< 1000ms apart), anchored to a
+    // fixed instant so the result does not depend on the wall clock.
+    let base = frame_base();
+    let samples: Vec<_> =
+        (0..5).map(|i| make_sample_at(base, device_id, i * 100, 0.1, 0.0, 9.81)).collect();
     let frames = downsample(samples);
     assert_eq!(frames.len(), 1);
     assert_eq!(frames[0].device_id, device_id);
+}
+
+#[test]
+fn test_downsample_samples_straddling_a_second_produce_two_frames() {
+    // The complement of the test above, and the behaviour the previous version
+    // was accidentally sensitive to: samples either side of a second boundary
+    // belong to different buckets.
+    let device_id = Uuid::now_v7();
+    let base = frame_base();
+    let samples: Vec<_> = (0..5)
+        .map(|i| make_sample_at(base, device_id, 900 + i * 100, 0.1, 0.0, 9.81))
+        .collect();
+    let frames = downsample(samples);
+    assert_eq!(frames.len(), 2, "900ms..1300ms spans two second buckets");
 }
 
 #[test]
@@ -572,7 +613,7 @@ async fn test_merkle_snapshot_round_trip_stub() {
 fn make_ping(device_id: Uuid, polygon_ref: &str, offset_secs: i64) -> LocationPing {
     LocationPing {
         device_id,
-        occurred_at: Utc::now() + Duration::seconds(offset_secs),
+        occurred_at: frame_base() + Duration::seconds(offset_secs),
         polygon_ref: polygon_ref.to_owned(),
     }
 }
