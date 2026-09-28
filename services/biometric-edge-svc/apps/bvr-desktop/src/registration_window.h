@@ -9,6 +9,7 @@
 #include <QLabel>
 #include <QMap>
 #include <QMainWindow>
+#include <QByteArray>
 #include <QStringList>
 #include <QStackedWidget>
 #include <QTextEdit>
@@ -34,6 +35,7 @@ class RegistrationWindow : public QMainWindow {
 
 public:
     RegistrationWindow(Workflow workflow, Store store, QString stationLabel,
+                       QString storePath, QByteArray keyEncryptionKey,
                        QWidget *parent = nullptr);
     ~RegistrationWindow() override = default;
 
@@ -55,10 +57,18 @@ private:
     bool collect(int stepIndex);
     QStringList captureKindsFor(int index) const;
     void updateProgress();
+    /// Persists the store. Called after every seal, so a crash or power loss
+    /// cannot lose completed registrations.
+    void persist();
 
     Workflow workflow_;
     Store store_;
     QString stationLabel_;
+    /// Where the store is persisted, so registrations survive a restart.
+    QString storePath_;
+    /// Seals the data key at rest. Supplied by the caller: a TPM- or
+    /// HSM-backed key in a deployed station.
+    QByteArray keyEncryptionKey_;
     QString operatorId_ = QStringLiteral("unidentified-officer");
 
     QStackedWidget *steps_ = nullptr;

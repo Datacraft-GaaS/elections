@@ -748,6 +748,86 @@ pub unsafe extern "C" fn eel_store_sync_state(store: *const EelStore, err: *mut 
     })
 }
 
+/// Writes the store to `path`, atomically.
+///
+/// # Safety
+/// `path` a valid C string, `kek` 32 readable bytes, `err` a writable `char *`.
+#[no_mangle]
+pub unsafe extern "C" fn eel_store_seal_to_disk(
+    store: *const EelStore,
+    path: *const c_char,
+    kek: *const u8,
+    err: *mut *mut c_char,
+) -> i32 {
+    let outcome = catch_unwind(AssertUnwindSafe(|| {
+        unsafe { clear(err) };
+        if store.is_null() || kek.is_null() {
+            unsafe { give_error(err, "store handle and key-encryption key are required") };
+            return -1;
+        }
+        let Some(path) = (unsafe { as_str(path) }) else {
+            unsafe { give_error(err, "path must be a valid UTF-8 C string") };
+            return -1;
+        };
+        let mut key = [0u8; 32];
+        key.copy_from_slice(unsafe { std::slice::from_raw_parts(kek, 32) });
+
+        let handle: &EelStore = unsafe { &*store };
+        match handle.store.seal_to_disk(std::path::Path::new(path), &key) {
+            Ok(()) => 0,
+            Err(e) => {
+                unsafe { give_error(err, e.to_string()) };
+                -1
+            }
+        }
+    }));
+    outcome.unwrap_or_else(|_| {
+        unsafe { give_error(err, "internal error sealing store to disk") };
+        -1
+    })
+}
+
+/// Checks a public key against the store's, so a restore fails fast.
+///
+/// # Safety
+/// `store` a live handle, `public_key` 32 readable bytes, `err` writable.
+#[no_mangle]
+pub unsafe extern "C" fn eel_store_check_key(
+    store: *const EelStore,
+    public_key: *const u8,
+    err: *mut *mut c_char,
+) -> i32 {
+    let outcome = catch_unwind(AssertUnwindSafe(|| {
+        unsafe { clear(err) };
+        if store.is_null() || public_key.is_null() {
+            unsafe { give_error(err, "store handle and public key are required") };
+            return -1;
+        }
+        let mut candidate = [0u8; 32];
+        candidate.copy_from_slice(unsafe { std::slice::from_raw_parts(public_key, 32) });
+        let handle: &EelStore = unsafe { &*store };
+        if constant_time_eq(&handle.store.public_key(), &candidate) {
+            0
+        } else {
+            1
+        }
+    }));
+    outcome.unwrap_or_else(|_| {
+        unsafe { give_error(err, "internal error checking station key") };
+        -1
+    })
+}
+
+/// Compares two 32-byte keys without an early exit, so a caller learns nothing
+/// from how far the comparison got.
+fn constant_time_eq(a: &[u8; 32], b: &[u8; 32]) -> bool {
+    let mut diff = 0u8;
+    for (x, y) in a.iter().zip(b.iter()) {
+        diff |= x ^ y;
+    }
+    diff == 0
+}
+
 // ---------------------------------------------------------------------------
 // validation
 // ---------------------------------------------------------------------------

@@ -119,6 +119,21 @@ public:
     /// Marks records acknowledged; returns how many newly changed, or -1.
     int markSynced(const QStringList &recordIds, QString *error);
 
+    /// Writes the store to `path`, atomically.
+    ///
+    /// `keyEncryptionKey` must be 32 bytes. The data key is sealed under it and
+    /// never written in the clear, so a deployed station supplies a TPM- or
+    /// HSM-backed key. A build using a software keystore supplies bytes it
+    /// already holds, which protects the file against casual reading but not
+    /// against an attacker who has those bytes.
+    bool sealToDisk(const QString &path, const QByteArray &keyEncryptionKey, QString *error);
+
+    /// Returns `true` when `publicKey` is the key this store signs with.
+    ///
+    /// Used after restoring a store to fail fast, rather than discovering at
+    /// verify time that every record is unreadable.
+    bool checkKey(const QByteArray &publicKey) const;
+
 private:
     explicit Store(EelStore *handle) : handle_(handle) {}
     EelStore *handle_;

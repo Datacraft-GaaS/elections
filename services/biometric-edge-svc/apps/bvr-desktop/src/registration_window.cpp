@@ -33,9 +33,11 @@ namespace {
 } // namespace
 
 RegistrationWindow::RegistrationWindow(Workflow workflow, Store store, QString stationLabel,
+                                       QString storePath, QByteArray keyEncryptionKey,
                                        QWidget *parent)
     : QMainWindow(parent), workflow_(std::move(workflow)), store_(std::move(store)),
-      stationLabel_(std::move(stationLabel)) {
+      stationLabel_(std::move(stationLabel)), storePath_(std::move(storePath)),
+      keyEncryptionKey_(std::move(keyEncryptionKey)) {
     setWindowTitle(tr("eel BVR — %1").arg(stationLabel_));
     resize(900, 680);
 
@@ -356,8 +358,25 @@ bool RegistrationWindow::collect(int stepIndex) {
             return false;
         }
         recordIds_.insert(name, *recordId);
+        // Persist immediately rather than at submit: an officer who completes
+        // four steps and then loses power must not lose the first three.
+        persist();
     }
     return true;
+}
+
+void RegistrationWindow::persist() {
+    if (storePath_.isEmpty() || keyEncryptionKey_.size() != 32) {
+        return;
+    }
+    QString error;
+    if (!store_.sealToDisk(storePath_, keyEncryptionKey_, &error)) {
+        QMessageBox::critical(
+            this, tr("Store could not be saved"),
+            tr("The registration is held in memory but could not be written to "
+               "disk. Continuing risks losing it.\n\n%1\n\n%2")
+                .arg(storePath_, error));
+    }
 }
 
 void RegistrationWindow::onSubmit() {
@@ -390,6 +409,7 @@ void RegistrationWindow::onSubmit() {
                              .arg(state.value(QStringLiteral("pending")).toInt())
                              .arg(store_.instanceId()));
     }
+    persist();
     statusBar()->showMessage(tr("Record sealed. It stays on this station until sync."));
     updateProgress();
 }

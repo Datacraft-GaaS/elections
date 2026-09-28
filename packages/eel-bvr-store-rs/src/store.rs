@@ -23,6 +23,27 @@ pub enum StoreError {
     /// The stored ciphertext was malformed or truncated.
     #[error("record {0} is not a well-formed sealed blob")]
     Malformed(String),
+    /// A filesystem operation failed.
+    #[error("store I/O failed: {0}")]
+    Io(String),
+    /// A value could not be serialised or deserialised.
+    #[error("store serialisation failed: {0}")]
+    Serialisation(String),
+    /// The data key could not be opened under the supplied key-encryption key.
+    #[error("store could not be opened: {0}")]
+    KeyUnwrap(String),
+    /// The file is a store format this build does not understand.
+    #[error("unsupported store format {got}, expected {expected}")]
+    UnsupportedFormat {
+        /// The version found.
+        got: u32,
+        /// The version this build understands.
+        expected: u32,
+    },
+    /// A store read from disk failed its integrity chain, so it will not be
+    /// reopened.
+    #[error("store on disk failed its integrity check and will not be reopened: {0}")]
+    OnDiskTampered(String),
 }
 
 /// An offline registration store belonging to one station instance.
@@ -210,14 +231,157 @@ impl Store {
     }
 }
 
-/// Serialised form of a store, for persisting across restarts.
+/// On-disk form of a store.
+///
+/// The data key is **never** written here in the clear. It is sealed under a
+/// key-encryption key that the caller supplies at open time, and in a deployed
+/// station that KEK lives in a TPM or HSM and never leaves it. Persisting the
+/// DEK in the file would make the record encryption pointless, since the file
+/// would carry both the key and the ciphertext.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StoredStore {
-    /// Station identity.
+    /// Store format version, so a future migration has somewhere to go.
+    pub version: u32,
+    /// Station identity. Public, so an auditor can read who wrote the file.
     pub identity: InstanceIdentity,
-    /// Base64 data key. Only for the dev keystore; a production store keeps
-    /// this in a TPM or HSM and persists a wrapped key instead.
-    pub data_key_b64: String,
-    /// Records in capture order.
-    pub records: Vec<Record>,
+    /// The data key, sealed under the KEK. Base64.
+    pub wrapped_data_key_b64: String,
+    /// Every record, sealed as one blob under the data key. Base64.
+    pub sealed_records_b64: String,
+}
+
+/// Current on-disk format version.
+pub const STORE_FORMAT_VERSION: u32 = 1;
+
+impl Store {
+    /// Writes the store to `path`, atomically.
+    ///
+    /// The whole file is written to a sibling temporary path and then renamed
+    /// over the target, so a crash or power loss mid-write leaves the previous
+    /// store intact rather than a truncated one. On a station that may be
+    /// unplugged at any moment, a partial write that destroys completed
+    /// registrations is the worst available outcome.
+    ///
+    /// `kek` seals the data key. It is not written to disk.
+    pub fn seal_to_disk(&self, path: &std::path::Path, kek: &[u8; 32]) -> Result<(), StoreError> {
+        let records = serde_json::to_vec(&self.records)
+            .map_err(|e| StoreError::Serialisation(e.to_string()))?;
+        let sealed_records = aead::seal(&self.data_key, &records, AAD_STORE.as_bytes())?;
+        let wrapped = aead::seal(kek, &self.data_key, AAD_STORE.as_bytes())?;
+
+        let stored = StoredStore {
+            version: STORE_FORMAT_VERSION,
+            identity: self.identity.clone(),
+            wrapped_data_key_b64: b64(&wrapped),
+            sealed_records_b64: b64(&sealed_records),
+        };
+        let text = serde_json::to_string_pretty(&stored)
+            .map_err(|e| StoreError::Serialisation(e.to_string()))?;
+
+        let temporary = path.with_extension("tmp");
+        std::fs::write(&temporary, text.as_bytes())
+            .map_err(|e| StoreError::Io(e.to_string()))?;
+        // rename(2) is atomic within a filesystem, so a reader sees either the
+        // old file or the new one, never a half-written one.
+        std::fs::rename(&temporary, path).map_err(|e| StoreError::Io(e.to_string()))?;
+        Ok(())
+    }
+
+    /// Reads a store from `path`, unwrapping the data key with `kek`.
+    ///
+    /// Returns the parts, not a [`Store`], because the station signing key
+    /// cannot be recovered from the file: it belongs in a TPM or HSM and is
+    /// never written to disk. Pass the result to [`OpenedStore::reopen`] with
+    /// a keystore that already holds that key.
+    pub fn open_from_disk(path: &std::path::Path, kek: &[u8; 32]) -> Result<OpenedStore, StoreError> {
+        let text = std::fs::read_to_string(path).map_err(|e| StoreError::Io(e.to_string()))?;
+        let stored: StoredStore =
+            serde_json::from_str(&text).map_err(|e| StoreError::Serialisation(e.to_string()))?;
+
+        if stored.version != STORE_FORMAT_VERSION {
+            return Err(StoreError::UnsupportedFormat {
+                got: stored.version,
+                expected: STORE_FORMAT_VERSION,
+            });
+        }
+
+        let wrapped = unb64(&stored.wrapped_data_key_b64)?;
+        let unwrapped =
+            aead::open(kek, &wrapped, AAD_STORE.as_bytes()).map_err(|_| {
+                StoreError::KeyUnwrap("data key did not open under the supplied KEK".to_owned())
+            })?;
+        let mut data_key = [0u8; 32];
+        data_key.copy_from_slice(&unwrapped);
+
+        let sealed = unb64(&stored.sealed_records_b64)?;
+        let plaintext = aead::open(&data_key, &sealed, AAD_STORE.as_bytes()).map_err(|_| {
+            StoreError::KeyUnwrap("record blob did not open under the data key".to_owned())
+        })?;
+        let records: Vec<Record> = serde_json::from_slice(&plaintext)
+            .map_err(|e| StoreError::Serialisation(e.to_string()))?;
+
+        Ok(OpenedStore { identity: stored.identity, records, data_key })
+    }
+}
+
+/// A store read from disk, awaiting the station signing key.
+///
+/// Splitting the reopen lets the caller supply a TPM- or HSM-backed keystore
+/// without the file ever having contained the key.
+#[derive(Debug, Clone)]
+pub struct OpenedStore {
+    identity: InstanceIdentity,
+    records: Vec<Record>,
+    data_key: [u8; 32],
+}
+
+impl OpenedStore {
+    /// The station identity read from the file.
+    pub fn identity(&self) -> &InstanceIdentity {
+        &self.identity
+    }
+
+    /// How many records the file held.
+    pub fn len(&self) -> usize {
+        self.records.len()
+    }
+
+    /// Whether the file held no records.
+    pub fn is_empty(&self) -> bool {
+        self.records.is_empty()
+    }
+
+    /// Rebuilds a usable [`Store`], verifying the integrity chain first.
+    ///
+    /// Verification happens here rather than being left to the caller, so a
+    /// store that fails its chain is never handed out. A tampered file yields
+    /// [`StoreError::OnDiskTampered`], not a store.
+    pub fn reopen(self, keys: SoftwareKeyStore) -> Result<Store, StoreError> {
+        let store = Store { identity: self.identity, keys, records: self.records, data_key: self.data_key };
+        store.verify().map_err(|e| StoreError::OnDiskTampered(e.to_string()))?;
+        Ok(store)
+    }
+}
+
+impl Store {
+    /// The data key, for tests that need to assert it is not written in the
+    /// clear. Deliberately named for a test so production code has no
+    /// reason to call it.
+    pub fn data_key_for_test(&self) -> [u8; 32] {
+        self.data_key
+    }
+}
+
+/// Associated data for the whole-store seal, distinct from the per-record one.
+const AAD_STORE: &str = "eel-bvr-store-file|v1";
+
+/// Base64-encodes bytes.
+fn b64(bytes: &[u8]) -> String {
+    base64::Engine::encode(&base64::engine::general_purpose::STANDARD, bytes)
+}
+
+/// Decodes base64, mapping failure to a store error.
+fn unb64(text: &str) -> Result<Vec<u8>, StoreError> {
+    base64::Engine::decode(&base64::engine::general_purpose::STANDARD, text)
+        .map_err(|e| StoreError::Serialisation(format!("malformed base64: {e}")))
 }

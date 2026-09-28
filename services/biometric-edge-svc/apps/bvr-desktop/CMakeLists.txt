@@ -28,47 +28,64 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
 # --- Rust bridge -----------------------------------------------------------
 #
-# Located from the workspace root so the build fails loudly with a useful
-# message if the static library has not been built, rather than at link time
-# with a wall of undefined symbols.
-set(REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../../..")
-get_filename_component(REPO_ROOT "${REPO_ROOT}" ABSOLUTE)
+# Built by cargo, not CMake, so the workspace's --locked and supply-chain rules
+# apply. CMake drives it via a custom target rather than expecting a developer to
+# run cargo by hand first: a build step that only works if you happened to know
+# an undocumented prerequisite is a build step that gets skipped.
+get_filename_component(REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../../.." ABSOLUTE)
 
-# The bridge is a workspace member, so cargo writes the archive to the shared
-# workspace target directory. The crate-local path is checked too so this still
-# works if the crate is ever built standalone.
-set(BRIDGE_CANDIDATES
-    "${REPO_ROOT}/target/release/libeel_bvr_bridge.a"
-    "${CMAKE_CURRENT_SOURCE_DIR}/bridge/target/release/libeel_bvr_bridge.a"
-)
-
-set(BRIDGE_LIB "")
-foreach(candidate IN LISTS BRIDGE_CANDIDATES)
-    if(EXISTS "${candidate}")
-        set(BRIDGE_LIB "${candidate}")
-        break()
-    endif()
-endforeach()
-
-if(NOT BRIDGE_LIB)
-    set(SEARCHED "")
-    foreach(candidate IN LISTS BRIDGE_CANDIDATES)
-        set(SEARCHED "${SEARCHED}\n  ${candidate}")
-    endforeach()
-    message(FATAL_ERROR
-        "Rust bridge static library not found.\n"
-        "Build it first:\n"
-        "  cargo build -p eel-bvr-bridge --release --locked\n"
-        "Searched:${SEARCHED}")
+set(BRIDGE_LIB "${REPO_ROOT}/target/${CMAKE_BUILD_TYPE}/libeel_bvr_bridge.a")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(BRIDGE_LIB "${REPO_ROOT}/target/debug/libeel_bvr_bridge.a")
+else()
+    set(BRIDGE_LIB "${REPO_ROOT}/target/release/libeel_bvr_bridge.a")
 endif()
 
-message(STATUS "Using Rust bridge: ${BRIDGE_LIB}")
+find_program(CARGO_EXECUTABLE cargo REQUIRED)
+message(STATUS "Cargo: ${CARGO_EXECUTABLE}")
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CARGO_PROFILE_FLAG "")
+else()
+    set(CARGO_PROFILE_FLAG "--release")
+endif()
+
+add_custom_command(
+    OUTPUT "${BRIDGE_LIB}"
+    COMMAND ${CMAKE_COMMAND} -E env
+            "CARGO_TARGET_DIR=${REPO_ROOT}/target"
+            ${CARGO_EXECUTABLE} build -p eel-bvr-bridge ${CARGO_PROFILE_FLAG} --locked
+    WORKING_DIRECTORY "${REPO_ROOT}"
+    COMMENT "Building the Rust bridge (eel-bvr-bridge)"
+    VERBATIM
+)
+add_custom_target(eel_bvr_bridge_build DEPENDS "${BRIDGE_LIB}")
+message(STATUS "Rust bridge: ${BRIDGE_LIB}")
 
 # --- embedded workflow document --------------------------------------------
+#
+# The standard workflow is compiled into the binary, not merely pointed at, so
+# a station works even if the file is absent from disk. It becomes a C++ raw
+# string literal, which avoids having to escape JSON.
 set(STANDARD_WORKFLOW "${CMAKE_CURRENT_SOURCE_DIR}/workflows/standard-enrolment.json")
 if(NOT EXISTS "${STANDARD_WORKFLOW}")
     message(FATAL_ERROR "Standard workflow document missing: ${STANDARD_WORKFLOW}")
 endif()
+file(READ "${STANDARD_WORKFLOW}" STANDARD_WORKFLOW_CONTENT)
+
+# A raw string literal ends at the delimiter, so reject content that would close
+# it early rather than emitting a file that does not compile.
+string(FIND "${STANDARD_WORKFLOW_CONTENT}" ")EELWF\"" DELIMITER_POSITION)
+if(NOT DELIMITER_POSITION EQUAL -1)
+    message(FATAL_ERROR
+        "Workflow document contains the raw-string delimiter and cannot be embedded")
+endif()
+
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/embedded_workflow.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/embedded_workflow.h"
+    @ONLY
+)
 
 # --- executable ------------------------------------------------------------
 add_executable(eel-bvr-desktop
@@ -81,17 +98,17 @@ add_executable(eel-bvr-desktop
 
 target_include_directories(eel-bvr-desktop PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_BINARY_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/bridge/include
-)
-
-target_compile_definitions(eel-bvr-desktop PRIVATE
-    EMBEDDED_WORKFLOW="${STANDARD_WORKFLOW}"
 )
 
 target_link_libraries(eel-bvr-desktop PRIVATE
     Qt6::Widgets
     "${BRIDGE_LIB}"
 )
+
+# Build the bridge before anything that links it.
+add_dependencies(eel-bvr-desktop eel_bvr_bridge_build)
 
 # Rust's std needs these on any Unix host. Order matters for some linkers:
 # the static archive must precede the system libraries that satisfy its

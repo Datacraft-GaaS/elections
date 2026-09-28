@@ -18,21 +18,23 @@
 #include <cstdio>
 #include <utility>
 
+#include "embedded_workflow.h"
 #include "registration_window.h"
 
 namespace {
 
-/// Reads a file, or the embedded default when `path` is empty.
+/// Reads a workflow from `path`, or returns the workflow compiled into the
+/// binary when `path` is empty.
 QString readWorkflowDocument(const QString &path) {
-    if (!path.isEmpty()) {
-        QFile file(path);
-        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            qFatal("cannot open workflow %s: %s", qPrintable(path),
-                   qPrintable(file.errorString()));
-        }
-        return QString::fromUtf8(file.readAll());
+    if (path.isEmpty()) {
+        return QString::fromUtf8(eel::kEmbeddedWorkflow);
     }
-    return QString::fromUtf8(EMBEDDED_WORKFLOW);
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qFatal("cannot open workflow %s: %s", qPrintable(path),
+               qPrintable(file.errorString()));
+    }
+    return QString::fromUtf8(file.readAll());
 }
 
 } // namespace
@@ -64,6 +66,19 @@ int main(int argc, char *argv[]) {
         {QStringLiteral("o"), QStringLiteral("operator")},
         QStringLiteral("Officer identity recorded in every record's provenance."),
         QStringLiteral("id"));
+    const QCommandLineOption storePathOption(
+        {QStringLiteral("f"), QStringLiteral("store")},
+        QStringLiteral("Path to the offline record store. Registrations are "
+                       "written here after every step."),
+        QStringLiteral("path"),
+        QStringLiteral("station-store.json"));
+    const QCommandLineOption kekOption(
+        {QStringLiteral("k"), QStringLiteral("store-key")},
+        QStringLiteral("Hex-encoded 32-byte key-encryption key. In a deployed "
+                       "station this comes from a TPM or HSM; a software build "
+                       "supplies bytes it already holds. The key is never "
+                       "written to disk."),
+        QStringLiteral("hex"));
     const QCommandLineOption checkOption(
         {QStringLiteral("c"), QStringLiteral("check")},
         QStringLiteral("Compile the workflow, verify the store, then exit. No window. "
@@ -71,6 +86,8 @@ int main(int argc, char *argv[]) {
     parser.addOption(workflowOption);
     parser.addOption(stationOption);
     parser.addOption(operatorOption);
+    parser.addOption(storePathOption);
+    parser.addOption(kekOption);
     parser.addOption(checkOption);
     parser.process(app);
 
@@ -113,12 +130,38 @@ int main(int argc, char *argv[]) {
         return 4;
     }
 
+    // 4. Validate the store key before anything else uses it. A key of the
+    //    wrong length is a deployment mistake, and --check exists precisely to
+    //    catch deployment mistakes, so this runs in check mode too rather than
+    //    being skipped by the early return below.
+    QByteArray keyEncryptionKey;
+    const QString kekHex = parser.value(kekOption);
+    if (!kekHex.isEmpty()) {
+        const QByteArray raw = QByteArray::fromHex(kekHex.toLatin1());
+        if (raw.size() != 32) {
+            report(QStringLiteral("Bad store key"),
+                   QStringLiteral("--store-key must decode to exactly 32 bytes, got %1.")
+                       .arg(raw.size()));
+            return 6;
+        }
+        keyEncryptionKey = raw;
+    } else if (!checkOnly) {
+        QMessageBox::warning(
+            nullptr, QStringLiteral("No store key supplied"),
+            QStringLiteral("No key-encryption key was given, so registrations will "
+                           "be held in memory only and will be lost when this station "
+                           "closes.\n\nPass --store-key with 32 hex-encoded bytes."));
+    }
+
     if (checkOnly) {
         QTextStream out(stdout);
         out << "workflow: " << workflow->id() << " (" << workflow->stepCount()
             << " steps)\n"
             << "store: ok, instance " << store->instanceId() << "\n"
-            << "public key: " << store->publicKeyBase64() << "\n";
+            << "public key: " << store->publicKeyBase64() << "\n"
+            << "store key: "
+            << (keyEncryptionKey.size() == 32 ? "ok (32 bytes)" : "NOT SUPPLIED")
+            << "\n";
         return 0;
     }
 
@@ -138,7 +181,8 @@ int main(int argc, char *argv[]) {
     }
 
     eel::RegistrationWindow window(std::move(*workflow), std::move(*store),
-                                   parser.value(stationOption));
+                                   parser.value(stationOption),
+                                   parser.value(storePathOption), keyEncryptionKey);
     window.setOperatorId(operatorId);
     window.show();
 

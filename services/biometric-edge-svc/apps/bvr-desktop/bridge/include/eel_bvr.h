@@ -175,6 +175,23 @@ int eel_store_mark_synced(EelStore *store, const char *const *record_ids, size_t
 /* Sync progress as JSON {"total":N,"synced":N,"pending":N}. Caller frees. */
 char *eel_store_sync_state(const EelStore *store, char **err);
 
+/* Writes the store to `path`, atomically.
+ *
+ * The data key is sealed under `kek` and never written in the clear. On a
+ * deployed station the KEK is supplied by a TPM or HSM and never leaves it; a
+ * software build passes bytes it already holds.
+ *
+ * Returns 0 on success. */
+int eel_store_seal_to_disk(const EelStore *store, const char *path, const unsigned char *kek, char **err);
+
+/* Verifies the station key this store expects, so a caller restoring a store
+ * can fail fast rather than discovering at verify time that every record is
+ * unreadable.
+ *
+ * Returns 0 when the key is the one the store's records were signed with,
+ * 1 when it is not, and -1 on error. */
+int eel_store_check_key(const EelStore *store, const unsigned char *public_key, char **err);
+
 /* =========================== validation ================================== */
 
 /* Validate a submission against a compiled workflow.

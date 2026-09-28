@@ -335,10 +335,16 @@ Exit codes, so a deployment script can branch on them:
 | `3` | Store could not be created |
 | `4` | **Store failed its integrity check** |
 | `5` | No officer identity supplied |
+| `6` | `--store-key` was not 32 bytes |
 
 `4` is the one that matters. A tampered store must not be used for
 registration, and `--check` is how a deployment pipeline finds that out before
 a kit reaches a county.
+
+`--check` also validates the store key, because a smoke test that skips the
+misconfiguration it exists to catch is worse than no smoke test. The key seals
+the data key at rest and is never written to disk; in a deployed station it
+comes from a TPM or HSM and never leaves the hardware.
 
 ---
 

@@ -292,6 +292,43 @@ int Store::markSynced(const QStringList &recordIds, QString *error) {
     return static_cast<int>(marked);
 }
 
+bool Store::sealToDisk(const QString &path, const QByteArray &keyEncryptionKey, QString *error) {
+    if (keyEncryptionKey.size() != 32) {
+        if (error) {
+            *error = QStringLiteral("key-encryption key must be 32 bytes, got %1")
+                         .arg(keyEncryptionKey.size());
+        }
+        return false;
+    }
+    const QByteArray pathUtf8 = path.toUtf8();
+    char *rawError = nullptr;
+    const int rc = eel_store_seal_to_disk(handle_, pathUtf8.constData(),
+                                          reinterpret_cast<const unsigned char *>(
+                                              keyEncryptionKey.constData()),
+                                          &rawError);
+    if (rc != 0) {
+        takeError(rawError, error);
+        return false;
+    }
+    if (rawError) {
+        eel_string_free(rawError);
+    }
+    return true;
+}
+
+bool Store::checkKey(const QByteArray &publicKey) const {
+    if (publicKey.size() != 32) {
+        return false;
+    }
+    char *rawError = nullptr;
+    const int rc = eel_store_check_key(
+        handle_, reinterpret_cast<const unsigned char *>(publicKey.constData()), &rawError);
+    if (rawError) {
+        eel_string_free(rawError);
+    }
+    return rc == 0;
+}
+
 // -------------------------------------------------------------- validate --
 
 std::vector<QJsonObject> validate(const Workflow &workflow,
