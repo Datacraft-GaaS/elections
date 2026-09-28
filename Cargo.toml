@@ -7,6 +7,9 @@ members = [
   "services/*/crates/*",
   "services/abis-svc/tools/*",
   "tools/*",
+  # C ABI bridges for native desktop clients (Qt). Each is a self-contained
+  # crate that wraps workspace packages and is linked into a C++ binary.
+  "services/*/apps/*/bridge",
 ]
 exclude = [
   # softhsm, spectral: placeholder-only tools (src/lib.rs contains no implementation);

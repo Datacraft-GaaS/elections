@@ -4181,6 +4181,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "eel-bvr-bridge"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "eel-bvr-store-rs",
+ "eel-bvr-workflow-rs",
+ "eel-crypto-rs",
+ "serde",
+ "serde_json",
+ "uuid",
+]
+
+[[package]]
 name = "eel-bvr-store-rs"
 version = "0.1.0"
 dependencies = [
