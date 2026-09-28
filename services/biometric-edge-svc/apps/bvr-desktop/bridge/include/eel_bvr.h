@@ -154,9 +154,9 @@ int eel_store_append(EelStore *store,
                      char **out_id,
                      char **err);
 
-/* Decrypt a record's value. On success writes the JSON value to *out (caller
- * frees) and returns 0. */
-int eel_store_value(const EelStore *store, const char *record_id, char **out, char **err);
+/* Decrypt a record's value, as a JSON value. Returns NULL with *err set on
+ * failure. Caller frees with eel_string_free. */
+char *eel_store_value(const EelStore *store, const char *record_id, char **err);
 
 /* Verify content hashes, chain linkage, and signatures across the store.
  * Returns 0 when intact, 1 when tampering is detected (*err then holds a
@@ -190,6 +190,21 @@ int eel_workflow_validate(const EelWorkflow *wf,
                           const char *captured_json,
                           char **out_violations,
                           char **err);
+
+/* ============================ lifetime =================================== */
+
+/* Frees a string returned by any function in this header.
+ *
+ * Every `char *` this library returns is owned by Rust. Passing it to plain
+ * free() would corrupt the allocator, and leaking it would leak once per
+ * field, per step, per sync poll. NULL is accepted and ignored.
+ *
+ * This declaration is load-bearing: the C++ side calls it from its deleter for
+ * every string it receives, so omitting it makes the whole ABI unusable rather
+ * than merely leaky. tests/abi_parity.rs asserts that every symbol the bridge
+ * exports is declared here, so a new export cannot be added without one.
+ */
+void eel_string_free(char *s);
 
 #ifdef __cplusplus
 } /* extern "C" */
