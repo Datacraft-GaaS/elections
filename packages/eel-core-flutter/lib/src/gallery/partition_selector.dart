@@ -17,8 +17,6 @@ import 'package:eel_design/eel_design.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:eel_core_flutter/src/audit/audit_service.dart';
-import 'package:eel_core_flutter/src/location/location_service.dart';
 
 /// Configuration for which partition dimensions to use.
 class PartitionSelection {

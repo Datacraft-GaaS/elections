@@ -1,6 +1,5 @@
 /// EelHttpClient factory for observer.
 
-import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 import 'package:dio/dio.dart';
 import 'package:uuid/uuid.dart';
 

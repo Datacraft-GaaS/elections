@@ -2,7 +2,6 @@
 /// injection and Idempotency-Key generation per request.
 library;
 
-import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:eel_kit_sdk/eel_kit_sdk.dart' show EelAttestationClientStub, EelHttpClient;

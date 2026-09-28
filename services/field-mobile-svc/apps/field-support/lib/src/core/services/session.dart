@@ -1,5 +1,6 @@
 /// Session for field-support (M32). Roles from module spec.
 
+import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:uuid/uuid.dart';

@@ -1,7 +1,6 @@
 /// Poll Clerk Incident Screen (M28 FR-013) — Beautiful, ergonomic, accessible.
 /// Uses eel_design: EelScaffold, EelTextField, EelButton, EelResultCard, EelColors, EelSecureScreen.
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
 
 class IncidentScreen extends StatelessWidget {

@@ -7,7 +7,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
-import 'package:eel_core_flutter/src/audit/audit_model.dart';
 import 'package:eel_core_flutter/src/audit/audit_service.dart';
 
 class OtpService {

@@ -2,6 +2,7 @@
 /// Per plan.md M3: Fabricated HSM → real key + deferred batch upload
 library;
 
+import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:uuid/uuid.dart';
 

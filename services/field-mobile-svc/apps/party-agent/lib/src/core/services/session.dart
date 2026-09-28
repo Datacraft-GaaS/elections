@@ -3,6 +3,7 @@
 /// Party agent roles: PARTY_AGENT, PARTY_CHIEF_AGENT
 /// OIDC PKCE + local_auth biometric + 6-digit PIN step-up.
 
+import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:uuid/uuid.dart';

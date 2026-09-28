@@ -3,6 +3,7 @@
 /// Implements OIDC PKCE + local_auth biometric + 6-digit PIN step-up.
 /// Per plan.md §2.4: 5 PIN failures → 30 min lockout (persisted, monotonic).
 
+import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:uuid/uuid.dart';

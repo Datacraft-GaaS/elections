@@ -1,6 +1,7 @@
 /// Observer session - roles: OBSERVER, OBSERVER_CHIEF
 /// Per plan.md M34: accreditation check, observations, station verification
 
+import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:uuid/uuid.dart';

@@ -1,5 +1,6 @@
 /// Personnel session (M33) - staff/admin tier
 library;
+import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:uuid/uuid.dart';
 

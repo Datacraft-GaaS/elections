@@ -2,6 +2,7 @@
 /// Per plan.md M3: SMS fallback stub → real status responses
 library;
 
+import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:uuid/uuid.dart';
 

@@ -7,7 +7,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
 import 'package:eel_design/eel_design.dart';
 import 'package:eel_core_flutter/src/otp/otp_service.dart';
-import 'package:eel_core_flutter/src/audit/audit_service.dart';
 
 class OtpScreen extends ConsumerStatefulWidget {
   const OtpScreen({super.key});

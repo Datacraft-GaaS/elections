@@ -2,6 +2,7 @@
 /// Per plan.md M3: NTS (Nintex Trusted Service) + GNSS + fingerprint capture
 library;
 
+import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:uuid/uuid.dart';
 
