@@ -4,7 +4,7 @@
 
 import 'package:crypto/crypto.dart' as crypto;
 import 'dart:convert';
-import 'package:uuid6/uuid6.dart';
+import 'package:uuid/uuid.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -155,7 +155,7 @@ class BiometricSubmissionOutbox {
 		final dedup = await _checkLocalDedup(fpTemplate ?? '', irisTemplate ?? '');
 		if (dedup.isDuplicate) {
 			final rejected = BiometricSubmission(
-				submissionId: uuid7().toString(),
+				submissionId: const Uuid().v7().toString(),
 				actorId: actorId, actorRole: actorRole,
 				fpTemplate: fpTemplate, irisTemplate: irisTemplate,
 				fpQualityScore: fpQualityScore, irisQualityScore: irisQualityScore,
@@ -169,7 +169,7 @@ class BiometricSubmissionOutbox {
 		}
 
 		final sub = BiometricSubmission(
-			submissionId: uuid7().toString(),
+			submissionId: const Uuid().v7().toString(),
 			actorId: actorId, actorRole: actorRole,
 			fpTemplate: fpTemplate, irisTemplate: irisTemplate,
 			fpQualityScore: fpQualityScore, irisQualityScore: irisQualityScore,

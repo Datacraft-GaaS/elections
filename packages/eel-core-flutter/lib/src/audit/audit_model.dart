@@ -1,5 +1,5 @@
 /// AuditLog model: where / when / who / why / how — per spec §FR-031.
-import 'package:uuid6/uuid6.dart';
+import 'package:uuid/uuid.dart';
 
 /// The 5 axes: GPS, timestamp, actor identity, justification/reason, method/proof.
 class AuditEntry {
@@ -52,7 +52,7 @@ class AuditEntry {
 		required bool isOffline,
 		required String sessionId,
 	}) => AuditEntry(
-		auditId: str(uuid7()),
+		auditId: const Uuid().v7().toString(),
 		actorId: actorId,
 		actorRole: actorRole,
 		action: action,

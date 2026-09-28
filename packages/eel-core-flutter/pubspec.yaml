@@ -7,7 +7,7 @@ version: 0.1.0
 publish_to: none
 
 environment:
-  sdk: ">=3.3.0 <4.0.0"
+  sdk: ">=3.6.0 <4.0.0"
   flutter: ">=3.19.0"
 
 dependencies:
@@ -17,6 +17,11 @@ dependencies:
   # kit-sdk: EelHttpClient, EelSecureStore, outbox primitives, HLC
   eel_kit_sdk:
     path: ../../packages/kit-sdk-flutter
+
+  # Shared design system (EelScaffold, EelColors, EelTextStyle). Imported by
+  # lib/src/gallery, so it is a real dependency rather than a stray import.
+  eel_design:
+    path: ../eel_design
 
   # State
   flutter_riverpod: ^2.5.0

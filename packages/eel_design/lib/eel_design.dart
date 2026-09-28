@@ -95,12 +95,13 @@ class EelResultCard extends StatelessWidget {
             ),
           ],
         ),
-      );
-    }
+      ),
+    );
   }
+}
 
-  /// A button that displays a label and an icon.
-  class EelButton extends StatelessWidget {
+/// A button that displays a label and an icon.
+class EelButton extends StatelessWidget {
     const EelButton({
       Key? key,
       required this.label,
@@ -126,4 +127,3 @@ class EelResultCard extends StatelessWidget {
           : button;
     }
   }
-}
