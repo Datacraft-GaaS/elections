@@ -4181,6 +4181,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "eel-bvr-workflow-rs"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "eel-spec-helpers-rs",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+]
+
+[[package]]
 name = "eel-completeness"
 version = "0.1.0"
 dependencies = [

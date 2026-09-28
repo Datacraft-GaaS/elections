@@ -1,0 +1,13 @@
+[package]
+name = "eel-bvr-workflow-rs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+chrono = { workspace = true }
+eel-spec-helpers-rs = { path = "../eel-spec-helpers-rs" }
