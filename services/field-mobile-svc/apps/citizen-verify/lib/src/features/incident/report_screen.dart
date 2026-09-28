@@ -18,7 +18,7 @@ class IncidentReportScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           const EelBanner(
             message: 'Your report is anonymous. No identity is linked to this submission.',
-            severity: 'info',
+            severity: EelSeverity.info,
           ),
           const SizedBox(height: 16),
           EelTextField(

@@ -23,9 +23,9 @@ class TallyVerifyScreen extends ConsumerWidget {
             subtitle: Text('All tallies verified ✓', style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 16),
-          EelStatusChip(label: 'Verification: Complete', severity: 'ok'),
+          EelStatusChip(label: 'Verification: Complete', severity: EelSeverity.success),
           const SizedBox(height: 8),
-          EelStatusChip(label: 'Discrepancies: 0', severity: 'ok'),
+          EelStatusChip(label: 'Discrepancies: 0', severity: EelSeverity.success),
           const SizedBox(height: 16),
           EelButton(
             label: 'Verify Now',

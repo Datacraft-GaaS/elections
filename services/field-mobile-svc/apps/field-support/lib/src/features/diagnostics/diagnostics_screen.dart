@@ -17,11 +17,11 @@ class DiagnosticsScreen extends ConsumerWidget {
         children: [
           const Text('Kit Diagnostics', style: EelTextStyle.titleLarge),
           const SizedBox(height: 24),
-          EelStatusChip(label: 'Kit Health: OK', severity: 'ok'),
+          EelStatusChip(label: 'Kit Health: OK', severity: EelSeverity.success),
           const SizedBox(height: 8),
-          EelStatusChip(label: 'Battery: 78%', severity: 'ok'),
+          EelStatusChip(label: 'Battery: 78%', severity: EelSeverity.success),
           const SizedBox(height: 8),
-          EelStatusChip(label: 'Firmware: Current', severity: 'ok'),
+          EelStatusChip(label: 'Firmware: Current', severity: EelSeverity.success),
           const SizedBox(height: 16),
           EelButton(
             label: 'Run Diagnostics',

@@ -17,9 +17,9 @@ class QueueScreen extends ConsumerWidget {
         children: [
           const Text('Queue Management', style: EelTextStyle.titleLarge),
           const SizedBox(height: 16),
-          EelStatusChip(label: 'Total in queue: 5', severity: 'ok'),
+          EelStatusChip(label: 'Total in queue: 5', severity: EelSeverity.success),
           const SizedBox(height: 8),
-          EelStatusChip(label: 'Avg wait: 4 min', severity: 'ok'),
+          EelStatusChip(label: 'Avg wait: 4 min', severity: EelSeverity.success),
           const SizedBox(height: 16),
           EelResultCard(
             leading: Icon(Icons.list, color: EelColors.of(context).primaryMuted, size: 32),

@@ -16,9 +16,9 @@ class StationScreen extends ConsumerWidget {
         children: [
           const Text('Station Overview', style: EelTextStyle.titleLarge),
           const SizedBox(height: 16),
-          EelStatusChip(label: 'Connection: Online', severity: 'ok'),
+          EelStatusChip(label: 'Connection: Online', severity: EelSeverity.success),
           const SizedBox(height: 8),
-          EelStatusChip(label: 'Forms synced: Yes', severity: 'ok'),
+          EelStatusChip(label: 'Forms synced: Yes', severity: EelSeverity.success),
           const SizedBox(height: 16),
           EelResultCard(
             leading: Icon(Icons.location_on, color: EelColors.of(context).primary, size: 32),

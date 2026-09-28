@@ -30,7 +30,7 @@ class BookmarksScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           EelBanner(
             message: 'Bookmarks are stored locally on your device only. No data leaves your phone.',
-            severity: 'info',
+            severity: EelSeverity.info,
           ),
         ],
       ),

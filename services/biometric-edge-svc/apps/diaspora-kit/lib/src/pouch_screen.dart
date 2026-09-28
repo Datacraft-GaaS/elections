@@ -18,7 +18,7 @@ class PouchScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           EelBanner(
             message: 'Pouch contents are sealed and verified by BVI back-end.',
-            severity: 'info',
+            severity: EelSeverity.info,
           ),
           const SizedBox(height: 16),
           EelResultCard(

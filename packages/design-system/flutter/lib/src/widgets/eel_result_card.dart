@@ -8,18 +8,45 @@ import 'eel_button.dart' show EelSeverity;
 class EelResultCard extends StatelessWidget {
   const EelResultCard({
     super.key,
-    required this.title,
-    required this.proofStatus,
+    this.title,
+    this.titleText,
+    this.proofStatus,
+    this.subtitle,
+    this.leading,
     this.rows = const [],
     this.severity,
+    this.semanticsLabel,
     this.onTap,
-  });
+  }) : assert(title != null || titleText != null,
+            'EelResultCard needs a title or a titleText');
 
-  final String title;
+  /// Card heading. A widget, because callers style it with [EelTextStyle]
+  /// roles rather than letting the card impose one.
+  final Widget? title;
+
+  /// Card heading as plain text, rendered in the card's own title style.
+  ///
+  /// Use this when the heading does not need custom styling; it keeps the
+  /// emphasis and colour the card has always applied, and pairs with
+  /// [proofStatus] for a signed record.
+  final String? titleText;
+
+  /// Secondary line under [title].
+  final Widget? subtitle;
+
+  /// Leading glyph or emblem, for identifying the kind of record at a glance.
+  final Widget? leading;
 
   /// Proof verification outcome shown as a chip (e.g. 'signature valid',
   /// 'unverified', 'mismatch').
-  final String proofStatus;
+  ///
+  /// Optional: this card is also used for records that carry no proof, where a
+  /// "not verified" chip would be a false statement rather than a gap.
+  final String? proofStatus;
+
+  /// Announced to screen readers. Falls back to the proof status, and is worth
+  /// setting when [title] is decorative or when the proof status is absent.
+  final String? semanticsLabel;
 
   /// Severity of the proof status; defaults derived from [proofStatus] text
   /// when null.
@@ -30,21 +57,24 @@ class EelResultCard extends StatelessWidget {
 
   final VoidCallback? onTap;
 
-  EelSeverity get _resolvedSeverity =>
-      severity ??
-      (proofStatus.toLowerCase().contains('valid') ||
-              proofStatus.toLowerCase().contains('verified')
-          ? EelSeverity.success
-          : proofStatus.toLowerCase().contains('mismatch') ||
-                  proofStatus.toLowerCase().contains('fail')
-              ? EelSeverity.danger
-              : EelSeverity.warning);
+  EelSeverity? get _resolvedSeverity {
+    if (severity != null) return severity;
+    final status = proofStatus;
+    if (status == null) return null;
+    final lower = status.toLowerCase();
+    return lower.contains('valid') ||
+            lower.contains('verified')
+        ? EelSeverity.success
+        : lower.contains('mismatch') || lower.contains('fail')
+            ? EelSeverity.danger
+            : EelSeverity.warning;
+  }
 
   @override
   Widget build(BuildContext context) {
     final c = context.eelColors;
     return Semantics(
-      label: '$title, $proofStatus',
+      label: semanticsLabel ?? proofStatus,
       child: Card(
         margin: EdgeInsets.zero,
         elevation: 0,
@@ -63,19 +93,46 @@ class EelResultCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
+                  // Centred for the proof-only card, which is a single line.
+                  // Top-aligned once a subtitle makes the text block taller,
+                  // so the chip lines up with the title rather than floating
+                  // against the middle of a two-line block.
+                  crossAxisAlignment: subtitle == null
+                      ? CrossAxisAlignment.center
+                      : CrossAxisAlignment.start,
                   children: [
+                    if (leading != null) ...[
+                      leading!,
+                      const SizedBox(width: EelSpacing.s3),
+                    ],
                     Expanded(
-                      child: Text(
-                        title,
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: c.textPrimary,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          title ??
+                              Text(
+                                titleText!,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      color: c.textPrimary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                          if (subtitle != null) ...[
+                            const SizedBox(height: EelSpacing.s1),
+                            subtitle!,
+                          ],
+                        ],
                       ),
                     ),
-                    _ProofChip(
-                        status: proofStatus, severity: _resolvedSeverity),
+                    if (proofStatus != null)
+                      _ProofChip(
+                        status: proofStatus!,
+                        severity: _resolvedSeverity!,
+                      ),
                   ],
                 ),
                 if (rows.isNotEmpty) ...[

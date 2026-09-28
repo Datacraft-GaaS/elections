@@ -24,24 +24,24 @@ class ObserverStatusScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           // Status chips — no PII, aggregate info only.
-          EelStatusChip(label: 'Connection: Online', severity: 'ok'),
+          EelStatusChip(label: 'Connection: Online', severity: EelSeverity.success),
           const SizedBox(height: 8),
-          EelStatusChip(label: 'Forms synced: Yes', severity: 'ok'),
+          EelStatusChip(label: 'Forms synced: Yes', severity: EelSeverity.success),
           const SizedBox(height: 8),
-          EelStatusChip(label: 'Kit battery: 78%', severity: 'ok'),
+          EelStatusChip(label: 'Kit battery: 78%', severity: EelSeverity.success),
           const SizedBox(height: 8),
-          EelStatusChip(label: 'Incidents open: 1', severity: 'warning'),
+          EelStatusChip(label: 'Incidents open: 1', severity: EelSeverity.warning),
           const SizedBox(height: 16),
           // Security banner.
           EelBanner(
             message: 'FLAG_SECURE / isCaptured / screen-capture-tamper (FR-M31-029)',
-            severity: 'info',
+            severity: EelSeverity.info,
           ),
           const SizedBox(height: 8),
           // Connectivity note.
           EelBanner(
             message: 'BVI back-end notified on connectivity change (§5.1, FR-M30-003).',
-            severity: 'info',
+            severity: EelSeverity.info,
           ),
           const SizedBox(height: 24),
           EelButton(

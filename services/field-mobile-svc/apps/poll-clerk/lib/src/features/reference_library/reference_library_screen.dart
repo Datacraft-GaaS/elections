@@ -16,7 +16,7 @@ class ReferenceLibraryScreen extends ConsumerWidget {
         children: [
           const EelBanner(
             message: 'Quick access to election procedures, forms, and legal references.',
-            severity: 'info',
+            severity: EelSeverity.info,
           ),
           const SizedBox(height: 16),
           const Text('Categories', style: EelTextStyle.titleMedium),

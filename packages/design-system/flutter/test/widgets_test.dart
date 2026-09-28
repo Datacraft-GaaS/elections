@@ -152,10 +152,12 @@ void main() {
   testWidgets('EelResultCard shows proof chip and rows', (tester) async {
     await pumpEel(
       tester,
-      const EelResultCard(
-        title: 'Form 34A',
+      EelResultCard(
+        title: Text('Form 34A',
+            style: EelTextStyle.titleMedium
+                .copyWith(fontWeight: FontWeight.w600)),
         proofStatus: 'signature valid',
-        rows: [(label: 'Polling station', value: 'ST-001')],
+        rows: const [(label: 'Polling station', value: 'ST-001')],
       ),
     );
     expect(find.text('Form 34A'), findsOneWidget);

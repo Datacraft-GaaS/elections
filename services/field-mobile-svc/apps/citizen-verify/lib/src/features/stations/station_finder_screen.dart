@@ -40,7 +40,7 @@ class StationFinderScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           EelBanner(
             message: 'Offline map available — previously downloaded regions are accessible.',
-            severity: 'info',
+            severity: EelSeverity.info,
           ),
         ],
       ),

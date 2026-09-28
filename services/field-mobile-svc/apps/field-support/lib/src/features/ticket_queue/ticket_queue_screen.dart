@@ -17,7 +17,7 @@ class TicketQueueScreen extends ConsumerWidget {
         children: [
           const Text('Open Tickets', style: EelTextStyle.titleLarge),
           const SizedBox(height: 24),
-          EelStatusChip(label: 'Open: 3', severity: 'warning'),
+          EelStatusChip(label: 'Open: 3', severity: EelSeverity.warning),
           const SizedBox(height: 16),
           EelResultCard(
             leading: Icon(Icons.confirmation_num, color: EelColors.of(context).primary, size: 32),

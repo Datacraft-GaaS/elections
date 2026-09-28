@@ -19,7 +19,7 @@ class DuressAlertScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           EelBanner(
             message: 'This will notify security and authorities. Use only in genuine distress.',
-            severity: 'critical',
+            severity: EelSeverity.danger,
           ),
           const SizedBox(height: 24),
           EelResultCard(

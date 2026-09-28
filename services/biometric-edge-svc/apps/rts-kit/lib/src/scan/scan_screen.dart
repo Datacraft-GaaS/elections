@@ -16,7 +16,7 @@ class ScanScreen extends ConsumerWidget {
         children: [
           const Text('RFID Scan', style: EelTextStyle.titleLarge),
           const SizedBox(height: 24),
-          EelStatusChip(label: 'RFID Reader: Ready', severity: 'ok'),
+          EelStatusChip(label: 'RFID Reader: Ready', severity: EelSeverity.success),
           const SizedBox(height: 16),
           EelButton(
             label: 'Start Scan',

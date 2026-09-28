@@ -24,18 +24,18 @@ class AgentDashboardScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           // Status chips.
-          EelStatusChip(label: 'Check-in: 06:42', severity: 'ok'),
+          EelStatusChip(label: 'Check-in: 06:42', severity: EelSeverity.success),
           const SizedBox(height: 8),
-          EelStatusChip(label: 'GPS verified: Yes', severity: 'ok'),
+          EelStatusChip(label: 'GPS verified: Yes', severity: EelSeverity.success),
           const SizedBox(height: 8),
-          EelStatusChip(label: 'BVI notified: Yes', severity: 'ok'),
+          EelStatusChip(label: 'BVI notified: Yes', severity: EelSeverity.success),
           const SizedBox(height: 8),
-          EelStatusChip(label: 'Forms synced: Complete', severity: 'ok'),
+          EelStatusChip(label: 'Forms synced: Complete', severity: EelSeverity.success),
           const SizedBox(height: 16),
           // Quick actions.
           EelBanner(
             message: 'All counters verified. Ready for tally.',
-            severity: 'info',
+            severity: EelSeverity.info,
           ),
           const SizedBox(height: 16),
           // Counter chips (example).

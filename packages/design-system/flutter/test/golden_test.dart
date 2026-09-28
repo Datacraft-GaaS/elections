@@ -74,7 +74,7 @@ void main() {
           message: '3 items waiting to sync.',
         ),
     'eel_result_card': (_) => const EelResultCard(
-          title: 'Form 34A',
+          titleText: 'Form 34A',
           proofStatus: 'signature valid',
           rows: [
             (label: 'Station', value: 'ST-001'),

@@ -71,31 +71,31 @@ class _BiometricOutboxPanelState extends ConsumerState<BiometricOutboxPanel> {
 						),
 						const SizedBox(height: 12),
 						Row(children: [
-							Expanded(child: EelStatusChip(label: 'Pending: ${s.pendingUpload}', severity: 'info')),
+							Expanded(child: EelStatusChip(label: 'Pending: ${s.pendingUpload}', severity: EelSeverity.info)),
 							const SizedBox(width: 8),
-							Expanded(child: EelStatusChip(label: 'Uploaded: ${s.uploaded}', severity: 'ok')),
+							Expanded(child: EelStatusChip(label: 'Uploaded: ${s.uploaded}', severity: EelSeverity.success)),
 						]),
 						const SizedBox(height: 8),
 						Row(children: [
-							Expanded(child: EelStatusChip(label: 'Failed: ${s.failed}', severity: 'critical')),
+							Expanded(child: EelStatusChip(label: 'Failed: ${s.failed}', severity: EelSeverity.danger)),
 							const SizedBox(width: 8),
-							Expanded(child: EelStatusChip(label: 'Deduplicated: ${s.deduplicated}', severity: 'warning')),
+							Expanded(child: EelStatusChip(label: 'Deduplicated: ${s.deduplicated}', severity: EelSeverity.warning)),
 						]),
 						const SizedBox(height: 24),
 						if (s.pendingUpload > 0)
 							EelBanner(
 								message: '${s.pendingUpload} biometric submission(s) awaiting upload. Connect to network and tap "Upload now".',
-								severity: 'info',
+								severity: EelSeverity.info,
 							),
 						if (s.failed > 0)
 							EelBanner(
 								message: '${s.failed} submission(s) failed upload. Will retry up to 5 times.',
-								severity: 'critical',
+								severity: EelSeverity.danger,
 							),
 						if (s.deduplicated > 0)
 							EelBanner(
 								message: '${s.deduplicated} submission(s) deduplicated (same biometric already on this device).',
-								severity: 'warning',
+								severity: EelSeverity.warning,
 							),
 						const SizedBox(height: 24),
 						EelButton(
@@ -114,7 +114,7 @@ class _BiometricOutboxPanelState extends ConsumerState<BiometricOutboxPanel> {
 						),
 						if (_lastResult != null) ...[
 							const SizedBox(height: 16),
-							EelBanner(message: _lastResult!, severity: 'info'),
+							EelBanner(message: _lastResult!, severity: EelSeverity.info),
 						],
 					],
 				),

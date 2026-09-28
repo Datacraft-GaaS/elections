@@ -18,7 +18,7 @@ class RegisterLookupScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           EelBanner(
             message: 'Requires DPO biometric attestation + written justification per M13 FR-010.',
-            severity: 'info',
+            severity: EelSeverity.info,
           ),
           const SizedBox(height: 16),
           EelTextField(

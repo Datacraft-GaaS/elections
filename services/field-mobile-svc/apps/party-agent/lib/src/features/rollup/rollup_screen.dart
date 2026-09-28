@@ -17,7 +17,7 @@ class RollupScreen extends ConsumerWidget {
         children: [
           const Text('Rollup Dashboard', style: EelTextStyle.titleLarge),
           const SizedBox(height: 24),
-          EelStatusChip(label: 'Status: Ready for Tally', severity: 'ok'),
+          EelStatusChip(label: 'Status: Ready for Tally', severity: EelSeverity.success),
           const SizedBox(height: 16),
           EelResultCard(
             leading: Icon(Icons.summarize, color: EelColors.of(context).primary, size: 32),

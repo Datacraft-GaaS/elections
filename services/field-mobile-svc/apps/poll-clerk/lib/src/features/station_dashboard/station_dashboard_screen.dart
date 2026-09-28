@@ -131,25 +131,25 @@ class _StationDashboardScreenState extends ConsumerState<StationDashboardScreen>
       case 'degraded':
         return EelStatusChip(
           label: 'Limited connectivity — uploads may be delayed',
-          severity: 'warning',
+          severity: EelSeverity.warning,
         );
       case 'offline':
         return EelStatusChip(
           label: 'Offline — data queued locally',
-          severity: 'critical',
+          severity: EelSeverity.danger,
         );
       case 'captivePortal':
         return EelStatusChip(
           label: 'Captive portal detected — sign in to network',
-          severity: 'warning',
+          severity: EelSeverity.warning,
         );
       case 'untrusted':
         return EelStatusChip(
           label: 'Untrusted network — TLS pin failure',
-          severity: 'critical',
+          severity: EelSeverity.danger,
         );
       default:
-        return EelStatusChip(label: 'Online', severity: 'ok');
+        return EelStatusChip(label: 'Online', severity: EelSeverity.success);
     }
   }
 
@@ -171,7 +171,7 @@ class _StationDashboardScreenState extends ConsumerState<StationDashboardScreen>
         title: 'Station Dashboard',
         bannerSlot: EelBanner(
           message: 'Loading station status...',
-          severity: 'info',
+          severity: EelSeverity.info,
         ),
         body: const Center(child: EelLoadingState()),
       );
@@ -183,7 +183,7 @@ class _StationDashboardScreenState extends ConsumerState<StationDashboardScreen>
         title: 'Station Dashboard',
         bannerSlot: EelBanner(
           message: _errorMessage ?? 'Failed to load station data',
-          severity: 'critical',
+          severity: EelSeverity.danger,
         ),
         body: EelErrorState(
           problem: ApiProblem(
@@ -208,7 +208,7 @@ class _StationDashboardScreenState extends ConsumerState<StationDashboardScreen>
         title: 'Station Dashboard',
         bannerSlot: EelBanner(
           message: 'Offline — showing cached data (last sync: ${_formatTimeAgo(_data!.updatedAt)})',
-          severity: 'warning',
+          severity: EelSeverity.warning,
         ),
         body: _buildDashboardBody(context, isOffline: true),
       );
@@ -257,7 +257,7 @@ class _StationDashboardScreenState extends ConsumerState<StationDashboardScreen>
           const SizedBox(height: 8),
           EelStatusChip(
             label: 'Expected: ${d.votersExpected}',
-            severity: 'info',
+            severity: EelSeverity.info,
           ),
           const SizedBox(height: 8),
           EelStatusChip(
@@ -290,12 +290,12 @@ class _StationDashboardScreenState extends ConsumerState<StationDashboardScreen>
           if (d.connectivityStatus == 'degraded')
             EelBanner(
               message: 'Limited connectivity — some features may be unavailable',
-              severity: 'warning',
+              severity: EelSeverity.warning,
             ),
           if (d.connectivityStatus == 'offline')
             EelBanner(
               message: 'Offline mode — using cached data. Sync will resume when network is restored.',
-              severity: 'info',
+              severity: EelSeverity.info,
             ),
         ],
       ),

@@ -16,7 +16,7 @@ class ResultsScreen extends ConsumerWidget {
         children: [
           const Text('Election Results — Verified', style: EelTextStyle.titleLarge),
           const SizedBox(height: 8),
-          EelStatusChip(label: 'National • County • Constituency • Station', severity: 'ok'),
+          EelStatusChip(label: 'National • County • Constituency • Station', severity: EelSeverity.success),
           const SizedBox(height: 16),
           EelTextField(
             label: 'Station code',

@@ -19,7 +19,7 @@ class CheckOutScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           EelBanner(
             message: 'Ensure all forms are submitted before checking out.',
-            severity: 'info',
+            severity: EelSeverity.info,
           ),
           const SizedBox(height: 24),
           EelButton(

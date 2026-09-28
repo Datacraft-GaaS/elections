@@ -34,14 +34,14 @@ class ScanResultScreen extends HookConsumerWidget {
             const SizedBox(height: 8),
             EelBanner(
               message: 'From cache (offline) — using cached CRL data.',
-              severity: 'warning',
+              severity: EelSeverity.warning,
             ),
           ],
           if (isCrlStale) ...[
             const SizedBox(height: 8),
             EelBanner(
               message: 'CRL is over 30 minutes old. Revocation data may be outdated.',
-              severity: 'critical',
+              severity: EelSeverity.danger,
             ),
           ],
           if (result.zones.isNotEmpty) ...[
@@ -55,7 +55,7 @@ class ScanResultScreen extends HookConsumerWidget {
               ),
             ),
           ] else
-            EelBanner(message: 'No zone information available.', severity: 'info'),
+            EelBanner(message: 'No zone information available.', severity: EelSeverity.info),
           const Spacer(),
           EelButton(
             label: 'Scan Another',

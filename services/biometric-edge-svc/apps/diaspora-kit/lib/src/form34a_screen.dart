@@ -16,7 +16,7 @@ class Form34aScreen extends ConsumerWidget {
         children: [
           const Text('Form 34A — Presiding Officer Report', style: EelTextStyle.titleLarge),
           const SizedBox(height: 8),
-          EelStatusChip(label: 'Sealed and signed', severity: 'ok'),
+          EelStatusChip(label: 'Sealed and signed', severity: EelSeverity.success),
           const SizedBox(height: 16),
           EelResultCard(
             leading: Icon(Icons.description, color: EelColors.of(context).primary, size: 32),
