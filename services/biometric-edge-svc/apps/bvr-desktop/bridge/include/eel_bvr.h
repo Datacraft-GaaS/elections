@@ -50,14 +50,27 @@ typedef struct EelStore EelStore;
 #define EEL_KIND_CONSENT 6
 
 /* --- capture kinds (mirrors eel_bvr_workflow_rs::CaptureKind) --------------- */
+/* Wire names are the snake_case forms; the numeric values are the C enum
+ * order and must be kept in step with the Rust `CaptureKind` declaration
+ * order. Prefer the wire names in JSON payloads. */
 #define EEL_CAPTURE_FINGERPRINT 0
 #define EEL_CAPTURE_FINGER_VEIN 1
 #define EEL_CAPTURE_PALM_VEIN 2
 #define EEL_CAPTURE_WRIST_VEIN 3
-#define EEL_CAPTURE_FACE 4
-#define EEL_CAPTURE_LIVE_PHOTOGRAPH 5
-#define EEL_CAPTURE_IRIS 6
-#define EEL_CAPTURE_DOCUMENT_MRZ 7
+#define EEL_CAPTURE_PALM_PRINT 4
+#define EEL_CAPTURE_FACE 5
+#define EEL_CAPTURE_LIVE_PHOTOGRAPH 6
+#define EEL_CAPTURE_PERIOCULAR 7
+#define EEL_CAPTURE_IRIS 8
+#define EEL_CAPTURE_EAR 9
+#define EEL_CAPTURE_VOICEPRINT 10
+#define EEL_CAPTURE_GAIT 11
+#define EEL_CAPTURE_SIGNATURE 12
+#define EEL_CAPTURE_RETINA 13
+#define EEL_CAPTURE_KEYSTROKE_DYNAMICS 14
+#define EEL_CAPTURE_MOUSE_DYNAMICS 15
+#define EEL_CAPTURE_DNA 16
+#define EEL_CAPTURE_DOCUMENT_MRZ 17
 
 /* --- step kinds (mirrors eel_bvr_workflow_rs::StepKind) -------------------- */
 #define EEL_STEP_DATA_ENTRY 0

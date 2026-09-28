@@ -1142,7 +1142,7 @@ fn the_dsl_capture_kinds_match_the_sensor_driver_taxonomy() {
     use eel_bvr_workflow_rs::CaptureKind;
     assert_eq!(
         CaptureKind::ALL.len(),
-        14,
+        18,
         "capture taxonomy grew; keep this in step with sensor-driver::Modality::ALL"
     );
     let wire: Vec<String> = CaptureKind::ALL
@@ -1163,6 +1163,10 @@ fn the_dsl_capture_kinds_match_the_sensor_driver_taxonomy() {
         "voiceprint",
         "gait",
         "signature",
+        "retina",
+        "keystroke_dynamics",
+        "mouse_dynamics",
+        "dna",
         "document_mrz",
     ] {
         assert!(wire.contains(&expected.to_owned()), "missing capture kind {expected}");
@@ -1178,5 +1182,167 @@ fn only_the_document_scan_is_not_biometric() {
             *kind != CaptureKind::DocumentMrz,
             "{kind:?} classification is wrong"
         );
+    }
+}
+
+// ---- the extended-capability workflow --------------------------------------
+
+const EXTENDED_WORKFLOW: &str =
+    "services/biometric-edge-svc/apps/bvr-desktop/workflows/extended-enrolment.json";
+
+fn load_extended_workflow() -> WorkflowSpec {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .join(EXTENDED_WORKFLOW);
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|e| panic!("reading {path:?} failed: {e}"));
+    serde_json::from_str(&text)
+        .unwrap_or_else(|e| panic!("parsing {path:?} failed: {e}"))
+}
+
+#[test]
+fn extended_workflow_compiles() {
+    let compiled = compile(&load_extended_workflow())
+        .expect("the extended workflow must compile");
+    assert_eq!(compiled.id, "bvr-enrolment-extended");
+    assert_eq!(compiled.capture_order.len(), 6);
+}
+
+#[test]
+fn extended_workflow_reaches_every_capture_kind() {
+    // The point of this document: every modality the platform can capture is
+    // reachable from a workflow, so the capability is genuinely available even
+    // though the standard enrolment does not use it.
+    let compiled = compile(&load_extended_workflow()).unwrap();
+    let reachable: std::collections::HashSet<CaptureKind> = compiled
+        .captures
+        .values()
+        .flat_map(|c| c.requirement.kinds.iter().copied())
+        .collect();
+    for kind in CaptureKind::ALL {
+        assert!(reachable.contains(kind), "{kind:?} is not reachable from any workflow");
+    }
+}
+
+#[test]
+fn extended_workflow_gates_the_risky_modalities_behind_consent() {
+    // Behavioural and ex-vivo capture must not be reachable in this workflow
+    // without the consent item being collected, and the workflow places the
+    // consent step before submit. Assert the consent item exists and is required.
+    let compiled = compile(&load_extended_workflow()).unwrap();
+    let consent = compiled
+        .data_item("consent_extended_modalities")
+        .expect("extended workflow must collect explicit consent");
+    assert_eq!(consent.item.kind, DataKind::Consent);
+    assert!(consent.item.required, "consent for extended modalities must be required");
+}
+
+#[test]
+fn extended_workflow_leaves_the_optional_modalities_optional() {
+    // Capability without obligation: every non-primary capture is optional, so
+    // a station can deploy this document unchanged without every kit having to
+    // serve all eighteen modalities.
+    let compiled = compile(&load_extended_workflow()).unwrap();
+    for id in ["secondary_biometric", "behavioural", "passive_dynamics", "biological_sample"] {
+        let cap = compiled.capture(id).expect("capability {id} must exist");
+        assert!(cap.requirement.optional, "{id} must stay optional");
+    }
+    // Only document and the primary biometric are mandatory.
+    for id in ["document", "primary_biometric"] {
+        let cap = compiled.capture(id).expect("{id} must exist");
+        assert!(!cap.requirement.optional, "{id} should be mandatory");
+    }
+}
+
+#[test]
+fn extended_workflow_validates_against_a_minimal_capture() {
+    // A citizen who only completes document plus one fingerprint satisfies the
+    // whole workflow, because everything else is optional.
+    let compiled = compile(&load_extended_workflow()).unwrap();
+    let submission: serde_json::Map<String, serde_json::Value> = json!({
+        "full_name": "Wanjiku Mwangi",
+        "national_id": "12345678",
+        "polling_station_code": "NRB001PS042",
+        "consent_extended_modalities": true,
+    })
+    .as_object()
+    .cloned()
+    .unwrap();
+    let result = validate_submission(
+        &compiled,
+        &submission,
+        &[CaptureKind::DocumentMrz, CaptureKind::Fingerprint],
+    );
+    assert!(result.is_ok(), "optional captures must not block: {:?}", result.violations);
+}
+
+#[test]
+fn extended_workflow_still_requires_the_primary_biometric() {
+    let compiled = compile(&load_extended_workflow()).unwrap();
+    let submission: serde_json::Map<String, serde_json::Value> = json!({
+        "full_name": "Wanjiku Mwangi",
+        "national_id": "12345678",
+        "polling_station_code": "NRB001PS042",
+        "consent_extended_modalities": true,
+    })
+    .as_object()
+    .cloned()
+    .unwrap();
+    // Document only: the primary biometric is at_least(1) over three
+    // alternatives, so satisfying it with one is enough, but omitting it
+    // entirely is not.
+    let no_primary = validate_submission(&compiled, &submission, &[CaptureKind::DocumentMrz]);
+    assert!(!no_primary.is_ok(), "the primary biometric must not be optional");
+
+    // One of the three accepted kinds is enough for the primary step.
+    for kind in [CaptureKind::Fingerprint, CaptureKind::PalmVein, CaptureKind::LivePhotograph] {
+        let ok = validate_submission(
+            &compiled,
+            &submission,
+            &[CaptureKind::DocumentMrz, kind],
+        );
+        assert!(ok.is_ok(), "{kind:?} should satisfy the primary step: {:?}", ok.violations);
+    }
+}
+
+#[test]
+fn the_standard_workflow_does_not_collect_the_extended_modalities() {
+    // Adding capability must not quietly change the default enrolment flow.
+    let standard = compile(&load_standard_workflow()).unwrap();
+    let reachable: std::collections::HashSet<CaptureKind> = standard
+        .captures
+        .values()
+        .flat_map(|c| c.requirement.kinds.iter().copied())
+        .collect();
+    for kind in [
+        CaptureKind::Retina,
+        CaptureKind::Dna,
+        CaptureKind::KeystrokeDynamics,
+        CaptureKind::MouseDynamics,
+        CaptureKind::Voiceprint,
+        CaptureKind::Gait,
+        CaptureKind::Ear,
+        CaptureKind::Periocular,
+    ] {
+        assert!(
+            !reachable.contains(&kind),
+            "{kind:?} must not appear in the standard enrolment workflow"
+        );
+    }
+}
+
+#[test]
+fn behavioural_kinds_are_distinguished_in_the_dsl_too() {
+    for kind in [
+        CaptureKind::Voiceprint,
+        CaptureKind::Gait,
+        CaptureKind::Signature,
+        CaptureKind::KeystrokeDynamics,
+        CaptureKind::MouseDynamics,
+    ] {
+        assert!(kind.is_behavioural(), "{kind:?} is behavioural");
+    }
+    for kind in [CaptureKind::Fingerprint, CaptureKind::Retina, CaptureKind::Dna] {
+        assert!(!kind.is_behavioural(), "{kind:?} is physiological");
     }
 }

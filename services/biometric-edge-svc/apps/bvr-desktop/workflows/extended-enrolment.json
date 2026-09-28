@@ -1,0 +1,123 @@
+{
+  "version": 1,
+  "id": "bvr-enrolment-extended",
+  "label": "Extended enrolment (optional and alternative modalities)",
+  "data_items": [
+    {
+      "name": "full_name",
+      "kind": "text",
+      "label": "Full legal name",
+      "required": true,
+      "data_class": "A",
+      "constraints": { "min_length": 1, "max_length": 200 }
+    },
+    {
+      "name": "national_id",
+      "kind": "national_id",
+      "label": "National ID number",
+      "required": true,
+      "data_class": "A"
+    },
+    {
+      "name": "polling_station_code",
+      "kind": "station_code",
+      "label": "Polling station",
+      "required": true,
+      "data_class": "B"
+    },
+    {
+      "name": "capture_method_note",
+      "kind": "text",
+      "label": "Acquisition notes",
+      "required": false,
+      "data_class": "E",
+      "help": "Free-text note recording which sensor or method was used, for the audit trail."
+    },
+    {
+      "name": "consent_extended_modalities",
+      "kind": "consent",
+      "label": "Citizen consents to collection of the additional modalities selected",
+      "required": true,
+      "data_class": "A",
+      "help": "Behavioural and ex-vivo modalities carry distinct consent and retention obligations. Must be affirmatively answered before any extended capture runs."
+    }
+  ],
+  "capture_requirements": [
+    {
+      "id": "document",
+      "label": "Identity document",
+      "kinds": ["document_mrz"],
+      "policy": "all_of",
+      "optional": false
+    },
+    {
+      "id": "primary_biometric",
+      "label": "Primary biometric",
+      "kinds": ["fingerprint", "palm_vein", "live_photograph"],
+      "policy": { "at_least": 1 },
+      "optional": false
+    },
+    {
+      "id": "secondary_biometric",
+      "label": "Secondary biometric",
+      "kinds": [
+        "fingerprint",
+        "finger_vein",
+        "palm_vein",
+        "wrist_vein",
+        "palm_print",
+        "face",
+        "live_photograph",
+        "periocular",
+        "iris",
+        "ear",
+        "retina"
+      ],
+      "policy": { "at_least": 1 },
+      "optional": true
+    },
+    {
+      "id": "behavioural",
+      "label": "Behavioural characteristic",
+      "kinds": ["voiceprint", "gait", "signature"],
+      "policy": { "at_least": 1 },
+      "optional": true
+    },
+    {
+      "id": "passive_dynamics",
+      "label": "Interaction dynamics",
+      "kinds": ["keystroke_dynamics", "mouse_dynamics"],
+      "policy": { "at_least": 1 },
+      "optional": true
+    },
+    {
+      "id": "biological_sample",
+      "label": "Biological sample",
+      "kinds": ["dna"],
+      "policy": "all_of",
+      "optional": true
+    }
+  ],
+  "steps": [
+    {
+      "id": "identity",
+      "kind": "data_entry",
+      "items": ["full_name", "national_id", "polling_station_code"],
+      "label": "Citizen details"
+    },
+    { "id": "document", "kind": "capture", "capture": "document" },
+    { "id": "primary", "kind": "capture", "capture": "primary_biometric" },
+    { "id": "secondary", "kind": "capture", "capture": "secondary_biometric" },
+    { "id": "behavioural", "kind": "capture", "capture": "behavioural" },
+    { "id": "passive", "kind": "capture", "capture": "passive_dynamics" },
+    { "id": "sample", "kind": "capture", "capture": "biological_sample" },
+    {
+      "id": "consent",
+      "kind": "data_entry",
+      "items": ["consent_extended_modalities", "capture_method_note"],
+      "label": "Consent and notes"
+    },
+    { "id": "review", "kind": "review" },
+    { "id": "submit", "kind": "submit" }
+  ]
+}

@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 ///   vascular capture is a different sensor class from optical contact
 ///   capture. Conflating the two would imply a capture path that does not
 ///   exist.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CaptureKind {
     /// Contact fingerprint image set, ISO/IEC 19794-2.
@@ -45,6 +45,14 @@ pub enum CaptureKind {
     Gait,
     /// Handwritten signature, ISO/IEC 19794-7.
     Signature,
+    /// Retinal image. No binding ISO interchange standard.
+    Retina,
+    /// Keystroke dynamics, collected passively during a session.
+    KeystrokeDynamics,
+    /// Mouse or pointer dynamics, collected passively during a session.
+    MouseDynamics,
+    /// DNA profile from a biological sample analysed away from the subject.
+    Dna,
     /// Optical document scan with an ICAO 9303 machine-readable zone.
     DocumentMrz,
 }
@@ -54,6 +62,22 @@ impl CaptureKind {
     /// subject to the biometric handling rules, as opposed to a document scan.
     pub fn is_biometric(self) -> bool {
         !matches!(self, CaptureKind::DocumentMrz)
+    }
+
+    /// Returns `true` when this capture records an observed action rather than a
+    /// physical measurement, mirroring `sensor_driver::Modality::is_behavioural`.
+    ///
+    /// Behavioural modalities attract different consent and retention analysis,
+    /// so the set is enumerable in one place for a later legal review.
+    pub fn is_behavioural(self) -> bool {
+        matches!(
+            self,
+            CaptureKind::Voiceprint
+                | CaptureKind::Gait
+                | CaptureKind::Signature
+                | CaptureKind::KeystrokeDynamics
+                | CaptureKind::MouseDynamics
+        )
     }
 
     /// Every capture kind, mirroring `sensor_driver::Modality::ALL`.
@@ -71,6 +95,10 @@ impl CaptureKind {
         CaptureKind::Voiceprint,
         CaptureKind::Gait,
         CaptureKind::Signature,
+        CaptureKind::Retina,
+        CaptureKind::KeystrokeDynamics,
+        CaptureKind::MouseDynamics,
+        CaptureKind::Dna,
         CaptureKind::DocumentMrz,
     ];
 }

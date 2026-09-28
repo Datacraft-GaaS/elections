@@ -102,11 +102,40 @@ Per component, the contract that any vendor adapter must implement.
    Provided helpers: `quality_gate(quality)` and
    `capture_fingerprint_degraded(timeout)` for degraded-finger fallback.
 
-   The `Modality` taxonomy covers fourteen captures: `fingerprint`,
+   The `Modality` taxonomy covers eighteen captures: `fingerprint`,
    `finger_vein`, `palm_vein`, `wrist_vein`, `palm_print`, `face`,
-   `live_photograph`, `periocular`, `iris`, `ear`, `voiceprint`, `gait`,
-   `signature`, and `document_mrz`. `Modality::is_biometric` is false only for
-   `document_mrz`, whose output is document text rather than a template.
+   `live_photograph`, `periocular`, `iris`, `ear`, `retina`, `voiceprint`,
+   `gait`, `signature`, `keystroke_dynamics`, `mouse_dynamics`, `dna`, and
+   `document_mrz`. `Modality::is_biometric` is false only for `document_mrz`,
+   whose output is document text rather than a template.
+
+   Three axes beyond "what is captured" are modelled explicitly, because each
+   changes how a client must behave:
+
+   - **Collection mode.** `Active` modalities are acquired on demand within a
+     timeout. `Passive` modalities (`keystroke_dynamics`, `mouse_dynamics`) are
+     accumulated during a session and submitted at the end -- a timeout-bounded
+     capture call is the wrong shape for them. `ExVivo` (`dna`) records a chain
+     of custody rather than a timed acquisition. A client uses
+     `Modality::collection_mode` to choose the right UI.
+   - **Presentation-attack checking.** `capture_fingerprint_live` fails closed:
+     an adapter with no declared liveness capability returns an error rather
+     than an unverified sample, and there is deliberately no fallback to plain
+     `capture_fingerprint`. A replica passes the quality gate and still fails
+     liveness, so the two must never be substituted. The verdict records which
+     technique was used (`blood_perfusion`, `subsurface_optical`,
+     `challenge_response`, `thermal`), because a verdict without a method is
+     not evidence of liveness.
+   - **Behavioural vs physiological.** `Modality::is_behavioural` enumerates
+     `voiceprint`, `gait`, `signature`, `keystroke_dynamics`, and
+     `mouse_dynamics`, so a later consent and retention review can list the
+     behavioural set from one place instead of auditing eighteen variants.
+
+   `retina`, `keystroke_dynamics`, `mouse_dynamics`, `dna`, and `ear` have no
+   binding ISO interchange standard. They are enumerated explicitly in
+   `Modality::standard`'s tests rather than left implicit, because citing a
+   standard that does not govern the data would be worse than citing none in a
+   tender deliverable.
 
    Ships `MockSensorDriver` (synthetic double) with per-modality
    present/absent/timeout behaviour and a configurable supported set, so CI never

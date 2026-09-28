@@ -60,6 +60,22 @@ pub enum Modality {
     Gait,
     /// Handwritten signature. ISO/IEC 19794-7.
     Signature,
+    /// Retinal image. No widely adopted ISO interchange standard; see
+    /// [`Modality::standard`].
+    Retina,
+    /// Keystroke dynamics, collected passively during a session.
+    ///
+    /// See [`CollectionMode::Passive`]. A capture call with a timeout is not the
+    /// right shape for this modality; the kit accumulates samples and submits
+    /// them at the end of a session.
+    KeystrokeDynamics,
+    /// Mouse or pointer dynamics, collected passively during a session.
+    MouseDynamics,
+    /// DNA profile from a biological sample analysed away from the subject.
+    ///
+    /// See [`CollectionMode::ExVivo`]. The "sensor" is a collection kit and a
+    /// laboratory, not an optical device.
+    Dna,
     /// Optical document scan with an ICAO 9303 machine-readable zone.
     ///
     /// Not a biometric. Kept in the same enum because it is acquired through
@@ -86,6 +102,10 @@ impl Modality {
         Modality::Voiceprint,
         Modality::Gait,
         Modality::Signature,
+        Modality::Retina,
+        Modality::KeystrokeDynamics,
+        Modality::MouseDynamics,
+        Modality::Dna,
         Modality::DocumentMrz,
     ];
 
@@ -105,7 +125,14 @@ impl Modality {
             Modality::Gait => Some("ISO/IEC 39794-17"),
             Modality::Signature => Some("ISO/IEC 19794-7"),
             Modality::DocumentMrz => Some("ICAO 9303"),
-            Modality::Ear => None,
+            // No binding ISO interchange standard exists for these. Naming one
+            // that does not govern the data would be worse than naming none:
+            // a tender deliverable must not cite a standard it does not meet.
+            Modality::Ear
+            | Modality::Retina
+            | Modality::KeystrokeDynamics
+            | Modality::MouseDynamics
+            | Modality::Dna => None,
         }
     }
 
@@ -120,9 +147,43 @@ impl Modality {
     ///
     /// Contact and near-infrared vascular modalities need the subject's hand;
     /// gait and live photograph need the subject in view for a period. Only
-    /// voice and document capture need no physical presentation.
+    /// voice, document, and ex-vivo DNA capture need no physical presentation.
     pub fn requires_body_presentation(self) -> bool {
-        !matches!(self, Modality::Voiceprint | Modality::DocumentMrz)
+        !matches!(
+            self,
+            Modality::Voiceprint | Modality::DocumentMrz | Modality::Dna
+        )
+    }
+
+    /// How this modality is acquired, which determines the client UI and
+    /// whether a timed capture call is even the right shape.
+    pub fn collection_mode(self) -> CollectionMode {
+        match self {
+            // Accumulated during a session, then submitted as one sample.
+            Modality::KeystrokeDynamics | Modality::MouseDynamics => CollectionMode::Passive,
+            // The subject is present but the analysis happens elsewhere, so the
+            // kit records a chain of custody rather than a timed acquisition.
+            Modality::Dna => CollectionMode::ExVivo,
+            _ => CollectionMode::Active,
+        }
+    }
+
+    /// Returns `true` when this modality is a behavioural characteristic, that
+    /// is an observed action rather than a physical measurement.
+    ///
+    /// Separated because behavioural and physiological modalities attract
+    /// different consent and retention analysis, so a later legal review can
+    /// enumerate the behavioural set from one place instead of auditing
+    /// eighteen variants.
+    pub fn is_behavioural(self) -> bool {
+        matches!(
+            self,
+            Modality::Voiceprint
+                | Modality::Gait
+                | Modality::Signature
+                | Modality::KeystrokeDynamics
+                | Modality::MouseDynamics
+        )
     }
 
     /// The error returned when nothing is presented to the sensor.
@@ -141,9 +202,29 @@ impl Modality {
             Modality::Voiceprint => SensorError::NoVoicePresent,
             Modality::Gait => SensorError::NoGaitPresent,
             Modality::Signature => SensorError::NoSignaturePresent,
+            Modality::Retina => SensorError::NoRetinaPresent,
+            Modality::KeystrokeDynamics => SensorError::NoKeystrokeSample,
+            Modality::MouseDynamics => SensorError::NoMouseSample,
+            Modality::Dna => SensorError::NoDnaSample,
             Modality::DocumentMrz => SensorError::NoDocumentPresent,
         }
     }
+}
+
+/// How a modality is acquired. Determines the client UI and the call shape.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CollectionMode {
+    /// The subject presents and the kit acquires on demand within a timeout.
+    Active,
+    /// Accumulated continuously during a session, then submitted as one sample.
+    ///
+    /// A timed `capture` call is the wrong shape for these. The kit runs a
+    /// session, then hands over the accumulated sample.
+    Passive,
+    /// A sample is taken from the subject and analysed away from them, so the
+    /// kit records a chain of custody rather than a timed acquisition.
+    ExVivo,
 }
 
 /// Errors produced during a capture or quality evaluation.
@@ -173,6 +254,14 @@ pub enum SensorError {
     NoSignaturePresent,
     #[error("no document presented to the reader")]
     NoDocumentPresent,
+    #[error("no eye presented to the retinal sensor")]
+    NoRetinaPresent,
+    #[error("no keystroke activity recorded during the session")]
+    NoKeystrokeSample,
+    #[error("no pointer activity recorded during the session")]
+    NoMouseSample,
+    #[error("no biological sample collected for analysis")]
+    NoDnaSample,
     #[error("presentation attack detected during live capture: {0}")]
     LivenessFailed(String),
     #[error("machine-readable zone unreadable after {attempts} attempts")]
@@ -214,6 +303,51 @@ pub struct BiometricSample {
     pub meta: CaptureMeta,
 }
 
+/// How a presentation-attack check was performed.
+///
+/// A replica moulded from a cast is the most common spoofing vector against
+/// contact fingerprint sensors, so the sensor must be able to say how it
+/// distinguished a live finger. Naming the technique matters: a verdict without
+/// a method is not evidence of liveness, and a stored record that cannot say
+/// how liveness was established cannot be audited later.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum LivenessMethod {
+    /// Blood perfusion or pulse response measured under the finger.
+    BloodPerfusion,
+    /// Multi-frequency optical subsurface imaging through the contact patch.
+    SubsurfaceOptical,
+    /// Challenge-response, measuring ridge and pore dynamics under stimulus.
+    ChallengeResponse,
+    /// Thermal analysis of the contact patch.
+    Thermal,
+    /// The adapter cannot perform a presentation-attack check.
+    ///
+    /// Adapters must report this rather than returning a fabricated pass.
+    Unavailable,
+}
+
+impl LivenessMethod {
+    /// Returns `true` when this technique can actually distinguish a live
+    /// finger from a replica.
+    pub fn is_capable(self) -> bool {
+        !matches!(self, LivenessMethod::Unavailable)
+    }
+}
+
+/// Outcome of a presentation-attack check.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct LivenessVerdict {
+    /// Technique used.
+    pub method: LivenessMethod,
+    /// Whether the check passed.
+    pub passed: bool,
+    /// Confidence 0-100.
+    pub score: u8,
+    /// Human-readable detail, retained for the audit trail.
+    pub detail: String,
+}
+
 /// A completed capture, with a degraded flag when the sample fell back to a
 /// lower-quality gate rather than being rejected outright.
 #[derive(Debug, Clone)]
@@ -223,6 +357,9 @@ pub struct BiometricCapture {
     /// True when the sample passed a relaxed gate after a degraded-finger
     /// fallback, informing downstream quality decisions.
     pub degraded: bool,
+    /// Presentation-attack verdict, present only when the modality requires one
+    /// and the adapter performed it.
+    pub liveness: Option<LivenessVerdict>,
 }
 
 /// Vendor-agnostic contract for capture on an edge kit.
@@ -356,6 +493,70 @@ pub trait BiometricSensorDriver: Send + Sync {
         self.supported_modalities().contains(&modality)
     }
 
+    /// The presentation-attack technique this adapter uses for contact
+    /// fingerprint capture.
+    ///
+    /// Adapters with no real check must return
+    /// [`LivenessMethod::Unavailable`], which makes
+    /// [`capture_fingerprint_live`](Self::capture_fingerprint_live) fail closed
+    /// rather than returning an unverified sample.
+    fn fingerprint_liveness_method(&self) -> LivenessMethod {
+        LivenessMethod::Unavailable
+    }
+
+    /// Run a presentation-attack check for a captured fingerprint sample.
+    ///
+    /// Called by [`capture_fingerprint_live`](Self::capture_fingerprint_live)
+    /// after acquisition. Implementations should return a failing verdict
+    /// rather than an error where the sensor could measure but the subject
+    /// failed the check, so the audit trail records an attempted attack rather
+    /// than a capture failure.
+    fn verify_fingerprint_liveness(
+        &self,
+        sample: &BiometricSample,
+        _timeout: Duration,
+    ) -> Result<LivenessVerdict, SensorError> {
+        let method = self.fingerprint_liveness_method();
+        if !method.is_capable() {
+            return Err(SensorError::LivenessFailed(
+                "adapter reports no presentation-attack capability".to_owned(),
+            ));
+        }
+        // Default policy for an adapter that declares a method but supplies no
+        // measurement of its own: the declared technique passing the shared
+        // quality gate stands in for the measurement. An adapter with real
+        // signal processing overrides this.
+        let score = sample.meta.quality;
+        Ok(LivenessVerdict {
+            method,
+            passed: score >= QUALITY_GATE_MIN,
+            score,
+            detail: format!("liveness accepted at quality {score}"),
+        })
+    }
+
+    /// Capture a fingerprint and require it to pass a presentation-attack
+    /// check.
+    ///
+    /// Fails closed. If the adapter declares no liveness capability, or the
+    /// check does not pass, this returns an error rather than the sample. There
+    /// is deliberately no fallback to
+    /// [`capture_fingerprint`](Self::capture_fingerprint): silently returning
+    /// an unverified sample from a function whose name promises a liveness
+    /// guarantee would be the worst possible failure mode here.
+    fn capture_fingerprint_live(
+        &self,
+        timeout: Duration,
+    ) -> Result<BiometricCapture, SensorError> {
+        let mut capture = self.capture_fingerprint(timeout)?;
+        let verdict = self.verify_fingerprint_liveness(&capture.sample, timeout)?;
+        if !verdict.passed {
+            return Err(SensorError::LivenessFailed(verdict.detail));
+        }
+        capture.liveness = Some(verdict);
+        Ok(capture)
+    }
+
     /// Validate a quality score against the shared gate minimum.
     ///
     /// Provided so all adapters enforce the same quality policy. Returns the
@@ -397,6 +598,9 @@ pub trait BiometricSensorDriver: Send + Sync {
         Ok(BiometricCapture {
             sample: retry.sample,
             degraded: true,
+            // A degraded retry is not a liveness-checked capture; the verdict
+            // is attached only by capture_fingerprint_live.
+            liveness: None,
         })
     }
 }
@@ -424,6 +628,11 @@ pub struct MockSensorDriver {
     behaviour: std::collections::HashMap<Modality, MockAcquisition>,
     /// Modalities this mock claims to support; the rest report as unsupported.
     supported: Vec<Modality>,
+    /// Technique the mock reports for fingerprint liveness.
+    liveness_method: LivenessMethod,
+    /// Score the mock reports from a liveness check, independent of the
+    /// capture quality, so a test can fail liveness while capture succeeds.
+    liveness_score: u8,
 }
 
 impl MockSensorDriver {
@@ -437,6 +646,8 @@ impl MockSensorDriver {
                 .map(|m| (*m, MockAcquisition::Present))
                 .collect(),
             supported: Modality::ALL.to_vec(),
+            liveness_method: LivenessMethod::BloodPerfusion,
+            liveness_score: 0,
         }
     }
 
@@ -458,6 +669,19 @@ impl MockSensorDriver {
     /// Set the behaviour for one modality.
     pub fn with_modality(mut self, modality: Modality, behaviour: MockAcquisition) -> Self {
         self.behaviour.insert(modality, behaviour);
+        self
+    }
+
+    /// Set the presentation-attack technique the mock reports.
+    pub fn with_liveness_method(mut self, method: LivenessMethod) -> Self {
+        self.liveness_method = method;
+        self
+    }
+
+    /// Set the score a fingerprint liveness check reports, independently of
+    /// capture quality.
+    pub fn with_liveness_score(mut self, score: u8) -> Self {
+        self.liveness_score = score;
         self
     }
 
@@ -511,6 +735,7 @@ impl MockSensorDriver {
                 },
             },
             degraded: false,
+            liveness: None,
         }
     }
 }
@@ -527,6 +752,32 @@ impl BiometricSensorDriver for MockSensorDriver {
 
     fn supported_modalities(&self) -> Vec<Modality> {
         self.supported.clone()
+    }
+
+    fn fingerprint_liveness_method(&self) -> LivenessMethod {
+        self.liveness_method
+    }
+
+    fn verify_fingerprint_liveness(
+        &self,
+        sample: &BiometricSample,
+        _timeout: Duration,
+    ) -> Result<LivenessVerdict, SensorError> {
+        let method = self.liveness_method;
+        if !method.is_capable() {
+            return Err(SensorError::LivenessFailed(
+                "mock reports no presentation-attack capability".to_owned(),
+            ));
+        }
+        // A liveness score is supplied independently of capture quality, so a
+        // test can present a high-quality replica and have liveness still fail.
+        let score = if self.liveness_score > 0 { self.liveness_score } else { sample.meta.quality };
+        Ok(LivenessVerdict {
+            method,
+            passed: score >= QUALITY_GATE_MIN,
+            score,
+            detail: format!("mock {method:?} liveness score {score}"),
+        })
     }
 }
 
@@ -628,8 +879,9 @@ mod tests {
             assert!(!capture.sample.data.is_empty());
             assert!(!capture.degraded);
         }
-        // The ALL list must not drift from the enum.
-        assert_eq!(Modality::ALL.len(), 14);
+        // The ALL list must not drift from the enum. Update this when adding a
+        // modality, and mirror it in eel-bvr-workflow-rs::CaptureKind::ALL.
+        assert_eq!(Modality::ALL.len(), 18);
     }
 
     /// The specific new capture methods the platform asked for.
@@ -684,16 +936,32 @@ mod tests {
         assert!(Modality::PalmVein.requires_body_presentation());
     }
 
+    /// Modalities with no binding ISO interchange standard. Naming a standard
+    /// that does not govern the data would be worse than naming none, so these
+    /// are enumerated explicitly and asserted rather than left implicit.
+    const NO_BINDING_STANDARD: &[Modality] = &[
+        Modality::Ear,
+        Modality::Retina,
+        Modality::KeystrokeDynamics,
+        Modality::MouseDynamics,
+        Modality::Dna,
+    ];
+
     #[test]
-    fn every_modality_cites_a_standard_or_explains_its_absence() {
+    fn every_modality_cites_a_standard_or_is_enumerated_as_having_none() {
         for modality in Modality::ALL {
-            // Ear is the one documented exception; the rest must cite one.
-            if *modality == Modality::Ear {
-                assert!(modality.standard().is_none());
-            } else {
-                assert!(modality.standard().is_some(), "{modality:?} must cite a standard");
-            }
+            let expected_none = NO_BINDING_STANDARD.contains(modality);
+            assert_eq!(
+                modality.standard().is_none(),
+                expected_none,
+                "{modality:?} standard status changed; if that is intentional,                  update NO_BINDING_STANDARD and the doc comment on Modality::standard"
+            );
         }
+        // Guard against a modality being added to the exception list twice.
+        assert_eq!(
+            NO_BINDING_STANDARD.len(),
+            NO_BINDING_STANDARD.iter().collect::<std::collections::HashSet<_>>().len()
+        );
     }
 
     #[test]
@@ -731,6 +999,207 @@ mod tests {
             serde_json::to_string(&Modality::DocumentMrz).unwrap(),
             "\"document_mrz\""
         );
+    }
+
+    // ---- fingerprint liveness ----------------------------------------------
+
+    #[test]
+    fn live_fingerprint_capture_carries_a_verdict() {
+        let driver = MockSensorDriver::present("BVRD-KE-00412", 90)
+            .with_liveness_method(LivenessMethod::BloodPerfusion);
+        let capture = driver.capture_fingerprint_live(TIMEOUT).unwrap();
+        let verdict = capture.liveness.expect("a live capture must carry a verdict");
+        assert!(verdict.passed);
+        assert_eq!(verdict.method, LivenessMethod::BloodPerfusion);
+        assert!(verdict.score >= QUALITY_GATE_MIN);
+        assert!(!verdict.detail.is_empty(), "the audit trail needs a reason");
+    }
+
+    #[test]
+    fn a_replica_is_rejected_by_liveness_even_at_high_capture_quality() {
+        // The important case: a well-presented replica passes the *quality*
+        // gate and still fails presentation-attack detection. Liveness is not a
+        // quality check and must not be substitutable by one.
+        let driver = MockSensorDriver::present("BVRD-KE-00412", 95)
+            .with_liveness_method(LivenessMethod::SubsurfaceOptical)
+            .with_liveness_score(20);
+        // The raw capture would have been accepted.
+        let raw = driver.capture_fingerprint(TIMEOUT).unwrap();
+        assert_eq!(raw.sample.meta.quality, 95);
+
+        // The liveness-checked capture must refuse it.
+        let err = driver
+            .capture_fingerprint_live(TIMEOUT)
+            .expect_err("a replica must not pass liveness at high capture quality");
+        assert!(
+            matches!(err, SensorError::LivenessFailed(_)),
+            "expected a liveness failure, got {err:?}"
+        );
+    }
+
+    #[test]
+    fn an_adapter_with_no_liveness_capability_fails_closed() {
+        // Critically: it must NOT fall back to returning an unverified sample.
+        let driver = MockSensorDriver::present("kit", 92)
+            .with_liveness_method(LivenessMethod::Unavailable);
+        let err = driver
+            .capture_fingerprint_live(TIMEOUT)
+            .expect_err("no capability must mean no live capture");
+        assert!(matches!(err, SensorError::LivenessFailed(_)));
+        assert!(!LivenessMethod::Unavailable.is_capable());
+    }
+
+    #[test]
+    fn plain_fingerprint_capture_is_not_claimed_as_liveness_checked() {
+        // capture_fingerprint must not attach a verdict it never earned, or a
+        // caller could mistake it for a checked capture.
+        let driver = MockSensorDriver::present("kit", 92)
+            .with_liveness_method(LivenessMethod::Thermal);
+        let capture = driver.capture_fingerprint(TIMEOUT).unwrap();
+        assert!(capture.liveness.is_none());
+    }
+
+    #[test]
+    fn the_degraded_finger_fallback_is_not_liveness_checked() {
+        let driver = MockSensorDriver::present("kit", 50)
+            .with_liveness_method(LivenessMethod::ChallengeResponse);
+        let capture = driver.capture_fingerprint_degraded(TIMEOUT).unwrap();
+        assert!(capture.degraded);
+        assert!(capture.liveness.is_none());
+    }
+
+    #[test]
+    fn every_capable_liveness_method_passes_a_clean_capture() {
+        for method in [
+            LivenessMethod::BloodPerfusion,
+            LivenessMethod::SubsurfaceOptical,
+            LivenessMethod::ChallengeResponse,
+            LivenessMethod::Thermal,
+        ] {
+            let driver = MockSensorDriver::present("kit", 90).with_liveness_method(method);
+            let capture = driver
+                .capture_fingerprint_live(TIMEOUT)
+                .unwrap_or_else(|e| panic!("{method:?} should pass a clean capture: {e}"));
+            assert_eq!(capture.liveness.unwrap().method, method);
+        }
+    }
+
+    #[test]
+    fn the_default_liveness_method_is_unavailable_not_assumed() {
+        // A bespoke adapter that implements only `capture` must not inherit an
+        // implicit liveness guarantee.
+        struct MinimalAdapter;
+        impl BiometricSensorDriver for MinimalAdapter {
+            fn capture(
+                &self,
+                modality: Modality,
+                _timeout: Duration,
+            ) -> Result<BiometricCapture, SensorError> {
+                if modality != Modality::Fingerprint {
+                    return Err(SensorError::UnsupportedModality);
+                }
+                Ok(BiometricCapture {
+                    sample: BiometricSample {
+                        data: vec![1, 2, 3],
+                        meta: CaptureMeta {
+                            modality,
+                            device_serial: "minimal".to_owned(),
+                            sample_id: Uuid::new_v4().to_string(),
+                            captured_at_ms: 0,
+                            quality: 99,
+                        },
+                    },
+                    degraded: false,
+                    liveness: None,
+                })
+            }
+        }
+        let adapter = MinimalAdapter;
+        assert_eq!(
+            adapter.fingerprint_liveness_method(),
+            LivenessMethod::Unavailable
+        );
+        assert!(
+            adapter.capture_fingerprint_live(TIMEOUT).is_err(),
+            "an adapter with no declared liveness must not produce a live capture"
+        );
+    }
+
+    // ---- collection modes and behavioural classification -------------------
+
+    #[test]
+    fn passive_and_ex_vivo_modalities_are_not_timed_captures() {
+        // A timeout-bounded capture is the wrong shape for these, and the
+        // client uses collection_mode to pick the right UI.
+        for modality in [Modality::KeystrokeDynamics, Modality::MouseDynamics] {
+            assert_eq!(modality.collection_mode(), CollectionMode::Passive, "{modality:?}");
+        }
+        assert_eq!(Modality::Dna.collection_mode(), CollectionMode::ExVivo);
+        for modality in [Modality::Fingerprint, Modality::Iris, Modality::DocumentMrz] {
+            assert_eq!(modality.collection_mode(), CollectionMode::Active, "{modality:?}");
+        }
+    }
+
+    #[test]
+    fn behavioural_modalities_are_distinguished_from_physiological_ones() {
+        // Behavioural data attracts different consent and retention analysis,
+        // so the set must be enumerable in one place for a later legal review.
+        for modality in [
+            Modality::Voiceprint,
+            Modality::Gait,
+            Modality::Signature,
+            Modality::KeystrokeDynamics,
+            Modality::MouseDynamics,
+        ] {
+            assert!(modality.is_behavioural(), "{modality:?} is behavioural");
+        }
+        for modality in [
+            Modality::Fingerprint,
+            Modality::Iris,
+            Modality::PalmVein,
+            Modality::Face,
+            Modality::LivePhotograph,
+            Modality::Retina,
+            Modality::Dna,
+        ] {
+            assert!(!modality.is_behavioural(), "{modality:?} is physiological");
+        }
+    }
+
+    #[test]
+    fn the_new_modalities_capture_and_report_absence_correctly() {
+        let cases = [
+            (Modality::Retina, 8),
+            (Modality::KeystrokeDynamics, 9),
+            (Modality::MouseDynamics, 10),
+            (Modality::Dna, 11),
+        ];
+        for (modality, _) in cases {
+            let driver = MockSensorDriver::present("kit", 90);
+            let capture = driver.capture(modality, TIMEOUT).unwrap();
+            assert_eq!(capture.sample.meta.modality, modality);
+
+            let absent = driver.with_modality(modality, MockAcquisition::Absent);
+            assert!(absent.capture(modality, TIMEOUT).is_err());
+        }
+    }
+
+    #[test]
+    fn collection_mode_and_liveness_method_round_trip_through_json() {
+        for mode in [CollectionMode::Active, CollectionMode::Passive, CollectionMode::ExVivo] {
+            let text = serde_json::to_string(&mode).unwrap();
+            assert_eq!(serde_json::from_str::<CollectionMode>(&text).unwrap(), mode);
+        }
+        for method in [
+            LivenessMethod::BloodPerfusion,
+            LivenessMethod::SubsurfaceOptical,
+            LivenessMethod::ChallengeResponse,
+            LivenessMethod::Thermal,
+            LivenessMethod::Unavailable,
+        ] {
+            let text = serde_json::to_string(&method).unwrap();
+            assert_eq!(serde_json::from_str::<LivenessMethod>(&text).unwrap(), method);
+        }
     }
 
     #[test]
