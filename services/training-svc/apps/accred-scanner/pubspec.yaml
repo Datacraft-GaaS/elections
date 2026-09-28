@@ -13,6 +13,11 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Shared design system (EelScaffold, EelColors, EelTextStyle). Imported
+  # across lib/, so it is a real dependency rather than a stray import.
+  eel_design:
+    path: ../../../../packages/eel_design
+
   eel_kit_sdk:
     path: ../../../../packages/kit-sdk-flutter
 
