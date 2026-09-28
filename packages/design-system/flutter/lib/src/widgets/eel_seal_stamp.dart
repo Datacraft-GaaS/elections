@@ -7,23 +7,38 @@ import '../theme/eel_theme.dart';
 class EelSealStamp extends StatelessWidget {
   const EelSealStamp({
     super.key,
-    required this.sealId,
-    required this.verified,
+    this.sealId,
+    this.verified,
     this.verifiedAt,
     this.onVerify,
+    this.size,
+    this.color,
   });
 
-  final String sealId;
-  final bool verified;
+  /// The container seal id. Null renders the compact emblem form.
+  final String? sealId;
+
+  /// Verification state. Null is treated as not verified; a seal with no id
+  /// cannot be verified, and saying so is the honest reading.
+  final bool? verified;
+
   final DateTime? verifiedAt;
   final VoidCallback? onVerify;
+
+  /// Emblem edge length, for the compact form.
+  final double? size;
+
+  /// Emblem colour, for the compact form. Defaults to the verification colour.
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
     final c = context.eelColors;
-    final color = verified ? c.success : c.warning;
+    if (sealId == null) return _emblem(context, c);
+    final isVerified = verified ?? false;
+    final color = isVerified ? c.success : c.warning;
     return Semantics(
-      label: 'Seal $sealId, ${verified ? 'verified' : 'not verified'}',
+      label: 'Seal $sealId, ${isVerified ? 'verified' : 'not verified'}',
       child: Container(
         padding: const EdgeInsets.all(EelSpacing.s3),
         decoration: BoxDecoration(
@@ -33,7 +48,7 @@ class EelSealStamp extends StatelessWidget {
         child: Row(
           children: [
             Icon(
-              verified ? Icons.verified_user_outlined : Icons.shield_outlined,
+              isVerified ? Icons.verified_user_outlined : Icons.shield_outlined,
               color: color,
               size: 28,
             ),
@@ -44,7 +59,7 @@ class EelSealStamp extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    sealId,
+                    sealId!,
                     style: TextStyle(
                       color: c.textPrimary,
                       fontFamily: EelTypography.fontFamilyMono,
@@ -52,14 +67,14 @@ class EelSealStamp extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    verified ? 'Seal verified' : 'Seal not verified',
+                    isVerified ? 'Seal verified' : 'Seal not verified',
                     style: TextStyle(
                         color: c.textSecondary, fontSize: EelTypography.sm),
                   ),
                 ],
               ),
             ),
-            if (!verified && onVerify != null)
+            if (!isVerified && onVerify != null)
               TextButton(
                 onPressed: onVerify,
                 style: TextButton.styleFrom(
@@ -69,6 +84,25 @@ class EelSealStamp extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// The compact form: just the mark, for use as a card's leading emblem.
+  ///
+  /// Carries no id and no verification claim. The alternative was a separate
+  /// widget, but every call site was already passing size and colour to this
+  /// one, so one component with two honest forms beat five rewrites.
+  Widget _emblem(BuildContext context, EelColors c) {
+    final isVerified = verified ?? false;
+    final tint = color ?? (isVerified ? c.success : c.warning);
+    final edge = size ?? 48.0;
+    return Semantics(
+      label: isVerified ? 'Seal, verified' : 'Seal',
+      child: Icon(
+        isVerified ? Icons.verified_user_outlined : Icons.shield_outlined,
+        color: tint,
+        size: edge,
       ),
     );
   }
