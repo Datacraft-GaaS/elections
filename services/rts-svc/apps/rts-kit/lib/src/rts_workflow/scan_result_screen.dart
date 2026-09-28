@@ -1,7 +1,7 @@
 /// RTS Scan Result — Beautiful, ergonomic, accessible.
 library;
 import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverprovider.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
 
 class ScanResultScreen extends ConsumerWidget {

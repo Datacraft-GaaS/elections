@@ -1,6 +1,6 @@
 /// Register Lookup (M13 FR-010/011/012) — Beautiful, ergonomic, accessible.
 import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverprovider.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
 
 class RegisterLookupScreen extends ConsumerWidget {

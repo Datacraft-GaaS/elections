@@ -1,6 +1,6 @@
 /// Bookmarks (M29 FR-C8) — Beautiful, ergonomic, accessible.
 import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverprovider.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
 
 class BookmarksScreen extends ConsumerWidget {

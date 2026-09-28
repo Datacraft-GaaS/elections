@@ -4,7 +4,7 @@
 import 'package:eel_core_flutter/src/outbox/biometric_submission_outbox.dart';
 import 'package:eel_design/eel_design.dart';
 import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverprovider.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class BiometricOutboxPanel extends ConsumerStatefulWidget {
 	const BiometricOutboxPanel({super.key, required this.outbox, required this.authToken});
