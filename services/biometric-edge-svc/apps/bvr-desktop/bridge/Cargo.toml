@@ -19,6 +19,7 @@ base64 = { workspace = true }
 eel-bvr-workflow-rs = { path = "../../../../../packages/eel-bvr-workflow-rs" }
 eel-bvr-store-rs = { path = "../../../../../packages/eel-bvr-store-rs" }
 eel-crypto-rs = { path = "../../../../../packages/eel-crypto-rs" }
+sensor-driver = { path = "../../../crates/sensor-driver" }
 
 [dev-dependencies]
 serde_json = { workspace = true }

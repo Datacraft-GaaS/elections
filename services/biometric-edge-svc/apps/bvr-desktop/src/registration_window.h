@@ -56,6 +56,8 @@ private:
     /// Reads a step's widgets, sealing each value into the store.
     bool collect(int stepIndex);
     QStringList captureKindsFor(int index) const;
+    /// Runs the sensor for every ticked capture kind and seals the results.
+    void acquireSelected();
     void updateProgress();
     /// Persists the store. Called after every seal, so a crash or power loss
     /// cannot lose completed registrations.
@@ -80,6 +82,8 @@ private:
     QMap<QString, QWidget *> editors_;
     /// Capture checkboxes by capture kind.
     QMap<QString, QCheckBox *> captureBoxes_;
+    /// Step id per capture kind, for the record's provenance.
+    QMap<QString, QString> captureStepIds_;
     /// Sealed record ids by data-item name.
     QMap<QString, QString> recordIds_;
     /// The values that were sealed, kept for review and submission validation.

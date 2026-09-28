@@ -192,6 +192,57 @@ int eel_store_seal_to_disk(const EelStore *store, const char *path, const unsign
  * 1 when it is not, and -1 on error. */
 int eel_store_check_key(const EelStore *store, const unsigned char *public_key, char **err);
 
+/* ============================ sensors ==================================== */
+
+/* Modality codes for the sensor functions below (mirrors
+ * sensor_driver::Modality). These are the C enum order, distinct from the
+ * CaptureKind wire names used in workflow documents. */
+#define EEL_MODALITY_FINGERPRINT 0
+#define EEL_MODALITY_FINGER_VEIN 1
+#define EEL_MODALITY_PALM_VEIN 2
+#define EEL_MODALITY_WRIST_VEIN 3
+#define EEL_MODALITY_PALM_PRINT 4
+#define EEL_MODALITY_FACE 5
+#define EEL_MODALITY_LIVE_PHOTOGRAPH 6
+#define EEL_MODALITY_PERIOCULAR 7
+#define EEL_MODALITY_IRIS 8
+#define EEL_MODALITY_EAR 9
+#define EEL_MODALITY_VOICEPRINT 10
+#define EEL_MODALITY_GAIT 11
+#define EEL_MODALITY_SIGNATURE 12
+#define EEL_MODALITY_RETINA 13
+#define EEL_MODALITY_KEYSTROKE_DYNAMICS 14
+#define EEL_MODALITY_MOUSE_DYNAMICS 15
+#define EEL_MODALITY_DNA 16
+#define EEL_MODALITY_DOCUMENT_MRZ 17
+
+/* Number of capture seconds the sensor layer is given by default. */
+#define EEL_SENSOR_DEFAULT_TIMEOUT_SECS 30
+
+/* How many modalities the sensor layer knows about. */
+size_t eel_sensor_supported_count(void);
+
+/* Wire name for the modality at `index`, e.g. "palm_vein". Caller frees. */
+char *eel_sensor_modality_name(size_t index, char **err);
+
+/* True when this station's sensor can acquire `modality` (1) or not (0). */
+int eel_sensor_supports(size_t index, char **err);
+
+/* Acquisition mode for the modality at `index`.
+ * 0 = active (timed capture), 1 = passive (session), 2 = ex vivo. */
+int eel_sensor_collection_mode(size_t index, char **err);
+
+/* Acquire one sample of the modality at `index`.
+ *
+ * Returns 0 on success and writes a JSON object to *out with keys
+ * `modality`, `sample_id`, `captured_at_ms`, `quality`, `bytes`, `degraded`,
+ * and `liveness` (null unless a presentation-attack check ran).
+ *
+ * Returns -1 on failure with *err set. A modality the sensor does not support
+ * fails with SensorError::UnsupportedModality rather than returning a
+ * fabricated sample. */
+int eel_sensor_capture(size_t index, int timeout_secs, char **out, char **err);
+
 /* =========================== validation ================================== */
 
 /* Validate a submission against a compiled workflow.

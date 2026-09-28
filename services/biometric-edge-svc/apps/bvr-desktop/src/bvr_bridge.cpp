@@ -329,6 +329,78 @@ bool Store::checkKey(const QByteArray &publicKey) const {
     return rc == 0;
 }
 
+// ---------------------------------------------------------------- sensors --
+
+QVector<ModalityInfo> sensorModalities() {
+    QVector<ModalityInfo> out;
+    const size_t count = eel_sensor_supported_count();
+    for (size_t i = 0; i < count; ++i) {
+        char *err = nullptr;
+        const std::optional<QString> name = takeString(eel_sensor_modality_name(i, &err));
+        if (err) {
+            eel_string_free(err);
+        }
+        if (!name) {
+            continue;
+        }
+        ModalityInfo info;
+        info.name = *name;
+        char *supportErr = nullptr;
+        info.supported = eel_sensor_supports(i, &supportErr) == 1;
+        if (supportErr) {
+            eel_string_free(supportErr);
+        }
+        char *modeErr = nullptr;
+        info.collectionMode = eel_sensor_collection_mode(i, &modeErr);
+        if (modeErr) {
+            eel_string_free(modeErr);
+        }
+        out.append(info);
+    }
+    return out;
+}
+
+std::optional<QJsonObject> sensorCapture(const QString &modalityName, int timeoutSeconds,
+                                         QString *error) {
+    const QVector<ModalityInfo> all = sensorModalities();
+    int index = -1;
+    for (int i = 0; i < all.size(); ++i) {
+        if (all.at(i).name == modalityName) {
+            index = i;
+            break;
+        }
+    }
+    if (index < 0) {
+        if (error) {
+            *error = QStringLiteral("unknown modality %1").arg(modalityName);
+        }
+        return std::nullopt;
+    }
+
+    char *out = nullptr;
+    char *err = nullptr;
+    const int rc = eel_sensor_capture(
+        static_cast<size_t>(index), timeoutSeconds, &out, &err);
+    if (rc != 0) {
+        takeError(err, error);
+        if (out) {
+            eel_string_free(out);
+        }
+        return std::nullopt;
+    }
+    if (err) {
+        eel_string_free(err);
+    }
+    if (!out) {
+        return std::nullopt;
+    }
+    const std::optional<QString> json = takeString(out);
+    if (!json) {
+        return std::nullopt;
+    }
+    return parseObject(*json);
+}
+
 // -------------------------------------------------------------- validate --
 
 std::vector<QJsonObject> validate(const Workflow &workflow,

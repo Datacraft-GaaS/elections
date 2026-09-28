@@ -422,3 +422,77 @@ fn a_null_workflow_handle_does_not_crash_validation() {
     assert_eq!(rc, -1);
     assert!(take_opt(err).unwrap().contains("null"));
 }
+
+// ---- sensors ----------------------------------------------------------------
+
+#[test]
+fn the_sensor_layer_reports_every_modality() {
+    let n = eel_sensor_supported_count();
+    assert_eq!(n, 18, "must mirror sensor_driver::Modality::ALL");
+
+    let mut names = Vec::new();
+    for i in 0..n {
+        let mut err: *mut std::ffi::c_char = std::ptr::null_mut();
+        names.push(take(unsafe { eel_sensor_modality_name(i, &mut err) }));
+        unsafe { eel_string_free(err) };
+    }
+    for expected in ["fingerprint", "palm_vein", "live_photograph", "document_mrz", "dna"] {
+        assert!(names.contains(&expected.to_owned()), "missing {expected}: {names:?}");
+    }
+}
+
+#[test]
+fn an_out_of_range_modality_index_is_rejected() {
+    let mut err: *mut std::ffi::c_char = std::ptr::null_mut();
+    let name = unsafe { eel_sensor_modality_name(999, &mut err) };
+    assert!(name.is_null());
+    assert!(take_opt(err).unwrap().contains("out of range"));
+}
+
+#[test]
+fn capturing_through_the_sensor_returns_a_usable_record() {
+    let mut err: *mut std::ffi::c_char = std::ptr::null_mut();
+    let mut out: *mut std::ffi::c_char = std::ptr::null_mut();
+    // Index 0 is fingerprint.
+    let rc = unsafe { eel_sensor_capture(0, 5, &mut out, &mut err) };
+    assert_eq!(rc, 0, "{}", take_opt(err).unwrap_or_default());
+
+    let json = take(out);
+    let value: serde_json::Value = serde_json::from_str(&json).unwrap();
+    assert_eq!(value["modality"], "fingerprint");
+    assert!(value["bytes"].as_u64().unwrap() > 0);
+    assert_eq!(value["degraded"], false);
+}
+
+#[test]
+fn a_fingerprint_capture_reports_its_liveness_verdict() {
+    // A station that captures a fingerprint must be able to show how liveness
+    // was established. A verdict without a method is not evidence of liveness.
+    let mut err: *mut std::ffi::c_char = std::ptr::null_mut();
+    let mut out: *mut std::ffi::c_char = std::ptr::null_mut();
+    let rc = unsafe { eel_sensor_capture(0, 5, &mut out, &mut err) };
+    assert_eq!(rc, 0, "{}", take_opt(err).unwrap_or_default());
+    let value: serde_json::Value = serde_json::from_str(&take(out)).unwrap();
+    let liveness = value["liveness"]
+        .as_object()
+        .expect("a liveness-checked fingerprint capture must carry a verdict");
+    assert_eq!(liveness["passed"], true);
+    assert!(
+        liveness["method"].is_string(),
+        "the verdict must name the technique used"
+    );
+}
+
+#[test]
+fn collection_modes_survive_the_boundary() {
+    let mut err: *mut std::ffi::c_char = std::ptr::null_mut();
+    let mut modes = Vec::new();
+    for i in 0..eel_sensor_supported_count() {
+        modes.push(unsafe { eel_sensor_collection_mode(i, &mut err) });
+        unsafe { eel_string_free(err) };
+    }
+    // Fingerprint is active, keystroke dynamics passive, DNA ex vivo.
+    assert_eq!(modes[0], 0, "fingerprint should be active");
+    assert_eq!(modes[14], 1, "keystroke_dynamics should be passive");
+    assert_eq!(modes[16], 2, "dna should be ex vivo");
+}

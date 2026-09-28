@@ -180,16 +180,32 @@ QWidget *RegistrationWindow::buildCaptureStep(int index) {
 
     auto *options = new QGroupBox(tr("Captured"), page);
     auto *optionsLayout = new QVBoxLayout(options);
+
+    // Ask the sensor layer what this station can actually acquire, so an
+    // unavailable modality is greyed out rather than offered and then failing
+    // after the officer has positioned the citizen.
+    const QVector<ModalityInfo> available = sensorModalities();
     for (const QString &kind : kinds) {
         auto *box = new QCheckBox(kind, options);
-        // In a deployed kit this reflects sensor discovery through
-        // BiometricSensorDriver::supported_modalities. The window cannot reach
-        // the trait yet, so everything is offered and the capture is refused at
-        // the driver if the hardware is absent.
-        box->setProperty("captureKind", kind);
+        bool supported = false;
+        for (const ModalityInfo &info : available) {
+            if (info.name == kind) {
+                supported = info.supported;
+                break;
+            }
+        }
+        box->setEnabled(supported);
+        if (!supported) {
+            box->setToolTip(tr("This station has no sensor for %1.").arg(kind));
+        }
         optionsLayout->addWidget(box);
         captureBoxes_.insert(kind, box);
+        captureStepIds_.insert(kind, workflow_.stepLabel(index));
     }
+
+    auto *acquire = new QPushButton(tr("Acquire selected"), page);
+    connect(acquire, &QPushButton::clicked, this, [this] { acquireSelected(); });
+    optionsLayout->addWidget(acquire);
     layout->addWidget(options);
 
     if (optional) {
@@ -284,6 +300,52 @@ QHBoxLayout *RegistrationWindow::makeNavRow(int stepIndex) {
     row->addStretch(1);
     row->addWidget(next);
     return row;
+}
+
+void RegistrationWindow::acquireSelected() {
+    for (auto it = captureBoxes_.constBegin(); it != captureBoxes_.constEnd(); ++it) {
+        if (!it.value()->isChecked() || !it.value()->isEnabled()) {
+            continue;
+        }
+        const QString kind = it.key();
+        const QString method = (kind == QStringLiteral("document_mrz"))
+                                   ? QStringLiteral("document_mrz")
+                                   : QStringLiteral("biometric_sensor");
+
+        QString error;
+        const std::optional<QJsonObject> capture = sensorCapture(kind, 30, &error);
+        if (!capture) {
+            QMessageBox::critical(this, tr("Capture failed"),
+                                  tr("Could not acquire %1: %2").arg(kind, error));
+            continue;
+        }
+
+        // A capture that failed its presentation-attack check must not be
+        // recorded as a successful enrolment, so the driver already refuses it.
+        // Record the quality and liveness method for the audit trail.
+        if (const QJsonValue verdict = capture->value(QStringLiteral("liveness"));
+            verdict.isObject()) {
+            statusBar()->showMessage(
+                tr("%1 captured; liveness %2 via %3")
+                    .arg(kind)
+                    .arg(verdict.toObject().value(QStringLiteral("method")).toString())
+                    .arg(verdict.toObject().value(QStringLiteral("score")).toInt()));
+        } else {
+            statusBar()->showMessage(
+                tr("%1 captured (%2 bytes)").arg(kind).arg(capture->value(QStringLiteral("bytes")).toInt()));
+        }
+
+        const QString stepId = captureStepIds_.value(kind);
+        if (const std::optional<QString> id = store_.append(
+                kind, QStringLiteral("A"), QStringLiteral("\"%1\"").arg(capture->value(QStringLiteral("sample_id")).toString()),
+                operatorId_, workflow_.id(), stepId, QStringLiteral("enrolment"), method, &error)) {
+            recordIds_.insert(kind, *id);
+        } else {
+            QMessageBox::critical(this, tr("Store failure"),
+                                  tr("Could not seal %1: %2").arg(kind, error));
+        }
+    }
+    persist();
 }
 
 QStringList RegistrationWindow::captureKindsFor(int index) const {

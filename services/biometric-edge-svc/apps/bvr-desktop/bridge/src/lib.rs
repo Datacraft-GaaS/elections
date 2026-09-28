@@ -37,6 +37,7 @@ type size_t = usize;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 
 use eel_bvr_store_rs::{CaptureMethod, Provenance, Purpose, Store};
+use sensor_driver::BiometricSensorDriver;
 use eel_bvr_workflow_rs::validate::Submission;
 use eel_bvr_workflow_rs::{
     CompiledWorkflow, ValidationError, WorkflowSpec, compile, validate_submission,
@@ -826,6 +827,199 @@ fn constant_time_eq(a: &[u8; 32], b: &[u8; 32]) -> bool {
         diff |= x ^ y;
     }
     diff == 0
+}
+
+// ---------------------------------------------------------------------------
+// sensors
+// ---------------------------------------------------------------------------
+
+/// Narrow a Rust `bool` to the C `int` the header promises.
+fn c_int_cast(value: bool) -> i32 {
+    i32::from(value)
+}
+
+/// The snake_case wire name for a modality, as used in workflow documents.
+fn modality_wire_name(modality: sensor_driver::Modality) -> String {
+    serde_json::to_value(modality)
+        .ok()
+        .and_then(|v| v.as_str().map(str::to_owned))
+        .unwrap_or_default()
+}
+
+/// Numeric form of a collection mode, matching the header's 0/1/2.
+fn mode_to_int(mode: sensor_driver::CollectionMode) -> i32 {
+    match mode {
+        sensor_driver::CollectionMode::Active => 0,
+        sensor_driver::CollectionMode::Passive => 1,
+        sensor_driver::CollectionMode::ExVivo => 2,
+    }
+}
+
+/// The sensor this client drives.
+///
+/// On a deployed station this is a vendor adapter implementing
+/// `BiometricSensorDriver`; the client does not know which. Until such an
+/// adapter is bound, the synthetic `MockSensorDriver` stands in, so the UI
+/// exercises real trait dispatch and real error paths rather than checkboxes
+/// with nothing behind them. A station running the mock is obvious from the
+/// fact that every modality reports present.
+fn sensor() -> &'static (dyn BiometricSensorDriver + 'static) {
+    use std::sync::OnceLock;
+    static SENSOR: OnceLock<Box<dyn BiometricSensorDriver>> = OnceLock::new();
+    SENSOR.get_or_init(|| Box::new(sensor_driver::MockSensorDriver::present("bvr-desktop-mock", 90)))
+        .as_ref()
+}
+
+/// `Modality::ALL[index]`, or an error when out of range.
+unsafe fn modality_at(index: size_t, err: *mut *mut c_char) -> Option<sensor_driver::Modality> {
+    let all = sensor_driver::Modality::ALL;
+    match all.get(index) {
+        Some(modality) => Some(*modality),
+        None => {
+            unsafe { give_error(err, format!("modality index {index} out of range")) };
+            None
+        }
+    }
+}
+
+/// How many modalities the sensor layer knows about.
+///
+/// # Safety
+/// This function is safe; declared for symmetry with the others.
+#[no_mangle]
+pub extern "C" fn eel_sensor_supported_count() -> size_t {
+    sensor_driver::Modality::ALL.len()
+}
+
+/// Wire name for the modality at `index`.
+///
+/// # Safety
+/// `err` must be a writable `char *`.
+#[no_mangle]
+pub unsafe extern "C" fn eel_sensor_modality_name(
+    index: size_t,
+    err: *mut *mut c_char,
+) -> *mut c_char {
+    let outcome = catch_unwind(AssertUnwindSafe(|| {
+        unsafe { clear(err) };
+        match unsafe { modality_at(index, err) } {
+            // Use the serialised form, not Debug: `PalmVein` lowercased is
+            // "palmvein", which is not the wire name "palm_vein" the workflow
+            // documents and the rest of the platform use.
+            Some(modality) => return_string(modality_wire_name(modality)),
+            None => std::ptr::null_mut(),
+        }
+    }));
+    outcome.unwrap_or_else(|_| {
+        unsafe { give_error(err, "internal error reading modality name") };
+        std::ptr::null_mut()
+    })
+}
+
+/// Whether this station's sensor can acquire the modality at `index`.
+///
+/// # Safety
+/// `err` must be a writable `char *`.
+#[no_mangle]
+pub unsafe extern "C" fn eel_sensor_supports(
+    index: size_t,
+    err: *mut *mut c_char,
+) -> i32 {
+    let outcome = catch_unwind(AssertUnwindSafe(|| {
+        unsafe { clear(err) };
+        match unsafe { modality_at(index, err) } {
+            Some(modality) => c_int_cast(sensor().supports(modality)),
+            None => -1,
+        }
+    }));
+    outcome.unwrap_or_else(|_| {
+        unsafe { give_error(err, "internal error checking sensor support") };
+        -1
+    })
+}
+
+/// Collection mode for the modality at `index`: 0 active, 1 passive, 2 ex vivo.
+///
+/// # Safety
+/// `err` must be a writable `char *`.
+#[no_mangle]
+pub unsafe extern "C" fn eel_sensor_collection_mode(
+    index: size_t,
+    err: *mut *mut c_char,
+) -> i32 {
+    let outcome = catch_unwind(AssertUnwindSafe(|| {
+        unsafe { clear(err) };
+        match unsafe { modality_at(index, err) } {
+            Some(modality) => mode_to_int(modality.collection_mode()),
+            None => -1,
+        }
+    }));
+    outcome.unwrap_or_else(|_| {
+        unsafe { give_error(err, "internal error reading collection mode") };
+        -1
+    })
+}
+
+/// Acquire one sample of the modality at `index`.
+///
+/// # Safety
+/// `out` and `err` must be writable `char *`.
+#[no_mangle]
+pub unsafe extern "C" fn eel_sensor_capture(
+    index: size_t,
+    timeout_secs: i32,
+    out: *mut *mut c_char,
+    err: *mut *mut c_char,
+) -> i32 {
+    let outcome = catch_unwind(AssertUnwindSafe(|| {
+        unsafe { clear(err); clear(out) };
+        let Some(modality) = (unsafe { modality_at(index, err) }) else {
+            return -1;
+        };
+        let timeout = std::time::Duration::from_secs(timeout_secs.max(1) as u64);
+
+        // Fingerprint is the modality where presentation attacks are the
+        // standard countermeasure target, so it goes through the liveness-
+        // checked path. The others are captured as declared; an adapter
+        // implementing live_photograph is responsible for its own PAD.
+        let result = if modality == sensor_driver::Modality::Fingerprint {
+            sensor().capture_fingerprint_live(timeout)
+        } else {
+            sensor().capture(modality, timeout)
+        };
+
+        match result {
+            Ok(capture) => {
+                let payload = serde_json::json!({
+                    "modality": modality_wire_name(modality),
+                    "sample_id": capture.sample.meta.sample_id,
+                    "captured_at_ms": capture.sample.meta.captured_at_ms,
+                    "quality": capture.sample.meta.quality,
+                    "bytes": capture.sample.data.len(),
+                    "degraded": capture.degraded,
+                    "liveness": capture.liveness.as_ref().map(|l| serde_json::json!({
+                        "method": serde_json::to_value(l.method)
+                            .ok()
+                            .and_then(|v| v.as_str().map(str::to_owned))
+                            .unwrap_or_default(),
+                        "passed": l.passed,
+                        "score": l.score,
+                        "detail": l.detail,
+                    })),
+                });
+                unsafe { give_string(out, payload.to_string()) };
+                0
+            }
+            Err(e) => {
+                unsafe { give_error(err, e.to_string()) };
+                -1
+            }
+        }
+    }));
+    outcome.unwrap_or_else(|_| {
+        unsafe { give_error(err, "internal error during capture") };
+        -1
+    })
 }
 
 // ---------------------------------------------------------------------------

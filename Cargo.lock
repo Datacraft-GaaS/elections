@@ -4188,6 +4188,7 @@ dependencies = [
  "eel-bvr-store-rs",
  "eel-bvr-workflow-rs",
  "eel-crypto-rs",
+ "sensor-driver",
  "serde",
  "serde_json",
  "uuid",

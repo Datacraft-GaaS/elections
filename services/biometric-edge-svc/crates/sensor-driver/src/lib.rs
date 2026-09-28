@@ -10,6 +10,7 @@
 pub mod sensor_driver;
 
 pub use sensor_driver::{
-    BiometricCapture, BiometricSample, BiometricSensorDriver, CaptureMeta, MockSensorDriver,
-    Modality, SensorError, QUALITY_GATE_MIN,
+    BiometricCapture, BiometricSample, BiometricSensorDriver, CaptureMeta, CollectionMode,
+    LivenessMethod, LivenessVerdict, MockAcquisition, MockSensorDriver, Modality, SensorError,
+    QUALITY_GATE_MIN,
 };

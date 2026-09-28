@@ -11,6 +11,7 @@
 #pragma once
 
 #include <QJsonArray>
+#include <QVector>
 #include <QJsonObject>
 #include <QString>
 
@@ -138,6 +139,27 @@ private:
     explicit Store(EelStore *handle) : handle_(handle) {}
     EelStore *handle_;
 };
+
+/// One modality, as the sensor layer reports it.
+struct ModalityInfo {
+    /// Snake_case wire name, e.g. "palm_vein".
+    QString name;
+    /// Whether this station's sensor can acquire it.
+    bool supported = false;
+    /// 0 active, 1 passive (session), 2 ex vivo.
+    int collectionMode = 0;
+};
+
+/// Every modality the sensor layer knows about, with per-station support.
+QVector<ModalityInfo> sensorModalities();
+
+/// Captures one sample. Returns an empty optional on failure, with `error` set.
+///
+/// A modality the station cannot acquire fails rather than returning a
+/// fabricated sample, which is what the UI relies on to refuse an impossible
+/// capture.
+std::optional<QJsonObject> sensorCapture(const QString &modalityName, int timeoutSeconds,
+                                         QString *error);
 
 /// Validates `submission` against `workflow`.
 ///
