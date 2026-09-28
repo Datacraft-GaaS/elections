@@ -287,7 +287,7 @@ Run security audits – cargo audit and cargo deny check before committing.
 
 ### Service Verification (all 20 services)
 - Compile all workspace-root services (`biometric-edge-svc`, `boundary-svc`, `bvi-svc`, `bvr-svc`, `field-mobile-svc`, `queue-svc`, `rts-svc`, `support-admin-svc`, `vprs-svc`) + individual child crates (`abis-svc`, `ai-platform-svc`, `crms-svc`, `ecc-svc`, `governance-svc`, `hello-svc`, `inventory-svc`, `portal-svc`, `training-svc`, `transparency-svc`, `workforce-svc`).
-- **Field-mobile-svc** (`mobile-bff`): pre-existing errors (E0382/E0061/E0599/E0308) — fix before release; not caused by session edits.
+- **Field-mobile-svc**: green. `mobile-bff`, `support-api`, `dispatch-api`, and `eel-field-mobile-telemetry-ingest` all compile clean under `cargo check --locked --all-targets`; 91 tests pass. The earlier E0382/E0061/E0599/E0308 errors in `mobile-bff` are resolved.
 - **Training-svc** (`training-api`): verified 22.27s, 298 `missing_docs` warnings only — acceptable per `#![warn(missing_docs)]`.
 - **No stubs**: 2 defensive `unreachable!()` kept; no `UnimplementedError`; no empty endpoints.
 - **Audit reference preserved** in every doc: 5-axis (where/when/who/why/how) + `proofHash` + `signature` + `auditId` (UUID7).
