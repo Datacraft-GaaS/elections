@@ -6,6 +6,7 @@
 
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QJsonDocument>
 
 namespace eel {
 namespace {
@@ -330,6 +331,33 @@ bool Store::checkKey(const QByteArray &publicKey) const {
 }
 
 // ---------------------------------------------------------------- sensors --
+
+SensorMode sensorMode() {
+    const std::optional<QString> mode = takeString(eel_sensor_mode());
+    if (!mode) {
+        return SensorMode::Unbound;
+    }
+    if (*mode == QStringLiteral("real")) {
+        return SensorMode::Real;
+    }
+    if (*mode == QStringLiteral("mock")) {
+        return SensorMode::Mock;
+    }
+    return SensorMode::Unbound;
+}
+
+bool enableMockSensor(std::string *error) {
+    if (eel_sensor_use_mock() == 1) {
+        return true;
+    }
+    if (error) {
+        *error =
+            "this build does not contain the mock sensor. It is a development "
+            "feature, compiled out of production builds so a station cannot "
+            "ship with a simulated reader. Build with --features mock-sensor.";
+    }
+    return false;
+}
 
 QVector<ModalityInfo> sensorModalities() {
     QVector<ModalityInfo> out;

@@ -50,17 +50,34 @@ else()
     set(CARGO_PROFILE_FLAG "--release")
 endif()
 
-add_custom_command(
-    OUTPUT "${BRIDGE_LIB}"
+# The mock sensor is a development feature, compiled out of production builds so
+# a station cannot ship with a simulated reader. Off unless explicitly requested.
+option(EEL_BVR_MOCK_SENSOR "Include the synthetic sensor (development only)" OFF)
+if(EEL_BVR_MOCK_SENSOR)
+    set(CARGO_FEATURE_FLAG "--features" "mock-sensor")
+    message(WARNING
+        "EEL_BVR_MOCK_SENSOR is ON: this binary contains the synthetic sensor and "
+        "is not fit for a registration station.")
+else()
+    set(CARGO_FEATURE_FLAG "")
+endif()
+
+# Always invokes cargo rather than keying off the archive's timestamp. Switching
+# EEL_BVR_MOCK_SENSOR changes the arguments, not the output path, so a
+# timestamp rule would consider an archive built by a previous configuration up
+# to date and silently keep the wrong feature set. Cargo is incremental and
+# near-free when nothing changed, so correctness wins here.
+add_custom_target(eel_bvr_bridge_build
     COMMAND ${CMAKE_COMMAND} -E env
             "CARGO_TARGET_DIR=${REPO_ROOT}/target"
-            ${CARGO_EXECUTABLE} build -p eel-bvr-bridge ${CARGO_PROFILE_FLAG} --locked
+            ${CARGO_EXECUTABLE} build -p eel-bvr-bridge
+            ${CARGO_FEATURE_FLAG} ${CARGO_PROFILE_FLAG} --locked
     WORKING_DIRECTORY "${REPO_ROOT}"
     COMMENT "Building the Rust bridge (eel-bvr-bridge)"
     VERBATIM
 )
-add_custom_target(eel_bvr_bridge_build DEPENDS "${BRIDGE_LIB}")
 message(STATUS "Rust bridge: ${BRIDGE_LIB}")
+message(STATUS "Mock sensor: ${EEL_BVR_MOCK_SENSOR}")
 
 # --- embedded workflow document --------------------------------------------
 #

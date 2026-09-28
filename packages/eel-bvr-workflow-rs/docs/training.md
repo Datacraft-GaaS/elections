@@ -326,6 +326,21 @@ cargo build -p eel-bvr-bridge --release --locked
 cargo check --workspace --locked --all-targets
 ```
 
+`--check` also reports the sensor mode, because the one thing that must never
+be ambiguous on a registration station is whether it is reading a real finger:
+
+```
+sensor: real
+sensor: UNBOUND (captures will fail)   # no adapter bound
+sensor: MOCK (no real hardware bound)  # development only
+```
+
+The mock is a `mock-sensor` Cargo feature, **off by default**, so a production
+build physically cannot simulate a reader and `--mock-sensor` is refused with
+exit 7. Development builds enable it with `-DEEL_BVR_MOCK_SENSOR=ON`, and
+enabling it is a second deliberate act on top of compiling it in. There is no
+fallback: with no adapter bound, captures fail with a message saying so.
+
 Exit codes, so a deployment script can branch on them:
 
 | Code | Meaning |
@@ -336,6 +351,7 @@ Exit codes, so a deployment script can branch on them:
 | `4` | **Store failed its integrity check** |
 | `5` | No officer identity supplied |
 | `6` | `--store-key` was not 32 bytes |
+| `7` | `--mock-sensor` on a build without the mock |
 
 `4` is the one that matters. A tampered store must not be used for
 registration, and `--check` is how a deployment pipeline finds that out before

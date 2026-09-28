@@ -79,6 +79,11 @@ int main(int argc, char *argv[]) {
                        "supplies bytes it already holds. The key is never "
                        "written to disk."),
         QStringLiteral("hex"));
+    const QCommandLineOption mockSensorOption(
+        {QStringLiteral("m"), QStringLiteral("mock-sensor")},
+        QStringLiteral("Bind the synthetic sensor so captures can be exercised "
+                       "with no hardware. Development only: a production build "
+                       "omits it and refuses this flag."));
     const QCommandLineOption checkOption(
         {QStringLiteral("c"), QStringLiteral("check")},
         QStringLiteral("Compile the workflow, verify the store, then exit. No window. "
@@ -88,6 +93,7 @@ int main(int argc, char *argv[]) {
     parser.addOption(operatorOption);
     parser.addOption(storePathOption);
     parser.addOption(kekOption);
+    parser.addOption(mockSensorOption);
     parser.addOption(checkOption);
     parser.process(app);
 
@@ -101,6 +107,19 @@ int main(int argc, char *argv[]) {
             QMessageBox::critical(nullptr, title, body);
         }
     };
+
+    // 0. Bind the sensor first, so an unbound station says so before an officer
+    //    starts a registration it cannot complete.
+    if (parser.isSet(mockSensorOption)) {
+        std::string why;
+        if (!eel::enableMockSensor(&why)) {
+            // Routed through report so --check can use it: a modal dialog in a
+            // headless smoke test would hang rather than fail.
+            report(QStringLiteral("Mock sensor unavailable"),
+                   QString::fromStdString(why));
+            return 7;
+        }
+    }
 
     // 1. Compile the workflow before anything else. A malformed document must
     //    not be discovered halfway through a citizen's registration.
@@ -154,14 +173,26 @@ int main(int argc, char *argv[]) {
     }
 
     if (checkOnly) {
+        const eel::SensorMode mode = eel::sensorMode();
         QTextStream out(stdout);
         out << "workflow: " << workflow->id() << " (" << workflow->stepCount()
             << " steps)\n"
             << "store: ok, instance " << store->instanceId() << "\n"
             << "public key: " << store->publicKeyBase64() << "\n"
             << "store key: "
-            << (keyEncryptionKey.size() == 32 ? "ok (32 bytes)" : "NOT SUPPLIED")
-            << "\n";
+            << (keyEncryptionKey.size() == 32 ? "ok (32 bytes)" : "NOT SUPPLIED") << "\n"
+            << "sensor: ";
+        switch (mode) {
+        case eel::SensorMode::Mock:
+            out << "MOCK (no real hardware bound)\n";
+            break;
+        case eel::SensorMode::Real:
+            out << "real\n";
+            break;
+        case eel::SensorMode::Unbound:
+            out << "UNBOUND (captures will fail)\n";
+            break;
+        }
         return 0;
     }
 

@@ -222,6 +222,20 @@ int eel_store_check_key(const EelStore *store, const unsigned char *public_key, 
 /* How many modalities the sensor layer knows about. */
 size_t eel_sensor_supported_count(void);
 
+/* Which sensor is bound: "real", "mock", or "unbound". Caller frees.
+ *
+ * There is no silent fallback to the mock. A client with no adapter bound
+ * reports "unbound" and capture fails, rather than simulating a reader that
+ * accepts everything. */
+char *eel_sensor_mode(void);
+
+/* Enables the mock sensor for this process.
+ *
+ * Returns 1 when enabled, 0 when this build does not contain the mock. A
+ * production build omits the `mock-sensor` feature entirely, so it cannot be
+ * talked into simulating a reader even if something asks. */
+int eel_sensor_use_mock(void);
+
 /* Wire name for the modality at `index`, e.g. "palm_vein". Caller frees. */
 char *eel_sensor_modality_name(size_t index, char **err);
 

@@ -38,7 +38,13 @@ RegistrationWindow::RegistrationWindow(Workflow workflow, Store store, QString s
     : QMainWindow(parent), workflow_(std::move(workflow)), store_(std::move(store)),
       stationLabel_(std::move(stationLabel)), storePath_(std::move(storePath)),
       keyEncryptionKey_(std::move(keyEncryptionKey)) {
-    setWindowTitle(tr("eel BVR — %1").arg(stationLabel_));
+    // The one thing that must never be ambiguous on a registration station is
+    // whether it is reading a real finger, so the mode is in the title bar.
+    const QString sensorText = sensorMode() == SensorMode::Mock
+        ? tr("SENSOR: MOCK")
+        : (sensorMode() == SensorMode::Real ? tr("SENSOR: real")
+                                            : tr("SENSOR: UNBOUND"));
+    setWindowTitle(tr("eel BVR — %1 — %2").arg(stationLabel_, sensorText));
     resize(900, 680);
 
     steps_ = new QStackedWidget(this);
@@ -196,7 +202,10 @@ QWidget *RegistrationWindow::buildCaptureStep(int index) {
         }
         box->setEnabled(supported);
         if (!supported) {
-            box->setToolTip(tr("This station has no sensor for %1.").arg(kind));
+            box->setToolTip(
+                sensorMode() == SensorMode::Unbound
+                    ? tr("No sensor is bound to this client, so no capture can run.")
+                    : tr("This station has no sensor for %1.").arg(kind));
         }
         optionsLayout->addWidget(box);
         captureBoxes_.insert(kind, box);

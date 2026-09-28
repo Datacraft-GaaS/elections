@@ -5,6 +5,12 @@ edition.workspace = true
 license.workspace = true
 publish = false
 
+[features]
+# Off by default. A production build physically cannot contain the mock sensor,
+# so a station cannot be shipped with it by omission or by accident. Development
+# and CI builds enable it explicitly with --features mock-sensor.
+mock-sensor = []
+
 [lib]
 name = "eel_bvr_bridge"
 # Static library so the Qt binary links one object and has no runtime search

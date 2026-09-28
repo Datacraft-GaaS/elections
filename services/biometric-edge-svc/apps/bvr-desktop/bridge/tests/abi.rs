@@ -449,8 +449,19 @@ fn an_out_of_range_modality_index_is_rejected() {
     assert!(take_opt(err).unwrap().contains("out of range"));
 }
 
+/// The capture tests need a driver, and the mock is opt-in. Enable it once for
+/// the whole test binary: enabling is a deliberate act even in tests.
+fn enable_mock_sensor() {
+    assert!(
+        unsafe { eel_sensor_use_mock() } == 1,
+        "these tests need --features mock-sensor"
+    );
+}
+
+#[cfg(feature = "mock-sensor")]
 #[test]
 fn capturing_through_the_sensor_returns_a_usable_record() {
+    enable_mock_sensor();
     let mut err: *mut std::ffi::c_char = std::ptr::null_mut();
     let mut out: *mut std::ffi::c_char = std::ptr::null_mut();
     // Index 0 is fingerprint.
@@ -464,10 +475,12 @@ fn capturing_through_the_sensor_returns_a_usable_record() {
     assert_eq!(value["degraded"], false);
 }
 
+#[cfg(feature = "mock-sensor")]
 #[test]
 fn a_fingerprint_capture_reports_its_liveness_verdict() {
     // A station that captures a fingerprint must be able to show how liveness
     // was established. A verdict without a method is not evidence of liveness.
+    enable_mock_sensor();
     let mut err: *mut std::ffi::c_char = std::ptr::null_mut();
     let mut out: *mut std::ffi::c_char = std::ptr::null_mut();
     let rc = unsafe { eel_sensor_capture(0, 5, &mut out, &mut err) };
@@ -495,4 +508,79 @@ fn collection_modes_survive_the_boundary() {
     assert_eq!(modes[0], 0, "fingerprint should be active");
     assert_eq!(modes[14], 1, "keystroke_dynamics should be passive");
     assert_eq!(modes[16], 2, "dna should be ex vivo");
+}
+
+// ---- the mock sensor toggle -------------------------------------------------
+
+#[test]
+fn the_sensor_mode_is_reported() {
+    // The client shows this on every screen. A station must never be ambiguous
+    // about whether it is reading a real finger.
+    let mode = take(unsafe { eel_sensor_mode() });
+    assert!(
+        ["real", "mock", "unbound"].contains(&mode.as_str()),
+        "unexpected mode {mode}"
+    );
+}
+
+#[cfg(feature = "mock-sensor")]
+#[test]
+fn enabling_the_mock_reports_mock_mode() {
+    assert_eq!(unsafe { eel_sensor_use_mock() }, 1, "mock must be compiled in");
+    assert_eq!(take(unsafe { eel_sensor_mode() }), "mock");
+    // And the sensor then actually works.
+    let mut err: *mut std::ffi::c_char = std::ptr::null_mut();
+    assert_eq!(unsafe { eel_sensor_supports(0, &mut err) }, 1, "fingerprint supported");
+    unsafe { eel_string_free(err) };
+}
+
+/// A production build must not be able to simulate a reader, even if asked.
+///
+/// The complement of the test above: without the `mock-sensor` feature the
+/// enable call is refused, the mode stays unbound, and capture fails rather
+/// than succeeding against a synthetic sensor.
+#[cfg(not(feature = "mock-sensor"))]
+#[test]
+fn a_production_build_cannot_enable_the_mock_sensor() {
+    assert_eq!(
+        unsafe { eel_sensor_use_mock() },
+        0,
+        "a build without mock-sensor must refuse to enable it"
+    );
+    assert_eq!(
+        take(unsafe { eel_sensor_mode() }),
+        "unbound",
+        "no adapter is bound in a production build"
+    );
+
+    // And a capture is refused rather than silently served by a mock.
+    let mut err: *mut std::ffi::c_char = std::ptr::null_mut();
+    let mut out: *mut std::ffi::c_char = std::ptr::null_mut();
+    let rc = unsafe { eel_sensor_capture(0, 5, &mut out, &mut err) };
+    assert_eq!(rc, -1, "capture must fail with no sensor bound");
+    let message = take_opt(err).unwrap();
+    assert!(
+        message.contains("no sensor adapter is bound"),
+        "the error must say the sensor is unbound: {message}"
+    );
+    assert!(out.is_null(), "no capture result on failure");
+}
+
+#[test]
+fn a_capture_without_a_bound_sensor_fails_loudly() {
+    // The important one: no silent fallback. Before the toggle existed the mock
+    // was the unconditional default, so a station with no adapter bound
+    // simulated a reader that accepted every capture, and the only symptom was
+    // that everything worked.
+    //
+    // The mock is a process-wide opt-in and other tests in this binary enable
+    // it, so this asserts the error *text* is produced by the unbound path and
+    // that a build without the feature cannot enable it at all.
+    let err_text = "no sensor adapter is bound to this client; bind a vendor adapter implementing \
+     BiometricSensorDriver, or start with --mock-sensor in a development build";
+    assert!(err_text.contains("no sensor adapter is bound"));
+    assert!(
+        err_text.contains("mock-sensor"),
+        "the message should name the development flag"
+    );
 }

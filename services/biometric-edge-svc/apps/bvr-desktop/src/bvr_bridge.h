@@ -140,6 +140,16 @@ private:
     EelStore *handle_;
 };
 
+/// Which sensor the client is bound to.
+enum class SensorMode { Real, Mock, Unbound };
+
+/// The current sensor mode.
+SensorMode sensorMode();
+
+/// Enables the mock sensor. Returns false when this build does not contain it,
+/// which is the production case.
+bool enableMockSensor(std::string *error);
+
 /// One modality, as the sensor layer reports it.
 struct ModalityInfo {
     /// Snake_case wire name, e.g. "palm_vein".

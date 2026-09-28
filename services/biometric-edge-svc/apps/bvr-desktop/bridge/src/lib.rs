@@ -855,19 +855,113 @@ fn mode_to_int(mode: sensor_driver::CollectionMode) -> i32 {
     }
 }
 
-/// The sensor this client drives.
+/// Which sensor this client is driving.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SensorMode {
+    /// A vendor adapter is bound. Capture reaches real hardware.
+    Real,
+    /// The synthetic double is driving, for development and CI only.
+    Mock,
+    /// No adapter is bound and the mock was not enabled. Capture fails.
+    Unbound,
+}
+
+impl SensorMode {
+    /// Lowercase wire name.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            SensorMode::Real => "real",
+            SensorMode::Mock => "mock",
+            SensorMode::Unbound => "unbound",
+        }
+    }
+}
+
+/// Whether this build contains the mock sensor at all.
+pub const MOCK_SENSOR_COMPILED_IN: bool = cfg!(feature = "mock-sensor");
+
+/// Runtime opt-in for the mock, set through `eel_sensor_use_mock`.
 ///
-/// On a deployed station this is a vendor adapter implementing
-/// `BiometricSensorDriver`; the client does not know which. Until such an
-/// adapter is bound, the synthetic `MockSensorDriver` stands in, so the UI
-/// exercises real trait dispatch and real error paths rather than checkboxes
-/// with nothing behind them. A station running the mock is obvious from the
-/// fact that every modality reports present.
-fn sensor() -> &'static (dyn BiometricSensorDriver + 'static) {
+/// A static rather than an argument threaded through every call, because the
+/// sensor is a process-wide singleton behind a trait object and the UI asks the
+/// same question from several places.
+static USE_MOCK: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Enables the mock sensor for this process.
+///
+/// Returns 1 when enabled, 0 when this build does not contain the mock, so a
+/// production binary cannot be talked into simulating a reader even if
+/// something asks.
+///
+/// Returns `int` rather than `bool` to match the header: a Rust `bool` is one
+/// byte and a C `int` is four, so returning `bool` across this boundary is an
+/// ABI mismatch rather than a stylistic choice.
+#[no_mangle]
+pub extern "C" fn eel_sensor_use_mock() -> i32 {
+    if !MOCK_SENSOR_COMPILED_IN {
+        return 0;
+    }
+    USE_MOCK.store(true, std::sync::atomic::Ordering::SeqCst);
+    1
+}
+
+/// Which sensor is bound, as its wire name.
+///
+/// The client calls this and shows it on every screen, because the one thing
+/// that must never be ambiguous is whether a station is reading a real finger.
+#[no_mangle]
+pub extern "C" fn eel_sensor_mode() -> *mut c_char {
+    return_string(sensor_mode().as_str().to_owned())
+}
+
+/// The current sensor mode.
+pub fn sensor_mode() -> SensorMode {
+    if USE_MOCK.load(std::sync::atomic::Ordering::SeqCst) {
+        return SensorMode::Mock;
+    }
+    if cfg!(feature = "mock-sensor") {
+        // A development build with the mock compiled in but not enabled is
+        // still unbound: enabling it is a deliberate act, never a default.
+        return SensorMode::Unbound;
+    }
+    SensorMode::Unbound
+}
+
+/// The sensor this client drives, or `None` when nothing is bound.
+///
+/// There is deliberately **no fallback**. An earlier version returned the mock
+/// unconditionally, so a station with no adapter bound silently simulated a
+/// reader that accepted every modality, and the only clue was that everything
+/// worked. Now an unbound sensor reports that it is unbound.
+fn sensor() -> Option<&'static (dyn BiometricSensorDriver + 'static)> {
     use std::sync::OnceLock;
-    static SENSOR: OnceLock<Box<dyn BiometricSensorDriver>> = OnceLock::new();
-    SENSOR.get_or_init(|| Box::new(sensor_driver::MockSensorDriver::present("bvr-desktop-mock", 90)))
-        .as_ref()
+    static SENSOR: OnceLock<Option<Box<dyn BiometricSensorDriver>>> = OnceLock::new();
+    SENSOR
+        .get_or_init(|| {
+            if !USE_MOCK.load(std::sync::atomic::Ordering::SeqCst) {
+                return None;
+            }
+            Some(Box::new(
+                sensor_driver::MockSensorDriver::present("bvr-desktop-mock", 90),
+            ) as Box<dyn BiometricSensorDriver>)
+        })
+        .as_deref()
+}
+
+/// The error reported when a capture is attempted with nothing bound.
+const NO_SENSOR: &str =
+    "no sensor adapter is bound to this client; bind a vendor adapter implementing \
+     BiometricSensorDriver, or start with --mock-sensor in a development build";
+
+/// The sensor, or an error written to `err`.
+unsafe fn require_sensor(err: *mut *mut c_char) -> Option<&'static dyn BiometricSensorDriver> {
+    match sensor() {
+        Some(driver) => Some(driver),
+        None => {
+            unsafe { give_error(err, NO_SENSOR) };
+            None
+        }
+    }
 }
 
 /// `Modality::ALL[index]`, or an error when out of range.
@@ -927,9 +1021,15 @@ pub unsafe extern "C" fn eel_sensor_supports(
 ) -> i32 {
     let outcome = catch_unwind(AssertUnwindSafe(|| {
         unsafe { clear(err) };
-        match unsafe { modality_at(index, err) } {
-            Some(modality) => c_int_cast(sensor().supports(modality)),
-            None => -1,
+        match (unsafe { modality_at(index, err) }, sensor()) {
+            (Some(modality), Some(driver)) => c_int_cast(driver.supports(modality)),
+            (Some(_), None) => {
+                // An unbound sensor supports nothing. Reporting support here
+                // would be the same silent-success failure as before.
+                unsafe { give_error(err, NO_SENSOR) };
+                0
+            }
+            (None, _) => -1,
         }
     }));
     outcome.unwrap_or_else(|_| {
@@ -976,6 +1076,9 @@ pub unsafe extern "C" fn eel_sensor_capture(
         let Some(modality) = (unsafe { modality_at(index, err) }) else {
             return -1;
         };
+        let Some(driver) = (unsafe { require_sensor(err) }) else {
+            return -1;
+        };
         let timeout = std::time::Duration::from_secs(timeout_secs.max(1) as u64);
 
         // Fingerprint is the modality where presentation attacks are the
@@ -983,9 +1086,9 @@ pub unsafe extern "C" fn eel_sensor_capture(
         // checked path. The others are captured as declared; an adapter
         // implementing live_photograph is responsible for its own PAD.
         let result = if modality == sensor_driver::Modality::Fingerprint {
-            sensor().capture_fingerprint_live(timeout)
+            driver.capture_fingerprint_live(timeout)
         } else {
-            sensor().capture(modality, timeout)
+            driver.capture(modality, timeout)
         };
 
         match result {
