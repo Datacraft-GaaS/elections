@@ -99,8 +99,8 @@ pub enum CompileError {
         /// The offending kind.
         kind: DataKind,
     },
-    /// A data class was not one of A, B, or C.
-    #[error("data item {name:?} has data class {class:?}, expected one of A, B, C")]
+    /// A data class was not one of the platform's five PII tiers, A through E.
+    #[error("data item {name:?} has data class {class:?}, expected one of A, B, C, D, E")]
     InvalidDataClass {
         /// The offending item.
         name: String,

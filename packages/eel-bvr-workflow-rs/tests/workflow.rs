@@ -423,19 +423,20 @@ fn length_bound_on_a_pattern_typed_item_is_rejected() {
 
 #[test]
 fn unknown_data_class_is_rejected() {
+    // "D" is a valid tier; "Z" is not.
     let mut spec = standard_ke_workflow();
-    spec.data_items[0].data_class = "D".to_owned();
+    spec.data_items[0].data_class = "Z".to_owned();
     let errors = compile(&spec).unwrap_err();
     assert!(errors.contains(&eel_bvr_workflow_rs::CompileError::InvalidDataClass {
         name: "full_name".to_owned(),
-        class: "D".to_owned()
+        class: "Z".to_owned()
     }));
 }
 
 #[test]
 fn compilation_reports_every_fault_not_just_the_first() {
     let mut spec = standard_ke_workflow();
-    spec.data_items[0].data_class = "Z".to_owned();
+    spec.data_items[0].data_class = "?".to_owned();
     spec.data_items[1].name = "full_name".to_owned(); // duplicate
     spec.steps[0].kind = StepKind::DataEntry { items: vec!["ghost".to_owned()] };
     let errors = compile(&spec).unwrap_err();
@@ -988,4 +989,144 @@ fn under_18_dob() -> String {
         .expect("subtracting 17 years must succeed")
         .format("%Y-%m-%d")
         .to_string()
+}
+
+// ---- the shipped standard workflow ------------------------------------------
+
+/// The standard document the desktop client ships with must compile, and must
+/// stay in step with the BVR contract. Paths are relative to the workspace root.
+const STANDARD_WORKFLOW: &str =
+    "services/biometric-edge-svc/apps/bvr-desktop/workflows/standard-enrolment.json";
+
+fn load_standard_workflow() -> WorkflowSpec {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .join(STANDARD_WORKFLOW);
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|e| panic!("reading {path:?} failed: {e}"));
+    serde_json::from_str(&text)
+        .unwrap_or_else(|e| panic!("parsing {path:?} failed: {e}"))
+}
+
+#[test]
+fn shipped_standard_workflow_compiles() {
+    let spec = load_standard_workflow();
+    let compiled = compile(&spec).expect("the shipped standard workflow must compile");
+    assert_eq!(compiled.id, "bvr-enrolment-standard");
+    assert_eq!(compiled.steps.len(), 8);
+    assert_eq!(compiled.capture_order.len(), 3);
+}
+
+#[test]
+fn shipped_workflow_covers_the_contract_required_voter_fields() {
+    // The BVR contract's Voter schema requires voter_id, national_id,
+    // full_name, dob, gender, polling_station_code, status, version, and
+    // election_scope. The client collects all of those a citizen supplies;
+    // the rest are server-assigned.
+    let compiled = compile(&load_standard_workflow()).unwrap();
+    for field in [
+        "full_name",
+        "national_id",
+        "dob",
+        "gender",
+        "polling_station_code",
+    ] {
+        assert!(
+            compiled.data_item(field).is_some(),
+            "standard workflow must collect {field}"
+        );
+    }
+}
+
+#[test]
+fn shipped_workflow_uses_only_pattern_checked_kinds_that_agree_with_the_contract() {
+    // Guards the documented contract discrepancy: station_code is enforced
+    // against ^[A-Z0-9]{6,12}$, so the workflow must not ship a value the
+    // pattern would reject.
+    let compiled = compile(&load_standard_workflow()).unwrap();
+    let station = compiled.data_item("polling_station_code").unwrap();
+    assert!(matches!(station.item.kind, DataKind::StationCode));
+    assert!(eel_spec_helpers_rs::matches_bvr_pattern("polling_station_code", "NRB001PS042"));
+    assert!(!eel_spec_helpers_rs::matches_bvr_pattern("polling_station_code", "NRB-001-PS-042"));
+}
+
+#[test]
+fn shipped_workflow_requires_consent_and_a_minimum_age() {
+    let compiled = compile(&load_standard_workflow()).unwrap();
+    let consent = compiled.data_item("consent_biometric").unwrap();
+    assert_eq!(consent.item.kind, DataKind::Consent);
+    assert!(consent.item.required, "consent must be required");
+
+    let dob = compiled.data_item("dob").unwrap();
+    assert_eq!(dob.item.constraints.min_age_years, Some(18));
+    assert_eq!(dob.item.constraints.max_age_years, Some(120));
+}
+
+#[test]
+fn shipped_workflow_accepts_a_complete_registration() {
+    let compiled = compile(&load_standard_workflow()).unwrap();
+    let submission: serde_json::Map<String, serde_json::Value> = json!({
+        "full_name": "Wanjiku Mwangi",
+        "national_id": "12345678",
+        "dob": "1990-06-15",
+        "gender": "female",
+        "county_code": "47",
+        "constituency_code": "042",
+        "polling_station_code": "NRB001PS042",
+        "phone": "+254712345678",
+        "consent_biometric": true,
+    })
+    .as_object()
+    .cloned()
+    .unwrap();
+
+    let result = validate_submission(
+        &compiled,
+        &submission,
+        &[
+            CaptureKind::DocumentMrz,
+            CaptureKind::Fingerprint,
+            CaptureKind::LivePhotograph,
+        ],
+    );
+    assert!(result.is_ok(), "shipped workflow rejected a valid registration: {:?}", result.violations);
+}
+
+#[test]
+fn shipped_workflow_rejects_a_registration_missing_a_capture() {
+    let compiled = compile(&load_standard_workflow()).unwrap();
+    let submission: serde_json::Map<String, serde_json::Value> = json!({
+        "full_name": "Wanjiku Mwangi",
+        "national_id": "12345678",
+        "dob": "1990-06-15",
+        "gender": "female",
+        "county_code": "47",
+        "constituency_code": "042",
+        "polling_station_code": "NRB001PS042",
+        "consent_biometric": true,
+    })
+    .as_object()
+    .cloned()
+    .unwrap();
+
+    let result = validate_submission(&compiled, &submission, &[CaptureKind::Fingerprint]);
+    assert_eq!(
+        result.violations.len(),
+        2,
+        "document and face captures both missing, got {:?}",
+        result.violations
+    );
+}
+
+#[test]
+fn all_five_pii_tiers_are_accepted() {
+    // The platform PII model is five tiers (eel-pii-rs::PIIDataClass), wider
+    // than the A/B/C subset the BVR contract happens to tag. A workflow
+    // storing operational metadata must not be rejected.
+    for (class, ok) in [("A", true), ("B", true), ("C", true), ("D", true), ("E", true), ("F", false), ("", false)] {
+        let mut spec = standard_ke_workflow();
+        spec.data_items[0].data_class = class.to_owned();
+        let compiled = compile(&spec);
+        assert_eq!(compiled.is_ok(), ok, "data class {class:?} should be ok={ok}");
+    }
 }

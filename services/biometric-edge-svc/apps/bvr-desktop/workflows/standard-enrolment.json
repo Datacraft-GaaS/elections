@@ -1,0 +1,141 @@
+{
+  "version": 1,
+  "id": "bvr-enrolment-standard",
+  "label": "Standard voter enrolment",
+  "data_items": [
+    {
+      "name": "full_name",
+      "kind": "text",
+      "label": "Full legal name",
+      "required": true,
+      "data_class": "A",
+      "constraints": { "min_length": 1, "max_length": 200 }
+    },
+    {
+      "name": "national_id",
+      "kind": "national_id",
+      "label": "National ID number",
+      "required": true,
+      "data_class": "A",
+      "help": "The 8-digit number printed on the national ID card."
+    },
+    {
+      "name": "dob",
+      "kind": "date",
+      "label": "Date of birth",
+      "required": true,
+      "data_class": "A",
+      "constraints": { "min_age_years": 18, "max_age_years": 120 }
+    },
+    {
+      "name": "gender",
+      "kind": "choice",
+      "label": "Gender",
+      "required": true,
+      "data_class": "A",
+      "constraints": {
+        "options": ["male", "female", "other", "prefer_not_to_say"]
+      }
+    },
+    {
+      "name": "county_code",
+      "kind": "text",
+      "label": "County code",
+      "required": true,
+      "data_class": "B",
+      "constraints": { "min_length": 2, "max_length": 2 }
+    },
+    {
+      "name": "constituency_code",
+      "kind": "text",
+      "label": "Constituency code",
+      "required": true,
+      "data_class": "B",
+      "constraints": { "min_length": 3, "max_length": 3 }
+    },
+    {
+      "name": "polling_station_code",
+      "kind": "station_code",
+      "label": "Polling station",
+      "required": true,
+      "data_class": "B",
+      "help": "Assigned station code, 6 to 12 uppercase letters and digits."
+    },
+    {
+      "name": "phone",
+      "kind": "phone",
+      "label": "Phone number",
+      "required": false,
+      "data_class": "A",
+      "help": "Optional. Kenyan mobile number in international format."
+    },
+    {
+      "name": "consent_biometric",
+      "kind": "consent",
+      "label": "Citizen consents to biometric enrolment and retention",
+      "required": true,
+      "data_class": "A",
+      "help": "Must be read to the citizen and affirmatively answered before continuing."
+    }
+  ],
+  "capture_requirements": [
+    {
+      "id": "fingerprints",
+      "label": "Fingerprints",
+      "kinds": ["fingerprint"],
+      "policy": "all_of",
+      "optional": false
+    },
+    {
+      "id": "document",
+      "label": "Identity document",
+      "kinds": ["document_mrz"],
+      "policy": "all_of",
+      "optional": false
+    },
+    {
+      "id": "face_live",
+      "label": "Liveness-checked photograph",
+      "kinds": ["live_photograph"],
+      "policy": "all_of",
+      "optional": false
+    }
+  ],
+  "steps": [
+    {
+      "id": "identity",
+      "kind": "data_entry",
+      "items": ["full_name", "national_id", "dob", "gender"],
+      "label": "Citizen details"
+    },
+    {
+      "id": "residence",
+      "kind": "data_entry",
+      "items": ["county_code", "constituency_code", "polling_station_code", "phone"],
+      "label": "Residence and station"
+    },
+    {
+      "id": "document",
+      "kind": "capture",
+      "capture": "document"
+    },
+    {
+      "id": "fingerprints",
+      "kind": "capture",
+      "capture": "fingerprints"
+    },
+    {
+      "id": "face",
+      "kind": "capture",
+      "capture": "face_live"
+    },
+    {
+      "id": "consent",
+      "kind": "data_entry",
+      "items": ["consent_biometric"],
+      "label": "Consent"
+    },
+    { "id": "review", "kind": "review" },
+    { "id": "submit", "kind": "submit" }
+  ]
+}

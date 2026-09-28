@@ -175,9 +175,16 @@ pub struct DataItem {
 }
 
 impl DataItem {
-    /// Returns `true` when the data class is one of the contract's A, B, or C.
+    /// Returns `true` when the data class is one of the platform's five PII
+    /// tiers, `A` through `E`, matching `PIIDataClass` in `eel-pii-rs`.
+    ///
+    /// An earlier version of this check accepted only A, B, and C because that
+    /// is the subset the BVR contract tags on its `Voter` schema. The platform
+    /// model is wider than the contract subset, so the check now follows
+    /// `PIIDataClass`; the contract subset is a documentation concern, not a
+    /// compilation rule.
     pub fn has_valid_data_class(&self) -> bool {
-        matches!(self.data_class.as_str(), "A" | "B" | "C")
+        matches!(self.data_class.as_str(), "A" | "B" | "C" | "D" | "E")
     }
 }
 
