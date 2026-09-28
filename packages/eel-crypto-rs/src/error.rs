@@ -18,6 +18,17 @@ pub enum CryptoError {
     #[error("signature verification failed")]
     InvalidSignature,
 
+    /// An AEAD operation failed. Deliberately coarse: a wrong key, a modified
+    /// ciphertext, a modified tag, and mismatched associated data are all
+    /// reported identically so the error reveals nothing to an attacker
+    /// probing the store.
+    #[error("authenticated encryption or decryption failed")]
+    Aead,
+
+    /// The operating system random number generator failed.
+    #[error("secure randomness unavailable")]
+    Randomness,
+
     /// The supplied key material was malformed or the wrong size.
     #[error("invalid key: {0}")]
     InvalidKey(String),

@@ -4181,6 +4181,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "eel-bvr-store-rs"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "chrono",
+ "eel-bvr-workflow-rs",
+ "eel-crypto-rs",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "uuid",
+]
+
+[[package]]
 name = "eel-bvr-workflow-rs"
 version = "0.1.0"
 dependencies = [
@@ -4227,6 +4241,7 @@ dependencies = [
  "proptest",
  "rand_core 0.6.4",
  "reqwest",
+ "ring",
  "serde",
  "serde_json",
  "sha2 0.10.9",

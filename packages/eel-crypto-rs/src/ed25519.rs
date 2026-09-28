@@ -34,6 +34,14 @@ pub fn generate_keypair() -> SigningKey {
     SigningKey::from_bytes(&secret)
 }
 
+/// Returns the 32-byte public key for `signing_key`.
+///
+/// Exposed so callers that only need the public key do not have to depend on
+/// `ed25519-dalek` directly just to read `verifying_key()`.
+pub fn public_key(signing_key: &SigningKey) -> [u8; 32] {
+    signing_key.verifying_key().to_bytes()
+}
+
 /// Sign `message` with `signing_key`, returning a 64-byte signature.
 ///
 /// # Example

@@ -19,6 +19,7 @@
 //! The [`KeyRole`] enum names every HSM-managed key purpose.
 #![warn(missing_docs)]
 
+pub mod aead;
 pub mod blake3;
 pub mod constant_time;
 pub mod ed25519;
