@@ -24,7 +24,7 @@ class FormsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           EelChips(
-            options: const ['Voter's Register', 'Candidate Application', 'Dispute Form'],
+            options: const ['Voter\'s Register', 'Candidate Application', 'Dispute Form'],
             onSelected: (chip) {},
           ),
           const SizedBox(height: 16),

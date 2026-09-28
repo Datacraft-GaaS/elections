@@ -71,8 +71,8 @@ class AtResponse {
     final trimmed = line.trim();
     final hasOk = trimmed.contains('OK');
     final hasErr = trimmed.contains('ERROR') || trimmed.contains('+CME ERROR') || trimmed.contains('+CMS ERROR');
-    final cmeMatch = RegExp(r'\+CME ERROR:\s*([0-9]+),([^\n]+)').firstMatch(trimmed);
-    final cmsMatch = RegExp(r'\+CMS ERROR:\s*([0-9]+),([^\n]+)').firstMatch(trimmed);
+    final cmeMatch = RegExp(r'\+CME ERROR:\s*([0-9]+),([^\n]+)').firstMatch(trimmed);
+    final cmsMatch = RegExp(r'\+CMS ERROR:\s*([0-9]+),([^\n]+)').firstMatch(trimmed);
     return AtResponse(
       raw: trimmed,
       ok: hasOk && !hasErr,
