@@ -1,4 +1,5 @@
 /// EelHttpClient factory for field-support.
+library;
 
 import 'package:dio/dio.dart';
 import 'package:uuid/uuid.dart';

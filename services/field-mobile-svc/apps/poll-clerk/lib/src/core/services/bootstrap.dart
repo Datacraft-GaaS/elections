@@ -5,6 +5,7 @@
 /// 
 /// States: cold, integrityCheck, attestation, config, auth, roleRoute, ready
 /// Blocked states: blockedRasp, blockedAttest, blockedConfig, blockedAuth, blockedVersion
+library;
 
 import 'package:eel_core_flutter/src/bootstrap/bootstrap_fsm.dart';
 

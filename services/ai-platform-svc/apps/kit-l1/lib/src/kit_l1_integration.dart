@@ -1,5 +1,6 @@
 /// Kit-L1 integration (M26/M28) — anomaly plugin integrated into bvi-kit / rts-kit pipelines.
 /// Per plan.md M4: kit-l1 is a small integration task (2 ED) after M2/M3 complete.
+library;
 
 import '../src/anomaly_detector.dart';
 import '../src/anomaly_result.dart';

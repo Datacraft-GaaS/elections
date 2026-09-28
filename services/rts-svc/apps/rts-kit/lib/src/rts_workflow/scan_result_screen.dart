@@ -19,8 +19,8 @@ class ScanResultScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           EelResultCard(
             leading: Icon(Icons.check_circle, color: EelColors.of(context).primary, size: 32),
-            title: Text('Scan Verified', style: EelTextStyle.titleMedium),
-            subtitle: Text('RFID tag: RT-001 • Station: KE-NBI-001', style: EelTextStyle.bodyMedium),
+            title: const Text('Scan Verified', style: EelTextStyle.titleMedium),
+            subtitle: const Text('RFID tag: RT-001 • Station: KE-NBI-001', style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 16),
           EelButton(

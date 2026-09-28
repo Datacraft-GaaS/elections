@@ -1,5 +1,6 @@
 /// Observer Status (M34 FR-025/027) — Beautiful, ergonomic, accessible.
 /// Uses eel_design: EelScaffold, EelStatusChip, EelBanner, EelButton, EelColors.
+library;
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
@@ -19,27 +20,27 @@ class ObserverStatusScreen extends ConsumerWidget {
           // Hero card — station info with seal.
           EelResultCard(
             leading: EelSealStamp(size: 48, color: colors.primaryMuted),
-            title: Text('Station KE-NBI-001', style: EelTextStyle.titleLarge),
-            subtitle: Text('Verified observer — active session', style: EelTextStyle.bodyMedium),
+            title: const Text('Station KE-NBI-001', style: EelTextStyle.titleLarge),
+            subtitle: const Text('Verified observer — active session', style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 16),
           // Status chips — no PII, aggregate info only.
-          EelStatusChip(label: 'Connection: Online', severity: EelSeverity.success),
+          const EelStatusChip(label: 'Connection: Online', severity: EelSeverity.success),
           const SizedBox(height: 8),
-          EelStatusChip(label: 'Forms synced: Yes', severity: EelSeverity.success),
+          const EelStatusChip(label: 'Forms synced: Yes', severity: EelSeverity.success),
           const SizedBox(height: 8),
-          EelStatusChip(label: 'Kit battery: 78%', severity: EelSeverity.success),
+          const EelStatusChip(label: 'Kit battery: 78%', severity: EelSeverity.success),
           const SizedBox(height: 8),
-          EelStatusChip(label: 'Incidents open: 1', severity: EelSeverity.warning),
+          const EelStatusChip(label: 'Incidents open: 1', severity: EelSeverity.warning),
           const SizedBox(height: 16),
           // Security banner.
-          EelBanner(
+          const EelBanner(
             message: 'FLAG_SECURE / isCaptured / screen-capture-tamper (FR-M31-029)',
             severity: EelSeverity.info,
           ),
           const SizedBox(height: 8),
           // Connectivity note.
-          EelBanner(
+          const EelBanner(
             message: 'BVI back-end notified on connectivity change (§5.1, FR-M30-003).',
             severity: EelSeverity.info,
           ),

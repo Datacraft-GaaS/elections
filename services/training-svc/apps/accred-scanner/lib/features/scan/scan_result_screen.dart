@@ -1,4 +1,5 @@
 /// Accred-Scanner Scan Result — Beautiful, ergonomic, accessible.
+library;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -32,21 +33,21 @@ class ScanResultScreen extends HookConsumerWidget {
           ),
           if (result.isFromCacheOnly) ...[
             const SizedBox(height: 8),
-            EelBanner(
+            const EelBanner(
               message: 'From cache (offline) — using cached CRL data.',
               severity: EelSeverity.warning,
             ),
           ],
           if (isCrlStale) ...[
             const SizedBox(height: 8),
-            EelBanner(
+            const EelBanner(
               message: 'CRL is over 30 minutes old. Revocation data may be outdated.',
               severity: EelSeverity.danger,
             ),
           ],
           if (result.zones.isNotEmpty) ...[
             const SizedBox(height: 16),
-            Text('Access Zones', style: EelTextStyle.titleMedium),
+            const Text('Access Zones', style: EelTextStyle.titleMedium),
             const SizedBox(height: 8),
             ...result.zones.map(
               (zone) => EelResultCard(
@@ -55,7 +56,7 @@ class ScanResultScreen extends HookConsumerWidget {
               ),
             ),
           ] else
-            EelBanner(message: 'No zone information available.', severity: EelSeverity.info),
+            const EelBanner(message: 'No zone information available.', severity: EelSeverity.info),
           const Spacer(),
           EelButton(
             label: 'Scan Another',

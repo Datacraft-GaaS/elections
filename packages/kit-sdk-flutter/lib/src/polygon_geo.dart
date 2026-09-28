@@ -9,7 +9,7 @@ import 'package:flutter/foundation.dart';
 /// zone checks. All functions are pure-Dart; no platform channels.
 @immutable
 class PolygonGeo {
-  PolygonGeo._();
+  const PolygonGeo._();
 
   /// Check if [position] is inside [polygon] using the ray-casting algorithm.
   ///
@@ -89,7 +89,7 @@ class PolygonGeo {
     if (polygon.length < 3) return 0;
 
     const R = 6371000; // Earth radius in meters
-    final rad = (double deg) => deg * pi / 180;
+    double rad(double deg) => deg * pi / 180;
 
     double sum = 0;
     final n = polygon.length;

@@ -1,4 +1,5 @@
 /// Party-Agent QR Verify (M30 FR-006) — Beautiful, ergonomic, accessible.
+library;
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
@@ -19,8 +20,8 @@ class QRVerifyScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           EelResultCard(
             leading: Icon(Icons.qr_code, color: EelColors.of(context).primary, size: 32),
-            title: Text('QR Scanner', style: EelTextStyle.titleMedium),
-            subtitle: Text('Ready to scan QR codes', style: EelTextStyle.bodyMedium),
+            title: const Text('QR Scanner', style: EelTextStyle.titleMedium),
+            subtitle: const Text('Ready to scan QR codes', style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 16),
           EelButton(

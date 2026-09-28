@@ -1,4 +1,5 @@
 /// Party-Agent Countersign (M30 FR-005) — Beautiful, ergonomic, accessible.
+library;
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
@@ -17,12 +18,12 @@ class CountersignScreen extends ConsumerWidget {
         children: [
           const Text('Countersign Document', style: EelTextStyle.titleLarge, textAlign: TextAlign.center),
           const SizedBox(height: 24),
-          EelTextField(
+          const EelTextField(
             label: 'Document ID',
             hintText: 'Enter document ID to countersign',
           ),
           const SizedBox(height: 16),
-          EelTextField(
+          const EelTextField(
             label: 'Countersignature',
             hintText: 'Enter your countersignature',
           ),

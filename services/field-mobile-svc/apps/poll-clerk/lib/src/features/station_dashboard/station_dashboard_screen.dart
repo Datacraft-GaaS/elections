@@ -4,11 +4,10 @@
 /// Per plan.md §5.3: Full state matrix implemented (loading/loaded/empty/offline/error/permission/unauth/version-blocked/tamper-blocked).
 /// Per plan.md §3.1: No PII in dashboard (turnout count only, no names/IDs/hashes).
 /// Per plan.md §7: ≤ 30 s refresh; read-only; WebSocket used for live updates.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:eel_design/eel_design.dart';
-import 'package:eel_design/eel_design.dart';
 import 'package:eel_design/eel_design.dart';
 
 /// Dashboard state matrix (per §5.3)
@@ -129,27 +128,27 @@ class _StationDashboardScreenState extends ConsumerState<StationDashboardScreen>
   Widget _buildConnectivityBanner(String status) {
     switch (status) {
       case 'degraded':
-        return EelStatusChip(
+        return const EelStatusChip(
           label: 'Limited connectivity — uploads may be delayed',
           severity: EelSeverity.warning,
         );
       case 'offline':
-        return EelStatusChip(
+        return const EelStatusChip(
           label: 'Offline — data queued locally',
           severity: EelSeverity.danger,
         );
       case 'captivePortal':
-        return EelStatusChip(
+        return const EelStatusChip(
           label: 'Captive portal detected — sign in to network',
           severity: EelSeverity.warning,
         );
       case 'untrusted':
-        return EelStatusChip(
+        return const EelStatusChip(
           label: 'Untrusted network — TLS pin failure',
           severity: EelSeverity.danger,
         );
       default:
-        return EelStatusChip(label: 'Online', severity: EelSeverity.success);
+        return const EelStatusChip(label: 'Online', severity: EelSeverity.success);
     }
   }
 
@@ -167,13 +166,13 @@ class _StationDashboardScreenState extends ConsumerState<StationDashboardScreen>
 
     // 1. Loading state
     if (_screenState == DashboardState.loading) {
-      return EelScaffold(
+      return const EelScaffold(
         title: 'Station Dashboard',
         bannerSlot: EelBanner(
           message: 'Loading station status...',
           severity: EelSeverity.info,
         ),
-        body: const Center(child: EelLoadingState()),
+        body: Center(child: EelLoadingState()),
       );
     }
 
@@ -216,9 +215,9 @@ class _StationDashboardScreenState extends ConsumerState<StationDashboardScreen>
 
     // 4. Empty state (no data)
     if (_data == null || (_data!.turnoutCount == 0 && _data!.queueDepth == 0)) {
-      return EelScaffold(
+      return const EelScaffold(
         title: 'Station Dashboard',
-        body: const EelEmptyState(
+        body: EelEmptyState(
           title: 'No station data yet',
           description: 'Dashboard data will appear once the station is configured and active.',
         ),
@@ -288,12 +287,12 @@ class _StationDashboardScreenState extends ConsumerState<StationDashboardScreen>
           ),
           const SizedBox(height: 8),
           if (d.connectivityStatus == 'degraded')
-            EelBanner(
+            const EelBanner(
               message: 'Limited connectivity — some features may be unavailable',
               severity: EelSeverity.warning,
             ),
           if (d.connectivityStatus == 'offline')
-            EelBanner(
+            const EelBanner(
               message: 'Offline mode — using cached data. Sync will resume when network is restored.',
               severity: EelSeverity.info,
             ),

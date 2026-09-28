@@ -2,6 +2,7 @@
 ///
 /// Implements OIDC PKCE + local_auth biometric + 6-digit PIN step-up.
 /// Per plan.md §2.4: 5 PIN failures → 30 min lockout (persisted, monotonic).
+library;
 
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -91,7 +92,7 @@ class SessionState {
     SessionPhase newPhase = phase;
 
     if (newFailures >= maxPinAttempts) {
-      newLockedUntil = DateTime.now().add(Duration(minutes: lockoutMinutes));
+      newLockedUntil = DateTime.now().add(const Duration(minutes: lockoutMinutes));
       newPhase = SessionPhase.locked;
     }
 

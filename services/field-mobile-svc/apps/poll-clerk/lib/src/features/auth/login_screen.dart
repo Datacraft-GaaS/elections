@@ -1,5 +1,6 @@
 /// Poll Clerk Login Screen (M28 FR-027) — Beautiful, ergonomic, accessible.
 /// Uses eel_design: EelScaffold, EelTextField, EelButton, EelResultCard, EelColors, EelSecureScreen.
+library;
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
@@ -30,19 +31,19 @@ class LoginScreen extends ConsumerWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
-          Text(
+          const Text(
             'Sign in to access station dashboard, voter lookup, and queue management.',
             style: EelTextStyle.bodyMedium,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
-          EelTextField(
+          const EelTextField(
             label: 'User ID',
             hint: 'Enter your clerk ID',
             enabled: true,
           ),
           const SizedBox(height: 16),
-          EelTextField(
+          const EelTextField(
             label: 'Password',
             hint: 'Enter your password',
             obscureText: true,

@@ -1,4 +1,5 @@
 /// Mission Export (M34 FR-023) — Beautiful, ergonomic, accessible.
+library;
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
@@ -19,8 +20,8 @@ class MissionExportScreen extends ConsumerWidget {
           EelResultCard(
             leading: Icon(Icons.export,
                 color: EelColors.of(context).primary, size: 32),
-            title: Text('Export Options', style: EelTextStyle.titleMedium),
-            subtitle: Text('Choose the data format and scope',
+            title: const Text('Export Options', style: EelTextStyle.titleMedium),
+            subtitle: const Text('Choose the data format and scope',
                 style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 16),

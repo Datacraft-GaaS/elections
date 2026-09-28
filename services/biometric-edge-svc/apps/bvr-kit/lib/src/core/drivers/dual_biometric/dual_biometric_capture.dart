@@ -4,8 +4,6 @@
 import 'dart:convert';
 import 'package:eel_core_flutter/src/audit/audit_service.dart';
 import 'package:eel_core_flutter/src/location/location_service.dart';
-import 'package:eel_kit_sdk/eel_kit_sdk.dart'
-    hide EelSigningKey, LocationService;
 import 'package:eel_kit_sdk/src/bundle_security.dart';
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:uuid/uuid.dart';

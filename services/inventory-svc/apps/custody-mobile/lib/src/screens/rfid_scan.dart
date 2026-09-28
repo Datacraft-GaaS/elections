@@ -313,7 +313,7 @@ class _ConnectionBanner extends StatelessWidget {
             children: [
               const Icon(Icons.error, color: Colors.red),
               const SizedBox(width: 8),
-              Expanded(child: Text('Connection error — check Bluetooth and retry.', style: TextStyle(color: Colors.red))),
+              const Expanded(child: Text('Connection error — check Bluetooth and retry.', style: TextStyle(color: Colors.red))),
               const SizedBox(width: 8),
               TextButton(
                 onPressed: onConnect,

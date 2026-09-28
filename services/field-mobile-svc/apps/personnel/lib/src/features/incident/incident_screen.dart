@@ -1,4 +1,5 @@
 /// Personnel Incident (M29 FR-018) — Beautiful, ergonomic, accessible.
+library;
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
@@ -17,13 +18,13 @@ class IncidentScreen extends ConsumerWidget {
         children: [
           const Text('Report Incident', style: EelTextStyle.titleLarge, textAlign: TextAlign.center),
           const SizedBox(height: 24),
-          EelTextField(
+          const EelTextField(
             label: 'Incident Description',
             maxLines: 4,
             hintText: 'Describe what happened',
           ),
           const SizedBox(height: 16),
-          EelTextField(
+          const EelTextField(
             label: 'Category',
             hintText: 'Intimidation, Bribery, Turned Away, Other',
           ),

@@ -1,4 +1,5 @@
 /// Observer Login (M34 FR-022) — Beautiful, ergonomic, accessible.
+library;
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
@@ -29,18 +30,18 @@ class ObserverLoginScreen extends ConsumerWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
-          Text(
+          const Text(
             'Sign in to access station status, mission exports, and tally verification.',
             style: EelTextStyle.bodyMedium,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
-          EelTextField(
+          const EelTextField(
             label: 'Username',
             hintText: 'Enter your observer ID',
           ),
           const SizedBox(height: 16),
-          EelTextField(
+          const EelTextField(
             label: 'Password',
             hintText: 'Enter your password',
             obscureText: true,

@@ -1,4 +1,5 @@
 /// LMS Offline Modules — Beautiful, ergonomic, accessible.
+library;
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
@@ -18,8 +19,8 @@ class ModuleScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           EelResultCard(
             leading: Icon(Icons.book, color: EelColors.of(context).primary, size: 32),
-            title: Text('Module Content', style: EelTextStyle.titleMedium),
-            subtitle: Text('Training material and assessment', style: EelTextStyle.bodyMedium),
+            title: const Text('Module Content', style: EelTextStyle.titleMedium),
+            subtitle: const Text('Training material and assessment', style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 16),
           EelButton(

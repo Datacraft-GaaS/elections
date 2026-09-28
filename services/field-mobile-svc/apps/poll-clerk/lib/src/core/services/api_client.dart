@@ -2,6 +2,7 @@
 ///
 /// Per plan.md §2.1: All networking through kit-sdk `EelHttpClient` (dio).
 /// No bare `Dio()` or `http.post` outside `core/api_client.dart`.
+library;
 
 import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 import 'package:dio/dio.dart';

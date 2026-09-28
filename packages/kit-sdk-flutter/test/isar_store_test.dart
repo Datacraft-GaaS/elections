@@ -1,5 +1,4 @@
 import 'package:eel_kit_sdk/eel_kit_sdk.dart';
-import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -88,36 +87,36 @@ void main() {
     });
 
     test('equality by eventType and recordId', () {
-      final a = PushPayload(eventType: 'e1', recordId: 'r1');
+      const a = PushPayload(eventType: 'e1', recordId: 'r1');
       final b = PushPayload(eventType: 'e1', recordId: 'r1', timestamp: DateTime.now());
       expect(a, b);
     });
 
     test('different eventType is not equal', () {
-      final a = PushPayload(eventType: 'e1', recordId: 'r1');
-      final b = PushPayload(eventType: 'e2', recordId: 'r1');
+      const a = PushPayload(eventType: 'e1', recordId: 'r1');
+      const b = PushPayload(eventType: 'e2', recordId: 'r1');
       expect(a != b, isTrue);
     });
   });
 
   group('validatePushPayload', () {
     test('valid payload passes', () {
-      final payload = PushPayload(eventType: 'eel.field.incident.v1', recordId: 'rec-1');
+      const payload = PushPayload(eventType: 'eel.field.incident.v1', recordId: 'rec-1');
       expect(validatePushPayload(payload), isNull);
     });
 
     test('empty eventType fails', () {
-      final payload = PushPayload(eventType: '', recordId: 'rec-1');
+      const payload = PushPayload(eventType: '', recordId: 'rec-1');
       expect(validatePushPayload(payload), isNotNull);
     });
 
     test('empty recordId fails', () {
-      final payload = PushPayload(eventType: 'e1', recordId: '');
+      const payload = PushPayload(eventType: 'e1', recordId: '');
       expect(validatePushPayload(payload), isNotNull);
     });
 
     test('PII in eventType fails', () {
-      final payload = PushPayload(eventType: 'eel.field.123456789.v1', recordId: 'rec-1');
+      const payload = PushPayload(eventType: 'eel.field.123456789.v1', recordId: 'rec-1');
       expect(validatePushPayload(payload), isNotNull);
     });
   });
@@ -140,7 +139,7 @@ void main() {
     });
 
     test('fromJson with missing optional fields', () {
-      final entry = PushTokenEntry.fromJson({
+      final entry = PushTokenEntry.fromJson(const {
         'device_id': 'dev-1',
         'token': 'token',
         'platform': 'apns',

@@ -119,7 +119,7 @@ class _SvidInterceptor extends Interceptor {
       RequestOptions options, RequestInterceptorHandler handler) async {
     options.headers['X-Spiffe-Svid'] = _svidProvider();
     options.headers['X-Eel-Role'] = 'COMMISSION_FIELD_OFFICER';
-    await handler.next(options);
+    handler.next(options);
   }
 }
 

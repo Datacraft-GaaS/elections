@@ -20,14 +20,14 @@ void main() {
     });
 
     test('equality by base64Sha256', () {
-      final a = SpkiPin(base64Sha256: 'abc');
-      final b = SpkiPin(base64Sha256: 'abc', host: 'x');
+      const a = SpkiPin(base64Sha256: 'abc');
+      const b = SpkiPin(base64Sha256: 'abc', host: 'x');
       expect(a, b);
     });
 
     test('different base64Sha256 is not equal', () {
-      final a = SpkiPin(base64Sha256: 'abc');
-      final b = SpkiPin(base64Sha256: 'def');
+      const a = SpkiPin(base64Sha256: 'abc');
+      const b = SpkiPin(base64Sha256: 'def');
       expect(a != b, isTrue);
     });
   });
@@ -51,14 +51,14 @@ void main() {
     });
 
     test('empty pins set is not valid', () {
-      final set = PinSet(setId: 'empty', pins: []);
+      const set = PinSet(setId: 'empty', pins: []);
       expect(set.hasPins, isFalse);
     });
 
     test('createdAt parsed from ISO string', () {
       final set = PinSet(
         setId: 'set-1',
-        pins: [SpkiPin(base64Sha256: 'abc')],
+        pins: const [SpkiPin(base64Sha256: 'abc')],
         createdAt: DateTime.utc(2026, 1, 1),
       );
       expect(set.createdAt, DateTime.utc(2026, 1, 1));
@@ -68,14 +68,14 @@ void main() {
   group('SpkiPinningAdapter', () {
     test('allows empty allowlist', () {
       final adapter = SpkiPinningAdapter(pins: [
-        SpkiPin(base64Sha256: 'abc'),
+        const SpkiPin(base64Sha256: 'abc'),
       ]);
       expect(adapter.allowList, isEmpty);
     });
 
     test('allowlist exempts specified hosts', () {
       final adapter = SpkiPinningAdapter(
-        pins: [SpkiPin(base64Sha256: 'abc')],
+        pins: [const SpkiPin(base64Sha256: 'abc')],
         allowList: {'localhost'},
       );
       expect(adapter.allowList, {'localhost'});
@@ -84,15 +84,15 @@ void main() {
     test('dual-pin window accepts either pin', () {
       // Simulate: old pin and new pin both valid during rotation.
       final adapter = SpkiPinningAdapter(pins: [
-        SpkiPin(base64Sha256: 'old-pin'),
-        SpkiPin(base64Sha256: 'new-pin'),
+        const SpkiPin(base64Sha256: 'old-pin'),
+        const SpkiPin(base64Sha256: 'new-pin'),
       ]);
       expect(adapter.pins.length, 2);
     });
 
     test('host constraint respected', () {
       final adapter = SpkiPinningAdapter(pins: [
-        SpkiPin(base64Sha256: 'abc', host: 'example.com'),
+        const SpkiPin(base64Sha256: 'abc', host: 'example.com'),
       ]);
       expect(adapter.pins.first.host, 'example.com');
     });

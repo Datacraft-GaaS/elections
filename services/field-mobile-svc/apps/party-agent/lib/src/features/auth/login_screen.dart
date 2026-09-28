@@ -1,4 +1,5 @@
 /// Party-Agent Login — Beautiful, ergonomic, accessible.
+library;
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
@@ -21,14 +22,14 @@ class LoginScreen extends ConsumerWidget {
             child: EelSealStamp(size: 64, color: colors.primary),
           ),
           const SizedBox(height: 32),
-          Text('Welcome, Party Agent', style: EelTextStyle.displayMedium, textAlign: TextAlign.center),
+          const Text('Welcome, Party Agent', style: EelTextStyle.displayMedium, textAlign: TextAlign.center),
           const SizedBox(height: 16),
-          Text('Sign in to access check-in, forms, and countersign tools.',
+          const Text('Sign in to access check-in, forms, and countersign tools.',
               style: EelTextStyle.bodyMedium, textAlign: TextAlign.center),
           const SizedBox(height: 32),
-          EelTextField(label: 'Agent ID', hintText: 'Enter your agent ID'),
+          const EelTextField(label: 'Agent ID', hintText: 'Enter your agent ID'),
           const SizedBox(height: 16),
-          EelTextField(label: 'Password', hintText: 'Enter your password', obscureText: true),
+          const EelTextField(label: 'Password', hintText: 'Enter your password', obscureText: true),
           const SizedBox(height: 24),
           EelButton(label: 'Sign In', icon: Icons.login, fullWidth: true, onPressed: () {}),
           const SizedBox(height: 16),

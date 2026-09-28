@@ -2,6 +2,7 @@
 /// 
 /// Implements the startup state machine per plan.md §2.4:
 /// cold → integrityCheck → attestation → config → auth → roleRoute → ready
+library;
 
 import 'package:eel_core_flutter/src/bootstrap/bootstrap_fsm.dart';
 

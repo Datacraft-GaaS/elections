@@ -1,4 +1,5 @@
 /// LMS Offline Assessment — Beautiful, ergonomic, accessible.
+library;
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
@@ -21,9 +22,9 @@ class AssessmentScreen extends ConsumerWidget {
           EelResultCard(
             leading: Icon(Icons.quiz,
                 color: EelColors.of(context).primary, size: 32),
-            title: Text('Question 1 of 10', style: EelTextStyle.titleMedium),
+            title: const Text('Question 1 of 10', style: EelTextStyle.titleMedium),
             subtitle:
-                Text('Select the best answer', style: EelTextStyle.bodyMedium),
+                const Text('Select the best answer', style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 16),
           EelChips(

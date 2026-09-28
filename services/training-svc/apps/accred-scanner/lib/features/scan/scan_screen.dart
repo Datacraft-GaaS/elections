@@ -1,4 +1,5 @@
 /// Accred-Scanner Scan Screen — Beautiful, ergonomic, accessible.
+library;
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';

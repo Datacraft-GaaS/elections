@@ -1,5 +1,6 @@
 /// Agent Dashboard (M30) — Beautiful, ergonomic, GPS-verified.
 /// Uses eel_design: EelScaffold, EelStatusChip, EelResultCard, EelSealStamp, EelButton, EelChips, EelColors.
+library;
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
@@ -19,27 +20,27 @@ class AgentDashboardScreen extends ConsumerWidget {
           // Hero — party agent identity with seal.
           EelResultCard(
             leading: EelSealStamp(size: 56, color: colors.primary),
-            title: Text('Party Agent — Station KE-NBI-001',
+            title: const Text('Party Agent — Station KE-NBI-001',
                 style: EelTextStyle.titleLarge),
-            subtitle: Text('GPS-verified check-in • BVI notified',
+            subtitle: const Text('GPS-verified check-in • BVI notified',
                 style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 16),
           // Status chips.
-          EelStatusChip(
+          const EelStatusChip(
               label: 'Check-in: 06:42', severity: EelSeverity.success),
           const SizedBox(height: 8),
-          EelStatusChip(
+          const EelStatusChip(
               label: 'GPS verified: Yes', severity: EelSeverity.success),
           const SizedBox(height: 8),
-          EelStatusChip(
+          const EelStatusChip(
               label: 'BVI notified: Yes', severity: EelSeverity.success),
           const SizedBox(height: 8),
-          EelStatusChip(
+          const EelStatusChip(
               label: 'Forms synced: Complete', severity: EelSeverity.success),
           const SizedBox(height: 16),
           // Quick actions.
-          EelBanner(
+          const EelBanner(
             message: 'All counters verified. Ready for tally.',
             severity: EelSeverity.info,
           ),

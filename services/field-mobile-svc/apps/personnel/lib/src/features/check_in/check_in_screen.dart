@@ -1,4 +1,5 @@
 /// Personnel Check-In (M29 FR-016) — Beautiful, ergonomic, accessible.
+library;
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
@@ -17,12 +18,12 @@ class CheckInScreen extends ConsumerWidget {
         children: [
           const Text('Personnel Check-In', style: EelTextStyle.titleLarge, textAlign: TextAlign.center),
           const SizedBox(height: 24),
-          EelTextField(
+          const EelTextField(
             label: 'Personnel ID',
             hintText: 'Enter your personnel ID',
           ),
           const SizedBox(height: 16),
-          EelTextField(
+          const EelTextField(
             label: 'Station Code',
             hintText: 'Enter station code',
           ),

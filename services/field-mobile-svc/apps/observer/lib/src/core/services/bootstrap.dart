@@ -1,5 +1,6 @@
 /// Observer bootstrap FSM (M34). Roles: OBSERVER / OBSERVER_CHIEF
 /// Per plan.md M34: station results access, observation ingest, accreditation
+library;
 
 import 'package:eel_core_flutter/src/bootstrap/bootstrap_fsm.dart';
 

@@ -1,4 +1,5 @@
 /// Party-Agent Forms (M34 FR-021) — Beautiful, ergonomic, accessible.
+library;
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
@@ -21,8 +22,8 @@ class FormsScreen extends ConsumerWidget {
           EelResultCard(
             leading: Icon(Icons.description,
                 color: EelColors.of(context).primary, size: 32),
-            title: Text('Available Forms', style: EelTextStyle.titleMedium),
-            subtitle: Text('Select a form to fill or view',
+            title: const Text('Available Forms', style: EelTextStyle.titleMedium),
+            subtitle: const Text('Select a form to fill or view',
                 style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 16),

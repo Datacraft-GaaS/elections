@@ -2,6 +2,7 @@
 /// 
 /// Party agent roles: PARTY_AGENT, PARTY_CHIEF_AGENT
 /// OIDC PKCE + local_auth biometric + 6-digit PIN step-up.
+library;
 
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -87,7 +88,7 @@ class SessionState {
     SessionPhase newPhase = phase;
 
     if (newFailures >= maxPinAttempts) {
-      newLockedUntil = DateTime.now().add(Duration(minutes: lockoutMinutes));
+      newLockedUntil = DateTime.now().add(const Duration(minutes: lockoutMinutes));
       newPhase = SessionPhase.locked;
     }
 

@@ -1,4 +1,5 @@
 /// Session for field-support (M32). Roles from module spec.
+library;
 
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -42,7 +43,7 @@ class SessionState {
       phase: nf >= 5 ? SessionPhase.locked : phase,
       accessToken: accessToken, refreshToken: refreshToken, userId: userId,
       role: role, engineerId: engineerId, pinFailures: nf,
-      lockedUntil: nf >= 5 ? DateTime.now().add(Duration(minutes: 30)) : null,
+      lockedUntil: nf >= 5 ? DateTime.now().add(const Duration(minutes: 30)) : null,
       expiresAt: expiresAt, sessionId: sessionId,
     );
   }

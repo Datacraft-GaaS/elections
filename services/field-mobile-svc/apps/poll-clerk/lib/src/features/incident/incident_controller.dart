@@ -1,6 +1,7 @@
 /// Incident reporting controller for poll-clerk.
 /// Per FR-M31-016/017/018: structured incident form, free text, evidence, escalation chain.
 /// Implements §5.3 state matrix (loading/loaded/empty/offline/error/permission/tamper).
+library;
 
 import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';

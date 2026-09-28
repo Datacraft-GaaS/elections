@@ -1,5 +1,6 @@
 /// Field Support Shift Report (M29 FR-014) — Beautiful, ergonomic, accessible.
 /// Uses eel_design: EelScaffold, EelResultCard, EelButton, EelChips, EelStatusChip, EelSecureScreen.
+library;
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
@@ -27,8 +28,8 @@ class ShiftReportScreen extends ConsumerWidget {
                   leading:
                       Icon(Icons.check_circle, color: colors.primary, size: 32),
                   title:
-                      Text('Shift Complete', style: EelTextStyle.titleMedium),
-                  subtitle: Text(
+                      const Text('Shift Complete', style: EelTextStyle.titleMedium),
+                  subtitle: const Text(
                       '12 electors processed, all signatures verified',
                       style: EelTextStyle.bodyMedium),
                 ),
@@ -37,8 +38,8 @@ class ShiftReportScreen extends ConsumerWidget {
                 EelResultCard(
                   leading: Icon(Icons.diagnostics,
                       color: colors.primaryMuted, size: 32),
-                  title: Text('Diagnostics', style: EelTextStyle.titleMedium),
-                  subtitle: Text(
+                  title: const Text('Diagnostics', style: EelTextStyle.titleMedium),
+                  subtitle: const Text(
                       'Kit health: OK • Battery: 78% • Firmware current',
                       style: EelTextStyle.bodyMedium),
                 ),
@@ -47,8 +48,8 @@ class ShiftReportScreen extends ConsumerWidget {
                 EelResultCard(
                   leading: Icon(Icons.task_alt,
                       color: colors.primaryMuted, size: 32),
-                  title: Text('Open Items', style: EelTextStyle.titleMedium),
-                  subtitle: Text('3 tickets pending — 1 standard, 2 urgent',
+                  title: const Text('Open Items', style: EelTextStyle.titleMedium),
+                  subtitle: const Text('3 tickets pending — 1 standard, 2 urgent',
                       style: EelTextStyle.bodyMedium),
                 ),
                 const SizedBox(height: 16),

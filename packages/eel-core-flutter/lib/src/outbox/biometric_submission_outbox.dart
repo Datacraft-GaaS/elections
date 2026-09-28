@@ -1,8 +1,3 @@
-/// BiometricSubmissionOutbox — offline-first deduplication + operator-controlled upload.
-/// Local dedup runs BEFORE submission to prevent same device creating duplicate enrollments.
-/// Network uploads queued in outbox; operator initiates via UI button when ready.
-
-import 'package:crypto/crypto.dart' as crypto;
 import 'dart:convert';
 import 'package:uuid/uuid.dart';
 import 'package:dio/dio.dart';

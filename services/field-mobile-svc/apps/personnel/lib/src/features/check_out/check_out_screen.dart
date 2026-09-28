@@ -1,4 +1,5 @@
 /// Personnel Check-Out (M29 FR-017) — Beautiful, ergonomic, accessible.
+library;
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
@@ -17,7 +18,7 @@ class CheckOutScreen extends ConsumerWidget {
         children: [
           const Text('Personnel Check-Out', style: EelTextStyle.titleLarge, textAlign: TextAlign.center),
           const SizedBox(height: 24),
-          EelBanner(
+          const EelBanner(
             message: 'Ensure all forms are submitted before checking out.',
             severity: EelSeverity.info,
           ),

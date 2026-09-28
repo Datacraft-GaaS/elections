@@ -1,4 +1,5 @@
 /// Field-Support Ticket Queue (M29 FR-013) — Beautiful, ergonomic, accessible.
+library;
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
@@ -17,12 +18,12 @@ class TicketQueueScreen extends ConsumerWidget {
         children: [
           const Text('Open Tickets', style: EelTextStyle.titleLarge),
           const SizedBox(height: 24),
-          EelStatusChip(label: 'Open: 3', severity: EelSeverity.warning),
+          const EelStatusChip(label: 'Open: 3', severity: EelSeverity.warning),
           const SizedBox(height: 16),
           EelResultCard(
             leading: Icon(Icons.confirmation_num, color: EelColors.of(context).primary, size: 32),
-            title: Text('Ticket #1234', style: EelTextStyle.titleMedium),
-            subtitle: Text('Field support request • Pending', style: EelTextStyle.bodyMedium),
+            title: const Text('Ticket #1234', style: EelTextStyle.titleMedium),
+            subtitle: const Text('Field support request • Pending', style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 16),
           EelButton(

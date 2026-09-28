@@ -1,5 +1,6 @@
 /// Observer session - roles: OBSERVER, OBSERVER_CHIEF
 /// Per plan.md M34: accreditation check, observations, station verification
+library;
 
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -64,7 +65,7 @@ class SessionState {
       observerId: observerId,
       accreditationPassId: accreditationPassId,
       pinFailures: nf,
-      lockedUntil: nf >= maxPinAttempts ? DateTime.now().add(Duration(minutes: lockoutMinutes)) : null,
+      lockedUntil: nf >= maxPinAttempts ? DateTime.now().add(const Duration(minutes: lockoutMinutes)) : null,
       expiresAt: expiresAt,
       sessionId: sessionId,
     );

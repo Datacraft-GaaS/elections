@@ -1,4 +1,5 @@
 /// Reference Library (M28 FR-011) — Elegant, ergonomic, accessible.
+library;
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
@@ -36,18 +37,18 @@ class ReferenceLibraryScreen extends ConsumerWidget {
           EelResultCard(
             leading: Icon(Icons.book,
                 color: EelColors.of(context).primary, size: 32),
-            title: Text('Polling Station Procedures (v2.1)',
+            title: const Text('Polling Station Procedures (v2.1)',
                 style: EelTextStyle.titleMedium),
-            subtitle: Text('Updated: 2026-08-15 • 42 pages',
+            subtitle: const Text('Updated: 2026-08-15 • 42 pages',
                 style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 12),
           EelResultCard(
             leading: Icon(Icons.description,
                 color: EelColors.of(context).primaryMuted, size: 32),
-            title: Text('Voter Registration Form (FRM-007)',
+            title: const Text('Voter Registration Form (FRM-007)',
                 style: EelTextStyle.titleMedium),
-            subtitle: Text('Current version • Available in 11 languages',
+            subtitle: const Text('Current version • Available in 11 languages',
                 style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 12),

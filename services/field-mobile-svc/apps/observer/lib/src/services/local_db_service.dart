@@ -1,4 +1,5 @@
 /// Encrypted local storage via Isar + SQLCipher (ADR-0021).
+library;
 import 'package:isar/isar.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 

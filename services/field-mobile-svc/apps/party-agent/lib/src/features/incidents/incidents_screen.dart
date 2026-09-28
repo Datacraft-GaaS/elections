@@ -1,4 +1,5 @@
 /// Party-Agent Incidents (M30 FR-008) — Beautiful, ergonomic, accessible.
+library;
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
@@ -19,8 +20,8 @@ class IncidentsScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           EelResultCard(
             leading: Icon(Icons.warning, color: EelColors.of(context).primary, size: 32),
-            title: Text('Open Incidents', style: EelTextStyle.titleMedium),
-            subtitle: Text('3 incidents reported', style: EelTextStyle.bodyMedium),
+            title: const Text('Open Incidents', style: EelTextStyle.titleMedium),
+            subtitle: const Text('3 incidents reported', style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 16),
           EelButton(

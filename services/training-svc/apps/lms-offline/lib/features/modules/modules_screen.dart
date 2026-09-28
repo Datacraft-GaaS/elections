@@ -1,5 +1,6 @@
 /// LMS Offline Modules — Beautiful, ergonomic, accessible.
 /// Uses eel_design: EelScaffold, EelResultCard, EelButton, EelStatusChip, EelChips, EelBanner.
+library;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -47,9 +48,9 @@ class ModulesScreen extends HookConsumerWidget {
           children: [
             Icon(Icons.cloud_off, size: 48, color: colors.onSurfaceMuted),
             const SizedBox(height: 16),
-            Text('Could not load modules', style: EelTextStyle.titleLarge, textAlign: TextAlign.center),
+            const Text('Could not load modules', style: EelTextStyle.titleLarge, textAlign: TextAlign.center),
             const SizedBox(height: 8),
-            Text('Why: offline or server error. Fix: check connection and retry. If it persists, open Sync.',
+            const Text('Why: offline or server error. Fix: check connection and retry. If it persists, open Sync.',
                 style: EelTextStyle.bodyMedium, textAlign: TextAlign.center),
             const SizedBox(height: 8),
             Text('Prevention: sync modules before going offline.',
@@ -116,9 +117,9 @@ class _ModuleList extends StatelessWidget {
             children: [
               const Icon(Icons.menu_book_outlined, size: 48),
               const SizedBox(height: 16),
-              Text('No modules yet', style: EelTextStyle.titleLarge, textAlign: TextAlign.center),
+              const Text('No modules yet', style: EelTextStyle.titleLarge, textAlign: TextAlign.center),
               const SizedBox(height: 8),
-              Text('Connect and download modules for offline study. Up to 5 modules can be stored.',
+              const Text('Connect and download modules for offline study. Up to 5 modules can be stored.',
                   style: EelTextStyle.bodyMedium, textAlign: TextAlign.center),
               const SizedBox(height: 20),
               EelButton(
