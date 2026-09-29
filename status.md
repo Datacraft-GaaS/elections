@@ -64,3 +64,67 @@ Measured before/after with `eel-completeness scan`: 389 non-allowlisted findings
 - Scan delta: 389 -> 312 non-allowlisted findings; residual breakdown above.
 
 Commits: 8a340e0 snapshot, then c7d6c39 crypto, cf28b9f rts, 5d7afeb bvr, 88168d6 transparency, aa3c631 inventory, 9cd19d7 cross-service fixes. Pushed to origin/main.
+
+---
+
+## Toolchain and mobile-tier state (measured 2026-09-29)
+
+Recorded here because the numbers above were measured before the toolchain
+repairs, and several claims no longer hold.
+
+### Closed since the report above
+
+- **Root workspace was unloadable.** `members` includes `tools/*`, Python leaves
+  `__pycache__` beside its scripts, and cargo tried to load each as a crate, so
+  no cargo command ran at the repo root at all. Five fuzz crates had no
+  `[workspace]` and were rejected; `rts-device-api/fuzz` declared a dependency
+  twice and could not be parsed; `nearform-nbis` and `bvr-desktop/bridge` were
+  members of no workspace; and `bft-tally`, `fhe-tally`,
+  `behavioural-biometrics` and `kit-cert-transparency` inherited root
+  dependencies but were shadowed by nested service workspaces, so they belonged
+  to nothing. All resolved.
+- **bvr-svc was unloadable** the same way: three crates referenced
+  `tower = { workspace = true }` with no such workspace entry.
+- **EC-MOB-02 storage guard was dead in production.** `RealStorageChecker`
+  returned null unconditionally, and null means "unavailable", so the check was
+  only ever exercised by test fakes. It now requires a bound delegate.
+- **party-agent's `Sign In` had an empty handler.** Wired to `AuthNotifier.login`.
+- **Orphaned Dart tree** at `services/field-mobile-verify/lib/`, byte-identical
+  to citizen-verify's copy, in a directory with no `pubspec.yaml` and therefore
+  in no package and never analyzed.
+- 158 committed `.gradle/` build caches untracked; 13 tracked `.bak` files
+  removed; two 3-line `// stub` crates (`tools/softhsm`, `tools/spectral`)
+  removed, keeping the Bash and JS tooling that shared those directories.
+
+### Verified now
+
+- 241 Cargo manifests load, 0 broken (`python3 tools/cargo_manifests.py`).
+  All 9 service workspaces and the 208-member root workspace compile with
+  `--locked`; `cargo test --workspace` = 3118 passed, 0 failed.
+- 24 Flutter packages, 0 errors / 0 warnings / 0 infos
+  (`python3 tools/flutter_health.py`); 334 tests pass across all 24, 0 failing,
+  0 broken (`python3 tools/flutter_tests.py`).
+
+Both gates are real: each was confirmed to exit non-zero on an injected fault,
+because an earlier version of the Flutter harness scored a package whose
+`pub get` had failed as clean.
+
+### Still open, restated with current numbers
+
+18. **45 dead button handlers** across 10 apps and 42 screens, each
+    `onPressed: () {}` — party-agent 9, poll-clerk 9, observer 7, field-support
+    5, personnel 4, diaspora-kit 3, rts-kit 2, citizen-verify 2,
+    accred-scanner 2, lms-offline 2. These are the visible face of item 14: the
+    field-mobile BFF implements 9 paths (attestation/verdict, config,
+    dispatch/assignments, forms/sync, incidents, observer/observations,
+    sessions, sessions/refresh, station/status, voter/verification) while the
+    contracts declare more, so a minority are wireable today and the rest need
+    their endpoint built. No handler is wired to invented behaviour.
+19. **field-mobile-verify has no implementation.** The directory holds a
+    migration, README and TRACEABILITY only. Its README describes a fully
+    implemented sqlx service, which is not true.
+20. **Items 13-17 above remain open.** 13 (traceability: 25 of 4,444 rows
+    tagged), 14 (287 unbound OpenAPI paths), 15-17 (blocked on absent backends,
+    infrastructure and a model contract respectively). 15, 16 and 17 remain
+    blocked on inputs this repository does not have, which is why they are
+    written down rather than started.
