@@ -5,7 +5,10 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
 
 class DiagnosticsScreen extends ConsumerWidget {
-  const DiagnosticsScreen({super.key});
+  const DiagnosticsScreen({super.key, this.kitSerial});
+
+  /// The kit this deep link names. Null when the screen is opened without one.
+  final String? kitSerial;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -17,6 +20,10 @@ class DiagnosticsScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text('Kit Diagnostics', style: EelTextStyle.titleLarge),
+          if (kitSerial != null) ...[
+            const SizedBox(height: 4),
+            Text(kitSerial!, style: EelTextStyle.bodySmall),
+          ],
           const SizedBox(height: 24),
           const EelStatusChip(label: 'Kit Health: OK', severity: EelSeverity.success),
           const SizedBox(height: 8),

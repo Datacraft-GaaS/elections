@@ -14,7 +14,7 @@ class WarrantyScreen extends ConsumerWidget {
       variant: EelScaffoldVariant.scrollable,
       padding: const EdgeInsets.all(16),
       body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretched,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text('Warranty Status', style: EelTextStyle.titleLarge),
           const SizedBox(height: 24),

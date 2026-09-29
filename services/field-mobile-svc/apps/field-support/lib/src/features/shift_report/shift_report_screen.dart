@@ -19,8 +19,7 @@ class ShiftReportScreen extends ConsumerWidget {
         children: [
           // EelSecureScreen wrapper per §3.4 / incident closure pattern.
           EelSecureScreen(
-            title: 'Shift Report — Close Shift',
-            body: Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Summary overview.
@@ -36,7 +35,7 @@ class ShiftReportScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 // Diagnostics card.
                 EelResultCard(
-                  leading: Icon(Icons.diagnostics,
+                  leading: Icon(Icons.troubleshoot,
                       color: colors.primaryMuted, size: 32),
                   title: const Text('Diagnostics', style: EelTextStyle.titleMedium),
                   subtitle: const Text(

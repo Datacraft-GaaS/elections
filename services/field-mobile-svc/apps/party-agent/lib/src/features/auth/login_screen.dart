@@ -39,7 +39,7 @@ class LoginScreen extends ConsumerWidget {
             fullWidth: true,
             onPressed: () {},
           ),
-          const Spacer(),
+          const SizedBox(height: 32),
           Text('eel Election Systems © 2026',
               style: EelTextStyle.bodySmall.copyWith(color: colors.onSurfaceMuted),
               textAlign: TextAlign.center),

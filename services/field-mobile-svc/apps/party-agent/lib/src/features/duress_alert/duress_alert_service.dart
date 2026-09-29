@@ -1,7 +1,7 @@
 /// Duress alert service — silent beacon to war-room + BVI (M30 FR-026).
 /// Uses EelHttpClient (mTLS via SPKI pinning) to send encrypted beacon.
 library;
-import 'package:eel_core_flutter/http_client.dart';
+import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 
 class DuressAlertService {
   final EelHttpClient? _client;

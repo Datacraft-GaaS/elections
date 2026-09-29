@@ -22,11 +22,11 @@ class UsbSerialTransport implements AtSerialTransport {
           d.productName?.toLowerCase().contains('telit') == true,
       orElse: () => devices.first,
     );
-    _port = await device.createPort();
-    if (_port == null) {
+    if (device.deviceName == null) {
       throw StateError(
-          'Failed to open USB port for device ${device.productName}');
+          'Device ${device.productName} has no deviceName to open a port on');
     }
+    _port = UsbPort(device.deviceName!);
     await _port!.open();
     await _port!.setDTR(true);
     await _port!.setRTS(true);
@@ -77,33 +77,42 @@ class UsbSerialTransport implements AtSerialTransport {
   Future<List<String>> readUntil(String terminator,
       {int timeoutMs = 5000}) async {
     if (!_open || _port == null) throw StateError('Serial port not open');
+    final completer = Completer<List<String>>();
     final lines = <String>[];
     final buffer = StringBuffer();
-    const chunkSize = 1024;
-    final deadline = DateTime.now().add(Duration(milliseconds: timeoutMs));
-    while (DateTime.now().isBefore(deadline)) {
-      try {
-        final chunk = await _port!.read(chunkSize);
-        if (chunk != null && chunk.isNotEmpty) {
-          buffer.write(String.fromCharCodes(chunk));
-          var s = buffer.toString();
-          while (s.contains(terminator)) {
-            final idx = s.indexOf(terminator);
-            lines.add(s.substring(0, idx).trim());
-            s = s.substring(idx + terminator.length);
-          }
-          buffer.clear();
-          buffer.write(s);
-          if (lines.isNotEmpty && s.isEmpty) break; // Got full block
-        } else {
-          await Future.delayed(const Duration(milliseconds: 50));
-        }
-      } catch (_) {
-        await Future.delayed(const Duration(milliseconds: 50));
+    late final StreamSubscription<Uint8List> sub;
+    Timer? timer;
+    sub = _port!.inputStream!.listen((Uint8List event) {
+      buffer.write(String.fromCharCodes(event));
+      var text = buffer.toString();
+      while (text.contains(terminator)) {
+        final idx = text.indexOf(terminator);
+        lines.add(text.substring(0, idx).trim());
+        text = text.substring(idx + terminator.length);
       }
+      buffer.clear();
+      buffer.write(text);
+      // A block is complete once a line has been read and nothing partial is
+      // left buffered.
+      if (lines.isNotEmpty && text.isEmpty && !completer.isCompleted) {
+        completer.complete(List.of(lines));
+      }
+    }, onError: (_) {
+      if (!completer.isCompleted) completer.complete(List.of(lines));
+    });
+    timer = Timer(Duration(milliseconds: timeoutMs), () {
+      if (!completer.isCompleted) {
+        final tail = buffer.toString().trim();
+        if (tail.isNotEmpty) lines.add(tail);
+        completer.complete(List.of(lines));
+      }
+    });
+    try {
+      return await completer.future;
+    } finally {
+      timer.cancel();
+      await sub.cancel();
     }
-    if (buffer.isNotEmpty) lines.add(buffer.toString().trim());
-    return lines;
   }
 
   @override

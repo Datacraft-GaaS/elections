@@ -78,8 +78,8 @@ class AtResponse {
       ok: hasOk && !hasErr,
       isCmeError: cmeMatch != null,
       isCmsError: cmsMatch != null,
-      cmeCode: cmeMatch.group(1),
-      cmeMsg: cmeMatch.group(2)?.trim(),
+      cmeCode: cmeMatch?.group(1),
+      cmeMsg: cmeMatch?.group(2)?.trim(),
       data: hasOk && !trimmed.startsWith('AT+') ? trimmed : null, // heuristic: data lines don't start with AT+
     );
   }
