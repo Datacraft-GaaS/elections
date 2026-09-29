@@ -7,6 +7,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
 import 'package:eel_core_flutter/eel_core_flutter.dart';
 
+import '../../core/services/otp_token.dart';
+
 class OtpScreen extends ConsumerStatefulWidget {
   const OtpScreen({super.key});
 
@@ -39,7 +41,10 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       final response = await _otp.sendOtp(phone);
       setState(() => _codeSent = true);
       if (response.success && response.token != null) {
-        // OTP sent successfully — navigate or show success
+        // Keep it: RegisterService.lookup and fileObjection take this as a
+        // bearer credential. It used to be dropped here, so the screens that
+        // need it had no way to authorise the call.
+        ref.read(otpTokenProvider.notifier).state = response.token;
       } else {
         setState(() => _error = response.error ?? 'Unknown error');
       }

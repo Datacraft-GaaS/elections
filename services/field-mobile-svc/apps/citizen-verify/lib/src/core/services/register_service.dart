@@ -15,8 +15,16 @@ class RegisterService {
   /// Look up own record by ID hash. Requires OTP-verified token.
   Future<RegisterLookup> lookup(String idHash, String otpToken) async {
     try {
-      final r = await _dio.get('/api/v1/mobile/bff/citizen-verify/register/${Uri.encodeComponent(idHash)}',
-        options: Options(headers: {'Authorization': 'Bearer $otpToken'}),
+      final r = await _dio.get(
+        '/api/v1/mobile/bff/citizen-verify/register/${Uri.encodeComponent(idHash)}',
+        options: Options(
+          headers: {'Authorization': 'Bearer $otpToken'},
+          // Dio rejects any status outside 2xx by throwing, which meant the
+          // 429 and 404 branches below were unreachable: a rate limit and a
+          // plain miss both surfaced as a raw DioException string instead of
+          // the messages this service defines for them.
+          validateStatus: (status) => status != null && status < 500,
+        ),
       );
       if (r.statusCode == 200) {
         return RegisterLookup.fromJson(r.data);
