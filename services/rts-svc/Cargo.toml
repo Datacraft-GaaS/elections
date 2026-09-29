@@ -14,6 +14,16 @@ members = [
     "crates/ballot-serial",
 ]
 
+exclude = [
+  # These inherit dependencies from the repository root workspace, so
+  # they are members there. Cargo assigns a package to the nearest enclosing
+  # workspace, so without excluding them here the root can never claim them
+  # and they belong to nothing at all.
+  "crates/bft-tally",
+  "crates/fhe-tally",
+  "crates/behavioural-biometrics",
+]
+
 [workspace.package]
 version      = "0.1.0"
 edition      = "2021"

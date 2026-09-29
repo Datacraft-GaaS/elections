@@ -16,3 +16,9 @@ doc = false
 [dependencies]
 libfuzzer-sys = "0.4"
 eel-hlc-rs    = { path = "..", default-features = false }
+
+# Detached from the parent workspace on purpose: the root member globs do not
+# include fuzz/, so without this cargo walks up, finds the root, and rejects
+# the manifest for claiming a workspace it is not a member of. This is the
+# arrangement the cargo-fuzz book prescribes.
+[workspace]

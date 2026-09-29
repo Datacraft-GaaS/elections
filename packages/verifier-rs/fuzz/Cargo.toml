@@ -30,3 +30,9 @@ name = "fuzz_sth_parse"
 path = "fuzz_targets/fuzz_sth_parse.rs"
 test = false
 doc = false
+
+# Detached from the parent workspace on purpose: the root member globs do not
+# include fuzz/, so without this cargo walks up, finds the root, and rejects
+# the manifest for claiming a workspace it is not a member of. This is the
+# arrangement the cargo-fuzz book prescribes.
+[workspace]

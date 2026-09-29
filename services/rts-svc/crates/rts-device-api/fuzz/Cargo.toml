@@ -9,15 +9,16 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
-rts-device-api = { path = ".." }
-
-# Disable default features to trim the fuzz binary.
-[dependencies.rts-device-api]
-path = ".."
-default-features = false
+# Default features off to trim the fuzz binary.
+rts-device-api = { path = "..", default-features = false }
 
 [[bin]]
 name = "fuzz_sms_decode"
 path = "fuzz_targets/fuzz_sms_decode.rs"
 test = false
 doc = false
+
+# Detached from the parent workspace on purpose: the parent's member list does
+# not include this fuzz crate, so without this cargo walks up, finds the
+# workspace, and rejects the manifest for claiming one it is not a member of.
+[workspace]

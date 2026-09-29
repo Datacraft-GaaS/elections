@@ -17,3 +17,9 @@ doc = false
 libfuzzer-sys = "0.4"
 eel-pii-rs    = { path = "..", default-features = false }
 serde_json    = "1"
+
+# Detached from the parent workspace on purpose: the root member globs do not
+# include fuzz/, so without this cargo walks up, finds the root, and rejects
+# the manifest for claiming a workspace it is not a member of. This is the
+# arrangement the cargo-fuzz book prescribes.
+[workspace]

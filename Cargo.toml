@@ -7,6 +7,15 @@ members = [
   "services/*/crates/*",
   "services/abis-svc/tools/*",
   "tools/*",
+  # These inherit their dependencies from this workspace, so they must be
+  # members of it. The `services/*/crates/*` glob cannot reach them: rts-svc
+  # and biometric-edge-svc each declare a nested [workspace], and a package is
+  # assigned to the nearest enclosing workspace, so the glob skipped these
+  # four and they were left belonging to nothing at all.
+  "services/rts-svc/crates/bft-tally",
+  "services/rts-svc/crates/fhe-tally",
+  "services/rts-svc/crates/behavioural-biometrics",
+  "services/biometric-edge-svc/crates/kit-cert-transparency",
   # C ABI bridges for native desktop clients (Qt). Each is a self-contained
   # crate that wraps workspace packages and is linked into a C++ binary.
   "services/*/apps/*/bridge",
@@ -30,6 +39,20 @@ exclude = [
   "services/support-admin-svc/crates/archive",
   "services/support-admin-svc/crates/special-voter",
   "services/support-admin-svc/crates/intent",
+  # `tools/*` is a glob, and Python leaves __pycache__ directories next to the
+  # scripts. Cargo then tries to load each one as a crate and the whole root
+  # workspace fails to load. It is gitignored, so it only ever appears locally,
+  # which makes this look like a random breakage on a fresh clone.
+  "tools/__pycache__",
+  # Scaffolding template: every manifest under it contains {{project-name}}
+  # placeholders, so they are deliberately not valid crates until
+  # instantiated. Each one needs its own entry because exclude is a literal
+  # path list, not a recursive pattern.
+  "packages/service-template-rs/template",
+  "packages/service-template-rs/template/crates/{{project-name}}-api",
+  "packages/service-template-rs/template/crates/{{project-name}}-domain",
+  "packages/service-template-rs/template/crates/{{project-name}}-projections",
+  "packages/service-template-rs/template/crates/{{project-name}}-worker",
 ]
 # Cargo tolerates glob members that match no paths yet.
 # New crates under these globs are picked up automatically.

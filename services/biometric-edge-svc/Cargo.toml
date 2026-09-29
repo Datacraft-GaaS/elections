@@ -9,6 +9,20 @@ members = [
     "crates/diaspora",
     "crates/sensor-driver",
     "crates/biometric-edge-integration-tests",
+    # nearform-nbis is the vendored NBIS FFI boundary and bvr-desktop/bridge the
+    # C ABI bridge to the Qt client. Both are real crates that were sitting
+    # outside this workspace, so cargo rejected their manifests for claiming a
+    # workspace they were not members of.
+    "crates/nearform-nbis",
+    "apps/bvr-desktop/bridge",
+]
+
+exclude = [
+  # These inherit dependencies from the repository root workspace, so
+  # they are members there. Cargo assigns a package to the nearest enclosing
+  # workspace, so without excluding them here the root can never claim them
+  # and they belong to nothing at all.
+  "crates/kit-cert-transparency",
 ]
 
 [workspace.package]
