@@ -88,7 +88,12 @@ repairs, and several claims no longer hold.
 - **EC-MOB-02 storage guard was dead in production.** `RealStorageChecker`
   returned null unconditionally, and null means "unavailable", so the check was
   only ever exercised by test fakes. It now requires a bound delegate.
-- **party-agent's `Sign In` had an empty handler.** Wired to `AuthNotifier.login`.
+- **Three login flows were fakes, not empty.** `observer` and `poll-clerk`'s
+  `AuthNotifier.login` slept 300ms and set `authenticated` for any credentials
+  at all, with no credential check and no attestation; only `party-agent` had a
+  real gate. All three now hard-fail device attestation before authenticating
+  (ADR-0021) and their `Sign In` buttons are wired. A fourth screen's `Sign In`
+
 - **Orphaned Dart tree** at `services/field-mobile-verify/lib/`, byte-identical
   to citizen-verify's copy, in a directory with no `pubspec.yaml` and therefore
   in no package and never analyzed.
@@ -111,15 +116,24 @@ because an earlier version of the Flutter harness scored a package whose
 
 ### Still open, restated with current numbers
 
-18. **45 dead button handlers** across 10 apps and 42 screens, each
-    `onPressed: () {}` — party-agent 9, poll-clerk 9, observer 7, field-support
-    5, personnel 4, diaspora-kit 3, rts-kit 2, citizen-verify 2,
-    accred-scanner 2, lms-offline 2. These are the visible face of item 14: the
-    field-mobile BFF implements 9 paths (attestation/verdict, config,
-    dispatch/assignments, forms/sync, incidents, observer/observations,
-    sessions, sessions/refresh, station/status, voter/verification) while the
-    contracts declare more, so a minority are wireable today and the rest need
-    their endpoint built. No handler is wired to invented behaviour.
+18. **41 dead button handlers** across 9 apps, each `onPressed: () {}`. These
+    are the visible face of item 14. The field-mobile BFF implements 9 paths
+    (attestation/verdict, config, dispatch/assignments, forms/sync, incidents,
+    observer/observations, sessions, sessions/refresh, station/status,
+    voter/verification) while the contracts declare more, and spot-checks
+    confirm the remainder are blocked on collaborators that do not exist
+    rather than on effort:
+
+    - `personnel` check-in: `DispatchApi.checkIn` is a real POST but requires
+      `electionId` and `biometricHash`, and neither appears anywhere in the app.
+    - `field-support` incident submit: the app has no controller or client at
+      all, where `poll-clerk` has a real `IncidentController`. The screen's
+      payload contract is not defined.
+    - `accred-scanner`, `lms-offline`, `citizen-verify`: no client for the
+      action the button claims.
+
+    No handler is wired to invented behaviour. Where a screen's own collaborator
+    did exist, it was wired and tested — see the three login flows below.
 19. **field-mobile-verify has no implementation.** The directory holds a
     migration, README and TRACEABILITY only. Its README describes a fully
     implemented sqlx service, which is not true.
