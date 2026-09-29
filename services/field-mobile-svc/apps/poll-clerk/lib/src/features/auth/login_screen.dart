@@ -39,13 +39,13 @@ class LoginScreen extends ConsumerWidget {
           const SizedBox(height: 32),
           const EelTextField(
             label: 'User ID',
-            hint: 'Enter your clerk ID',
+            hintText: 'Enter your clerk ID',
             enabled: true,
           ),
           const SizedBox(height: 16),
           const EelTextField(
             label: 'Password',
-            hint: 'Enter your password',
+            hintText: 'Enter your password',
             obscureText: true,
           ),
           const SizedBox(height: 24),

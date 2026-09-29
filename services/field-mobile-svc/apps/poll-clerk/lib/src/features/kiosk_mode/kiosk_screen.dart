@@ -19,7 +19,7 @@ class KioskScreen extends ConsumerWidget {
           const Text('Kiosk Mode', style: EelTextStyle.titleLarge, textAlign: TextAlign.center),
           const SizedBox(height: 24),
           EelResultCard(
-            leading: Icon(Icons.kiosk, color: EelColors.of(context).primary, size: 32),
+            leading: Icon(Icons.terminal, color: EelColors.of(context).primary, size: 32),
             title: const Text('Kiosk Active', style: EelTextStyle.titleMedium),
             subtitle: const Text('Operational - 100% uptime', style: EelTextStyle.bodyMedium),
           ),

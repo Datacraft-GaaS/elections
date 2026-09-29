@@ -5,7 +5,6 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:uuid/uuid.dart';
 import '../../core/services/api_client.dart';
 
 /// Incident severity levels (M31)
@@ -43,6 +42,16 @@ class IncidentDraft {
     required this.updatedAt,
     this.offlineQueued = false,
   });
+
+  /// The draft before anything has been entered.
+  ///
+  /// updatedAt is epoch rather than nullable, because "when was this draft
+  /// last touched" has no meaningful answer before it exists; the UI shows the
+  /// empty state, not a timestamp of 1970.
+  static final IncidentDraft empty = IncidentDraft(
+    id: '',
+    updatedAt: DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+  );
 
   IncidentDraft copyWith({
     IncidentCategory? category,
@@ -83,18 +92,18 @@ class IncidentState {
   final String? supportCode;
   final int? httpStatus;
 
-  const IncidentState({
+  IncidentState({
     this.screenState = IncidentScreenState.empty,
-    this.draft = const IncidentDraft(id: '', updatedAt: null as dynamic) ?? IncidentDraft._empty,
+    IncidentDraft? draft,
     this.submitted,
     this.errorMessage,
     this.supportCode,
     this.httpStatus,
-  });
+  }) : draft = draft ?? IncidentDraft.empty;
 
   factory IncidentState.initial() => IncidentState(
     screenState: IncidentScreenState.empty,
-    draft: IncidentDraft._empty,
+    draft: IncidentDraft.empty,
   );
 
   IncidentState copyWith({
@@ -112,10 +121,6 @@ class IncidentState {
     supportCode: supportCode ?? this.supportCode,
     httpStatus: httpStatus ?? this.httpStatus,
   );
-}
-
-extension on IncidentDraft {
-  static IncidentDraft get _empty => IncidentDraft(id: const Uuid().v7(), updatedAt: DateTime.now());
 }
 
 /// Incident controller (Riverpod Notifier)

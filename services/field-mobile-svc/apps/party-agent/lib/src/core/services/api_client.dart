@@ -62,12 +62,12 @@ class EelHttpClient {
   Future<Response<T>> get<T>(String p, {Map<String, dynamic>? q, Options? o}) =>
       _dio.get<T>(p, queryParameters: q, options: o);
 
-  Future<Response<T>> post<T>(String p, {dynamic d, Map<String, dynamic>? q, Options? o}) =>
-      _dio.post<T>(p, data: d, queryParameters: q, options: o);
+  Future<Response<T>> post<T>(String p, {dynamic data, Map<String, dynamic>? q, Options? o}) =>
+      _dio.post<T>(p, data: data, queryParameters: q, options: o);
 
-  Future<Response> patch(String p, {dynamic d, Map<String, dynamic>? q, Options? o}) =>
-      _dio.patch(p, data: d, queryParameters: q, options: o);
+  Future<Response> patch(String p, {dynamic data, Map<String, dynamic>? q, Options? o}) =>
+      _dio.patch(p, data: data, queryParameters: q, options: o);
 
-  Future<Response> delete(String p, {dynamic d, Map<String, dynamic>? q, Options? o}) =>
-      _dio.delete(p, data: d, queryParameters: q, options: o);
+  Future<Response> delete(String p, {dynamic data, Map<String, dynamic>? q, Options? o}) =>
+      _dio.delete(p, data: data, queryParameters: q, options: o);
 }

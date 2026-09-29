@@ -155,23 +155,21 @@ class _StationDashboardScreenState extends ConsumerState<StationDashboardScreen>
   /// Build the full state matrix screen (§5.3)
   /// States: loading · loaded · empty · offline · error · permission-denied · unauthenticated · version-blocked · tamper-blocked
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     // Security: Apply EelSecureScreen wrapper (FLAG_SECURE / isCaptured)
     // Per §3.4: FLAG_SECURE / isCaptured wrapper for incident + lookup screens
     return _buildStateMatrix(context);
   }
 
   Widget _buildStateMatrix(BuildContext context) {
-    final themeColors = Theme.of(context).extension<EelColors>();
-
     // 1. Loading state
     if (_screenState == DashboardState.loading) {
       return const EelScaffold(
         title: 'Station Dashboard',
-        bannerSlot: EelBanner(
+        banners: [EelBanner(
           message: 'Loading station status...',
           severity: EelSeverity.info,
-        ),
+        )],
         body: Center(child: EelLoadingState()),
       );
     }
@@ -180,23 +178,18 @@ class _StationDashboardScreenState extends ConsumerState<StationDashboardScreen>
     if (_screenState == DashboardState.error) {
       return EelScaffold(
         title: 'Station Dashboard',
-        bannerSlot: EelBanner(
+        banners: [EelBanner(
           message: _errorMessage ?? 'Failed to load station data',
           severity: EelSeverity.danger,
-        ),
+        )],
         body: EelErrorState(
-          problem: ApiProblem(
+          problem: const EelProblem(
+            type: 'about:blank',
             status: 500,
             title: 'Dashboard unavailable',
-            detail: _errorMessage ?? 'Could not fetch station status from BFF',
             instance: '/api/v1/mobile/bff/station/status',
           ),
-          actions: [
-            EelButton(
-              label: 'Retry',
-              onPressed: _refresh,
-            ),
-          ],
+          onRetry: _refresh,
         ),
       );
     }
@@ -205,10 +198,10 @@ class _StationDashboardScreenState extends ConsumerState<StationDashboardScreen>
     if (_screenState == DashboardState.offline && _data != null) {
       return EelScaffold(
         title: 'Station Dashboard',
-        bannerSlot: EelBanner(
+        banners: [EelBanner(
           message: 'Offline — showing cached data (last sync: ${_formatTimeAgo(_data!.updatedAt)})',
           severity: EelSeverity.warning,
-        ),
+        )],
         body: _buildDashboardBody(context, isOffline: true),
       );
     }
@@ -219,7 +212,7 @@ class _StationDashboardScreenState extends ConsumerState<StationDashboardScreen>
         title: 'Station Dashboard',
         body: EelEmptyState(
           title: 'No station data yet',
-          description: 'Dashboard data will appear once the station is configured and active.',
+          message: 'Dashboard data will appear once the station is configured and active.',
         ),
       );
     }
@@ -227,7 +220,7 @@ class _StationDashboardScreenState extends ConsumerState<StationDashboardScreen>
     // 5. Loaded state (main view — no PII per §3.2)
     return EelScaffold(
       title: 'Station Dashboard — ${_data!.stationCode}',
-      bannerSlot: _buildConnectivityBanner(_data!.connectivityStatus),
+      banners: [_buildConnectivityBanner(_data!.connectivityStatus)],
       body: _buildDashboardBody(context, isOffline: false),
     );
   }
@@ -235,7 +228,6 @@ class _StationDashboardScreenState extends ConsumerState<StationDashboardScreen>
   /// Build the dashboard body (no PII — numeric counts only)
   Widget _buildDashboardBody(BuildContext context, {required bool isOffline}) {
     final d = _data!;
-    final colors = Theme.of(context).extension<EelColors>();
 
     return RefreshIndicator(
       onRefresh: _refresh,
@@ -245,13 +237,17 @@ class _StationDashboardScreenState extends ConsumerState<StationDashboardScreen>
           // SLA timer chip (port from field-support, generalize)
           EelSlaTimerChip(
             deadline: DateTime.now().add(const Duration(hours: 2)),
-            label: 'Refresh cycle',
+            phaseLabels: (
+              normal: 'Refresh cycle',
+              warning: 'Refresh due',
+              critical: 'Refresh overdue',
+            ),
           ),
           const SizedBox(height: 16),
           // Status indicators (no PII — only aggregate counts)
           EelStatusChip(
             label: 'Turnout: ${d.turnoutCount}',
-            severity: d.turnoutCount > 0 ? 'ok' : 'warning',
+            severity: d.turnoutCount > 0 ? EelSeverity.success : EelSeverity.warning,
           ),
           const SizedBox(height: 8),
           EelStatusChip(
@@ -261,29 +257,29 @@ class _StationDashboardScreenState extends ConsumerState<StationDashboardScreen>
           const SizedBox(height: 8),
           EelStatusChip(
             label: 'Queue depth: ${d.queueDepth}',
-            severity: d.queueDepth > 10 ? 'warning' : 'ok',
+            severity: d.queueDepth > 10 ? EelSeverity.warning : EelSeverity.success,
           ),
           const SizedBox(height: 8),
           EelStatusChip(
             label: 'Kit battery: ${d.kitBatteryLevel}%',
-            severity: d.kitBatteryLevel > 20 ? 'ok' : 'warning',
+            severity: d.kitBatteryLevel > 20 ? EelSeverity.success : EelSeverity.warning,
           ),
           const SizedBox(height: 8),
           EelStatusChip(
             label: 'Forms synced: ${d.formsSynced ? 'Yes' : 'No'}',
-            severity: d.formsSynced ? 'ok' : 'warning',
+            severity: d.formsSynced ? EelSeverity.success : EelSeverity.warning,
           ),
           const SizedBox(height: 8),
           EelStatusChip(
             label: 'Open incidents: ${d.incidentsOpen}',
-            severity: d.incidentsOpen > 0 ? 'warning' : 'ok',
+            severity: d.incidentsOpen > 0 ? EelSeverity.warning : EelSeverity.success,
           ),
           const SizedBox(height: 24),
           // Connectivity indicator
           EelSyncIndicator(
             lastSync: d.updatedAt,
-            queueDepth: d.queueDepth,
-            isLive: d.isLive,
+            pendingCount: d.queueDepth,
+            syncing: d.isLive,
           ),
           const SizedBox(height: 8),
           if (d.connectivityStatus == 'degraded')

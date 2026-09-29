@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 
 enum AuthStatus { unauthenticated, authenticated, loading }
 

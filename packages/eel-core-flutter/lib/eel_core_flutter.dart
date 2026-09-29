@@ -11,6 +11,7 @@ export 'src/audit/audit_service.dart';
 export 'src/biometric/biometric_policy.dart';
 export 'src/bootstrap/bootstrap_fsm.dart';
 export 'src/connectivity/connectivity_probe.dart';
+export 'src/errors/problem_json.dart';
 export 'src/location/location_service.dart';
 export 'src/otp/otp_service.dart';
 export 'src/outbox/biometric_submission_outbox.dart';

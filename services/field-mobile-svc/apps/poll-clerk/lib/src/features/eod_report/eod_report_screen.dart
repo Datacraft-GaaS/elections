@@ -17,14 +17,14 @@ class EODReportScreen extends ConsumerWidget {
         children: [
           const Text('End of Day Report', style: EelTextStyle.titleLarge, textAlign: TextAlign.center),
           const SizedBox(height: 16),
-          const EelResultCard(
+          EelResultCard(
             leading: Icon(Icons.check_circle, color: EelColors.of(context).primary, size: 32),
-            title: Text('Daily Summary', style: EelTextStyle.titleMedium),
-            subtitle: Text('Total voters: 12,450 • Turnout: 87% • EOD: 18:00', style: EelTextStyle.bodyMedium),
+            title: const Text('Daily Summary', style: EelTextStyle.titleMedium),
+            subtitle: const Text('Total voters: 12,450 • Turnout: 87% • EOD: 18:00', style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 16),
           EelResultCard(
-            leading: Icon(Icons.analysis, color: EelColors.of(context).primaryMuted, size: 32),
+            leading: Icon(Icons.analytics, color: EelColors.of(context).primaryMuted, size: 32),
             title: const Text('Kiosk Status', style: EelTextStyle.titleMedium),
             subtitle: const Text('Operational - 100% uptime', style: EelTextStyle.bodyMedium),
           ),
