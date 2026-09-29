@@ -333,4 +333,54 @@ void main() {
       expect(error.error, isA<Exception>());
     });
   });
+
+  // The storage guard is only as real as the checker behind it. RealStorageChecker
+  // used to return null unconditionally, and null means "unavailable", so the
+  // EC-MOB-02 refusal was exercised by test fakes and never by production.
+  // These pin the behaviour that made that invisible.
+  group('RealStorageChecker', () {
+    test('reports what the bound delegate reports', () async {
+      final checker = RealStorageChecker(
+        availableBytesDelegate: () async => 4096,
+      );
+      expect(await checker.availableBytes(), 4096);
+    });
+
+    test('propagates an unavailable reading rather than inventing one', () async {
+      var asked = 0;
+      final checker = RealStorageChecker(
+        availableBytesDelegate: () async {
+          asked++;
+          return null;
+        },
+      );
+      expect(await checker.availableBytes(), isNull);
+      // The delegate is consulted every time; it is not cached into a null.
+      expect(asked, 1);
+    });
+
+    test('a real checker bound to a full disk refuses the upload', () async {
+      final transport = InMemoryEvidenceUploader();
+      final coordinator = EvidenceUploaderCoordinator(
+        transport: transport,
+        storage: RealStorageChecker(
+          availableBytesDelegate: () async => 1024,
+        ),
+        degradedThreshold: 1024 * 1024,
+      );
+      final result = await coordinator.upload(
+        EvidenceUploadRequest(
+          id: 'x',
+          idempotencyKey: 'x',
+          path: '/data/photo.jpg',
+          contentType: 'image/jpeg',
+          size: 2 * 1024 * 1024,
+          sha256: 'x',
+        ),
+        ConnectivityState.online,
+      );
+      expect(result, isA<EvidenceUploadStorageFull>());
+      expect(transport.sent, isEmpty);
+    });
+  });
 }

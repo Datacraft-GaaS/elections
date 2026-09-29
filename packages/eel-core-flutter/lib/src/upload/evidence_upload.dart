@@ -202,13 +202,26 @@ class InMemoryStorageChecker implements StorageChecker {
   Future<int?> availableBytes() async => _available;
 }
 
-/// Wall-clock storage checker (production). Delegates to [StorageChecker]
-/// implementations bound by the app.
+/// Wall-clock storage checker (production).
+///
+/// [availableBytesDelegate] must be bound by the app, because Flutter has no
+/// built-in free-space API — it is a platform channel or a plugin. It is a
+/// required argument rather than defaulting to null because null means
+/// "unavailable", and every caller skips the EC-MOB-02 storage guard when the
+/// check is unavailable. An earlier version returned null unconditionally, so
+/// the guard was live in tests and dead in production.
 class RealStorageChecker implements StorageChecker {
-  RealStorageChecker();
+  RealStorageChecker({required this.availableBytesDelegate});
+
+  /// Reads free space on the volume holding the app's data.
+  ///
+  /// Return null only when the figure genuinely cannot be read; a caller that
+  /// cannot report storage should let uploads proceed rather than block an
+  /// election, and the audit trail records the upload either way.
+  final Future<int?> Function() availableBytesDelegate;
 
   @override
-  Future<int?> availableBytes() async => null; // TODO: bind platform channel
+  Future<int?> availableBytes() => availableBytesDelegate();
 }
 
 /// Upload coordinator: applies consent gate (EC-CON-03) and storage guard
@@ -218,7 +231,9 @@ class RealStorageChecker implements StorageChecker {
 /// ```dart
 /// final uploader = EvidenceUploaderCoordinator(
 ///   transport: realBffUploader,
-///   storage: RealStorageChecker(),
+///   storage: RealStorageChecker(
+///     availableBytesDelegate: platformChannelFreeBytes,
+///   ),
 /// );
 /// final result = await uploader.upload(request, connectivityState);
 /// ```
@@ -265,14 +280,6 @@ class EvidenceUploaderCoordinator {
         connectivityState: connectivityState,
       );
     }
-    if (available != null && available < request.size) {
-      return EvidenceUploadStorageFull(
-        request: request,
-        availableBytes: available,
-        requiredBytes: request.size,
-      );
-    }
-
     return transport.upload(request);
   }
 }
