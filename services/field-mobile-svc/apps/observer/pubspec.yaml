@@ -8,6 +8,7 @@ environment:
   flutter: ">=3.19.0"
 
 dependencies:
+  path_provider: ^2.1.4
   flutter:
     sdk: flutter
 

@@ -3,6 +3,7 @@
 /// Hardware: FAP60 fingerprint scanner, document camera.
 
 import 'dart:io';
+import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
 import 'fap60/fap60_driver.dart';
@@ -302,24 +303,14 @@ class BvrDriver {
     }
   }
 
-  static String _sha256Bytes(Uint8List bytes) {
-    // SHA-256 via dart:convert — available in all Flutter runtimes
-    int rotateRight(int x, int n) => ((x >> n) | (x << (32 - n))) & 0xFFFFFFFF;
-    const k = [
-      0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
-      0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-    ];
-    const h = [
-      0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
-      0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
-    ];
-    // Process message (simplified — in production use crypto package)
-    String result = '';
-    for (var i = 0; i < 8; i++) {
-      result += h[i].toRadixString(16).padLeft(8, '0');
-    }
-    return 'sha256:$result';
-  }
+  /// SHA-256 over the file's bytes.
+  ///
+  /// This used to be a hand-rolled stub that ignored [bytes] and returned
+  /// SHA-256's initial hash constants, so every upload hashed to the same
+  /// string regardless of content. As a proof hash that is worse than none: it
+  /// cannot distinguish two different evidence files.
+  static String _sha256Bytes(Uint8List bytes) =>
+      'sha256:${sha256.convert(bytes)}';
 
   // ── Signature pad capture ────────────────────────────────────────────────────
 

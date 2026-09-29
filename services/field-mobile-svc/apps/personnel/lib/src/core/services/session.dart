@@ -40,7 +40,7 @@ class PersonnelSessionService {
         userId: data['user_id'] as String?, role: data['role'] as String?,
         staffCode: data['staff_code'] as String?,
         expiresAt: DateTime.parse(data['expires_at']),
-        sessionId: data['session_id'] as String?,
+        sessionId: data['session_id'] as String? ?? const Uuid().v7(),
       );
     } catch (_) { return PersonnelSessionState.initial(); }
   }

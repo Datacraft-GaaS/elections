@@ -57,7 +57,10 @@ class ScanResultScreen extends HookConsumerWidget {
             ),
           ] else
             const EelBanner(message: 'No zone information available.', severity: EelSeverity.info),
-          const Spacer(),
+      // A Spacer is an Expanded, which needs a bounded height. This body sits
+      // in EelScaffold's scrollable variant, so the height is unbounded and the
+      // Spacer threw during layout. A fixed gap it is.
+      const SizedBox(height: 32),
           EelButton(
             label: 'Scan Another',
             icon: Icons.qr_code_scanner,

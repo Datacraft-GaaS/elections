@@ -263,8 +263,23 @@ class EelAccessibleTextField extends StatelessWidget {
 
 /// Screen reader announcement utility
 class EelAnnouncer {
-  static void announce(BuildContext context, String message, {bool polite = true}) {
-    SemanticsService.announce(message, Directionality.of(context));
+  /// Announces [message] to the platform screen reader.
+  ///
+  /// sendAnnouncement is view-scoped rather than BuildContext-scoped, because
+  /// the old announce() could not address more than one window. A context
+  /// alone does not identify a view reliably, so callers pass the view
+  /// explicitly.
+  static Future<void> announce(
+    BuildContext context,
+    String message, {
+    bool polite = true,
+  }) {
+    return SemanticsService.sendAnnouncement(
+      View.of(context),
+      message,
+      Directionality.of(context),
+      assertiveness: polite ? Assertiveness.polite : Assertiveness.assertive,
+    );
   }
 }
 

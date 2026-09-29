@@ -13,9 +13,9 @@ dependencies:
   camera: ^0.10.5+9
   crypto: ^3.0.3
   dio: ^5.4.0
+  eel_design: { path: ../../../../packages/design-system/flutter }
   eel_drivers:
     path: ../../../../packages/eel_drivers
-
   eel_kit_sdk:
     path: ../../../../packages/kit-sdk-flutter
   flutter:
@@ -34,11 +34,10 @@ dependencies:
   logging: ^1.2.0
   path: ^1.9.0
   sqflite: ^2.3.2
-  wakelock_plus: ^1.2.7
-
   usb_serial: any
   uuid: any
-  eel_design: { path: ../../../../packages/design-system/flutter }
+  wakelock_plus: ^1.2.7
+
 dev_dependencies:
   build_runner: ^2.4.8
   flutter_lints: ^3.0.0

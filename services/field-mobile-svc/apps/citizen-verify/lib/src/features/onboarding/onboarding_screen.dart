@@ -60,7 +60,10 @@ class OnboardingScreen extends ConsumerWidget {
             title: 'Cryptographic proof',
             body: 'Results are signed and verified on your device — no server trust required.',
           ),
-          const Spacer(),
+          // A Spacer is an Expanded, which needs a bounded height. This body
+          // sits in EelScaffold's scrollable variant, so the height is
+          // unbounded and the Spacer threw during layout.
+          const SizedBox(height: 32),
           // Bottom: legal line + actions.
           Text(
             'By continuing, you accept the no-tracking attestation (DPA 2019 §28).',

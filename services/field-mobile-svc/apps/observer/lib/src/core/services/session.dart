@@ -116,7 +116,7 @@ class SessionService {
         pinFailures: data['pin_failures'] as int? ?? 0,
         lockedUntil: data['locked_until'] != null ? DateTime.parse(data['locked_until']) : null,
         expiresAt: DateTime.parse(data['expires_at']),
-        sessionId: data['session_id'] as String?,
+        sessionId: data['session_id'] as String? ?? const Uuid().v7(),
       );
     } catch (_) { return SessionState.initial(); }
   }

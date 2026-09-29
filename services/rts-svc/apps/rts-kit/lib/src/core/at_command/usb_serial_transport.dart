@@ -22,11 +22,9 @@ class UsbSerialTransport implements AtSerialTransport {
           d.productName?.toLowerCase().contains('telit') == true,
       orElse: () => devices.first,
     );
-    if (device.deviceName == null) {
-      throw StateError(
-          'Device ${device.productName} has no deviceName to open a port on');
-    }
-    _port = UsbPort(device.deviceName!);
+    // UsbDevice.deviceName is non-nullable in usb_serial, so there is no
+    // missing-name case to guard here.
+    _port = UsbPort(device.deviceName);
     await _port!.open();
     await _port!.setDTR(true);
     await _port!.setRTS(true);
@@ -67,7 +65,7 @@ class UsbSerialTransport implements AtSerialTransport {
     });
     await Future.delayed(Duration(milliseconds: timeoutMs));
     if (!completer.isCompleted) {
-      sub.cancel();
+      await sub.cancel();
       completer.complete(buffer.toString().trim());
     }
     return await completer.future;

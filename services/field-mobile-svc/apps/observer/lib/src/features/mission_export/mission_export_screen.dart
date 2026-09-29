@@ -18,7 +18,7 @@ class MissionExportScreen extends ConsumerWidget {
           const Text('Export Mission Data', style: EelTextStyle.titleLarge),
           const SizedBox(height: 16),
           EelResultCard(
-            leading: Icon(Icons.export,
+            leading: Icon(Icons.upload_file,
                 color: EelColors.of(context).primary, size: 32),
             title: const Text('Export Options', style: EelTextStyle.titleMedium),
             subtitle: const Text('Choose the data format and scope',

@@ -7,7 +7,7 @@ class AssessmentAttempt {
   final String id;
   final String workerId;
   final String moduleId;
-  final Map<String, String> answers;
+  final Map<String, dynamic> answers;
   final double? score;
   final bool? passed;
   final String idempotencyKey;

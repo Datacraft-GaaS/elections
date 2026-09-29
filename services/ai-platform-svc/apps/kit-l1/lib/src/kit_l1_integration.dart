@@ -9,19 +9,19 @@ import '../src/telemetry_point.dart';
 /// Integration wrapper — consumes telemetry points from BVI (GNSS, fingerprint) and RTS (transmit events)
 /// and produces anomaly results for the M4 pipeline.
 class KitL1Pipeline {
-  final AnomalyDetector _detector;
-  KitL1Pipeline({AnomalyDetector? detector}) : _detector = detector ?? AnomalyDetector();
+  final EelKitL1AnomalyDetector _detector;
+  KitL1Pipeline({EelKitL1AnomalyDetector? detector}) : _detector = detector ?? EelKitL1AnomalyDetector();
 
   /// Process telemetry point from BVI or RTS kit pipeline.
   /// Returns [AnomalyResult] with score + explanation.
-  Future<AnomalyResult> processPoint(TelemetryPoint point) async => await _detector.detect(point);
+  ///
+  /// detect() fits itself on first use. Given a single point that fit is
+  /// degenerate, so a caller scoring a live stream should call [processBatch]
+  /// first to establish the model.
+  Future<AnomalyResult> processPoint(TelemetryPoint point) async =>
+      _detector.detect(<TelemetryPoint>[point]).first;
 
   /// Batch process multiple points (pipeline integration point).
-  Future<List<AnomalyResult>> processBatch(List<TelemetryPoint> points) async {
-    final results = <AnomalyResult>[];
-    for (final point in points) {
-      results.add(await _detector.detect(point));
-    }
-    return results;
-  }
+  Future<List<AnomalyResult>> processBatch(List<TelemetryPoint> points) async =>
+      _detector.detect(points);
 }

@@ -7,6 +7,9 @@ import 'package:eel_design/eel_design.dart';
 class ModuleScreen extends ConsumerWidget {
   const ModuleScreen({super.key, this.moduleId});
 
+  /// The module being shown; null when opened without one.
+  final String? moduleId;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return EelScaffold(

@@ -16,7 +16,7 @@ class DuressAlertService {
     if (_client == null) {
       throw StateError('DuressAlertService requires EelHttpClient (mTLS/SPKI). Per M30: hardware-gated when network unavailable.');
     }
-    await _client!.post(
+    await _client.post(
       '/api/v1/mobile/bff/duress',
       data: {
         'agent_id': agentId,

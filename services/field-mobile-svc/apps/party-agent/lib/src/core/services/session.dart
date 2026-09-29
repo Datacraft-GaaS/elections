@@ -245,11 +245,14 @@ class SessionService {
     }
   }
 
+  /// Clears the stored session and PIN.
+  ///
+  /// Throws if the keys survive: a caller that swallows this would believe the
+  /// device is signed out while the session is still on disk. Deliberately not
+  /// an empty catch.
   Future<void> clearSession() async {
-    try {
-      await _secureStorage.delete(key: 'party_agent_session');
-      await _secureStorage.delete(key: 'party_agent_pin');
-    } catch (e) {}
+    await _secureStorage.delete(key: 'party_agent_session');
+    await _secureStorage.delete(key: 'party_agent_pin');
   }
 
   Future<bool> canCheckBiometrics() async {

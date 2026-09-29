@@ -10,7 +10,7 @@ class OfflineQueueEntry {
   final String workerId;
   final String moduleId;
   final String idempotencyKey;
-  final Map<String, String> answers;
+  final Map<String, dynamic> answers;
   final String status; // pending / synced / failed
   final DateTime createdAt;
 

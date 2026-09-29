@@ -3,11 +3,9 @@
 /// Logs every capture to AuditService with all 5 axes: where/when/who/why/how.
 import 'dart:convert';
 import 'package:eel_core_flutter/eel_core_flutter.dart';
-import 'package:eel_core_flutter/eel_core_flutter.dart';
 import 'package:eel_kit_sdk/src/bundle_security.dart';
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:uuid/uuid.dart';
-import 'package:eel_core_flutter/eel_core_flutter.dart';
 import '../fap60/fap60_driver.dart';
 import 'bvi_driver.dart';
 // AntIrisResult only; this package has its own AntIrisDriver, which shadows

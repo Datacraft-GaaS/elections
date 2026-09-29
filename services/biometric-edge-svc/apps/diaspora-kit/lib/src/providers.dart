@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:eel_kit_sdk/src/bundle_security.dart';
 
 import 'models.dart';
 
@@ -95,3 +98,18 @@ class PouchNotifier extends StateNotifier<List<PouchRecord>> {
     ];
   }
 }
+
+// ---- Form signing -----------------------------------------------------------
+
+/// Signs a canonical form payload, returning the signature.
+///
+/// Behind a provider because signing needs a device key from secure storage,
+/// which does not exist in a widget test or on a desktop debug build. The app
+/// wires the real Ed25519 device key; a test overrides this explicitly rather
+/// than the app quietly signing with a fallback.
+typedef FormSigner = Future<String> Function(String message);
+
+final formSignerProvider = Provider<FormSigner>((ref) => (message) async {
+  final key = await EelSigningKey.loadOrCreate();
+  return key.sign(utf8.encode(message));
+});

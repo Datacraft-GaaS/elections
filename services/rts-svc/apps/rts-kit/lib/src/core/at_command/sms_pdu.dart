@@ -210,8 +210,8 @@ List<String> encodeSmsSubmit({
   int messageReference = 0,
 }) {
   final address = _encodeAddress(destinationNumber);
-  final pduType = 0x11; // SMS-SUBMIT, VP relative
-  final pid = 0x00;
+  const pduType = 0x11; // SMS-SUBMIT, VP relative
+  const pid = 0x00;
 
   final List<List<int>> userDataParts;
   final bool isGsm7 = dataCodingScheme == 0x00 || dataCodingScheme == 0xF0;

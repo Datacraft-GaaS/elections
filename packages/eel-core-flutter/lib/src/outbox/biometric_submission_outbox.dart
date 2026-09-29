@@ -114,7 +114,6 @@ typedef BiometricMatcher = Future<bool> Function(String captured, String enrolle
 class BiometricSubmissionOutbox {
 	final Dio _dio;
 	final String _outboxKeyPrefix = 'eel.bio.outbox.';
-	final String _dedupIndexKey = 'eel.bio.dedup_index';
 
 	/// Real biometric comparison functions — MUST be provided by the caller.
 	/// In bvr-kit, these wrap Fap60Driver.match() (minutiae) and AntIrisDriver.match() (texture).

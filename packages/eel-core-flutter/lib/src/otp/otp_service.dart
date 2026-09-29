@@ -10,7 +10,6 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
-import 'package:uuid/uuid.dart';
 
 import 'package:eel_core_flutter/eel_core_flutter.dart';
 
@@ -33,7 +32,6 @@ class OtpService {
   /// Send OTP to phone number using the telco-sms adapter.
   /// An audit entry is emitted on every outcome: sent, failed, or exception.
   Future<OtpResponse> sendOtp(String phoneNumber) async {
-    final auditId = 'otp-${const Uuid().v7()}';
     final payload = jsonEncode(<String, dynamic>{'phoneNumber': phoneNumber});
 
     try {

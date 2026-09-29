@@ -156,11 +156,16 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            formSignerProvider.overrideWithValue(
+              (message) async => 'test-signature:$message',
+            ),
+          ],
           child: MaterialApp(
             home: Consumer(
               builder: (context, ref, _) {
                 capturedRef = ref;
-                return Form34AScreen(station: station);
+                return Form34aScreen(station: station);
               },
             ),
           ),

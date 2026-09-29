@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 
 import 'package:eel_core_flutter/eel_core_flutter.dart';
-import 'package:eel_core_flutter/eel_core_flutter.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

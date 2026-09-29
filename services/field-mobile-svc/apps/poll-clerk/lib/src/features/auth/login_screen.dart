@@ -62,7 +62,10 @@ class LoginScreen extends ConsumerWidget {
             fullWidth: true,
             onPressed: () {},
           ),
-          const Spacer(),
+      // A Spacer is an Expanded, which needs a bounded height. This body sits
+      // in EelScaffold's scrollable variant, so the height is unbounded and the
+      // Spacer threw during layout. A fixed gap it is.
+      const SizedBox(height: 32),
           Text(
             'eel Election Systems © 2026',
             style: EelTextStyle.bodySmall.copyWith(
