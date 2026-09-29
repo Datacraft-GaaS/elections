@@ -97,6 +97,10 @@ repairs, and several claims no longer hold.
 - **Orphaned Dart tree** at `services/field-mobile-verify/lib/`, byte-identical
   to citizen-verify's copy, in a directory with no `pubspec.yaml` and therefore
   in no package and never analyzed.
+- **Two dead Dart trees** outside any package: an orphaned duplicate in
+  `services/field-mobile-verify/`, and a second `lib/src/features` copy under
+  `accred-scanner` that nothing imported and that had already diverged from
+  the live one.
 - 158 committed `.gradle/` build caches untracked; 13 tracked `.bak` files
   removed; two 3-line `// stub` crates (`tools/softhsm`, `tools/spectral`)
   removed, keeping the Bash and JS tooling that shared those directories.
@@ -116,7 +120,7 @@ because an earlier version of the Flutter harness scored a package whose
 
 ### Still open, restated with current numbers
 
-18. **41 dead button handlers** across 9 apps, each `onPressed: () {}`. These
+18. **38 dead button handlers** across 9 apps, each `onPressed: () {}`. These
     are the visible face of item 14. The field-mobile BFF implements 9 paths
     (attestation/verdict, config, dispatch/assignments, forms/sync, incidents,
     observer/observations, sessions, sessions/refresh, station/status,
@@ -129,11 +133,19 @@ because an earlier version of the Flutter harness scored a package whose
     - `field-support` incident submit: the app has no controller or client at
       all, where `poll-clerk` has a real `IncidentController`. The screen's
       payload contract is not defined.
-    - `accred-scanner`, `lms-offline`, `citizen-verify`: no client for the
-      action the button claims.
+    - `lms-offline` assessment: no `Question` model exists; the screen renders
+      chips literally labelled A–D under a hardcoded "Question 1 of 10".
+    - `diaspora-kit` pouch verify: `PouchNotifier` has `add` and `addTransfer`
+      but no loader and starts empty, so there is nothing to verify.
+    - `poll-clerk` eod-report: `ApiService` is an empty class with no methods
+      and no callers, and no report endpoint exists.
 
     No handler is wired to invented behaviour. Where a screen's own collaborator
-    did exist, it was wired and tested — see the three login flows below.
+    did exist, it was wired and tested. Six have been: three login flows, the
+    citizen-verify results and register-lookup screens, and the party-agent
+    duress beacon. The first three found that the collaborator existed but was
+    itself a fake, and the register lookup needed an OTP token that the OTP
+    screen was discarding.
 19. **field-mobile-verify has no implementation.** The directory holds a
     migration, README and TRACEABILITY only. Its README describes a fully
     implemented sqlx service, which is not true.
