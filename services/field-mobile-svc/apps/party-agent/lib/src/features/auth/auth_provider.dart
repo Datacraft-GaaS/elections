@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 
 import '../../services/attestation_service.dart';
 
@@ -64,8 +65,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
 	}
 }
 
+// The stub is software-tier, so attestation fails closed in development rather
+// than passing on a machine with no hardware attestation behind it.
 final attestationServiceProvider = Provider<AttestationService>(
-	(ref) => AttestationService(),
+	(ref) => AttestationService(client: EelAttestationClientStub()),
 );
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(

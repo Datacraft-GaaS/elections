@@ -12,7 +12,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 		routes: [
 			GoRoute(
 				path: '/login',
-				builder: (context, state) => const LoginScreen(),
+				builder: (context, state) => const ObserverLoginScreen(),
 			),
 			GoRoute(
 				path: '/station-visit',

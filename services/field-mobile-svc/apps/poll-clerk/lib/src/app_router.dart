@@ -41,7 +41,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 			),
 			GoRoute(
 				path: '/eod-report',
-				builder: (context, state) => const EodReportScreen(),
+				builder: (context, state) => const EODReportScreen(),
 			),
 			GoRoute(
 				path: '/kiosk',

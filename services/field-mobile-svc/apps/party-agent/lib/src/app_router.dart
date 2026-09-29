@@ -20,7 +20,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 			),
 			GoRoute(
 				path: '/verify',
-				builder: (context, state) => const QrVerifyScreen(),
+				builder: (context, state) => const QRVerifyScreen(),
 			),
 			GoRoute(
 				path: '/countersign',
