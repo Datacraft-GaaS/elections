@@ -37,5 +37,5 @@ unicode-normalization = { workspace = true }
 
 [dev-dependencies]
 rstest        = { workspace = true }
-tower         = { version = "0.5", features = ["util"] }
+tower         = { workspace = true }
 eel-trace-rs  = { workspace = true }

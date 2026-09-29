@@ -26,4 +26,4 @@ uuid              = { workspace = true }
 chrono            = { workspace = true }
 
 [dev-dependencies]
-tower = { workspace = true }
+tower            = { workspace = true }

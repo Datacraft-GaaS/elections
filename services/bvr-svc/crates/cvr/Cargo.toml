@@ -35,9 +35,9 @@ eel-outbox-rs     = { workspace = true }
 sha2              = { workspace = true }
 
 [dev-dependencies]
+tower            = { workspace = true }
 rstest  = { workspace = true }
 tokio   = { workspace = true }
-tower   = { version = "0.5" }
 eel-trace-rs = { workspace = true }
 
 [features]
