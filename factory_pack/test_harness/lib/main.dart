@@ -54,12 +54,22 @@ class _TestHarnessHomeState extends State<TestHarnessHome> {
   final MethodChannel _cameraChannel = const MethodChannel('eel/bvi/camera');
   final MethodChannel _deviceChannel = const MethodChannel('eel/device/info');
 
+  /// Cancelled on dispose so the harness does not keep running after the
+  /// widget tree goes away.
+  Timer? _startupTimer;
+
+  @override
+  void dispose() {
+    _startupTimer?.cancel();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
     _log('Test harness ready');
     // Gather device info and start tests after a short delay
-    Future.delayed(const Duration(seconds: 1), () async {
+    _startupTimer = Timer(const Duration(seconds: 1), () async {
       _deviceInfo = await _getDeviceInfo();
       _startTime = DateTime.now();
       await _runAllTests();

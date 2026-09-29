@@ -27,18 +27,21 @@ WARN_RE = re.compile(r"^\s*warning •", re.M)
 INFO_RE = re.compile(r"^\s*info •", re.M)
 
 
+SKIP = {".dart_tool", "build", "node_modules", ".git", "target"}
+
+
 def package_dirs(targets):
     found = []
     for base in targets:
         for dirpath, dirnames, filenames in os.walk(os.path.join(ROOT, base)):
-            dirnames[:] = [d for d in dirnames if d not in (".dart_tool", "build")]
+            dirnames[:] = [d for d in dirnames if d not in SKIP]
             if "pubspec.yaml" in filenames:
                 found.append(dirpath)
     return sorted(found)
 
 
 def main():
-    targets = sys.argv[1:] or ["services", "packages"]
+    targets = sys.argv[1:] or ["."]
     dirs = package_dirs(targets)
 
     total_errors = 0

@@ -21,14 +21,15 @@ def package_dirs(targets):
     for base in targets:
         for dirpath, dirnames, filenames in os.walk(os.path.join(ROOT, base)):
             dirnames[:] = [d for d in dirnames
-                           if d not in (".dart_tool", "build", "node_modules")]
+                           if d not in (".dart_tool", "build", "node_modules",
+                                        ".git", "target")]
             if "pubspec.yaml" in filenames:
                 out.append(dirpath)
     return sorted(out)
 
 
 def main():
-    targets = sys.argv[1:] or ["services", "packages"]
+    targets = sys.argv[1:] or ["."]
     dirs = package_dirs(targets)
     total_pass = total_fail = 0
     clean, failed, untested, broken, empty = [], [], [], [], []
