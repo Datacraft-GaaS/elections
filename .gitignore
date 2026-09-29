@@ -95,3 +95,8 @@ tmp_new_*.txt
 
 # zvec-grep local workspace index
 .zvec-grep/
+
+# Editor and scaffold backups. These are stale copies of files that are
+# still live — including a pubspec.yaml and a Dart source file — where the
+# wrong one can easily be edited by mistake.
+*.bak
