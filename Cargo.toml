@@ -21,8 +21,11 @@ members = [
   "services/*/apps/*/bridge",
 ]
 exclude = [
-  # softhsm, spectral: placeholder-only tools (src/lib.rs contains no implementation);
-  # their manifests inherit edition from a workspace root, so standalone cargo check fails
+  # softhsm and spectral are Bash and JS tools, not Rust crates. They used to
+  # carry a 3-line `// stub` Cargo.toml each, which had to be excluded because
+  # `tools/*` matched them and cargo then tried to load a crate with no
+  # implementation. The stub crates are gone; the directories are real tooling
+  # documented in tools/README.md, so they stay excluded from the glob.
   "tools/softhsm",
   "tools/spectral",
   "services/bvr-svc/crates/bvr-api",
