@@ -13,6 +13,7 @@ class EelSealStamp extends StatelessWidget {
     this.onVerify,
     this.size,
     this.color,
+    this.label,
   });
 
   /// The container seal id. Null renders the compact emblem form.
@@ -30,6 +31,9 @@ class EelSealStamp extends StatelessWidget {
 
   /// Emblem colour, for the compact form. Defaults to the verification colour.
   final Color? color;
+
+  /// Wordmark shown beside the emblem in the compact form.
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
@@ -99,10 +103,26 @@ class EelSealStamp extends StatelessWidget {
     final edge = size ?? 48.0;
     return Semantics(
       label: isVerified ? 'Seal, verified' : 'Seal',
-      child: Icon(
-        isVerified ? Icons.verified_user_outlined : Icons.shield_outlined,
-        color: tint,
-        size: edge,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isVerified ? Icons.verified_user_outlined : Icons.shield_outlined,
+            color: tint,
+            size: edge,
+          ),
+          if (label != null) ...[
+            const SizedBox(width: EelSpacing.s3),
+            Text(
+              label!,
+              style: TextStyle(
+                color: c.textPrimary,
+                fontSize: edge * 0.4,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

@@ -15,6 +15,12 @@ class OtpScreen extends ConsumerStatefulWidget {
 }
 
 class _OtpScreenState extends ConsumerState<OtpScreen> {
+  /// Every OTP attempt writes a 5-axis audit entry, so the service needs an
+  /// AuditService; the screen owns one for its own lifetime.
+  final OtpService _otp = OtpService(
+    audit: AuditService('citizen-verify', 'citizen-verify'),
+  );
+
   final _phone = TextEditingController();
   final _code = TextEditingController();
   bool _codeSent = false;
@@ -30,7 +36,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     setState(() { _loading = true; _error = null; });
 
     try {
-      final response = await OtpService.sendOtp(phone);
+      final response = await _otp.sendOtp(phone);
       setState(() => _codeSent = true);
       if (response.success && response.token != null) {
         // OTP sent successfully — navigate or show success
@@ -69,7 +75,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
           const SizedBox(height: 16),
           EelButton(
             onPressed: _loading || _codeSent ? null : _sendOtp,
-            text: _loading ? 'Sending...' : (_codeSent ? 'Resend OTP' : 'Send OTP'),
+            label: _loading ? 'Sending...' : (_codeSent ? 'Resend OTP' : 'Send OTP'),
           ),
           if (_codeSent) ...[
             const SizedBox(height: 16),

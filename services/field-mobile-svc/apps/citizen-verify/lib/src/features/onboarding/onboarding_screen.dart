@@ -12,16 +12,15 @@ class OnboardingScreen extends ConsumerWidget {
     final colors = EelColors.of(context);
     return EelScaffold(
       variant: EelScaffoldVariant.scrollable,
-      showAppBar: false,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-      child: Column(
+      body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 48),
           // Hero seal — soft attestation stamp, immediately establishes trust.
           Center(
             child: EelSealStamp(
-              text: 'eel',
+              label: 'eel',
               size: 96,
               color: colors.primary,
             ),

@@ -17,9 +17,11 @@ class CvrBootstrap {
   static Future<BootstrapState> run() async => BootstrapFsm(steps: _steps).run();
 
   static final Map<BootstrapStage, BootstrapStep> _steps = {
-    // RASP probes (root/emulator/debugger/frida/xposed/resign) land with the
-    // platform channels; a clean probe set is StepOk.
-    BootstrapStage.integrityCheck: (_) => const StepOk(),
+    // NOT YET A GATE. The RASP probes (root/emulator/debugger/frida/xposed/
+    // resign) arrive with the platform channels; until they exist this step
+    // always passes. It is a StepOk, not a check, and should not be read as
+    // one. Attestation below is real and does gate.
+    BootstrapStage.integrityCheck: (_) async => const StepOk(),
 
     // Device attestation via kit-sdk (real client through AppIdentity).
     BootstrapStage.attestation: (state) async {
@@ -35,13 +37,13 @@ class CvrBootstrap {
       }
     },
 
-    // Config fetch (M1 /config) is offline last-good until the BFF lands.
-    BootstrapStage.config: (_) => const StepOk(),
+    // NOT YET A GATE: offline last-good config until the BFF lands.
+    BootstrapStage.config: (_) async => const StepOk(),
 
-    // OIDC code + PKCE and biometric step-up (M1 session).
-    BootstrapStage.auth: (_) => const StepOk(),
+    // NOT YET A GATE: OIDC + PKCE and biometric step-up land with M1 session.
+    BootstrapStage.auth: (_) async => const StepOk(),
 
-    // SpiceDB-declared role from the app session token (M1).
-    BootstrapStage.roleRoute: (_) => const StepOk(),
+    // NOT YET A GATE: SpiceDB role from the session token lands with M1.
+    BootstrapStage.roleRoute: (_) async => const StepOk(),
   };
 }

@@ -83,7 +83,6 @@ class ResultsData {
     snapshotId: j['snapshot_id'] as String?,
   );
 
-  static const error = ResultsData(ok: false, error: 'unknown');
   factory ResultsData.error(String e) => ResultsData(ok: false, error: e);
 }
 

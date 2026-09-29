@@ -9,13 +9,19 @@ import 'package:eel_kit_sdk/eel_kit_sdk.dart' show EelAttestationClientStub, Eel
 import '../models/capture.dart';
 
 class ApiClient {
-  final Uri baseUri;
-  final String Function() svidProvider; // provided by kit-sdk boot attestation
+  ApiClient({required this.baseUri, required this.svidProvider});
 
+  final Uri baseUri;
+
+  /// Supplies the SVID header, from kit-sdk boot attestation.
+  final String Function() svidProvider;
+
+  // The SVID rides on the kit-sdk client's own Dio, which is where the pinning
+  // adapter, the attestation header and retry are installed.
   late final EelHttpClient _http = EelHttpClient(
     baseUrl: baseUri.toString(),
     attestation: EelAttestationClientStub(),
-  )..interceptors.add(_SvidInterceptor(svidProvider));
+  )..raw.interceptors.add(_SvidInterceptor(svidProvider));
 
   /// POST /v1/cvr/field-notifications
   Future<SubmitCaptureResponse> submitCapture(CaptureRecord record) async {
@@ -52,7 +58,8 @@ class ApiClient {
         queuePosition: (json['queuePosition'] as num?)?.toInt() ?? 0,
       );
     }
-    throw ApiException(response.statusCode, _bodyText(response));
+    // 0 means the request produced no HTTP response at all.
+    throw ApiException(response.statusCode ?? 0, _bodyText(response));
   }
 
   /// GET /v1/cvr/field-notifications?officer_id=&status=&page=&page_size=
@@ -77,7 +84,8 @@ class ApiClient {
           .toList() ??
           const [];
     }
-    throw ApiException(response.statusCode, _bodyText(response));
+    // 0 means the request produced no HTTP response at all.
+    throw ApiException(response.statusCode ?? 0, _bodyText(response));
   }
 
   String _generateIdempotencyKey(String captureId) {
