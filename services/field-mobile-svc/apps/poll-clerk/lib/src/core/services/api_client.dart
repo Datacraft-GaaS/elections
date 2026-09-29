@@ -1,139 +1,73 @@
 /// EelHttpClient factory for poll-clerk.
-///
-/// Per plan.md §2.1: All networking through kit-sdk `EelHttpClient` (dio).
-/// No bare `Dio()` or `http.post` outside `core/api_client.dart`.
 library;
 
-import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 import 'package:dio/dio.dart';
+import 'package:eel_kit_sdk/eel_kit_sdk.dart' as kit;
+import 'package:uuid/uuid.dart';
 
-/// Factory for creating pinned, retry-enabled HTTP clients.
-/// Uses SPKI pinning from config pin-set.
 class EelHttpClientFactory {
+  /// [pinSet] is passed rather than a pinSetId: resolving an id to pins is the
+  /// caller's job, and a factory that looked one up would have to invent a
+  /// trust store. A null pinSet means no pinning, so callers should prefer to
+  /// supply one.
   static EelHttpClient create({
     required String baseUrl,
-    required String pinSetId,
+    required kit.EelAttestationClient attestation,
+    kit.PinSet? pinSet,
     int connectTimeoutMs = 10000,
     int receiveTimeoutMs = 30000,
-    int maxRetries = 3,
   }) {
-    final dio = Dio(BaseOptions(
+    final client = kit.EelHttpClient(
       baseUrl: baseUrl,
+      attestation: attestation,
+      pinSet: pinSet,
       connectTimeout: Duration(milliseconds: connectTimeoutMs),
       receiveTimeout: Duration(milliseconds: receiveTimeoutMs),
-      followRedirects: false, // Security: don't follow redirects
-    ));
-
-    // Add SPKI pinning adapter
-    dio.httpClientAdapter = EelHttpClientAdapter(
-      pinSetId: pinSetId,
     );
-
-    // Add retry interceptor with full jitter
-    dio.interceptors.add(RetryInterceptor(
-      maxRetries: maxRetries,
-      retryDelays: const [1, 2, 4, 8], // Seconds with full jitter
-      retryCondition: (error, attempt) =>
-        error is DioException &&
-        (error.type == DioExceptionType.connectionTimeout ||
-         error.type == DioExceptionType.receiveTimeout ||
-         error.type == DioExceptionType.connectionError),
-    ));
-
-    // Add idempotency header injection
-    dio.interceptors.add(IdempotencyInterceptor());
-
-    return EelHttpClient(innerDio: dio);
+    // Retry and attestation headers come from the SDK client itself. Only the
+    // idempotency key is this app's own policy.
+    client.raw.interceptors.add(IdempotencyInterceptor());
+    return EelHttpClient(client);
   }
 }
 
-/// Retry interceptor with exponential backoff + full jitter
-class RetryInterceptor extends Interceptor {
-  final int maxRetries;
-  final List<int> retryDelays; // Base delays in seconds
-
-  const RetryInterceptor({
-    required this.maxRetries,
-    required this.retryDelays,
-  });
-
-  @override
-  void onError(DioException err, ErrorInterceptorHandler handler) async {
-    final attempt = err.requestOptions.extra['retry_attempt'] as int? ?? 0;
-    
-    if (attempt >= maxRetries) {
-      return handler.next(err);
-    }
-    
-    // Calculate delay with full jitter
-    final baseDelay = retryDelays[attempt.min(retryDelays.length - 1)];
-    final jitter = (DateTime.now().millisecondsSinceEpoch % 1000);
-    final delayMs = (baseDelay * 1000) + jitter;
-    
-    await Future.delayed(Duration(milliseconds: delayMs));
-    
-    err.requestOptions.extra['retry_attempt'] = attempt + 1;
-    
-    // Retry the request
-    try {
-      final response = await Dio().fetch(err.requestOptions);
-      handler.resolve(response);
-    } catch (e) {
-      handler.next(err);
-    }
-  }
-}
-
-/// Interceptor that injects Idempotency-Key header for POST/PATCH
 class IdempotencyInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    // Use existing key if provided by caller
-    if (options.headers.containsKey('Idempotency-Key')) {
-      return handler.next(options);
+    if (!options.headers.containsKey('Idempotency-Key')) {
+      options.headers['Idempotency-Key'] = const Uuid().v7();
     }
-    
-    // Generate UUID7 for new requests
-    final key = const Uuid().v7();
-    options.headers['Idempotency-Key'] = key;
     handler.next(options);
   }
 }
 
-/// Wrapper around kit-sdk's EelHttpClient
+/// Thin adapter over the SDK's pinned, attested client.
+///
+/// This used to be an independent EelHttpClient wrapping a bare Dio, shadowing
+/// the SDK class of the same name. Anything holding one of those talked to the
+/// network with no SPKI pinning, no attestation header and no retry, which is
+/// exactly the set of properties the SDK client exists to provide.
+///
+/// Every verb goes through the SDK client's Dio rather than its get/post
+/// helpers, because those two helpers have narrower signatures than the rest of
+/// Dio's API and the security interceptors (pinning adapter, attestation
+/// header, retry) are all installed on that Dio either way.
 class EelHttpClient {
-  final Dio innerDio;
-  
-  EelHttpClient({required this.innerDio});
-  
-  /// Make GET request
-  Future<Response> get(
-    String path, {
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-  }) async => innerDio.get(path, queryParameters: queryParameters, options: options);
-  
-  /// Make POST request with idempotency
-  Future<Response> post(
-    String path, {
-    dynamic data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-  }) async => innerDio.post(path, data: data, queryParameters: queryParameters, options: options);
-  
-  /// Make PATCH request with idempotency
-  Future<Response> patch(
-    String path, {
-    dynamic data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-  }) async => innerDio.patch(path, data: data, queryParameters: queryParameters, options: options);
-  
-  /// Make DELETE request
-  Future<Response> delete(
-    String path, {
-    dynamic data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-  }) async => innerDio.delete(path, data: data, queryParameters: queryParameters, options: options);
+  EelHttpClient(this._client);
+
+  final kit.EelHttpClient _client;
+
+  Dio get _dio => _client.raw;
+
+  Future<Response<T>> get<T>(String p, {Map<String, dynamic>? q, Options? o}) =>
+      _dio.get<T>(p, queryParameters: q, options: o);
+
+  Future<Response<T>> post<T>(String p, {dynamic d, Map<String, dynamic>? q, Options? o}) =>
+      _dio.post<T>(p, data: d, queryParameters: q, options: o);
+
+  Future<Response> patch(String p, {dynamic d, Map<String, dynamic>? q, Options? o}) =>
+      _dio.patch(p, data: d, queryParameters: q, options: o);
+
+  Future<Response> delete(String p, {dynamic d, Map<String, dynamic>? q, Options? o}) =>
+      _dio.delete(p, data: d, queryParameters: q, options: o);
 }
