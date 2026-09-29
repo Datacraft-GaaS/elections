@@ -149,7 +149,21 @@ because an earlier version of the Flutter harness scored a package whose
 19. **field-mobile-verify has no implementation.** The directory holds a
     migration, README and TRACEABILITY only. Its README describes a fully
     implemented sqlx service, which is not true.
-20. **Items 13-17 above remain open.** 13 (traceability: 25 of 4,444 rows
+20. **Three mobile-bff verification handlers do not verify.**
+    `verify_voter_lookup` (spec.rs:713) defaults the voter id to
+    "VOTER-12345" and returns `{"verified": true}` for any input, including
+    none — and it is a live route. `tally_verify` (spec.rs:746) and
+    `verify_certificate` (spec.rs:807) do the same but are defined without being
+    registered on any router, so they are dead code.
+
+    A voter lookup that always agrees is a security defect rather than a missing
+    feature: it is wired, and it answers. Fixing it means consulting the
+    register, which is a data-source decision for someone who owns that schema.
+    The app side was made honest instead — poll-clerk's VoterLookupScreen no
+    longer renders a fixed "Voter Verified • Registered" card and states that
+    verification is unavailable.
+
+21. **Items 13-17 above remain open.** 13 (traceability: 25 of 4,444 rows
     tagged), 14 (287 unbound OpenAPI paths), 15-17 (blocked on absent backends,
     infrastructure and a model contract respectively). 15, 16 and 17 remain
     blocked on inputs this repository does not have, which is why they are
