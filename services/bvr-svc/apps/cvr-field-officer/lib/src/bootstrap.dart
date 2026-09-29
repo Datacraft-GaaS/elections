@@ -5,7 +5,7 @@
 /// the remaining stages are StepOk until their M1 backends land.
 library;
 
-import 'package:eel_core_flutter/src/bootstrap/bootstrap_fsm.dart';
+import 'package:eel_core_flutter/eel_core_flutter.dart';
 
 import 'services/app_identity.dart';
 

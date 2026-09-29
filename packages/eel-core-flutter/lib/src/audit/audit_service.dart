@@ -1,7 +1,7 @@
 /// AuditService: where / when / who / why / how — shared by all 14 apps.
 /// Persists every entry to encrypted secure storage (AES-256 via Android
 /// KeyStore/Strongbox, iOS Secure Enclave). Outbox replay on reconnect.
-import 'package:eel_core_flutter/src/audit/audit_model.dart';
+import 'package:eel_core_flutter/eel_core_flutter.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 const _storage = FlutterSecureStorage(

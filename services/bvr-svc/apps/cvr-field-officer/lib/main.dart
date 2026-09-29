@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:eel_core_flutter/src/bootstrap/bootstrap_fsm.dart';
+import 'package:eel_core_flutter/eel_core_flutter.dart';
 import 'src/app.dart';
 import 'src/bootstrap.dart';
 

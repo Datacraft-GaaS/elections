@@ -2,7 +2,8 @@
 /// Per plan.md M34: station results access, observation ingest, accreditation
 library;
 
-import 'package:eel_core_flutter/src/bootstrap/bootstrap_fsm.dart';
+import 'package:eel_core_flutter/eel_core_flutter.dart';
+import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 
 enum ObserverBootstrapStage {
   cold, integrityCheck, attestation, config, auth, roleRoute, ready,
@@ -50,45 +51,105 @@ class ObserverStepBlock extends ObserverStepResult {
   const ObserverStepBlock(this.state, this.reason);
 }
 
+/// The three security gates bootstrap must pass, injected rather than assumed.
+///
+/// [integrityCheck] is the RASP / tamper check, [attestation] is the platform
+/// attestation, and [fetchConfig] is the signed-config fetch. They are
+/// constructor parameters with no default on purpose: a default that passed
+/// would leave bootstrap always succeeding, which is the same as having no
+/// gate at all, and a default that failed would block every launch. The app
+/// has to state what it trusts.
+typedef IntegrityCheck = Future<bool> Function();
+typedef ConfigLoader = Future<bool> Function();
+
 class ObserverBootstrapFsm {
+  ObserverBootstrapFsm({
+    required this.integrityCheck,
+    required this.attestation,
+    required this.fetchConfig,
+  }) : _inner = BootstrapFsm(
+          steps: {
+            BootstrapStage.integrityCheck: (_) async =>
+                await integrityCheck()
+                    ? const StepOk()
+                    : StepBlock(
+                        stage: BootstrapStage.blockedRasp,
+                        supportCode: _code('OBS-RASP'),
+                        detail: 'Integrity check failed',
+                      ),
+            BootstrapStage.attestation: (_) async =>
+                _verdictIsAcceptable(await attestation.attest())
+                    ? const StepOk()
+                    : StepBlock(
+                        stage: BootstrapStage.blockedAttest,
+                        supportCode: _code('OBS-ATTEST'),
+                        detail: 'Attestation failed',
+                      ),
+            BootstrapStage.config: (_) async =>
+                await fetchConfig()
+                    ? const StepOk()
+                    : StepBlock(
+                        stage: BootstrapStage.blockedConfig,
+                        supportCode: _code('OBS-CONFIG'),
+                        detail: 'Config fetch failed',
+                      ),
+          },
+        );
+
+  final IntegrityCheck integrityCheck;
+  final EelAttestationClient attestation;
+  final ConfigLoader fetchConfig;
+
   final BootstrapFsm _inner;
-  ObserverBootstrapFsm() : _inner = BootstrapFsm();
 
+  /// A verdict is acceptable only if it is hardware-backed and current.
+  ///
+  /// A softwareFallback tier means no hardware attestation happened, and an
+  /// expired verdict proves nothing about the device's present state. Both
+  /// fail the gate. Note this makes EelAttestationClientStub always block,
+  /// which is the intended direction: a stub must not stand in for hardware.
+  static bool _verdictIsAcceptable(AttestationVerdict v) =>
+      v.tier != AttestationTier.softwareFallback && v.expiresAt.isAfter(DateTime.now());
+
+  static String _code(String prefix) =>
+      '$prefix-${DateTime.now().millisecondsSinceEpoch}';
+
+  ObserverBootstrapState _toLocal(BootstrapState s) => ObserverBootstrapState(
+        stage: ObserverBootstrapStage.values.byName(s.stage.name),
+        supportCode: s.supportCode,
+        detail: s.detail,
+        attempt: s.attempt,
+        tamperDetected: s.stage == BootstrapStage.blockedRasp,
+        attestationVerdict: s.stage == BootstrapStage.blockedAttest ? 'failed' : null,
+        appConfigVersion: s.stage == BootstrapStage.config ? 'fetched' : null,
+      );
+
+  /// Runs the shared FSM and reports every stage it passed through.
+  ///
+  /// The transitions are collected and replayed on return rather than yielded
+  /// as they happen: a bootstrap runs to a terminal state before the UI can
+  /// act on any of it, and an async* generator that yielded mid-run would
+  /// leave the caller holding a half-finished sequence.
   Stream<ObserverStepResult> run() async* {
-    var state = const ObserverBootstrapState();
-    yield ObserverStepOk(state.copyWith(stage: ObserverBootstrapStage.cold));
+    final seen = <BootstrapState>[];
+    void listener(BootstrapState s) => seen.add(s);
 
-    state = state.copyWith(stage: ObserverBootstrapStage.integrityCheck);
-    yield ObserverStepOk(state);
-    if (!(await _inner.checkIntegrity())) {
-      state = state.copyWith(stage: ObserverBootstrapStage.blockedRasp, tamperDetected: true, supportCode: 'OBS-${DateTime.now().millisecondsSinceEpoch}');
-      yield ObserverStepBlock(state, 'Integrity check failed');
-      return;
+    _inner.addListener(listener);
+    try {
+      final terminal = await _inner.run();
+      for (final s in seen) {
+        yield ObserverStepOk(_toLocal(s));
+      }
+      if (terminal.stage == BootstrapStage.ready) {
+        yield ObserverStepOk(_toLocal(terminal));
+      } else {
+        yield ObserverStepBlock(
+          _toLocal(terminal),
+          terminal.detail ?? 'Bootstrap blocked at ${terminal.stage.name}',
+        );
+      }
+    } finally {
+      _inner.removeListener(listener);
     }
-
-    state = state.copyWith(stage: ObserverBootstrapStage.attestation);
-    yield ObserverStepOk(state);
-    if ((await _inner.verifyAttestation()) == null) {
-      state = state.copyWith(stage: ObserverBootstrapStage.blockedAttest, supportCode: 'OBS-${DateTime.now().millisecondsSinceEpoch}');
-      yield ObserverStepBlock(state, 'Attestation failed');
-      return;
-    }
-
-    state = state.copyWith(stage: ObserverBootstrapStage.config);
-    yield ObserverStepOk(state);
-    if (!(await _inner.fetchConfig())) {
-      state = state.copyWith(stage: ObserverBootstrapStage.blockedConfig, supportCode: 'OBS-${DateTime.now().millisecondsSinceEpoch}');
-      yield ObserverStepBlock(state, 'Config fetch failed');
-      return;
-    }
-
-    state = state.copyWith(stage: ObserverBootstrapStage.auth);
-    yield ObserverStepOk(state);
-
-    state = state.copyWith(stage: ObserverBootstrapStage.roleRoute);
-    yield ObserverStepOk(state);
-
-    state = state.copyWith(stage: ObserverBootstrapStage.ready);
-    yield ObserverStepOk(state);
   }
 }

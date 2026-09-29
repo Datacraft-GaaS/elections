@@ -12,7 +12,7 @@ import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
-import 'package:eel_core_flutter/src/audit/audit_service.dart';
+import 'package:eel_core_flutter/eel_core_flutter.dart';
 
 class OtpService {
   OtpService({

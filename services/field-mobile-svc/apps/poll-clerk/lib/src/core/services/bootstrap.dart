@@ -7,7 +7,8 @@
 /// Blocked states: blockedRasp, blockedAttest, blockedConfig, blockedAuth, blockedVersion
 library;
 
-import 'package:eel_core_flutter/src/bootstrap/bootstrap_fsm.dart';
+import 'package:eel_core_flutter/eel_core_flutter.dart';
+import 'package:eel_kit_sdk/eel_kit_sdk.dart';
 
 /// Bootstrap stage enum matching the FSM spec
 enum PollClerkBootstrapStage {
@@ -95,82 +96,108 @@ class PollClerkStepBlock extends PollClerkStepResult {
 ///   // handle state changes and final result
 /// }
 /// ```
+/// The three security gates bootstrap must pass, injected rather than assumed.
+///
+/// [integrityCheck] is the RASP / tamper check, [attestation] is the platform
+/// attestation, and [fetchConfig] is the signed-config fetch. They are
+/// constructor parameters with no default on purpose: a default that passed
+/// would leave bootstrap always succeeding, which is the same as having no
+/// gate at all, and a default that failed would block every launch. The app
+/// has to state what it trusts.
+typedef IntegrityCheck = Future<bool> Function();
+typedef ConfigLoader = Future<bool> Function();
+
 class PollClerkBootstrapFsm {
+  PollClerkBootstrapFsm({
+    required this.integrityCheck,
+    required this.attestation,
+    required this.fetchConfig,
+  }) : _inner = BootstrapFsm(
+          steps: {
+            BootstrapStage.integrityCheck: (_) async =>
+                await integrityCheck()
+                    ? const StepOk()
+                    : StepBlock(
+                        stage: BootstrapStage.blockedRasp,
+                        supportCode: _code('PC-RASP'),
+                        detail: 'Integrity check failed',
+                      ),
+            BootstrapStage.attestation: (_) async =>
+                _verdictIsAcceptable(await attestation.attest())
+                    ? const StepOk()
+                    : StepBlock(
+                        stage: BootstrapStage.blockedAttest,
+                        supportCode: _code('PC-ATTEST'),
+                        detail: 'Attestation failed',
+                      ),
+            BootstrapStage.config: (_) async =>
+                await fetchConfig()
+                    ? const StepOk()
+                    : StepBlock(
+                        stage: BootstrapStage.blockedConfig,
+                        supportCode: _code('PC-CONFIG'),
+                        detail: 'Config fetch failed',
+                      ),
+          },
+        );
+
+  final IntegrityCheck integrityCheck;
+  final EelAttestationClient attestation;
+  final ConfigLoader fetchConfig;
+
   final BootstrapFsm _inner;
-  
-  PollClerkBootstrapFsm() : _inner = BootstrapFsm();
-  
-  /// Run the bootstrap FSM and emit state transitions
+
+  /// A verdict is acceptable only if it is hardware-backed and current.
+  ///
+  /// A softwareFallback tier means no hardware attestation happened, and an
+  /// expired verdict proves nothing about the device's present state. Both
+  /// fail the gate. Note this makes EelAttestationClientStub always block,
+  /// which is the intended direction: a stub must not stand in for hardware.
+  static bool _verdictIsAcceptable(AttestationVerdict v) =>
+      v.tier != AttestationTier.softwareFallback &&
+      v.expiresAt.isAfter(DateTime.now());
+
+  static String _code(String prefix) =>
+      '$prefix-${DateTime.now().millisecondsSinceEpoch}';
+
+  PollClerkBootstrapState _toLocal(BootstrapState s) => PollClerkBootstrapState(
+        stage: PollClerkBootstrapStage.values.byName(s.stage.name),
+        supportCode: s.supportCode,
+        detail: s.detail,
+        attempt: s.attempt,
+        tamperDetected: s.stage == BootstrapStage.blockedRasp,
+        attestationVerdict:
+            s.stage == BootstrapStage.blockedAttest ? 'failed' : null,
+        appConfigVersion:
+            s.stage == BootstrapStage.config ? 'fetched' : null,
+      );
+
+  /// Runs the shared FSM and reports every stage it passed through.
+  ///
+  /// The transitions are collected and replayed on return rather than yielded
+  /// as they happen: a bootstrap runs to a terminal state before the UI can
+  /// act on any of it, and a generator that yielded mid-run would leave the
+  /// caller holding a half-finished sequence.
   Stream<PollClerkStepResult> run() async* {
-    var state = const PollClerkBootstrapState();
-    
-    // Stage 1: Cold start
-    yield PollClerkStepOk(state.copyWith(stage: PollClerkBootstrapStage.cold));
-    
-    // Stage 2: Integrity check (RASP)
-    state = state.copyWith(stage: PollClerkBootstrapStage.integrityCheck);
-    yield PollClerkStepOk(state);
-    
-    final integrityOk = await _inner.checkIntegrity();
-    if (!integrityOk) {
-      state = state.copyWith(
-        stage: PollClerkBootstrapStage.blockedRasp,
-        tamperDetected: true,
-        supportCode: _generateSupportCode(),
-      );
-      yield PollClerkStepBlock(state, 'Device integrity check failed');
-      return;
+    final seen = <BootstrapState>[];
+    void listener(BootstrapState s) => seen.add(s);
+
+    _inner.addListener(listener);
+    try {
+      final terminal = await _inner.run();
+      for (final s in seen) {
+        yield PollClerkStepOk(_toLocal(s));
+      }
+      if (terminal.stage == BootstrapStage.ready) {
+        yield PollClerkStepOk(_toLocal(terminal));
+      } else {
+        yield PollClerkStepBlock(
+          _toLocal(terminal),
+          terminal.detail ?? 'Bootstrap blocked at ${terminal.stage.name}',
+        );
+      }
+    } finally {
+      _inner.removeListener(listener);
     }
-    
-    // Stage 3: Attestation
-    state = state.copyWith(stage: PollClerkBootstrapStage.attestation);
-    yield PollClerkStepOk(state);
-    
-    final verdict = await _inner.verifyAttestation();
-    if (verdict == null) {
-      state = state.copyWith(
-        stage: PollClerkBootstrapStage.blockedAttest,
-        supportCode: _generateSupportCode(),
-      );
-      yield PollClerkStepBlock(state, 'Device attestation failed');
-      return;
-    }
-    state = state.copyWith(attestationVerdict: verdict);
-    
-    // Stage 4: Config fetch
-    state = state.copyWith(stage: PollClerkBootstrapStage.config);
-    yield PollClerkStepOk(state);
-    
-    final configOk = await _inner.fetchConfig();
-    if (!configOk) {
-      state = state.copyWith(
-        stage: PollClerkBootstrapStage.blockedConfig,
-        supportCode: _generateSupportCode(),
-      );
-      yield PollClerkStepBlock(state, 'Config fetch failed');
-      return;
-    }
-    
-    // Stage 5: Auth
-    state = state.copyWith(stage: PollClerkBootstrapStage.auth);
-    yield PollClerkStepOk(state);
-    
-    // Auth is handled by session management - emit ready state
-    // The actual auth flow is in session.dart
-    state = state.copyWith(stage: PollClerkBootstrapStage.auth);
-    yield PollClerkStepOk(state);
-    
-    // Stage 6: Role route
-    state = state.copyWith(stage: PollClerkBootstrapStage.roleRoute);
-    yield PollClerkStepOk(state);
-    
-    // Stage 7: Ready
-    state = state.copyWith(stage: PollClerkBootstrapStage.ready);
-    yield PollClerkStepOk(state);
-  }
-  
-  String _generateSupportCode() {
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    return 'PC-${timestamp.toRadixString(36).toUpperCase()}';
   }
 }
