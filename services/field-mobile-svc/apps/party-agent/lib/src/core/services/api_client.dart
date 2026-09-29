@@ -57,6 +57,13 @@ class EelHttpClient {
 
   final kit.EelHttpClient _client;
 
+  /// The pinned, attested kit-sdk client underneath.
+  ///
+  /// Services that take a kit.EelHttpClient directly take this, so they share
+  /// the pinning and attestation the rest of the app uses rather than opening
+  /// an unpinned connection of their own.
+  kit.EelHttpClient get client => _client;
+
   Dio get _dio => _client.raw;
 
   Future<Response<T>> get<T>(String p, {Map<String, dynamic>? q, Options? o}) =>
