@@ -97,10 +97,17 @@ repairs, and several claims no longer hold.
 - **Orphaned Dart tree** at `services/field-mobile-verify/lib/`, byte-identical
   to citizen-verify's copy, in a directory with no `pubspec.yaml` and therefore
   in no package and never analyzed.
-- **Two dead Dart trees** outside any package: an orphaned duplicate in
-  `services/field-mobile-verify/`, and a second `lib/src/features` copy under
-  `accred-scanner` that nothing imported and that had already diverged from
-  the live one.
+- **Three dead Dart trees** outside any package, all removed: an orphaned
+  duplicate in `services/field-mobile-verify/` that was byte-identical to
+  citizen-verify's copy; a second `lib/src/features` copy under
+  `accred-scanner` that nothing imported and that had already diverged from the
+  live one; and `services/biometric-edge-svc/apps/rts-kit/`, a single
+  `ScanScreen` shell with no `pubspec.yaml`. That last one was not a duplicate —
+  the real `services/rts-svc/apps/rts-kit` has its own `ScanScreen` in
+  `rts_workflow/scan.dart` and wires it into the router, so the orphan was a
+  name collision with no callers, whose entire content was three defects: a
+  fabricated "RFID Reader: Ready" success chip, a dead Start Scan button, and a
+  nested-scrollable body.
 - 158 committed `.gradle/` build caches untracked; 13 tracked `.bak` files
   removed; two 3-line `// stub` crates (`tools/softhsm`, `tools/spectral`)
   removed, keeping the Bash and JS tooling that shared those directories.
@@ -146,9 +153,11 @@ because an earlier version of the Flutter harness scored a package whose
     duress beacon. The first three found that the collaborator existed but was
     itself a fake, and the register lookup needed an OTP token that the OTP
     screen was discarding.
-19. **field-mobile-verify has no implementation.** The directory holds a
-    migration, README and TRACEABILITY only. Its README describes a fully
-    implemented sqlx service, which is not true.
+19. **field-mobile-verify has no implementation.** The orphan Dart tree that
+    sat in it has been removed; what remains is a migration, README and
+    TRACEABILITY and nothing else. Its README describes a fully implemented sqlx
+    service, which is not true. Whether the remaining skeleton is worth keeping
+    is a product decision, not a cleanup one.
 20. **Three mobile-bff verification handlers do not verify.**
     `verify_voter_lookup` (spec.rs:713) defaults the voter id to
     "VOTER-12345" and returns `{"verified": true}` for any input, including
