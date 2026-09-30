@@ -17,6 +17,12 @@ pub enum ApiError {
 	Conflict(String),
 	#[error("{0}")]
 	Unauthorized(String),
+	/// The operation is declared by the contract but has no implementation
+	/// behind it. Returned instead of a fabricated success: a caller that gets
+	/// 501 knows the answer does not exist, where a caller handed an invented
+	/// `match_score` and `outcome` has no way to tell it from a real verdict.
+	#[error("{0}")]
+	NotImplemented(String),
 	#[error("abis store unavailable")]
 	Store(#[source] sqlx::Error),
 }
@@ -28,6 +34,7 @@ impl ApiError {
 			ApiError::NotFound(_) => (StatusCode::NOT_FOUND, "Not Found"),
 			ApiError::Conflict(_) => (StatusCode::CONFLICT, "Conflict"),
 			ApiError::Unauthorized(_) => (StatusCode::UNAUTHORIZED, "Unauthorized"),
+			ApiError::NotImplemented(_) => (StatusCode::NOT_IMPLEMENTED, "Not Implemented"),
 			// Store errors are infrastructure failures; never leak internals.
 			ApiError::Store(_) => (StatusCode::SERVICE_UNAVAILABLE, "Service Unavailable"),
 		}
@@ -49,7 +56,8 @@ fn detail(err: &ApiError) -> String {
 		ApiError::Validation(d)
 		| ApiError::NotFound(d)
 		| ApiError::Conflict(d)
-		| ApiError::Unauthorized(d) => d.clone(),
+		| ApiError::Unauthorized(d)
+		| ApiError::NotImplemented(d) => d.clone(),
 		ApiError::Store(_) => "ABIS store temporarily unavailable".to_string(),
 	}
 }

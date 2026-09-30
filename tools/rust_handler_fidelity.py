@@ -235,17 +235,27 @@ IGNORED_EXTRACTOR = re.compile(
     r"\b(Json|Query|Path|State|Form|Extension)\(\s*_\w+", re.M
 )
 
+# A handler that says out loud that it has no implementation is honest, and
+# must be counted separately. Without this the fabricated total can never fall,
+# which is how a metric stops being a signal: a number that cannot improve is
+# decoration.
+DECLARES_UNIMPLEMENTED = re.compile(
+    r"NotImplemented|NOT_IMPLEMENTED|not_implemented", re.M
+)
+
 
 def classify(body: str, op: dict | None = None) -> str:
-    """VERIFIED, IGNORES_INPUT, FABRICATED, or UNKNOWN.
+    """VERIFIED, DECLARES_UNIMPLEMENTED, IGNORES_INPUT, FABRICATED, UNKNOWN.
 
-    IGNORES_INPUT is reported ahead of FABRICATED because it is the stronger
-    statement: the handler provably cannot be right about its caller, because
-    it never read the caller's input.
+    DECLARES_UNIMPLEMENTED is checked first so that a handler converted to an
+    honest 501 stops being counted as fabricated, even though its signature
+    still carries the underscore-prefixed extractors it never used.
     """
     lines = [ln for ln in body.splitlines() if ln.strip() and not ln.strip().startswith("//")]
     if not lines:
         return "FABRICATED"
+    if DECLARES_UNIMPLEMENTED.search(body):
+        return "DECLARES_UNIMPLEMENTED"
     if IGNORED_EXTRACTOR.search(body):
         return "IGNORES_INPUT"
     if op and PROBE_OPERATION.search(op.get("operation_id") or ""):
@@ -272,7 +282,7 @@ def main() -> int:
 
     per_service: dict[str, dict] = defaultdict(
         lambda: {"declared": 0, "fabricated": 0, "ignores_input": 0,
-                 "missing": 0, "unknown": 0}
+                 "declared_unimpl": 0, "missing": 0, "unknown": 0}
     )
     findings = []
 
@@ -295,22 +305,25 @@ def main() -> int:
             per_service[svc]["fabricated"] += 1
             if verdict == "IGNORES_INPUT":
                 per_service[svc]["ignores_input"] += 1
+        elif verdict == "DECLARES_UNIMPLEMENTED":
+            per_service[svc]["declared_unimpl"] += 1
         elif verdict == "UNKNOWN":
             per_service[svc]["unknown"] += 1
         if verdict != "VERIFIED":
             findings.append((svc, op, found, verdict))
 
-    print(f"{'service':<24} {'bound':>6} {'fabricated':>11} {'ignores':>8} "
-          f"{'missing':>8} {'unknown':>8}")
-    print("-" * 70)
+    print(f"{'service':<22} {'bound':>6} {'fabricated':>11} {'ignores':>8} "
+          f"{'honest501':>9} {'missing':>8} {'unknown':>8}")
+    print("-" * 78)
     total_fab = 0
     for svc in sorted(per_service):
         c = per_service[svc]
         total_fab += c["fabricated"]
-        print(f"{svc:<24} {c['declared']:>6} {c['fabricated']:>11} "
-              f"{c['ignores_input']:>8} {c['missing']:>8} {c['unknown']:>8}")
-    print("-" * 70)
-    print(f"{'TOTAL':<24} {'':>6} {total_fab:>11}")
+        print(f"{svc:<22} {c['declared']:>6} {c['fabricated']:>11} "
+              f"{c['ignores_input']:>8} {c['declared_unimpl']:>9} "
+              f"{c['missing']:>8} {c['unknown']:>8}")
+    print("-" * 78)
+    print(f"{'TOTAL':<22} {'':>6} {total_fab:>11}")
 
     if args.verbose:
         print("\nfindings")

@@ -2,22 +2,23 @@
 
 use std::sync::Arc;
 
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{extract::State, Json};
 
-use crate::models::{BatchDedupRequest, BatchJobAccepted};
+use crate::error::ApiError;
+use crate::models::BatchDedupRequest;
 use crate::state::AppState;
 
 pub async fn submit_batch_dedup(
     State(_state): State<Arc<AppState>>,
     Json(_req): Json<BatchDedupRequest>,
-) -> (StatusCode, Json<BatchJobAccepted>) {
-    (
-        StatusCode::ACCEPTED,
-        Json(BatchJobAccepted {
-            job_id: uuid::Uuid::new_v4().to_string(),
-            status: "queued".to_string(),
-            estimated_duration_s: 3600,
-            probe_count: None,
-        }),
+) -> ApiError {
+    // Previously returned 202 with a fresh job id and status "queued". Nothing
+    // was ever queued, so the job id resolved to nothing and the caller waited
+    // on work that would never run.
+    ApiError::NotImplemented(
+        "batch deduplication is declared by the abis contract but has no queue \
+         or dedup engine behind it; it previously returned 202 with a job id \
+         for a job that was never enqueued"
+            .to_string(),
     )
 }

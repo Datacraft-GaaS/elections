@@ -10,7 +10,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::models::AbisReport;
+use crate::error::ApiError;
 use crate::state::AppState;
 
 // ---------------------------------------------------------------------------
@@ -185,20 +185,15 @@ pub async fn get_enrolment_throughput(
 }
 
 /// GET /v1/reports (legacy summary endpoint, kept for compat)
-pub async fn get_reports(State(_state): State<Arc<AppState>>) -> (StatusCode, Json<AbisReport>) {
-	(
-		StatusCode::OK,
-		Json(AbisReport {
-			generated_at: chrono::Utc::now(),
-			gallery_size: 0,
-			pending_dedup_count: 0,
-			open_adjudication_count: 0,
-			match_throughput_per_hour: Some(0),
-			duplicate_rate_pct: Some(0.0),
-			p50_match_ms: None,
-			p95_match_ms: None,
-			p99_match_ms: None,
-			error_rate_pct: None,
-		}),
+pub async fn get_reports(State(_state): State<Arc<AppState>>) -> ApiError {
+	// Previously returned 200 with gallery_size: 0, match_throughput_per_hour:
+	// Some(0) and duplicate_rate_pct: Some(0.0). Those read as measured
+	// operational telemetry, so a dashboard would show a healthy zeroed system
+	// rather than an absent one.
+	ApiError::NotImplemented(
+		"the abis metrics summary is declared by the contract but has no \
+		 telemetry source behind it; it previously reported zeroed \
+		 throughput and duplicate rate as if measured"
+			.to_string(),
 	)
 }

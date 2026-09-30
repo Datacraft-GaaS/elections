@@ -10,10 +10,8 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::models::{
-	AdjudicationCase, AdjudicationCasePage, AdjudicationResolutionRequest, AdjudicationStatus,
-	ListAdjudicationQuery,
-};
+use crate::models::{AdjudicationResolutionRequest, ListAdjudicationQuery};
+use crate::error::ApiError;
 use crate::state::AppState;
 
 // ---------------------------------------------------------------------------
@@ -70,18 +68,12 @@ pub struct EvidenceItem {
 pub async fn list_adjudication(
 	State(_state): State<Arc<AppState>>,
 	Query(_q): Query<ListAdjudicationQuery>,
-) -> (StatusCode, Json<AdjudicationCasePage>) {
-	(
-		StatusCode::OK,
-		Json(AdjudicationCasePage {
-			cases: vec![],
-			pagination: crate::models::PaginationMeta {
-				total: 0,
-				page: 1,
-				page_size: 50,
-				has_next: false,
-			},
-		}),
+) -> ApiError {
+	ApiError::NotImplemented(
+		"adjudication case listing is declared by the abis contract but has no \
+		 store behind it; it previously answered 200 with an empty page and \
+		 total: 0, which read as a real query that found nothing"
+			.to_string(),
 	)
 }
 
@@ -216,22 +208,18 @@ pub async fn upload_evidence(
 /// PATCH /v1/adjudication/{case_id} (legacy resolve endpoint, kept for compat)
 pub async fn resolve_adjudication(
 	State(_state): State<Arc<AppState>>,
-	Path(case_id): Path<String>,
+	Path(_case_id): Path<String>,
 	Json(_req): Json<AdjudicationResolutionRequest>,
-) -> (StatusCode, Json<AdjudicationCase>) {
-	(
-		StatusCode::OK,
-		Json(AdjudicationCase {
-			case_id,
-			status: "resolved".to_string(),
-			match_score: 0.65,
-			probe_ref: "probe-001".into(),
-			candidate_gallery_ref: "gallery-001".into(),
-			outcome: Some("no_match".into()),
-			resolution_notes: None,
-			adjudicator_id: None,
-			created_at: chrono::Utc::now(),
-			resolved_at: Some(chrono::Utc::now()),
-		}),
+) -> ApiError {
+	// This handler used to answer 200 for every case id with a fabricated
+	// verdict: status "resolved", match_score 0.65, outcome "no_match", and
+	// probe/gallery refs naming records it never read. On an ABIS endpoint a
+	// caller cannot distinguish that from a real biometric comparison, which
+	// is a worse failure than refusing: 501 says the answer does not exist.
+	ApiError::NotImplemented(
+		"adjudication resolution is declared by the abis contract but has no \
+		 comparison engine or store behind it; it previously returned a \
+		 fabricated match_score and outcome for any case id"
+			.to_string(),
 	)
 }

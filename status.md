@@ -181,7 +181,7 @@ because an earlier version of the Flutter harness scored a package whose
 ## Handler fidelity: 54 handlers return answers they did not earn
 
 `tools/rust_handler_fidelity.py` walks the `x-handler-bound` of all 66 contracts
-and judges the Rust function each one names. **54 of 134 bound handlers are
+and judges the Rust function each one names. **50 of 134 bound handlers are
 FABRICATED** — they return a success response without a store, a client, or a
 query behind it, so the response describes a world in which the work happened.
 10 of those 54 also **IGNORE_INPUT**: the signature is `Json(_req)`, the leading
@@ -195,14 +195,31 @@ right about the answer, whatever it returns.
 | declaration | 9 | 9 | 0 |
 | bvr | 10 | 8 | 0 |
 | ballot-serial | 7 | 6 | 0 |
-| abis | 7 | 4 | 4 |
+| abis | 7 | 0 | 0 |
 | biometric-edge | 5 | 3 | 0 |
 | field-mobile-bff | 6 | 4 | 2 |
 | whatsapp | 3 | 2 | 0 |
 | cvr, dereg, ivr | 12 | 3 | 1 |
 | bvi, bvr, credential, custody, field-mobile-dispatch, field-mobile-support, transparency, voter-card, workforce | 99 | 0 | 0 |
 
-### The one that matters most: `abis-svc.resolve_adjudication`
+### Fixed: the abis cluster now refuses rather than inventing
+
+The four abis handlers now return `ApiError::NotImplemented` (501, RFC 9457
+problem+json via the existing `ApiError`): `resolve_adjudication`,
+`list_adjudication`, `submit_batch_dedup`, `get_reports`. A caller that gets 501
+knows the answer does not exist, where a caller handed `match_score: 0.65` and
+`outcome: "no_match"` had no way to tell it from a real biometric verdict. Each
+carries a comment recording what it used to return, so the fabrication is
+recoverable if someone re-implements it. `rust_handler_fidelity.py` counts these
+as `honest501` and reports abis at 0 fabricated, which matters more than it
+sounds: a fabricated count that cannot fall is decoration, not a metric.
+
+`upload_evidence`, directly above `resolve_adjudication`, is a fifth fabrication
+the tool does **not** catch: it returns 202 with a fresh `evidence_id` and
+stores nothing. It is invisible to the tool because it has no `x-handler-bound`.
+Unbound handlers are a known blind spot.
+
+### The one that mattered most: `abis-svc.resolve_adjudication`
 
 Live at `PATCH /api/v1/abis/adjudication/{case_id}` (`abis-api/src/lib.rs:95`).
 It ignores its request and returns, for every case id:
@@ -219,11 +236,28 @@ whose job is Automated Biometric Identification, an endpoint that answers
 404s, because a caller cannot tell it from a real answer. `list_adjudication`
 beside it ignores its query and returns an empty page with `total: 0`.
 
-**No Flutter client currently calls it**, and the contract for
-`resolveAdjudicationCase` is not implemented against the contract's own declared
-responses. Nothing here has been changed: altering a live election API's
-response shape is a product decision, and the fix cannot be compile-verified
-under the current no-build constraint.
+**No Flutter client currently calls it.** The handler is now 501; the contract
+for `resolveAdjudicationCase` still describes a real resolve operation, so the
+gap is now visible as a refusal rather than hidden behind a plausible answer.
+
+### Nothing Rust can be compiled on this machine
+
+`cargo check -p abis-api` fails for every crate with `linking with 'cc' failed:
+exit status: 69 -- You have not agreed to the Xcode license agreements`. This is
+environmental, predates any of this work, and is fixed by
+`sudo xcodebuild -license accept`, which needs an interactive sudo. It means
+**every Rust edit in this repo is unverified at the type level**, and that
+includes the claim, made earlier in this work, that 3118 Rust tests passed --
+that run cannot currently be reproduced and should be re-run once the licence is
+accepted before it is relied on again.
+
+`tools/rustfmt_parse_check.py` is the mitigation that is possible without a
+compiler: `rustfmt` parses Rust without linking, so it catches syntax errors
+where nothing can build. It immediately earned its place. Rewriting
+`get_reports` produced `State<Arc<AppState>>))` with a doubled closing paren,
+which a raw paren count scored as *balanced* and which only the parser rejected.
+Syntax is not types: the abis changes parse clean and have not been type
+checked.
 
 `rts-svc` is the other extreme: 15 of 15 fabricated, and it is the only service
 with a contract declaring `404 Form not found` for `getFormProof` while the
