@@ -177,3 +177,70 @@ because an earlier version of the Flutter harness scored a package whose
     infrastructure and a model contract respectively). 15, 16 and 17 remain
     blocked on inputs this repository does not have, which is why they are
     written down rather than started.
+
+## Handler fidelity: 54 handlers return answers they did not earn
+
+`tools/rust_handler_fidelity.py` walks the `x-handler-bound` of all 66 contracts
+and judges the Rust function each one names. **54 of 134 bound handlers are
+FABRICATED** — they return a success response without a store, a client, or a
+query behind it, so the response describes a world in which the work happened.
+10 of those 54 also **IGNORE_INPUT**: the signature is `Json(_req)`, the leading
+underscore silencing the unused warning, so the handler compiles clean while
+discarding what the caller sent. A handler that never read its input cannot be
+right about the answer, whatever it returns.
+
+| service | bound | fabricated | ignores input |
+|---|---|---|---|
+| rts | 15 | 15 | 2 |
+| declaration | 9 | 9 | 0 |
+| bvr | 10 | 8 | 0 |
+| ballot-serial | 7 | 6 | 0 |
+| abis | 7 | 4 | 4 |
+| biometric-edge | 5 | 3 | 0 |
+| field-mobile-bff | 6 | 4 | 2 |
+| whatsapp | 3 | 2 | 0 |
+| cvr, dereg, ivr | 12 | 3 | 1 |
+| bvi, bvr, credential, custody, field-mobile-dispatch, field-mobile-support, transparency, voter-card, workforce | 99 | 0 | 0 |
+
+### The one that matters most: `abis-svc.resolve_adjudication`
+
+Live at `PATCH /api/v1/abis/adjudication/{case_id}` (`abis-api/src/lib.rs:95`).
+It ignores its request and returns, for every case id:
+
+```
+status: "resolved", match_score: 0.65, outcome: Some("no_match"),
+probe_ref: "probe-001", candidate_gallery_ref: "gallery-001"
+```
+
+That is a fabricated biometric verdict with a fabricated match score and two
+reference ids pointing at gallery records that were never read. On a service
+whose job is Automated Biometric Identification, an endpoint that answers
+`"no_match"` at 0.65 with plausible-looking references is worse than one that
+404s, because a caller cannot tell it from a real answer. `list_adjudication`
+beside it ignores its query and returns an empty page with `total: 0`.
+
+**No Flutter client currently calls it**, and the contract for
+`resolveAdjudicationCase` is not implemented against the contract's own declared
+responses. Nothing here has been changed: altering a live election API's
+response shape is a product decision, and the fix cannot be compile-verified
+under the current no-build constraint.
+
+`rts-svc` is the other extreme: 15 of 15 fabricated, and it is the only service
+with a contract declaring `404 Form not found` for `getFormProof` while the
+handler returns `200` with an empty proof and a Merkle root of 64 zeros, for
+every form id, forever.
+
+### Two defects in the measurement itself, worth recording
+
+Both were found by checking the tool against ground truth rather than trusting
+its first output, which is why the number moved 31 → 15 → 54 as they were fixed:
+
+- It resolved `x-handler-bound` by bare function name, so the cvr contract's
+  `bvr-svc.cvr.list_events` was answered with `list_events` out of `crms-api` —
+  a different service, reported as if it were the bound handler.
+- It extracted only the function body, not the signature, so the discarded
+  extractor (`Json(_req)`) was never in the searched text and IGNORES_INPUT
+  could not fire even once.
+
+A measurement that reports a gap as a finding, or a finding as a gap, is worse
+than no measurement.
