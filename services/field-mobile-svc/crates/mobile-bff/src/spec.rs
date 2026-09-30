@@ -712,11 +712,19 @@ async fn countersign_form_34a(
 
 async fn verify_voter_lookup(
     State(_state): State<Arc<BffState>>,
-    Query(q): Query<serde_json::Value>,
+    Query(_q): Query<serde_json::Value>,
 ) -> impl IntoResponse {
-    let voter_id = q.get("voter_id").and_then(|v| v.as_str()).unwrap_or("VOTER-12345");
-
-    (StatusCode::OK, Json(serde_json::json!({ "verified": true, "voter_id": voter_id })))
+    // This is the GET arm of /api/v1/mobile/bff/voter/verification. It used to
+    // read voter_id from the query and default it to the literal "VOTER-12345"
+    // when absent, then answer {"verified": true} for whatever it was given --
+    // so a request with no voter id verified a made-up one, and a request for
+    // any id at all verified it against nothing. A register lookup that cannot
+    // fail is worse than one that 404s, because the caller has no signal.
+    not_implemented(
+        "voter registration lookup",
+        "no register data source is wired; it previously returned \
+         verified: true for any voter id, defaulting to a literal one",
+    )
 }
 
 // =============================================================================
@@ -748,16 +756,16 @@ async fn tally_verify(
     Path(id): Path<String>,
     Json(_req): Json<serde_json::Value>,
 ) -> impl IntoResponse {
-    let idempotency_key = format!("tally-verify-{}-{}", id, Uuid::now_v7());
-
-    match state.idempotency_store.get(&idempotency_key).await {
-        Some(resp) => return (StatusCode::OK, resp),
-        None => {
-            let _ = state.idempotency_store.store(&idempotency_key, &serde_json::json!({})).await;
-        }
-    }
-
-    (StatusCode::OK, Json(serde_json::json!({ "verified": true })))
+    // Returned {"verified": true} for any tally id, having verified no tally.
+    // It also stored an empty object as its idempotency record, so a repeat of
+    // the same request returned {} instead -- the same call answered two
+    // different ways depending on whether it was the first.
+    let _ = (state, id);
+    not_implemented(
+        "tally verification",
+        "no tally store is wired; it previously returned verified: true for \
+         any id, and stored an empty idempotency record so a repeat returned {}",
+    )
 }
 
 // =============================================================================
@@ -808,16 +816,15 @@ async fn verify_certificate(
     State(state): State<Arc<BffState>>,
     Path(id): Path<String>,
 ) -> impl IntoResponse {
-    let idempotency_key = format!("cert-verify-{}-{}", id, Uuid::now_v7());
-
-    match state.idempotency_store.get(&idempotency_key).await {
-        Some(resp) => return (StatusCode::OK, resp),
-        None => {
-            let _ = state.idempotency_store.store(&idempotency_key, &serde_json::json!({})).await;
-        }
-    }
-
-    (StatusCode::OK, Json(serde_json::json!({ "verified": true })))
+    // Returned {"verified": true} for any certificate, having checked no
+    // signature, chain or revocation status. Same empty-idempotency-record bug
+    // as tally_verify: the second identical request answered {}.
+    let _ = (state, id);
+    not_implemented(
+        "certificate verification",
+        "no certificate store or chain check is wired; it previously returned \
+         verified: true for any certificate",
+    )
 }
 
 // =============================================================================
@@ -901,6 +908,31 @@ async fn assign_incident(
     }
 
     (StatusCode::OK, Json(serde_json::json!({ "assigned": true, "assignee": "agent-001" })))
+}
+
+/// A declared operation with no implementation behind it.
+///
+/// Returned instead of a fabricated success. The distinction matters most for
+/// the `verified` operations: a caller handed `{"verified": true}` cannot tell
+/// a real check from an invented one, and a refusal is the only answer that
+/// preserves that distinction.
+fn not_implemented(operation: &str, detail: &str) -> impl IntoResponse {
+    (
+        StatusCode::NOT_IMPLEMENTED,
+        [(
+            axum::http::header::CONTENT_TYPE,
+            "application/problem+json",
+        )],
+        Json(serde_json::json!({
+            "type": "about:blank",
+            "title": "Not Implemented",
+            "status": 501,
+            "detail": format!(
+                "{operation} is declared by the contract but has no \
+                 implementation behind it: {detail}"
+            ),
+        })),
+    )
 }
 
 // =============================================================================

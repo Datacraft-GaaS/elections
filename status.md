@@ -240,6 +240,43 @@ beside it ignores its query and returns an empty page with `total: 0`.
 for `resolveAdjudicationCase` still describes a real resolve operation, so the
 gap is now visible as a refusal rather than hidden behind a plausible answer.
 
+### Fixed: the mobile-bff verification cluster now refuses
+
+`verify_voter_lookup` is the GET arm of `/api/v1/mobile/bff/voter/verification`
+and is live. It read `voter_id` from the query, **defaulted it to the literal
+`"VOTER-12345"` when absent**, and answered `{"verified": true}` for whatever it
+got — so a request naming nobody verified an invented voter, and a request
+naming anybody verified them against nothing. `tally_verify` and
+`verify_certificate` returned `{"verified": true}` for any id having checked no
+tally and no certificate. All three now return 501 problem+json via a
+`not_implemented` helper in the same file.
+
+The tool could not see any of the three: they carry no `x-handler-bound`, so
+they are invisible to contract-fidelity measurement. That is the same blind spot
+as `upload_evidence` and it is now the tool's most consequential gap — the three
+worst fabrications in this service are exactly the ones it cannot see.
+
+### A second defect in the same file: the idempotency record is empty
+
+11 handlers in `mobile-bff/src/spec.rs` follow this shape:
+
+```rust
+let key = format!("...{}", id, Uuid::now_v7());   // unique per call
+match state.idempotency_store.get(&key).await {
+    Some(resp) => return (StatusCode::OK, resp),
+    None => { let _ = state.idempotency_store.store(&key, &json!({})).await; }
+}
+(StatusCode::OK, Json(json!({ "verified": true })))
+```
+
+Two bugs at once. The key embeds `Uuid::now_v7()`, so it is **unique on every
+call and never repeats** — the idempotency store can never hit, and the
+"already processed" path is dead code. And the record stored is `{}`, so if it
+ever did hit, a repeat would answer `{}` instead of the claimed result: the same
+request answered two different ways depending on whether it had been made
+before. Now detected mechanically as `EMPTY_IDEMPOTENCY` in
+`rust_handler_fidelity.py`, so it cannot reappear unnoticed. 11 remain.
+
 ### Nothing Rust can be compiled on this machine
 
 `cargo check -p abis-api` fails for every crate with `linking with 'cc' failed:

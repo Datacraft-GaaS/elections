@@ -243,9 +243,21 @@ DECLARES_UNIMPLEMENTED = re.compile(
     r"NotImplemented|NOT_IMPLEMENTED|not_implemented", re.M
 )
 
+# An idempotency record should hold the response it stands in for. Storing an
+# empty object and then returning a claimed result means the first request gets
+# the claim and every repeat gets `{}` -- the same call answered two different
+# ways depending on whether it had been made before. It is mechanically
+# detectable, which matters: 13 handlers in mobile-bff carried it, and a bug
+# that changes the answer on retry is the kind that survives review of the
+# happy path.
+EMPTY_IDEMPOTENCY_RECORD = re.compile(
+    r"store\(\s*&\w*idempotency\w*\s*,\s*&serde_json::json!\(\{\}\)\s*\)"
+)
+
 
 def classify(body: str, op: dict | None = None) -> str:
-    """VERIFIED, DECLARES_UNIMPLEMENTED, IGNORES_INPUT, FABRICATED, UNKNOWN.
+    """VERIFIED, DECLARES_UNIMPLEMENTED, EMPTY_IDEMPOTENCY, IGNORES_INPUT,
+    FABRICATED, UNKNOWN.
 
     DECLARES_UNIMPLEMENTED is checked first so that a handler converted to an
     honest 501 stops being counted as fabricated, even though its signature
@@ -258,6 +270,8 @@ def classify(body: str, op: dict | None = None) -> str:
         return "DECLARES_UNIMPLEMENTED"
     if IGNORED_EXTRACTOR.search(body):
         return "IGNORES_INPUT"
+    if EMPTY_IDEMPOTENCY_RECORD.search(body):
+        return "EMPTY_IDEMPOTENCY"
     if op and PROBE_OPERATION.search(op.get("operation_id") or ""):
         return "VERIFIED"
     if op and PROBE_OPERATION.search(op.get("path") or ""):
@@ -282,7 +296,7 @@ def main() -> int:
 
     per_service: dict[str, dict] = defaultdict(
         lambda: {"declared": 0, "fabricated": 0, "ignores_input": 0,
-                 "declared_unimpl": 0, "missing": 0, "unknown": 0}
+                 "declared_unimpl": 0, "empty_idem": 0, "missing": 0, "unknown": 0}
     )
     findings = []
 
@@ -301,29 +315,33 @@ def main() -> int:
             findings.append((svc, op, None, "MISSING"))
             continue
         verdict = classify(found["body"], op)
+        if EMPTY_IDEMPOTENCY_RECORD.search(found["body"]):
+            per_service[svc]["empty_idem"] += 1
         if verdict in ("FABRICATED", "IGNORES_INPUT"):
             per_service[svc]["fabricated"] += 1
             if verdict == "IGNORES_INPUT":
                 per_service[svc]["ignores_input"] += 1
         elif verdict == "DECLARES_UNIMPLEMENTED":
             per_service[svc]["declared_unimpl"] += 1
+        elif verdict == "EMPTY_IDEMPOTENCY":
+            per_service[svc]["fabricated"] += 1
         elif verdict == "UNKNOWN":
             per_service[svc]["unknown"] += 1
         if verdict != "VERIFIED":
             findings.append((svc, op, found, verdict))
 
-    print(f"{'service':<22} {'bound':>6} {'fabricated':>11} {'ignores':>8} "
-          f"{'honest501':>9} {'missing':>8} {'unknown':>8}")
-    print("-" * 78)
+    print(f"{'service':<20} {'bound':>6} {'fabricated':>11} {'ignores':>8} "
+          f"{'honest501':>9} {'emptyIdem':>10} {'missing':>8} {'unknown':>8}")
+    print("-" * 86)
     total_fab = 0
     for svc in sorted(per_service):
         c = per_service[svc]
         total_fab += c["fabricated"]
-        print(f"{svc:<22} {c['declared']:>6} {c['fabricated']:>11} "
+        print(f"{svc:<20} {c['declared']:>6} {c['fabricated']:>11} "
               f"{c['ignores_input']:>8} {c['declared_unimpl']:>9} "
-              f"{c['missing']:>8} {c['unknown']:>8}")
-    print("-" * 78)
-    print(f"{'TOTAL':<22} {'':>6} {total_fab:>11}")
+              f"{c['empty_idem']:>10} {c['missing']:>8} {c['unknown']:>8}")
+    print("-" * 86)
+    print(f"{'TOTAL':<20} {'':>6} {total_fab:>11}")
 
     if args.verbose:
         print("\nfindings")
