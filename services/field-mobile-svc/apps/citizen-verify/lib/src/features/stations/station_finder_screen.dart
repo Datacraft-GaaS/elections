@@ -12,7 +12,11 @@ class StationFinderScreen extends ConsumerWidget {
       title: 'Find Station',
       variant: EelScaffoldVariant.scrollable,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      body: ListView(
+      // EelScaffold's scrollable variant already provides the viewport, so a
+      // ListView here is a scrollable inside a scrollable and throws on
+      // performResize. A Column is what the variant expects.
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text('Polling Station Finder', style: EelTextStyle.titleLarge),
           const SizedBox(height: 8),

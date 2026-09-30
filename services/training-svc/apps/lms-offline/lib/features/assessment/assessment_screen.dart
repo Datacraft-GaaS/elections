@@ -15,7 +15,11 @@ class AssessmentScreen extends ConsumerWidget {
       title: 'Assessment',
       variant: EelScaffoldVariant.scrollable,
       padding: const EdgeInsets.all(16),
-      body: ListView(
+      // EelScaffold's scrollable variant already provides the viewport, so a
+      // ListView here is a scrollable inside a scrollable and throws on
+      // performResize. A Column is what the variant expects.
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text('Module Assessment', style: EelTextStyle.titleLarge),
           const SizedBox(height: 16),

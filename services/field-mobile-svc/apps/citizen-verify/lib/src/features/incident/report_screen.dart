@@ -12,7 +12,11 @@ class IncidentReportScreen extends ConsumerWidget {
       title: 'Report Incident',
       variant: EelScaffoldVariant.scrollable,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      body: ListView(
+      // EelScaffold's scrollable variant already provides the viewport, so a
+      // ListView here is a scrollable inside a scrollable and throws on
+      // performResize. A Column is what the variant expects.
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text('Anonymous Incident Report',
               style: EelTextStyle.titleLarge),

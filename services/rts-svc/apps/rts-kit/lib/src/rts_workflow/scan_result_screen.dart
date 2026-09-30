@@ -13,21 +13,34 @@ class ScanResultScreen extends ConsumerWidget {
       title: 'Scan Result',
       variant: EelScaffoldVariant.scrollable,
       padding: const EdgeInsets.all(16),
-      body: ListView(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text('RFID Scan Result', style: EelTextStyle.titleLarge),
           const SizedBox(height: 16),
-          EelResultCard(
-            leading: Icon(Icons.check_circle, color: EelColors.of(context).primary, size: 32),
-            title: const Text('Scan Verified', style: EelTextStyle.titleMedium),
-            subtitle: const Text('RFID tag: RT-001 • Station: KE-NBI-001', style: EelTextStyle.bodyMedium),
+          // This rendered a fixed 'Scan Verified' card naming tag RT-001 at
+          // station KE-NBI-001. Neither was read from anything, so a completed
+          // tally or transfer could be confirmed against a scan that never
+          // happened.
+          const EelResultCard(
+            leading: Icon(Icons.help_outline, size: 32),
+            title: Text('No scan recorded', style: EelTextStyle.titleMedium),
+            subtitle: Text(
+              'Nothing has been scanned. Tag and station are read from a reader, '
+              'which is not implemented.',
+              style: EelTextStyle.bodyMedium,
+            ),
           ),
           const SizedBox(height: 16),
           EelButton(
             label: 'Confirm Scan',
             icon: Icons.check,
             fullWidth: true,
-            onPressed: () {},
+            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('There is no scan to confirm.'),
+              ),
+            ),
           ),
         ],
       ),

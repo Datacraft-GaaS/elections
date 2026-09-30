@@ -25,6 +25,9 @@ ROOT = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 ERROR_RE = re.compile(r"^\s*error •", re.M)
 WARN_RE = re.compile(r"^\s*warning •", re.M)
 INFO_RE = re.compile(r"^\s*info •", re.M)
+# "1 issue found" is singular, so matching the plural alone hides any
+# package with exactly one finding.
+SUMMARY_RE = re.compile(r"\bissues? found", re.I)
 
 
 SKIP = {".dart_tool", "build", "node_modules", ".git", "target"}
@@ -72,7 +75,7 @@ def main():
         # "No issues found!" means analyze really ran.
         if "No issues found" in output:
             errors, warnings, infos = 0, 0, 0
-        elif ERROR_RE.search(output) or "issues found" in output:
+        elif ERROR_RE.search(output) or SUMMARY_RE.search(output):
             errors = len(ERROR_RE.findall(output))
             warnings = len(WARN_RE.findall(output))
             infos = len(INFO_RE.findall(output))
