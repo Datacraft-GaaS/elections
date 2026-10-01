@@ -186,8 +186,8 @@ Measuring the routers directly instead:
 
 ```
 registered handlers judged : 631
-fabricated                 : 245   (39%)
-  of which contract-unbound: 200
+fabricated                 : 238   (38%)
+  of which contract-unbound: 193
   contract-bound           : 45
 ```
 
@@ -265,9 +265,44 @@ The three list handlers (`list_mous`, `list_datasets`, `list_incidents`,
 about storage: "no incidents are open" and "no witness is registered" are exactly
 what an incident tracker and a witness register exist to assert.
 
-Still open, and the clearest of the remainder:
-`abis-api::assign_adjudication` echoes the request back as
-`status: "in_review"` without storing the assignment.
+### Also fixed: `abis-api` (6 handlers), including an unsigned policy change
+
+`admin.rs::update_policy` is the security finding. It answered `200` with
+`applied: true` and `"attestation policy updated"` **without ever validating the
+request**, under a comment that recorded exactly what was missing: *"In
+production: validate req.signature_b64 against HSM public key."* The one control
+deciding whether a policy change is authentic was acknowledged in a comment and
+absent from the code. The attestation policy governs what the service accepts as
+proof of a device, so changing it unsigned is the whole attack.
+
+`adjudication.rs::decide_adjudication` keeps its real check and refuses the rest.
+The tier3 dual sign-off guard is genuine — a tier3 decision without a second
+adjudicator is rejected with 400 — so that branch was preserved. What it did
+*after* passing was echo the caller's own `outcome` back as `status: "resolved"`
+and store nothing. The guard therefore decided nothing: the request cleared
+validation and the case was never adjudicated. It now returns 501 after the
+guard, and says so.
+
+The other four echo without storing: `assign_adjudication` returned
+`status: "in_review"` for an adjudicator who was never notified and whose queue
+does not exist; `escalate_adjudication` returned `200` with `status: "escalated"`
+for an escalation reaching nobody; `list_evidence` returned an empty list, which
+claims the case has no evidence rather than that nothing is stored; and
+`upload_evidence` returned `202` with a minted `evidence_id` for an upload it
+never received, leaving the caller a receipt for an artefact that does not exist.
+
+### A tool bug this surfaced: probes were exempt in the wrong order
+
+`abis-api::readyz` was classified `IGNORES_INPUT`, and the fix exposed a worse
+problem. It answers `ready: true` with `checks: {"database": "ok", "vendor":
+"ok", "matcher": "ok"}` **without touching any of them**. A readiness gate that
+always passes keeps a broken instance in the load-balancer pool.
+
+So a probe must be exempt from the *input* check — "is this process up" has no
+request to read — but not from the *fabrication* check. Both call sites were also
+passing `op=None`, which meant the probe exemption could never fire at all and
+the ordering fix silently did nothing. Caught by adding `readyz` to the self-test
+and watching it fail 9/10. Now 10/10, and `readyz` is correctly `FABRICATED`.
 
 Run `python3 tools/rust_handler_fidelity.py --all-routes` for the list.
 

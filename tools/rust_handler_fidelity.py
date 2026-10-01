@@ -289,14 +289,20 @@ def classify(body: str, op: dict | None = None) -> str:
         return "FABRICATED"
     if DECLARES_UNIMPLEMENTED.search(body):
         return "DECLARES_UNIMPLEMENTED"
-    if IGNORED_EXTRACTOR.search(body):
+    # A probe legitimately ignores its input -- "is this process up" has no
+    # request to read -- so the input check does not apply to one. It is NOT
+    # exempt from the fabrication check below: abis-api::readyz answers
+    # ready: true with checks {"database": "ok"} without touching the database,
+    # and a readiness gate that always passes keeps a broken instance in the
+    # load-balancer pool.
+    is_probe = bool(op) and bool(
+        PROBE_OPERATION.search(op.get("operation_id") or "")
+        or PROBE_OPERATION.search(op.get("path") or "")
+    )
+    if not is_probe and IGNORED_EXTRACTOR.search(body):
         return "IGNORES_INPUT"
     if EMPTY_IDEMPOTENCY_RECORD.search(body):
         return "EMPTY_IDEMPOTENCY"
-    if op and PROBE_OPERATION.search(op.get("operation_id") or ""):
-        return "VERIFIED"
-    if op and PROBE_OPERATION.search(op.get("path") or ""):
-        return "VERIFIED"
     # Three independent ways to have earned the answer. Missing all three while
     # returning only a constructed success is what fabrication actually looks
     # like, and it is what the earlier heuristic kept getting wrong.
@@ -382,7 +388,10 @@ def report_unbound(ops: list[dict], bodies: dict[str, dict]) -> int:
         if entry is None:
             continue
         total += 1
-        verdict = classify(entry["body"], None)
+        # Pass the registration path as context. Without it the probe exemption
+        # can never fire, because both call sites used to pass None, and a
+        # readiness endpoint was indistinguishable from a domain handler.
+        verdict = classify(entry["body"], {"operation_id": "", "path": paths[0]})
         if verdict in ("VERIFIED", "DECLARES_UNIMPLEMENTED", "UNKNOWN"):
             continue
         fab += 1
@@ -414,42 +423,49 @@ def report_unbound(ops: list[dict], bodies: dict[str, dict]) -> int:
 # This has already earned its keep: converting certify_county_result and
 # amend_form34a to 501s dropped this from 7/7 to 5/7, because the expectations
 # recorded the old behaviour. A test that cannot fail is worse than no test.
+# (handler, file, route, expected) -- file and route are distinct: the file is
+# only a diagnostic when resolution drifts, the route is the context the
+# classifier needs to tell a probe from a domain handler.
 SELF_TEST = [
-    # (handler, file, expected) -- verified by reading the handler.
+    # (handler, file, route, expected) -- verified by reading the handler.
     ("acknowledge_alert", "services/support-admin-svc/crates/intent/src/http.rs",
-     "VERIFIED"),   # locks state.alerts, mutates, 404s on unknown id
+     "/v1/intent/alerts/{id}/acknowledge", "VERIFIED"),   # locks state.alerts, mutates, 404s on unknown id
     ("verify_voter_lookup", "services/field-mobile-svc/crates/mobile-bff/src/spec.rs",
-     "DECLARES_UNIMPLEMENTED"),
+     "/op", "DECLARES_UNIMPLEMENTED"),
     ("tally_verify", "services/field-mobile-svc/crates/mobile-bff/src/spec.rs",
-     "DECLARES_UNIMPLEMENTED"),
+     "/op", "DECLARES_UNIMPLEMENTED"),
     ("get_reports", "services/abis-svc/crates/abis-api/src/routes/reports.rs",
-     "DECLARES_UNIMPLEMENTED"),
+     "/op", "DECLARES_UNIMPLEMENTED"),
     # Converted to honest 501s; previously logged and returned 204 while
     # certifying nothing, and logged then returned 202 with a minted
     # amendment_id while discarding the amendment.
     ("certify_county_result", "services/governance-svc/crates/referendum/src/handlers.rs",
-     "DECLARES_UNIMPLEMENTED"),
+     "/op", "DECLARES_UNIMPLEMENTED"),
     ("amend_form34a", "services/rts-svc/crates/rts-ro-api/src/handlers.rs",
-     "DECLARES_UNIMPLEMENTED"),
+     "/op", "DECLARES_UNIMPLEMENTED"),
     ("declare_referendum", "services/governance-svc/crates/referendum/src/handlers.rs",
-     "DECLARES_UNIMPLEMENTED"),
+     "/op", "DECLARES_UNIMPLEMENTED"),
     ("get_national_result", "services/governance-svc/crates/referendum/src/handlers.rs",
-     "DECLARES_UNIMPLEMENTED"),
+     "/op", "DECLARES_UNIMPLEMENTED"),
     ("assign_adjudication", "services/abis-svc/crates/abis-api/src/routes/adjudication.rs",
-     "IGNORES_INPUT"),  # State(_state) unused, echoes req as "in_review"
+     "/op", "IGNORES_INPUT"),  # State(_state) unused, echoes req as "in_review"
+    # A probe may ignore its input, but not its checks: this answers
+    # ready: true with {"database": "ok"} without touching the database.
+    ("readyz", "services/abis-svc/crates/abis-api/src/routes/health.rs",
+     "/readyz", "FABRICATED"),
 ]
 
 
 def self_test() -> int:
     bodies = handler_bodies()
     bad = 0
-    for handler, path, expected in SELF_TEST:
+    for handler, path, route, expected in SELF_TEST:
         entry = bodies.get(handler)
         if entry is None:
             print(f"MISSING  {handler} (not indexed)")
             bad += 1
             continue
-        got = classify(entry["body"], None)
+        got = classify(entry["body"], {"operation_id": "", "path": route})
         want = expected
         ok = got == want
         bad += 0 if ok else 1

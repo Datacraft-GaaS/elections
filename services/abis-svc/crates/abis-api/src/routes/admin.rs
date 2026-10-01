@@ -10,6 +10,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
+use crate::error::ApiError;
 use crate::state::AppState;
 
 // ---------------------------------------------------------------------------
@@ -63,16 +64,20 @@ pub struct VendorHealthCheckResult {
 )]
 pub async fn update_policy(
 	State(_state): State<Arc<AppState>>,
-	Json(req): Json<AttestationPolicyUpdate>,
-) -> (StatusCode, Json<PolicyUpdateResult>) {
-	// In production: validate req.signature_b64 against HSM public key.
-	let _ = req;
-	(
-		StatusCode::OK,
-		Json(PolicyUpdateResult {
-			applied: true,
-			message: "attestation policy updated".into(),
-		}),
+	Json(_req): Json<AttestationPolicyUpdate>,
+) -> ApiError {
+	// Answered 200 with applied: true and "attestation policy updated" without
+	// ever validating the request. The comment recorded what was missing --
+	// "In production: validate req.signature_b64 against HSM public key" -- so
+	// the one control that decides whether a policy change is authentic was
+	// acknowledged in a comment and absent from the code. The attestation policy
+	// governs what the service will accept as proof of a device; changing it
+	// unsigned is the whole attack.
+	ApiError::NotImplemented(
+		"attestation policy update is declared by the contract but has neither \
+		 an HSM signature check nor a store behind it; it previously reported \
+		 applied: true without validating req.signature_b64"
+			.to_string(),
 	)
 }
 

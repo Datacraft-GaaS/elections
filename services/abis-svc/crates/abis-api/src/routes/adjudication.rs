@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use axum::{
 	extract::{Path, Query, State},
-	http::StatusCode,
+	response::{IntoResponse, Response},
 	Json,
 };
 use serde::{Deserialize, Serialize};
@@ -90,16 +90,16 @@ pub async fn list_adjudication(
 )]
 pub async fn assign_adjudication(
 	State(_state): State<Arc<AppState>>,
-	Path(case_id): Path<String>,
-	Json(req): Json<AssignRequest>,
-) -> (StatusCode, Json<serde_json::Value>) {
-	(
-		StatusCode::OK,
-		Json(serde_json::json!({
-			"case_id": case_id,
-			"assigned_to": req.adjudicator_id,
-			"status": "in_review"
-		})),
+	Path(_case_id): Path<String>,
+	Json(_req): Json<AssignRequest>,
+) -> ApiError {
+	// Echoed the request back as status "in_review" without storing the
+	// assignment, so the case looked assigned to an adjudicator who was never
+	// notified and whose queue does not exist.
+	 ApiError::NotImplemented(
+		"adjudication assignment is declared by the contract but has no store \
+		 behind it; it previously echoed the request back as in_review"
+			.to_string(),
 	)
 }
 
@@ -119,22 +119,25 @@ pub async fn decide_adjudication(
 	State(_state): State<Arc<AppState>>,
 	Path(case_id): Path<String>,
 	Json(req): Json<DecideRequest>,
-) -> (StatusCode, Json<serde_json::Value>) {
-	// Tier3 dual sign-off check.
+) -> Response {
+	// The tier3 dual sign-off check below is real and is kept: a tier3 decision
+	// without a second adjudicator is genuinely rejected with 400.
 	if req.second_adjudicator_id.is_none() && req.adjudicator_id == "tier3" {
-		return (
-			StatusCode::BAD_REQUEST,
-			Json(serde_json::json!({"error": "Tier3 decision requires second_adjudicator_id"})),
-		);
+		return ApiError::Validation(
+			"Tier3 decision requires second_adjudicator_id".to_string(),
+		)
+		.into_response();
 	}
-	(
-		StatusCode::OK,
-		Json(serde_json::json!({
-			"case_id": case_id,
-			"outcome": req.outcome,
-			"status": "resolved"
-		})),
+	// What it used to do next was echo the caller's own outcome back as
+	// status "resolved", storing nothing. So the guard decided nothing: the
+	// request passed validation and the case was never adjudicated.
+	let _ = case_id;
+	ApiError::NotImplemented(
+		"adjudication decision is declared by the contract but has no store \
+		 behind it; it previously echoed the caller's outcome back as resolved"
+			.to_string(),
 	)
+	.into_response()
 }
 
 /// POST /v1/adjudication/cases/{id}/escalate
@@ -150,16 +153,16 @@ pub async fn decide_adjudication(
 )]
 pub async fn escalate_adjudication(
 	State(_state): State<Arc<AppState>>,
-	Path(case_id): Path<String>,
-	Json(req): Json<EscalateRequest>,
-) -> (StatusCode, Json<serde_json::Value>) {
-	(
-		StatusCode::OK,
-		Json(serde_json::json!({
-			"case_id": case_id,
-			"status": "escalated",
-			"reason": req.reason,
-		})),
+	Path(_case_id): Path<String>,
+	Json(_req): Json<EscalateRequest>,
+) -> ApiError {
+	// Answered 200 with status "escalated" and the reason echoed back. Nothing
+	// was escalated: an escalation that reaches no adjudicator reads, from the
+	// response, exactly like one that did.
+	ApiError::NotImplemented(
+		"adjudication escalation is declared by the contract but has no store \
+		 behind it; it previously answered 200 with status escalated"
+			.to_string(),
 	)
 }
 
@@ -176,8 +179,14 @@ pub async fn escalate_adjudication(
 pub async fn list_evidence(
 	State(_state): State<Arc<AppState>>,
 	Path(_case_id): Path<String>,
-) -> (StatusCode, Json<Vec<EvidenceItem>>) {
-	(StatusCode::OK, Json(vec![]))
+) -> ApiError {
+	// An empty list reads as "this case has no evidence", which is a claim
+	// about the case rather than about storage.
+	ApiError::NotImplemented(
+		"evidence listing is declared by the contract but has no store behind \
+		 it; it previously returned an empty list"
+			.to_string(),
+	)
 }
 
 /// POST /v1/adjudication/cases/{id}/evidence
@@ -192,16 +201,15 @@ pub async fn list_evidence(
 )]
 pub async fn upload_evidence(
 	State(_state): State<Arc<AppState>>,
-	Path(case_id): Path<String>,
-) -> (StatusCode, Json<serde_json::Value>) {
-	let evidence_id = uuid::Uuid::new_v4().to_string();
-	(
-		StatusCode::ACCEPTED,
-		Json(serde_json::json!({
-			"case_id": case_id,
-			"evidence_id": evidence_id,
-			"status": "accepted",
-		})),
+	Path(_case_id): Path<String>,
+) -> ApiError {
+	// Accepted no upload, stored nothing, and minted an evidence_id so the
+	// caller held a receipt for an artefact that was never received.
+	ApiError::NotImplemented(
+		"evidence upload is declared by the contract but has no store behind \
+		 it; it previously returned 202 with a minted evidence_id for an upload \
+		 it never received"
+			.to_string(),
 	)
 }
 
