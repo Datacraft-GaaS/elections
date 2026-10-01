@@ -19,8 +19,10 @@ pub struct TransferResponse {
     pub status: String,
 }
 
-pub fn router() -> Router {
-    Router::new().route("/api/v1/bvr/transfers", post(create_transfer))
+// These handlers need no state, but the router is typed with `AppState` so it
+// can be merged into the composed router alongside the stateful sub-routers.
+pub fn router() -> Router<crate::state::AppState> {
+    Router::<crate::state::AppState>::new().route("/api/v1/bvr/transfers", post(create_transfer))
 }
 
 async fn create_transfer(

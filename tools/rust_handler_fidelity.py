@@ -352,6 +352,47 @@ def reaches_store_via_local_helper(
     return False
 
 
+# A whole call, with its argument text, so the argument list can be inspected.
+# The lookbehind is the same as FN_CALL: only bare calls, never method calls, so
+# `c.begin_ro_review()` is not mistaken for a free function.
+CALL_SPAN = re.compile(r"(?<![.:\w])([a-z_][a-z0-9_]{2,})\s*\(([^()]*)\)")
+
+# An argument list made only of literals: string, char, number, bool, and the
+# obvious decorations around them.
+LITERAL_ARG = re.compile(
+    r"""^\s*(?:
+            r?\#*"(?:[^"\\]|\\.)*\#*      # "literal" and r"literal"
+          | '(?:[^'\\]|\\.)'                # 'c'
+          | -?\d[\d_]*(?:\.\d+)?(?:[eE][-+]?\d+)?   # 204, 1_000, 0.5, 1e9
+          | true | false
+          | &\s*(?:"[^"]*"|\[\s*\])        # &"literal", &[]
+          | \[\s*\]                        # []
+        )\s*(?:,\s*|$)""",
+    re.X,
+)
+
+
+def _all_literal_args(arg_text: str) -> bool:
+    """True if every argument is a literal, so the handler wrote the value itself.
+
+    A call like `wrap("Placeholder Voter")` looks like delegation to a body-only
+    heuristic: `wrap` is defined in another file, and it is a real function. But
+    every argument is a literal, so nothing was looked up -- the handler supplied
+    the answer in the source, and the callee only reshaped it.
+    """
+    text = arg_text.strip()
+    if not text:
+        # A zero-argument bare call is a call on state the handler did not supply.
+        # `with_candidate()` and friends are rare; treat it as delegation, which is
+        # the conservative direction for a false-positive-prone check.
+        return False
+    # Every argument must match. Walk the list by splitting on top-level commas.
+    for part in text.split(","):
+        if not LITERAL_ARG.match(part):
+            return False
+    return True
+
+
 def delegates_elsewhere(body: str, local_fns: set[str]) -> bool:
     """True if the handler calls a function defined in another file.
 
@@ -362,11 +403,22 @@ def delegates_elsewhere(body: str, local_fns: set[str]) -> bool:
     delegation is invisible to a body-only heuristic. Without this, every thin
     wrapper around real logic reads as fake, which is how `evaluate_quota_rule`
     (a genuine pure computation over the request) got caught too.
+
+    The exception is a call whose arguments are all literals. The work is then not
+    in the callee, it is in the source: see `_all_literal_args`.
     """
     if local_fns is None:
         return False
     for name in FN_CALL.findall(body):
         if name in NOT_A_DELEGATION or name in local_fns:
+            continue
+        return True
+    for name, arg_text in CALL_SPAN.findall(body):
+        if name in NOT_A_DELEGATION or name in local_fns:
+            continue
+        if _all_literal_args(arg_text):
+            # A literal-only call is the handler writing its own answer. Skip it
+            # and keep looking for a call that actually reaches logic.
             continue
         return True
     return False
@@ -518,8 +570,9 @@ def report_unbound(ops: list[dict], bodies: dict[str, dict]) -> int:
     bound = {op["handler"] for op in ops if op["handler"]}
     routes = all_routes(bodies)
 
-    total = fab = 0
+    total = fab = unverified = 0
     rows: list[tuple[str, str, str, str, str]] = []
+    unknown_rows: list[tuple[str, str, str, str, str]] = []
     for handler, registrations in sorted(routes.items()):
         path, source_file = registrations[0]
         paths = [p for p, _ in registrations]
@@ -536,7 +589,18 @@ def report_unbound(ops: list[dict], bodies: dict[str, dict]) -> int:
             entry.get("local_fns"),
             bodies,
         )
-        if verdict in ("VERIFIED", "DECLARES_UNIMPLEMENTED", "UNKNOWN"):
+        if verdict in ("VERIFIED", "DECLARES_UNIMPLEMENTED"):
+            continue
+        if verdict == "UNKNOWN":
+            # Reported, not counted as fabricated. UNKNOWN means the classifier
+            # found no evidence either way, which is a gap in the measurement
+            # rather than a clean handler. It used to be dropped here, so a body of
+            # nothing but literals -- long enough to clear FABRICATED_MAX_LINES --
+            # disappeared from the report entirely. `bvr-api::get_voter` was one:
+            # it returned `full_name: nfc("Placeholder Voter")` for any voter id
+            # and was invisible here for the whole of its life.
+            unverified += 1
+            unknown_rows.append((verdict, handler, f"{source_file}::{handler}", str(entry["file"]), path))
             continue
         fab += 1
         # The row carries the bare name for the contract-binding check and the
@@ -544,20 +608,41 @@ def report_unbound(ops: list[dict], bodies: dict[str, dict]) -> int:
         # two modules may define it.
         rows.append((verdict, handler, f"{source_file}::{handler}", str(entry["file"]), path))
 
+    bound_rows = [r for r in rows if r[1] in bound]
     unbound = [r for r in rows if r[1] not in bound]
     print(f"registered handlers judged : {total}")
     print(f"fabricated                 : {fab}")
-    print(f"  of which contract-unbound: {len(unbound)}")
-    print(f"  contract-bound           : {len(rows) - len(unbound)}")
+    print(f"  contract-bound           : {len(bound_rows)}")
+    print(f"  contract-unbound         : {len(unbound)}")
+    print(f"unverified (UNKNOWN)       : {unverified}")
     print()
-    if not unbound:
-        print("no unregistered fabrications")
-        return 0
-    print("contract-unbound fabrications (invisible to the bound-only view)")
-    print("-" * 78)
-    for verdict, _handler, qualified, _file, path in unbound:
-        print(f"[{verdict:<15}] {qualified}")
-        print(f"                  {path}")
+    # Both lists are printed. Only the unbound ones used to be, which meant a
+    # contract-bound fabrication -- a contract a generated client depends on --
+    # was counted in the total and then never shown, so it could not be found by
+    # reading this output. The count was honest; the listing was not.
+    if bound_rows:
+        print("contract-BOUND fabrications (a contract names this handler)")
+        print("-" * 78)
+        for verdict, _handler, qualified, _file, path in bound_rows:
+            print(f"[{verdict:<15}] {qualified}")
+            print(f"                  {path}")
+        print()
+    if unbound:
+        print("contract-unbound fabrications (invisible to the bound-only view)")
+        print("-" * 78)
+        for verdict, _handler, qualified, _file, path in unbound:
+            print(f"[{verdict:<15}] {qualified}")
+            print(f"                  {path}")
+        print()
+    if unknown_rows:
+        print("no evidence either way -- NOT counted as fabricated, but not proven either")
+        print("-" * 78)
+        for verdict, _handler, qualified, _file, path in unknown_rows:
+            print(f"[{verdict:<15}] {qualified}")
+            print(f"                  {path}")
+        print()
+    if not rows and not unknown_rows:
+        print("no fabrications")
     return 0
 
 

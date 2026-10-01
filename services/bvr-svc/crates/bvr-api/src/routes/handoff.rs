@@ -1,8 +1,20 @@
-use axum::{extract::Path, routing::post, Json, Router};
+//! The citizen portal's single-use handoff token.
+//!
+//! This returned `status: "redeemed"` and `voter_id: null` for any token. A handoff
+//! token is a **JWT signed by the citizen portal**, and redeeming one is a state
+//! change: the token is single-use, so a redeem must be recorded or the same token
+//! redeems twice.
+
+use axum::{
+    extract::{Path, State},
+    routing::post,
+    Json, Router,
+};
 use serde::Serialize;
 
-use crate::error::ApiError;
+use crate::{error::ApiError, state::AppState};
 
+/// The shape the contract asks for on success.
 #[derive(Debug, Serialize)]
 pub struct HandoffResponse {
     pub token: String,
@@ -10,16 +22,28 @@ pub struct HandoffResponse {
     pub voter_id: Option<String>,
 }
 
-pub fn router() -> Router {
+pub fn router() -> Router<AppState> {
     Router::new().route("/api/v1/bvr/handoff/{token}", post(process_handoff))
 }
 
 async fn process_handoff(
+    State(_state): State<AppState>,
     Path(token): Path<String>,
 ) -> Result<Json<HandoffResponse>, ApiError> {
-    Ok(Json(HandoffResponse {
-        token,
-        status: "redeemed".into(),
-        voter_id: None,
-    }))
+    let _ = token;
+    // The token is a JWT signed by the citizen portal, so validating it needs that
+    // portal's verification key, and recording the single-use redemption needs a
+    // store for it. Neither is in this workspace.
+    //
+    // This used to answer `status: "redeemed"` for any string, which told a caller
+    // their token had been consumed when nothing had been checked and nothing had
+    // been recorded.
+    Err(ApiError::NotImplemented(
+        "a handoff token is a JWT signed by the citizen portal: validating it needs that \
+         portal's verification key, and redeeming it is a single-use state change that \
+         needs a redemption store. Neither is in this workspace. This handler previously \
+         answered status redeemed for any token, which told a caller their token had been \
+         consumed when nothing was checked and nothing was recorded"
+            .to_string(),
+    ))
 }

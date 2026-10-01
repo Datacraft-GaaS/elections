@@ -1762,3 +1762,98 @@ verification and Valkey (`post_ingest_read`, `sign_gazette_notice`), object
 storage (`portal-api::snapshots_bulk`). The two that need building rather than
 blocking are `bvr-api::get_latest_merkle_root`, which still returns a zero root
 without an append-only log, and `mobile-bff`'s Merkle token proof.
+
+## Fixed: bvr-api had no register to read, and the tables have always been there
+
+`bvr-api`'s `AppState` was an IPRS URL and nothing else. Four handlers had no
+register to consult, so they built their answers — while `voters` (V1),
+`audit_voters_history` (V2), `merkle_roots` and `register_snapshots` (V3) and
+`sar_requests` (V4) sat in `services/bvr-svc/migrations/` the whole time. These
+are real queries, not refusals.
+
+| handler | was | now |
+|---|---|---|
+| `get_voter` | `full_name: nfc("Placeholder Voter")`, county `047`, station `047-001-001`, `status: active` — for **any** id | reads `voters`; 404 when absent |
+| `update_voter_status` | logged and returned **204** | updates the row, appends to `audit_voters_history`, returns 200 with the new version |
+| `get_latest_merkle_root` | `"0".repeat(64)`, `seq: 0` | reads `merkle_roots` joined to `register_snapshots`; 404 when nothing published |
+| `create_sar` | minted a `sar_id`, answered 202, wrote nothing | inserts into `sar_requests` with a statutory due date |
+| `process_handoff` | `status: "redeemed"`, `voter_id: null` for any token | 501, naming the portal's signing key |
+
+`get_voter` was the one the classifier **passed**. It saw a real call to `nfc`,
+which is a Unicode normalizer, and read the delegation as genuine work — all four
+of its arguments were string literals. It invented a person's name and where they
+vote. The contract's `VoterSummary` has no `full_name` field at all, and
+`voters.full_name_enc` is a field-encrypted blob, so there was never a name to
+return; the query deliberately does not select the encrypted columns at all.
+
+`update_voter_status` returning 204 is worth its own line. A 204 says *no content*,
+and the handler had no content because it had changed nothing. The contract asks
+for 200 with the updated `VoterSummary`, which is also the only way a caller can
+see that the version moved. The transition is now written to `voters` and the
+from/to pair appended to `audit_voters_history` in the same transaction, because
+the contract says these transitions are event-sourced and a state change with no
+record of who made it is not event-sourced.
+
+`get_latest_merkle_root` returned the Merkle root of an *empty* tree presented as
+the root of the register. A root is precisely what a client checks an inclusion
+proof against, so that value is a verification anchor that verifies nothing while
+looking authoritative. The contract also requires a signature over
+`(root_hash || tree_size || timestamp)`; `merkle_roots.signed_by_hsm` records the
+signing key and no HSM has signed, so the endpoint returns 503 saying the root is
+unsigned **and returns the real root alongside it** rather than withholding a
+fact it has.
+
+`create_sar` also had a PII problem: it took `requester_national_id` in the clear
+and wrote it to the ticket table, where the contract asks for
+`requestor_national_id_hash`. `V056__sar_requestor_hash.sql` renames the column
+and **aborts** if any existing row is not a 64-hex hash, on the grounds that
+anything already written under the old name is a raw national ID that cannot be
+retro-hashed without the salt and must not be allowed to stand in as one.
+
+`process_handoff` is a 501 rather than a build: a handoff token is a **JWT signed
+by the citizen portal**, so validating it needs that portal's verification key, and
+redeeming it is a single-use state change that needs a redemption store. Neither is
+here. The old handler told a caller their token had been consumed when nothing had
+been checked and nothing had been recorded.
+
+### Two defects in the measurement, both found by checking the tool against ground truth
+
+- **A bare call whose arguments are all literals is not a delegation.** The work is
+  in the source, not the callee. `delegates_elsewhere` now skips those and keeps
+  looking. This has no effect on today's count — every affected handler is already
+  fixed — so it is a latent-correctness change, recorded as such rather than claimed
+  as a fix. Self-test still 12/12.
+- **The report only ever listed the contract-*unbound* fabrications.** A
+  contract-bound fabrication — a contract a generated client depends on — was
+  counted in the total and then never printed, so it could not be found by reading
+  the output. The count was honest; the listing was not. Both lists are printed now,
+  and doing so immediately surfaced a fabrication that had been invisible in every
+  previous run: `cvr::family_notify`, which is a named blocker in the table below.
+- `UNKNOWN` verdicts were dropped entirely. They are now reported as "no evidence
+  either way" — not counted as fabricated, but not claimed as clean either. There
+  are currently none.
+
+### Measured
+
+```
+registered handlers judged : 639
+fabricated                 : 20   (was 25)
+  contract-bound           :  1
+  contract-unbound         : 19
+unverified (UNKNOWN)       :  0
+
+implementable  12   (was 15)
+needs build     1   (was 2)
+blocked         7   (was 8)
+```
+
+`bvr-api` 17 tests green; `bvr-svc` workspace `--all-targets` clean; rustfmt parse
+14/14; manifests 242/0 broken. Rebreaks: returning 204 without making the change
+fails 3 tests; returning a zero root as the register's root fails 2.
+
+`get_latest_merkle_root` is the needs-build item that is now implemented against
+real tables, leaving `mobile-bff`'s Merkle token proof. Of the eight blocked, seven
+remain: the transactional outbox (`edge-api::distress`, both `rts-device-api`
+handlers), the M02 BVR snapshot client (`get_voter_qr`, `family_notify`), HSM and
+Valkey (`post_ingest_read`, `sign_gazette_notice`), and object storage
+(`portal-api::snapshots_bulk`).

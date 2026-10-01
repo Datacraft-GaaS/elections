@@ -23,8 +23,10 @@ pub struct EnrolmentAccepted {
     pub status: String,
 }
 
-pub fn router() -> Router {
-    Router::new().route("/api/v1/bvr/enrolments", post(create_enrolment))
+// These handlers need no state, but the router is typed with `AppState` so it
+// can be merged into the composed router alongside the stateful sub-routers.
+pub fn router() -> Router<crate::state::AppState> {
+    Router::<crate::state::AppState>::new().route("/api/v1/bvr/enrolments", post(create_enrolment))
 }
 
 async fn create_enrolment(
@@ -70,7 +72,7 @@ mod tests {
     #[trace("FR-M02-001")]
     #[tokio::test]
     async fn create_enrolment_returns_202_for_valid_request() {
-        let app = router();
+        let app = router().with_state(crate::state::AppState::default());
         let body = serde_json::json!({
             "idempotency_key": "test-key-1",
             "national_id": "KE12345678",
@@ -92,7 +94,7 @@ mod tests {
 
     #[tokio::test]
     async fn create_enrolment_returns_422_for_missing_fields() {
-        let app = router();
+        let app = router().with_state(crate::state::AppState::default());
         let body = serde_json::json!({"national_id": "KE12345678"});
         let req = Request::builder()
             .method("POST")

@@ -11,6 +11,8 @@ pub enum ApiError {
     BadRequest(String),
     Conflict(String),
     ServiceUnavailable(String),
+    /// The contract declares the operation and this process cannot perform it.
+    NotImplemented(String),
     Internal(String),
 }
 
@@ -21,6 +23,7 @@ impl IntoResponse for ApiError {
             ApiError::BadRequest(m) => (StatusCode::BAD_REQUEST, m.clone()),
             ApiError::Conflict(m) => (StatusCode::CONFLICT, m.clone()),
             ApiError::ServiceUnavailable(m) => (StatusCode::SERVICE_UNAVAILABLE, m.clone()),
+            ApiError::NotImplemented(m) => (StatusCode::NOT_IMPLEMENTED, m.clone()),
             ApiError::Internal(m) => (StatusCode::INTERNAL_SERVER_ERROR, m.clone()),
         };
         (status, Json(json!({"error": msg}))).into_response()

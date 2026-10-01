@@ -1,26 +1,54 @@
-use axum::{routing::get, Json, Router};
-use chrono::Utc;
-use serde::Serialize;
+//! The latest published Merkle root.
+//!
+//! This returned `"0".repeat(64)` with `seq: 0`. That is the Merkle root of an
+//! *empty* tree, presented as the root of the register -- and a Merkle root is
+//! exactly the kind of value a client is meant to check a proof against, so a zero
+//! root is a verification anchor that verifies nothing while looking authoritative.
+
+use axum::{extract::State, response::IntoResponse, routing::get, Json, Router};
 
 use crate::error::ApiError;
 
-#[derive(Debug, Serialize)]
-pub struct MerkleRootResponse {
-    pub root_hash: String,
-    pub seq: u64,
-    pub election_scope: String,
-    pub created_at: String,
-}
+pub use crate::store::MerkleRootResponse;
 
-pub fn router() -> Router {
+pub fn router() -> Router<crate::state::AppState> {
     Router::new().route("/api/v1/bvr/merkle-root/latest", get(get_latest_merkle_root))
 }
 
-async fn get_latest_merkle_root() -> Result<Json<MerkleRootResponse>, ApiError> {
-    Ok(Json(MerkleRootResponse {
-        root_hash: "0".repeat(64),
-        seq: 0,
-        election_scope: "2027-general".into(),
-        created_at: Utc::now().to_rfc3339(),
-    }))
+async fn get_latest_merkle_root(
+    State(state): State<crate::state::AppState>,
+) -> Result<impl IntoResponse, ApiError> {
+    let Some(root) = state
+        .store
+        .latest_merkle_root()
+        .await
+        .map_err(|e| ApiError::Internal(e.to_string()))?
+    else {
+        // No root has been published. Saying so is the honest answer; a zero root
+        // is not.
+        return Err(ApiError::NotFound(
+            "no Merkle root has been published for this election scope. This handler \
+             previously returned 64 zeros with seq 0, which is the root of an empty tree \
+             and reads as a verification anchor that verifies nothing"
+                .to_string(),
+        ));
+    };
+    if root.signature.is_none() {
+        // The contract requires a signature over (root_hash || tree_size ||
+        // timestamp). `merkle_roots.signed_by_hsm` records the signing key, and no
+        // HSM has signed in this deployment. The root is real and is returned
+        // below, but a root presented as a verification anchor without a signature
+        // is not one, so the endpoint says so rather than inventing a signature.
+        return Ok((
+            axum::http::StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({
+                "error": "the latest root is unsigned: no HSM has signed it, and the \
+                          contract requires a signature over (root_hash || tree_size || \
+                          timestamp) for a root to be a verification anchor",
+                "root": root,
+            })),
+        )
+            .into_response());
+    }
+    Ok(Json(root).into_response())
 }

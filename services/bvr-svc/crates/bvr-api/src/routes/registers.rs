@@ -12,8 +12,10 @@ pub struct RegisterResponse {
     pub merkle_root: String,
 }
 
-pub fn router() -> Router {
-    Router::new().route("/api/v1/bvr/registers/{scope}", get(get_register))
+// These handlers need no state, but the router is typed with `AppState` so it
+// can be merged into the composed router alongside the stateful sub-routers.
+pub fn router() -> Router<crate::state::AppState> {
+    Router::<crate::state::AppState>::new().route("/api/v1/bvr/registers/{scope}", get(get_register))
 }
 
 async fn get_register(Path(scope): Path<String>) -> Result<Json<RegisterResponse>, ApiError> {

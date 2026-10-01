@@ -10,8 +10,13 @@ pub mod voters;
 
 use axum::Router;
 
-pub fn router() -> Router {
-    Router::new()
+/// Composes the BVR router. Handlers that need the register take `AppState`; the
+/// rest are stateless and are merged in their own right.
+pub fn router() -> Router<crate::state::AppState> {
+    // Seeded as `Router<AppState>` so the stateful sub-routers can be merged: a
+    // bare `Router::new()` is `Router<()>` and will not accept them, and a
+    // `let` annotation does not propagate into the method chain.
+    let router = Router::<crate::state::AppState>::new()
         .merge(health::router())
         .merge(enrolments::router())
         .merge(voters::router())
@@ -20,5 +25,6 @@ pub fn router() -> Router {
         .merge(sar::router())
         .merge(merkle::router())
         .merge(adjudication::router())
-        .merge(handoff::router())
+        .merge(handoff::router());
+    router
 }

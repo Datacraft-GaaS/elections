@@ -35,6 +35,8 @@ utoipa-swagger-ui = { workspace = true }
 reqwest           = { workspace = true }
 unicode-normalization = { workspace = true }
 
+sqlx = { workspace = true, features = ["runtime-tokio", "postgres"] }
+
 [dev-dependencies]
 rstest        = { workspace = true }
 tower         = { workspace = true }
