@@ -11,6 +11,7 @@ name = "eel_portal_inspection"
 path = "src/lib.rs"
 
 [dependencies]
+eel-memstore-rs = { path = "../../../../packages/eel-memstore-rs" }
 axum            = { workspace = true }
 tokio           = { workspace = true }
 sqlx            = { workspace = true }
@@ -30,4 +31,6 @@ eel-auth-rs     = { path = "../../../../packages/eel-auth-rs" }
 
 [dev-dependencies]
 tokio           = { workspace = true, features = ["full"] }
+tower           = { workspace = true, features = ["util"] }
+serde_json      = { workspace = true }
 rstest          = { workspace = true }

@@ -186,8 +186,8 @@ Measuring the routers directly instead:
 
 ```
 registered handlers judged : 631
-fabricated                 : 180   (29%)
-  of which contract-unbound: 136
+fabricated                 : 170   (27%)
+  of which contract-unbound: 126
   contract-bound           : 45
 ```
 
@@ -450,12 +450,12 @@ into three buckets, because "238 fabricated" is not a task list. Converting all
 238 to 501 would remove capability a refusal cannot replace; leaving them
 fabricated is worse than either. The split is the point.
 
-**163 implementable** (was 221; 100 converted) — local work. Create/read/update
+**153 implementable** (was 221; 110 converted) — local work. Create/read/update
 against `AppState`, or a computation over inputs the request already carries.
 `eel-memstore-rs` is usually the whole requirement. These are worth doing, and are
 how the ten crates already fixed were fixed.
 
-Nine crates are now at zero fabrications: `county-coord`, `recall`, `referendum`,
+Ten crates are now at zero fabrications: `county-coord`, `recall`, `referendum`,
 `by-election`, `court-interface`, `ecc-api` (21 handlers, whose records took no
 state at all — a complaint filed through the grievance portal could never be
 retrieved, an escalation could never be resolved, and `get_audit_log` returned
@@ -474,6 +474,35 @@ rather than leaving the reader to assume.
 
 `review` also has no endpoint that creates a recommendation, so signing one is a
 404. That is recorded rather than papered over by inventing a creation route.
+
+`portal/inspection` is the tenth, and it is the first crate fixed using the
+crate's *own* existing logic rather than a memstore alone.
+
+`create_roll_snapshot` already stored its snapshot, but `get_roll_snapshot`
+discarded state and answered 404 for **every** id — so a snapshot that had just
+been created could not be read back. `file_objection` answered 201 and dropped the
+objection, and `update_objection_status` answered 204 for any id while discarding
+the status, so an objection could read as resolved while still `Filed`.
+`decide_correction` recorded a `Determination` and answered 200 **without updating
+the claim**, leaving it `Pending` — which is precisely the state
+`auto_referral::should_refer` requires before it will refer anything. So the
+correction decision never reached the claim it decided.
+
+Two handlers now use logic the crate already had and nothing was using:
+`roll_lookup` enforces the real `search::LookupCap` instead of returning
+`found: false` forever with no cap at all, while preserving its constant-time
+response shape so a caller cannot distinguish absent from errored; and
+`run_auto_referral` delegates to the crate's own
+`AutoReferralScheduler::run_batch`, which previously logged that it would refer and
+referred nothing. `a_filed_correction…` and
+`auto_referral_considers_real_claims…` between them assert the chain works, and the
+latter also asserts referral is idempotent on a second run.
+
+`search_voter_list` is refused rather than implemented: there is no voter list in
+the crate, so the previous `{"found": false}` answered every query as a miss. The
+`LookupCap` needs a subject to key on and that endpoint accepts no body or query,
+so there is nothing to rate-limit against either. That is recorded rather than
+papered over with an invented body.
 
 `ai-gateway` is the ninth. Its eleven `spec.rs` handlers all discarded state.
 `add_redteam_finding` minted a `finding_id`, echoed the request and stored nothing,
@@ -597,7 +626,7 @@ added for verdicts asserted as a literal `true`.
 | `training-svc/crates/training-api/src/handlers/accreditation.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/lms.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/spec.rs` | 6 | 0 | 0 |
-| **total** | **163** | **8** | **9** |
+| **total** | **153** | **8** | **9** |
 Run `python3 tools/fabrication_triage.py --list` for every handler, or
 `--crate <fragment>` for one file.
 
