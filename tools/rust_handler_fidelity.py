@@ -626,6 +626,23 @@ SELF_TEST = [
     # above happened.
     ("evaluate_quota_rule", "services/crms-svc/crates/crms-api/src/handlers/quota.rs",
      "/api/v1/crms/quota/evaluate", "VERIFIED"),
+    # The one remaining verifier finding, and the handler whose old shape was the
+    # most dangerous in the tree. It returned `registered: false` for every
+    # request, which is a definitive-looking negative about a real person on the
+    # one endpoint whose whole job is to answer that question.
+    #
+    # It now validates `id_number_hash` against the contract pattern
+    # ^[0-9a-f]{64}$ and answers with the contract's own `roll_not_published`
+    # reason, because verify.yaml has no 501 on this path and defines
+    # `not_registered_reason` for exactly this situation. The hash is
+    # deliberately not used to look anything up: the roll is held by the
+    # registration service, and `services/bvr-svc/migrations/` has no
+    # `eel_voter_register` table to query. IGNORES_INPUT is the honest verdict
+    # here -- pinning it says the state was reviewed and accepted, rather than
+    # left unreviewed, and it will fail if the handler ever stops validating the
+    # hash or starts asserting a registration status.
+    ("lookup_voter_registration", "services/bvr-svc/crates/verifier-api/src/http.rs",
+     "/api/v1/verifier/lookups", "IGNORES_INPUT"),
 ]
 
 

@@ -2,3 +2,4 @@
 #![warn(missing_docs)]
 /// HTTP handlers.
 pub mod http;
+pub mod store;

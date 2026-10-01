@@ -25,5 +25,13 @@ serde_json        = { workspace = true }
 uuid              = { workspace = true }
 chrono            = { workspace = true }
 
+eel-crypto-rs     = { path = "../../../../packages/eel-crypto-rs" }
+hmac = { workspace = true }
+
+sha2 = { workspace = true }
+
+hex = { workspace = true }
+
+
 [dev-dependencies]
 tower            = { workspace = true }

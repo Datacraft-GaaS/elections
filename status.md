@@ -1602,3 +1602,163 @@ its first output, which is why the number moved 31 → 15 → 54 as they were fi
 
 A measurement that reports a gap as a finding, or a finding as a gap, is worse
 than no measurement.
+
+## Fixed: the three handlers that answered about a person's registration
+
+Twenty-five fabrications remain. Ten of them were the most consequential in the
+tree, because they were the only ones that made a claim about a specific
+individual rather than a broken number: `verifier-api` (4), `cvr` (3) and
+`dereg-appeal` (4).
+
+**`cvr::voter_lookup` was the worst of them.** It returned `registered: false`
+with null station, ward and constituency **for every request**. Every other
+fabrication in this tree is a wrong number or a dead endpoint; that one is a
+definitive-looking "no, you are not on the register", delivered to a person who
+may well be on it, on the one endpoint whose entire purpose is to answer that
+question. It could turn a registered voter away.
+
+The roll is not merely a service that is missing. It does not exist here to query:
+`services/bvr-svc/migrations/` defines `register_snapshots` (aggregate counts and
+a Merkle root) and `eel_voter_register_events` (an audit log), and there is no
+`eel_voter_register` table in any migration. So there was no row a lookup could
+have returned and no column it could have filtered on. All three CVR handlers now
+refuse, each naming the specific thing that is absent, and each test asserts the
+body contains no registration status at all:
+
+| handler | was | now | blocker named in the response |
+|---|---|---|---|
+| `voter_lookup` | `200 {registered: false, …null}` | `501` | no `eel_voter_register` table; the roll is the registration service's |
+| `get_register_snapshot` | `404 "no snapshot available"` | `501` | the download is a presigned MinIO URL; object storage is absent |
+| `get_register_stats` | `200 {total_registered: 0, counties: 0}` | `501` | `register_snapshots` holds a whole-election count, but `RegisterStats` needs a per-county rollup and no table has a county dimension over the roll |
+
+`get_register_snapshot` previously answered 404 for every request, which reads as
+"no snapshot has been published" rather than as "this process cannot issue one" —
+a 404 is a claim about the world, and this process knows nothing about it.
+
+**There were no tests on these three handlers at all.** That is itself part of the
+finding: handlers returning a definitive `registered: false`, an empty page and a
+zeroed register had no test asserting any of it, so nothing would have caught the
+fabrication either way. `register_refusal_test.rs` now pins all three, and the
+rebreak is real: restoring `registered: false` fails
+`a_lookup_never_claims_a_voter_is_not_registered`.
+
+### `verifier-api`: the shapes were invented, and one signature was never read
+
+This one is worth recording for the process rather than the count, because the
+first implementation of these four handlers **also** did not match the contract.
+`StationDetail` requires nine fields; the first version returned four with two
+nulls. `ResultSummary` requires seven; the first version invented a
+`{scope, contests}` shape. The USSD response field is `text`, not
+`response_text`. `action` is lowercase `continue`/`end` on `verify.yaml`'s USSD
+path and uppercase `CON`/`END` on `dereg`'s — the two contracts disagree, and
+guessing would have broken one of them.
+
+So the handlers were rewritten against the three contracts, and the divergences
+that mattered:
+
+- **`verify_whatsapp_webhook` compared nothing.** It returned
+  `{"challenge": "verified"}` for any request. `whatsapp.yaml` says: echo
+  `hub.challenge` as plain text when `hub.mode` is `subscribe` and
+  `hub.verify_token` matches the configured token, otherwise 403. It now does,
+  in constant time via the repo's own `eel_crypto_rs::constant_time::ct_eq` — not
+  a new dependency — and an unconfigured deployment answers 403 rather than
+  accepting every challenge.
+- **`handle_whatsapp_webhook` acknowledged unsigned bodies.** Meta signs with
+  HMAC-SHA256 over the raw body; the handler read no signature. It now verifies
+  `X-Hub-Signature-256` before parsing, and refuses with `unverifiable` when no
+  app secret is configured rather than reporting a check it did not perform.
+- **`handle_ussd_session` answered `END` to every caller.** The line hung up before
+  a citizen with a phone and no smartphone could state anything. The menu is now
+  real, and the state is derived from the **accumulated** `*`-delimited input the
+  contract specifies, which means it is idempotent and no session lock is held
+  across a store lookup.
+- **`get_polling_station_detail` and `get_result_summary` are store-backed** and
+  return the contract shapes. A station that was never published is a 404; an
+  absent result summary is a **500**, not a 404, because the contract publishes
+  the summary every two minutes during tallying — its absence is a fault in the
+  publishing chain, not a missing resource.
+
+The three secrets (Meta verify token, Meta app secret, telco USSD webhook secret)
+are provider- or telco-issued and read from configuration. With any absent, the
+matching endpoint reports that it cannot verify. That is the state these tests run
+in, so the refusal path is the tested path.
+
+### `lookup_voter_registration` is pinned, and the pin is the finding
+
+One verifier handler is still reported: `lookup_voter_registration` is
+`IGNORES_INPUT`, because the `id_number_hash` is validated and then not used to
+look anything up. It is now pinned as `IGNORES_INPUT` (12/12 classifier checks).
+
+The pin records a decision rather than hiding a gap. `verify.yaml` offers no 501 on
+this path — 200, 400, 401, 422, 429, 500 — but it does define
+`not_registered_reason` with a `roll_not_published` member, which is exactly this
+situation. So the handler answers in-contract and states the reason rather than
+implying it. The distinction is the entire point of that enum:
+`roll_not_published` means "check back", `not_found` means "you are not
+registered", and losing it is what the previous handler did.
+
+`register.yaml` has no such member, which is why the CVR equivalent refuses rather
+than answering `registered: false`. The same fact, two contracts, two honest
+shapes: where the contract can say "the roll is not published", it says it; where
+it cannot, the handler says it cannot.
+
+### `dereg-appeal`: the verdict direction was inverted
+
+`decide_dereg_appeal` returned `201 Created` with
+`reinstated: verdict == "reinstate"` for **any** appeal id — a decision reinstating
+a voter's registration against a case that need not exist, and the decision a
+deregistered voter most needs to be right.
+
+`appeal.yaml`'s enum is `[upheld, dismissed]`, and the direction is the part that
+matters: **upholding** the appeal means the deregistration was wrong, so the voter
+is reinstated. **Dismissing** it means the deregistration stands. The old handler
+had it backwards, which is the direction that puts a person back on the register on
+a dismissal. `upholding_an_appeal_reinstates_the_voter` and
+`dismissing_an_appeal_leaves_the_deregistration_standing` now pin both, and
+inverting the comparison in the store fails both.
+
+Also corrected against the contract: `appeal_id` and `decision_id` are UUIDs (the
+first version minted `dga-`/`dgd-` prefixes); `status` is
+`submitted | under_review | upheld | dismissed`; the response carries all six
+`AppealDecision` fields rather than four; grounds and `decided_by_hash` are
+required, because a decision on a deregistration appeal is a finding about a
+person's registration; and an appeal cannot be decided twice.
+
+The USSD menu is keyed on **the reference on the deregistration notice**, which the
+citizen already holds. It is deliberately not keyed on the caller's number: the
+request carries `msisdn_hash`, appeals are stored against `voter_id_hash`, and
+nothing in this workspace resolves one to the other. Offering a "look up by my
+number" branch would be a promise this process cannot keep, so the branch is not
+offered — and the USSD reports a real appeal's real status and outcome, including
+after a decision, rather than a standing "in progress".
+
+There is no `POST /appeals` in the contract, so nothing in this workspace files an
+appeal: the deregistration workflow that raises one lives upstream.
+`DeregStore::file_appeal` is the ingestion point that workflow writes through, and
+it is what the read and decision paths are exercised against.
+
+### Measured
+
+```
+registered handlers judged : 639
+fabricated                 : 25   (was 35)
+  of which contract-unbound: 19
+  contract-bound           :  6
+
+implementable  15   (was 25)
+needs build     2
+blocked         8
+```
+
+`verifier-api` 24 tests, `cvr` 25, `dereg-appeal` 16 — all green, all
+`--all-targets` clean. Rebreaks: inverting the dereg verdict direction fails 2
+tests; accepting any webhook signature fails 4; restoring `registered: false` in
+CVR fails 1. Manifests 242, 0 broken. Classifier self-test 12/12.
+
+The eight blocked are unchanged and are recorded with their blockers: a
+transactional outbox (`edge-api::distress`, both `rts-device-api` handlers), the
+M02 BVR snapshot client (`get_voter_qr`, `family_notify`), HSM/signature
+verification and Valkey (`post_ingest_read`, `sign_gazette_notice`), object
+storage (`portal-api::snapshots_bulk`). The two that need building rather than
+blocking are `bvr-api::get_latest_merkle_root`, which still returns a zero root
+without an append-only log, and `mobile-bff`'s Merkle token proof.
