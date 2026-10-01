@@ -8,44 +8,192 @@ use tracing::info;
 
 use crate::models::*;
 use crate::spec;
+
+use crate::models::RecordTransmissionRequest;
 use crate::state::SharedState;
 
 pub async fn health() -> impl IntoResponse {
     StatusCode::OK
 }
 
-pub async fn list_transmissions() -> impl IntoResponse {
+/// A problem+json response.
+fn problem(status: StatusCode, detail: impl Into<String>) -> axum::response::Response {
+    (
+        status,
+        Json(serde_json::json!({
+            "type": "about:blank",
+            "title": status.canonical_reason().unwrap_or("Error"),
+            "status": status.as_u16(),
+            "detail": detail.into(),
+        })),
+    )
+        .into_response()
+}
+
+/// The SHA-256 of the canonical JSON, prefixed the way the rest of the tree
+/// writes payload hashes.
+fn payload_hash(value: &serde_json::Value) -> String {
+    let canonical = serde_json::to_vec(value).expect("Value is JSON-serialisable");
+    let mut h = sha2::Sha256::new();
+    use sha2::Digest;
+    h.update(&canonical);
+    format!("sha256:{}", hex::encode(h.finalize()))
+}
+
+pub async fn list_transmissions(State(state): State<SharedState>) -> impl IntoResponse {
     info!("list_transmissions");
-    let transmissions: Vec<TransmissionRecord> = vec![];
+    let guard = state.transmissions_legacy.lock().expect("lock poisoned");
+    let transmissions: Vec<TransmissionRecord> = guard.clone();
+    drop(guard);
     Json(serde_json::json!({ "transmissions": transmissions }))
 }
 
-pub async fn record_transmission() -> impl IntoResponse {
-    info!("record_transmission");
-    Json(TransmissionRecord::default())
+pub async fn record_transmission(
+    State(state): State<SharedState>,
+    Json(req): Json<RecordTransmissionRequest>,
+) -> axum::response::Response {
+    info!(event_type = %req.event_type, sender = %req.sender, "record_transmission");
+    if req.event_type.trim().is_empty()
+        || req.sender.trim().is_empty()
+        || req.recipient.trim().is_empty()
+    {
+        return problem(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "event_type, sender and recipient are required",
+        );
+    }
+    // The caller may supply a payload_hash for a body this service never saw.
+    // When they do not, the hash is computed over the payload actually received,
+    // so the stored record is self-consistent rather than carrying an empty or
+    // caller-asserted digest.
+    let payload_hash = match req.payload_hash.filter(|h| !h.trim().is_empty()) {
+        Some(h) => h,
+        None => payload_hash(&serde_json::json!({
+            "event_type": req.event_type,
+            "sender": req.sender,
+            "recipient": req.recipient,
+            "payload": req.payload,
+        })),
+    };
+    let record = TransmissionRecord {
+        record_id: uuid::Uuid::now_v7().to_string(),
+        event_type: req.event_type,
+        sender: req.sender,
+        recipient: req.recipient,
+        transmitted_at: chrono::Utc::now().to_rfc3339(),
+        payload_hash,
+        legal_basis: req.legal_basis,
+    };
+    let verdicts = state.record_and_evaluate(record.clone());
+    (StatusCode::CREATED, Json(serde_json::json!({
+        "transmission": record,
+        "verdicts": verdicts,
+    })))
+    .into_response()
 }
 
-pub async fn get_verdict(Path(record_id): Path<String>) -> impl IntoResponse {
+pub async fn get_verdict(
+    State(state): State<SharedState>,
+    Path(record_id): Path<String>,
+) -> axum::response::Response {
     info!(record_id, "get_verdict");
-    Json(ComplianceVerdict { record_id, ..Default::default() })
+    let known = state
+        .transmissions_legacy
+        .lock()
+        .expect("lock poisoned")
+        .iter()
+        .any(|r| r.record_id == record_id);
+    if !known {
+        return problem(
+            StatusCode::NOT_FOUND,
+            format!("no transmission record with id {record_id}"),
+        );
+    }
+    let verdicts = state.verdicts_for(&record_id);
+    Json(serde_json::json!({ "record_id": record_id, "verdicts": verdicts })).into_response()
 }
 
-pub async fn list_verdicts() -> impl IntoResponse {
+pub async fn list_verdicts(State(state): State<SharedState>) -> impl IntoResponse {
     info!("list_verdicts");
-    let verdicts: Vec<ComplianceVerdict> = vec![];
-    Json(serde_json::json!({ "verdicts": verdicts }))
+    let guard = state.verdicts.lock().expect("lock poisoned");
+    let verdicts: Vec<ComplianceVerdict> = guard.clone();
+    drop(guard);
+    Json(serde_json::json!({
+        "verdicts": verdicts,
+        "chain_head": crate::rules::chain_head(&verdicts),
+    }))
 }
 
-pub async fn party_summary(Path(party_id): Path<String>) -> impl IntoResponse {
+pub async fn party_summary(
+    State(state): State<SharedState>,
+    Path(party_id): Path<String>,
+) -> axum::response::Response {
     info!(party_id, "party_summary");
-    Json(PartySummary { party_id, ..Default::default() })
+    if !state.party_exists(&party_id) {
+        return problem(
+            StatusCode::NOT_FOUND,
+            format!("no party named {party_id} has transmitted anything"),
+        );
+    }
+    let records = state.records_for_party(&party_id);
+    let chain = state.verdicts.lock().expect("lock poisoned").clone();
+    let refs: Vec<&TransmissionRecord> = records.iter().collect();
+    let summary = crate::rules::summarise_party(&party_id, &party_id, &refs, &chain);
+    (StatusCode::OK, Json(summary)).into_response()
 }
 
-pub async fn generate_report() -> impl IntoResponse {
+pub async fn generate_report(State(state): State<SharedState>) -> axum::response::Response {
     info!("generate_report");
-    StatusCode::ACCEPTED
-}
+    let records = state.transmissions_legacy.lock().expect("lock poisoned").clone();
+    let chain = state.verdicts.lock().expect("lock poisoned").clone();
 
+    // The report is derived, not asserted: it counts what is actually stored and
+    // says so in `scope`. It previously answered 202 with no body, which left no
+    // way to tell a completed audit from one that had not run.
+    let total = records.len();
+    let failed: usize = chain.iter().filter(|v| !v.passed).count();
+    let passed = chain.iter().filter(|v| v.passed).count();
+    let unevaluated = records
+        .iter()
+        .filter(|r| !chain.iter().any(|v| v.record_id == r.record_id))
+        .count();
+    let mut findings: Vec<String> = Vec::new();
+    for r in &records {
+        let rec_verdicts: Vec<&ComplianceVerdict> =
+            chain.iter().filter(|v| v.record_id == r.record_id).collect();
+        if rec_verdicts.is_empty() {
+            findings.push(format!(
+                "record {} has no verdict: it was stored but never evaluated",
+                r.record_id
+            ));
+            continue;
+        }
+        for v in rec_verdicts.iter().filter(|v| !v.passed) {
+            findings.push(format!(
+                "record {} failed {} ({})",
+                r.record_id, v.rule_id, v.section_ref
+            ));
+        }
+    }
+    let body = serde_json::json!({
+        "report_id": format!("audit-{}", &chain.first().map(|v| &v.verdict_hash[..8]).unwrap_or("empty")),
+        "generated_at": chrono::Utc::now().to_rfc3339(),
+        "scope": "all recorded transmissions in this process's store",
+        "compliance_summary": serde_json::json!({
+            "transmissions": total,
+            "verdicts": chain.len(),
+            "verdicts_passed": passed,
+            "verdicts_failed": failed,
+            "transmissions_without_verdicts": unevaluated,
+            "chain_head": crate::rules::chain_head(&chain),
+            "chain_verifies": crate::rules::verify_chain_with_records(&chain, &records).is_none(),
+            // There is no append-only log here, so inclusion is never claimed.
+            "tlog_inclusion_proven": false,
+        }),
+        "findings": findings,
+    });
+    (StatusCode::OK, Json(body)).into_response()
+}
 // ---------------------------------------------------------------------------
 // Public contract endpoints (governance-legal-audit/audit.yaml)
 // ---------------------------------------------------------------------------

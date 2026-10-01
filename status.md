@@ -186,8 +186,8 @@ Measuring the routers directly instead:
 
 ```
 registered handlers judged : 631
-fabricated                 : 132   (21%)
-  of which contract-unbound: 92
+fabricated                 : 126   (20%)
+  of which contract-unbound: 86
   contract-bound           : 45
 ```
 
@@ -450,12 +450,12 @@ into three buckets, because "238 fabricated" is not a task list. Converting all
 238 to 501 would remove capability a refusal cannot replace; leaving them
 fabricated is worse than either. The split is the point.
 
-**116 implementable** (was 221; 140 converted) — local work. Create/read/update
+**110 implementable** (was 221; 146 converted) — local work. Create/read/update
 against `AppState`, or a computation over inputs the request already carries.
 `eel-memstore-rs` is usually the whole requirement. These are worth doing, and are
 how the ten crates already fixed were fixed.
 
-Fourteen crates are now at zero fabrications, and the one remaining handler here is recorded as blocked: `county-coord`, `recall`, `referendum`,
+Fifteen crates are now at zero fabrications, and the one remaining handler here is recorded as blocked: `county-coord`, `recall`, `referendum`,
 `by-election`, `court-interface`, `ecc-api` (21 handlers, whose records took no
 state at all — a complaint filed through the grievance portal could never be
 retrieved, an escalation could never be resolved, and `get_audit_log` returned
@@ -570,6 +570,59 @@ not stored.
 Scheduling a briefing also no longer marks attendance. `schedule_briefing` set
 `attendance_confirmed` from nothing in particular; it is now explicitly `false`,
 because attendance is confirmed by the mission, not by the act of scheduling.
+
+`governance/legal-audit` was described in its own manifest as a "§39 rules engine,
+per-event compliance verdicts, tlog-hashed (WP-5.1)". **None of those three things
+existed.** All six `/legal-audit/*` handlers answered from `vec![]` or
+`Default::default()`; `generate_report` answered `202 Accepted` with no body.
+
+The shape worth dwelling on is `get_verdict`, which returned an **empty**
+`ComplianceVerdict` for every record id. `passed` is `false` by default, so an
+unevaluated record read as a *failed* compliance check with a rule id of `""` —
+authoritative-looking, meaningful to nobody. An empty verdict is worse than a
+missing one, because it answers the question.
+
+What exists now:
+
+- **`rules.rs`** — a real §39 rule set with section references. A record is
+  non-compliant when it declares **no** legal basis, because there is no
+  instrument justifying the transmission. A record declaring an instrument the
+  rule set does not know is flagged `unrecognised-basis` rather than silently
+  accepted, so an invented basis is visible. Every applicable rule is judged, so a
+  record matching two rules yields two verdicts instead of one standing in for
+  both.
+- **A real hash chain.** Each verdict commits to its predecessor *and* to its
+  position in the global sequence, so removing or reordering one changes every
+  subsequent hash. `verify_chain_with_records` re-derives the hashes from the
+  source records rather than trusting them, and `the_report_derived...` asserts
+  the chain verifies inside the generated report.
+
+Two bugs I introduced while building the chain, both caught by the tests and both
+worth recording because they are the kind that pass a casual review:
+
+1. `verdict_index` restarted at zero for each record, so two records at the same
+   offset with the same rule and outcome produced **identical hashes**. Fixed by
+   threading `first_index` through the global sequence.
+2. Every verdict in a multi-verdict record chained to the *record's* predecessor,
+   so all N verdicts pointed at the same parent rather than forming an ordered
+   chain. Fixed by advancing the running predecessor within the record too.
+
+**`tlog_inclusion_proven` is `false` on every verdict and in every report.** There
+is no append-only log in this workspace to submit a leaf to, so the hash is a
+local chain and is labelled as one. The old field was `tlog_hash`, which invited
+exactly the reading this workspace cannot support; it is now `verdict_hash`, and
+the inclusion claim is a separate field that is explicitly never true.
+
+`party_summary` previously returned a zeroed summary for any party id — which
+reads as "fully compliant". It is now a 404 for a party that has never
+transmitted, and an unevaluated transmission counts as **non**-compliant rather
+than being skipped.
+
+`tests/compliance.rs` is 17 tests, all failing against the previous code, and
+proven able to fail: forcing every rule to pass drops 5 of them. An earlier
+attempt at that rebreak was itself a no-op — an empty basis still fell through to
+the `unrecognised-basis` branch and still failed — which is worth noting because a
+test that cannot fail is the failure mode this whole effort is about.
 
 `portal/gazette` contains **the most serious refusal in this tree**, and it is
 recorded as blocked rather than implemented.
@@ -742,7 +795,7 @@ added for verdicts asserted as a literal `true`.
 | `training-svc/crates/training-api/src/handlers/accreditation.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/lms.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/spec.rs` | 6 | 0 | 0 |
-| **total** | **116** | **7** | **9** |
+| **total** | **110** | **7** | **9** |
 Run `python3 tools/fabrication_triage.py --list` for every handler, or
 `--crate <fragment>` for one file.
 
