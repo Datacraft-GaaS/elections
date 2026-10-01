@@ -131,13 +131,14 @@ def main() -> int:
     needs_build: list[tuple[str, str, str, str]] = []
     blocked: list[tuple[str, str, str, list[str]]] = []
 
-    for handler, paths in routes.items():
-        entry = bodies.get(handler)
+    for handler, registrations in routes.items():
+        path, source_file = registrations[0]
+        entry = f.resolve_handler(handler, source_file, bodies)
         if entry is None:
             continue
         verdict = f.classify(
             entry["body"],
-            {"operation_id": "", "path": paths[0]},
+            {"operation_id": "", "path": path},
             entry.get("local_fns"),
             bodies,
         )
@@ -150,15 +151,15 @@ def main() -> int:
         artifact = CRYPTO_ARTIFACT.search(entry["body"])
         verdict = ASSERTED_VERDICT.search(entry["body"])
         if blockers:
-            blocked.append((handler, file, paths[0], blockers))
+            blocked.append((f"{source_file}::{handler}", file, path, blockers))
         elif artifact:
-            needs_build.append((handler, file, paths[0], artifact.group(0)))
+            needs_build.append((f"{source_file}::{handler}", file, path, artifact.group(0)))
         elif verdict:
             needs_build.append(
-                (handler, file, paths[0], f"{verdict.group(1)}: true")
+                (f"{source_file}::{handler}", file, path, f"{verdict.group(1)}: true")
             )
         else:
-            impl.append((handler, file, paths[0]))
+            impl.append((f"{source_file}::{handler}", file, path))
 
     if args.markdown:
         per_crate = defaultdict(lambda: {"impl": 0, "build": 0, "blocked": 0})

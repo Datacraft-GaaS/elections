@@ -450,7 +450,7 @@ into three buckets, because "238 fabricated" is not a task list. Converting all
 238 to 501 would remove capability a refusal cannot replace; leaving them
 fabricated is worse than either. The split is the point.
 
-**66 implementable** (was 221; 192 converted) — local work. Create/read/update
+**60 implementable** (was 221; 198 converted) — local work. Create/read/update
 against `AppState`, or a computation over inputs the request already carries.
 `eel-memstore-rs` is usually the whole requirement. These are worth doing, and are
 how the ten crates already fixed were fixed.
@@ -923,6 +923,66 @@ right.
 `tests/contract_tests.rs` is 16 tests, and the 4 signature tests are proven able to
 fail: accepting any webhook drops all four.
 
+`training-svc/training-api` had the two most consequential fabrications left in
+this tree, and both sat in endpoints a person relies on.
+
+`submit_assessment` returned `score_pct: 100.0, passed: true` for **every**
+submission and minted a certificate id. The enrolment id was discarded outright —
+`let _ = (assessment_id, req)` — so a submission could be filed against an
+enrolment that did not exist and still came back a pass. **Every candidate passed
+every assessment.** The crate contains its own scoring engine, `exam::score_session`,
+with blueprint weighting, all-or-nothing multi-select marking and a pass mark; the
+handler never called it.
+
+`verify_badge` returned `valid: true` for **any** badge number. That is the
+endpoint a verifier trusts to check an accreditation credential before letting
+someone near a count centre, and it accepted every string presented to it. Badges
+are now issued by the approval decision — the registrar may assign the number, and
+where they do not one is derived from the application so an approved application
+always has something real to check — and `verify_badge` answers 404 for an unknown
+number and `valid: false` for one past its validity.
+
+`get_certificate` returned a URL for any `certificate_id` with an `expires_at` of
+**now**, so every certificate resolved and every certificate was already expired.
+
+Two design points worth recording:
+
+- **The assessment scores against the bank the exam module serves.** `SpecState`
+  now holds the same `ExamApiState`, and `build_router` merges both surfaces over
+  one store, so questions registered at `POST /v1/exams/questions` are the questions
+  a spec-surface submission is marked against. A candidate cannot score themselves,
+  because a submitted option that the bank does not offer maps to no index and
+  counts as wrong. With no questions registered the endpoint answers `503` naming
+  the route that fixes it, because scoring against nothing is how every submission
+  reached 100%.
+- **The weighted score exposed a behaviour worth having.** The scorer divides by
+  the blueprint's *total* weight, so a candidate who answered one of four sections
+  scores that section's weight, not a quarter of the pass mark. My first test
+  asserted 100% for a partial answer; the code was right and the test was wrong.
+  `a_partial_submission_scores_proportionally` now pins 35% for one section of
+  the PO blueprint, and asserts it is a fail.
+
+The CMS handlers echoed their input and stored nothing: `list_content` was always
+empty, `get_content` returned a bare id for anything, `delete_content` answered
+204 for any id, and translations were dropped so a content item could accumulate
+none. All of it is stored now, updates bump a version, and a translation is a 409
+rather than a silent overwrite.
+
+**And a third measurement bug in the classifier, this one a real resolution
+failure rather than a heuristic.** `verify_badge` and `submit_assessment` each
+exist **twice** in `training-api`: once in the spec surface, once in the internal
+`accreditation`/`lms` modules. The bare-name index took whichever file sorted
+first, so a route registered in `spec.rs` was being judged against the body in
+`accreditation.rs` — a different function. Bodies are now indexed under
+`file::fn` and every route carries the module that registered it, so the name means
+what the registering module means by it. That is the fifth time this classifier
+has been wrong, and the first time the bug was in *which* function it was reading
+rather than how it judged it.
+
+`tests/spec_surface.rs` is 22 tests, all failing against the previous code, and
+proven able to fail: passing every submission drops 4 of them, and validating every
+badge drops the badge tests.
+
 `portal/gazette` contains **the most serious refusal in this tree**, and it is
 recorded as blocked rather than implemented.
 
@@ -1094,7 +1154,7 @@ added for verdicts asserted as a literal `true`.
 | `training-svc/crates/training-api/src/handlers/accreditation.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/lms.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/spec.rs` | 6 | 0 | 0 |
-| **total** | **66** | **4** | **8** |
+| **total** | **60** | **4** | **8** |
 Run `python3 tools/fabrication_triage.py --list` for every handler, or
 `--crate <fragment>` for one file.
 

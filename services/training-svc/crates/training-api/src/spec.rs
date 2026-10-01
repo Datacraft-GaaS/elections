@@ -159,3 +159,97 @@ pub struct MedicalPersonnel {
     pub station_code: String,
     pub active: bool,
 }
+
+// ---------------------------------------------------------------------------
+// Records the spec surface issues rather than inventing
+// ---------------------------------------------------------------------------
+
+/// A scored assessment submission.
+///
+/// `submit_assessment` previously returned `score_pct: 100.0, passed: true` for
+/// **every** submission and minted a certificate id, so every candidate passed
+/// every assessment. The score is now computed by the crate's own
+/// `exam::score_session`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AssessmentSubmissionRecord {
+    pub submission_id: String,
+    pub assessment_id: String,
+    pub enrolment_id: String,
+    pub score_pct: f64,
+    pub passed: bool,
+    /// Questions the candidate got right, out of those submitted.
+    pub correct: usize,
+    pub answered: usize,
+    pub certificate_id: Option<String>,
+    pub assessed_at: String,
+    /// Why no certificate was issued, when none was.
+    pub blocking_reason: Option<String>,
+}
+
+/// An issued certificate.
+///
+/// `get_certificate` previously returned a URL for any `certificate_id` and an
+/// `expires_at` of *now*, so every certificate was instantly expired and every id
+/// resolved.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CertificateRecord {
+    pub certificate_id: String,
+    pub enrolment_id: String,
+    pub issued_at: String,
+    pub expires_at: String,
+    /// Where the certificate document lives, once rendered.
+    pub document_url: Option<String>,
+    /// Certificates are not signed here: the board's signing key is in the HSM.
+    pub blocking_reason: Option<String>,
+}
+
+/// An issued accreditation badge.
+///
+/// `verify_badge` previously returned `valid: true` for **any** badge number, so
+/// the endpoint that a verifier trusts to check a journalist's accreditation
+/// credential accepted every string presented to it.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BadgeRecord {
+    pub badge_number: String,
+    pub application_id: String,
+    /// The holder's name, masked for display.
+    pub name_masked: String,
+    pub organisation: String,
+    pub r#type: String,
+    pub issued_at: String,
+    pub valid_until: String,
+}
+
+/// A published CMS content item.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ContentRecord {
+    pub content_id: String,
+    pub title: String,
+    pub body: serde_json::Value,
+    pub status: String,
+    pub version: u32,
+    pub published_at: Option<String>,
+    pub updated_at: String,
+    /// Translations, keyed by BCP-47 tag.
+    pub translations: std::collections::BTreeMap<String, serde_json::Value>,
+}
+
+/// A request to publish CMS content.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PublishContentRequest {
+    pub title: String,
+    #[serde(default)]
+    pub body: serde_json::Value,
+    #[serde(default)]
+    pub status: Option<String>,
+}
+
+/// A request to add a translation to a content item.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ContentTranslationRequest {
+    /// BCP-47 tag, e.g. "sw".
+    pub language: String,
+    #[serde(default)]
+    pub title: Option<String>,
+    pub body: serde_json::Value,
+}

@@ -179,10 +179,17 @@ def handler_bodies() -> dict[str, dict]:
             entry = {"file": rs.relative_to(ROOT), "body": body,
                      "crate": crate, "fn": name,
                      "local_fns": defs}
-            # A bare name is ambiguous; only the first claimant gets it.
+            # A bare name is ambiguous; only the first claimant gets it. A
+            # same-crate claimant is indexed under `crate::name`, and every body
+            # is indexed under its own path, so a route registration can be
+            # resolved against the file that made it.
             bodies.setdefault(name, entry)
+            # `file::fn`, so a route registration resolves against the module that
+            # made it. Keying by the file alone would only ever hold that file's
+            # first function.
+            bodies.setdefault(f"{rs.relative_to(ROOT)}::{name}", entry)
             if crate:
-                bodies[f"{crate}::{name}"] = entry
+                bodies.setdefault(f"{crate}::{name}", entry)
     return bodies
 
 
@@ -463,9 +470,15 @@ def _balanced(text: str, open_at: int) -> str | None:
     return None
 
 
-def all_routes(bodies: dict[str, dict]) -> dict[str, list[str]]:
-    """handler name -> the paths it is registered on, across the services tree."""
-    routes: dict[str, list[str]] = {}
+def all_routes(bodies: dict[str, dict]) -> dict[str, list[tuple[str, str]]]:
+    """(path, registering file) per handler, across the services tree.
+
+    The registering file travels with each route because a handler name is only
+    meaningful in the module that registered it: `verify_badge` and
+    `submit_assessment` each exist twice, once in the spec surface and once in the
+    internal module, and they are different functions with different bodies.
+    """
+    routes: dict[str, list[tuple[str, str]]] = {}
     for rs in sorted((ROOT / "services").rglob("*.rs")):
         if "/target/" in str(rs):
             continue
@@ -474,8 +487,24 @@ def all_routes(bodies: dict[str, dict]) -> dict[str, list[str]]:
         except Exception:
             continue
         for path, handler in route_registrations(text):
-            routes.setdefault(handler, []).append(path)
+            routes.setdefault(handler, []).append((path, str(rs.relative_to(ROOT))))
     return routes
+
+
+def resolve_handler(handler: str, source_file: str | None, bodies: dict) -> dict | None:
+    """The body of `handler` as the module that registered it defines it.
+
+    Two modules can each define `verify_badge` or `submit_assessment` -- the spec
+    surface and the internal lms/accreditation modules both do. A bare-name
+    lookup takes whichever file sorted first, so a route registered in `spec.rs`
+    was being judged against the body in `accreditation.rs`. The name means
+    whatever the registering module means by it.
+    """
+    if source_file:
+        entry = bodies.get(f"{source_file}::{handler}")
+        if entry is not None:
+            return entry
+    return bodies.get(handler)
 
 
 def report_unbound(ops: list[dict], bodies: dict[str, dict]) -> int:
@@ -490,9 +519,11 @@ def report_unbound(ops: list[dict], bodies: dict[str, dict]) -> int:
     routes = all_routes(bodies)
 
     total = fab = 0
-    rows: list[tuple[str, str, str, str]] = []
-    for handler, paths in sorted(routes.items()):
-        entry = bodies.get(handler)
+    rows: list[tuple[str, str, str, str, str]] = []
+    for handler, registrations in sorted(routes.items()):
+        path, source_file = registrations[0]
+        paths = [p for p, _ in registrations]
+        entry = resolve_handler(handler, source_file, bodies)
         if entry is None:
             continue
         total += 1
@@ -501,14 +532,17 @@ def report_unbound(ops: list[dict], bodies: dict[str, dict]) -> int:
         # readiness endpoint was indistinguishable from a domain handler.
         verdict = classify(
             entry["body"],
-            {"operation_id": "", "path": paths[0]},
+            {"operation_id": "", "path": path},
             entry.get("local_fns"),
             bodies,
         )
         if verdict in ("VERIFIED", "DECLARES_UNIMPLEMENTED", "UNKNOWN"):
             continue
         fab += 1
-        rows.append((verdict, handler, str(entry["file"]), paths[0]))
+        # The row carries the bare name for the contract-binding check and the
+        # qualified name for the report, because a contract names a handler and
+        # two modules may define it.
+        rows.append((verdict, handler, f"{source_file}::{handler}", str(entry["file"]), path))
 
     unbound = [r for r in rows if r[1] not in bound]
     print(f"registered handlers judged : {total}")
@@ -521,9 +555,9 @@ def report_unbound(ops: list[dict], bodies: dict[str, dict]) -> int:
         return 0
     print("contract-unbound fabrications (invisible to the bound-only view)")
     print("-" * 78)
-    for verdict, handler, f, path in unbound:
-        print(f"[{verdict:<15}] {handler:<28} {path}")
-        print(f"                  {f}")
+    for verdict, _handler, qualified, _file, path in unbound:
+        print(f"[{verdict:<15}] {qualified}")
+        print(f"                  {path}")
     return 0
 
 

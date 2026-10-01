@@ -95,6 +95,9 @@ pub fn build_router() -> Router {
             "/v1/training/medical/cluster-alerts/{id}/resolve",
             post(medical::resolve_cluster_alert),
         );
-    app.merge(exam::router(exam::ExamApiState::new()))
-        .merge(spec::router())
+    // One exam store for both surfaces, so the question bank `submit_assessment`
+    // scores against is the bank the exam module serves.
+    let exam = exam::ExamApiState::new();
+    app.merge(spec::router(crate::spec_state::SpecState::with_exam(exam.clone())))
+    .merge(exam::router(exam))
 }
