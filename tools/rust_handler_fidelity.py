@@ -420,9 +420,13 @@ def report_unbound(ops: list[dict], bodies: dict[str, dict]) -> int:
 # function name so it answered one service with another's handler. A heuristic
 # with no test is just a guess that prints a number.
 #
-# This has already earned its keep: converting certify_county_result and
-# amend_form34a to 501s dropped this from 7/7 to 5/7, because the expectations
-# recorded the old behaviour. A test that cannot fail is worse than no test.
+# This has earned its keep three times, always the same way: converting a
+# handler to an honest 501 drops a check, because the expectation recorded the
+# old behaviour. certify_county_result and amend_form34a took it 7/7 -> 5/7;
+# assign_adjudication took it 10/10 -> 9/10. That is the pins doing their job
+# rather than a nuisance -- a test that cannot fail is worse than no test. The
+# cost is that converting a handler means updating its expectation in the same
+# commit, which is the correct place to notice.
 # (handler, file, route, expected) -- file and route are distinct: the file is
 # only a diagnostic when resolution drifts, the route is the context the
 # classifier needs to tell a probe from a domain handler.
@@ -447,8 +451,10 @@ SELF_TEST = [
      "/op", "DECLARES_UNIMPLEMENTED"),
     ("get_national_result", "services/governance-svc/crates/referendum/src/handlers.rs",
      "/op", "DECLARES_UNIMPLEMENTED"),
+    # Converted to an honest 501; previously State(_state) unused while echoing
+    # the request back as "in_review".
     ("assign_adjudication", "services/abis-svc/crates/abis-api/src/routes/adjudication.rs",
-     "/op", "IGNORES_INPUT"),  # State(_state) unused, echoes req as "in_review"
+     "/cases/{id}/assign", "DECLARES_UNIMPLEMENTED"),
     # A probe may ignore its input, but not its checks: this answers
     # ready: true with {"database": "ok"} without touching the database.
     ("readyz", "services/abis-svc/crates/abis-api/src/routes/health.rs",
