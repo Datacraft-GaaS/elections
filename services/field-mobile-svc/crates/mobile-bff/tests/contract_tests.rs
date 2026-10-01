@@ -130,18 +130,39 @@ async fn test_report_incident_returns_201_created() {
 }
 
 #[tokio::test]
-/// FR-M1-006: Voter verification validates DPO attestation
-async fn test_verify_voter_returns_200_with_verification_result() {
+/// FR-M1-006 is UNMET: voter verification must validate DPO attestation.
+///
+/// This test used to be `test_verify_voter_returns_200_with_verification_result`
+/// and asserted only `StatusCode::OK`. The handler it covered read `voter_id`,
+/// substituted the literal `"VOTER-12345"` when it was absent, and answered
+/// `{"verified": true}` regardless -- so the test passed while asserting nothing,
+/// under a name and a doc comment claiming attestation validation that no code
+/// performed. A requirement with a green test and no implementation is the
+/// failure mode this rename exists to make visible.
+///
+/// Assert the honest state: a refusal that says why. When the register lookup
+/// and DPO attestation are implemented, this becomes a positive assertion.
+async fn test_verify_voter_refuses_while_fr_m1_006_unmet() {
     let app = make_test_router();
-    
+
     let req = Request::builder()
         .uri("/api/v1/mobile/bff/voter/verification?voter_id=voter-12345")
         .method("GET")
         .body(Body::empty())
         .unwrap();
-    
+
     let resp = app.oneshot(req).await.unwrap();
-    assert_eq!(resp.status(), StatusCode::OK, "Voter verification should return 200");
+    assert_eq!(
+        resp.status(),
+        StatusCode::NOT_IMPLEMENTED,
+        "voter verification must refuse while FR-M1-006 is unmet, not return 200"
+    );
+    assert_eq!(
+        resp.headers()
+            .get(axum::http::header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok()),
+        Some("application/problem+json")
+    );
 }
 
 #[tokio::test]

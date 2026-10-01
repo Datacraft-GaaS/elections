@@ -336,29 +336,64 @@ request answered two different ways depending on whether it had been made
 before. Now detected mechanically as `EMPTY_IDEMPOTENCY` in
 `rust_handler_fidelity.py`, so it cannot reappear unnoticed. 11 remain.
 
-### Nothing Rust can be compiled on this machine
+### The Rust toolchain works; the blocker was a stale `SDKROOT`
 
-`cargo check -p abis-api` fails for every crate with `linking with 'cc' failed:
-exit status: 69 -- You have not agreed to the Xcode license agreements`. This is
-environmental, predates any of this work, and is fixed by
-`sudo xcodebuild -license accept`, which needs an interactive sudo. It means
-**every Rust edit in this repo is unverified at the type level**, and that
-includes the claim, made earlier in this work, that 3118 Rust tests passed --
-that run cannot currently be reproduced and should be re-run once the licence is
-accepted before it is relied on again.
+**Correction to the previous entry in this file.** Rust does compile on this
+machine. Nothing is wrong with the Xcode licence and nothing needs `sudo`.
 
-`tools/rustfmt_parse_check.py` is the mitigation that is possible without a
-compiler: `rustfmt` parses Rust without linking, so it catches syntax errors
-where nothing can build. It immediately earned its place. Rewriting
-`get_reports` produced `State<Arc<AppState>>))` with a doubled closing paren,
-which a raw paren count scored as *balanced* and which only the parser rejected.
-Syntax is not types: the abis changes parse clean and have not been type
-checked.
+`~/.zshrc:169-174` runs this at every shell startup:
 
-`rts-svc` is the other extreme: 15 of 15 fabricated, and it is the only service
-with a contract declaring `404 Form not found` for `getFormProof` while the
-handler returns `200` with an empty proof and a Merkle root of 64 zeros, for
-every form id, forever.
+```zsh
+sdkroot_path="$(xcrun --sdk macosx --show-sdk-path 2>/dev/null)"
+[[ -n "$sdkroot_path" ]] && export SDKROOT="$sdkroot_path"
+```
+
+`xcrun` honours an inherited `SDKROOT` and echoes it straight back, so the block
+is self-perpetuating: once Xcode was upgraded to 27.0, which ships
+`MacOSX27.0.sdk`, the shell kept re-exporting the previous `MacOSX26.5.sdk`
+forever. Every `cc` invocation then failed with `SDK "…/MacOSX26.5.sdk" cannot
+be located`, which surfaced as an apparent licence error. The stale value
+survives in every new shell because the very command meant to refresh it is the
+one that cannot see past it.
+
+Fix, in `.zshrc`:
+
+```zsh
+if command -v xcrun >/dev/null 2>&1; then
+    unset SDKROOT                      # let xcrun resolve afresh
+    sdkroot_path="$(xcrun --sdk macosx --show-sdk-path 2>/dev/null)"
+    [[ -n "$sdkroot_path" ]] && export SDKROOT="$sdkroot_path"
+    unset sdkroot_path
+fi
+```
+
+Or simply drop the `SDKROOT` export; cargo and rustc resolve the SDK themselves.
+
+Until then, **`env -u SDKROOT cargo …` works**, and that is how every Rust
+verification in this file was run.
+
+### All 13 handler edits are now type-checked and tested
+
+Previously "syntax-checked only, at risk of not compiling". With `env -u SDKROOT`:
+
+- `cargo check` clean on `abis-api`, `mobile-bff`, `rts-ro-api`,
+  `eel-governance-referendum`.
+- `cargo test` green on all four.
+
+### Four tests were asserting the fabrication, and one was named after it
+
+`abis-api/tests/api_test.rs` had four tests asserting `StatusCode::OK` against
+the four handlers that fabricated. The suite was green because the endpoints
+lied and the tests agreed. They now assert 501 *and* that the body is
+problem+json explaining why, which is the part a caller actually reads.
+
+Worse: `mobile-bff/tests/contract_tests.rs` had
+`test_verify_voter_returns_200_with_verification_result`, documented as
+`FR-M1-006: Voter verification validates DPO attestation`, asserting only a
+status code against a handler that validated nothing. A requirement with a green
+test, a descriptive name, and no implementation. Renamed to
+`test_verify_voter_refuses_while_fr_m1_006_unmet` with the requirement marked
+UNMET, so the gap is visible in the test name rather than hidden inside it.
 
 ### Two defects in the measurement itself, worth recording
 

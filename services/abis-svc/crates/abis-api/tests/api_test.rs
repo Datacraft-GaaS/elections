@@ -174,70 +174,94 @@ async fn test_get_match_result() {
     assert_eq!(resp.status(), StatusCode::OK);
 }
 
-#[tokio::test]
-async fn test_list_adjudication() {
-    let app = test_app();
-    let resp = app
-        .oneshot(
-            Request::builder()
-                .uri("/api/v1/abis/adjudication")
-                .body(Body::empty())
-                .unwrap(),
-        )
+/// Assert an endpoint refuses rather than inventing a success.
+///
+/// These four handlers used to answer 200/202 with a fabricated biometric
+/// verdict, a job id for work never queued, an empty adjudication page and a
+/// zeroed metrics summary. The tests below asserted only `StatusCode::OK`, so
+/// the suite was green while the endpoints lied: a green test here meant the
+/// fabrication was reachable, not that it was correct. They now assert the
+/// refusal *and* that the body says why, which is the part a caller reads.
+async fn assert_refuses_not_invents(app: axum::Router, req: Request<Body>) {
+    let resp = app.oneshot(req).await.unwrap();
+    assert_eq!(
+        resp.status(),
+        StatusCode::NOT_IMPLEMENTED,
+        "expected 501 rather than a fabricated success"
+    );
+    assert_eq!(
+        resp.headers()
+            .get(axum::http::header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok()),
+        Some("application/problem+json"),
+        "a refusal must be problem+json so callers can read it"
+    );
+    let bytes = axum::body::to_bytes(resp.into_body(), 64 * 1024)
         .await
         .unwrap();
-    assert_eq!(resp.status(), StatusCode::OK);
+    let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(body["status"], 501);
+    let detail = body["detail"].as_str().unwrap_or("");
+    assert!(
+        detail.contains("no") || detail.contains("never"),
+        "detail should say the operation is unimplemented, got: {detail}"
+    );
+}
+
+#[tokio::test]
+async fn test_list_adjudication() {
+    assert_refuses_not_invents(
+        test_app(),
+        Request::builder()
+            .uri("/api/v1/abis/adjudication")
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
 }
 
 #[tokio::test]
 async fn test_resolve_adjudication() {
     let app = test_app();
     let body = r#"{"outcome":"no_match","adjudicator_id":"adj-1","resolution_notes":"distinct"}"#;
-    let resp = app
-        .oneshot(
-            Request::builder()
-                .method("PATCH")
-                .uri("/api/v1/abis/adjudication/case-001")
-                .header("content-type", "application/json")
-                .body(json_body(body))
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-    assert_eq!(resp.status(), StatusCode::OK);
+    assert_refuses_not_invents(
+        app,
+        Request::builder()
+            .method("PATCH")
+            .uri("/api/v1/abis/adjudication/case-001")
+            .header("content-type", "application/json")
+            .body(json_body(body))
+            .unwrap(),
+    )
+    .await;
 }
 
 #[tokio::test]
 async fn test_submit_batch_dedup() {
     let app = test_app();
     let body = r#"{"election_id":"e1","mode":"full","requester_id":"r1"}"#;
-    let resp = app
-        .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/api/v1/abis/batch/dedup")
-                .header("content-type", "application/json")
-                .body(json_body(body))
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-    assert_eq!(resp.status(), StatusCode::ACCEPTED);
+    assert_refuses_not_invents(
+        app,
+        Request::builder()
+            .method("POST")
+            .uri("/api/v1/abis/batch/dedup")
+            .header("content-type", "application/json")
+            .body(json_body(body))
+            .unwrap(),
+    )
+    .await;
 }
 
 #[tokio::test]
 async fn test_get_reports() {
-    let app = test_app();
-    let resp = app
-        .oneshot(
-            Request::builder()
-                .uri("/api/v1/abis/reports")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-    assert_eq!(resp.status(), StatusCode::OK);
+    assert_refuses_not_invents(
+        test_app(),
+        Request::builder()
+            .uri("/api/v1/abis/reports")
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
 }
 
 #[tokio::test]
