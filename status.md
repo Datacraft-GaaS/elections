@@ -186,8 +186,8 @@ Measuring the routers directly instead:
 
 ```
 registered handlers judged : 631
-fabricated                 : 170   (27%)
-  of which contract-unbound: 126
+fabricated                 : 161   (26%)
+  of which contract-unbound: 117
   contract-bound           : 45
 ```
 
@@ -450,12 +450,12 @@ into three buckets, because "238 fabricated" is not a task list. Converting all
 238 to 501 would remove capability a refusal cannot replace; leaving them
 fabricated is worse than either. The split is the point.
 
-**153 implementable** (was 221; 110 converted) — local work. Create/read/update
+**144 implementable** (was 221; 120 converted) — local work. Create/read/update
 against `AppState`, or a computation over inputs the request already carries.
 `eel-memstore-rs` is usually the whole requirement. These are worth doing, and are
 how the ten crates already fixed were fixed.
 
-Ten crates are now at zero fabrications: `county-coord`, `recall`, `referendum`,
+Eleven crates are now at zero fabrications, and the one remaining handler here is recorded as blocked: `county-coord`, `recall`, `referendum`,
 `by-election`, `court-interface`, `ecc-api` (21 handlers, whose records took no
 state at all — a complaint filed through the grievance portal could never be
 retrieved, an escalation could never be resolved, and `get_audit_log` returned
@@ -474,6 +474,26 @@ rather than leaving the reader to assume.
 
 `review` also has no endpoint that creates a recommendation, so signing one is a
 404. That is recorded rather than papered over by inventing a creation route.
+
+`portal/gazette` contains **the most serious refusal in this tree**, and it is
+recorded as blocked rather than implemented.
+
+`submit_gazette_notice` fabricated `gov_printer_ref = format!("GPR-{id}")` from
+the notice's own id, emitted a `gazette_submitted_v1` event, and returned 204. A
+gazette notice is a **statutory publication** — that reference is the evidence it
+was published, and it was manufactured with no printer contacted. A caller
+holding `GPR-…` had a receipt for a publication that never happened, and the
+emitted event asserted it did. There is no gazette printer integration in this
+workspace, so it returns `501` naming the missing integration. This is the one
+handler in the crate left in the triage's *blocked* bucket, and it belongs there.
+
+`derive_notices_for_event` carried the comment *"load event from DB, call rules
+engine, persist notices"* and did **none of the three** — it returned an empty
+derived list for every event. For a polling-day event that is indistinguishable
+from "no notice required", which is exactly the answer that lets a statutory
+notice go unpublished. It now calls the crate's own `rules::derive_notices` and
+persists what it derives; `derive_notices_uses_the_rules_engine` asserts a
+`campaign_start` notice appears and is then listed.
 
 `portal/inspection` is the tenth, and it is the first crate fixed using the
 crate's *own* existing logic rather than a memstore alone.
@@ -626,7 +646,7 @@ added for verdicts asserted as a literal `true`.
 | `training-svc/crates/training-api/src/handlers/accreditation.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/lms.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/spec.rs` | 6 | 0 | 0 |
-| **total** | **153** | **8** | **9** |
+| **total** | **144** | **8** | **9** |
 Run `python3 tools/fabrication_triage.py --list` for every handler, or
 `--crate <fragment>` for one file.
 
