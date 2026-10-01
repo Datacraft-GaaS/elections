@@ -406,10 +406,14 @@ def report_unbound(ops: list[dict], bodies: dict[str, dict]) -> int:
 
 
 # Hand-checked against the source, one verdict each. The classifier has been
-# wrong twice in ways that looked confident -- it called `acknowledge_alert`
+# wrong in ways that looked confident -- it called `acknowledge_alert`
 # fabricated because the body was short, and resolved contract bindings by bare
 # function name so it answered one service with another's handler. A heuristic
 # with no test is just a guess that prints a number.
+#
+# This has already earned its keep: converting certify_county_result and
+# amend_form34a to 501s dropped this from 7/7 to 5/7, because the expectations
+# recorded the old behaviour. A test that cannot fail is worse than no test.
 SELF_TEST = [
     # (handler, file, expected) -- verified by reading the handler.
     ("acknowledge_alert", "services/support-admin-svc/crates/intent/src/http.rs",
@@ -420,10 +424,17 @@ SELF_TEST = [
      "DECLARES_UNIMPLEMENTED"),
     ("get_reports", "services/abis-svc/crates/abis-api/src/routes/reports.rs",
      "DECLARES_UNIMPLEMENTED"),
+    # Converted to honest 501s; previously logged and returned 204 while
+    # certifying nothing, and logged then returned 202 with a minted
+    # amendment_id while discarding the amendment.
     ("certify_county_result", "services/governance-svc/crates/referendum/src/handlers.rs",
-     "FABRICATED"),  # logs and returns 204; certifies nothing
+     "DECLARES_UNIMPLEMENTED"),
     ("amend_form34a", "services/rts-svc/crates/rts-ro-api/src/handlers.rs",
-     "FABRICATED"),  # logs and returns 202; discards the amendment
+     "DECLARES_UNIMPLEMENTED"),
+    ("declare_referendum", "services/governance-svc/crates/referendum/src/handlers.rs",
+     "DECLARES_UNIMPLEMENTED"),
+    ("get_national_result", "services/governance-svc/crates/referendum/src/handlers.rs",
+     "DECLARES_UNIMPLEMENTED"),
     ("assign_adjudication", "services/abis-svc/crates/abis-api/src/routes/adjudication.rs",
      "IGNORES_INPUT"),  # State(_state) unused, echoes req as "in_review"
 ]

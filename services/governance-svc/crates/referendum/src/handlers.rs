@@ -8,7 +8,28 @@ use tracing::info;
 
 use crate::models::*;
 use crate::state::SharedState;
-use crate::threshold::{can_declare, county_has_yes_majority, meets_county_threshold, meets_national_majority};
+use crate::threshold::{can_declare, county_has_yes_majority, meets_county_threshold};
+
+/// A declared operation with no implementation behind it.
+///
+/// Returned instead of a fabricated success. Certification and declaration are
+/// the two operations in this file that a caller cannot undo, so an endpoint
+/// that answers 204 for work it never did is the most dangerous shape available
+/// here: it is indistinguishable from a real certification.
+fn not_implemented(operation: &str, detail: &str) -> impl IntoResponse {
+    (
+        StatusCode::NOT_IMPLEMENTED,
+        Json(serde_json::json!({
+            "type": "about:blank",
+            "title": "Not Implemented",
+            "status": 501,
+            "detail": format!(
+                "{operation} is declared by the contract but has no \
+                 implementation behind it: {detail}"
+            ),
+        })),
+    )
+}
 
 pub async fn health() -> impl IntoResponse {
     StatusCode::OK
@@ -84,32 +105,46 @@ pub async fn certify_county_result(
     Path((id, county)): Path<(String, String)>,
 ) -> impl IntoResponse {
     info!(id, county, "certify_county_result");
-    StatusCode::NO_CONTENT
+    // Previously logged and returned 204, which is a successful
+    // certification: a county result was declared certified and recorded
+    // nowhere. There is no store here, so the honest answer is that the
+    // certification does not exist.
+    not_implemented(
+        "county result certification",
+        "no results store is wired; it previously returned 204 for a \
+         certification it never recorded",
+    )
 }
 
 pub async fn get_national_result(Path(id): Path<String>) -> impl IntoResponse {
     info!(id, "get_national_result");
-    // Stub: returns empty aggregate; real impl aggregates all 47 county results
-    let result = ReferendumNationalResult {
-        id: uuid::Uuid::now_v7().to_string(),
-        referendum_id: id,
-        counties_reported: 0,
-        counties_yes_majority: 0,
-        meets_county_threshold: meets_county_threshold(0),
-        meets_national_majority: meets_national_majority(0, 0),
-        computed_at: chrono::Utc::now().to_rfc3339(),
-        ..Default::default()
-    };
-    Json(result)
+    // Previously synthesised an aggregate from constants: counties_reported 0,
+    // counties_yes_majority 0, both thresholds evaluated at zero, and a
+    // freshly minted id. A national tally computed from no county results is
+    // not a tally of zero, it is a tally that was never taken, and the two
+    // thresholds made the fabricated figures look authoritative.
+    let _ = id;
+    not_implemented(
+        "national result aggregate",
+        "no county results are stored; it previously reported zero counties \
+         and evaluated the county and national thresholds at zero",
+    )
 }
 
 pub async fn declare_referendum(Path(id): Path<String>) -> impl IntoResponse {
     info!(id, "declare_referendum");
-    // Hard dependency on M51 result-declaration-certification
-    // Invariant enforced: NoDeclarationWithoutBothThresholds
-    // Stub: real impl fetches county results and checks can_declare()
+    // Hard dependency on M51 result-declaration-certification.
+    // Invariant NoDeclarationWithoutBothThresholds is *named* here and not
+    // enforced: the handler returned 204 without ever calling can_declare(),
+    // so the invariant the comment claims to hold was only ever a comment.
     let _ = can_declare; // referenced to confirm import
-    StatusCode::NO_CONTENT
+    let _ = id;
+    not_implemented(
+        "referendum declaration",
+        "the NoDeclarationWithoutBothThresholds invariant was named in a \
+         comment but never checked; this previously returned 204 for a \
+         declaration that was never made",
+    )
 }
 
 // ---------------------------------------------------------------------------

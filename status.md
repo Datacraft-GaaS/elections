@@ -186,8 +186,8 @@ Measuring the routers directly instead:
 
 ```
 registered handlers judged : 631
-fabricated                 : 275   (44%)
-  of which contract-unbound: 230
+fabricated                 : 271   (43%)
+  of which contract-unbound: 226
   contract-bound           : 45
 ```
 
@@ -196,14 +196,25 @@ suggested, and 230 of the 275 were invisible to it. Worst by service:
 governance 73, abis 32, portal 24, ecc 22, field-mobile 21, bvr 16,
 ai-platform 13.
 
-Election-critical examples, none of which any contract binds:
+Election-critical examples, none of which any contract binds. All four below are
+now 501:
 
-- `governance-svc/referendum::certify_county_result` — logs and returns
-  `204 No Content`. A county result is **certified** and recorded nowhere.
-- `rts-svc/rts-ro-api::amend_form34a` — logs the amendment and returns
-  `202 Accepted`, having discarded the Form 34A amendment it was handed.
-- `abis-api::assign_adjudication` — echoes the request back as
-  `status: "in_review"` without storing the assignment.
+- ~~`governance-svc/referendum::certify_county_result`~~ — logged and returned
+  `204 No Content`. A county result was **certified** and recorded nowhere.
+- ~~`rts-svc/rts-ro-api::amend_form34a`~~ — logged the RO id, reason and
+  idempotency key, then returned `202` with a minted `amendment_id` and
+  `status: "amended"`, discarding all of it. The caller held a receipt for an
+  amendment that does not exist.
+- ~~`governance-svc/referendum::declare_referendum`~~ — returned `204` and named
+  the invariant `NoDeclarationWithoutBothThresholds` in a comment without ever
+  calling `can_declare()`. The invariant was a comment.
+- ~~`governance-svc/referendum::get_national_result`~~ — synthesised a national
+  aggregate from constants and evaluated both thresholds at zero, so a tally
+  never taken looked authoritative.
+
+Still open, and the clearest of the remainder:
+`abis-api::assign_adjudication` echoes the request back as
+`status: "in_review"` without storing the assignment.
 
 Run `python3 tools/rust_handler_fidelity.py --all-routes` for the list.
 

@@ -43,23 +43,27 @@ pub async fn verify_form34a(
 // POST /api/v1/rts/ro/form34a/{id}/amend
 // Edit-with-reason; emits form34a_amended.v1 with amendment lineage.
 pub async fn amend_form34a(
-    Path(id): Path<Uuid>,
-    Json(req): Json<AmendForm34ARequest>,
+    Path(_id): Path<Uuid>,
+    Json(_req): Json<AmendForm34ARequest>,
 ) -> impl IntoResponse {
-    info!(
-        form_id = %id,
-        ro_id = %req.ro_id,
-        reason = %req.reason,
-        idempotency_key = %req.idempotency_key,
-        "amend_form34a"
-    );
+    // This logged the amendment, including the RO id, the reason and the
+    // idempotency key, then answered 202 with a freshly minted amendment_id and
+    // status "amended" -- and discarded all of it. Nothing was persisted, no
+    // form34a_amended.v1 event was emitted, and the idempotency key the caller
+    // supplied was only ever written to a log. A caller holding that
+    // amendment_id had a receipt for an amendment that does not exist.
     (
-        StatusCode::ACCEPTED,
-        Json(AmendAccepted {
-            form_id: id,
-            amendment_id: Uuid::new_v4(),
-            status: "amended".into(),
-        }),
+        StatusCode::NOT_IMPLEMENTED,
+        Json(serde_json::json!({
+            "type": "about:blank",
+            "title": "Not Implemented",
+            "status": 501,
+            "detail": format!(
+                "form34a amendment is declared by the contract but has no \
+                 implementation behind it: it previously returned 202 with a \
+                 minted amendment_id and discarded the amendment"
+            ),
+        })),
     )
 }
 
