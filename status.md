@@ -450,7 +450,7 @@ into three buckets, because "238 fabricated" is not a task list. Converting all
 238 to 501 would remove capability a refusal cannot replace; leaving them
 fabricated is worse than either. The split is the point.
 
-**60 implementable** (was 221; 198 converted) — local work. Create/read/update
+**54 implementable** (was 221; 203 converted) — local work. Create/read/update
 against `AppState`, or a computation over inputs the request already carries.
 `eel-memstore-rs` is usually the whole requirement. These are worth doing, and are
 how the ten crates already fixed were fixed.
@@ -983,6 +983,64 @@ rather than how it judged it.
 proven able to fail: passing every submission drops 4 of them, and validating every
 badge drops the badge tests.
 
+`field-mobile-svc/mobile-bff`'s public verify surface had **two unconditional
+attestations**, and both were answered "yes" to everything.
+
+`POST /verify/v1/token` returned `included: true` for **any** token, with a proof
+reference of `proof-<query_id>` — a string containing the query id and nothing
+else. This is the endpoint a member of the public uses to check whether their
+token is in the published results.
+
+`POST /verify/v1/binary-integrity` returned `passed: true` for every app with
+`failure_reason: None`. That is a statement that a build is legitimate, made
+without checking anything.
+
+The honest resolution differs between the two, and the difference matters.
+
+**The token check can be made real.** Nothing in this workspace publishes results,
+so a token cannot honestly be *included in the results*. What can be answered is
+whether the token was **recorded here** — a different, narrower question, and the
+response now says which one it is answering (`scope: "tokens recorded through this
+BFF"`, `included_in_this_set` rather than a bare `included`). `verify_store.rs`
+holds the recorded tokens, builds a real `MerkleTree` over their leaf hashes with
+`eel_crypto_rs`, and **verifies the inclusion proof before serving it** — a proof
+that would not verify is never returned. The zero root problem does not recur
+because an empty set reports `merkle_root: null` rather than a root over nothing.
+
+**The attestation check cannot.** Verifying a build needs the platform key
+attestation service, which is not in this workspace. So `passed` is `false`, and
+`failure_reason` names either the missing material (`build_fingerprint`,
+`attestation_token`) or the missing service. The attestation token is kept on the
+event as evidence of what was presented, and the event does not claim it was
+verified.
+
+Also in this surface:
+
+- `get_queue_snapshot` returned `queue_length: 0` for **any** station, which reads
+  as "no one is waiting" for every station in the country. Stations now have queues
+  that agents check in and out of, and a station with no queue is a 404.
+- Anomaly flags are now **derived** from the queue history rather than returned as
+  `[]` for every query: a repeat check-in is the duplicated-device signal, and its
+  flag id is derived from station and agent so re-reading the list does not invent
+  new flags.
+- `get_results` / `get_results_by_scope` were described as a "relay from M11" — a
+  service not in this workspace — and returned `data: []` or `data: null`. They now
+  report the set this process holds, and an empty set says `status: "empty"`.
+- `report_clone` minted a report id, returned it, and stored nothing. Reports are
+  stored with a digest over their content, and carry `determination: "reported, not
+  determined"` — an independent clone determination needs the published package set
+  and the platform signing key, neither of which is here.
+
+**One more test expectation of mine was wrong, and it is a nice one.** I asserted a
+non-empty inclusion proof for a single recorded token. A one-leaf Merkle tree has
+no sibling to prove against — the root *is* the leaf — so the proof is legitimately
+empty. `a_single_leaf_tree_needs_no_sibling` now pins that property, and
+`a_recorded_token_has_a_proof` registers a second token so the proof is a real one.
+
+`tests/verify_surface.rs` is 28 tests, all failing against the previous code, and
+proven able to fail twice: asserting every token included drops 2, and asserting
+every build attested drops 1.
+
 `portal/gazette` contains **the most serious refusal in this tree**, and it is
 recorded as blocked rather than implemented.
 
@@ -1154,7 +1212,7 @@ added for verdicts asserted as a literal `true`.
 | `training-svc/crates/training-api/src/handlers/accreditation.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/lms.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/spec.rs` | 6 | 0 | 0 |
-| **total** | **60** | **4** | **8** |
+| **total** | **54** | **3** | **8** |
 Run `python3 tools/fabrication_triage.py --list` for every handler, or
 `--crate <fragment>` for one file.
 

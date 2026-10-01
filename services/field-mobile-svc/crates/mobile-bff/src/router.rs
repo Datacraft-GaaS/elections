@@ -7,10 +7,12 @@ use axum::{
 
 use crate::handlers::{
     binary_integrity_check, file_grievance, get_anomalies, get_queue_snapshot, get_results,
-    get_results_by_scope, get_token_proof, health, report_clone, sse_events, verify_token,
+    get_results_by_scope, get_token_proof, health, queue_check_in, queue_check_out, record_token,
+    report_clone, sse_events, verify_token,
 };
 use crate::spec::{BffState};
 use crate::sse::ShardedBroadcast;
+use crate::verify_store::SharedVerifyStore;
 use axum::extract::FromRef;
 
 /// Combined router state: spec handlers extract `Arc<BffState>`, verify
@@ -22,6 +24,13 @@ pub struct AppState {
     pub bff: Arc<BffState>,
     /// SSE broadcast for verify/dashboard streams.
     pub broadcast: Arc<ShardedBroadcast>,
+    /// The recorded token set, per-station queues, and clone reports behind the
+    /// public `/verify/v1/*` surface.
+    ///
+    /// This was added because every one of those handlers answered from a
+    /// constant: `verify_token` reported `included: true` for any token, and
+    /// `get_queue_snapshot` reported `queue_length: 0` for any station.
+    pub verify: SharedVerifyStore,
 }
 
 impl FromRef<AppState> for Arc<BffState> {
@@ -36,6 +45,12 @@ impl FromRef<AppState> for Arc<ShardedBroadcast> {
     }
 }
 
+impl FromRef<AppState> for SharedVerifyStore {
+    fn from_ref(state: &AppState) -> Self {
+        state.verify.clone()
+    }
+}
+
 pub fn build_router() -> Router {
     let broadcast = ShardedBroadcast::new();
     build_router_with_state(broadcast)
@@ -45,7 +60,11 @@ pub fn build_router_with_test_state(
     state: Arc<BffState>, 
     broadcast: Arc<ShardedBroadcast>
 ) -> Router {
-    let app_state = AppState { bff: state, broadcast };
+    let app_state = AppState {
+        bff: state,
+        broadcast,
+        verify: crate::verify_store::VerifyStore::new(),
+    };
     // Delegate to spec::router which has all the BFF routes.
     // The legacy /verify/v1/* and /health routes are also merged.
     Router::new()
@@ -56,10 +75,13 @@ pub fn build_router_with_test_state(
             get(get_results_by_scope),
         )
         .route("/verify/v1/token", post(verify_token))
+        .route("/verify/v1/token/record", post(record_token))
         .route("/verify/v1/token/{sha}/proof", get(get_token_proof))
         .route("/verify/v1/grievances", post(file_grievance))
         .route("/verify/v1/events", get(sse_events))
         .route("/verify/v1/queue/{station}", get(get_queue_snapshot))
+        .route("/verify/v1/queue/{station}/check-in", post(queue_check_in))
+        .route("/verify/v1/queue/{station}/check-out", post(queue_check_out))
         .route("/verify/v1/anomalies", get(get_anomalies))
         .route("/verify/v1/clone-report", post(report_clone))
         .route("/verify/v1/binary-integrity", post(binary_integrity_check))
@@ -71,6 +93,7 @@ pub fn build_router_with_state(broadcast: Arc<ShardedBroadcast>) -> Router {
     let app_state = AppState {
         bff: Arc::new(crate::spec::BffState::new(None).expect("in-memory BffState")),
         broadcast,
+        verify: crate::verify_store::VerifyStore::new(),
     };
     Router::new()
         .route("/health", get(health))
@@ -80,10 +103,13 @@ pub fn build_router_with_state(broadcast: Arc<ShardedBroadcast>) -> Router {
             get(get_results_by_scope),
         )
         .route("/verify/v1/token", post(verify_token))
+        .route("/verify/v1/token/record", post(record_token))
         .route("/verify/v1/token/{sha}/proof", get(get_token_proof))
         .route("/verify/v1/grievances", post(file_grievance))
         .route("/verify/v1/events", get(sse_events))
         .route("/verify/v1/queue/{station}", get(get_queue_snapshot))
+        .route("/verify/v1/queue/{station}/check-in", post(queue_check_in))
+        .route("/verify/v1/queue/{station}/check-out", post(queue_check_out))
         .route("/verify/v1/anomalies", get(get_anomalies))
         .route("/verify/v1/clone-report", post(report_clone))
         .route("/verify/v1/binary-integrity", post(binary_integrity_check))

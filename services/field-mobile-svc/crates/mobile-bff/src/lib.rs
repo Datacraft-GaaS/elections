@@ -5,3 +5,4 @@ pub mod models;
 pub mod router;
 pub mod spec;
 pub mod sse;
+pub mod verify_store;
