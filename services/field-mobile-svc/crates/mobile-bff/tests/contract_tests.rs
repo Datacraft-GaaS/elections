@@ -316,9 +316,9 @@ async fn test_report_tamper_event_returns_201() {
     
     let body = json!({
         "event_type": "SCREEN_CAPTURE_ATTEMPTED",
-        "device_id": "device-001",
-        "timestamp": "2026-09-04T10:00:00Z",
-        "details": {}
+        "station_code": "KE-NBI-001",
+        "description": "a screenshot was attempted during the count",
+        "severity": "medium"
     });
     
     let req = Request::builder()
@@ -357,18 +357,16 @@ async fn test_register_push_token_returns_201() {
 }
 
 #[tokio::test]
-/// FR-M1-015: Party agent check-in with GPS verification
-async fn test_agent_check_in_returns_201() {
+/// FR-M1-015: A party agent check-in names the agent and station it is for.
+///
+/// **This previously minted a `check_in_id` and stored nothing.** Both are
+/// required, because a check-in with neither is a record of nobody having arrived.
+async fn test_agent_check_in_requires_an_agent_and_station() {
     let app = make_test_router();
-    
+
     let body = json!({
-        "station_code": "KE-NBI-001",
-        "agent_id": "agent-001",
-        "party_code": "PARTY-A",
-        "gps": {
-            "lat": -1.286389,
-            "lon": 36.817223
-        }
+        "station_code": "",
+        "agent_id_hash": "agent-001"
     });
     
     let req = Request::builder()
@@ -379,12 +377,19 @@ async fn test_agent_check_in_returns_201() {
         .unwrap();
     
     let resp = app.oneshot(req).await.unwrap();
-    assert_eq!(resp.status(), StatusCode::CREATED, "Agent check-in should return 201");
+    assert_eq!(
+        resp.status(),
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "a check-in with no station is a record of nobody having arrived"
+    );
 }
 
 #[tokio::test]
-/// FR-M1-016: Agent station dashboard (no PII)
-async fn test_get_station_dashboard_returns_200() {
+/// FR-M1-016: A station dashboard exists only once the station has checked in.
+///
+/// **This previously returned an empty dashboard object for any station**, which
+/// reads as "there is nothing to show" for every station.
+async fn test_get_station_dashboard_requires_a_checked_in_station() {
     let app = make_test_router();
     
     let req = Request::builder()
@@ -394,7 +399,11 @@ async fn test_get_station_dashboard_returns_200() {
         .unwrap();
     
     let resp = app.oneshot(req).await.unwrap();
-    assert_eq!(resp.status(), StatusCode::OK, "Dashboard should return 200");
+    assert_eq!(
+        resp.status(),
+        StatusCode::NOT_FOUND,
+        "a station that has never checked in has no dashboard"
+    );
 }
 
 #[tokio::test]

@@ -577,27 +577,69 @@ async fn get_station_status(
 struct FormsSyncRequest {
     station_code: String,
     election_scope: String,
+    /// The Form 34A returns being synced. Previously absent, and the response
+    /// reported a hardcoded 150 forms synced.
+    #[serde(default)]
+    forms: Vec<serde_json::Value>,
 }
 
 #[derive(Serialize, Deserialize)]
 struct FormsSyncResponse {
     forms_synced: u64,
+    /// A real Merkle root over the content hashes, or empty when nothing was
+    /// received. Never a string shaped to look like a root.
     merkle_root: String,
     last_sync_at: String,
+    /// Why the synced forms are recorded but not attested.
+    blocking_reason: Option<String>,
 }
 
 async fn sync_forms(
-    State(_state): State<Arc<BffState>>,
-    Json(_req): Json<FormsSyncRequest>,
-) -> impl IntoResponse {
-    let forms_synced = 150;
-    let merkle_root = format!("{}-{}", Uuid::now_v7().to_string(), chrono::Utc::now().format("%Y%m%d%H%M%S"));
-
-    (StatusCode::OK, Json(FormsSyncResponse {
-        forms_synced,
-        merkle_root: merkle_root.clone(),
-        last_sync_at: chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
-    }))
+    State(mobile): State<crate::mobile_store::SharedMobileStore>,
+    Json(req): Json<FormsSyncRequest>,
+) -> axum::response::Response {
+    // The previous handler returned `forms_synced: 150` and a "merkle root" of
+    // `<uuid>-<date>` for any request. 150 forms synced is a claim about a
+    // station's return having been received, and a uuid-and-date string is not a
+    // Merkle root.
+    for form in &req.forms {
+        let form_id = form
+            .get("form_id")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .unwrap_or_default();
+        if form_id.is_empty() {
+            continue;
+        }
+        mobile.record_form(
+            form_id,
+            form.get("station_code")
+                .and_then(|v| v.as_str())
+                .unwrap_or(&req.station_code),
+            form.clone(),
+        );
+    }
+    let synced = mobile.forms_sorted().len();
+    let tree = mobile.form_tree();
+    (
+        StatusCode::OK,
+        Json(FormsSyncResponse {
+            forms_synced: synced as u64,
+            // A real root over the content hashes, or null when nothing was
+            // received -- never a string shaped to look like a root.
+            merkle_root: tree
+                .as_ref()
+                .map(|t| hex::encode(t.root()))
+                .unwrap_or_default(),
+            last_sync_at: chrono::Utc::now().to_rfc3339(),
+            blocking_reason: Some(
+                "a signed Form 34A is attested by the HSM ceremony; the HSM is not \
+                 reachable from this process, so the forms are recorded but not attested"
+                    .to_string(),
+            ),
+        }),
+    )
+        .into_response()
 }
 
 // =============================================================================
@@ -834,23 +876,54 @@ async fn issue_pass(
 struct ObservationRequest {
     station_code: String,
     observation_type: String,
-    data: serde_json::Value,
+    /// The observation body.
+    #[serde(alias = "data", default)]
+    detail: serde_json::Value,
 }
 
 async fn submit_observation(
-    State(state): State<Arc<BffState>>,
+    State(mobile): State<crate::mobile_store::SharedMobileStore>,
+    headers: axum::http::HeaderMap,
     Json(req): Json<ObservationRequest>,
-) -> impl IntoResponse {
-    let idempotency_key = format!("obs-{}-{}", req.station_code, Uuid::now_v7());
-
-    match state.idempotency_store.get(&idempotency_key).await {
-        Some(resp) => return (StatusCode::OK, resp),
-        None => {
-            let _ = state.idempotency_store.store(&idempotency_key, &serde_json::json!({})).await;
-        }
+) -> axum::response::Response {
+    // The previous handler minted an observation id, cached `{}` under a key built
+    // from a fresh UUID, and stored nothing.
+    let idempotency_key = headers
+        .get("idempotency-key")
+        .and_then(|v| v.to_str().ok())
+        .map(str::trim)
+        .filter(|k| !k.is_empty())
+        .map(str::to_string)
+        .unwrap_or_else(|| Uuid::now_v7().to_string());
+    if let Some(existing) = mobile.observation_by_idempotency(&idempotency_key) {
+        return (
+            StatusCode::OK,
+            Json(serde_json::json!({
+                "observation_id": existing.observation_id,
+                "duplicate_of": existing.observation_id,
+            })),
+        )
+            .into_response();
     }
-
-    (StatusCode::CREATED, Json(serde_json::json!({ "observation_id": Uuid::now_v7().to_string() })))
+    if req.station_code.trim().is_empty() {
+        return spec_problem(StatusCode::UNPROCESSABLE_ENTITY, "station_code is required");
+    }
+    let observation = mobile.submit_observation(
+        req.station_code.trim(),
+        req.observation_type.trim(),
+        "",
+        serde_json::json!({ "detail": req.detail }),
+        &idempotency_key,
+    );
+    (
+        StatusCode::CREATED,
+        Json(serde_json::json!({
+            "observation_id": observation.observation_id,
+            "station_code": observation.station_code,
+            "submitted_at": observation.submitted_at,
+        })),
+    )
+        .into_response()
 }
 
 // =============================================================================
@@ -860,17 +933,65 @@ async fn submit_observation(
 #[derive(Deserialize)]
 struct TamperEventRequest {
     event_type: String,
-    device_id: String,
-    details: serde_json::Value,
+    #[serde(alias = "device_id", default)]
+    station_code: String,
+    #[serde(alias = "details", default)]
+    description: String,
+    #[serde(default)]
+    severity: String,
 }
 
 async fn report_tamper_event(
-    State(_state): State<Arc<BffState>>,
-    Json(_req): Json<TamperEventRequest>,
-) -> impl IntoResponse {
-    let event_id = Uuid::now_v7().to_string();
-
-    (StatusCode::CREATED, Json(serde_json::json!({ "tamper_event_id": event_id })))
+    State(mobile): State<crate::mobile_store::SharedMobileStore>,
+    headers: axum::http::HeaderMap,
+    Json(req): Json<TamperEventRequest>,
+) -> axum::response::Response {
+    // The previous handler minted a tamper event id and stored nothing.
+    let idempotency_key = headers
+        .get("idempotency-key")
+        .and_then(|v| v.to_str().ok())
+        .map(str::trim)
+        .filter(|k| !k.is_empty())
+        .map(str::to_string)
+        .unwrap_or_else(|| Uuid::now_v7().to_string());
+    if let Some(existing) = mobile.tamper_by_idempotency(&idempotency_key) {
+        return (
+            StatusCode::OK,
+            Json(serde_json::json!({
+                "tamper_event_id": existing.tamper_event_id,
+                "duplicate_of": existing.tamper_event_id,
+            })),
+        )
+            .into_response();
+    }
+    if req.event_type.trim().is_empty() {
+        return spec_problem(StatusCode::UNPROCESSABLE_ENTITY, "event_type is required");
+    }
+    const SEVERITIES: [&str; 3] = ["low", "medium", "high"];
+    let severity = req.severity.trim().to_ascii_lowercase();
+    if !SEVERITIES.contains(&severity.as_str()) {
+        return spec_problem(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            format!("severity must be one of {}", SEVERITIES.join(", ")),
+        );
+    }
+    let event = mobile.record_tamper(
+        req.event_type.trim(),
+        (!req.station_code.trim().is_empty()).then(|| req.station_code.trim().to_string()),
+        &severity,
+        serde_json::json!({ "description": req.description }),
+        &idempotency_key,
+    );
+    (
+        StatusCode::CREATED,
+        Json(serde_json::json!({
+            "tamper_event_id": event.tamper_event_id,
+            "event_type": event.event_type,
+            "severity": event.severity,
+            "reported_at": event.reported_at,
+        })),
+    )
+        .into_response()
 }
 
 // =============================================================================
@@ -918,35 +1039,119 @@ async fn register_push_token(
 // =============================================================================
 
 async fn agent_check_in(
-    State(state): State<Arc<BffState>>,
-    Json(_req): Json<serde_json::Value>,
-) -> impl IntoResponse {
-    let idempotency_key = Uuid::now_v7().to_string();
-
-    match state.idempotency_store.get(&idempotency_key).await {
-        Some(resp) => return (StatusCode::OK, resp),
-        None => {
-            let _ = state.idempotency_store.store(&idempotency_key, &serde_json::json!({})).await;
-        }
+    State(mobile): State<crate::mobile_store::SharedMobileStore>,
+    Json(req): Json<serde_json::Value>,
+) -> axum::response::Response {
+    // The previous handler minted a check_in_id, cached `{}` under a fresh
+    // idempotency key, and stored nothing.
+    let agent_id_hash = req
+        .get("agent_id_hash")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .unwrap_or_default();
+    let station_code = req
+        .get("station_code")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .unwrap_or_default();
+    if agent_id_hash.is_empty() || station_code.is_empty() {
+        return spec_problem(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "agent_id_hash and station_code are required",
+        );
     }
-
-    (StatusCode::CREATED, Json(serde_json::json!({ "check_in_id": Uuid::now_v7().to_string() })))
+    let role = req.get("role").and_then(|v| v.as_str()).unwrap_or("clerk");
+    let battery = req.get("battery_level").and_then(|v| v.as_f64());
+    // A kit that checks in is a kit that is online, with a battery reading.
+    mobile.station_check_in(station_code, battery);
+    let check_in = mobile.check_in_agent(agent_id_hash, station_code, role);
+    (
+        StatusCode::CREATED,
+        Json(serde_json::json!({
+            "check_in_id": check_in.check_in_id,
+            "agent_id_hash": check_in.agent_id_hash,
+            "station_code": check_in.station_code,
+            "role": check_in.role,
+            "checked_in_at": check_in.checked_in_at,
+        })),
+    )
+        .into_response()
 }
 
 // =============================================================================
 // 13. Station dashboard endpoint
 // =============================================================================
 
-async fn get_station_dashboard(Path(code): Path<String>) -> impl IntoResponse {
-    (StatusCode::OK, Json(serde_json::json!({ "station_code": code, "dashboard": {} })))
+async fn get_station_dashboard(
+    State(mobile): State<crate::mobile_store::SharedMobileStore>,
+    Path(code): Path<String>,
+) -> axum::response::Response {
+    // The previous handler returned an empty dashboard object for any station,
+    // which reads as "there is nothing to show" for every station.
+    let Some(station) = mobile.station(&code) else {
+        return spec_problem(
+            StatusCode::NOT_FOUND,
+            format!("station {code} has never checked in; there is no dashboard to build"),
+        );
+    };
+    let forms: Vec<serde_json::Value> = mobile
+        .forms_sorted()
+        .iter()
+        .filter(|f| f.station_code == code)
+        .map(|f| {
+            serde_json::json!({
+                "form_id": f.form_id,
+                "content_hash": f.content_hash,
+                "received_at": f.received_at,
+                "countersigned": !f.countersignatures.is_empty(),
+            })
+        })
+        .collect();
+    let tree = mobile.form_tree();
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "station_code": code,
+            "online": station.online,
+            "battery_level": station.battery_level,
+            "last_seen_at": station.last_seen_at,
+            "queue_depth": station.queue_depth,
+            "forms_received": forms.len(),
+            "forms": forms,
+            "forms_merkle_root": tree.as_ref().map(|t| hex::encode(t.root())),
+            "tlog_inclusion_proven": false,
+        })),
+    )
+        .into_response()
 }
 
 // =============================================================================
 // 14. Form 34A endpoint
 // =============================================================================
 
-async fn get_form_34a(Path(id): Path<String>) -> impl IntoResponse {
-    (StatusCode::OK, Json(serde_json::json!({ "form_id": id, "signed": true })))
+async fn get_form_34a(
+    State(mobile): State<crate::mobile_store::SharedMobileStore>,
+    Path(id): Path<String>,
+) -> axum::response::Response {
+    // The previous handler returned `{ "form_id": id, "signed": true }` for any
+    // id. A Form 34A that reports itself signed, for a form that may not exist,
+    // is a statement about an election result.
+    match mobile.form(&id) {
+        Some(form) => (
+            StatusCode::OK,
+            Json(serde_json::json!({
+                "form_id": form.form_id,
+                "station_code": form.station_code,
+                "content_hash": form.content_hash,
+                "leaf_index": form.leaf_index,
+                "received_at": form.received_at,
+                "countersignatures": form.countersignatures,
+                "countersigned": !form.countersignatures.is_empty(),
+            })),
+        )
+            .into_response(),
+        None => spec_problem(StatusCode::NOT_FOUND, format!("no Form 34A with id {id}")),
+    }
 }
 
 // =============================================================================
@@ -954,20 +1159,43 @@ async fn get_form_34a(Path(id): Path<String>) -> impl IntoResponse {
 // =============================================================================
 
 async fn countersign_form_34a(
-    State(state): State<Arc<BffState>>,
+    State(mobile): State<crate::mobile_store::SharedMobileStore>,
     Path(id): Path<String>,
-    Json(_req): Json<serde_json::Value>,
-) -> impl IntoResponse {
-    let idempotency_key = format!("countersign-{}-{}", id, Uuid::now_v7());
-
-    match state.idempotency_store.get(&idempotency_key).await {
-        Some(resp) => return (StatusCode::OK, resp),
-        None => {
-            let _ = state.idempotency_store.store(&idempotency_key, &serde_json::json!({})).await;
+    Json(req): Json<serde_json::Value>,
+) -> axum::response::Response {
+    // The previous handler returned `{ "countersigned": true }` for any form id,
+    // and keyed its idempotency store on a fresh UUID so the store never hit.
+    // A countersignature is a signature: an officer attesting to figures they have
+    // not seen is worse than no countersignature at all.
+    let Some(countersigner) = req
+        .get("countersigner_hash")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    else {
+        return spec_problem(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "countersigner_hash is required: a countersignature is an officer's attestation",
+        );
+    };
+    match mobile.countersign_form(&id, countersigner) {
+        Ok(sig) => (
+            StatusCode::CREATED,
+            Json(serde_json::json!({
+                "form_id": id,
+                "countersigned": true,
+                "countersignature": sig,
+                "blocking_reason": "this is a digest bound to the form content, not a \
+                                     cryptographic signature; attestation needs the HSM \
+                                     signing key, which is not reachable from this process",
+            })),
+        )
+            .into_response(),
+        Err(detail) if detail.starts_with("no Form 34A") => {
+            spec_problem(StatusCode::NOT_FOUND, detail)
         }
+        Err(detail) => spec_problem(StatusCode::CONFLICT, detail),
     }
-
-    (StatusCode::OK, Json(serde_json::json!({ "form_id": id, "countersigned": true })))
 }
 
 // =============================================================================
@@ -1271,15 +1499,80 @@ pub fn router(state: crate::router::AppState) -> Router<crate::router::AppState>
         .route("/v1/agent/forms/34a/{id}", get(get_form_34a))
         .route("/v1/agent/forms/34a/{id}/countersign", post(countersign_form_34a))
         .route("/v1/agent/incidents", post(create_incident))
-        .route("/v1/verify/registration", get(verify_registration))
+        .route("/v1/verify/registration", post(verify_registration))
+        .route("/v1/verify/registration/record", post(record_registration))
 
         // Add other app routes here as needed
         .with_state(state)
 }
 
 /// Voter registration lookup (used by citizen-verify M29).
-async fn verify_registration() -> impl IntoResponse {
-    (StatusCode::OK, Json(serde_json::json!({ "registered": true })))
+/// Record a registration hash this service has seen.
+///
+/// The register is held by the registration service; this is what has passed
+/// through the BFF, which is a narrower record than the register itself.
+async fn record_registration(
+    State(mobile): State<crate::mobile_store::SharedMobileStore>,
+    Json(req): Json<serde_json::Value>,
+) -> axum::response::Response {
+    let Some(hash) = req
+        .get("registration_hash")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    else {
+        return spec_problem(StatusCode::UNPROCESSABLE_ENTITY, "registration_hash is required");
+    };
+    mobile.record_registration(hash);
+    (StatusCode::CREATED, Json(serde_json::json!({
+        "registration_hash": hash,
+        "seen_by_this_service": true,
+    })))
+        .into_response()
+}
+
+async fn verify_registration(
+    State(mobile): State<crate::mobile_store::SharedMobileStore>,
+    Json(req): Json<serde_json::Value>,
+) -> axum::response::Response {
+    // The previous handler took **no input at all** and answered
+    // `{ "registered": true }`. It is the most unconditional confirmation in this
+    // tree: there was nothing to check and it confirmed anyway.
+    let Some(reg_hash) = req
+        .get("registration_hash")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    else {
+        return spec_problem(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "registration_hash is required: there is nothing to verify without it",
+        );
+    };
+    // The register itself is held by the registration service, which is not in this
+    // workspace. What can be answered is whether this BFF has seen the
+    // registration, which is a narrower question than "is this voter registered".
+    let known = mobile
+        .registrations()
+        .iter()
+        .any(|r| r == reg_hash);
+    if !known {
+        return spec_problem(
+            StatusCode::NOT_FOUND,
+            "no registration with that hash has been seen by this service",
+        );
+    }
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "registration_hash": reg_hash,
+            "seen_by_this_service": true,
+            "scope": "registrations this BFF has seen",
+            "blocking_reason": "the register is held by the registration service, which is \
+                                 not in this workspace; this is not a register lookup",
+        })),
+    )
+        .into_response()
 }
 
 fn check_rate_limit(_station_code: &str) -> bool {

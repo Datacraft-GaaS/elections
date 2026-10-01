@@ -585,3 +585,377 @@ async fn routers_do_not_share_state() {
     .await;
     assert_eq!(resp.status(), StatusCode::UNAUTHORIZED, "session state leaked");
 }
+
+// ---------------------------------------------------------------------------
+// agent forms, check-ins, tamper events and registration
+// ---------------------------------------------------------------------------
+
+/// Store a Form 34A through the sync endpoint and return its id.
+async fn sync_form(app: &axum::Router, form_id: &str, station: &str) -> String {
+    let resp = send(
+        app,
+        "POST",
+        "/api/v1/mobile/bff/forms/sync",
+        Some(json!({
+            "station_code": station,
+            "election_scope": "2027-general",
+            "forms": [{"form_id": form_id, "station_code": station, "valid_votes": 400}]
+        })),
+    )
+    .await;
+    assert_eq!(resp.status(), StatusCode::OK, "forms must sync: {form_id}");
+    form_id.to_string()
+}
+
+#[tokio::test]
+async fn a_form_is_not_reported_signed_for_an_id_that_does_not_exist() {
+    // The old handler returned `{ "form_id": id, "signed": true }` for any id.
+    let app = app();
+    let resp = send(&app, "GET", "/v1/agent/forms/34a/form-nope", None).await;
+    assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn a_synced_form_is_readable_and_not_yet_countersigned() {
+    let app = app();
+    sync_form(&app, "form-1", "STN001").await;
+    let form = body_json(send(&app, "GET", "/v1/agent/forms/34a/form-1", None).await).await;
+    assert_eq!(form["form_id"], "form-1");
+    assert_eq!(form["station_code"], "STN001");
+    assert_eq!(form["countersigned"], false);
+    assert!(form["content_hash"].as_str().unwrap().starts_with("sha256:"));
+}
+
+#[tokio::test]
+async fn sync_reports_the_forms_it_actually_received() {
+    // The old handler reported `forms_synced: 150` and a "merkle root" of
+    // `<uuid>-<date>` for any request.
+    let app = app();
+    let empty = body_json(
+        send(
+            &app,
+            "POST",
+            "/api/v1/mobile/bff/forms/sync",
+            Some(json!({"station_code": "STN001", "election_scope": "2027"})),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(empty["forms_synced"], 0);
+    assert!(
+        empty["merkle_root"].as_str().unwrap().is_empty(),
+        "a root over nothing must be empty, not a uuid-and-date string: {empty:?}"
+    );
+
+    sync_form(&app, "form-1", "STN001").await;
+    let one = body_json(
+        send(
+            &app,
+            "POST",
+            "/api/v1/mobile/bff/forms/sync",
+            Some(json!({
+                "station_code": "STN001",
+                "election_scope": "2027",
+                "forms": [{"form_id": "form-2", "station_code": "STN001"}]
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(one["forms_synced"], 2, "a real count, not a hardcoded 150");
+    let root = one["merkle_root"].as_str().unwrap();
+    assert_eq!(root.len(), 64, "a SHA-256 root is 32 bytes hex-encoded");
+    assert_ne!(root, "0".repeat(64));
+}
+
+#[tokio::test]
+async fn a_countersignature_needs_a_form_and_an_officer() {
+    // The old handler returned `{ "countersigned": true }` for any form id.
+    let app = app();
+    let no_officer = send(
+        &app,
+        "POST",
+        "/v1/agent/forms/34a/form-1/countersign",
+        Some(json!({})),
+    )
+    .await;
+    assert_eq!(no_officer.status(), StatusCode::UNPROCESSABLE_ENTITY);
+
+    let no_form = send(
+        &app,
+        "POST",
+        "/v1/agent/forms/34a/form-nope/countersign",
+        Some(json!({"countersigner_hash": "officer-1"})),
+    )
+    .await;
+    assert_eq!(no_form.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn a_countersignature_is_bound_to_the_form_it_was_made_over() {
+    let app = app();
+    sync_form(&app, "form-1", "STN001").await;
+    let sig = body_json(
+        send(
+            &app,
+            "POST",
+            "/v1/agent/forms/34a/form-1/countersign",
+            Some(json!({"countersigner_hash": "officer-1"})),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(sig["countersigned"], true);
+    let countersig = &sig["countersignature"];
+    assert_eq!(countersig["countersigner_hash"], "officer-1");
+    // A digest bound to the content, and explicitly not a cryptographic signature.
+    assert_eq!(countersig["hsm_signature_verified"], false);
+    let reason = sig["blocking_reason"].as_str().unwrap_or_default();
+    assert!(reason.contains("HSM"), "{reason}");
+
+    let form = body_json(send(&app, "GET", "/v1/agent/forms/34a/form-1", None).await).await;
+    assert_eq!(form["countersigned"], true);
+    assert_eq!(
+        form["countersignatures"][0]["content_hash"], form["content_hash"],
+        "the countersignature is bound to the content it covers"
+    );
+}
+
+#[tokio::test]
+async fn one_officer_countersigns_once() {
+    let app = app();
+    sync_form(&app, "form-1", "STN001").await;
+    for _ in 0..2 {
+        let _ = send(
+            &app,
+            "POST",
+            "/v1/agent/forms/34a/form-1/countersign",
+            Some(json!({"countersigner_hash": "officer-1"})),
+        )
+        .await;
+    }
+    let again = send(
+        &app,
+        "POST",
+        "/v1/agent/forms/34a/form-1/countersign",
+        Some(json!({"countersigner_hash": "officer-1"})),
+    )
+    .await;
+    assert_eq!(again.status(), StatusCode::CONFLICT);
+    let form = body_json(send(&app, "GET", "/v1/agent/forms/34a/form-1", None).await).await;
+    assert_eq!(form["countersignatures"].as_array().unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn a_station_dashboard_needs_a_station() {
+    // The old handler returned an empty dashboard object for any station.
+    let app = app();
+    let resp = send(&app, "GET", "/v1/agent/station/STN404/dashboard", None).await;
+    assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn a_station_dashboard_counts_the_forms_it_holds() {
+    let app = app();
+    send(
+        &app,
+        "POST",
+        "/v1/agent/check-in",
+        Some(json!({"agent_id_hash": "agent-1", "station_code": "STN001", "role": "clerk", "battery_level": 72.0})),
+    )
+    .await;
+    sync_form(&app, "form-1", "STN001").await;
+    sync_form(&app, "form-2", "STN001").await;
+    let dash = body_json(
+        send(&app, "GET", "/v1/agent/station/STN001/dashboard", None).await,
+    )
+    .await;
+    assert_eq!(dash["station_code"], "STN001");
+    assert_eq!(dash["forms_received"], 2);
+    assert_eq!(dash["battery_level"], 72.0);
+    assert_eq!(dash["online"], true);
+    assert!(dash["forms_merkle_root"].as_str().unwrap().len() == 64);
+}
+
+#[tokio::test]
+async fn an_agent_check_in_makes_the_station_online() {
+    let app = app();
+    let check_in = body_json(
+        send(
+            &app,
+            "POST",
+            "/v1/agent/check-in",
+            Some(json!({"agent_id_hash": "agent-1", "station_code": "STN001", "battery_level": 55.5})),
+        )
+        .await,
+    )
+    .await;
+    assert!(check_in["check_in_id"].as_str().unwrap().starts_with("chk-"));
+    let status = body_json(
+        send(
+            &app,
+            "GET",
+            "/api/v1/mobile/bff/station/status?station_code=STN001",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(status["connectivity_status"], "online");
+    assert_eq!(status["kit_battery_level"], 55.5);
+    assert!(status["turnout_count"].is_null(), "no kit has reported a turnout yet");
+}
+
+#[tokio::test]
+async fn an_agent_check_in_needs_an_agent_and_a_station() {
+    let app = app();
+    for body in [
+        json!({"agent_id_hash": "", "station_code": "S"}),
+        json!({"agent_id_hash": "a", "station_code": "  "}),
+    ] {
+        let resp = send(&app, "POST", "/v1/agent/check-in", Some(body)).await;
+        assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY);
+    }
+}
+
+#[tokio::test]
+async fn a_tamper_event_is_recorded_and_a_retry_is_recognised() {
+    // The old handler minted an id and stored nothing.
+    let app = app();
+    let body = json!({
+        "event_type": "seal-tampered",
+        "station_code": "STN001",
+        "description": "seal number did not match the manifest",
+        "severity": "high"
+    });
+    let filed = body_json(
+        send_with_headers(
+            &app,
+            "/api/v1/mobile/bff/tamper-events",
+            body.clone(),
+            &[("idempotency-key", "tam-1")],
+        )
+        .await,
+    )
+    .await;
+    assert!(filed["tamper_event_id"].as_str().unwrap().starts_with("tam-"));
+    assert_eq!(filed["severity"], "high");
+
+    let retry = body_json(
+        send_with_headers(
+            &app,
+            "/api/v1/mobile/bff/tamper-events",
+            body,
+            &[("idempotency-key", "tam-1")],
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(retry["tamper_event_id"], filed["tamper_event_id"]);
+}
+
+#[tokio::test]
+async fn a_tamper_event_needs_a_type_and_a_known_severity() {
+    let app = app();
+    for body in [
+        json!({"event_type": "", "station_code": "S", "description": "d", "severity": "low"}),
+        json!({"event_type": "t", "station_code": "S", "description": "d", "severity": "apocalyptic"}),
+    ] {
+        let resp = send(&app, "POST", "/api/v1/mobile/bff/tamper-events", Some(body)).await;
+        assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY);
+    }
+}
+
+#[tokio::test]
+async fn a_registration_is_not_confirmed_without_anything_to_check() {
+    // The headline for this surface. The old handler took **no input at all** and
+    // answered `{ "registered": true }`.
+    let app = app();
+    let resp = send(&app, "POST", "/v1/verify/registration", Some(json!({}))).await;
+    assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY);
+    let detail = body_json(resp).await["detail"].as_str().unwrap_or_default().to_string();
+    assert!(detail.contains("nothing to verify"), "{detail}");
+}
+
+#[tokio::test]
+async fn an_unseen_registration_is_not_found() {
+    let app = app();
+    let resp = send(
+        &app,
+        "POST",
+        "/v1/verify/registration",
+        Some(json!({"registration_hash": "sha256:abc"})),
+    )
+    .await;
+    assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn a_seen_registration_is_reported_with_its_scope() {
+    let app = app();
+    send(
+        &app,
+        "POST",
+        "/v1/verify/registration/record",
+        Some(json!({"registration_hash": "sha256:abc"})),
+    )
+    .await;
+    let seen = body_json(
+        send(
+            &app,
+            "POST",
+            "/v1/verify/registration",
+            Some(json!({"registration_hash": "sha256:abc"})),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(seen["seen_by_this_service"], true);
+    assert_eq!(seen["scope"], "registrations this BFF has seen");
+    let reason = seen["blocking_reason"].as_str().unwrap_or_default();
+    assert!(reason.contains("not a register lookup"), "{reason}");
+}
+
+#[tokio::test]
+async fn a_grievance_is_filed_and_its_ack_ref_resolves_to_itself() {
+    // The old handler minted a grievance id and an `ack_ref` and stored nothing,
+    // so the ack reference pointed at nothing.
+    let app = app();
+    let filed = body_json(
+        send(
+            &app,
+            "POST",
+            "/verify/v1/grievances",
+            Some(json!({
+                "channel": "ussd",
+                "description": "my name is not on the register",
+                "station_code": "STN001",
+                "idempotency_key": "grv-1"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert!(filed["grievance_id"].as_str().unwrap().starts_with("grv-"));
+    assert_eq!(filed["ack_ref"], filed["grievance_id"]);
+    let reason = filed["blocking_reason"].as_str().unwrap_or_default();
+    assert!(reason.contains("case management"), "{reason}");
+
+    let retry = body_json(
+        send(
+            &app,
+            "POST",
+            "/verify/v1/grievances",
+            Some(json!({
+                "channel": "ussd",
+                "description": "my name is not on the register",
+                "station_code": "STN001",
+                "idempotency_key": "grv-1"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(retry["grievance_id"], filed["grievance_id"]);
+    assert!(!retry["duplicate_of"].is_null());
+}

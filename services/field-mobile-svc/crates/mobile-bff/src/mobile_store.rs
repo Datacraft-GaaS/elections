@@ -137,6 +137,18 @@ pub struct MobileStore {
     by_idempotency: Mutex<HashMap<String, String>>,
     push_tokens: Mutex<HashMap<String, PushTokenRecord>>,
     passes: Mutex<HashMap<String, ObserverPass>>,
+    forms: Mutex<HashMap<String, Form34ARecord>>,
+    check_ins: Mutex<HashMap<String, AgentCheckIn>>,
+    tamper_events: Mutex<HashMap<String, TamperEvent>>,
+    tamper_index: Mutex<HashMap<String, String>>,
+    observations: Mutex<HashMap<String, Observation>>,
+    observation_index: Mutex<HashMap<String, String>>,
+    grievances: Mutex<HashMap<String, Grievance>>,
+    grievance_index: Mutex<HashMap<String, String>>,
+    /// Registration hashes this service has seen. The register itself is held by
+    /// the registration service, which is not in this workspace, so this is only
+    /// what has passed through here.
+    registrations: Mutex<HashMap<String, String>>,
 }
 
 /// The handle threaded through the router.
@@ -552,5 +564,365 @@ impl MobileStore {
     /// An observer pass by id.
     pub fn observer_pass(&self, pass_id: &str) -> Option<ObserverPass> {
         self.passes.lock().expect("lock poisoned").get(pass_id).cloned()
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Forms, check-ins, tamper events, observations and grievances
+// ---------------------------------------------------------------------------
+
+/// A Form 34A held by the BFF.
+#[derive(Clone, Debug, serde::Serialize)]
+pub struct Form34ARecord {
+    pub form_id: String,
+    pub station_code: String,
+    /// The form's content, as submitted.
+    pub content: Value,
+    /// The digest of the content, so a later read can show whether it changed.
+    pub content_hash: String,
+    /// The form's position in the arrival-ordered leaf set.
+    pub leaf_index: usize,
+    pub received_at: String,
+    /// Countersignatures, by countersigner.
+    pub countersignatures: Vec<Countersignature>,
+}
+
+/// One officer's countersignature over a form.
+///
+/// **This is a digest, not a signature.** There is no signing key or HSM
+/// reachable from this process, so nothing here is cryptographically attributable
+/// to an officer. The field says so, because a field named `signature` invites the
+/// reading this workspace cannot support.
+#[derive(Clone, Debug, serde::Serialize)]
+pub struct Countersignature {
+    pub countersigner_hash: String,
+    pub content_hash: String,
+    pub countersigned_at: String,
+    /// Always true here; see the type's documentation.
+    pub hsm_signature_verified: bool,
+}
+
+/// An agent check-in.
+#[derive(Clone, Debug, serde::Serialize)]
+pub struct AgentCheckIn {
+    pub check_in_id: String,
+    pub agent_id_hash: String,
+    pub station_code: String,
+    pub role: String,
+    pub checked_in_at: String,
+}
+
+/// A tamper event report.
+#[derive(Clone, Debug, serde::Serialize)]
+pub struct TamperEvent {
+    pub tamper_event_id: String,
+    pub event_type: String,
+    pub station_code: Option<String>,
+    pub severity: String,
+    pub detail: Value,
+    pub reported_at: String,
+}
+
+/// An observer observation.
+#[derive(Clone, Debug, serde::Serialize)]
+pub struct Observation {
+    pub observation_id: String,
+    pub station_code: String,
+    pub observation_type: String,
+    pub observer_hash: String,
+    pub detail: Value,
+    pub submitted_at: String,
+}
+
+/// A grievance filed through the public form.
+#[derive(Clone, Debug, serde::Serialize)]
+pub struct Grievance {
+    pub grievance_id: String,
+    pub channel: String,
+    /// The reporter's contact is a credential, so only its digest is kept.
+    pub contact_hash: String,
+    pub category: String,
+    pub detail: Value,
+    /// The Idempotency-Key it was filed under, so a retry is recognisable.
+    pub idempotency_key: String,
+    pub submitted_at: String,
+}
+
+impl MobileStore {
+    /// Store a Form 34A, returning it with its leaf index.
+    pub fn record_form(&self, form_id: &str, station_code: &str, content: Value) -> Form34ARecord {
+        let mut guard = self.forms.lock().expect("lock poisoned");
+        if let Some(existing) = guard.get(form_id) {
+            return existing.clone();
+        }
+        let leaf_index = guard.len();
+        let record = Form34ARecord {
+            form_id: form_id.to_string(),
+            station_code: station_code.to_string(),
+            content_hash: Self::hash_token(&[form_id, &content.to_string()]),
+            content,
+            leaf_index,
+            received_at: chrono::Utc::now().to_rfc3339(),
+            countersignatures: Vec::new(),
+        };
+        guard.insert(form_id.to_string(), record.clone());
+        record
+    }
+
+    /// A Form 34A by id.
+    pub fn form(&self, form_id: &str) -> Option<Form34ARecord> {
+        self.forms.lock().expect("lock poisoned").get(form_id).cloned()
+    }
+
+    /// Every Form 34A, in arrival order.
+    pub fn forms_sorted(&self) -> Vec<Form34ARecord> {
+        let guard = self.forms.lock().expect("lock poisoned");
+        let mut items: Vec<Form34ARecord> = guard.values().cloned().collect();
+        drop(guard);
+        items.sort_by(|a, b| a.leaf_index.cmp(&b.leaf_index));
+        items
+    }
+
+    /// Count a form as countersigned by an officer.
+    ///
+    /// The countersignature is bound to the content it was made over, so a form
+    /// whose content changes afterwards carries a countersignature that no longer
+    /// matches it. One officer countersigns once.
+    pub fn countersign_form(
+        &self,
+        form_id: &str,
+        countersigner_hash: &str,
+    ) -> Result<Countersignature, String> {
+        let mut guard = self.forms.lock().expect("lock poisoned");
+        let form = guard
+            .get_mut(form_id)
+            .ok_or_else(|| format!("no Form 34A with id {form_id}"))?;
+        if form.countersignatures.iter().any(|c| c.countersigner_hash == countersigner_hash) {
+            return Err(format!(
+                "this officer has already countersigned form {form_id}"
+            ));
+        }
+        let sig = Countersignature {
+            countersigner_hash: countersigner_hash.to_string(),
+            content_hash: form.content_hash.clone(),
+            countersigned_at: chrono::Utc::now().to_rfc3339(),
+            hsm_signature_verified: false,
+        };
+        form.countersignatures.push(sig.clone());
+        Ok(sig)
+    }
+
+    /// The Merkle tree over the stored Form 34A content hashes.
+    pub fn form_tree(&self) -> Option<eel_crypto_rs::merkle::MerkleTree> {
+        let forms = self.forms_sorted();
+        if forms.is_empty() {
+            return None;
+        }
+        let entries: Vec<&[u8]> = forms.iter().map(|f| f.content_hash.as_bytes()).collect();
+        Some(eel_crypto_rs::merkle::MerkleTree::build(&entries))
+    }
+
+    /// Record an agent check-in.
+    pub fn check_in_agent(
+        &self,
+        agent_id_hash: &str,
+        station_code: &str,
+        role: &str,
+    ) -> AgentCheckIn {
+        let check_in = AgentCheckIn {
+            check_in_id: format!("chk-{}", &uuid::Uuid::now_v7().simple().to_string()[..12]),
+            agent_id_hash: agent_id_hash.to_string(),
+            station_code: station_code.to_string(),
+            role: role.to_string(),
+            checked_in_at: chrono::Utc::now().to_rfc3339(),
+        };
+        self.check_ins
+            .lock()
+            .expect("lock poisoned")
+            .insert(check_in.check_in_id.clone(), check_in.clone());
+        check_in
+    }
+
+    /// Every agent check-in, oldest first.
+    pub fn check_ins(&self) -> Vec<AgentCheckIn> {
+        let guard = self.check_ins.lock().expect("lock poisoned");
+        let mut items: Vec<AgentCheckIn> = guard.values().cloned().collect();
+        drop(guard);
+        items.sort_by(|a, b| a.checked_in_at.cmp(&b.checked_in_at));
+        items
+    }
+
+    /// A tamper event already reported under an idempotency key, if any.
+    pub fn tamper_by_idempotency(&self, key: &str) -> Option<TamperEvent> {
+        let id = self
+            .tamper_index
+            .lock()
+            .expect("lock poisoned")
+            .get(key)
+            .cloned()?;
+        self.tamper_events
+            .lock()
+            .expect("lock poisoned")
+            .get(&id)
+            .cloned()
+    }
+
+    /// Record a tamper event.
+    pub fn record_tamper(
+        &self,
+        event_type: &str,
+        station_code: Option<String>,
+        severity: &str,
+        detail: Value,
+        idempotency_key: &str,
+    ) -> TamperEvent {
+        let event = TamperEvent {
+            tamper_event_id: format!("tam-{}", &uuid::Uuid::now_v7().simple().to_string()[..12]),
+            event_type: event_type.to_string(),
+            station_code,
+            severity: severity.to_string(),
+            detail,
+            reported_at: chrono::Utc::now().to_rfc3339(),
+        };
+        self.tamper_events
+            .lock()
+            .expect("lock poisoned")
+            .insert(event.tamper_event_id.clone(), event.clone());
+        self.tamper_index
+            .lock()
+            .expect("lock poisoned")
+            .insert(idempotency_key.to_string(), event.tamper_event_id.clone());
+        event
+    }
+
+    /// Every tamper event, oldest first.
+    pub fn tamper_events(&self) -> Vec<TamperEvent> {
+        let guard = self.tamper_events.lock().expect("lock poisoned");
+        let mut items: Vec<TamperEvent> = guard.values().cloned().collect();
+        drop(guard);
+        items.sort_by(|a, b| a.reported_at.cmp(&b.reported_at));
+        items
+    }
+
+    /// The observation already submitted under an idempotency key, if any.
+    pub fn observation_by_idempotency(&self, key: &str) -> Option<Observation> {
+        let id = self
+            .observation_index
+            .lock()
+            .expect("lock poisoned")
+            .get(key)
+            .cloned()?;
+        self.observations
+            .lock()
+            .expect("lock poisoned")
+            .get(&id)
+            .cloned()
+    }
+
+    /// Submit an observation.
+    pub fn submit_observation(
+        &self,
+        station_code: &str,
+        observation_type: &str,
+        observer_hash: &str,
+        detail: Value,
+        idempotency_key: &str,
+    ) -> Observation {
+        let observation = Observation {
+            observation_id: format!("obs-{}", &uuid::Uuid::now_v7().simple().to_string()[..12]),
+            station_code: station_code.to_string(),
+            observation_type: observation_type.to_string(),
+            observer_hash: observer_hash.to_string(),
+            detail,
+            submitted_at: chrono::Utc::now().to_rfc3339(),
+        };
+        self.observations
+            .lock()
+            .expect("lock poisoned")
+            .insert(observation.observation_id.clone(), observation.clone());
+        self.observation_index
+            .lock()
+            .expect("lock poisoned")
+            .insert(idempotency_key.to_string(), observation.observation_id.clone());
+        observation
+    }
+
+    /// Every observation, oldest first.
+    pub fn observations(&self) -> Vec<Observation> {
+        let guard = self.observations.lock().expect("lock poisoned");
+        let mut items: Vec<Observation> = guard.values().cloned().collect();
+        drop(guard);
+        items.sort_by(|a, b| a.submitted_at.cmp(&b.submitted_at));
+        items
+    }
+
+    /// The grievance already filed under an idempotency key, if any.
+    pub fn grievance_by_idempotency(&self, key: &str) -> Option<Grievance> {
+        let id = self
+            .grievance_index
+            .lock()
+            .expect("lock poisoned")
+            .get(key)
+            .cloned()?;
+        self.grievances
+            .lock()
+            .expect("lock poisoned")
+            .get(&id)
+            .cloned()
+    }
+
+    /// File a grievance.
+    pub fn file_grievance(
+        &self,
+        channel: &str,
+        contact: &str,
+        category: &str,
+        detail: Value,
+        idempotency_key: &str,
+    ) -> Grievance {
+        let grievance = Grievance {
+            grievance_id: format!("grv-{}", &uuid::Uuid::now_v7().simple().to_string()[..12]),
+            channel: channel.to_string(),
+            contact_hash: Self::hash_token(&[contact]),
+            category: category.to_string(),
+            detail,
+            idempotency_key: idempotency_key.to_string(),
+            submitted_at: chrono::Utc::now().to_rfc3339(),
+        };
+        self.grievances
+            .lock()
+            .expect("lock poisoned")
+            .insert(grievance.grievance_id.clone(), grievance.clone());
+        self.grievance_index
+            .lock()
+            .expect("lock poisoned")
+            .insert(
+                idempotency_key.to_string(),
+                grievance.grievance_id.clone(),
+            );
+        grievance
+    }
+
+    /// Record a registration hash this service has seen.
+    pub fn record_registration(&self, registration_hash: &str) {
+        self.registrations
+            .lock()
+            .expect("lock poisoned")
+            .insert(registration_hash.to_string(), chrono::Utc::now().to_rfc3339());
+    }
+
+    /// Every registration hash this service has seen, in arrival order.
+    pub fn registrations(&self) -> Vec<String> {
+        let guard = self.registrations.lock().expect("lock poisoned");
+        guard.keys().cloned().collect()
+    }
+
+    /// Every grievance, oldest first.
+    pub fn grievances(&self) -> Vec<Grievance> {
+        let guard = self.grievances.lock().expect("lock poisoned");
+        let mut items: Vec<Grievance> = guard.values().cloned().collect();
+        drop(guard);
+        items.sort_by(|a, b| a.submitted_at.cmp(&b.submitted_at));
+        items
     }
 }

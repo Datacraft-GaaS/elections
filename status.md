@@ -450,7 +450,7 @@ into three buckets, because "238 fabricated" is not a task list. Converting all
 238 to 501 would remove capability a refusal cannot replace; leaving them
 fabricated is worse than either. The split is the point.
 
-**44 implementable** (was 221; 213 converted) — local work. Create/read/update
+**36 implementable** (was 221; 221 converted) — local work. Create/read/update
 against `AppState`, or a computation over inputs the request already carries.
 `eel-memstore-rs` is usually the whole requirement. These are worth doing, and are
 how the ten crates already fixed were fixed.
@@ -1102,6 +1102,65 @@ the real contract, with the previous behaviour named in a doc comment on each.
 proven able to fail twice: returning MEETS for every device drops 2, and letting any
 refresh token through drops 1.
 
+`field-mobile-svc/mobile-bff` is now at zero across both surfaces, and its agent
+surface held the most unconditional confirmation found in this tree.
+
+`verify_registration` took **no input at all** and answered
+`{ "registered": true }`. Not a query, not a body — nothing to check, and it
+confirmed anyway. A registration check that confirms without being asked anything
+is the endpoint you would least want to trust and most likely to. It now requires
+a `registration_hash`, and answers for the narrower question it can actually
+answer: has *this service* seen that registration. The response says so
+(`scope: "registrations this BFF has seen"`) and carries a `blocking_reason`
+stating it is not a register lookup, because the register is held by the
+registration service, which is not in this workspace.
+
+`countersign_form_34a` returned `{ "countersigned": true }` for any form id. A
+countersignature is an officer attesting to figures; one returned for a form that
+may not exist is worse than none, because it puts a signature on nothing. It now
+requires a form this service holds and a named officer, one officer countersigns
+once, and the countersignature is **bound to the form's content hash** so a form
+whose content changes afterwards carries a countersignature that no longer matches
+it. The field is `hsm_signature_verified: false` rather than `signature`, with a
+`blocking_reason` — there is no signing key or HSM reachable from this process, so
+nothing here is cryptographically attributable to an officer.
+
+`sync_forms` returned `forms_synced: 150` and a **"merkle root" of
+`<uuid>-<date>`** for any request. 150 forms synced is a claim about a station's
+return having been received; a uuid-and-date string is not a Merkle root, and
+reads as one. The root is now a real `MerkleTree` over the stored content hashes,
+or **empty** when nothing was received — the honest answer, and the same principle
+as rts-api's empty-set `merkle_root: null` rather than a root over nothing.
+
+`get_form_34a` returned `{ "form_id": id, "signed": true }` for any id — a Form 34A
+reporting itself signed, for a form that might not exist, which is a statement
+about an election result. Forms are read from the store, and a form that has not
+been synced is a 404.
+
+`agent_check_in` minted a `check_in_id`, cached `{}` under a fresh idempotency key
+and stored nothing. It now records the check-in **and** makes the station online
+with its reported battery, so the agent surface and the station-status surface
+agree instead of being two unrelated fictions.
+
+`get_station_dashboard` returned an empty dashboard object for any station, which
+reads as "there is nothing to show" for every station. It now needs a station that
+has checked in, and reports the forms it holds with a real root over them.
+
+`report_tamper_event` minted an id and stored nothing. Grievances minted a
+`grievance_id` **and** an `ack_ref` and stored nothing, so the acknowledgement
+reference pointed at nothing — an ack ref that resolves to nothing is worse than no
+ack ref, because it looks like a case exists. `ack_ref` is now the grievance's own
+id, which resolves.
+
+**The contract tests were pinning these again** — three more, bringing the total
+across this crate to nine: an agent check-in with no station, a dashboard for a
+station that never checked in, and a tamper event with a body the handler had
+discarded. All now pin the real contract with the previous behaviour named in the
+doc comment.
+
+`tests/mobile_surface.rs` is now 40 tests. Proven able to fail: accepting any
+registration drops `an_unseen_registration_is_not_found`.
+
 `portal/gazette` contains **the most serious refusal in this tree**, and it is
 recorded as blocked rather than implemented.
 
@@ -1273,7 +1332,7 @@ added for verdicts asserted as a literal `true`.
 | `training-svc/crates/training-api/src/handlers/accreditation.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/lms.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/spec.rs` | 6 | 0 | 0 |
-| **total** | **44** | **3** | **8** |
+| **total** | **36** | **2** | **8** |
 Run `python3 tools/fabrication_triage.py --list` for every handler, or
 `--crate <fragment>` for one file.
 
