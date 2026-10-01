@@ -186,8 +186,8 @@ Measuring the routers directly instead:
 
 ```
 registered handlers judged : 631
-fabricated                 : 119   (19%)
-  of which contract-unbound: 79
+fabricated                 : 114   (18%)
+  of which contract-unbound: 74
   contract-bound           : 45
 ```
 
@@ -450,12 +450,12 @@ into three buckets, because "238 fabricated" is not a task list. Converting all
 238 to 501 would remove capability a refusal cannot replace; leaving them
 fabricated is worse than either. The split is the point.
 
-**103 implementable** (was 221; 153 converted) — local work. Create/read/update
+**98 implementable** (was 221; 158 converted) — local work. Create/read/update
 against `AppState`, or a computation over inputs the request already carries.
 `eel-memstore-rs` is usually the whole requirement. These are worth doing, and are
 how the ten crates already fixed were fixed.
 
-Sixteen crates are now at zero fabrications, and the one remaining handler here is recorded as blocked: `county-coord`, `recall`, `referendum`,
+Seventeen crates are now at zero fabrications, and the one remaining handler here is recorded as blocked: `county-coord`, `recall`, `referendum`,
 `by-election`, `court-interface`, `ecc-api` (21 handlers, whose records took no
 state at all — a complaint filed through the grievance portal could never be
 retrieved, an escalation could never be resolved, and `get_audit_log` returned
@@ -657,6 +657,42 @@ caller-supplied digest is preserved. A digest of the *metadata* would have looke
 like a content hash without being one, which is the same mistake as legal-audit's
 `tlog_hash` in a different place.
 
+`governance/reporting` closes out the governance-svc legacy surfaces, and its five
+fabrications were all the same shape: **a downstream artefact with no upstream
+check**. A testimony workspace, a judiciary handover and an SC/IT pre-registration
+each presuppose a report with a body behind it, and none of the three handlers
+looked at the report at all. `ReportStatus::allows_downstream` encodes the rule
+and all three now check it, so opening testimony against a report that is still
+generating is a `409` and nothing is stored.
+
+That required deciding what makes a report ready, and the answer is recorded
+rather than assumed. A generated report starts at `GENERATING` and carries a
+`blocking_reason`: the body is assembled outside this service and the reporting
+data warehouse is not in this workspace, so this service records the request and
+its digest but cannot render statutory content. `POST /reporting/reports/{id}/ready`
+is the transition, and it is a fact about the report — marking it ready clears
+the blocking reason. Without that, "ready" would have been a value the handlers
+assumed, and the gate would have been circular.
+
+`get_report` returned a blank `StatutoryReport` for **any** id with `200 OK`. So
+asking for a report that had never been generated returned an empty report rather
+than a 404, and — because `StatutoryReport::sig` was a non-optional `String` —
+that blank report carried an **empty signature**. `sig` is now `content_hash`, the
+SHA-256 of the canonical request, and there is nothing that could be mistaken for
+an officer's cryptographic signature: no signing key or HSM is reachable from
+this service. The judiciary handover and the SC/IT pre-registration got the same
+treatment. `handover_ref` is the local id and says so; `confirmation_ref` is
+`None` because no SC/IT committee endpoint exists here to issue one, and filling
+it with a local id would imply a confirmation that was never given.
+
+Handing a report to a court moves it to `DELIVERED`, and a delivered report
+cannot return to generating — it is a historical record, and reversing that
+would let a handed-over report be quietly rewritten.
+
+That is the last of the governance-svc legacy surfaces: `forensics`,
+`intl-observer`, `legal-audit`, `oag` and `reporting` are all at zero, taking the
+crate total from 238 to 114.
+
 `portal/gazette` contains **the most serious refusal in this tree**, and it is
 recorded as blocked rather than implemented.
 
@@ -828,7 +864,7 @@ added for verdicts asserted as a literal `true`.
 | `training-svc/crates/training-api/src/handlers/accreditation.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/lms.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/spec.rs` | 6 | 0 | 0 |
-| **total** | **103** | **7** | **9** |
+| **total** | **98** | **7** | **9** |
 Run `python3 tools/fabrication_triage.py --list` for every handler, or
 `--crate <fragment>` for one file.
 

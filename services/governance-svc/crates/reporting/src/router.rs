@@ -13,6 +13,7 @@ pub fn build_router(state: SharedState) -> Router {
             get(list_reports).post(generate_report),
         )
         .route("/reporting/reports/{report_id}", get(get_report))
+        .route("/reporting/reports/{report_id}/ready", post(mark_report_ready))
         .route(
             "/reporting/testimony-workspaces",
             get(list_testimony_workspaces).post(create_testimony_workspace),
