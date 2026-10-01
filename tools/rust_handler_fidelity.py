@@ -64,7 +64,12 @@ STATE_MARKERS = re.compile(
     # because the collection was reached through a variable named `records`
     # rather than `state`. A metric that flags correct code is worse than none.
     r"|\b\w+\s*\.\s*(list|list_where|list_where_mut|get|insert|update|"
-    r"update_if|remove|len|is_empty|shares_state_with)\s*\(",
+    r"update_if|remove|len|is_empty|shares_state_with)\s*\("
+    # Handing state to a helper is as much a store access as dereferencing it.
+    # crms-api's candidate handlers are one line -- `with_candidate(&state, id,
+    # |c| c.begin_ro_review())` -- delegating to the real domain state machine,
+    # and were flagged as fabrications purely because the deref is behind an `&`.
+    r"|&\s*(?:mut\s+)?state\b|&\s*(?:mut\s+)?s\b",
 )
 
 # A handler that can fail is one that consulted something. Returning 404 on a
@@ -148,6 +153,9 @@ def handler_bodies() -> dict[str, dict]:
     """
     bodies: dict[str, dict] = {}
     crates = crate_names()
+    # `fn` definitions per file, so a call to a function defined *elsewhere* can
+    # be told apart from a call to one of the handler's own helpers.
+    local_defs: dict[Path, set[str]] = {}
     for rs in sorted((ROOT / "services").rglob("*.rs")):
         if "/target/" in str(rs):
             continue
@@ -155,6 +163,9 @@ def handler_bodies() -> dict[str, dict]:
             text = rs.read_text(errors="replace")
         except Exception:
             continue
+        # Every `fn` defined in this file, so a call to one defined elsewhere can
+        # be recognised as delegation rather than fabrication.
+        defs = set(re.findall(r"\bfn\s+([a-z_][a-z0-9_]*)", text))
         # Not just `pub fn`: handlers in route modules are routinely private
         # (`async fn list_events(...)`), and indexing only public ones reports
         # a fully implemented handler as MISSING.
@@ -166,7 +177,8 @@ def handler_bodies() -> dict[str, dict]:
             if body is None:
                 continue
             entry = {"file": rs.relative_to(ROOT), "body": body,
-                     "crate": crate, "fn": name}
+                     "crate": crate, "fn": name,
+                     "local_fns": defs}
             # A bare name is ambiguous; only the first claimant gets it.
             bodies.setdefault(name, entry)
             if crate:
@@ -288,6 +300,40 @@ EMPTY_IDEMPOTENCY_RECORD = re.compile(
 # look up. `redirect_legacy` answers 308 to /api/v1/ai/{tail} and `stream_alerts`
 # emits a heartbeat. Flagging them is the same mistake as flagging
 # `acknowledge_alert` for being short.
+# Calls that are never the handler's own logic: macros, std, serde, axum.
+NOT_A_DELEGATION = {
+    "json", "format", "vec", "some", "ok", "err", "new", "default", "from",
+    "into", "to_string", "to_owned", "clone", "as_str", "as_array", "unwrap",
+    "unwrap_or", "unwrap_or_else", "unwrap_or_default", "expect", "is_none",
+    "is_some", "map", "and_then", "filter", "collect", "iter", "len", "push",
+    "insert", "get", "remove", "contains", "starts_with", "to_rfc3339", "now",
+    "parse", "read", "write", "lock", "await", "println", "eprintln", "write_all",
+}
+
+# `fn name(` calls in a handler body.
+FN_CALL = re.compile(r"(?<![.:\w])([a-z_][a-z0-9_]{2,})\s*\(")
+
+
+def delegates_elsewhere(body: str, local_fns: set[str]) -> bool:
+    """True if the handler calls a function defined in another file.
+
+    A one-line handler that hands off to a domain crate is not fabricating: the
+    work happens in the code it calls. `crms-api`'s candidate handlers are exactly
+    this -- `with_candidate(&state, id, |c| c.begin_ro_review())`, delegating to
+    the real candidate state machine -- and they were flagged because the
+    delegation is invisible to a body-only heuristic. Without this, every thin
+    wrapper around real logic reads as fake, which is how `evaluate_quota_rule`
+    (a genuine pure computation over the request) got caught too.
+    """
+    if local_fns is None:
+        return False
+    for name in FN_CALL.findall(body):
+        if name in NOT_A_DELEGATION or name in local_fns:
+            continue
+        return True
+    return False
+
+
 RE_DIRECT_OR_KEEPALIVE = re.compile(
     r"StatusCode::(?:PERMANENT_REDIRECT|TEMPORARY_REDIRECT|MOVED_PERMANENTLY|FOUND)\b"
     r"|\bSse\b|heartbeat",
@@ -295,7 +341,9 @@ RE_DIRECT_OR_KEEPALIVE = re.compile(
 )
 
 
-def classify(body: str, op: dict | None = None) -> str:
+def classify(
+    body: str, op: dict | None = None, local_fns: set[str] | None = None
+) -> str:
     """VERIFIED, DECLARES_UNIMPLEMENTED, EMPTY_IDEMPOTENCY, IGNORES_INPUT,
     FABRICATED, UNKNOWN.
 
@@ -330,6 +378,8 @@ def classify(body: str, op: dict | None = None) -> str:
     # like, and it is what the earlier heuristic kept getting wrong.
     if WORK_MARKERS.search(body) or STATE_MARKERS.search(body) \
             or ERROR_BRANCH.search(body):
+        return "VERIFIED"
+    if delegates_elsewhere(body, local_fns):
         return "VERIFIED"
     if len(lines) <= FABRICATED_MAX_LINES:
         return "FABRICATED"
@@ -413,7 +463,11 @@ def report_unbound(ops: list[dict], bodies: dict[str, dict]) -> int:
         # Pass the registration path as context. Without it the probe exemption
         # can never fire, because both call sites used to pass None, and a
         # readiness endpoint was indistinguishable from a domain handler.
-        verdict = classify(entry["body"], {"operation_id": "", "path": paths[0]})
+        verdict = classify(
+            entry["body"],
+            {"operation_id": "", "path": paths[0]},
+            entry.get("local_fns"),
+        )
         if verdict in ("VERIFIED", "DECLARES_UNIMPLEMENTED", "UNKNOWN"):
             continue
         fab += 1
@@ -486,6 +540,14 @@ SELF_TEST = [
     # ready: true with {"database": "ok"} without touching the database.
     ("readyz", "services/abis-svc/crates/abis-api/src/routes/health.rs",
      "/readyz", "FABRICATED"),
+    # A pure computation over the request body is real capability, not a
+    # fabrication: this one runs the crate's own quota evaluation over the
+    # candidates supplied and returns the computed status. It takes no state, so
+    # it needs a pin rather than a heuristic -- the alternative is assuming every
+    # stateless short handler is fake, which is how the delegation false positive
+    # above happened.
+    ("evaluate_quota_rule", "services/crms-svc/crates/crms-api/src/handlers/quota.rs",
+     "/api/v1/crms/quota/evaluate", "VERIFIED"),
 ]
 
 
@@ -498,7 +560,11 @@ def self_test() -> int:
             print(f"MISSING  {handler} (not indexed)")
             bad += 1
             continue
-        got = classify(entry["body"], {"operation_id": "", "path": route})
+        got = classify(
+            entry["body"],
+            {"operation_id": "", "path": route},
+            entry.get("local_fns"),
+        )
         want = expected
         ok = got == want
         bad += 0 if ok else 1

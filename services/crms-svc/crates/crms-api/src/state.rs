@@ -62,6 +62,19 @@ pub struct AppState {
     pub public_primaries: Mutex<HashMap<String, serde_json::Value>>,
     /// Public symbol registrations (symbol/registry.yaml).
     pub public_symbols: Mutex<HashMap<String, serde_json::Value>>,
+    /// Initiated party document uploads by upload_ref.
+    pub documents: Mutex<HashMap<String, serde_json::Value>>,
+    /// Registration decisions by decision_id.
+    pub registration_decisions: Mutex<HashMap<String, serde_json::Value>>,
+    /// Submitted primary tallies by result id.
+    ///
+    /// Separate from `primary_results`, which holds the typed
+    /// `crms_domain::primaries::PrimaryResult` this endpoint does not build --
+    /// it accepts an opaque tally from the party portal. Shadowing the existing
+    /// field would have made the domain store unreachable.
+    pub submitted_primary_results: Mutex<HashMap<Uuid, serde_json::Value>>,
+    /// Filed primary disputes by dispute_id.
+    pub primary_disputes: Mutex<HashMap<String, serde_json::Value>>,
     /// Public nomination fees (nomination/fees.yaml).
     pub public_fees: Mutex<HashMap<String, serde_json::Value>>,
 }

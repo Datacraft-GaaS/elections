@@ -8,7 +8,7 @@ use std::sync::Arc;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    response::IntoResponse,
+    response::{IntoResponse, Response},
     routing::{get, post},
     Json, Router,
 };
@@ -64,11 +64,48 @@ async fn get_party_registration(State(s): State<Arc<AppState>>, Path(id): Path<S
     }
 }
 
-async fn initiate_party_document_upload(State(s): State<Arc<AppState>>, Path(id): Path<String>, Json(req): Json<Value>) -> impl IntoResponse {
-    let _ = (s, id);
-    (StatusCode::CREATED, Json(json!({ "upload_ref": uuid::Uuid::now_v7().to_string(), "request": req })))
+async fn initiate_party_document_upload(
+    State(s): State<Arc<AppState>>,
+    Path(id): Path<String>,
+    Json(req): Json<Value>,
+) -> Response {
+    // Real. Previously minted an upload_ref and discarded the request, so a
+    // document upload could be initiated and never tracked.
+    let exists = s
+        .public_registrations
+        .lock()
+        .expect("lock poisoned")
+        .contains_key(&id);
+    if !exists {
+        return not_found(format!("no party registration with id {id}"));
+    }
+    let upload_ref = uuid::Uuid::now_v7().to_string();
+    let doc = json!({
+        "upload_ref": upload_ref,
+        "registration_id": id,
+        "document_type": req.get("document_type").cloned().unwrap_or(Value::Null),
+        "requested_at": now(),
+    });
+    s.documents
+        .lock()
+        .expect("lock poisoned")
+        .insert(upload_ref.clone(), doc.clone());
+    (StatusCode::CREATED, Json(doc)).into_response()
 }
 
+/// A problem+json response for a missing resource.
+fn not_found(detail: String) -> Response {
+    (
+        StatusCode::NOT_FOUND,
+        Json(json!({
+            "type": "about:blank",
+            "title": "Not Found",
+            "status": 404,
+            "detail": detail,
+        })),
+    )
+        .into_response()
+}
 async fn list_public_parties(State(s): State<Arc<AppState>>) -> impl IntoResponse {
     let guard = s.public_registrations.lock().expect("lock poisoned");
     let items: Vec<Value> = guard.values().cloned().collect();
@@ -83,9 +120,23 @@ async fn get_party(State(s): State<Arc<AppState>>, Path(id): Path<String>) -> im
     }
 }
 
-async fn record_registration_decision(State(_s): State<Arc<AppState>>, Json(req): Json<Value>) -> impl IntoResponse {
-    let decision = json!({ "decision_id": uuid::Uuid::now_v7().to_string(), "decided_at": now(), "request": req });
-    (StatusCode::CREATED, Json(decision))
+async fn record_registration_decision(State(s): State<Arc<AppState>>, Json(req): Json<Value>) -> Response {
+    // Real. Previously minted a decision_id and discarded the decision, so a
+    // registration could be approved or rejected with nothing recording it.
+    let decision = json!({
+        "decision_id": uuid::Uuid::now_v7().to_string(),
+        "registration_id": req.get("registration_id").cloned().unwrap_or(Value::Null),
+        "decision": req.get("decision").cloned().unwrap_or(Value::Null),
+        "decided_at": now(),
+    });
+    s.registration_decisions
+        .lock()
+        .expect("lock poisoned")
+        .insert(
+            decision["decision_id"].as_str().unwrap_or_default().to_string(),
+            decision.clone(),
+        );
+    (StatusCode::CREATED, Json(decision)).into_response()
 }
 
 // --- party/primaries ---
@@ -111,18 +162,85 @@ async fn get_primary_details(State(s): State<Arc<AppState>>, Path(id): Path<Stri
     }
 }
 
-async fn submit_primary_results(State(s): State<Arc<AppState>>, Path(id): Path<String>, Json(req): Json<Value>) -> impl IntoResponse {
-    let _ = (s, id);
-    (StatusCode::CREATED, Json(json!({ "result_id": uuid::Uuid::now_v7().to_string(), "request": req })))
+async fn submit_primary_results(
+    State(s): State<Arc<AppState>>,
+    Path(id): Path<String>,
+    Json(req): Json<Value>,
+) -> Response {
+    // Real. Previously minted a result_id and discarded the tally, so a primary
+    // result could be submitted and never read back.
+    let exists = s
+        .public_primaries
+        .lock()
+        .expect("lock poisoned")
+        .contains_key(&id);
+    if !exists {
+        return not_found(format!("no primary with id {id}"));
+    }
+    // Stored as the record that was submitted, keyed by its own id, so a
+    // repeat submission cannot overwrite an earlier tally silently and the
+    // declared `primary_id` is carried on the record.
+    let submitted_at: chrono::DateTime<chrono::Utc> = now().parse().unwrap_or_else(|_| chrono::Utc::now());
+    let result = json!({
+        "result_id": uuid::Uuid::now_v7().to_string(),
+        "primary_id": id,
+        "results": req.get("results").cloned().unwrap_or(Value::Null),
+        "submitted_at": submitted_at.to_rfc3339(),
+    });
+    let result_id: uuid::Uuid = result["result_id"]
+        .as_str()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or_else(uuid::Uuid::now_v7);
+    s.submitted_primary_results
+        .lock()
+        .expect("lock poisoned")
+        .insert(result_id, result.clone());
+    (StatusCode::CREATED, Json(result)).into_response()
 }
 
-async fn submit_primary_dispute(State(s): State<Arc<AppState>>, Path(id): Path<String>, Json(req): Json<Value>) -> impl IntoResponse {
-    let _ = (s, id);
-    (StatusCode::CREATED, Json(json!({ "dispute_id": uuid::Uuid::now_v7().to_string(), "request": req })))
+async fn submit_primary_dispute(
+    State(s): State<Arc<AppState>>,
+    Path(id): Path<String>,
+    Json(req): Json<Value>,
+) -> Response {
+    // Real. Previously minted a dispute_id and discarded the dispute.
+    let exists = s
+        .public_primaries
+        .lock()
+        .expect("lock poisoned")
+        .contains_key(&id);
+    if !exists {
+        return not_found(format!("no primary with id {id}"));
+    }
+    let dispute = json!({
+        "dispute_id": uuid::Uuid::now_v7().to_string(),
+        "primary_id": id,
+        "grounds": req.get("grounds").cloned().unwrap_or(Value::Null),
+        "status": "submitted",
+        "submitted_at": now(),
+    });
+    s.primary_disputes
+        .lock()
+        .expect("lock poisoned")
+        .insert(
+            dispute["dispute_id"].as_str().unwrap_or_default().to_string(),
+            dispute.clone(),
+        );
+    (StatusCode::CREATED, Json(dispute)).into_response()
 }
 
-async fn list_primary_disputes(State(_s): State<Arc<AppState>>, Path(_id): Path<String>) -> impl IntoResponse {
-    Json(json!({ "disputes": [] }))
+async fn list_primary_disputes(State(s): State<Arc<AppState>>, Path(id): Path<String>) -> impl IntoResponse {
+    // Real. Previously always an empty array, which reads as "no dispute has been
+    // filed against this primary" rather than "nothing is stored".
+    let disputes: Vec<Value> = s
+        .primary_disputes
+        .lock()
+        .expect("lock poisoned")
+        .values()
+        .filter(|d| d["primary_id"].as_str() == Some(id.as_str()))
+        .cloned()
+        .collect();
+    Json(json!({ "disputes": disputes }))
 }
 
 // --- symbol/registry ---
@@ -148,8 +266,50 @@ async fn get_party_symbol(State(s): State<Arc<AppState>>, Path(id): Path<String>
     }
 }
 
-async fn check_symbol_collision(Json(req): Json<Value>) -> impl IntoResponse {
-    Json(json!({ "collision": false, "request": req }))
+async fn check_symbol_collision(
+    State(s): State<Arc<AppState>>,
+    Json(req): Json<Value>,
+) -> Response {
+    // Real. Previously answered `collision: false` for every request without
+    // looking at the registered symbols, so a genuine collision with a symbol
+    // already registered to another party was reported as clear.
+    let proposed = req
+        .get("symbol")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .trim()
+        .to_ascii_uppercase();
+    let guard = s.public_symbols.lock().expect("lock poisoned");
+    let conflicting = guard
+        .values()
+        .find(|v| {
+            v["request"]["symbol"]
+                .as_str()
+                .map(|sym| sym.trim().eq_ignore_ascii_case(&proposed))
+                .unwrap_or(false)
+        })
+        .map(|v| v["registration_id"].as_str().unwrap_or_default().to_string());
+    drop(guard);
+
+    if proposed.is_empty() {
+        return (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(json!({
+                "type": "about:blank",
+                "title": "Unprocessable Entity",
+                "status": 422,
+                "detail": "a symbol must be supplied to check for a collision",
+            })),
+        )
+            .into_response();
+    }
+
+    Json(json!({
+        "symbol": proposed,
+        "collision": conflicting.is_some(),
+        "conflicting_registration_id": conflicting,
+    }))
+    .into_response()
 }
 
 async fn list_public_symbol_registry(State(s): State<Arc<AppState>>) -> impl IntoResponse {

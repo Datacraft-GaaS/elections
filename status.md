@@ -186,8 +186,8 @@ Measuring the routers directly instead:
 
 ```
 registered handlers judged : 631
-fabricated                 : 161   (26%)
-  of which contract-unbound: 117
+fabricated                 : 146   (23%)
+  of which contract-unbound: 106
   contract-bound           : 45
 ```
 
@@ -450,12 +450,12 @@ into three buckets, because "238 fabricated" is not a task list. Converting all
 238 to 501 would remove capability a refusal cannot replace; leaving them
 fabricated is worse than either. The split is the point.
 
-**144 implementable** (was 221; 120 converted) — local work. Create/read/update
+**130 implementable** (was 221; 126 converted) — local work. Create/read/update
 against `AppState`, or a computation over inputs the request already carries.
 `eel-memstore-rs` is usually the whole requirement. These are worth doing, and are
 how the ten crates already fixed were fixed.
 
-Eleven crates are now at zero fabrications, and the one remaining handler here is recorded as blocked: `county-coord`, `recall`, `referendum`,
+Twelve crates are now at zero fabrications, and the one remaining handler here is recorded as blocked: `county-coord`, `recall`, `referendum`,
 `by-election`, `court-interface`, `ecc-api` (21 handlers, whose records took no
 state at all — a complaint filed through the grievance portal could never be
 retrieved, an escalation could never be resolved, and `get_audit_log` returned
@@ -474,6 +474,38 @@ rather than leaving the reader to assume.
 
 `review` also has no endpoint that creates a recommendation, so signing one is a
 404. That is recorded rather than papered over by inventing a creation route.
+
+`crms-api` exposed **a whole false-positive class in the classifier**, which is
+worth recording before its own six fixes.
+
+Four of its nine flagged handlers were not fabrications at all.
+`begin_ro_review`, `mark_docs_uploaded` and `withdraw_candidate` are one line each
+— `with_candidate(&state, id, |c| c.begin_ro_review())` — delegating to the real
+candidate state machine in `crms_domain`. `evaluate_quota_rule` runs the crate's
+own quota evaluation over the candidates supplied. All four were flagged because a
+body-only heuristic cannot see through a delegation: the store is reached behind
+an `&`, and a pure computation has no store at all.
+
+Two signals fix this honestly rather than by exception. `STATE_MARKERS` now treats
+handing state to a helper as a store access, and a new `delegates_elsewhere`
+check recognises a call to a function defined in **another file** as real work
+happening elsewhere. `evaluate_quota_rule` is additionally pinned in the
+self-test at VERIFIED, because a pure computation over request input is real
+capability and no heuristic will reliably separate it from a fabrication.
+
+**This removed 10 handlers from the fabricated count with no code change at all**,
+which is the same lesson as `redirect_legacy`: every one of these was a case where
+the measurement was wrong and the code was right. Fabricated 161 -> 151 on the
+classifier fix alone, then 151 -> 146 on the six real fixes below.
+
+The six real ones: `check_symbol_collision` answered `collision: false` for every
+request **without looking at the registered symbols**, so a genuine clash with a
+symbol already registered to another party was reported as clear; it now compares
+case-insensitively against the registry and names the conflicting registration.
+`submit_primary_results` and `submit_primary_dispute` each minted an id and
+discarded the submission, and `record_registration_decision` did the same for a
+registration decision — all three now persist and 404 for an unknown parent.
+`initiate_party_document_upload` minted an `upload_ref` and dropped the request.
 
 `portal/gazette` contains **the most serious refusal in this tree**, and it is
 recorded as blocked rather than implemented.
@@ -646,7 +678,7 @@ added for verdicts asserted as a literal `true`.
 | `training-svc/crates/training-api/src/handlers/accreditation.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/lms.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/spec.rs` | 6 | 0 | 0 |
-| **total** | **144** | **8** | **9** |
+| **total** | **130** | **7** | **9** |
 Run `python3 tools/fabrication_triage.py --list` for every handler, or
 `--crate <fragment>` for one file.
 

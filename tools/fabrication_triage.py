@@ -135,7 +135,11 @@ def main() -> int:
         entry = bodies.get(handler)
         if entry is None:
             continue
-        verdict = f.classify(entry["body"], {"operation_id": "", "path": paths[0]})
+        verdict = f.classify(
+            entry["body"],
+            {"operation_id": "", "path": paths[0]},
+            entry.get("local_fns"),
+        )
         if verdict in ("VERIFIED", "DECLARES_UNIMPLEMENTED", "UNKNOWN"):
             continue
         file = str(entry["file"])
