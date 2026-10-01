@@ -443,6 +443,104 @@ claims the case has no evidence rather than that nothing is stored; and
 `upload_evidence` returned `202` with a minted `evidence_id` for an upload it
 never received, leaving the caller a receipt for an artefact that does not exist.
 
+## Fabrication triage: 238 sorted into what can be built here and what cannot
+
+`tools/fabrication_triage.py` sorts every fabrication the fidelity scanner finds
+into three buckets, because "238 fabricated" is not a task list. Converting all
+238 to 501 would remove capability a refusal cannot replace; leaving them
+fabricated is worse than either. The split is the point.
+
+**221 implementable** — local work. Create/read/update against `AppState`, or a
+computation over inputs the request already carries. `eel-memstore-rs` is usually
+the whole requirement. These are worth doing, and are how the five crates already
+fixed were fixed.
+
+**8 need a subsystem** — the response carries a cryptographic artifact or asserts
+a verdict as a literal `true`. Neither can come from a request body or a
+`HashMap`. `bvr-api`'s `get_latest_merkle_root` returns `"0".repeat(64)`; a real
+root needs an append-only log. `mobile-bff`'s `binary_integrity_check` returns
+`passed: true` for **any** `build_fingerprint` and **any** `attestation_token` — an
+integrity gate wired to always open — and needs the attestation service that would
+actually perform the check. Calling these "implementable with memstore" would be
+the same optimism that produced them.
+
+**9 blocked on something absent** — the handler's own body or doc comment names
+the missing system, so the blocker is a specific thing to build rather than a
+shrug. Named in this repo: M02 BVR snapshot adapter, OCR engine, HSM signature
+verification, transactional outbox, Kafka, SpiceDB, station gazetteer, object
+storage, M50 by-election trigger, M04 register subset service.
+
+Comments are searched as well as bodies, deliberately: several handlers document
+their own blocker — *"no adapter crate exists in this workspace"* — which is the
+most reliable evidence available and was previously being discarded.
+
+The triage was corrected twice against ground truth before being trusted. It first
+reported 229 implementable / 9 blocked, which put `get_latest_merkle_root` in the
+implementable bucket; a fabricated Merkle root is not a `HashMap` away. It then
+reported `binary_integrity_check` as implementable until `ASSERTED_VERDICT` was
+added for verdicts asserted as a literal `true`.
+
+### Per file
+
+| crate | implementable | needs a log or key | blocked on absent system |
+|---|---|---|---|
+| `abis-svc/crates/abis-api/src/routes/admin.rs` | 1 | 0 | 0 |
+| `abis-svc/crates/abis-api/src/routes/enrolment.rs` | 4 | 0 | 0 |
+| `abis-svc/crates/abis-api/src/routes/health.rs` | 2 | 0 | 0 |
+| `abis-svc/crates/abis-api/src/routes/reports.rs` | 4 | 0 | 0 |
+| `abis-svc/crates/abis-reports-adhoc/src/api.rs` | 15 | 0 | 0 |
+| `abis-svc/crates/abis-reports/src/api.rs` | 1 | 0 | 0 |
+| `ai-platform-svc/crates/ai-gateway/src/routes/anomaly.rs` | 1 | 0 | 0 |
+| `ai-platform-svc/crates/ai-gateway/src/spec.rs` | 10 | 0 | 0 |
+| `ai-platform-svc/crates/telemetry-analytics/src/api.rs` | 2 | 0 | 0 |
+| `biometric-edge-svc/crates/edge-api/src/routes/attestation.rs` | 1 | 0 | 0 |
+| `biometric-edge-svc/crates/edge-api/src/routes/distress.rs` | 0 | 0 | 1 |
+| `bvr-svc/crates/bvr-api/src/routes/handoff.rs` | 1 | 0 | 0 |
+| `bvr-svc/crates/bvr-api/src/routes/merkle.rs` | 0 | 1 | 0 |
+| `bvr-svc/crates/bvr-api/src/routes/registers.rs` | 0 | 1 | 0 |
+| `bvr-svc/crates/bvr-api/src/routes/sar.rs` | 1 | 0 | 0 |
+| `bvr-svc/crates/bvr-api/src/routes/transfers.rs` | 1 | 0 | 0 |
+| `bvr-svc/crates/bvr-api/src/routes/voters.rs` | 2 | 0 | 1 |
+| `bvr-svc/crates/channel-gateway/src/http.rs` | 8 | 0 | 0 |
+| `bvr-svc/crates/cvr/src/routes/family_notify.rs` | 0 | 0 | 1 |
+| `bvr-svc/crates/cvr/src/routes/spec.rs` | 3 | 0 | 0 |
+| `bvr-svc/crates/dereg-appeal/src/routes/spec.rs` | 4 | 0 | 0 |
+| `bvr-svc/crates/verifier-api/src/http.rs` | 4 | 0 | 0 |
+| `crms-svc/crates/crms-api/src/handlers/candidate.rs` | 3 | 0 | 0 |
+| `crms-svc/crates/crms-api/src/handlers/public.rs` | 5 | 0 | 0 |
+| `crms-svc/crates/crms-api/src/handlers/quota.rs` | 1 | 0 | 0 |
+| `ecc-svc/crates/ecc-api/src/handlers.rs` | 21 | 0 | 0 |
+| `ecc-svc/crates/telemetry-query/src/api.rs` | 1 | 0 | 0 |
+| `field-mobile-svc/crates/mobile-bff/src/handlers/clone_detect.rs` | 1 | 1 | 0 |
+| `field-mobile-svc/crates/mobile-bff/src/handlers/grievance.rs` | 1 | 0 | 0 |
+| `field-mobile-svc/crates/mobile-bff/src/handlers/queue.rs` | 1 | 0 | 0 |
+| `field-mobile-svc/crates/mobile-bff/src/handlers/verify.rs` | 4 | 0 | 0 |
+| `field-mobile-svc/crates/mobile-bff/src/spec.rs` | 15 | 2 | 0 |
+| `governance-svc/crates/forensics/src/handlers.rs` | 8 | 0 | 0 |
+| `governance-svc/crates/intl-observer/src/handlers.rs` | 7 | 0 | 0 |
+| `governance-svc/crates/legal-audit/src/handlers.rs` | 6 | 0 | 0 |
+| `governance-svc/crates/oag/src/handlers.rs` | 7 | 0 | 0 |
+| `governance-svc/crates/reporting/src/handlers.rs` | 5 | 0 | 0 |
+| `governance-svc/crates/review/src/handlers.rs` | 11 | 0 | 0 |
+| `inventory-svc/crates/rfid-cover-custody/src/api.rs` | 1 | 0 | 1 |
+| `portal-svc/crates/gazette/src/api.rs` | 9 | 0 | 1 |
+| `portal-svc/crates/inspection/src/api.rs` | 10 | 0 | 0 |
+| `portal-svc/crates/portal-api/src/lib.rs` | 1 | 1 | 2 |
+| `queue-svc/crates/queue-pipeline/src/handlers.rs` | 1 | 0 | 0 |
+| `rts-svc/crates/ballot-serial/src/api.rs` | 6 | 0 | 0 |
+| `rts-svc/crates/declaration/src/api.rs` | 9 | 0 | 0 |
+| `rts-svc/crates/rts-api/src/handlers.rs` | 9 | 2 | 0 |
+| `rts-svc/crates/rts-device-api/src/handlers.rs` | 1 | 0 | 2 |
+| `rts-svc/crates/rts-ro-api/src/handlers.rs` | 1 | 0 | 0 |
+| `rts-svc/crates/rts-ro-api/src/router.rs` | 1 | 0 | 0 |
+| `support-admin-svc/crates/intent/src/http.rs` | 2 | 0 | 0 |
+| `training-svc/crates/training-api/src/handlers/accreditation.rs` | 1 | 0 | 0 |
+| `training-svc/crates/training-api/src/handlers/lms.rs` | 1 | 0 | 0 |
+| `training-svc/crates/training-api/src/handlers/spec.rs` | 6 | 0 | 0 |
+| **total** | **221** | **8** | **9** |
+Run `python3 tools/fabrication_triage.py --list` for every handler, or
+`--crate <fragment>` for one file.
+
 ### A tool bug this surfaced: probes were exempt in the wrong order
 
 `abis-api::readyz` was classified `IGNORES_INPUT`, and the fix exposed a worse
