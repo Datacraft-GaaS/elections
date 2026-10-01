@@ -304,6 +304,33 @@ signature hash, so both are written to the audit log instead of being dropped.
 The signer and hash used to reach only a log line while the response was 204 for
 anything.
 
+`by-election` is the fourth, and it turned up a structural fault the fabrications
+were hiding: **two `ByElection` types, neither ever written to.**
+`create_by_election` built a `models::ByElection` and dropped it;
+`transition_by_election_status` mutated a `spec::ByElection` that nothing had ever
+inserted. So no by-election could be activated because none existed, and the
+status machine operated on an empty map. `AppState` now holds both, with
+`by_elections: Collection<models::ByElection>` for the typed
+`ByElectionStatus` enum and `elections` left for the legacy String-status view.
+
+| handler | before | now |
+|---|---|---|
+| `create_by_election` | 201, built and dropped the record | stores it; `GAZETTED` when a gazette notice is present, else `Draft` |
+| `activate_by_election` | **204 for any id**, GAZETTED never checked | requires GAZETTED → `NOMINATIONS_OPEN`; **409** otherwise |
+| `create_kit_plan` | **every station `gps_lat: 0.0, gps_lng: 0.0`** — Gulf of Guinea | coordinates are a **required input** (`{code, lat, lng}`); **422** on an empty plan |
+| `generate_register_subset` | 201 with `station_count: 0, voter_count: 0` | counts are a required M02 input; **422** rather than assumed zero |
+| `get_cost_report` | default report, every line zero, bypassing `build_cost_report` | reads the stored report; **404** when none submitted |
+| `submit_cost_report` | computed correctly but discarded | stores it, so `get_cost_report` can read it |
+
+Station coordinates are now **required input** rather than a defaulted zero.
+There is no station gazetteer in this workspace to resolve a code against, so
+making them required is the honest option: the alternative was inventing `0.0`,
+which is what pointed every delivery at open ocean. The test asserts Nairobi
+`-1.2921, 36.8219` round-trips exactly.
+
+`sign_kit_plan`'s SHA-256 is kept and the field comment now says what it is: a
+digest over the canonical plan, not a signature, with no key to attest authorship.
+
 `referendum` is the third, and it is where the chain matters most. Every link of
 submit -> certify -> aggregate -> declare was severed, and the crate already had
 the real, unit-tested logic to close them:
