@@ -186,8 +186,8 @@ Measuring the routers directly instead:
 
 ```
 registered handlers judged : 631
-fabricated                 : 238   (38%)
-  of which contract-unbound: 193
+fabricated                 : 216   (34%)
+  of which contract-unbound: 171
   contract-bound           : 45
 ```
 
@@ -450,10 +450,16 @@ into three buckets, because "238 fabricated" is not a task list. Converting all
 238 to 501 would remove capability a refusal cannot replace; leaving them
 fabricated is worse than either. The split is the point.
 
-**221 implementable** — local work. Create/read/update against `AppState`, or a
-computation over inputs the request already carries. `eel-memstore-rs` is usually
-the whole requirement. These are worth doing, and are how the five crates already
-fixed were fixed.
+**155 implementable** (was 221; 66 converted) — local work. Create/read/update
+against `AppState`, or a computation over inputs the request already carries.
+`eel-memstore-rs` is usually the whole requirement. These are worth doing, and are
+how the ten crates already fixed were fixed.
+
+Six crates are now at zero fabrications: `county-coord`, `recall`, `referendum`,
+`by-election`, `court-interface`, and `ecc-api` (21 handlers, whose records took
+no state at all — a complaint filed through the grievance portal could never be
+retrieved, an escalation could never be resolved, and `get_audit_log` returned
+`{"entries": []}`, which is an audit log that records nothing).
 
 **8 need a subsystem** — the response carries a cryptographic artifact or asserts
 a verdict as a literal `true`. Neither can come from a request body or a
@@ -537,7 +543,7 @@ added for verdicts asserted as a literal `true`.
 | `training-svc/crates/training-api/src/handlers/accreditation.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/lms.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/spec.rs` | 6 | 0 | 0 |
-| **total** | **221** | **8** | **9** |
+| **total** | **155** | **8** | **9** |
 Run `python3 tools/fabrication_triage.py --list` for every handler, or
 `--crate <fragment>` for one file.
 

@@ -57,7 +57,14 @@ WORK_MARKERS = re.compile(
 STATE_MARKERS = re.compile(
     r"\bstate\s*\.|\bstore\s*\.|\bguard\b|\.lock\(\)|\.try_lock\(\)|"
     r"\.read\(\)|\.write\(\)|get_mut|\.insert\(|\.remove\(|\.entry\(|"
-    r"\.extend\(|\.retain\(|\.get\(&|\.get_mut\(",
+    r"\.extend\(|\.retain\(|\.get\(&|\.get_mut\("
+    # Reading or writing a Collection<T> is as much a store access as locking a
+    # Mutex, and eel-memstore-rs hides the lock. Without this the classifier
+    # called ten correctly-implemented ecc-api list handlers fabricated, purely
+    # because the collection was reached through a variable named `records`
+    # rather than `state`. A metric that flags correct code is worse than none.
+    r"|\b\w+\s*\.\s*(list|list_where|list_where_mut|get|insert|update|"
+    r"update_if|remove|len|is_empty|shares_state_with)\s*\(",
 )
 
 # A handler that can fail is one that consulted something. Returning 404 on a

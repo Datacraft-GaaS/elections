@@ -1,89 +1,88 @@
-//! Records for the ECC grievance, escalation and IAB endpoints.
+//! Records for the ECC station, grievance, escalation and IAB endpoints.
 //!
-//! The handlers in this crate took no state at all: `create_complaint` minted a
-//! reference code and dropped it, `list_complaints` always returned an empty
-//! array, `get_complaint` answered for any reference code, and `get_audit_log`
-//! returned `{"entries": []}`. A complaint filed through the grievance portal was
-//! never retrievable, and the audit log recorded nothing.
+//! Every handler in this group took no state at all. `list_stations` returned an
+//! empty array, `get_station` answered 200 with `name: "stub"` for any station
+//! code, `create_complaint` minted a reference code and dropped it, `list_complaints`
+//! always returned `[]`, `get_complaint` answered for any reference code, and
+//! `get_audit_log` returned `{"entries": []}`. A complaint filed through the
+//! grievance portal could never be retrieved, and an escalation could never be
+//! resolved.
 //!
 //! These live behind an `Extension` rather than in the router state, because
-//! `.with_state(store)` is already the speech handlers' `State<Store>` and
-//! retyping that would touch code unrelated to this fix.
+//! `.with_state(store)` is already the speech handlers' `State<Store>` and retyping
+//! that would touch code unrelated to this fix. A fresh `Records` is constructed
+//! per `build_router` call, so each router — including every test's — is isolated.
 
 use eel_memstore_rs::Collection;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-/// A grievance complaint as stored.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Complaint {
-    pub complaint_id: Uuid,
-    pub reference_code: String,
-    pub complainant_name: String,
-    pub complainant_contact: String,
-    pub category: String,
-    pub description: String,
-    pub station_code: Option<String>,
-    pub status: String,
-    pub created_at: String,
-}
+use crate::models::{ComplaintUpdate, Escalation, GrievanceComplaint, Station};
 
-/// A note added to a complaint.
+/// An Internal Audit Bureau flag, with the detail the public shape omits.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ComplaintUpdate {
-    pub update_id: Uuid,
-    pub complaint_id: Uuid,
-    pub note: String,
-    pub author: String,
-    pub created_at: String,
-}
-
-/// An election-security escalation.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Escalation {
-    pub escalation_id: Uuid,
-    pub station_code: String,
-    pub category: String,
-    pub severity: String,
-    pub description: String,
-    pub raised_by: String,
-    pub status: String,
-    pub resolution_notes: Option<String>,
-    pub created_at: String,
-    pub updated_at: String,
-}
-
-/// An Internal Audit Bureau flag.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct IabFlag {
+pub struct IabFlagRecord {
     pub flag_id: Uuid,
-    pub subject: String,
+    pub module_code: String,
     pub reason: String,
     pub raised_by: String,
     pub status: String,
     pub created_at: String,
 }
 
-/// An audit report produced by the IAB.
+/// An audit report, with the detail the public shape omits.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AuditReport {
+pub struct AuditReportRecord {
     pub report_id: Uuid,
     pub module_code: String,
-    pub summary: String,
+    pub title: String,
+    pub status: String,
+    pub submitted_at: String,
     pub findings: u32,
-    pub generated_by: String,
-    pub generated_at: String,
 }
 
-/// All records the grievance/escalation/IAB endpoints read and write.
+/// A single audit-log entry, derived from what actually happened.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AuditEntry {
+    pub entry_id: String,
+    pub kind: String,
+    pub subject: String,
+    pub detail: String,
+    pub at: String,
+}
+
+/// All records these endpoints read and write.
 ///
-/// `Clone` on a shared handle rather than a deep copy: the collections are
-/// internally synchronised, so cloning must share state rather than fork it.
+/// `Clone` shares rather than copies, which is what axum's `Extension` requires;
+/// see `Collection::shares_state_with`.
 #[derive(Debug, Default, Clone)]
 pub struct Records {
-    pub complaints: Collection<Complaint>,
+    pub stations: Collection<Station>,
+    pub complaints: Collection<GrievanceComplaint>,
     pub complaint_updates: Collection<ComplaintUpdate>,
     pub escalations: Collection<Escalation>,
-    pub iab_flags: Collection<IabFlag>,
-    pub audit_reports: Collection<AuditReport>,
+    pub iab_flags: Collection<IabFlagRecord>,
+    pub audit_reports: Collection<AuditReportRecord>,
+    /// Audit-log entries, appended as things happen rather than derived on read.
+    pub audit_log: Collection<AuditEntry>,
+}
+
+impl Records {
+    /// Record an audit-log entry.
+    pub fn audit(&self, kind: &str, subject: &str, detail: &str, at: String) {
+        let entry = AuditEntry {
+            entry_id: Uuid::now_v7().to_string(),
+            kind: kind.to_string(),
+            subject: subject.to_string(),
+            detail: detail.to_string(),
+            at,
+        };
+        self.audit_log.insert(entry.entry_id.clone(), entry);
+    }
+
+    /// Escalations not yet resolved.
+    pub fn open_escalations(&self) -> Vec<Escalation> {
+        self.escalations
+            .list_where(|e| e.status != "resolved" && e.status != "closed")
+    }
 }
