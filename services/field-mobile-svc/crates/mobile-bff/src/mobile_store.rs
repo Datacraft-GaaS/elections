@@ -361,7 +361,7 @@ impl MobileStore {
     ) -> DispatchAssignment {
         let now = chrono::Utc::now().to_rfc3339();
         let assignment = DispatchAssignment {
-            assignment_id: format!("assign-{}", &uuid::Uuid::now_v7().simple().to_string()[..12]),
+            assignment_id: format!("assign-{}", short_id()),
             worker_id: worker_id.to_string(),
             role: role.to_string(),
             status: "assigned".to_string(),
@@ -450,7 +450,7 @@ impl MobileStore {
         idempotency_key: &str,
     ) -> Incident {
         let incident = Incident {
-            incident_id: format!("inc-{}", &uuid::Uuid::now_v7().simple().to_string()[..12]),
+            incident_id: format!("inc-{}", short_id()),
             incident_type: incident_type.to_string(),
             station_code,
             severity: severity.to_string(),
@@ -492,7 +492,7 @@ impl MobileStore {
         platform: &str,
     ) -> PushTokenRecord {
         let record = PushTokenRecord {
-            token_id: format!("pt-{}", &uuid::Uuid::now_v7().simple().to_string()[..12]),
+            token_id: format!("pt-{}", short_id()),
             device_id: device_id.to_string(),
             // A provider token is a credential: only its digest is kept.
             token_hash: Self::hash_token(&[device_id, provider_token]),
@@ -547,7 +547,7 @@ impl MobileStore {
     ) -> ObserverPass {
         let now = chrono::Utc::now();
         let pass = ObserverPass {
-            pass_id: format!("PASS-{}", &uuid::Uuid::now_v7().simple().to_string()[..12]),
+            pass_id: format!("PASS-{}", short_id()),
             organisation: organisation.to_string(),
             accreditation_ref: format!("{accreditation_ref}#{application_id}"),
             issued_at: now.to_rfc3339(),
@@ -730,7 +730,7 @@ impl MobileStore {
         role: &str,
     ) -> AgentCheckIn {
         let check_in = AgentCheckIn {
-            check_in_id: format!("chk-{}", &uuid::Uuid::now_v7().simple().to_string()[..12]),
+            check_in_id: format!("chk-{}", short_id()),
             agent_id_hash: agent_id_hash.to_string(),
             station_code: station_code.to_string(),
             role: role.to_string(),
@@ -777,7 +777,7 @@ impl MobileStore {
         idempotency_key: &str,
     ) -> TamperEvent {
         let event = TamperEvent {
-            tamper_event_id: format!("tam-{}", &uuid::Uuid::now_v7().simple().to_string()[..12]),
+            tamper_event_id: format!("tam-{}", short_id()),
             event_type: event_type.to_string(),
             station_code,
             severity: severity.to_string(),
@@ -829,7 +829,7 @@ impl MobileStore {
         idempotency_key: &str,
     ) -> Observation {
         let observation = Observation {
-            observation_id: format!("obs-{}", &uuid::Uuid::now_v7().simple().to_string()[..12]),
+            observation_id: format!("obs-{}", short_id()),
             station_code: station_code.to_string(),
             observation_type: observation_type.to_string(),
             observer_hash: observer_hash.to_string(),
@@ -881,7 +881,7 @@ impl MobileStore {
         idempotency_key: &str,
     ) -> Grievance {
         let grievance = Grievance {
-            grievance_id: format!("grv-{}", &uuid::Uuid::now_v7().simple().to_string()[..12]),
+            grievance_id: format!("grv-{}", short_id()),
             channel: channel.to_string(),
             contact_hash: Self::hash_token(&[contact]),
             category: category.to_string(),
@@ -925,4 +925,16 @@ impl MobileStore {
         items.sort_by(|a, b| a.submitted_at.cmp(&b.submitted_at));
         items
     }
+}
+
+/// A short id from a UUID.
+///
+/// The slice is taken from the **end** of the hex, not the start. A UUIDv7's
+/// leading hex is its millisecond timestamp, so two ids minted in the same
+/// millisecond share a prefix and slicing from the front produces collisions --
+/// which is exactly what `two_jobs_have_different_subjects` caught when it found
+/// both jobs reporting the second subject.
+fn short_id() -> String {
+    let hex = uuid::Uuid::now_v7().simple().to_string();
+    hex[hex.len() - 12..].to_string()
 }

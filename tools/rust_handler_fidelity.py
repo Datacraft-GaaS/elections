@@ -609,8 +609,15 @@ SELF_TEST = [
      "/cases/{id}/assign", "DECLARES_UNIMPLEMENTED"),
     # A probe may ignore its input, but not its checks: this answers
     # ready: true with {"database": "ok"} without touching the database.
+    # Pinned VERIFIED as of the readiness fix. It used to answer
+    # `ready: true` with `checks: { database: "ok", vendor: "ok", matcher: "ok" }`
+    # without touching a database, a vendor or a matcher -- a probe that always
+    # passes keeps a broken instance in the load-balancer pool. It now runs
+    # `SELECT 1` against the pool with a 500ms timeout, gates readiness on that
+    # result, and reports the matcher as `not-performed` rather than `ok`. The
+    # FABRICATED pin here was the classifier being right about the old code.
     ("readyz", "services/abis-svc/crates/abis-api/src/routes/health.rs",
-     "/readyz", "FABRICATED"),
+     "/readyz", "VERIFIED"),
     # A pure computation over the request body is real capability, not a
     # fabrication: this one runs the crate's own quota evaluation over the
     # candidates supplied and returns the computed status. It takes no state, so

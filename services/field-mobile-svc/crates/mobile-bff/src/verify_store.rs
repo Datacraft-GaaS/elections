@@ -275,3 +275,15 @@ impl VerifyStore {
         self.clones.lock().expect("lock poisoned").clone()
     }
 }
+
+/// A short id from a UUID.
+///
+/// The slice is taken from the **end** of the hex, not the start. A UUIDv7's
+/// leading hex is its millisecond timestamp, so two ids minted in the same
+/// millisecond share a prefix and slicing from the front produces collisions --
+/// which is exactly what `two_jobs_have_different_subjects` caught when it found
+/// both jobs reporting the second subject.
+fn short_id() -> String {
+    let hex = uuid::Uuid::now_v7().simple().to_string();
+    hex[hex.len() - 12..].to_string()
+}

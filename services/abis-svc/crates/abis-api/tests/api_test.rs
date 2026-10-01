@@ -88,7 +88,7 @@ async fn test_match_1n() {
         return;
     };
     seed_probe(&pool, "p1").await;
-    let app = app(Arc::new(AppState { db: pool }));
+    let app = app(Arc::new(AppState { db: pool, store: abis_api::store::AbisStore::new() }));
     let body = r#"{"probe_ref":"p1","modality":"fingerprint","caller_id":"c1","election_id":"33333333-2222-3333-4444-555555555555"}"#;
     let resp = app
         .oneshot(
@@ -112,7 +112,7 @@ async fn test_match_11() {
         return;
     };
     seed_probe(&pool, "p1").await;
-    let app = app(Arc::new(AppState { db: pool }));
+    let app = app(Arc::new(AppState { db: pool, store: abis_api::store::AbisStore::new() }));
     let body = r#"{"probe_ref":"p1","gallery_ref":"g1","modality":"iris","caller_id":"c1"}"#;
     let resp = app
         .oneshot(
@@ -136,7 +136,7 @@ async fn test_get_match_result() {
         return;
     };
     seed_probe(&pool, "p2").await;
-    let app = app(Arc::new(AppState { db: pool }));
+    let app = app(Arc::new(AppState { db: pool, store: abis_api::store::AbisStore::new() }));
 
     // Mint a request row via 1:n, then fetch its result back.
     let body = r#"{"probe_ref":"p2","modality":"fingerprint","caller_id":"c1","election_id":"33333333-2222-3333-4444-555555555555"}"#;

@@ -8,6 +8,7 @@ pub mod models;
 pub mod openapi;
 pub mod routes;
 pub mod state;
+pub mod store;
 
 use std::sync::Arc;
 
@@ -25,7 +26,8 @@ use routes::{
 	admin::{list_vendors, update_policy, vendor_health_check},
 	batch::submit_batch_dedup,
 	enrolment::{
-		create_enrolment_job, get_enrolment_job, get_quality_report, withdraw_enrolment_job,
+		create_enrolment_job, get_enrolment_job, get_quality_report, record_modality,
+		withdraw_enrolment_job,
 	},
 	health::{healthz, readyz},
 	kit::{kit_enrol, kit_gallery_config, kit_verify},
@@ -41,7 +43,8 @@ pub fn app(state: Arc<AppState>) -> Router {
 		.route("/jobs", post(create_enrolment_job))
 		.route("/jobs/{id}", get(get_enrolment_job))
 		.route("/jobs/{id}/withdraw", patch(withdraw_enrolment_job))
-		.route("/jobs/{id}/quality-report", get(get_quality_report));
+		.route("/jobs/{id}/quality-report", get(get_quality_report))
+		.route("/jobs/{id}/modalities", post(record_modality));
 
 	// v1 match routes
 	let match_r = Router::new()

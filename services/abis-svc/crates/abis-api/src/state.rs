@@ -8,6 +8,13 @@
 /// surface as 503 problem+json responses, never at construction time.
 pub struct AppState {
 	pub db: sqlx::PgPool,
+	/// Enrolment jobs and vendors.
+	///
+	/// The pool alone was the whole of this state, so the handlers that needed a
+	/// record built one: `get_enrolment_job` reported `subject_id: "subject-001"`
+	/// and `status: "processing"` for any id, and `get_quality_report` reported
+	/// `overall_pass: true` for any id.
+	pub store: crate::store::SharedAbisStore,
 }
 
 impl AppState {
@@ -26,7 +33,10 @@ impl AppState {
 			.acquire_timeout(std::time::Duration::from_secs(5))
 			.connect_lazy(url)
 			.expect("connect_lazy cannot fail");
-		Self { db }
+		Self {
+			db,
+			store: crate::store::AbisStore::new(),
+		}
 	}
 }
 

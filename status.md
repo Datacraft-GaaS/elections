@@ -450,7 +450,7 @@ into three buckets, because "238 fabricated" is not a task list. Converting all
 238 to 501 would remove capability a refusal cannot replace; leaving them
 fabricated is worse than either. The split is the point.
 
-**36 implementable** (was 221; 221 converted) — local work. Create/read/update
+**25 implementable** (was 221; 221 converted) — local work. Create/read/update
 against `AppState`, or a computation over inputs the request already carries.
 `eel-memstore-rs` is usually the whole requirement. These are worth doing, and are
 how the ten crates already fixed were fixed.
@@ -1161,6 +1161,66 @@ doc comment.
 `tests/mobile_surface.rs` is now 40 tests. Proven able to fail: accepting any
 registration drops `an_unseen_registration_is_not_found`.
 
+`abis-svc/abis-api` fabricated **biometric records**, and one of them is the record
+an enrolment proceeds on.
+
+`get_quality_report` returned `fingerprint_nfiq2: 60.0`, `face_quality: 0.92`,
+`iris_quality: 0.88` and **`overall_pass: true`** for any id. A passing quality
+report is what allows an enrolment to continue, so this is the fabrication with
+direct electoral consequence. The three figures come from the kit's sensor and the
+matcher; neither is reachable from this process. They are null, `overall_pass` is
+null, and the reason is stated.
+
+`get_enrolment_job` returned `subject_id: "subject-001"`, `status: "processing"`
+and `modalities_completed: ["fingerprint"]` for **any** id — a fabricated subject
+identity and capture state for every job in the country. `AppState` was a Postgres
+pool and nothing else, so there was nowhere to put a job. `store.rs` holds them
+now, with a lifecycle a kit can move through: `POST /jobs/{id}/modalities` records
+a capture, a job reaches `captured` when every requested modality is present, and
+a captured job **cannot be withdrawn** — the templates are already in the system,
+and withdrawing would imply they are not.
+
+`get_fmr_fnmr` returned **`fmr: 0.001, fnmr: 0.005`** as constants, for any
+slice. False match and false non-match rates are what determine whether a biometric
+system is fit for electoral use, and they are measured against a test corpus of
+known genuine and known impostor presentations. There is no such corpus here. This
+is now an explicit `501` carrying the reason, matching the refusal `get_reports` and
+`update_policy` already used in this crate — I tried a `200` with null fields first
+and rejected it, because teaching the classifier a sixth "honest" response shape
+after five false positives is worse than reusing the established one.
+
+`readyz` answered `ready: true` with `checks: { database: "ok", vendor: "ok",
+matcher: "ok" }` without touching a database, a vendor or a matcher. A readiness
+probe that always passes keeps a broken instance in the load-balancer pool. It now
+runs `SELECT 1` with a 500ms timeout, gates readiness on that result, and reports
+the matcher as `not-performed` rather than `ok`. `/healthz` stays a liveness probe —
+the request itself proves the process is up — and now reports a real count from the
+store rather than a bare constant.
+
+`list_vendors` returned a single **`Mock Vendor` reported `healthy`** with
+fingerprint, face and iris capabilities. A vendor list reporting a fabricated vendor
+as healthy is worse than an empty list, because a health check against it would
+pass. The list now starts empty and a vendor appears when a kit from it enrols,
+`unregistered` until then.
+
+**The self-test pin moved, and that is worth recording.** `readyz` was pinned
+`FABRICATED` with the comment "answers ready: true with {database: ok} without
+touching the database". Fixing the handler made the pin wrong, so it is now
+`VERIFIED` with the reason the old pin was right and the new one is not. The
+objective requires pins to move in the same commit as a conversion, and this is the
+case where the classifier was right and the code was wrong.
+
+**A real bug my test caught, which affected two crates.** Short ids were built by
+slicing the first 12 hex characters of a UUIDv7. A UUIDv7's leading hex *is* its
+millisecond timestamp, so two ids minted in the same millisecond share a prefix.
+`two_jobs_have_different_subjects` found both jobs reporting the second subject.
+Eight call sites in `mobile_store.rs` had the same defect and now use a shared
+`short_id()` that slices from the end, where the random part is.
+
+`tests/abis_records.rs` is 23 tests, all failing against the previous code, and
+proven able to fail: a constant FMR pair and a readiness probe that always passes
+are both caught.
+
 `portal/gazette` contains **the most serious refusal in this tree**, and it is
 recorded as blocked rather than implemented.
 
@@ -1332,7 +1392,7 @@ added for verdicts asserted as a literal `true`.
 | `training-svc/crates/training-api/src/handlers/accreditation.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/lms.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/spec.rs` | 6 | 0 | 0 |
-| **total** | **36** | **2** | **8** |
+| **total** | **25** | **2** | **8** |
 Run `python3 tools/fabrication_triage.py --list` for every handler, or
 `--crate <fragment>` for one file.
 

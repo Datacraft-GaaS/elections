@@ -3,6 +3,7 @@
 use std::sync::Arc;
 
 use axum::{
+	response::IntoResponse,
 	extract::{Path, State},
 	http::StatusCode,
 	Json,
@@ -91,19 +92,17 @@ pub async fn update_policy(
     )
 )]
 pub async fn list_vendors(
-	State(_state): State<Arc<AppState>>,
-) -> (StatusCode, Json<Vec<VendorInfo>>) {
-	(
-		StatusCode::OK,
-		Json(vec![
-			VendorInfo {
-				id: "mock".into(),
-				name: "Mock Vendor".into(),
-				status: "healthy".into(),
-				capabilities: vec!["fingerprint".into(), "face".into(), "iris".into()],
-			},
-		]),
-	)
+	State(state): State<Arc<AppState>>,
+) -> axum::response::Response {
+	// Previously returned a single `Mock Vendor` reported as `healthy` with
+	// fingerprint, face and iris capabilities. A vendor list that reports a
+	// fabricated vendor as healthy is worse than an empty list: a health check
+	// against it would pass.
+	//
+	// Vendors are registered when a kit from one enrols a subject, so the list is
+	// what this service has actually seen. It starts empty rather than seeded with
+	// a mock.
+	axum::Json(serde_json::json!(state.store.vendors())).into_response()
 }
 
 /// POST /v1/admin/vendors/{id}/health-check
