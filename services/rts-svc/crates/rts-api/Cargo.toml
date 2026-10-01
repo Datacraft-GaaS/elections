@@ -30,8 +30,16 @@ rts-projections   = { path = "../rts-projections" }
 sqlx              = { workspace = true }
 tracing           = { workspace = true }
 tracing-subscriber = { workspace = true }
-uuid              = { workspace = true }
+uuid              = { workspace = true, features = ["v4", "v5", "serde"] }
 thiserror         = { workspace = true }
+
+eel-crypto-rs = { workspace = true }
+
+sha2 = { workspace = true }
+
+hex = { workspace = true }
+
+chrono = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true }

@@ -450,7 +450,7 @@ into three buckets, because "238 fabricated" is not a task list. Converting all
 238 to 501 would remove capability a refusal cannot replace; leaving them
 fabricated is worse than either. The split is the point.
 
-**83 implementable** (was 221; 173 converted) — local work. Create/read/update
+**74 implementable** (was 221; 184 converted) — local work. Create/read/update
 against `AppState`, or a computation over inputs the request already carries.
 `eel-memstore-rs` is usually the whole requirement. These are worth doing, and are
 how the ten crates already fixed were fixed.
@@ -797,6 +797,76 @@ this same endpoint is the easiest way to make the numbers balance.
 `tests/api.rs` is 21 tests, all failing against the previous code, and proven able
 to fail: restoring the synthetic `1..=deposited+spoilt` range drops 3 of them.
 
+`rts-svc/rts-api` is where the zero Merkle root lived, and the fix is the one I
+said earlier might only be a documented blocker. **It was not** —
+`packages/eel-crypto-rs` has a real `MerkleTree` with `inclusion_proof` and
+`verify_inclusion_against_root`, and it was sitting unused in the same repository.
+
+`get_form_proof` returned:
+
+```json
+{ "merkle_root": "0000...0000", "merkle_proof": [] }
+```
+
+The zero root is not a Merkle root of anything. A client that verified the proof
+would correctly reject it; a client that only checked "is a root present" would
+accept it — and a zero root is the kind of value that survives a glance. The proof
+is now a real inclusion proof over the Form 34A submissions this process received,
+and it is **verified before it is served**, so a proof that would not verify is
+never emitted. The test rebuilds the tree from the audit trail's leaf hashes,
+checks the reported root reproduces, and runs the crate's own
+`verify_inclusion` against the served proof and root.
+
+What the root is *not* is stated on the response: `tlog_inclusion_proven: false`.
+It is a root over one process's forms with no cross-process agreement on the leaf
+set and no append-only log behind it. That is the same distinction legal-audit
+needed, and the honesty is the point — the alternative is a field that invites
+exactly the reading this workspace cannot support.
+
+The other handlers in this crate were fabrications of a more mundane kind, and
+two of them would have broken a real client outright:
+
+- **`get_icr_job` minted a *new* `job_id` on every read.** A client polling one
+  form's ICR job got a different id each time and could never correlate two polls.
+  The job id is now derived from the form id, so it is stable across reads.
+- **`get_ack` returned `status: "pending"` for any scan id**, so a form that had
+  been submitted and scanned read as never received. The scan id is now derived
+  from the form id, which also makes the endpoint reachable at all.
+- **`get_snapshot` returned `merkle_root: None` and `form34c: None` for any
+  scope/code.** There is now a real Form 34C consolidation: candidate votes summed
+  across every station that reported them in a constituency, with a deterministic
+  ordering so two reads agree.
+- **`resolve_dispute` answered `resolved` for any dispute id** and never read the
+  `countersign_token` the request carries. The token must now be one this service
+  issued *and* belong to the running officer named on the dispute, so one
+  officer's token cannot countersign another's dispute.
+- `provision_token` returned `rts-token-stub-<uuid>` with a hardcoded
+  `expires_at` of 2030-01-01. The token is now a digest over device id, svid and
+  issue time, expiring in 24 hours.
+- `ingest_event` answered `queued` for anything and stored nothing. It now
+  requires a non-empty envelope `id` and `type`, and records the event.
+- `sms_fallback` turned an unparsed encoded payload into a "received" form. It now
+  stores the envelope verbatim and says the payload is not parsed — fabricating a
+  form from bytes this service cannot read is the failure this effort is about.
+- `compile_form34b`/`34c` answered `compilation_queued` for any input and recorded
+  nothing. Jobs are now recorded, and each says that sealing needs the HSM
+  ceremony.
+
+**Form 34A arithmetic is now checked on receipt**: votes_cast must equal
+valid + rejected + spoilt, must not exceed registered voters, and the candidate
+totals must equal valid_votes. A form whose own numbers disagree is evidence of a
+transcription fault and should not be consolidated. Nothing checked this before,
+and the sum is exactly what Form 34C aggregation is built on.
+
+`tests/http_surface.rs` is 32 tests, all failing against the previous code, and
+proven able to fail: restoring the zero root and empty proof drops
+`a_form_proof_carries_a_real_root_that_verifies`.
+
+Three of my own test expectations were wrong before the code was: I asserted a
+candidate-total mismatch on a payload that failed the votes_cast check first, and
+I asserted a token was stable across issuance when including the issue time is the
+point. Both corrected in the tests.
+
 `portal/gazette` contains **the most serious refusal in this tree**, and it is
 recorded as blocked rather than implemented.
 
@@ -968,7 +1038,7 @@ added for verdicts asserted as a literal `true`.
 | `training-svc/crates/training-api/src/handlers/accreditation.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/lms.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/spec.rs` | 6 | 0 | 0 |
-| **total** | **83** | **7** | **9** |
+| **total** | **74** | **5** | **9** |
 Run `python3 tools/fabrication_triage.py --list` for every handler, or
 `--crate <fragment>` for one file.
 

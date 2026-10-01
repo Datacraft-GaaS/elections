@@ -10,7 +10,8 @@ async fn main() {
     let _db_url = env::var("DB_URL").unwrap_or_else(|_| "postgres://localhost/eel".to_string());
     let http_addr = "0.0.0.0:8080";
     info!(http_addr, "rts-api starting");
-    let app = rts_api::router::build_router();
+    let state = std::sync::Arc::new(rts_api::store::AppState::default());
+    let app = rts_api::router::build_router(state);
     let listener = tokio::net::TcpListener::bind(http_addr).await.expect("bind failed");
     info!(http_addr, "rts-api HTTP listening");
     axum::serve(listener, app).await.expect("HTTP server failed");

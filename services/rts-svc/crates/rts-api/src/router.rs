@@ -1,9 +1,11 @@
 use axum::{routing::{get, post}, Router};
 use crate::handlers::*;
+use crate::store::SharedState;
 
-pub fn build_router() -> Router {
+pub fn build_router(state: SharedState) -> Router {
     Router::new()
         .route("/health", get(health))
+        .layer(axum::Extension(state.clone()))
         .route("/api/v1/rts/forms", post(submit_form))
         .route("/api/v1/rts/forms/sms-fallback", post(sms_fallback))
         .route("/api/v1/rts/forms/34b", post(compile_form34b))
@@ -19,4 +21,5 @@ pub fn build_router() -> Router {
         .route("/api/v1/rts/audit/{form_id}", get(get_audit))
         .route("/api/v1/rts/ro/disputes", post(create_dispute))
         .route("/api/v1/rts/ro/disputes/{id}/resolve", post(resolve_dispute))
+        .with_state(state)
 }
