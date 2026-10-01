@@ -6,7 +6,6 @@ use axum::{
 };
 use tracing::info;
 
-use crate::models::*;
 use crate::spec;
 use crate::state::SharedState;
 
@@ -14,30 +13,87 @@ pub async fn health() -> impl IntoResponse {
     StatusCode::OK
 }
 
+/// A declared operation with no implementation behind it.
+///
+/// `get_evidence_bundle` is the reason this matters here. It answered 200 with
+/// a default-constructed EvidenceBundle for any petition id, so a caller
+/// checking what evidence the court had on file received a well-formed bundle
+/// containing nothing. In a filing context that is worse than an error: an empty
+/// bundle and a populated one are indistinguishable from the response alone.
+fn not_implemented(operation: &str, detail: &str) -> impl IntoResponse {
+    (
+        StatusCode::NOT_IMPLEMENTED,
+        Json(serde_json::json!({
+            "type": "about:blank",
+            "title": "Not Implemented",
+            "status": 501,
+            "detail": format!(
+                "{operation} is declared by the contract but has no \
+                 implementation behind it: {detail}"
+            ),
+        })),
+    )
+}
+
 pub async fn request_evidence(Path(petition_id): Path<String>) -> impl IntoResponse {
     info!(petition_id, "request_evidence");
-    StatusCode::ACCEPTED
+    // 202 means a request for evidence was accepted and is being pursued. None
+    // was; the only trace was this log line.
+    let _ = petition_id;
+    not_implemented(
+        "evidence request",
+        "no evidence store or request queue is wired; it previously returned \
+         202 for a request that was never made",
+    )
 }
 
 pub async fn get_evidence_bundle(Path(petition_id): Path<String>) -> impl IntoResponse {
     info!(petition_id, "get_evidence_bundle");
-    Json(EvidenceBundle { petition_id, ..Default::default() })
+    // Answered 200 with a default-constructed bundle for any petition id: a
+    // well-formed evidence bundle containing nothing.
+    let _ = petition_id;
+    not_implemented(
+        "evidence bundle retrieval",
+        "no evidence store is wired; it previously returned a \
+         default-constructed EvidenceBundle for any petition id, which is \
+         indistinguishable from a populated one",
+    )
 }
 
 pub async fn register_witness(Path(petition_id): Path<String>) -> impl IntoResponse {
     info!(petition_id, "register_witness");
-    Json(TechnicalWitness { petition_id, ..Default::default() })
+    // Answered 200 with a default-constructed TechnicalWitness, so a technical
+    // witness appeared to be registered to the petition and was recorded
+    // nowhere. No witness consented, was identified, or was contactable.
+    let _ = petition_id;
+    not_implemented(
+        "witness registration",
+        "no witness store is wired; it previously returned a \
+         default-constructed TechnicalWitness for the petition",
+    )
 }
 
 pub async fn list_witnesses(Path(petition_id): Path<String>) -> impl IntoResponse {
     info!(petition_id, "list_witnesses");
-    let witnesses: Vec<TechnicalWitness> = vec![];
-    Json(serde_json::json!({ "witnesses": witnesses }))
+    // An empty witness list reads as "no witness is registered to this
+    // petition", which is a claim about the petition rather than about storage.
+    let _ = petition_id;
+    not_implemented(
+        "witness listing",
+        "no witness store is wired; it previously returned an empty list, \
+         which reads as no witness being registered",
+    )
 }
 
 pub async fn add_supplementary_request(Path(petition_id): Path<String>) -> impl IntoResponse {
     info!(petition_id, "add_supplementary_request");
-    Json(SupplementaryRequest { petition_id, ..Default::default() })
+    // Echoed the petition id into a default-constructed request record.
+    let _ = petition_id;
+    not_implemented(
+        "supplementary request",
+        "no request store is wired; it previously returned a \
+         default-constructed SupplementaryRequest for the petition",
+    )
 }
 
 // ---------------------------------------------------------------------------

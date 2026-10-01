@@ -15,10 +15,34 @@ pub async fn health() -> impl IntoResponse {
     StatusCode::OK
 }
 
+/// A declared operation with no implementation behind it.
+///
+/// `sign_mou` and `resolve_incident` are why this crate needs it. Signing an MOU
+/// between a county and a ministry, and resolving an election-security incident,
+/// are both attestations: the response is the only evidence the caller has that
+/// the thing happened. Answering 204 for either means the record exists nowhere
+/// and the caller cannot tell.
+fn not_implemented(operation: &str, detail: &str) -> impl IntoResponse {
+    (
+        StatusCode::NOT_IMPLEMENTED,
+        Json(serde_json::json!({
+            "type": "about:blank",
+            "title": "Not Implemented",
+            "status": 501,
+            "detail": format!(
+                "{operation} is declared by the contract but has no \
+                 implementation behind it: {detail}"
+            ),
+        })),
+    )
+}
+
 pub async fn list_mous() -> impl IntoResponse {
     info!("list_mous");
-    let mous: Vec<Mou> = vec![];
-    Json(serde_json::json!({ "mous": mous }))
+    not_implemented(
+        "MOU listing",
+        "no MOU store is wired; it previously returned an empty list",
+    )
 }
 
 pub async fn create_mou(Json(req): Json<CreateMouRequest>) -> impl IntoResponse {
@@ -35,18 +59,35 @@ pub async fn create_mou(Json(req): Json<CreateMouRequest>) -> impl IntoResponse 
         signed_at: None,
         created_at: chrono::Utc::now().to_rfc3339(),
     };
-    (StatusCode::CREATED, Json(mou))
+    // The body above echoes the request into a draft and answers 201, storing
+    // nothing.
+    let _ = &mou;
+    not_implemented(
+        "MOU creation",
+        "no MOU store is wired; it previously returned 201 with the request \
+         echoed into a draft record",
+    )
 }
 
-pub async fn sign_mou(Path(id): Path<String>, Json(req): Json<SignMouRequest>) -> impl IntoResponse {
-    info!(id, officer_id = %req.officer_id, "sign_mou");
-    StatusCode::NO_CONTENT
+pub async fn sign_mou(Path(id): Path<String>, Json(_req): Json<SignMouRequest>) -> impl IntoResponse {
+    info!(id, "sign_mou");
+    // Logged the signing officer's id and answered 204. A 204 is a successful
+    // signature: the caller had no other evidence the MOU was signed, and none
+    // existed anywhere.
+    let _ = id;
+    not_implemented(
+        "MOU signing",
+        "no MOU store is wired; it previously returned 204 for a signature \
+         that was recorded nowhere",
+    )
 }
 
 pub async fn list_datasets() -> impl IntoResponse {
     info!("list_datasets");
-    let datasets: Vec<CountyDataset> = vec![];
-    Json(serde_json::json!({ "datasets": datasets }))
+    not_implemented(
+        "dataset listing",
+        "no dataset store is wired; it previously returned an empty list",
+    )
 }
 
 pub async fn submit_dataset(Json(req): Json<SubmitDatasetRequest>) -> impl IntoResponse {
@@ -65,13 +106,26 @@ pub async fn submit_dataset(Json(req): Json<SubmitDatasetRequest>) -> impl IntoR
         retention_until: req.retention_until,
         created_at: chrono::Utc::now().to_rfc3339(),
     };
-    (StatusCode::CREATED, Json(dataset))
+    // Echoed the submission into a dataset record and answered 201, storing
+    // nothing. approved_by and approval_date are already None here, so the
+    // record never claimed approval -- but the 201 claimed receipt.
+    let _ = &dataset;
+    not_implemented(
+        "dataset submission",
+        "no dataset store is wired; it previously returned 201 with the \
+         submission echoed into a record it never stored",
+    )
 }
 
 pub async fn list_incidents() -> impl IntoResponse {
     info!("list_incidents");
-    let incidents: Vec<CoordinationIncident> = vec![];
-    Json(serde_json::json!({ "incidents": incidents }))
+    // An empty incident list reads as "no incidents are open", which is a
+    // materially different claim from "nothing is stored".
+    not_implemented(
+        "incident listing",
+        "no incident store is wired; it previously returned an empty list, \
+         which reads as no incidents being open",
+    )
 }
 
 pub async fn create_incident(Json(req): Json<CreateIncidentRequest>) -> impl IntoResponse {
@@ -98,8 +152,16 @@ pub async fn resolve_incident(
     Json(req): Json<ResolveIncidentRequest>,
 ) -> impl IntoResponse {
     info!(id, "resolve_incident");
-    let _ = req.resolution_notes;
-    StatusCode::NO_CONTENT
+    // Discarded the resolution notes the caller supplied and answered 204.
+    // Resolving an election-security incident is an attestation that the
+    // incident is closed; the only record of the resolution was the request
+    // that is now gone.
+    let _ = (id, &req);
+    not_implemented(
+        "incident resolution",
+        "no incident store is wired; it discarded the resolution notes and \
+         returned 204 for a resolution recorded nowhere",
+    )
 }
 
 pub async fn saml_acs(Json(body): Json<serde_json::Value>) -> impl IntoResponse {

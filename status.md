@@ -186,8 +186,8 @@ Measuring the routers directly instead:
 
 ```
 registered handlers judged : 631
-fabricated                 : 257   (41%)
-  of which contract-unbound: 212
+fabricated                 : 245   (39%)
+  of which contract-unbound: 200
   contract-bound           : 45
 ```
 
@@ -239,6 +239,31 @@ to ask; `list_signatories` and `list_referendums` returned empty lists with
 `total: 0`, which is a claim about the world rather than about storage;
 `get_referendum` echoed any requested id into a default record and answered 200
 for ids that do not exist.
+
+### Also fixed: `county-coord` and `court-interface` (12 handlers)
+
+Three of these are attestations where the HTTP response was the caller's only
+evidence the thing happened:
+
+- `county-coord::sign_mou` logged the signing officer's id and returned `204`.
+  A 204 is a successful signature. The MOU was signed nowhere.
+- `county-coord::resolve_incident` **discarded the `resolution_notes` the caller
+  supplied** and returned `204`. The only record of an incident resolution was
+  the request that is now gone.
+- `court-interface::register_witness` answered `200` with a
+  default-constructed `TechnicalWitness`, so a witness appeared registered to a
+  court petition having never consented, been identified, or been contactable.
+
+`court-interface::get_evidence_bundle` is the one to be most careful about: it
+returned `200` with a default-constructed `EvidenceBundle` for **any** petition
+id. A caller checking what evidence the court held received a well-formed bundle
+containing nothing, and an empty bundle is indistinguishable from a populated one
+from the response alone — which in a filing context is worse than an error.
+
+The three list handlers (`list_mous`, `list_datasets`, `list_incidents`,
+`list_witnesses`) all returned empty arrays. That is a claim about the world, not
+about storage: "no incidents are open" and "no witness is registered" are exactly
+what an incident tracker and a witness register exist to assert.
 
 Still open, and the clearest of the remainder:
 `abis-api::assign_adjudication` echoes the request back as
