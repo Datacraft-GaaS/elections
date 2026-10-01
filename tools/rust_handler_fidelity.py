@@ -40,13 +40,34 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACTS = ROOT / "packages" / "openapi-contracts"
 
-# Anything reaching for one of these is doing real work: it is talking to a
-# store, a database, or a downstream service. Its response is earned.
+# Reaching for one of these means the answer came from somewhere durable: a
+# store, a database, or a downstream service.
 WORK_MARKERS = re.compile(
     r"\b(repo|repos|store|storage|db|pool|client|svc|service|dao|"
-    r"query|fetch_|insert|upsert|update|delete_from|execute|commit|"
+    r"query|fetch_|insert|upsert|delete_from|execute|commit|"
     r"sqlx|rusqlite|diesel|repository)\b",
     re.I,
+)
+
+# Reading or mutating in-process state. A handler that touches a shared map,
+# mutex or store is answering from real data even with no database behind it --
+# `acknowledge_alert` locks `state.alerts`, mutates the record, and 404s when
+# the id is unknown, which is about as honest as a handler gets. The first
+# version of this tool called it FABRICATED because its body was short.
+STATE_MARKERS = re.compile(
+    r"\bstate\s*\.|\bstore\s*\.|\bguard\b|\.lock\(\)|\.try_lock\(\)|"
+    r"\.read\(\)|\.write\(\)|get_mut|\.insert\(|\.remove\(|\.entry\(|"
+    r"\.extend\(|\.retain\(|\.get\(&|\.get_mut\(",
+)
+
+# A handler that can fail is one that consulted something. Returning 404 on a
+# missing key or propagating Err is evidence of a lookup, and it is the
+# cheapest reliable signal that a response was derived rather than invented.
+ERROR_BRANCH = re.compile(
+    r"StatusCode::(?:NOT_FOUND|BAD_REQUEST|UNAUTHORIZED|FORBIDDEN|CONFLICT|"
+    r"UNPROCESSABLE_ENTITY|SERVICE_UNAVAILABLE|INTERNAL_SERVER_ERROR|"
+    r"TOO_MANY_REQUESTS|NOT_ACCEPTABLE)\b"
+    r"|\bNone\s*=>|\bErr\(|\.is_err\(\)|\bSome\("
 )
 
 # A handler body that is a single expression and short enough to read in one
@@ -276,23 +297,185 @@ def classify(body: str, op: dict | None = None) -> str:
         return "VERIFIED"
     if op and PROBE_OPERATION.search(op.get("path") or ""):
         return "VERIFIED"
-    # A handler that reaches for a store, a client, or a query earns its answer.
-    if WORK_MARKERS.search(body):
+    # Three independent ways to have earned the answer. Missing all three while
+    # returning only a constructed success is what fabrication actually looks
+    # like, and it is what the earlier heuristic kept getting wrong.
+    if WORK_MARKERS.search(body) or STATE_MARKERS.search(body) \
+            or ERROR_BRANCH.search(body):
         return "VERIFIED"
     if len(lines) <= FABRICATED_MAX_LINES:
         return "FABRICATED"
     return "UNKNOWN"
 
 
+METHOD_CALL = re.compile(r"\b(get|post|put|patch|delete)\(\s*(\w+)\s*\)")
+
+
+def route_registrations(text: str) -> list[tuple[str, str]]:
+    """Every (path, handler) pair registered by an axum `.route(...)` call.
+
+    Contract fidelity only covers operations a contract names. An axum router
+    can serve any handler on any path, so a handler with no binding is invisible
+    to that measurement -- and the three worst fabrications found so far
+    (voter lookup, tally verify, certificate verify) were all invisible for
+    exactly that reason. This enumerates registrations directly, so an unbound
+    fabrication shows up as itself rather than as an absence.
+
+    Handles `.route("/p", get(h))`, the method-chained
+    `.route("/p", get(a).post(b))`, and paths wrapped across lines.
+    """
+    out: list[tuple[str, str]] = []
+    for m in re.finditer(r"\.route\s*\(", text):
+        block = _balanced(text, m.end() - 1)
+        if block is None:
+            continue
+        pm = re.search(r'"([^"]*)"', block)
+        path = pm.group(1) if pm else "?"
+        for _verb, handler in METHOD_CALL.findall(block):
+            out.append((path, handler))
+    return out
+
+
+def _balanced(text: str, open_at: int) -> str | None:
+    """The parenthesised group starting at `open_at`, matched by depth."""
+    depth = 0
+    for i in range(open_at, len(text)):
+        if text[i] == "(":
+            depth += 1
+        elif text[i] == ")":
+            depth -= 1
+            if depth == 0:
+                return text[open_at + 1 : i]
+    return None
+
+
+def all_routes(bodies: dict[str, dict]) -> dict[str, list[str]]:
+    """handler name -> the paths it is registered on, across the services tree."""
+    routes: dict[str, list[str]] = {}
+    for rs in sorted((ROOT / "services").rglob("*.rs")):
+        if "/target/" in str(rs):
+            continue
+        try:
+            text = rs.read_text(errors="replace")
+        except Exception:
+            continue
+        for path, handler in route_registrations(text):
+            routes.setdefault(handler, []).append(path)
+    return routes
+
+
+def report_unbound(ops: list[dict], bodies: dict[str, dict]) -> int:
+    """Fabrications among registered handlers that no contract binds.
+
+    This is the measurement the bound-only view cannot give. A contract that
+    names a handler is the easy case; a handler on a live route with no binding
+    is the one that was invisible when verify_voter_lookup answered
+    `verified: true` for an invented voter.
+    """
+    bound = {op["handler"] for op in ops if op["handler"]}
+    routes = all_routes(bodies)
+
+    total = fab = 0
+    rows: list[tuple[str, str, str, str]] = []
+    for handler, paths in sorted(routes.items()):
+        entry = bodies.get(handler)
+        if entry is None:
+            continue
+        total += 1
+        verdict = classify(entry["body"], None)
+        if verdict in ("VERIFIED", "DECLARES_UNIMPLEMENTED", "UNKNOWN"):
+            continue
+        fab += 1
+        rows.append((verdict, handler, str(entry["file"]), paths[0]))
+
+    unbound = [r for r in rows if r[1] not in bound]
+    print(f"registered handlers judged : {total}")
+    print(f"fabricated                 : {fab}")
+    print(f"  of which contract-unbound: {len(unbound)}")
+    print(f"  contract-bound           : {len(rows) - len(unbound)}")
+    print()
+    if not unbound:
+        print("no unregistered fabrications")
+        return 0
+    print("contract-unbound fabrications (invisible to the bound-only view)")
+    print("-" * 78)
+    for verdict, handler, f, path in unbound:
+        print(f"[{verdict:<15}] {handler:<28} {path}")
+        print(f"                  {f}")
+    return 0
+
+
+# Hand-checked against the source, one verdict each. The classifier has been
+# wrong twice in ways that looked confident -- it called `acknowledge_alert`
+# fabricated because the body was short, and resolved contract bindings by bare
+# function name so it answered one service with another's handler. A heuristic
+# with no test is just a guess that prints a number.
+SELF_TEST = [
+    # (handler, file, expected) -- verified by reading the handler.
+    ("acknowledge_alert", "services/support-admin-svc/crates/intent/src/http.rs",
+     "VERIFIED"),   # locks state.alerts, mutates, 404s on unknown id
+    ("verify_voter_lookup", "services/field-mobile-svc/crates/mobile-bff/src/spec.rs",
+     "DECLARES_UNIMPLEMENTED"),
+    ("tally_verify", "services/field-mobile-svc/crates/mobile-bff/src/spec.rs",
+     "DECLARES_UNIMPLEMENTED"),
+    ("get_reports", "services/abis-svc/crates/abis-api/src/routes/reports.rs",
+     "DECLARES_UNIMPLEMENTED"),
+    ("certify_county_result", "services/governance-svc/crates/referendum/src/handlers.rs",
+     "FABRICATED"),  # logs and returns 204; certifies nothing
+    ("amend_form34a", "services/rts-svc/crates/rts-ro-api/src/handlers.rs",
+     "FABRICATED"),  # logs and returns 202; discards the amendment
+    ("assign_adjudication", "services/abis-svc/crates/abis-api/src/routes/adjudication.rs",
+     "IGNORES_INPUT"),  # State(_state) unused, echoes req as "in_review"
+]
+
+
+def self_test() -> int:
+    bodies = handler_bodies()
+    bad = 0
+    for handler, path, expected in SELF_TEST:
+        entry = bodies.get(handler)
+        if entry is None:
+            print(f"MISSING  {handler} (not indexed)")
+            bad += 1
+            continue
+        got = classify(entry["body"], None)
+        want = expected
+        ok = got == want
+        bad += 0 if ok else 1
+        mark = "ok  " if ok else "FAIL"
+        print(f"{mark} {handler:<24} want={want:<24} got={got}")
+        if not ok and str(entry["file"]) != path:
+            print(f"       note: resolved in {entry['file']}, expected {path}")
+    print(f"\n{len(SELF_TEST) - bad}/{len(SELF_TEST)} classifier checks pass")
+    return 1 if bad else 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--services", help="comma-separated service filter")
     ap.add_argument("--verbose", action="store_true", help="print every finding")
+    ap.add_argument(
+        "--self-test",
+        action="store_true",
+        help="check the classifier against hand-verified handlers",
+    )
+    ap.add_argument(
+        "--all-routes",
+        action="store_true",
+        help="judge every registered axum handler, including ones no contract binds",
+    )
     args = ap.parse_args()
 
-    wanted = {s.strip() for s in args.services.split(",")} if args.services else None
+    if args.self_test:
+        return self_test()
+
     ops = contract_operations()
     bodies = handler_bodies()
+
+    if args.all_routes:
+        return report_unbound(ops, bodies)
+
+    wanted = {s.strip() for s in args.services.split(",")} if args.services else None
 
     per_service: dict[str, dict] = defaultdict(
         lambda: {"declared": 0, "fabricated": 0, "ignores_input": 0,

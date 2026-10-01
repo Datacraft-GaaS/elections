@@ -178,7 +178,55 @@ because an earlier version of the Flutter harness scored a package whose
     blocked on inputs this repository does not have, which is why they are
     written down rather than started.
 
-## Handler fidelity: 54 handlers return answers they did not earn
+## Handler fidelity: 275 of 631 registered handlers return answers they did not earn
+
+**The bound-only count in the table below is 45, and 45 is not the size of the
+problem.** It counts only handlers a contract names via `x-handler-bound`.
+Measuring the routers directly instead:
+
+```
+registered handlers judged : 631
+fabricated                 : 275   (44%)
+  of which contract-unbound: 230
+  contract-bound           : 45
+```
+
+The fabrication problem is roughly **six times** the contract-bound view
+suggested, and 230 of the 275 were invisible to it. Worst by service:
+governance 73, abis 32, portal 24, ecc 22, field-mobile 21, bvr 16,
+ai-platform 13.
+
+Election-critical examples, none of which any contract binds:
+
+- `governance-svc/referendum::certify_county_result` — logs and returns
+  `204 No Content`. A county result is **certified** and recorded nowhere.
+- `rts-svc/rts-ro-api::amend_form34a` — logs the amendment and returns
+  `202 Accepted`, having discarded the Form 34A amendment it was handed.
+- `abis-api::assign_adjudication` — echoes the request back as
+  `status: "in_review"` without storing the assignment.
+
+Run `python3 tools/rust_handler_fidelity.py --all-routes` for the list.
+
+### The classifier was wrong twice, both times confidently
+
+It has been rebuilt once. The first version judged a handler fabricated largely
+because its body was **short**, which condemned `acknowledge_alert`: it locks
+`state.alerts`, mutates the record, and returns 404 for an unknown id, and was
+called fabricated. A short body doing real work is the opposite of the defect.
+Fabrication is now defined as returning a constructed success with no source of
+truth behind it — no store, no state access, and **no branch that can fail**. A
+handler that can 404 consulted something.
+
+The other error was resolving `x-handler-bound` by bare function name, so one
+service's contract was answered with a same-named handler from another service.
+The first run of this tool reported 438 fabrications; that was wrong in the
+other direction, and the rebuild plus ground-truth checks brought it to 275.
+
+Seven hand-checked handlers are pinned in `--self-test`: one real in-memory
+mutation, three honest 501s, one IGNORES_INPUT, two FABRICATED. A heuristic with
+no test is a guess that prints a number.
+
+### Bound-only measurement, for the record
 
 `tools/rust_handler_fidelity.py` walks the `x-handler-bound` of all 66 contracts
 and judges the Rust function each one names. **50 of 134 bound handlers are
