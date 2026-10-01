@@ -450,7 +450,7 @@ into three buckets, because "238 fabricated" is not a task list. Converting all
 238 to 501 would remove capability a refusal cannot replace; leaving them
 fabricated is worse than either. The split is the point.
 
-**89 implementable** (was 221; 167 converted) — local work. Create/read/update
+**83 implementable** (was 221; 173 converted) — local work. Create/read/update
 against `AppState`, or a computation over inputs the request already carries.
 `eel-memstore-rs` is usually the whole requirement. These are worth doing, and are
 how the ten crates already fixed were fixed.
@@ -745,6 +745,58 @@ was unconstructable.
 `tests/api.rs` is 27 tests, all failing against the previous code, and proven able
 to fail: bypassing `evaluate` and hardcoding a winner drops 4 of them.
 
+`rts-svc/ballot-serial` contains the single worst fabrication found in this tree,
+and it is worth describing precisely because the code *looked* like it was doing
+the work.
+
+`trigger_reconciliation` did call the real arithmetic —
+`reconciliation::reconcile`, which implements FR-M63-023/024 with a `Held` branch,
+`flag_reason`, and EC-DAT-11 named in its own comments and tests. But it built its
+own input rather than reading the assignment:
+
+```rust
+let counts = StationCounts {
+    serial_low: 1,                              // invented
+    serial_high: req.deposited_count + req.spoilt_count,  // derived from the answer
+    ...
+};
+```
+
+`assigned == deposited + spoilt` by construction, so `accounted > assigned` was
+**arithmetically unreachable** and the hold branch never fired through the API —
+even though `over_assigned_triggers_hold` proves it fires when called directly.
+**A station could deposit 120 ballots against a 100-ballot issue and be cleared.**
+The comment above it, "We don't have the serial range in the request (needs a DB
+lookup in full impl)", is the whole defect stated plainly. There is a store now, so
+the range is the one the station was actually assigned.
+
+This is a different failure mode from the `declaration` commit and worth
+separating. `declaration` had a correct engine that nothing called. `ballot-serial`
+had a correct engine that was called **with fabricated inputs**, and the
+fabrication was constructed so that the check could not fail. A test that calls
+`reconcile` directly would have stayed green forever. The only thing that caught
+it was an end-to-end test asserting a station that over-deposits is held.
+
+Three more in the same crate:
+
+- `get_reconciliation` returned `status: "pending", result_hold: false` for **any**
+  station code. A station that had never been reconciled reported no hold, which
+  is the opposite of what a hold is for.
+- `resolve_hold` returned `cleared` for **any** id — clearing a hold that might not
+  exist. `ResolveHoldRequest` has always carried `resolved_by_po` **and**
+  `resolved_by_cro`; the handler read only the first. It now requires both, and
+  refuses a station with no active hold.
+- `record_spoilt` never checked the serial against the station's assigned range,
+  so a spoilt ballot could be recorded outside it, inflating the spoilt count and
+  masking the very discrepancy the hold exists to catch (FR-M63-014).
+
+The reconciliation also now uses `max(recorded_spoilt_serials, request.spoilt_count)`,
+because a station under-reporting spoilt ballots it had itself recorded through
+this same endpoint is the easiest way to make the numbers balance.
+
+`tests/api.rs` is 21 tests, all failing against the previous code, and proven able
+to fail: restoring the synthetic `1..=deposited+spoilt` range drops 3 of them.
+
 `portal/gazette` contains **the most serious refusal in this tree**, and it is
 recorded as blocked rather than implemented.
 
@@ -916,7 +968,7 @@ added for verdicts asserted as a literal `true`.
 | `training-svc/crates/training-api/src/handlers/accreditation.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/lms.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/spec.rs` | 6 | 0 | 0 |
-| **total** | **89** | **7** | **9** |
+| **total** | **83** | **7** | **9** |
 Run `python3 tools/fabrication_triage.py --list` for every handler, or
 `--crate <fragment>` for one file.
 

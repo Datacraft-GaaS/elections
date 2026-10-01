@@ -7,3 +7,4 @@ pub mod aggregate;
 pub mod api;
 pub mod events;
 pub mod reconciliation;
+pub mod store;
