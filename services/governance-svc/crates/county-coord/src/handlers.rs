@@ -15,37 +15,16 @@ pub async fn health() -> impl IntoResponse {
     StatusCode::OK
 }
 
-/// A declared operation with no implementation behind it.
-///
-/// `sign_mou` and `resolve_incident` are why this crate needs it. Signing an MOU
-/// between a county and a ministry, and resolving an election-security incident,
-/// are both attestations: the response is the only evidence the caller has that
-/// the thing happened. Answering 204 for either means the record exists nowhere
-/// and the caller cannot tell.
-fn not_implemented(operation: &str, detail: &str) -> impl IntoResponse {
-    (
-        StatusCode::NOT_IMPLEMENTED,
-        Json(serde_json::json!({
-            "type": "about:blank",
-            "title": "Not Implemented",
-            "status": 501,
-            "detail": format!(
-                "{operation} is declared by the contract but has no \
-                 implementation behind it: {detail}"
-            ),
-        })),
-    )
-}
 
-pub async fn list_mous() -> impl IntoResponse {
+pub async fn list_mous(State(state): State<SharedState>) -> impl IntoResponse {
     info!("list_mous");
-    not_implemented(
-        "MOU listing",
-        "no MOU store is wired; it previously returned an empty list",
-    )
+    Json(serde_json::json!({ "mous": state.mous.list() }))
 }
 
-pub async fn create_mou(Json(req): Json<CreateMouRequest>) -> impl IntoResponse {
+pub async fn create_mou(
+    State(state): State<SharedState>,
+    Json(req): Json<CreateMouRequest>,
+) -> impl IntoResponse {
     info!(county_code = %req.county_code, "create_mou");
     let mou = Mou {
         id: uuid::Uuid::new_v4().to_string(),
@@ -59,38 +38,59 @@ pub async fn create_mou(Json(req): Json<CreateMouRequest>) -> impl IntoResponse 
         signed_at: None,
         created_at: chrono::Utc::now().to_rfc3339(),
     };
-    // The body above echoes the request into a draft and answers 201, storing
-    // nothing.
-    let _ = &mou;
-    not_implemented(
-        "MOU creation",
-        "no MOU store is wired; it previously returned 201 with the request \
-         echoed into a draft record",
-    )
+    // Real. Previously echoed the request into a draft and answered 201 while
+    // storing nothing, so it never appeared in list_mous and a re-read never
+    // found it.
+    state.mous.insert(mou.id.clone(), mou.clone());
+    (StatusCode::CREATED, Json(mou))
 }
 
-pub async fn sign_mou(Path(id): Path<String>, Json(_req): Json<SignMouRequest>) -> impl IntoResponse {
-    info!(id, "sign_mou");
-    // Logged the signing officer's id and answered 204. A 204 is a successful
-    // signature: the caller had no other evidence the MOU was signed, and none
-    // existed anywhere.
-    let _ = id;
-    not_implemented(
-        "MOU signing",
-        "no MOU store is wired; it previously returned 204 for a signature \
-         that was recorded nowhere",
-    )
+pub async fn sign_mou(
+    State(state): State<SharedState>,
+    Path(id): Path<String>,
+    Json(req): Json<SignMouRequest>,
+) -> impl IntoResponse {
+    // The signer and their signature hash are the evidence a signature exists,
+    // and the Mou model has no field for either, so they are recorded in the
+    // audit log rather than dropped. Previously officer_id reached only a log
+    // line and the response was 204 for any id.
+    info!(
+        id,
+        officer_id = %req.officer_id,
+        signature_hash = %req.signature_hash,
+        "sign_mou"
+    );
+    let signed_at = chrono::Utc::now().to_rfc3339();
+    match state.mous.update(&id, |mut m| {
+        m.status = MouStatus::Signed;
+        m.signed_at = Some(signed_at.clone());
+        m
+    }) {
+        Some(_) => (StatusCode::NO_CONTENT, Json(serde_json::json!({}))),
+        // Previously answered 204 for any id at all, so signing a MOU that does
+        // not exist was indistinguishable from signing one that did.
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({
+                "type": "about:blank",
+                "title": "Not Found",
+                "status": 404,
+                "detail": format!("no MOU with id {id}"),
+            })),
+        ),
+    }
+    .into_response()
 }
 
-pub async fn list_datasets() -> impl IntoResponse {
+pub async fn list_datasets(State(state): State<SharedState>) -> impl IntoResponse {
     info!("list_datasets");
-    not_implemented(
-        "dataset listing",
-        "no dataset store is wired; it previously returned an empty list",
-    )
+    Json(serde_json::json!({ "datasets": state.datasets.list() }))
 }
 
-pub async fn submit_dataset(Json(req): Json<SubmitDatasetRequest>) -> impl IntoResponse {
+pub async fn submit_dataset(
+    State(state): State<SharedState>,
+    Json(req): Json<SubmitDatasetRequest>,
+) -> impl IntoResponse {
     info!(county_code = %req.county_code, dataset_type = ?req.dataset_type, "submit_dataset");
     let dataset = CountyDataset {
         id: uuid::Uuid::new_v4().to_string(),
@@ -106,29 +106,21 @@ pub async fn submit_dataset(Json(req): Json<SubmitDatasetRequest>) -> impl IntoR
         retention_until: req.retention_until,
         created_at: chrono::Utc::now().to_rfc3339(),
     };
-    // Echoed the submission into a dataset record and answered 201, storing
-    // nothing. approved_by and approval_date are already None here, so the
-    // record never claimed approval -- but the 201 claimed receipt.
-    let _ = &dataset;
-    not_implemented(
-        "dataset submission",
-        "no dataset store is wired; it previously returned 201 with the \
-         submission echoed into a record it never stored",
-    )
+    state.datasets.insert(dataset.id.clone(), dataset.clone());
+    (StatusCode::CREATED, Json(dataset))
 }
 
-pub async fn list_incidents() -> impl IntoResponse {
+pub async fn list_incidents(State(state): State<SharedState>) -> impl IntoResponse {
     info!("list_incidents");
-    // An empty incident list reads as "no incidents are open", which is a
-    // materially different claim from "nothing is stored".
-    not_implemented(
-        "incident listing",
-        "no incident store is wired; it previously returned an empty list, \
-         which reads as no incidents being open",
-    )
+    // Real: previously always an empty list, which asserted that no incidents
+    // were open rather than that nothing was stored.
+    Json(serde_json::json!({ "incidents": state.incidents.list() }))
 }
 
-pub async fn create_incident(Json(req): Json<CreateIncidentRequest>) -> impl IntoResponse {
+pub async fn create_incident(
+    State(state): State<SharedState>,
+    Json(req): Json<CreateIncidentRequest>,
+) -> impl IntoResponse {
     info!(
         county_code = %req.county_code,
         severity = ?req.severity,
@@ -144,24 +136,38 @@ pub async fn create_incident(Json(req): Json<CreateIncidentRequest>) -> impl Int
         resolved_at: None,
         ecc_alert_ref: None,
     };
+    state.incidents.insert(incident.id.clone(), incident.clone());
     (StatusCode::CREATED, Json(incident))
 }
 
 pub async fn resolve_incident(
+    State(state): State<SharedState>,
     Path(id): Path<String>,
     Json(req): Json<ResolveIncidentRequest>,
 ) -> impl IntoResponse {
     info!(id, "resolve_incident");
-    // Discarded the resolution notes the caller supplied and answered 204.
-    // Resolving an election-security incident is an attestation that the
-    // incident is closed; the only record of the resolution was the request
-    // that is now gone.
-    let _ = (id, &req);
-    not_implemented(
-        "incident resolution",
-        "no incident store is wired; it discarded the resolution notes and \
-         returned 204 for a resolution recorded nowhere",
-    )
+    // The notes are the substance of this call. They used to be discarded
+    // (`let _ = req.resolution_notes`) and the handler answered 204 for any id,
+    // so a caller resolving an incident that never existed was told it had been
+    // resolved. The model has no field for the notes, so they are acknowledged
+    // in the audit log rather than silently dropped.
+    info!(resolution_notes = %req.resolution_notes, "incident resolved");
+    let resolved_at = chrono::Utc::now().to_rfc3339();
+    match state.incidents.update(&id, |mut i| {
+        i.resolved_at = Some(resolved_at.clone());
+        i
+    }) {
+        Some(_) => (StatusCode::NO_CONTENT, Json(serde_json::json!({}))),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({
+                "type": "about:blank",
+                "title": "Not Found",
+                "status": 404,
+                "detail": format!("no incident with id {id}"),
+            })),
+        ),
+    }
 }
 
 pub async fn saml_acs(Json(body): Json<serde_json::Value>) -> impl IntoResponse {

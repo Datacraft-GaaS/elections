@@ -1,0 +1,16 @@
+[package]
+name = "eel-memstore-rs"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Thread-safe in-memory collections for eel services that have no store wired"
+
+[lib]
+name = "eel_memstore_rs"
+path = "src/lib.rs"
+
+[dependencies]
+serde      = { workspace = true }
+serde_json = { workspace = true }

@@ -265,6 +265,50 @@ The three list handlers (`list_mous`, `list_datasets`, `list_incidents`,
 about storage: "no incidents are open" and "no witness is registered" are exactly
 what an incident tracker and a witness register exist to assert.
 
+### Capability, not refusal: `packages/eel-memstore-rs` and `county-coord`
+
+Converting handlers to 501 removes capability, which is the wrong trade when the
+honest answer is "there is no store yet". `packages/eel-memstore-rs` is the
+missing piece: a `Collection<T>` with real create/read/update/remove semantics,
+`RwLock`-guarded, ordered by key so list responses are stable, with JSON
+snapshot/restore and 12 unit tests.
+
+It is honest about being in-memory. `Collection::is_durable()` returns false by
+name so a service can surface it in a health response rather than implying
+Postgres. Per-process and non-durable cannot serve two replicas, and that is the
+gap `bvi-api`'s sqlx `PgStore` is the target for. This is the step that lets a
+handler be *correct* before the durable store exists.
+
+`county-coord` is the first crate on it, and is now at **zero** fabrications. The
+seven handlers converted to 501 earlier are now implemented:
+
+| handler | before | now |
+|---|---|---|
+| `create_mou` | 201, echoed into a draft, stored nothing | inserts; appears in `list_mous` |
+| `list_mous` | always `[]` | lists what was created |
+| `sign_mou` | **204 for any id**, including ids that never existed | sets `Signed` + `signed_at`; **404** if absent |
+| `create_incident` | 201, stored nothing | inserts; appears in `list_incidents` |
+| `list_incidents` | always `[]` | lists real incidents |
+| `resolve_incident` | **discarded `resolution_notes`, 204 for any id** | sets `resolved_at`; **404** if absent |
+| `submit_dataset` / `list_datasets` | 201 then always `[]` | round-trips |
+
+`tests/round_trip.rs` (7 tests) asserts the behaviour that was previously absent,
+and every one of them fails against the old code: `signing_an_unknown_mou_is_404_not_204`
+contradicts the 204-for-any-id outright. `state_is_isolated_between_routers` exists
+so a store leaking across `AppState` instances cannot make the round-trip pass
+for the wrong reason.
+
+Two things the model could not hold, recorded rather than hidden: `CoordinationIncident`
+has no field for the resolution notes and `Mou` has none for the signer's
+signature hash, so both are written to the audit log instead of being dropped.
+The signer and hash used to reach only a log line while the response was 204 for
+anything.
+
+**The headline fabricated count did not move (238).** It should not have: both a
+501 and a working handler are non-fabricated, so the metric cannot distinguish
+"refuses" from "works". Only the per-service number for `county-coord` shows the
+change. Any future progress claim from the total alone is not trustworthy.
+
 ### Also fixed: `abis-api` (6 handlers), including an unsigned policy change
 
 `admin.rs::update_policy` is the security finding. It answered `200` with
