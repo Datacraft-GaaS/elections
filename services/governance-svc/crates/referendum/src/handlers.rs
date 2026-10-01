@@ -8,7 +8,7 @@ use tracing::info;
 
 use crate::models::*;
 use crate::state::SharedState;
-use crate::threshold::{can_declare, county_has_yes_majority, meets_county_threshold};
+use crate::threshold::{can_declare, meets_county_threshold};
 
 /// A declared operation with no implementation behind it.
 ///
@@ -37,30 +37,39 @@ pub async fn health() -> impl IntoResponse {
 
 pub async fn list_referendums() -> impl IntoResponse {
     info!("list_referendums");
-    let referendums: Vec<Referendum> = vec![];
-    Json(serde_json::json!({ "referendums": referendums, "total": 0 }))
+    // Previously answered 200 with an empty list and total: 0, which reads as
+    // "no referendums exist" rather than "nothing is stored".
+    not_implemented(
+        "referendum listing",
+        "no referendum store is wired; it previously returned an empty list \
+         with total 0",
+    )
 }
 
 pub async fn get_referendum(Path(id): Path<String>) -> impl IntoResponse {
     info!(id, "get_referendum");
-    Json(Referendum { id, ..Default::default() })
+    // Echoed the requested id back inside a default-constructed Referendum and
+    // answered 200 for any id at all, so a lookup for a referendum that does
+    // not exist returned a plausible referendum rather than a 404.
+    let _ = id;
+    not_implemented(
+        "referendum lookup",
+        "no referendum store is wired; it previously echoed the requested id \
+         into a default record and answered 200 for any id",
+    )
 }
 
-pub async fn create_referendum(Json(body): Json<serde_json::Value>) -> impl IntoResponse {
+pub async fn create_referendum(Json(_body): Json<serde_json::Value>) -> impl IntoResponse {
     info!("create_referendum");
-    let id = uuid::Uuid::now_v7().to_string();
-    let referendum = Referendum {
-        id: id.clone(),
-        county_threshold: crate::threshold::REQUIRED_COUNTY_THRESHOLD,
-        created_at: chrono::Utc::now().to_rfc3339(),
-        ..Default::default()
-    };
-    let evt = crate::events::ReferendumConfiguredV1::new(
-        id,
-        body["election_id"].as_str().unwrap_or("").to_string(),
-        body["scheduled_date"].as_str().unwrap_or("").to_string(),
-    );
-    (StatusCode::CREATED, Json(serde_json::json!({ "referendum": referendum, "event": evt })))
+    // Minted a UUIDv7, built a Referendum from defaults, synthesised a
+    // ReferendumConfiguredV1 event and answered 201 -- storing nothing and
+    // emitting nothing. Every referendum creation therefore succeeded and none
+    // of them existed.
+    not_implemented(
+        "referendum creation",
+        "no referendum store or event bus is wired; it previously returned \
+         201 with a minted id and a synthesised ReferendumConfiguredV1",
+    )
 }
 
 pub async fn activate_referendum(Path(id): Path<String>) -> impl IntoResponse {
@@ -78,27 +87,19 @@ pub async fn activate_referendum(Path(id): Path<String>) -> impl IntoResponse {
 }
 
 pub async fn submit_county_result(
-    Path(id): Path<String>,
-    Json(body): Json<serde_json::Value>,
+    Path(_id): Path<String>,
+    Json(_body): Json<serde_json::Value>,
 ) -> impl IntoResponse {
-    info!(id, "submit_county_result");
-    let yes: u64 = body["yes_votes"].as_u64().unwrap_or(0);
-    let no: u64 = body["no_votes"].as_u64().unwrap_or(0);
-    let county_code = body["county_code"].as_str().unwrap_or("000").to_string();
-    let majority = county_has_yes_majority(yes, no);
-    let result = ReferendumCountyResult {
-        id: uuid::Uuid::now_v7().to_string(),
-        referendum_id: id,
-        county_code,
-        yes_votes: yes,
-        no_votes: no,
-        rejected_votes: body["rejected_votes"].as_u64().unwrap_or(0),
-        registered_voters: body["registered_voters"].as_u64().unwrap_or(0),
-        status: "provisional".to_string(),
-        certified_at: None,
-        county_yes_majority: majority,
-    };
-    (StatusCode::CREATED, Json(result))
+    info!("submit_county_result");
+    // Parsed the tally, computed county_has_yes_majority, built a provisional
+    // result and answered 201 -- persisting nothing. County results are what
+    // certify_county_result and get_national_result later claim to be working
+    // from, so this was the bottom of a chain that had no storage at any link.
+    not_implemented(
+        "county result submission",
+        "no results store is wired; it previously returned 201 with a \
+         provisional result it never recorded",
+    )
 }
 
 pub async fn certify_county_result(

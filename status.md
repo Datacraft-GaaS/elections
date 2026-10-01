@@ -186,8 +186,8 @@ Measuring the routers directly instead:
 
 ```
 registered handlers judged : 631
-fabricated                 : 271   (43%)
-  of which contract-unbound: 226
+fabricated                 : 257   (41%)
+  of which contract-unbound: 212
   contract-bound           : 45
 ```
 
@@ -211,6 +211,34 @@ now 501:
 - ~~`governance-svc/referendum::get_national_result`~~ — synthesised a national
   aggregate from constants and evaluated both thresholds at zero, so a tally
   never taken looked authoritative.
+
+### Also fixed: `recall` and `by-election` (10 handlers)
+
+`recall::get_threshold_report` is the most consequential of the ten. It evaluated
+California Constitution article IV section 2 recall eligibility — the invariant
+between a petition and a recall election — against a **hardcoded
+`registered_voters = 100_000` and `verified_signatories = 0`**. The threshold
+logic in `crate::threshold` is real and unit-tested; both inputs were constants.
+
+`by-election::create_kit_plan` assigned **every polling station
+`station_gps_lat: 0.0, station_gps_lng: 0.0`** — 0N 0E, in the Gulf of Guinea —
+so 201 described a kit delivery plan for kits never reserved, routed to open
+ocean. Its `sign_kit_plan` computes a genuine SHA-256 over the canonical plan and
+stores it in a field called `signed_blob_hash`: a digest, not a signature. There
+is no key, so it attests only that the plan is self-consistent, not who produced
+it. The comment now says exactly that rather than leaving "signed" to imply an
+attestation that does not exist.
+
+Also in recall: `create_petition` echoed the request back as `status: "draft"`
+under a comment claiming commissioner dual-sign is verified via SpiceDB (no
+SpiceDB call exists); `close_petition` returned 204 for a closure recorded
+nowhere; `create_recall_election` returned 201 with `trigger_status: "pending"`
+under a comment claiming an outbox event it never emitted; `import_signatories`
+discarded the OCR batch and returned `status: "processing"` with no poll endpoint
+to ask; `list_signatories` and `list_referendums` returned empty lists with
+`total: 0`, which is a claim about the world rather than about storage;
+`get_referendum` echoed any requested id into a default record and answered 200
+for ids that do not exist.
 
 Still open, and the clearest of the remainder:
 `abis-api::assign_adjudication` echoes the request back as

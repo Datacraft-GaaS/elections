@@ -9,7 +9,7 @@ use tracing::info;
 use crate::models::*;
 use crate::spec;
 use crate::state::SharedState;
-use crate::threshold::{meets_art_104_2_threshold, threshold_numerator_denominator};
+use crate::threshold::meets_art_104_2_threshold;
 
 pub async fn health() -> impl IntoResponse {
     StatusCode::OK
@@ -26,11 +26,39 @@ pub async fn get_petition(Path(id): Path<String>) -> impl IntoResponse {
     Json(RecallPetition { id, ..Default::default() })
 }
 
-pub async fn create_petition(Json(body): Json<serde_json::Value>) -> impl IntoResponse {
+/// A declared operation with no implementation behind it.
+///
+/// Returned instead of a fabricated success. `get_threshold_report` is why this
+/// matters more here than elsewhere: it evaluated recall eligibility against
+/// California Constitution article IV section 2 using a hardcoded
+/// `registered_voters = 100_000` and `verified_signatories = 0`, so the one
+/// invariant standing between a petition and a recall election was evaluated
+/// against an invented electorate.
+fn not_implemented(operation: &str, detail: &str) -> impl IntoResponse {
+    (
+        StatusCode::NOT_IMPLEMENTED,
+        Json(serde_json::json!({
+            "type": "about:blank",
+            "title": "Not Implemented",
+            "status": 501,
+            "detail": format!(
+                "{operation} is declared by the contract but has no \
+                 implementation behind it: {detail}"
+            ),
+        })),
+    )
+}
+
+pub async fn create_petition(Json(_body): Json<serde_json::Value>) -> impl IntoResponse {
     info!("create_petition");
-    // Commissioner dual-sign verified in production via SpiceDB (P01)
-    let id = uuid::Uuid::now_v7().to_string();
-    Json(serde_json::json!({ "id": id, "status": "draft", "body": body }))
+    // Minted a UUIDv7 and echoed the request back as status "draft", storing
+    // nothing. The comment claimed commissioner dual-sign is verified in
+    // production via SpiceDB; no SpiceDB call exists here.
+    not_implemented(
+        "recall petition creation",
+        "no petition store or SpiceDB dual-sign check is wired; it previously \
+         returned a minted id and the request echoed back as draft",
+    )
 }
 
 pub async fn import_signatories(
@@ -38,58 +66,67 @@ pub async fn import_signatories(
     Json(_body): Json<serde_json::Value>,
 ) -> impl IntoResponse {
     info!(id, "import_signatories");
-    // OCR batch processed asynchronously; result available via poll endpoint
-    Json(serde_json::json!({
-        "petition_id": id,
-        "batch_id": uuid::Uuid::now_v7().to_string(),
-        "status": "processing"
-    }))
+    // Discarded the batch and answered with a minted batch_id and status
+    // "processing", with nothing processing and no poll endpoint to ask.
+    let _ = id;
+    not_implemented(
+        "signatory import",
+        "no OCR pipeline or poll endpoint is wired; it previously returned a \
+         minted batch_id and status processing for a batch it discarded",
+    )
 }
 
 pub async fn get_threshold_report(Path(id): Path<String>) -> impl IntoResponse {
     info!(id, "get_threshold_report");
-    let registered_voters = 100_000u64;
-    let verified_signatories = 0u64;
-    let (num, den) = threshold_numerator_denominator(verified_signatories, registered_voters);
-    let meets = meets_art_104_2_threshold(verified_signatories, registered_voters);
-    let report = ThresholdReport {
-        id: uuid::Uuid::now_v7().to_string(),
-        petition_id: id,
-        total_signatories: 0,
-        verified_signatories,
-        registered_voters,
-        numerator_x100: num,
-        denominator_30pct: den,
-        meets_threshold: meets,
-        ward_breakdown: serde_json::Value::Object(Default::default()),
-        generated_at: chrono::Utc::now().to_rfc3339(),
-    };
-    Json(report)
+    // Previously evaluated the article IV section 2 recall threshold against a
+    // hardcoded electorate of 100_000 and zero verified signatories, and
+    // returned meets_threshold computed from them. The threshold logic in
+    // crate::threshold is real; both inputs were constants.
+    let _ = id;
+    return not_implemented(
+        "recall threshold report",
+        "registered_voters was hardcoded to 100_000 and verified_signatories \
+         to 0, so article IV section 2 eligibility was evaluated against an \
+         invented electorate",
+    )
 }
 
 pub async fn close_petition(Path(id): Path<String>) -> impl IntoResponse {
     info!(id, "close_petition");
-    StatusCode::NO_CONTENT
+    // Answered 204, which is a successful close: a petition was closed and
+    // recorded nowhere.
+    let _ = id;
+    not_implemented(
+        "petition closure",
+        "no petition store is wired; it previously returned 204 for a closure \
+         it never recorded",
+    )
 }
 
 pub async fn create_recall_election(Path(id): Path<String>) -> impl IntoResponse {
     info!(id, "create_recall_election");
-    // Idempotent: triggers M50 by-election creation via outbox event
-    let election = RecallElection {
-        id: uuid::Uuid::now_v7().to_string(),
-        petition_id: id,
-        by_election_id: None,
-        trigger_status: "pending".to_string(),
-        trigger_attempts: 0,
-        created_at: chrono::Utc::now().to_rfc3339(),
-    };
-    (StatusCode::CREATED, Json(election))
+    // Returned 201 with a minted RecallElection and trigger_status "pending".
+    // The comment claimed it triggers M50 by-election creation via an outbox
+    // event; there is no outbox client here and no event emitted, so a recall
+    // election was created on paper.
+    let _ = id;
+    not_implemented(
+        "recall election creation",
+        "no outbox or by-election trigger is wired; it previously returned \
+         201 with trigger_status pending and emitted nothing",
+    )
 }
 
 pub async fn list_signatories(Path(id): Path<String>) -> impl IntoResponse {
     info!(id, "list_signatories");
-    let records: Vec<SignatoryRecord> = vec![];
-    Json(serde_json::json!({ "petition_id": id, "records": records, "total": 0 }))
+    // An empty list with total: 0 reads as "this petition has no signatories",
+    // which is a claim about a petition, not about the absence of storage.
+    let _ = id;
+    not_implemented(
+        "signatory listing",
+        "no signatory store is wired; it previously returned an empty list \
+         with total 0",
+    )
 }
 
 // ---------------------------------------------------------------------------

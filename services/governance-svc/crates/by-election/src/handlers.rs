@@ -7,11 +7,9 @@ use axum::{
 use tracing::info;
 
 use crate::cost_report::build_cost_report;
-use crate::kit_plan::{generate_kit_plan, sign_kit_plan};
 use crate::models::*;
 use crate::spec;
 use crate::state::SharedState;
-use crate::register_subset::generate_subset;
 
 pub async fn health() -> impl IntoResponse {
     StatusCode::OK
@@ -42,15 +40,44 @@ pub async fn create_by_election(Json(body): Json<serde_json::Value>) -> impl Int
     )
 }
 
+/// A declared operation with no implementation behind it.
+///
+/// The pure functions this crate does have -- `generate_subset`,
+/// `generate_kit_plan`, `build_cost_report` -- are real arithmetic over inputs
+/// that do not exist here. `generate_kit_plan` in particular assigns every
+/// polling station `station_gps_lat: 0.0, station_gps_lng: 0.0`, which is
+/// 0N 0E in the Gulf of Guinea: a kit delivery plan pointing at open ocean.
+fn not_implemented(operation: &str, detail: &str) -> impl IntoResponse {
+    (
+        StatusCode::NOT_IMPLEMENTED,
+        Json(serde_json::json!({
+            "type": "about:blank",
+            "title": "Not Implemented",
+            "status": 501,
+            "detail": format!(
+                "{operation} is declared by the contract but has no \
+                 implementation behind it: {detail}"
+            ),
+        })),
+    )
+}
+
 pub async fn generate_register_subset(
     Path(id): Path<String>,
     Json(body): Json<serde_json::Value>,
 ) -> impl IntoResponse {
     info!(id, "generate_register_subset");
-    let snapshot_id = body["snapshot_id"].as_str().unwrap_or("").to_string();
-    let constituency_id = body["constituency_id"].as_str().unwrap_or("").to_string();
-    let subset = generate_subset(id, constituency_id, snapshot_id);
-    (StatusCode::CREATED, Json(subset))
+    // generate_subset returns station_count: 0 and voter_count: 0, annotated
+    // "populated from M02 response" -- and its own comment records that no M02
+    // adapter crate exists in this workspace. So this returned 201 for a
+    // register subset covering zero voters.
+    let _ = (id, &body);
+    not_implemented(
+        "register subset generation",
+        "the M02 snapshot adapter does not exist; generate_subset returns \
+         station_count 0 and voter_count 0, and this previously returned 201 \
+         for a subset covering no voters",
+    )
 }
 
 pub async fn create_kit_plan(
@@ -58,20 +85,34 @@ pub async fn create_kit_plan(
     Json(body): Json<serde_json::Value>,
 ) -> impl IntoResponse {
     info!(id, "create_kit_plan");
-    let station_codes: Vec<String> = body["station_codes"]
-        .as_array()
-        .unwrap_or(&vec![])
-        .iter()
-        .filter_map(|v| v.as_str().map(String::from))
-        .collect();
-    let plan = sign_kit_plan(generate_kit_plan(id, station_codes));
-    (StatusCode::CREATED, Json(plan))
+    // The hash in sign_kit_plan is real: a SHA-256 over the canonical plan,
+    // stored in a field named signed_blob_hash. It is a digest, not a
+    // signature -- there is no key, so it attests only that the plan is
+    // self-consistent, not who produced it. The plan it hashes assigns every
+    // station gps 0.0, 0.0 and reserves no kit, because the M20 inventory
+    // adapter does not exist here. So 201 described a delivery plan for kits
+    // that were never reserved, delivered to coordinates in the Atlantic.
+    let _ = (id, &body);
+    not_implemented(
+        "kit plan creation",
+        "the M20 inventory adapter does not exist, so no kit is reserved and \
+         every station is assigned gps 0.0, 0.0; the plan hash is a plain \
+         digest in a field named signed_blob_hash, which is not a signature",
+    )
 }
 
 pub async fn activate_by_election(Path(id): Path<String>) -> impl IntoResponse {
     info!(id, "activate_by_election");
-    // Triggers M04 register subset notice; GAZETTED transition required first
-    StatusCode::NO_CONTENT
+    // Answered 204, which is a successful activation. The comment notes a
+    // GAZETTED transition is required first; no transition was checked, so a
+    // by-election could be activated from any state.
+    let _ = id;
+    not_implemented(
+        "by-election activation",
+        "no state machine or M04 register notice is wired; it previously \
+         returned 204 for an activation it never performed and did not check \
+         the required GAZETTED transition",
+    )
 }
 
 pub async fn submit_cost_report(
@@ -99,11 +140,15 @@ pub async fn submit_cost_report(
 
 pub async fn get_cost_report(Path(id): Path<String>) -> impl IntoResponse {
     info!(id, "get_cost_report");
-    Json(CostReport {
-        id: uuid::Uuid::now_v7().to_string(),
-        by_election_id: id,
-        ..Default::default()
-    })
+    // Bypassed build_cost_report -- which is real arithmetic -- and returned a
+    // default-constructed report: every cost line zero, presented as a cost
+    // report for a by-election.
+    let _ = id;
+    not_implemented(
+        "cost report retrieval",
+        "no cost ledger is stored; it previously returned a default report \
+         with every cost line zero",
+    )
 }
 
 // ---------------------------------------------------------------------------
