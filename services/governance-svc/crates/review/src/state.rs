@@ -3,6 +3,9 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use eel_memstore_rs::Collection;
+
+use crate::models::{Finding, LongDripAlert, ParliamentReferral, Recommendation};
 use crate::spec::{ElectionReview, ReviewFinding};
 
 /// Shared application state.
@@ -12,6 +15,18 @@ pub struct AppState {
     pub reviews: Mutex<HashMap<String, ElectionReview>>,
     /// Findings by `review_id`, in insertion order.
     pub findings: Mutex<HashMap<String, Vec<ReviewFinding>>>,
+    /// Findings by finding id, so triage can update one. `models::Finding` is
+    /// what `submit_finding` builds, so this is the same shape the caller saw.
+    pub findings_by_id: Collection<Finding>,
+    /// Recommendations by recommendation id.
+    ///
+    /// Nothing creates recommendations yet -- there is no endpoint for it, which
+    /// is recorded in status.md rather than papered over by inventing one.
+    pub recommendations: Collection<Recommendation>,
+    /// Parliament referrals by referral id.
+    pub referrals: Collection<ParliamentReferral>,
+    /// Long-drip alerts by alert id.
+    pub long_drip: Collection<LongDripAlert>,
 }
 
 /// Shared state handle threaded through the router.

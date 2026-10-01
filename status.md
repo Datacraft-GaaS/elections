@@ -186,8 +186,8 @@ Measuring the routers directly instead:
 
 ```
 registered handlers judged : 631
-fabricated                 : 216   (34%)
-  of which contract-unbound: 171
+fabricated                 : 206   (33%)
+  of which contract-unbound: 161
   contract-bound           : 45
 ```
 
@@ -450,16 +450,30 @@ into three buckets, because "238 fabricated" is not a task list. Converting all
 238 to 501 would remove capability a refusal cannot replace; leaving them
 fabricated is worse than either. The split is the point.
 
-**155 implementable** (was 221; 66 converted) — local work. Create/read/update
+**145 implementable** (was 221; 76 converted) — local work. Create/read/update
 against `AppState`, or a computation over inputs the request already carries.
 `eel-memstore-rs` is usually the whole requirement. These are worth doing, and are
 how the ten crates already fixed were fixed.
 
-Six crates are now at zero fabrications: `county-coord`, `recall`, `referendum`,
-`by-election`, `court-interface`, and `ecc-api` (21 handlers, whose records took
-no state at all — a complaint filed through the grievance portal could never be
+Seven crates are now at zero fabrications: `county-coord`, `recall`, `referendum`,
+`by-election`, `court-interface`, `ecc-api` (21 handlers, whose records took no
+state at all — a complaint filed through the grievance portal could never be
 retrieved, an escalation could never be resolved, and `get_audit_log` returned
-`{"entries": []}`, which is an audit log that records nothing).
+`{"entries": []}`, which is an audit log that records nothing), and `review`
+(10 handlers, where `submit_finding` answered 201 and dropped the finding and
+`triage_finding`, `sign_recommendation`, `record_long_drip_review` and
+`record_parliament_response` each returned 204 for **any** id).
+
+`review::sign_recommendation` is worth singling out: the request carries an
+`hsm_signature` and the handler discarded it, logging only the signer's name, then
+answered 204 — so a recommendation could read as chair-signed with no signature
+behind it. An empty signature is now refused with 422, and a presented one is
+recorded verbatim to the audit trail. It is explicitly **not verified**: there is
+no HSM public key in this workspace to check it against, and the log line says so
+rather than leaving the reader to assume.
+
+`review` also has no endpoint that creates a recommendation, so signing one is a
+404. That is recorded rather than papered over by inventing a creation route.
 
 **8 need a subsystem** — the response carries a cryptographic artifact or asserts
 a verdict as a literal `true`. Neither can come from a request body or a
@@ -543,7 +557,7 @@ added for verdicts asserted as a literal `true`.
 | `training-svc/crates/training-api/src/handlers/accreditation.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/lms.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/spec.rs` | 6 | 0 | 0 |
-| **total** | **155** | **8** | **9** |
+| **total** | **145** | **8** | **9** |
 Run `python3 tools/fabrication_triage.py --list` for every handler, or
 `--crate <fragment>` for one file.
 

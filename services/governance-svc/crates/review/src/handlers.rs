@@ -1,7 +1,7 @@
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    response::IntoResponse,
+    response::{IntoResponse, Response},
     Json,
 };
 use tracing::info;
@@ -10,11 +10,26 @@ use crate::models::*;
 use crate::spec;
 use crate::state::SharedState;
 
+/// A problem+json response, so a refusal is readable rather than a bare status.
+fn problem(status: StatusCode, detail: String) -> Response {
+    (
+        status,
+        Json(serde_json::json!({
+            "type": "about:blank",
+            "title": status.canonical_reason().unwrap_or("Error"),
+            "status": status.as_u16(),
+            "detail": detail,
+        })),
+    )
+        .into_response()
+}
+
+
 pub async fn health() -> impl IntoResponse {
     StatusCode::OK
 }
 
-pub async fn submit_finding(Json(req): Json<SubmitFindingRequest>) -> impl IntoResponse {
+pub async fn submit_finding(State(state): State<SharedState>, Json(req): Json<SubmitFindingRequest>) -> impl IntoResponse {
     info!(
         election_cycle = %req.election_cycle,
         finding_type = ?req.finding_type,
@@ -36,41 +51,132 @@ pub async fn submit_finding(Json(req): Json<SubmitFindingRequest>) -> impl IntoR
         status: FindingStatus::Submitted,
         submitted_at: chrono::Utc::now().to_rfc3339(),
     };
+    // Real. Previously built the finding, answered 201 and dropped it, so a
+    // finding submitted to the post-election review could never be listed or
+    // triaged.
+    state
+        .findings_by_id
+        .insert(finding.id.clone(), finding.clone());
     (StatusCode::CREATED, Json(finding))
 }
 
-pub async fn list_findings() -> impl IntoResponse {
+pub async fn list_findings(State(state): State<SharedState>) -> impl IntoResponse {
     info!("list_findings");
-    let findings: Vec<Finding> = vec![];
-    Json(serde_json::json!({ "findings": findings }))
+    // Real. Previously always an empty array.
+    Json(serde_json::json!({
+        "findings": state.findings_by_id.list(),
+    })).into_response()
 }
 
 pub async fn triage_finding(
+    State(state): State<SharedState>,
     Path(id): Path<String>,
     Json(req): Json<TriageFindingRequest>,
-) -> impl IntoResponse {
+) -> Result<Response, Response> {
     info!(id, status = ?req.status, "triage_finding");
-    StatusCode::NO_CONTENT
+    // Real. Previously returned 204 for any id, so a finding could be reported as
+    // triaged when it had never been submitted.
+    let long_drip = req.is_long_drip;
+    let dup = req.duplicate_of.clone();
+    let updated = state.findings_by_id.update(&id, |mut f| {
+        f.status = req.status;
+        if let Some(d) = dup.clone() {
+            f.duplicate_of = Some(d);
+        }
+        if let Some(ld) = long_drip {
+            f.is_long_drip = ld;
+        }
+        f
+    });
+    match updated {
+        Some(_) => Ok(StatusCode::NO_CONTENT.into_response()),
+        None => Err(problem(
+            StatusCode::NOT_FOUND,
+            format!("no finding with id {id}"),
+        )),
+    }
 }
 
-pub async fn list_recommendations() -> impl IntoResponse {
+pub async fn list_recommendations(State(state): State<SharedState>) -> impl IntoResponse {
     info!("list_recommendations");
-    let recs: Vec<Recommendation> = vec![];
-    Json(serde_json::json!({ "recommendations": recs }))
+    // Real. Previously always an empty array.
+    Json(serde_json::json!({
+        "recommendations": state.recommendations.list(),
+    })).into_response()
 }
 
 pub async fn sign_recommendation(
+    State(state): State<SharedState>,
     Path(id): Path<String>,
     Json(req): Json<SignRecommendationRequest>,
-) -> impl IntoResponse {
+) -> Result<Response, Response> {
     info!(id, signed_by = %req.signed_by, "sign_recommendation");
-    StatusCode::NO_CONTENT
+    if req.hsm_signature.trim().is_empty() {
+        // The request carries an HSM signature and this handler previously
+        // discarded it entirely, logging only the signer's name and answering
+        // 204. A recommendation marked signed with no signature recorded cannot
+        // be audited, so an absent signature is refused rather than accepted.
+        return Err(problem(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "hsm_signature is required: a recommendation must not be marked \
+             signed without the signature that signed it"
+                .to_string(),
+        ));
+    }
+    let signature = req.hsm_signature.clone();
+    let signed_by = req.signed_by.clone();
+    // The Recommendation model has no field for the signature, so it is written
+    // to the audit trail rather than discarded. It is recorded verbatim and NOT
+    // verified: there is no HSM public key in this workspace to check it against,
+    // and dropping it is what let a recommendation read as signed with no
+    // signature behind it.
+    info!(
+        recommendation_id = %id,
+        signature_present = !signature.is_empty(),
+        signature = %signature,
+        "chair signature recorded but NOT verified: no HSM public key here"
+    );
+    let now = chrono::Utc::now().to_rfc3339();
+    // Recorded verbatim. Verification against the HSM public key is NOT
+    // implemented here, so this stores the presented signature without checking
+    // it -- which is why the field is kept alongside the signer rather than
+    // discarded, and why a reviewer can see it has not been verified.
+    let updated = state.recommendations.update(&id, |mut r| {
+        r.chair_signed_by = Some(signed_by.clone());
+        r.chair_signed_at = Some(now.clone());
+        r
+    });
+    match updated {
+        Some(_) => Ok(StatusCode::NO_CONTENT.into_response()),
+        None => Err(problem(
+            StatusCode::NOT_FOUND,
+            format!("no recommendation with id {id}"),
+        )),
+    }
 }
 
-pub async fn public_tracker() -> impl IntoResponse {
+pub async fn public_tracker(State(state): State<SharedState>) -> impl IntoResponse {
     info!("public_tracker");
-    let items: Vec<PublicTrackerItem> = vec![];
-    Json(serde_json::json!({ "items": items }))
+    // Real. Previously always an empty items array, so the public tracker -- the
+    // face of the post-election review -- showed nothing at all.
+    let mut items: Vec<PublicTrackerItem> = state
+        .recommendations
+        .list()
+        .into_iter()
+        .map(|r| PublicTrackerItem {
+            recommendation_id: r.id,
+            recommendation_text: r.recommendation_text,
+            eel_response_type: r.eel_response_type,
+            status: if r.chair_signed_at.is_some() {
+                "signed".to_string()
+            } else {
+                "awaiting_chair_signature".to_string()
+            },
+            chair_signed_at: r.chair_signed_at,
+        })
+        .collect();
+    items.sort_by(|a, b| a.recommendation_id.cmp(&b.recommendation_id));
+    Json(serde_json::json!({ "items": items })).into_response()
 }
 
 pub async fn create_parliament_referral(
@@ -90,39 +196,102 @@ pub async fn create_parliament_referral(
 }
 
 pub async fn record_parliament_response(
+    State(state): State<SharedState>,
     Path(id): Path<String>,
     Json(req): Json<RecordParliamentResponseRequest>,
-) -> impl IntoResponse {
+) -> Result<Response, Response> {
     info!(
         id,
         parliament_response = %req.parliament_response,
         "record_parliament_response"
     );
-    StatusCode::NO_CONTENT
+    let response = req.parliament_response.clone();
+    let bill = req.bill_reference.clone();
+    let at = req.parliament_response_at.clone();
+    // Real. Previously returned 204 for any id, discarding the response, the bill
+    // reference and the date entirely.
+    let updated = state.referrals.update(&id, |mut r| {
+        r.parliament_response = Some(response.clone());
+        r.bill_reference = bill.clone();
+        r.parliament_response_at = Some(at.clone());
+        r.clerk_received_at = Some(chrono::Utc::now().to_rfc3339());
+        r
+    });
+    match updated {
+        Some(_) => Ok(StatusCode::NO_CONTENT.into_response()),
+        None => Err(problem(
+            StatusCode::NOT_FOUND,
+            format!("no parliament referral with id {id}"),
+        )),
+    }
 }
 
-pub async fn list_long_drip() -> impl IntoResponse {
+pub async fn list_long_drip(State(state): State<SharedState>) -> impl IntoResponse {
     info!("list_long_drip");
-    let alerts: Vec<LongDripAlert> = vec![];
-    Json(serde_json::json!({ "alerts": alerts }))
+    // Real. Previously always an empty alerts array, which asserted that no
+    // long-drip finding was outstanding.
+    Json(serde_json::json!({
+        "alerts": state.long_drip.list(),
+    })).into_response()
 }
 
 pub async fn record_long_drip_review(
+    State(state): State<SharedState>,
     Path(id): Path<String>,
     Json(req): Json<RecordLongDripReviewRequest>,
-) -> impl IntoResponse {
+) -> Result<Response, Response> {
     info!(
         id,
         reviewer_id = %req.reviewer_id,
         escalated = req.escalated_to_commissioner,
         "record_long_drip_review"
     );
-    StatusCode::NO_CONTENT
+    let reviewer = req.reviewer_id.clone();
+    let escalated = req.escalated_to_commissioner;
+    let now = chrono::Utc::now().to_rfc3339();
+    // Real. Previously returned 204 for any id, recording no reviewer, no review
+    // timestamp and no escalation.
+    let updated = state.long_drip.update(&id, |mut a| {
+        a.reviewer_id = Some(reviewer.clone());
+        a.reviewed_at = Some(now.clone());
+        if escalated {
+            a.escalated_to_commissioner = true;
+            a.escalated_at = Some(now.clone());
+        }
+        a
+    });
+    match updated {
+        Some(_) => Ok(StatusCode::NO_CONTENT.into_response()),
+        None => Err(problem(
+            StatusCode::NOT_FOUND,
+            format!("no long-drip alert with id {id}"),
+        )),
+    }
 }
 
-pub async fn next_cycle_handoff() -> impl IntoResponse {
+pub async fn next_cycle_handoff(State(state): State<SharedState>) -> impl IntoResponse {
     info!("next_cycle_handoff");
-    Json(serde_json::json!({ "handoff_items": [] }))
+    // Real. Previously returned an empty handoff_items array. The handoff is
+    // derived from findings that are still open, so it reflects what is actually
+    // outstanding rather than nothing.
+    let all_findings = state.findings_by_id.list();
+    let mut open: Vec<&Finding> = all_findings
+        .iter()
+        .filter(|f| f.status == FindingStatus::Submitted)
+        .collect();
+    open.sort_by(|a, b| a.submitted_at.cmp(&b.submitted_at));
+    let items: Vec<serde_json::Value> = open
+        .iter()
+        .map(|f| serde_json::json!({
+            "finding_id": f.id,
+            "election_cycle": f.election_cycle,
+            "severity": f.severity,
+            "status": f.status,
+            "is_long_drip": f.is_long_drip,
+            "submitted_at": f.submitted_at,
+        }))
+        .collect();
+    Json(serde_json::json!({ "handoff_items": items })).into_response()
 }
 
 // ---------------------------------------------------------------------------
