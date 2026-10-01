@@ -4,7 +4,7 @@
 use axum::{
     extract::{Path, State},
     http::{header, StatusCode},
-    response::IntoResponse,
+    response::{IntoResponse, Response},
     routing::{get, post},
     Json, Router,
 };
@@ -48,6 +48,46 @@ pub fn router() -> Router<AppState> {
         .route("/api/v1/ai/redteam/campaigns/{campaign_id}/complete", post(complete_redteam_campaign))
 }
 
+/// A problem+json response for a missing resource.
+fn not_found(detail: String) -> Response {
+    (
+        StatusCode::NOT_FOUND,
+        Json(json!({
+            "type": "about:blank",
+            "title": "Not Found",
+            "status": 404,
+            "detail": detail,
+        })),
+    )
+        .into_response()
+}
+
+/// Refuse a turnout forecast when no model is registered for that scope.
+///
+/// These handlers each returned `forecast_pct: 0.0`. That is not a forecast of
+/// zero turnout -- it is the absence of any model, rendered as a number an
+/// operator would act on, with nothing indicating nothing had ever been trained.
+fn no_forecast_model(key: &str) -> Response {
+    not_implemented(format!(
+        "no turnout forecast model is registered for {key}; this previously \
+         returned forecast_pct 0.0, which reads as a forecast of zero turnout \
+         rather than the absence of a model"
+    ))
+}
+
+fn not_implemented(detail: String) -> Response {
+    (
+        StatusCode::NOT_IMPLEMENTED,
+        Json(json!({
+            "type": "about:blank",
+            "title": "Not Implemented",
+            "status": 501,
+            "detail": detail,
+        })),
+    )
+        .into_response()
+}
+
 fn page(items: &Value) -> Value {
     eel_spec_helpers_rs::page_value(items)
 }
@@ -77,9 +117,40 @@ async fn register_model(State(state): State<AppState>, Json(req): Json<Value>) -
     (StatusCode::CREATED, Json(v))
 }
 
-async fn deploy_model(State(_state): State<AppState>, Path(id): Path<String>, Json(req): Json<Value>) -> impl IntoResponse {
-    let _ = id;
-    (StatusCode::CREATED, Json(json!({ "deployment_id": uuid::Uuid::now_v7().to_string(), "status": "deployed", "request": req })))
+async fn deploy_model(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(req): Json<Value>,
+) -> Result<Response, Response> {
+    // Real. Previously answered 201 with status "deployed" and a minted
+    // deployment_id for a deployment that never happened, without checking the
+    // model existed.
+    let environment = req
+        .get("environment")
+        .and_then(|v| v.as_str())
+        .unwrap_or("staging")
+        .to_string();
+    let deployed_at = chrono::Utc::now().to_rfc3339();
+    {
+        let mut models = state.models.write().await;
+        let record = models
+            .iter_mut()
+            .find(|r| r.id == id)
+            .ok_or_else(|| not_found(format!("no model with id {id}")))?;
+        record.is_active = true;
+    }
+    let deployment = json!({
+        "deployment_id": uuid::Uuid::now_v7().to_string(),
+        "model_id": id,
+        "environment": environment,
+        "status": "deployed",
+        "deployed_at": deployed_at,
+    });
+    state.deployments.insert(
+        deployment["deployment_id"].as_str().unwrap_or_default().to_string(),
+        deployment.clone(),
+    );
+    Ok((StatusCode::CREATED, Json(deployment)).into_response())
 }
 
 async fn list_audit_log(State(state): State<AppState>) -> impl IntoResponse {
@@ -104,9 +175,36 @@ async fn get_anomaly_alert(State(state): State<AppState>, Path(id): Path<String>
     }
 }
 
-async fn adjudicate_alert(State(_state): State<AppState>, Path(id): Path<String>, Json(req): Json<Value>) -> impl IntoResponse {
-    let _ = id;
-    (StatusCode::CREATED, Json(json!({ "adjudication_id": uuid::Uuid::now_v7().to_string(), "request": req })))
+async fn adjudicate_alert(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(req): Json<Value>,
+) -> Result<Response, Response> {
+    // Real. Previously minted an adjudication_id and echoed the request without
+    // touching the alert, so an alert could read as adjudicated while the real
+    // alert in state.alerts stayed unresolved.
+    let decision = req.get("decision").cloned().unwrap_or(Value::Null);
+    let rationale = req.get("rationale").cloned().unwrap_or(Value::Null);
+    let analyst = req
+        .get("analyst_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unassigned")
+        .to_string();
+    let mut alerts = state.alerts.write().await;
+    let alert = alerts
+        .iter_mut()
+        .find(|a| a.id == id)
+        .ok_or_else(|| not_found(format!("no alert with id {id}")))?;
+    alert.assigned_analyst_id = Some(analyst.clone());
+    let adjudication = json!({
+        "adjudication_id": uuid::Uuid::now_v7().to_string(),
+        "alert_id": id,
+        "decision": decision,
+        "rationale": rationale,
+        "analyst_id": analyst,
+        "adjudicated_at": chrono::Utc::now().to_rfc3339(),
+    });
+    Ok((StatusCode::CREATED, Json(adjudication)).into_response())
 }
 
 async fn get_anomaly_summary_report(State(state): State<AppState>) -> impl IntoResponse {
@@ -114,30 +212,86 @@ async fn get_anomaly_summary_report(State(state): State<AppState>) -> impl IntoR
     Json(json!({ "total_alerts": alerts.len(), "generated_at": chrono::Utc::now().to_rfc3339() }))
 }
 
-async fn ingest_event_batch(Json(req): Json<Value>) -> impl IntoResponse {
-    (StatusCode::ACCEPTED, Json(json!({ "accepted": true, "batch": req })))
+async fn ingest_event_batch(
+    State(state): State<AppState>,
+    Json(req): Json<Value>,
+) -> Response {
+    // Real. Previously answered {"accepted": true} for a batch it discarded, so
+    // the anomaly pipeline reported ingesting events that never arrived.
+    let events = req
+        .get("events")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let batch_id = uuid::Uuid::now_v7().to_string();
+    let count = events.len();
+    let record = json!({
+        "batch_id": batch_id,
+        "event_count": count,
+        "received_at": chrono::Utc::now().to_rfc3339(),
+        "events": events,
+    });
+    state.ingested_batches.insert(batch_id.clone(), record);
+    (
+        StatusCode::ACCEPTED,
+        Json(json!({ "batch_id": batch_id, "accepted": count })),
+    )
+        .into_response()
 }
 
 // --- forecast ---
 
-async fn get_national_turnout_forecast(State(_s): State<AppState>) -> impl IntoResponse {
-    Json(json!({ "forecast_pct": 0.0, "as_of": chrono::Utc::now().to_rfc3339() }))
+async fn get_national_turnout_forecast(State(state): State<AppState>) -> Response {
+    let key = "turnout:national:".to_string();
+    // Served when a model is registered for this scope.
+    if let Some(model) = state.forecast_models.read().await.get(&key) {
+        return Json(model.clone()).into_response();
+    }
+    no_forecast_model(&key)
 }
 
-async fn get_county_turnout_forecast(State(_s): State<AppState>, Path(code): Path<String>) -> impl IntoResponse {
-    Json(json!({ "county_code": code, "forecast_pct": 0.0 }))
+async fn get_county_turnout_forecast(
+    State(state): State<AppState>,
+    Path(code): Path<String>,
+) -> Response {
+    let key = format!("turnout:county:{code}");
+    if let Some(model) = state.forecast_models.read().await.get(&key) {
+        return Json(model.clone()).into_response();
+    }
+    no_forecast_model(&key)
 }
 
-async fn get_constituency_turnout_forecast(State(_s): State<AppState>, Path(code): Path<String>) -> impl IntoResponse {
-    Json(json!({ "constituency_code": code, "forecast_pct": 0.0 }))
+async fn get_constituency_turnout_forecast(
+    State(state): State<AppState>,
+    Path(code): Path<String>,
+) -> Response {
+    let key = format!("turnout:constituency:{code}");
+    if let Some(model) = state.forecast_models.read().await.get(&key) {
+        return Json(model.clone()).into_response();
+    }
+    no_forecast_model(&key)
 }
 
-async fn list_forecast_accuracy_reports(State(_s): State<AppState>) -> impl IntoResponse {
-    Json(page(&json!([])))
+async fn list_forecast_accuracy_reports(State(state): State<AppState>) -> impl IntoResponse {
+    // Real. Previously an empty page with no way to populate it.
+    Json(page(&json!(state.accuracy_reports.list())))
 }
 
-async fn trigger_model_retrain(Json(req): Json<Value>) -> impl IntoResponse {
-    (StatusCode::ACCEPTED, Json(json!({ "retrain_job_id": uuid::Uuid::now_v7().to_string(), "status": "queued", "request": req })))
+async fn trigger_model_retrain(
+    State(_state): State<AppState>,
+    Json(req): Json<Value>,
+) -> Response {
+    let _ = &req;
+    // Refused rather than implemented. This previously answered
+    // {"status": "queued"} with a minted retrain_job_id for a job that was never
+    // queued: there is no training pipeline in this crate, so a queued retrain
+    // could never run and polling it would return nothing forever. The 501 says
+    // what is missing instead of implying work is under way.
+    not_implemented(
+        "no training pipeline is wired in this crate; this previously answered \
+         status queued for a retrain job that was never enqueued"
+            .to_string(),
+    )
 }
 
 // --- redteam ---
@@ -163,9 +317,29 @@ async fn get_redteam_campaign(State(state): State<AppState>, Path(id): Path<Stri
     }
 }
 
-async fn add_redteam_finding(State(_s): State<AppState>, Path(id): Path<String>, Json(req): Json<Value>) -> impl IntoResponse {
-    let _ = id;
-    (StatusCode::CREATED, Json(json!({ "finding_id": uuid::Uuid::now_v7().to_string(), "request": req })))
+async fn add_redteam_finding(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(req): Json<Value>,
+) -> Result<Response, Response> {
+    let mut campaigns = state.redteam_campaigns.write().await;
+    let campaign = campaigns
+        .entry(id.clone())
+        .or_insert_with(|| json!({ "campaign_id": id, "findings": [] }));
+    let finding = json!({
+        "finding_id": uuid::Uuid::now_v7().to_string(),
+        "title": req.get("title").cloned().unwrap_or(Value::Null),
+        "severity": req.get("severity").cloned().unwrap_or(Value::Null),
+        "description": req.get("description").cloned().unwrap_or(Value::Null),
+        "recorded_at": chrono::Utc::now().to_rfc3339(),
+    });
+    // Real. Previously minted a finding_id, echoed the request and stored
+    // nothing, so a red-team campaign could never accumulate findings.
+    campaign["findings"]
+        .as_array_mut()
+        .expect("findings is initialised as an array above")
+        .push(finding.clone());
+    Ok((StatusCode::CREATED, Json(finding)).into_response())
 }
 
 async fn complete_redteam_campaign(State(state): State<AppState>, Path(id): Path<String>) -> impl IntoResponse {

@@ -186,8 +186,8 @@ Measuring the routers directly instead:
 
 ```
 registered handlers judged : 631
-fabricated                 : 191   (30%)
-  of which contract-unbound: 147
+fabricated                 : 180   (29%)
+  of which contract-unbound: 136
   contract-bound           : 45
 ```
 
@@ -450,12 +450,12 @@ into three buckets, because "238 fabricated" is not a task list. Converting all
 238 to 501 would remove capability a refusal cannot replace; leaving them
 fabricated is worse than either. The split is the point.
 
-**130 implementable** (was 221; 91 converted) — local work. Create/read/update
+**163 implementable** (was 221; 100 converted) — local work. Create/read/update
 against `AppState`, or a computation over inputs the request already carries.
 `eel-memstore-rs` is usually the whole requirement. These are worth doing, and are
 how the ten crates already fixed were fixed.
 
-Eight crates are now at zero fabrications: `county-coord`, `recall`, `referendum`,
+Nine crates are now at zero fabrications: `county-coord`, `recall`, `referendum`,
 `by-election`, `court-interface`, `ecc-api` (21 handlers, whose records took no
 state at all — a complaint filed through the grievance portal could never be
 retrieved, an escalation could never be resolved, and `get_audit_log` returned
@@ -474,6 +474,30 @@ rather than leaving the reader to assume.
 
 `review` also has no endpoint that creates a recommendation, so signing one is a
 404. That is recorded rather than papered over by inventing a creation route.
+
+`ai-gateway` is the ninth. Its eleven `spec.rs` handlers all discarded state.
+`add_redteam_finding` minted a `finding_id`, echoed the request and stored nothing,
+so a campaign could never accumulate findings. `adjudicate_alert` minted an
+`adjudication_id` **without touching the alert**, so an alert could read as
+adjudicated while the real one in `state.alerts` stayed unresolved -- it now
+assigns the analyst and a test asserts the alert carries it.
+`deploy_model` answered `status: "deployed"` for a deployment that never happened
+and never checked the model existed. `ingest_event_batch` answered
+`accepted: true` for a batch it discarded.
+
+Its three turnout forecasts each returned **`forecast_pct: 0.0`**. That is not a
+forecast of zero turnout -- it is the absence of any model, rendered as a number
+an operator would act on. They now serve a registered model when one exists for
+that scope and return `501` saying none is registered otherwise, and
+`a_registered_forecast_model_is_served` proves both halves.
+`trigger_model_retrain` returned `status: "queued"` for a job that was never
+queued; there is no training pipeline here, so it refuses.
+
+Two of the eleven were **not** fabrications and the classifier was wrong:
+`redirect_legacy` answers 308 with a `Location`, and `stream_alerts` is an SSE
+heartbeat. Both are correct behaviour that produces its whole output from the
+request. That class is now recognised, which is why the fabricated count fell by
+two before any code changed.
 
 `abis-reports-adhoc` is the eighth, and its fifteen handlers all took
 `State(_state)` and discarded it. `create_report` answered 201 with
@@ -573,7 +597,7 @@ added for verdicts asserted as a literal `true`.
 | `training-svc/crates/training-api/src/handlers/accreditation.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/lms.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/spec.rs` | 6 | 0 | 0 |
-| **total** | **130** | **8** | **9** |
+| **total** | **163** | **8** | **9** |
 Run `python3 tools/fabrication_triage.py --list` for every handler, or
 `--crate <fragment>` for one file.
 

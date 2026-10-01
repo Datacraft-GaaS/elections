@@ -283,6 +283,18 @@ EMPTY_IDEMPOTENCY_RECORD = re.compile(
 )
 
 
+# A redirect and an SSE keep-alive are correct behaviour, not fabrications: both
+# produce the whole point of the endpoint from the request alone, with nothing to
+# look up. `redirect_legacy` answers 308 to /api/v1/ai/{tail} and `stream_alerts`
+# emits a heartbeat. Flagging them is the same mistake as flagging
+# `acknowledge_alert` for being short.
+RE_DIRECT_OR_KEEPALIVE = re.compile(
+    r"StatusCode::(?:PERMANENT_REDIRECT|TEMPORARY_REDIRECT|MOVED_PERMANENTLY|FOUND)\b"
+    r"|\bSse\b|heartbeat",
+    re.I,
+)
+
+
 def classify(body: str, op: dict | None = None) -> str:
     """VERIFIED, DECLARES_UNIMPLEMENTED, EMPTY_IDEMPOTENCY, IGNORES_INPUT,
     FABRICATED, UNKNOWN.
@@ -302,6 +314,9 @@ def classify(body: str, op: dict | None = None) -> str:
     # ready: true with checks {"database": "ok"} without touching the database,
     # and a readiness gate that always passes keeps a broken instance in the
     # load-balancer pool.
+    if RE_DIRECT_OR_KEEPALIVE.search(body):
+        return "VERIFIED"
+
     is_probe = bool(op) and bool(
         PROBE_OPERATION.search(op.get("operation_id") or "")
         or PROBE_OPERATION.search(op.get("path") or "")
