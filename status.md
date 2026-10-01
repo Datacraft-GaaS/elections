@@ -186,8 +186,8 @@ Measuring the routers directly instead:
 
 ```
 registered handlers judged : 631
-fabricated                 : 146   (23%)
-  of which contract-unbound: 106
+fabricated                 : 138   (22%)
+  of which contract-unbound: 98
   contract-bound           : 45
 ```
 
@@ -450,12 +450,12 @@ into three buckets, because "238 fabricated" is not a task list. Converting all
 238 to 501 would remove capability a refusal cannot replace; leaving them
 fabricated is worse than either. The split is the point.
 
-**130 implementable** (was 221; 126 converted) — local work. Create/read/update
+**122 implementable** (was 221; 134 converted) — local work. Create/read/update
 against `AppState`, or a computation over inputs the request already carries.
 `eel-memstore-rs` is usually the whole requirement. These are worth doing, and are
 how the ten crates already fixed were fixed.
 
-Twelve crates are now at zero fabrications, and the one remaining handler here is recorded as blocked: `county-coord`, `recall`, `referendum`,
+Thirteen crates are now at zero fabrications, and the one remaining handler here is recorded as blocked: `county-coord`, `recall`, `referendum`,
 `by-election`, `court-interface`, `ecc-api` (21 handlers, whose records took no
 state at all — a complaint filed through the grievance portal could never be
 retrieved, an escalation could never be resolved, and `get_audit_log` returned
@@ -506,6 +506,43 @@ case-insensitively against the registry and names the conflicting registration.
 discarded the submission, and `record_registration_decision` did the same for a
 registration decision — all three now persist and 404 for an unknown parent.
 `initiate_party_document_upload` minted an `upload_ref` and dropped the request.
+
+`governance/forensics` is the clearest case of **a whole surface answering from
+nothing**. All eight `/v1/forensics/*` endpoints took no state at all: `list_cycles`
+and `list_estimates` returned a literal `vec![]`, `trigger_run` answered `202
+Accepted` with an empty body for *any* id — including a cycle that did not exist —
+and discarded the path id, and `get_public_report` answered `200` with an empty
+`PublicReport` for every id, which reads as a real but blank report.
+
+The one that matters most is `publish_replication`. A replication package is an
+attestation that an analysis was produced and can be reproduced by someone else.
+The crate already had the rule encoded and unused:
+`ForensicsEngine::can_publish_replication` requires `CycleStatus::Complete`. The
+handler never called it, so a **draft** cycle could publish a replication package
+and a `data_hash` nobody had computed. It now calls the engine and answers `409`
+with the actual status.
+
+`trigger_run` is the honest-refusal case, and it is worth being precise about
+where the boundary is. The RD/IV/DiD estimators live in
+`services/governance-svc/py/forensics-ml` — a separate Python distribution
+(`forensics-ml` 0.1.0) with no in-process or IPC bridge in this workspace. So the
+run **does** transition the stored cycle to `RUNNING` with a real `started_at`,
+because that transition is local state work, and it records
+`AnalysisCycle::blocked_reason` naming the estimator that is absent. It does not
+invent an estimate. The distinction the objective cares about is that a *blocked*
+surface says so in a field a consumer can read, rather than answering `202` and
+pretending.
+
+Wiring this up also surfaced a contract bug worth recording: `AnalysisMethod`
+carried `#[serde(rename_all = "SCREAMING_SNAKE_CASE")]`, which turns the `DiD`
+variant into `DI_D`. That was never a chosen wire value, just an accident of the
+variant name, and it meant `DIFF_IN_DIFF` could not be deserialized at all. The
+variants are now renamed explicitly and pinned by
+`engine::tests::wire_values_match_the_contract`, which also asserts `DI_D` is now
+*rejected*. The two `wire()` helpers derive their string from the serde
+representation rather than restating it, so a handler's conflict message and the
+serialized enum cannot drift apart. (`CycleStatus` is the one enum here
+serialized snake_case; the helpers serve both.)
 
 `portal/gazette` contains **the most serious refusal in this tree**, and it is
 recorded as blocked rather than implemented.
@@ -678,7 +715,7 @@ added for verdicts asserted as a literal `true`.
 | `training-svc/crates/training-api/src/handlers/accreditation.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/lms.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/spec.rs` | 6 | 0 | 0 |
-| **total** | **130** | **7** | **9** |
+| **total** | **122** | **7** | **9** |
 Run `python3 tools/fabrication_triage.py --list` for every handler, or
 `--crate <fragment>` for one file.
 

@@ -3,14 +3,33 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AnalysisMethod {
-    Rd,  // Regression Discontinuity
-    Iv,  // Instrumental Variables
-    DiD, // Difference-in-Differences
+    /// Regression Discontinuity.
+    #[serde(rename = "RD")]
+    Rd,
+    /// Instrumental Variables.
+    #[serde(rename = "IV")]
+    Iv,
+    /// Difference-in-Differences.
+    #[serde(rename = "DIFF_IN_DIFF")]
+    DiD,
 }
 
 impl Default for AnalysisMethod {
     fn default() -> Self {
         Self::Rd
+    }
+}
+
+impl AnalysisMethod {
+    /// The contract wire value, e.g. `RD`.
+    ///
+    /// Derived from the serde representation rather than restated, so the
+    /// handler messages and the serialized enum cannot drift apart.
+    pub fn wire(&self) -> String {
+        serde_json::to_value(self)
+            .ok()
+            .and_then(|v| v.as_str().map(str::to_string))
+            .unwrap_or_default()
     }
 }
 
@@ -26,6 +45,18 @@ pub enum CycleStatus {
 impl Default for CycleStatus {
     fn default() -> Self {
         Self::Draft
+    }
+}
+
+impl CycleStatus {
+    /// The contract wire value, e.g. `DRAFT`.
+    ///
+    /// Derived from the serde representation, as with `AnalysisMethod::wire`.
+    pub fn wire(&self) -> String {
+        serde_json::to_value(self)
+            .ok()
+            .and_then(|v| v.as_str().map(str::to_string))
+            .unwrap_or_default()
     }
 }
 
@@ -52,6 +83,14 @@ pub struct AnalysisCycle {
     pub started_at: Option<String>,
     pub completed_at: Option<String>,
     pub created_at: String,
+    /// Why the run cannot progress, when it cannot.
+    ///
+    /// The estimators themselves (RD, IV, DiD) live in
+    /// `services/governance-svc/py/forensics-ml`, a separate Python
+    /// distribution with no in-process or IPC bridge in this workspace. A run
+    /// therefore transitions to `Running` and records the reason here instead of
+    /// inventing an estimate. Empty means no run has been blocked.
+    pub blocked_reason: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]

@@ -11,60 +11,163 @@ use crate::state::SharedState;
 
 pub async fn health() -> impl IntoResponse { StatusCode::OK }
 
-pub async fn list_cycles() -> impl IntoResponse {
-    info!("list_cycles");
-    let cycles: Vec<AnalysisCycle> = vec![];
-    Json(serde_json::json!({ "cycles": cycles }))
+/// Cycle status transitions are enforced: only a draft cycle may start a run,
+/// and only a complete cycle may publish a replication package or a report.
+fn problem(status: StatusCode, detail: impl Into<String>) -> axum::response::Response {
+    (
+        status,
+        Json(serde_json::json!({
+            "type": "about:blank",
+            "title": status.canonical_reason().unwrap_or("Error"),
+            "status": status.as_u16(),
+            "detail": detail.into(),
+        })),
+    )
+        .into_response()
 }
 
-pub async fn create_cycle(Json(req): Json<CreateCycleRequest>) -> impl IntoResponse {
-    info!(election_id = %req.election_id, method = ?req.method, "create_cycle");
+pub async fn list_cycles(State(state): State<SharedState>) -> impl IntoResponse {
+    info!("list_cycles");
+    Json(serde_json::json!({ "cycles": state.cycles_sorted() }))
+}
+
+pub async fn create_cycle(
+    State(state): State<SharedState>,
+    Json(req): Json<CreateCycleRequest>,
+) -> axum::response::Response {
+    if req.election_id.trim().is_empty() {
+        return problem(StatusCode::UNPROCESSABLE_ENTITY, "election_id is required");
+    }
+    let now = chrono::Utc::now().to_rfc3339();
     let cycle = AnalysisCycle {
-        id: uuid::Uuid::new_v4().to_string(),
+        id: uuid::Uuid::now_v7().to_string(),
         election_id: req.election_id,
         method: req.method,
         status: CycleStatus::Draft,
-        created_at: chrono::Utc::now().to_rfc3339(),
+        created_at: now,
         ..Default::default()
     };
-    (StatusCode::CREATED, Json(cycle))
+    state
+        .cycles
+        .lock()
+        .expect("lock poisoned")
+        .insert(cycle.id.clone(), cycle.clone());
+    (StatusCode::CREATED, Json(cycle)).into_response()
 }
 
-pub async fn trigger_run(Path(id): Path<String>) -> impl IntoResponse {
+pub async fn trigger_run(
+    State(state): State<SharedState>,
+    Path(id): Path<String>,
+) -> axum::response::Response {
     info!(cycle_id = %id, "trigger_run");
-    StatusCode::ACCEPTED
+    let mut guard = state.cycles.lock().expect("lock poisoned");
+    let Some(cycle) = guard.get_mut(&id) else {
+        return problem(StatusCode::NOT_FOUND, format!("no cycle with id {id}"));
+    };
+    if cycle.status != CycleStatus::Draft {
+        return problem(
+            StatusCode::CONFLICT,
+            format!(
+                "cycle is {}; only a draft cycle can be started",
+                cycle.status.wire()
+            ),
+        );
+    }
+    crate::engine::ForensicsEngine::start_run(cycle);
+    // The estimator is a separate Python distribution with no bridge in this
+    // workspace, so the cycle is recorded as blocked rather than being given a
+    // fabricated estimate. See `AnalysisCycle::blocked_reason`.
+    cycle.blocked_reason = Some(format!(
+        "the {} estimator lives in services/governance-svc/py/forensics-ml, which has no \
+         in-process or IPC bridge in this workspace",
+        cycle.method.wire()
+    ));
+    let cycle = cycle.clone();
+    drop(guard);
+    (StatusCode::ACCEPTED, Json(cycle)).into_response()
 }
 
-pub async fn list_estimates(Path(id): Path<String>) -> impl IntoResponse {
+pub async fn list_estimates(
+    State(state): State<SharedState>,
+    Path(id): Path<String>,
+) -> axum::response::Response {
     info!(cycle_id = %id, "list_estimates");
-    let estimates: Vec<EstimateRecord> = vec![];
-    Json(serde_json::json!({ "estimates": estimates }))
+    if !state.cycles.lock().expect("lock poisoned").contains_key(&id) {
+        return problem(StatusCode::NOT_FOUND, format!("no cycle with id {id}"));
+    }
+    Json(serde_json::json!({ "estimates": state.estimates_for(&id) })).into_response()
 }
 
 pub async fn create_referral(
+    State(state): State<SharedState>,
     Path(cycle_id): Path<String>,
     Json(req): Json<CreateReferralRequest>,
-) -> impl IntoResponse {
+) -> axum::response::Response {
     info!(cycle_id, referred_to = ?req.referred_to, "create_referral");
-    let packet = ReferralPacket {
-        id: uuid::Uuid::new_v4().to_string(),
-        cycle_id,
-        referred_to: req.referred_to,
-        referral_basis: req.referral_basis,
-        content_url: req.content_url,
-        referred_at: chrono::Utc::now().to_rfc3339(),
-        acknowledged_at: None,
+    let guard = state.cycles.lock().expect("lock poisoned");
+    let Some(cycle) = guard.get(&cycle_id) else {
+        return problem(
+            StatusCode::NOT_FOUND,
+            format!("no cycle with id {cycle_id}"),
+        );
     };
-    (StatusCode::CREATED, Json(packet))
+    // An ODPP referral is built by the engine so the content reference and id
+    // follow one convention rather than two.
+    let basis = req.referral_basis;
+    let mut packet = if req.referred_to == ReferralTarget::Odpp {
+        // The engine owns the id and content-reference convention for ODPP.
+        crate::engine::ForensicsEngine::build_odpp_packet(cycle, &basis)
+    } else {
+        ReferralPacket {
+            id: uuid::Uuid::now_v7().to_string(),
+            cycle_id: cycle_id.clone(),
+            referred_to: req.referred_to,
+            referral_basis: basis,
+            content_url: String::new(),
+            referred_at: chrono::Utc::now().to_rfc3339(),
+            acknowledged_at: None,
+        }
+    };
+    // The caller's content reference always wins: the engine's is a fallback
+    // convention, not a reason to discard what was actually supplied.
+    if !req.content_url.is_empty() {
+        packet.content_url = req.content_url;
+    }
+    drop(guard);
+    state
+        .referrals
+        .lock()
+        .expect("lock poisoned")
+        .insert(packet.id.clone(), packet.clone());
+    (StatusCode::CREATED, Json(packet)).into_response()
 }
 
 pub async fn publish_replication(
+    State(state): State<SharedState>,
     Path(cycle_id): Path<String>,
     Json(req): Json<PublishReplicationRequest>,
-) -> impl IntoResponse {
+) -> axum::response::Response {
     info!(cycle_id, "publish_replication");
+    let guard = state.cycles.lock().expect("lock poisoned");
+    let Some(cycle) = guard.get(&cycle_id) else {
+        return problem(
+            StatusCode::NOT_FOUND,
+            format!("no cycle with id {cycle_id}"),
+        );
+    };
+    // The engine already encodes this rule; publishing against a draft cycle
+    // would attest to a result that has not been produced.
+    if !crate::engine::ForensicsEngine::can_publish_replication(cycle) {
+        return problem(
+            StatusCode::CONFLICT,
+            format!(
+                "cycle is {}; replication requires a complete cycle",
+                cycle.status.wire()
+            ),
+        );
+    }
     let pkg = ReplicationPackage {
-        id: uuid::Uuid::new_v4().to_string(),
+        id: uuid::Uuid::now_v7().to_string(),
         cycle_id,
         code_url: req.code_url,
         data_hash: req.data_hash,
@@ -72,21 +175,30 @@ pub async fn publish_replication(
         doi: req.doi,
         published_at: chrono::Utc::now().to_rfc3339(),
     };
-    (StatusCode::CREATED, Json(pkg))
+    drop(guard);
+    state
+        .replication
+        .lock()
+        .expect("lock poisoned")
+        .insert(pkg.id.clone(), pkg.clone());
+    (StatusCode::CREATED, Json(pkg)).into_response()
 }
 
-pub async fn list_public_reports() -> impl IntoResponse {
+pub async fn list_public_reports(State(state): State<SharedState>) -> impl IntoResponse {
     info!("list_public_reports");
-    let reports: Vec<PublicReport> = vec![];
-    Json(serde_json::json!({ "reports": reports }))
+    Json(serde_json::json!({ "reports": state.reports_sorted() }))
 }
 
-pub async fn get_public_report(Path(id): Path<String>) -> impl IntoResponse {
+pub async fn get_public_report(
+    State(state): State<SharedState>,
+    Path(id): Path<String>,
+) -> axum::response::Response {
     info!(report_id = %id, "get_public_report");
-    Json(PublicReport {
-        id,
-        ..Default::default()
-    })
+    let guard = state.reports.lock().expect("lock poisoned");
+    match guard.get(&id) {
+        Some(r) => Json(r.clone()).into_response(),
+        None => problem(StatusCode::NOT_FOUND, format!("no published report with id {id}")),
+    }
 }
 
 // ---------------------------------------------------------------------------
