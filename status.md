@@ -186,8 +186,8 @@ Measuring the routers directly instead:
 
 ```
 registered handlers judged : 631
-fabricated                 : 206   (33%)
-  of which contract-unbound: 161
+fabricated                 : 191   (30%)
+  of which contract-unbound: 147
   contract-bound           : 45
 ```
 
@@ -450,12 +450,12 @@ into three buckets, because "238 fabricated" is not a task list. Converting all
 238 to 501 would remove capability a refusal cannot replace; leaving them
 fabricated is worse than either. The split is the point.
 
-**145 implementable** (was 221; 76 converted) — local work. Create/read/update
+**130 implementable** (was 221; 91 converted) — local work. Create/read/update
 against `AppState`, or a computation over inputs the request already carries.
 `eel-memstore-rs` is usually the whole requirement. These are worth doing, and are
 how the ten crates already fixed were fixed.
 
-Seven crates are now at zero fabrications: `county-coord`, `recall`, `referendum`,
+Eight crates are now at zero fabrications: `county-coord`, `recall`, `referendum`,
 `by-election`, `court-interface`, `ecc-api` (21 handlers, whose records took no
 state at all — a complaint filed through the grievance portal could never be
 retrieved, an escalation could never be resolved, and `get_audit_log` returned
@@ -474,6 +474,22 @@ rather than leaving the reader to assume.
 
 `review` also has no endpoint that creates a recommendation, so signing one is a
 404. That is recorded rather than papered over by inventing a creation route.
+
+`abis-reports-adhoc` is the eighth, and its fifteen handlers all took
+`State(_state)` and discarded it. `create_report` answered 201 with
+`{"created": true}` and stored nothing; `get_preview` returned `{"preview": null}`
+for any id, so a caller could not tell "no such preview" from "the preview
+failed"; `publish_version` answered 201 with a freshly minted `definition_id` and
+recorded it nowhere, so a version could read as published with nothing behind it;
+and `revoke_share` and `delete_snippet` answered 204 for any id. All now work,
+with the publish definition id recorded on the report so "published" is a fact
+rather than a response.
+
+Its `run_preview` deliberately reports `rows_returned: null` with an
+`error_message`: no query engine is wired in that crate, so reporting `0` would
+read as "the query ran and matched nothing" rather than "nothing ran". That is
+the same distinction as `binary_integrity_check`, and it is why the triage puts
+it in the implementable bucket rather than refusing it.
 
 **8 need a subsystem** — the response carries a cryptographic artifact or asserts
 a verdict as a literal `true`. Neither can come from a request body or a
@@ -557,7 +573,7 @@ added for verdicts asserted as a literal `true`.
 | `training-svc/crates/training-api/src/handlers/accreditation.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/lms.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/spec.rs` | 6 | 0 | 0 |
-| **total** | **145** | **8** | **9** |
+| **total** | **130** | **8** | **9** |
 Run `python3 tools/fabrication_triage.py --list` for every handler, or
 `--crate <fragment>` for one file.
 

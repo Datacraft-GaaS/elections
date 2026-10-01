@@ -3847,6 +3847,7 @@ dependencies = [
  "eel-auth-rs",
  "eel-crypto-rs",
  "eel-events-rs",
+ "eel-memstore-rs",
  "eel-outbox-rs",
  "hex",
  "rstest",
@@ -3860,6 +3861,7 @@ dependencies = [
  "thiserror 2.0.20",
  "tokio",
  "tokio-util",
+ "tower 0.5.3",
  "tracing",
  "uuid",
 ]
