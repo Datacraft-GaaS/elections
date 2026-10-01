@@ -420,13 +420,14 @@ def report_unbound(ops: list[dict], bodies: dict[str, dict]) -> int:
 # function name so it answered one service with another's handler. A heuristic
 # with no test is just a guess that prints a number.
 #
-# This has earned its keep three times, always the same way: converting a
-# handler to an honest 501 drops a check, because the expectation recorded the
-# old behaviour. certify_county_result and amend_form34a took it 7/7 -> 5/7;
-# assign_adjudication took it 10/10 -> 9/10. That is the pins doing their job
-# rather than a nuisance -- a test that cannot fail is worse than no test. The
-# cost is that converting a handler means updating its expectation in the same
-# commit, which is the correct place to notice.
+# This has earned its keep four times, always the same way: changing a handler
+# drops a check, because the expectation recorded the old behaviour.
+# certify_county_result and amend_form34a took it 7/7 -> 5/7; assign_adjudication
+# 10/10 -> 9/10; and implementing the referendum chain took it 10/10 -> 7/10
+# because those three went from DECLARES_UNIMPLEMENTED to VERIFIED. That is the
+# pins doing their job rather than a nuisance -- a test that cannot fail is worse
+# than no test. The cost is that changing a handler means updating its
+# expectation in the same commit, which is the correct place to notice.
 # (handler, file, route, expected) -- file and route are distinct: the file is
 # only a diagnostic when resolution drifts, the route is the context the
 # classifier needs to tell a probe from a domain handler.
@@ -440,17 +441,21 @@ SELF_TEST = [
      "/op", "DECLARES_UNIMPLEMENTED"),
     ("get_reports", "services/abis-svc/crates/abis-api/src/routes/reports.rs",
      "/op", "DECLARES_UNIMPLEMENTED"),
-    # Converted to honest 501s; previously logged and returned 204 while
-    # certifying nothing, and logged then returned 202 with a minted
-    # amendment_id while discarding the amendment.
+    # Implementations that replaced fabrications. certify_county_result logged
+    # and returned 204 while certifying nothing; declare_referendum named
+    # NoDeclarationWithoutBothThresholds in a comment without calling
+    # can_declare; get_national_result synthesised an aggregate from constants.
     ("certify_county_result", "services/governance-svc/crates/referendum/src/handlers.rs",
-     "/op", "DECLARES_UNIMPLEMENTED"),
-    ("amend_form34a", "services/rts-svc/crates/rts-ro-api/src/handlers.rs",
-     "/op", "DECLARES_UNIMPLEMENTED"),
+     "/v1/referendums/{id}/county-results/{county}/certify", "VERIFIED"),
     ("declare_referendum", "services/governance-svc/crates/referendum/src/handlers.rs",
-     "/op", "DECLARES_UNIMPLEMENTED"),
+     "/v1/referendums/{id}/declare", "VERIFIED"),
     ("get_national_result", "services/governance-svc/crates/referendum/src/handlers.rs",
-     "/op", "DECLARES_UNIMPLEMENTED"),
+     "/v1/referendums/{id}/national-result", "VERIFIED"),
+    # amend_form34a remains an honest 501: a Form 34A amendment needs the event
+    # bus and lineage store that do not exist here, so refusing is the honest
+    # answer rather than minting an amendment_id.
+    ("amend_form34a", "services/rts-svc/crates/rts-ro-api/src/handlers.rs",
+     "/api/v1/rts/ro/form34a/{id}/amend", "DECLARES_UNIMPLEMENTED"),
     # Converted to an honest 501; previously State(_state) unused while echoing
     # the request back as "in_review".
     ("assign_adjudication", "services/abis-svc/crates/abis-api/src/routes/adjudication.rs",

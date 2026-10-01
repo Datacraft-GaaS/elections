@@ -304,6 +304,33 @@ signature hash, so both are written to the audit log instead of being dropped.
 The signer and hash used to reach only a log line while the response was 204 for
 anything.
 
+`court-interface` is the fifth, and it is the clearest case for refusing to
+fabricate rather than guessing:
+
+| handler | before | now |
+|---|---|---|
+| `get_evidence_bundle` | **200 with a default bundle for any petition** — empty and populated indistinguishable | 404 until a request exists; then assembled from the recorded requests |
+| `register_witness` | 200 with a default witness, never consented | stores the supplied witness; 404 for an unknown petition |
+| `list_witnesses` | always `[]` | lists real witnesses, scoped per petition |
+| `request_evidence` | 202 for a request never made | records it; the bundle reflects it |
+| `add_supplementary_request` | echoed the id into a default record | stores description and requester |
+
+The bundle is the reason this matters: a caller checking what the court held on
+file got a well-formed bundle containing nothing, and from the response alone that
+is indistinguishable from a populated one. In a filing context that is worse than
+an error, so 404 is the honest answer until evidence is actually requested.
+
+Two tests exist purely to prevent a false pass: `witnesses_do_not_leak_across_petitions`
+and `evidence_requests_do_not_leak_across_petitions`. A shared store would let a
+witness appear on a petition they never gave evidence to.
+
+The fidelity self-test dropped 10/10 -> 7/10 when the referendum chain was
+implemented, because three pins recorded `DECLARES_UNIMPLEMENTED` and are now
+`VERIFIED`. Fourth time the pins have caught a stale expectation, always the same
+way. `amend_form34a` stays `DECLARES_UNIMPLEMENTED` and its pin records why: a
+Form 34A amendment needs an event bus and a lineage store that do not exist here,
+so refusing is correct rather than minting an `amendment_id`.
+
 `by-election` is the fourth, and it turned up a structural fault the fabrications
 were hiding: **two `ByElection` types, neither ever written to.**
 `create_by_election` built a `models::ByElection` and dropped it;

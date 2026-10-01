@@ -4478,6 +4478,7 @@ version = "0.1.0"
 dependencies = [
  "axum 0.8.9",
  "chrono",
+ "eel-memstore-rs",
  "serde",
  "serde_json",
  "thiserror 2.0.20",
