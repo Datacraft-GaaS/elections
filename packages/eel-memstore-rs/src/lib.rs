@@ -24,14 +24,28 @@
 //! requests is its own small lie.
 
 use std::collections::BTreeMap;
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 
 use serde::{de::DeserializeOwned, Serialize};
 
 /// A keyed, thread-safe collection of `T`.
+///
+/// The map sits behind an `Arc`, so cloning a `Collection` shares the same data
+/// rather than forking it. That matters because axum's `Extension` requires
+/// `Clone` and a derived `Clone` would deep-copy: every request would get its own
+/// empty map and nothing would ever be retrievable after the response. Sharing is
+/// the only correct semantics here, and it is why this is a manual impl.
 #[derive(Debug)]
 pub struct Collection<T> {
-    inner: RwLock<BTreeMap<String, T>>,
+    inner: Arc<RwLock<BTreeMap<String, T>>>,
+}
+
+impl<T> Clone for Collection<T> {
+    fn clone(&self) -> Self {
+        Self {
+            inner: Arc::clone(&self.inner),
+        }
+    }
 }
 
 impl<T> Default for Collection<T> {
@@ -44,8 +58,16 @@ impl<T> Collection<T> {
     /// An empty collection.
     pub fn new() -> Self {
         Self {
-            inner: RwLock::new(BTreeMap::new()),
+            inner: Arc::new(RwLock::new(BTreeMap::new())),
         }
+    }
+
+    /// Whether two handles refer to the same underlying map.
+    ///
+    /// Exposed because `Clone` shares rather than copies, which is surprising
+    /// enough that a service relying on it should be able to assert it.
+    pub fn shares_state_with(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.inner, &other.inner)
     }
 
     /// Number of stored items.
@@ -333,6 +355,28 @@ mod tests {
         s.from_map(&items);
         assert_eq!(s.len(), 1);
         assert_eq!(s.get("i-1"), Some(inc("i-1")));
+    }
+
+    #[test]
+    fn clone_shares_state_rather_than_copying_it() {
+        // axum's Extension requires Clone. A derived Clone would deep-copy and
+        // every request would see an empty collection.
+        let a = store();
+        a.insert("i-1", inc("i-1"));
+        let b = a.clone();
+        assert!(b.shares_state_with(&a), "clone must share, not copy");
+        assert_eq!(b.get("i-1"), Some(inc("i-1")), "clone sees the same data");
+        b.insert("i-2", inc("i-2"));
+        assert_eq!(a.len(), 2, "a write through the clone is visible in the original");
+    }
+
+    #[test]
+    fn independent_collections_do_not_share() {
+        let a = store();
+        let b = store();
+        a.insert("i-1", inc("i-1"));
+        assert!(!a.shares_state_with(&b));
+        assert!(b.is_empty());
     }
 
     #[test]

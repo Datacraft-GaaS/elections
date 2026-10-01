@@ -3,10 +3,14 @@ use crate::speech;
 use crate::store::Store;
 use axum::{
     routing::{get, post},
-    Router,
+    Extension, Router,
 };
 
 pub fn build_router(store: Store) -> Router {
+    // Constructed per call so each router -- including every test's -- gets its
+    // own records. A shared store would let one test's complaint appear in
+    // another's list and make the round-trip pass for the wrong reason.
+    let records = crate::records::Records::default();
     Router::new()
         .route("/health", get(health))
         // ECC
@@ -57,4 +61,5 @@ pub fn build_router(store: Store) -> Router {
         .route("/speech/media-items/{item_id}/adjudications", post(speech::adjudicate_media_item))
         .route("/speech/reports/summary", get(speech::get_speech_summary_report))
         .with_state(store)
+        .layer(Extension(records))
 }
