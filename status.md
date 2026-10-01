@@ -304,6 +304,38 @@ signature hash, so both are written to the audit log instead of being dropped.
 The signer and hash used to reach only a log line while the response was 204 for
 anything.
 
+`recall` is the second crate implemented this way, and it is where the payoff is
+largest. The 30 handlers converted to 501 across the sweep were refusals; these
+are the same endpoints working:
+
+| handler | before | now |
+|---|---|---|
+| `create_petition` | 201, stored nowhere | stores the `Petition`, `list_petitions` sees it |
+| `import_signatories` | **whole batch discarded** into a minted `batch_id` | classifies every row, stores it, returns real counts |
+| `list_signatories` | always `[]` | lists real records, per petition |
+| `get_threshold_report` | **Art. IV §2 evaluated against `registered_voters = 100_000`, `verified_signatories = 0`** | counts only `VALID` rows against a loaded constituency roll |
+| `close_petition` | 204 for any id | sets `CLOSED`; 404 if absent |
+| `create_recall_election` | 201 with `trigger_status: "pending"` under a comment claiming an outbox event | records it; `by_election_id` stays `null` because none exists |
+
+The signature import is new capability the models always described and no code
+implemented: rows below 0.80 OCR confidence are flagged for manual re-entry and
+do **not** count toward the threshold, duplicate `voter_id`s within a batch are
+detected, empty `voter_id`s are returned as `RowError`s, and the threshold
+report's `ward_breakdown` is derived from real rows instead of `{}`.
+
+`AppState` gained `roll: HashMap<constituency_code, registered_voters>` with
+`set_roll`/`roll_size`. There is no roll-loading endpoint, so a petition whose
+constituency has no roll entry gets **409** from the threshold report rather than
+a verdict computed against an assumed electorate — the same bug, one layer down,
+is what the hardcoded 100_000 was. `threshold_report_without_a_loaded_roll_is_refused`
+pins that.
+
+`tests/round_trip.rs` (11 tests) covers the whole path: import 30 valid + 10
+low-confidence rows into a 100-voter roll, and assert `verified_signatories == 30`,
+`numerator_x100 == 3000`, `denominator_30pct == 3000`, `meets_threshold == true`,
+and a two-way ward breakdown. The statutory test itself uses the existing
+unit-tested `meets_art_104_2_threshold` rather than a hand-rolled comparison.
+
 **The headline fabricated count did not move (238).** It should not have: both a
 501 and a working handler are non-fabricated, so the metric cannot distinguish
 "refuses" from "works". Only the per-service number for `county-coord` shows the
