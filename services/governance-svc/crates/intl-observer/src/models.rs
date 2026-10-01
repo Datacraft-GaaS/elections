@@ -21,12 +21,24 @@ pub enum ReportType {
     Final,
 }
 
+impl MissionStatus {
+    /// The wire value, derived from the serde representation so the two cannot
+    /// drift apart.
+    pub fn wire(&self) -> String {
+        serde_json::to_value(self)
+            .ok()
+            .and_then(|v| v.as_str().map(str::to_string))
+            .unwrap_or_default()
+    }
+}
+
 impl Default for ReportType {
     fn default() -> Self {
         Self::Interim
     }
 }
 
+/// A registered observer mission.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ObserverMission {
     pub id: String,
@@ -38,6 +50,7 @@ pub struct ObserverMission {
     pub registered_at: String,
 }
 
+/// A briefing scheduled for a mission.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Briefing {
     pub id: String,
@@ -48,6 +61,7 @@ pub struct Briefing {
     pub attendance_confirmed: bool,
 }
 
+/// An observation report filed by a mission.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ObservationReport {
     pub id: String,
@@ -58,6 +72,7 @@ pub struct ObservationReport {
     pub classified: bool,
 }
 
+/// A joint statement co-published by missions.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct JointStatement {
     pub id: String,
@@ -67,6 +82,7 @@ pub struct JointStatement {
     pub signed_by: Vec<String>,
 }
 
+/// A registration request.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct RegisterMissionRequest {
     pub organisation_name: String,
@@ -74,6 +90,7 @@ pub struct RegisterMissionRequest {
     pub lead_contact_hash: String,
 }
 
+/// A briefing scheduling request.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ScheduleBriefingRequest {
     pub topic: String,
@@ -81,6 +98,7 @@ pub struct ScheduleBriefingRequest {
     pub materials_url: Option<String>,
 }
 
+/// An observation report submission.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct SubmitReportRequest {
     pub report_type: ReportType,
@@ -88,6 +106,7 @@ pub struct SubmitReportRequest {
     pub classified: bool,
 }
 
+/// A joint statement publication request.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct PublishJointStatementRequest {
     pub participating_mission_ids: Vec<String>,

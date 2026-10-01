@@ -11,88 +11,233 @@ use crate::state::SharedState;
 
 pub async fn health() -> impl IntoResponse { StatusCode::OK }
 
-pub async fn list_missions() -> impl IntoResponse {
-    info!("list_missions");
-    let missions: Vec<ObserverMission> = vec![];
-    Json(serde_json::json!({ "missions": missions }))
+/// A problem+json response.
+fn problem(status: StatusCode, detail: impl Into<String>) -> axum::response::Response {
+    (
+        status,
+        Json(serde_json::json!({
+            "type": "about:blank",
+            "title": status.canonical_reason().unwrap_or("Error"),
+            "status": status.as_u16(),
+            "detail": detail.into(),
+        })),
+    )
+        .into_response()
 }
 
-pub async fn register_mission(Json(req): Json<RegisterMissionRequest>) -> impl IntoResponse {
+pub async fn list_missions(State(state): State<SharedState>) -> impl IntoResponse {
+    info!("list_missions");
+    Json(serde_json::json!({ "missions": state.legacy_missions_sorted() }))
+}
+
+pub async fn register_mission(
+    State(state): State<SharedState>,
+    Json(req): Json<RegisterMissionRequest>,
+) -> axum::response::Response {
     info!(org = %req.organisation_name, "register_mission");
+    if req.organisation_name.trim().is_empty() {
+        return problem(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "organisation_name is required",
+        );
+    }
+    let id = uuid::Uuid::now_v7().to_string();
+    // The workspace id is derived from the mission id by the engine. Previously
+    // this was the literal "ws-stub" for every mission, so two missions shared
+    // one workspace reference.
+    let accredited = !req.accreditation_ref.trim().is_empty();
     let mission = ObserverMission {
-        id: uuid::Uuid::new_v4().to_string(),
+        id: id.clone(),
         organisation_name: req.organisation_name,
         accreditation_ref: req.accreditation_ref,
         lead_contact_hash: req.lead_contact_hash,
-        workspace_id: "ws-stub".to_string(),
-        status: MissionStatus::Registered,
+        workspace_id: crate::engine::ObserverEngine::provision_workspace(&id),
+        // Accreditation is what entitles a mission to observe, so an accredited
+        // registration is an active mission. An unaccredited one is merely
+        // registered. This is the only path to `Active`, which matters because
+        // `can_submit_report` gates on it -- without it `submit_report` would be
+        // permanently closed.
+        status: if accredited {
+            MissionStatus::Active
+        } else {
+            MissionStatus::Registered
+        },
         registered_at: chrono::Utc::now().to_rfc3339(),
     };
-    (StatusCode::CREATED, Json(mission))
+    state
+        .legacy_missions
+        .lock()
+        .expect("lock poisoned")
+        .insert(id, mission.clone());
+    (StatusCode::CREATED, Json(mission)).into_response()
 }
 
-pub async fn list_briefings(Path(mission_id): Path<String>) -> impl IntoResponse {
+/// Look up a mission, or answer 404. Every `/v1` endpoint that names a mission
+/// goes through this, so a briefing or report can never be attached to a
+/// mission that was never registered.
+fn require_mission(
+    state: &SharedState,
+    mission_id: &str,
+) -> Result<crate::models::ObserverMission, axum::response::Response> {
+    let guard = state.legacy_missions.lock().expect("lock poisoned");
+    match guard.get(mission_id) {
+        Some(m) => Ok(m.clone()),
+        None => Err(problem(
+            StatusCode::NOT_FOUND,
+            format!("no observer mission with id {mission_id}"),
+        )),
+    }
+}
+
+pub async fn list_briefings(
+    State(state): State<SharedState>,
+    Path(mission_id): Path<String>,
+) -> axum::response::Response {
     info!(mission_id, "list_briefings");
-    let briefings: Vec<Briefing> = vec![];
-    Json(serde_json::json!({ "briefings": briefings }))
+    if let Err(resp) = require_mission(&state, &mission_id) {
+        return resp;
+    }
+    Json(serde_json::json!({ "briefings": state.briefings_for(&mission_id) })).into_response()
 }
 
 pub async fn schedule_briefing(
+    State(state): State<SharedState>,
     Path(mission_id): Path<String>,
     Json(req): Json<ScheduleBriefingRequest>,
-) -> impl IntoResponse {
+) -> axum::response::Response {
     info!(mission_id, topic = %req.topic, "schedule_briefing");
+    if let Err(resp) = require_mission(&state, &mission_id) {
+        return resp;
+    }
+    if req.topic.trim().is_empty() || req.scheduled_at.trim().is_empty() {
+        return problem(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "topic and scheduled_at are required",
+        );
+    }
     let briefing = Briefing {
-        id: uuid::Uuid::new_v4().to_string(),
-        mission_id,
+        id: uuid::Uuid::now_v7().to_string(),
+        mission_id: mission_id.clone(),
         topic: req.topic,
         scheduled_at: req.scheduled_at,
         materials_url: req.materials_url,
+        // Attendance is confirmed by the mission, never by the scheduling act.
         attendance_confirmed: false,
     };
-    (StatusCode::CREATED, Json(briefing))
+    state
+        .briefings
+        .lock()
+        .expect("lock poisoned")
+        .entry(mission_id)
+        .or_default()
+        .push(briefing.clone());
+    (StatusCode::CREATED, Json(briefing)).into_response()
 }
 
 pub async fn submit_report(
+    State(state): State<SharedState>,
     Path(mission_id): Path<String>,
     Json(req): Json<SubmitReportRequest>,
-) -> impl IntoResponse {
+) -> axum::response::Response {
     info!(mission_id, "submit_report");
+    let Ok(mission) = require_mission(&state, &mission_id) else {
+        return problem(
+            StatusCode::NOT_FOUND,
+            format!("no observer mission with id {mission_id}"),
+        );
+    };
+    // The engine encoded this rule -- only an active mission may report -- and
+    // the handler never called it, so a mission that had only ever been
+    // registered could file observations.
+    if !crate::engine::ObserverEngine::can_submit_report(&mission) {
+        return problem(
+            StatusCode::CONFLICT,
+            format!(
+                "mission is {}; only an active mission may file an observation report",
+                mission.status.wire()
+            ),
+        );
+    }
     let report = ObservationReport {
-        id: uuid::Uuid::new_v4().to_string(),
+        id: uuid::Uuid::now_v7().to_string(),
         mission_id,
         report_type: req.report_type,
         submitted_at: chrono::Utc::now().to_rfc3339(),
         content_url: req.content_url,
         classified: req.classified,
     };
-    (StatusCode::CREATED, Json(report))
+    state
+        .observation_reports
+        .lock()
+        .expect("lock poisoned")
+        .entry(report.mission_id.clone())
+        .or_default()
+        .push(report.clone());
+    (StatusCode::CREATED, Json(report)).into_response()
 }
 
-pub async fn list_reports(Path(mission_id): Path<String>) -> impl IntoResponse {
+pub async fn list_reports(
+    State(state): State<SharedState>,
+    Path(mission_id): Path<String>,
+) -> axum::response::Response {
     info!(mission_id, "list_reports");
-    let reports: Vec<ObservationReport> = vec![];
-    Json(serde_json::json!({ "reports": reports }))
+    if let Err(resp) = require_mission(&state, &mission_id) {
+        return resp;
+    }
+    Json(serde_json::json!({ "reports": state.observation_reports_for(&mission_id) }))
+        .into_response()
 }
 
-pub async fn publish_joint_statement(Json(req): Json<PublishJointStatementRequest>) -> impl IntoResponse {
+pub async fn publish_joint_statement(
+    State(state): State<SharedState>,
+    Json(req): Json<PublishJointStatementRequest>,
+) -> axum::response::Response {
     info!(mission_count = req.participating_mission_ids.len(), "publish_joint_statement");
+    if !crate::engine::ObserverEngine::validate_joint_statement_participants(
+        &req.participating_mission_ids,
+    ) {
+        return problem(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "a joint statement needs at least one participating mission",
+        );
+    }
+    // The engine's check is only "not empty" -- it cannot see the store. A
+    // statement attributing itself to missions that do not exist is worse than
+    // no statement, so every participant is resolved.
+    let mut missing: Vec<String> = Vec::new();
+    {
+        let guard = state.legacy_missions.lock().expect("lock poisoned");
+        for id in &req.participating_mission_ids {
+            if !guard.contains_key(id) {
+                missing.push(id.clone());
+            }
+        }
+    }
+    if !missing.is_empty() {
+        return problem(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            format!("unknown participating missions: {}", missing.join(", ")),
+        );
+    }
     let stmt = JointStatement {
-        id: uuid::Uuid::new_v4().to_string(),
+        id: uuid::Uuid::now_v7().to_string(),
         participating_mission_ids: req.participating_mission_ids,
         published_at: chrono::Utc::now().to_rfc3339(),
         content_url: req.content_url,
         signed_by: req.signed_by,
     };
-    (StatusCode::CREATED, Json(stmt))
+    state
+        .joint_statements
+        .lock()
+        .expect("lock poisoned")
+        .insert(stmt.id.clone(), stmt.clone());
+    (StatusCode::CREATED, Json(stmt)).into_response()
 }
 
-pub async fn list_joint_statements() -> impl IntoResponse {
+pub async fn list_joint_statements(State(state): State<SharedState>) -> impl IntoResponse {
     info!("list_joint_statements");
-    let stmts: Vec<JointStatement> = vec![];
-    Json(serde_json::json!({ "joint_statements": stmts }))
+    Json(serde_json::json!({ "joint_statements": state.joint_statements_sorted() }))
 }
-
 // ---------------------------------------------------------------------------
 // Public contract endpoints (governance-intl-observer/coordination.yaml)
 // ---------------------------------------------------------------------------

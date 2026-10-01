@@ -186,8 +186,8 @@ Measuring the routers directly instead:
 
 ```
 registered handlers judged : 631
-fabricated                 : 138   (22%)
-  of which contract-unbound: 98
+fabricated                 : 132   (21%)
+  of which contract-unbound: 92
   contract-bound           : 45
 ```
 
@@ -450,12 +450,12 @@ into three buckets, because "238 fabricated" is not a task list. Converting all
 238 to 501 would remove capability a refusal cannot replace; leaving them
 fabricated is worse than either. The split is the point.
 
-**122 implementable** (was 221; 134 converted) — local work. Create/read/update
+**116 implementable** (was 221; 140 converted) — local work. Create/read/update
 against `AppState`, or a computation over inputs the request already carries.
 `eel-memstore-rs` is usually the whole requirement. These are worth doing, and are
 how the ten crates already fixed were fixed.
 
-Thirteen crates are now at zero fabrications, and the one remaining handler here is recorded as blocked: `county-coord`, `recall`, `referendum`,
+Fourteen crates are now at zero fabrications, and the one remaining handler here is recorded as blocked: `county-coord`, `recall`, `referendum`,
 `by-election`, `court-interface`, `ecc-api` (21 handlers, whose records took no
 state at all — a complaint filed through the grievance portal could never be
 retrieved, an escalation could never be resolved, and `get_audit_log` returned
@@ -543,6 +543,33 @@ variants are now renamed explicitly and pinned by
 representation rather than restating it, so a handler's conflict message and the
 serialized enum cannot drift apart. (`CycleStatus` is the one enum here
 serialized snake_case; the helpers serve both.)
+
+`governance/intl-observer` repeats the forensics shape on a surface where the
+severity is higher. `register_mission` assigned the literal
+`workspace_id: "ws-stub"` to **every** mission while discarding the mission
+itself, so two missions shared one workspace reference and none was retrievable.
+Every list returned `vec![]`. And `submit_report` accepted a report against any
+mission id — including one that had never been registered — with no check at all.
+
+`ObserverEngine::can_submit_report` encoded the rule that **only an active
+mission may file an observation report**, and the handler never called it. So the
+question is what makes a mission active, because nothing did: registration set
+`Registered` and there was no transition out of it, which would have left
+`submit_report` permanently closed. Accreditation is what entitles a mission to
+observe, so registration now sets `Active` when `accreditation_ref` is present and
+`Registered` when it is not. That is a judgement call worth naming — it is the
+one place this commit invents a rule rather than enforcing an existing one.
+
+The engine's other check is a good example of a stub that cannot be trusted with
+a store. `validate_joint_statement_participants` returns `!ids.is_empty()`, so a
+joint statement could be published attributing itself to missions that do not
+exist. The handler now calls the engine **and** resolves every participant
+against the store, so an unknown mission is a `422` naming it and the statement is
+not stored.
+
+Scheduling a briefing also no longer marks attendance. `schedule_briefing` set
+`attendance_confirmed` from nothing in particular; it is now explicitly `false`,
+because attendance is confirmed by the mission, not by the act of scheduling.
 
 `portal/gazette` contains **the most serious refusal in this tree**, and it is
 recorded as blocked rather than implemented.
@@ -715,7 +742,7 @@ added for verdicts asserted as a literal `true`.
 | `training-svc/crates/training-api/src/handlers/accreditation.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/lms.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/spec.rs` | 6 | 0 | 0 |
-| **total** | **122** | **7** | **9** |
+| **total** | **116** | **7** | **9** |
 Run `python3 tools/fabrication_triage.py --list` for every handler, or
 `--crate <fragment>` for one file.
 
