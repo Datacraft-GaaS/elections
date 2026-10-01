@@ -186,8 +186,8 @@ Measuring the routers directly instead:
 
 ```
 registered handlers judged : 631
-fabricated                 : 126   (20%)
-  of which contract-unbound: 86
+fabricated                 : 119   (19%)
+  of which contract-unbound: 79
   contract-bound           : 45
 ```
 
@@ -450,12 +450,12 @@ into three buckets, because "238 fabricated" is not a task list. Converting all
 238 to 501 would remove capability a refusal cannot replace; leaving them
 fabricated is worse than either. The split is the point.
 
-**110 implementable** (was 221; 146 converted) — local work. Create/read/update
+**103 implementable** (was 221; 153 converted) — local work. Create/read/update
 against `AppState`, or a computation over inputs the request already carries.
 `eel-memstore-rs` is usually the whole requirement. These are worth doing, and are
 how the ten crates already fixed were fixed.
 
-Fifteen crates are now at zero fabrications, and the one remaining handler here is recorded as blocked: `county-coord`, `recall`, `referendum`,
+Sixteen crates are now at zero fabrications, and the one remaining handler here is recorded as blocked: `county-coord`, `recall`, `referendum`,
 `by-election`, `court-interface`, `ecc-api` (21 handlers, whose records took no
 state at all — a complaint filed through the grievance portal could never be
 retrieved, an escalation could never be resolved, and `get_audit_log` returned
@@ -623,6 +623,39 @@ proven able to fail: forcing every rule to pass drops 5 of them. An earlier
 attempt at that rebreak was itself a no-op — an empty basis still fell through to
 the `unrecognised-basis` branch and still failed — which is worth noting because a
 test that cannot fail is the failure mode this whole effort is about.
+
+`governance/oag` is the only crate so far that had **no state module at all** —
+not an empty one, not an unused one. `src/` was `handlers.rs`, `models.rs`,
+`router.rs`, `lib.rs`, `main.rs` and nothing else, so there was nowhere to put
+state even in principle. All seven handlers answered from `vec![]` or
+`T::default()`: `get_engagement` echoed the path id into a default struct, so
+asking for an engagement that had never existed returned a blank engagement with
+`200 OK`, and evidence could be extracted from an engagement that was not there.
+
+The one with real-world teeth is `record_response`. Every call minted a fresh
+`response_id` for the same engagement, so the OAG's answer to an audit could be
+silently replaced by a later one, and nothing recorded that a response had been
+given. The lifecycle is now explicit on `EngagementStatus`:
+`Scoping -> Active -> Responded -> Closed`, with `accepts_response()` false once
+responded. Recording a response **moves the engagement to `Responded`**, so the
+state lives on the engagement rather than being implied by the presence of a
+response. `GET /oag/engagements/{id}/response` is new and returns `404` when
+nothing has been answered, rather than an empty body that reads as "answered with
+nothing to say".
+
+`extract_evidence` now hashes what it actually stored — engagement, description
+and extractor — so the digest is reproducible from the stored fields rather than
+being an opaque value. `a_same_extract_yields_the_same_digest` pins that: two
+extracts of identical content share a digest and differ only in id and timestamp.
+
+One honest field worth naming. `PublishedReport::hash` was a non-optional
+`String`, so registering a report without a digest recorded an empty string in a
+field that reads like a content hash. This service does not hold the published
+contents — they live in the OAG's own repository — so it cannot compute one. The
+field is now `Option<String>`: null when the caller supplies nothing, and a
+caller-supplied digest is preserved. A digest of the *metadata* would have looked
+like a content hash without being one, which is the same mistake as legal-audit's
+`tlog_hash` in a different place.
 
 `portal/gazette` contains **the most serious refusal in this tree**, and it is
 recorded as blocked rather than implemented.
@@ -795,7 +828,7 @@ added for verdicts asserted as a literal `true`.
 | `training-svc/crates/training-api/src/handlers/accreditation.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/lms.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/spec.rs` | 6 | 0 | 0 |
-| **total** | **110** | **7** | **9** |
+| **total** | **103** | **7** | **9** |
 Run `python3 tools/fabrication_triage.py --list` for every handler, or
 `--crate <fragment>` for one file.
 

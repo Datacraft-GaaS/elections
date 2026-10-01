@@ -1,5 +1,40 @@
 use serde::{Deserialize, Serialize};
 
+/// An audit engagement opened by the OAG.
+/// A request to open an engagement.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct CreateEngagementRequest {
+    pub scope: String,
+    pub oag_ref: String,
+}
+
+/// A request to extract evidence.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ExtractEvidenceRequest {
+    pub description: String,
+    pub extracted_by: String,
+}
+
+/// A request to record the OAG's response.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct RecordResponseRequest {
+    pub summary: String,
+    pub disposition: String,
+    pub oag_signatory: String,
+}
+
+/// A request to register a published report.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct RegisterPublishedReportRequest {
+    pub title: String,
+    pub report_type: String,
+    pub uri: String,
+    /// The digest of the published report's contents, when the caller holds it.
+    #[serde(default)]
+    pub hash: Option<String>,
+}
+
+/// An audit engagement opened by the OAG.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct OagEngagement {
     pub engagement_id: String,
@@ -9,15 +44,45 @@ pub struct OagEngagement {
     pub oag_ref: String,
 }
 
+/// Where an engagement sits in its lifecycle.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum EngagementStatus {
+    /// Opened, scope not yet agreed.
     #[default]
     Scoping,
+    /// In progress; evidence may be extracted.
     Active,
+    /// The OAG has responded; no further response may be recorded.
     Responded,
+    /// Concluded.
     Closed,
 }
 
+impl EngagementStatus {
+    /// The wire value, derived from serde so it cannot drift from the enum.
+    pub fn wire(&self) -> String {
+        serde_json::to_value(self)
+            .ok()
+            .and_then(|v| v.as_str().map(str::to_string))
+            .unwrap_or_default()
+    }
+
+    /// Whether evidence may still be extracted.
+    pub fn accepts_evidence(&self) -> bool {
+        matches!(self, Self::Scoping | Self::Active)
+    }
+
+    /// Whether a response may still be recorded.
+    ///
+    /// False once responded: the OAG has answered, and a second answer would
+    /// silently replace the first.
+    pub fn accepts_response(&self) -> bool {
+        matches!(self, Self::Scoping | Self::Active)
+    }
+}
+
+/// Evidence extracted from an engagement.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct EvidenceExtract {
     pub extract_id: String,
@@ -28,6 +93,7 @@ pub struct EvidenceExtract {
     pub extracted_by: String,
 }
 
+/// The OAG's response to an engagement.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct OagResponse {
     pub response_id: String,
@@ -38,6 +104,7 @@ pub struct OagResponse {
     pub oag_signatory: String,
 }
 
+/// A report the OAG has published.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct PublishedReport {
     pub pub_report_id: String,
@@ -45,5 +112,8 @@ pub struct PublishedReport {
     pub report_type: String,
     pub published_at: String,
     pub uri: String,
-    pub hash: String,
+    /// Null when the caller did not supply one. This service does not hold the
+    /// report contents, so it cannot compute this itself, and a digest of the
+    /// metadata would look like a content hash without being one.
+    pub hash: Option<String>,
 }

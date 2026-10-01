@@ -12,7 +12,8 @@ async fn main() {
         .init();
     let http_addr = env::var("HTTP_ADDR").unwrap_or_else(|_| "0.0.0.0:8095".to_string());
     info!(http_addr, "eel-governance-oag starting");
-    let app = eel_governance_oag::router::build_router();
+    let state = eel_governance_oag::AppState::new();
+    let app = eel_governance_oag::router::build_router(state);
     let listener = tokio::net::TcpListener::bind(&http_addr).await.expect("bind failed");
     info!(http_addr, "eel-governance-oag HTTP listening");
     axum::serve(listener, app).await.expect("HTTP server failed");

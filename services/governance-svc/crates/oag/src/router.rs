@@ -1,10 +1,11 @@
 use crate::handlers::*;
+use crate::state::SharedState;
 use axum::{
     routing::{get, post},
     Router,
 };
 
-pub fn build_router() -> Router {
+pub fn build_router(state: SharedState) -> Router {
     Router::new()
         .route("/health", get(health))
         .route(
@@ -20,8 +21,10 @@ pub fn build_router() -> Router {
             "/oag/engagements/{engagement_id}/response",
             post(record_response),
         )
+        .route("/oag/engagements/{engagement_id}/response", get(get_response))
         .route(
             "/oag/published-reports",
             get(list_published_reports).post(register_published_report),
         )
+        .with_state(state)
 }
