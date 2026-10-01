@@ -82,3 +82,8 @@ rdkafka = { version = "0.37", features = ["cmake-build", "ssl"] }
 
 # Testing
 rstest = { version = "0.23" }
+# HMAC-SHA256 and hex, for the channel gateway's WhatsApp webhook signature
+# check. Added with this crate: verifying a provider signature is ordinary
+# HMAC-SHA256, and the gateway previously answered "verified" without checking.
+hmac  = { version = "0.12", features = ["std"] }
+hex   = { version = "0.4" }

@@ -139,6 +139,7 @@ def main() -> int:
             entry["body"],
             {"operation_id": "", "path": paths[0]},
             entry.get("local_fns"),
+            bodies,
         )
         if verdict in ("VERIFIED", "DECLARES_UNIMPLEMENTED", "UNKNOWN"):
             continue

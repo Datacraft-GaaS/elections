@@ -4,3 +4,4 @@
 pub mod http;
 /// Typed models for ussd/ivr/whatsapp contracts.
 pub mod spec;
+pub mod store;

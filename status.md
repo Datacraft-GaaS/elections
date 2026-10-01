@@ -450,7 +450,7 @@ into three buckets, because "238 fabricated" is not a task list. Converting all
 238 to 501 would remove capability a refusal cannot replace; leaving them
 fabricated is worse than either. The split is the point.
 
-**74 implementable** (was 221; 184 converted) — local work. Create/read/update
+**66 implementable** (was 221; 192 converted) — local work. Create/read/update
 against `AppState`, or a computation over inputs the request already carries.
 `eel-memstore-rs` is usually the whole requirement. These are worth doing, and are
 how the ten crates already fixed were fixed.
@@ -867,6 +867,62 @@ candidate-total mismatch on a payload that failed the votes_cast check first, an
 I asserted a token was stable across issuance when including the issue time is the
 point. Both corrected in the tests.
 
+`bvr-svc/channel-gateway` had the fabrication I had earlier written down as
+**genuinely blocked**: two webhook endpoints returning `{"challenge": "verified"}`
+for any request. I had recorded that as "WhatsApp webhook signature verification
+cannot be performed — the provider app secret is not in the workspace". That was
+**too broad, and this commit is the correction.**
+
+The signature check is ordinary HMAC-SHA256 over the raw body keyed by the app
+secret. `packages` in this repo already does exactly that elsewhere — see
+`field-mobile-svc/telemetry-ingest/src/hmac_verify.rs` — so the *algorithm* was
+never the obstacle. Only the **key** is absent, because the app secret is issued by
+the provider and must never live in a repository. So the secret is read from
+configuration (`WHATSAPP_APP_SECRET`), and:
+
+- with a secret configured, the signature is genuinely checked over the raw body
+  and a mismatch is a `401`;
+- with no secret, the endpoints return `503 unverifiable` and the message
+  endpoints **refuse** — they no longer acknowledge anything.
+
+`SignatureVerdict` has four states — `Valid`, `Invalid`, `Unverifiable`,
+`Missing` — and `Unverifiable` is deliberately distinct from `Valid`. Collapsing
+those two is exactly the bug. A missing secret is reported *before* a missing
+header, because no header fixes a configuration problem and reporting it as a
+missing signature points the operator at the wrong place.
+
+The USSD and IVR handlers answered `response_text: "END"` to **every** input, so
+a caller dialled a service code and was disconnected before seeing a menu. There
+is now a real menu per service code with session state: an empty first turn shows
+the menu, `0` cancels (and only `0`), a selection advances, and
+`get_ussd_session_log` returns the whole recorded exchange instead of `log: []`
+for any session id. An **unoperated service code is refused** — a gateway that
+answers every code accepts traffic for services it does not run. The IVR is a
+matching DTMF state machine. A session id is bound to the service code that
+opened it, so state cannot be carried between services, and the caller's MSISDN is
+hashed rather than stored.
+
+**The existing contract tests were pinning the fabrication**, which is worth
+recording. `ussd_session_closes_with_end` asserted `action == "end"` for every
+input. `ussd_session_log_is_empty_list` asserted `log == []`. `whatsapp_verify_challenge`
+asserted `200 OK` from the verification endpoints. And
+`whatsapp_inbound_is_acknowledged` asserted that an **unsigned** body was
+acknowledged. All four now pin the real contract: an unsigned or unverifiable
+webhook is refused, which is the entire purpose of a verification endpoint.
+
+**And a second measurement fix.** The two `receive_*` handlers are one line each —
+`receive(state, headers, body).await` — delegating to a same-file helper that does
+the work. `delegates_elsewhere` covers a call into *another* file; the same-file
+case was still being flagged, which made two genuinely implemented handlers read
+as fabrications. `reaches_store_via_local_helper` now accepts a same-file
+delegation **only when that helper's own body carries a store or work marker** — so
+a handler calling a same-file no-op is still correctly flagged. That is the fourth
+time this classifier has been wrong, and the fourth time the code turned out to be
+right.
+
+`tests/contract_tests.rs` is 16 tests, and the 4 signature tests are proven able to
+fail: accepting any webhook drops all four.
+
 `portal/gazette` contains **the most serious refusal in this tree**, and it is
 recorded as blocked rather than implemented.
 
@@ -1038,7 +1094,7 @@ added for verdicts asserted as a literal `true`.
 | `training-svc/crates/training-api/src/handlers/accreditation.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/lms.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/spec.rs` | 6 | 0 | 0 |
-| **total** | **74** | **5** | **9** |
+| **total** | **66** | **4** | **8** |
 Run `python3 tools/fabrication_triage.py --list` for every handler, or
 `--crate <fragment>` for one file.
 

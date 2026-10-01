@@ -314,6 +314,37 @@ NOT_A_DELEGATION = {
 FN_CALL = re.compile(r"(?<![.:\w])([a-z_][a-z0-9_]{2,})\s*\(")
 
 
+def reaches_store_via_local_helper(
+    body: str, local_fns: set[str] | None, fn_bodies: dict
+) -> bool:
+    """True if the handler calls a same-file helper that itself touches the store.
+
+    `delegates_elsewhere` covers a call to a function in *another* file. The
+    same-file case was still being flagged: `channel-gateway`'s two WhatsApp
+    receive handlers are one line each -- `receive(state, headers, body).await` --
+    delegating to a shared helper in the same module that does the signature
+    check and calls `state.record_message`.
+
+    The distinction that matters is not which file the helper is in, it is
+    whether the helper does the work. So a same-file call counts only when that
+    helper's own body carries a store or work marker. A handler that calls a
+    same-file helper which does nothing still reads as fabricated.
+    """
+    if local_fns is None:
+        return False
+    for name in FN_CALL.findall(body):
+        if name in NOT_A_DELEGATION or name not in local_fns:
+            continue
+        entry = fn_bodies.get(name)
+        if entry is None:
+            continue
+        helper = entry.get("body") or ""
+        if WORK_MARKERS.search(helper) or STATE_MARKERS.search(helper) \
+                or ERROR_BRANCH.search(helper):
+            return True
+    return False
+
+
 def delegates_elsewhere(body: str, local_fns: set[str]) -> bool:
     """True if the handler calls a function defined in another file.
 
@@ -342,7 +373,10 @@ RE_DIRECT_OR_KEEPALIVE = re.compile(
 
 
 def classify(
-    body: str, op: dict | None = None, local_fns: set[str] | None = None
+    body: str,
+    op: dict | None = None,
+    local_fns: set[str] | None = None,
+    fn_bodies: dict | None = None,
 ) -> str:
     """VERIFIED, DECLARES_UNIMPLEMENTED, EMPTY_IDEMPOTENCY, IGNORES_INPUT,
     FABRICATED, UNKNOWN.
@@ -380,6 +414,8 @@ def classify(
             or ERROR_BRANCH.search(body):
         return "VERIFIED"
     if delegates_elsewhere(body, local_fns):
+        return "VERIFIED"
+    if fn_bodies and reaches_store_via_local_helper(body, local_fns, fn_bodies):
         return "VERIFIED"
     if len(lines) <= FABRICATED_MAX_LINES:
         return "FABRICATED"
@@ -467,6 +503,7 @@ def report_unbound(ops: list[dict], bodies: dict[str, dict]) -> int:
             entry["body"],
             {"operation_id": "", "path": paths[0]},
             entry.get("local_fns"),
+            bodies,
         )
         if verdict in ("VERIFIED", "DECLARES_UNIMPLEMENTED", "UNKNOWN"):
             continue
@@ -564,6 +601,7 @@ def self_test() -> int:
             entry["body"],
             {"operation_id": "", "path": route},
             entry.get("local_fns"),
+            bodies,
         )
         want = expected
         ok = got == want
