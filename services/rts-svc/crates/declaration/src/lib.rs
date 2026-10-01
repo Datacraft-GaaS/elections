@@ -9,6 +9,7 @@ pub mod events;
 pub mod gazette;
 pub mod quorum;
 pub mod rules;
+pub mod store;
 
 #[cfg(test)]
 mod proptest_rules;

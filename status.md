@@ -450,12 +450,12 @@ into three buckets, because "238 fabricated" is not a task list. Converting all
 238 to 501 would remove capability a refusal cannot replace; leaving them
 fabricated is worse than either. The split is the point.
 
-**98 implementable** (was 221; 158 converted) — local work. Create/read/update
+**89 implementable** (was 221; 167 converted) — local work. Create/read/update
 against `AppState`, or a computation over inputs the request already carries.
 `eel-memstore-rs` is usually the whole requirement. These are worth doing, and are
 how the ten crates already fixed were fixed.
 
-Seventeen crates are now at zero fabrications, and the one remaining handler here is recorded as blocked: `county-coord`, `recall`, `referendum`,
+Eighteen crates are now at zero fabrications. and the one remaining handler here is recorded as blocked: `county-coord`, `recall`, `referendum`,
 `by-election`, `court-interface`, `ecc-api` (21 handlers, whose records took no
 state at all — a complaint filed through the grievance portal could never be
 retrieved, an escalation could never be resolved, and `get_audit_log` returned
@@ -693,6 +693,58 @@ That is the last of the governance-svc legacy surfaces: `forensics`,
 `intl-observer`, `legal-audit`, `oag` and `reporting` are all at zero, taking the
 crate total from 238 to 114.
 
+`rts-svc/declaration` is the most consequential handler set in this tree, because
+it is the one that decides who won a presidential election — and **all nine
+handlers answered from the path id alone.** The `:id` was never checked against
+anything.
+
+The one that matters: `declare_result` returned `status: "declared"` for **any**
+id, with no winner, no `declared_at`, and no evaluation. Meanwhile the crate
+contains the actual Art. 138(4) winner-determination engine — `rules::evaluate`,
+requiring BOTH a strict majority AND the 25%-in-24-of-47-counties threshold, with
+Elections Act §§83-84 semantics and TLA+ invariants behind it — and
+`crate::rules::evaluate` was **never called from anywhere in the repository.**
+
+So the fix was to make the engine the authority rather than add a second
+implementation. `DeclareRequest` now carries the tally, because without a tally
+there is nothing to evaluate, and a "declared" status with no tally is precisely
+the fabrication this must not produce. The outcome is derived and reported:
+
+- A bare national majority **does not declare**. `a_majority_without_the_county_threshold_does_not_declare`
+  is the test that matters most here: 900 votes in one county is not a win.
+- An exact tie yields `tie_pending`, and EC-LEG-06 then makes the certificate
+  endpoint a `409`. That rule lived in `Declaration::may_issue_certificate` and
+  was **unreachable**, because `get_certificate` answered `not_issued` without
+  reading anything.
+
+`set_runoff` and `set_tie` were endpoints that *asserted* an outcome. They now take
+a tally and accept it **only if the rules engine produces that outcome** — a `409`
+naming what the tally actually produced otherwise. An endpoint that can set a
+national result by assertion is the failure mode, not the fix.
+
+`amend_declaration` had the same problem in miniature: it minted an amendment id
+and dropped the lineage, so an amendment could be layered on any tally. It now
+requires `previous_snapshot_hash` to match the tally the declaration is actually
+on, and `amendment_count` exposes the append-only lineage. `judiciary_ack`
+requires the petition window to be `petitioned` — an acknowledgement follows a
+petition, and acknowledging an unopened window records a judicial act against
+nothing.
+
+State is a real event-sourced projection (`store.rs`): the `Declaration` aggregate
+is folded from `StoredEvent`s, so the aggregate's own `apply` is the only thing
+that decides state and a handler cannot set a status the aggregate would not have
+reached.
+
+**A latent panic the tests caught.** All nine routes were declared with axum 0.6
+path syntax (`/api/v1/declarations/:id`). The workspace is on axum 0.8, where a
+`:` segment is a hard error — so `router()` would have panicked at construction.
+Nothing called it, so it was never caught. The paths are now `{id}`. This is worth
+more than the fabrication count: the endpoint set was not merely fabricating, it
+was unconstructable.
+
+`tests/api.rs` is 27 tests, all failing against the previous code, and proven able
+to fail: bypassing `evaluate` and hardcoding a winner drops 4 of them.
+
 `portal/gazette` contains **the most serious refusal in this tree**, and it is
 recorded as blocked rather than implemented.
 
@@ -864,7 +916,7 @@ added for verdicts asserted as a literal `true`.
 | `training-svc/crates/training-api/src/handlers/accreditation.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/lms.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/spec.rs` | 6 | 0 | 0 |
-| **total** | **98** | **7** | **9** |
+| **total** | **89** | **7** | **9** |
 Run `python3 tools/fabrication_triage.py --list` for every handler, or
 `--crate <fragment>` for one file.
 
