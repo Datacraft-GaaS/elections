@@ -450,7 +450,7 @@ into three buckets, because "238 fabricated" is not a task list. Converting all
 238 to 501 would remove capability a refusal cannot replace; leaving them
 fabricated is worse than either. The split is the point.
 
-**54 implementable** (was 221; 203 converted) — local work. Create/read/update
+**44 implementable** (was 221; 213 converted) — local work. Create/read/update
 against `AppState`, or a computation over inputs the request already carries.
 `eel-memstore-rs` is usually the whole requirement. These are worth doing, and are
 how the ten crates already fixed were fixed.
@@ -1041,6 +1041,67 @@ empty. `a_single_leaf_tree_needs_no_sibling` now pins that property, and
 proven able to fail twice: asserting every token included drops 2, and asserting
 every build attested drops 1.
 
+`field-mobile-svc/mobile-bff`'s second surface was the same failure mode across
+eleven handlers, and one of them is the clearest example in this tree of
+**invented telemetry presented as measurement**.
+
+`get_station_status` returned, for **every station in the country**:
+
+```
+turnout_count: 1247, kit_battery_level: 87.5, connectivity_status: "online", queue_depth: 3
+```
+
+Those are not defaults or placeholders that read as such. They are four specific
+readings of a real polling station's ballot box, its battery, its link and its
+queue — hardcoded, identical everywhere. A station status that reads 1247 for
+Nairobi's Kibra and for a village polling station is a fabricated measurement,
+and it is the kind a monitoring dashboard would present without a second thought.
+`turnout_count` is now `null` until a kit reports one, and a station that has never
+checked in is a 404 with the reason.
+
+`get_attestation_verdict` decided the verdict from the **device id string**:
+`starts_with("emulator")` -> UNVERIFIED, `starts_with("rooted")` -> FAILS,
+anything else -> **MEETS** — while ignoring the `attestation_object` the request
+carried entirely, and then minting an observer licence on a MEETS. A device id is
+not evidence in either direction: a rooted device can be named anything, and a
+genuine Pixel can be named `emulator-1`. A MEETS needs the platform key attestation
+service, which is not here, so the verdict is `UNVERIFIED`, no licence is issued,
+and the response keeps the digest of the attestation object as evidence of what was
+presented.
+
+`create_bff_session` swallowed a failed OIDC exchange and fell back to
+`mock_access_token`, then wrapped it in a string beginning `eyJhbGciOiJIUzI1NiI...`
+with a literal `...` in it — a credential deliberately shaped to read as a signed
+JWT to any client that inspects it, from a service that signs nothing. The token is
+now a digest the store holds, deliberately **not** JWT-shaped, and the response
+records `oidc_exchange: "not-completed"` with the reason. `refresh_bff_session`
+minted a JWT-shaped string from a UUID with no session lookup at all, so a refresh
+worked for any caller; it now requires a token this service issued and records the
+rotation.
+
+The rest, briefly: dispatch returned two fabricated assignments
+(`assign-001` active, `assign-002` pending) for any worker, and its update path
+built its idempotency key from a **fresh UUID on every call** so the store was
+never read and never hit; incidents discarded the body and cached `{}` under the
+idempotency key, so a retry returned an empty object; push tokens minted an id and
+stored nothing, and a provider token is a credential so only its digest is kept;
+and an observer pass to a count centre was minted for anyone who asked, so it now
+names the accreditation application it rests on.
+
+**Two of the existing test files were pinning the fabrications**, which is worth
+recording as a pattern rather than an accident. `contract_tests.rs` asserted
+`200 OK` from station status for a station that never checked in, from a dispatch
+update for an assignment that was never issued, from a refresh with a token this
+service never issued, and from an observer pass request that named no
+accreditation. `verify_test.rs` asserted `200` for a clone report that is a new
+record (`201` is the honest status) and for a constituency with no recorded tokens.
+Six tests across two files were asserting the fabricated behaviour. All now pin
+the real contract, with the previous behaviour named in a doc comment on each.
+
+`tests/mobile_surface.rs` is 24 tests, all failing against the previous code, and
+proven able to fail twice: returning MEETS for every device drops 2, and letting any
+refresh token through drops 1.
+
 `portal/gazette` contains **the most serious refusal in this tree**, and it is
 recorded as blocked rather than implemented.
 
@@ -1212,7 +1273,7 @@ added for verdicts asserted as a literal `true`.
 | `training-svc/crates/training-api/src/handlers/accreditation.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/lms.rs` | 1 | 0 | 0 |
 | `training-svc/crates/training-api/src/handlers/spec.rs` | 6 | 0 | 0 |
-| **total** | **54** | **3** | **8** |
+| **total** | **44** | **3** | **8** |
 Run `python3 tools/fabrication_triage.py --list` for every handler, or
 `--crate <fragment>` for one file.
 

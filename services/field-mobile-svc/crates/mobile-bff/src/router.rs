@@ -31,6 +31,15 @@ pub struct AppState {
     /// constant: `verify_token` reported `included: true` for any token, and
     /// `get_queue_snapshot` reported `queue_length: 0` for any station.
     pub verify: SharedVerifyStore,
+    /// Sessions, stations, dispatch, incidents, push tokens and observer passes
+    /// behind the `/api/v1/mobile/bff/*` and `/v1/agent/*` surfaces.
+    ///
+    /// Added because those handlers answered from constants: station status
+    /// reported a fixed turnout of 1247 and a fixed battery of 87.5 for every
+    /// station, dispatch returned two fabricated assignments for any worker, and
+    /// the OIDC session endpoints minted JWT-shaped strings with no session behind
+    /// them.
+    pub mobile: crate::mobile_store::SharedMobileStore,
 }
 
 impl FromRef<AppState> for Arc<BffState> {
@@ -51,6 +60,12 @@ impl FromRef<AppState> for SharedVerifyStore {
     }
 }
 
+impl FromRef<AppState> for crate::mobile_store::SharedMobileStore {
+    fn from_ref(state: &AppState) -> Self {
+        state.mobile.clone()
+    }
+}
+
 pub fn build_router() -> Router {
     let broadcast = ShardedBroadcast::new();
     build_router_with_state(broadcast)
@@ -64,6 +79,7 @@ pub fn build_router_with_test_state(
         bff: state,
         broadcast,
         verify: crate::verify_store::VerifyStore::new(),
+        mobile: crate::mobile_store::MobileStore::new(),
     };
     // Delegate to spec::router which has all the BFF routes.
     // The legacy /verify/v1/* and /health routes are also merged.
@@ -94,6 +110,7 @@ pub fn build_router_with_state(broadcast: Arc<ShardedBroadcast>) -> Router {
         bff: Arc::new(crate::spec::BffState::new(None).expect("in-memory BffState")),
         broadcast,
         verify: crate::verify_store::VerifyStore::new(),
+        mobile: crate::mobile_store::MobileStore::new(),
     };
     Router::new()
         .route("/health", get(health))

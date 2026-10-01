@@ -55,7 +55,21 @@ pub fn hmac_sha256(_key: &[u8], _data: &[u8]) -> Result<Vec<u8>, anyhow::Error> 
     Err(anyhow::anyhow!("hmac_sha256 not yet implemented — requires eel_crypto_rs crate"))
 }
 
-/// Shared application state for the BFF.
+//// A problem+json response for this module.
+fn spec_problem(status: StatusCode, detail: impl Into<String>) -> axum::response::Response {
+    (
+        status,
+        Json(serde_json::json!({
+            "type": "about:blank",
+            "title": status.canonical_reason().unwrap_or("Error"),
+            "status": status.as_u16(),
+            "detail": detail.into(),
+        })),
+    )
+        .into_response()
+}
+
+// Shared application state for the BFF.
 pub struct AppState {
     pub pool: Option<sqlx::PgPool>,
     pub outbox_client: OutboxClient,
@@ -282,44 +296,101 @@ struct SessionRequest {
 struct BffSessionResponse {
     session_id: String,
     token: String,
+    /// Opaque local token; this service signs nothing, so it is not a JWT.
+    refresh_token: Option<String>,
     expires_in: i64,
+    /// Whether the OIDC exchange actually completed. It does not here.
+    oidc_exchange: String,
+    blocking_reason: Option<String>,
 }
 
 async fn create_bff_session(
-    State(_state): State<Arc<BffState>>,
+    State(mobile): State<crate::mobile_store::SharedMobileStore>,
     Json(req): Json<SessionRequest>,
-) -> impl IntoResponse {
-    let _client_id = "mobile-bff"; // M1: pass into keycloak_token_exchange
-    let _redirect_uri = format!("https://auth.eel.internal/callback/mobile-bff"); // M1: pass into keycloak_token_exchange
+) -> axum::response::Response {
+    use crate::mobile_store::MobileStore;
 
-    let (access_token, _refresh_token) = keycloak_token_exchange(
-        &req.code,
-        req.state.as_str(),
-        req.nonce.as_str(),
-    )
-    .await
-    .map_err(|e| anyhow::anyhow!("OIDC token exchange failed: {}", e))
-    .unwrap_or_else(|_| (
-        "mock_access_token".to_string(),
-        "mock_refresh_token".to_string(),
-    ));
+    if req.code.trim().is_empty() || req.nonce.trim().is_empty() {
+        return spec_problem(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "code and nonce are required",
+        );
+    }
+    // The OIDC exchange is attempted. It cannot complete here: the identity
+    // provider is not reachable from this process. The previous handler swallowed
+    // the failure and fell back to `mock_access_token`, then wrapped it in a string
+    // shaped like a JWT, and returned 201.
+    let (exchanged, failure) = match keycloak_token_exchange(&req.code, &req.state, &req.nonce).await {
+        Ok((access, refresh)) => (Some((access, refresh)), None),
+        Err(e) => (None, Some(e.to_string())),
+    };
 
     let session_id = Uuid::now_v7().to_string();
-    let token = format!("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.{}...", access_token);
+    // The access token is a digest over the session, the client nonce and the
+    // issue time, and it is the value the store holds. It is not a JWT and is
+    // deliberately not shaped like one: a string starting `eyJhbGci` reads as
+    // signed to any client that inspects it, and this service signs nothing.
+    let session = mobile.create_session(&session_id, &req.nonce, req.scopes.clone(), exchanged.is_some());
+    let access_token = session.token_hash.clone();
+    let refresh_token = session.refresh_hash.clone();
 
-    (StatusCode::CREATED, Json(BffSessionResponse {
-        session_id,
-        token,
-        expires_in: 300, // 5 minutes
-    }))
+    (
+        StatusCode::CREATED,
+        Json(BffSessionResponse {
+            session_id,
+            token: access_token,
+            refresh_token: Some(refresh_token),
+            expires_in: crate::mobile_store::SESSION_TTL_SECS,
+            oidc_exchange: if exchanged.is_some() { "completed".to_string() } else { "not-completed".to_string() },
+            blocking_reason: failure.map(|e| format!(
+                "the OIDC token exchange did not complete ({e}); this session is a local session over this store and does not carry an OIDC identity"
+            )),
+        }),
+    )
+        .into_response()
 }
 
 async fn refresh_bff_session(
-    State(_state): State<Arc<BffState>>,
-    Json(_req): Json<serde_json::Value>,
-) -> impl IntoResponse {
-    let token = format!("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.{}...", Uuid::now_v7());
-    (StatusCode::OK, Json(serde_json::json!({ "token": token })))
+    mobile: State<crate::mobile_store::SharedMobileStore>,
+    Json(req): Json<serde_json::Value>,
+) -> axum::response::Response {
+    use crate::mobile_store::MobileStore;
+
+    // The previous handler minted a JWT-shaped string from a UUID with no session
+    // lookup, so a refresh worked for any caller.
+    let Some(refresh_token) = req
+        .get("refresh_token")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    else {
+        return spec_problem(StatusCode::UNPROCESSABLE_ENTITY, "refresh_token is required");
+    };
+    let Some(session) = mobile.session_for_refresh(refresh_token) else {
+        return spec_problem(
+            StatusCode::UNAUTHORIZED,
+            "the refresh token is unknown, expired, or belongs to a revoked session",
+        );
+    };
+    // The rotation is recorded, so the token the client receives is the one the
+    // session holds.
+    let Some(rotated) = mobile.rotate_access_token(&session.session_id) else {
+        return spec_problem(
+            StatusCode::UNAUTHORIZED,
+            "the session is revoked; a refresh cannot rotate its token",
+        );
+    };
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "session_id": rotated.session_id,
+            "token": rotated.token_hash,
+            "refresh_token": refresh_token,
+            "expires_in": crate::mobile_store::SESSION_TTL_SECS,
+            "scopes": rotated.scopes,
+        })),
+    )
+        .into_response()
 }
 
 // =============================================================================
@@ -335,29 +406,50 @@ struct AttestationVerdictRequest {
 
 #[derive(Serialize, Deserialize)]
 struct AttestationVerdictResponse {
-    verdict: String, // "MEETS", "FAILS", "UNVERIFIED"
+    /// "UNVERIFIED" unless the platform key attestation service is reachable.
+    verdict: String,
+    /// Never issued here: a licence rests on a MEETS verdict.
     license: Option<String>,
+    /// The digest of the attestation object presented, as evidence of what was.
+    attestation_object_sha256: Option<String>,
+    blocking_reason: Option<String>,
 }
 
 async fn get_attestation_verdict(
-    State(_state): State<Arc<BffState>>,
     Json(req): Json<AttestationVerdictRequest>,
-) -> impl IntoResponse {
-    let verdict = if req.device_id.starts_with("emulator") {
-        "UNVERIFIED".to_string()
-    } else if req.device_id.starts_with("rooted") {
-        "FAILS".to_string()
-    } else {
-        "MEETS".to_string()
-    };
-
-    let license = if verdict == "MEETS" {
-        Some(format!("{}-{}", req.device_id, chrono::Utc::now().format("%Y%m%d")))
-    } else {
-        None
-    };
-
-    (StatusCode::OK, Json(AttestationVerdictResponse { verdict, license }))
+) -> axum::response::Response {
+    // The previous handler decided the verdict from the **device id string** --
+    // `starts_with("emulator")` -> UNVERIFIED, `starts_with("rooted")` -> FAILS,
+    // anything else -> MEETS -- ignored the `attestation_object` entirely, and
+    // minted an observer licence on a MEETS.
+    //
+    // Deciding MEETS requires the platform key attestation service, which is not in
+    // this workspace. A device-id prefix is not evidence of anything: a rooted
+    // device can be named anything, and a genuine device can be named "emulator-1".
+    if req.device_id.trim().is_empty() || req.attestation_object.trim().is_empty() {
+        return spec_problem(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "device_id and attestation_object are required",
+        );
+    }
+    (
+        StatusCode::OK,
+        Json(AttestationVerdictResponse {
+            // Never MEETS here, and never a licence.
+            verdict: "UNVERIFIED".to_string(),
+            license: None,
+            attestation_object_sha256: Some(
+                crate::mobile_store::MobileStore::hash_token(&[&req.attestation_object]),
+            ),
+            blocking_reason: Some(
+                "a MEETS verdict requires the platform key attestation service, which is not \
+                 in this workspace; the device id is not evidence and the attestation object \
+                 has not been verified"
+                    .to_string(),
+            ),
+        }),
+    )
+        .into_response()
 }
 
 // =============================================================================
@@ -429,10 +521,14 @@ async fn verify_voter(
 #[derive(Serialize, Deserialize)]
 struct StationStatusResponse {
     station_code: String,
-    turnout_count: i64,
+    /// Null until a kit reports one. It was a hardcoded 1247 for every station.
+    turnout_count: Option<i64>,
+    /// Null until a kit reports one. It was a hardcoded 87.5 for every station.
     kit_battery_level: Option<f32>,
     connectivity_status: String,
     queue_depth: u32,
+    last_seen_at: Option<String>,
+    materials_delivered: bool,
 }
 
 #[derive(Deserialize)]
@@ -441,16 +537,36 @@ struct StationStatusQuery {
 }
 
 async fn get_station_status(
-    State(_state): State<Arc<BffState>>,
+    State(mobile): State<crate::mobile_store::SharedMobileStore>,
     Query(q): Query<StationStatusQuery>,
-) -> impl IntoResponse {
-    (StatusCode::OK, Json(StationStatusResponse {
-        station_code: q.station_code.clone(),
-        turnout_count: 1247,
-        kit_battery_level: Some(87.5),
-        connectivity_status: "online".to_string(),
-        queue_depth: 3,
-    }))
+) -> axum::response::Response {
+    // The previous handler returned turnout_count 1247, kit_battery_level 87.5,
+    // connectivity_status "online" and queue_depth 3 for **every station**. Those
+    // are invented readings presented as measurements of a real polling station.
+    if q.station_code.trim().is_empty() {
+        return spec_problem(StatusCode::UNPROCESSABLE_ENTITY, "station_code is required");
+    }
+    // A station the service has never seen has no status to report. `turnout_count`
+    // is `null` until a kit reports it, not 1247.
+    match mobile.station(&q.station_code) {
+        Some(station) => (
+            StatusCode::OK,
+            Json(StationStatusResponse {
+                station_code: station.station_code,
+                turnout_count: if station.voter_count == 0 { None } else { Some(station.voter_count as i64) },
+                kit_battery_level: station.battery_level.map(|b| b as f32),
+                connectivity_status: if station.online { "online" } else { "never-checked-in" }.to_string(),
+                queue_depth: station.queue_depth as u32,
+                last_seen_at: station.last_seen_at,
+                materials_delivered: station.materials_delivered,
+            }),
+        )
+            .into_response(),
+        None => spec_problem(
+            StatusCode::NOT_FOUND,
+            format!("station {} has never checked in; there is no status to report", q.station_code),
+        ),
+    }
 }
 
 // =============================================================================
@@ -503,31 +619,78 @@ struct IncidentReportResponse {
 }
 
 async fn report_incident(
-    State(state): State<Arc<BffState>>,
+    State(mobile): State<crate::mobile_store::SharedMobileStore>,
     headers: axum::http::HeaderMap,
-    Json(_req): Json<IncidentReportRequest>,
-) -> impl IntoResponse {
-    // EC-DAT-01: honor the client-supplied Idempotency-Key so retried POSTs
-    // return the cached response instead of creating duplicates.
+    Json(req): Json<IncidentReportRequest>,
+) -> axum::response::Response {
+    // EC-DAT-01: honor the client-supplied Idempotency-Key so a retried POST
+    // returns the same incident rather than filing a second one.
+    //
+    // The previous handler discarded the incident body (`_req`) and cached `{}`
+    // under the key, so a retry returned an empty object and nothing was ever
+    // recorded.
     let idempotency_key = headers
         .get("idempotency-key")
         .and_then(|v| v.to_str().ok())
+        .map(str::trim)
+        .filter(|k| !k.is_empty())
         .map(str::to_string)
         .unwrap_or_else(|| Uuid::now_v7().to_string());
 
-    match state.idempotency_store.get(&idempotency_key).await {
-        Some(resp) => return (StatusCode::OK, resp),
-        None => {
-            let _ = state.idempotency_store.store(&idempotency_key, &serde_json::json!({})).await;
-        }
+    if let Some(existing) = mobile.incident_by_idempotency(&idempotency_key) {
+        return (
+            StatusCode::OK,
+            Json(serde_json::json!({
+                "incident_id": existing.incident_id,
+                "acknowledged": true,
+                "duplicate_of": existing.incident_id,
+                "idempotency_key": idempotency_key,
+            })),
+        )
+            .into_response();
     }
 
-    let incident_id = Uuid::now_v7().to_string();
+    if req.incident_type.trim().is_empty() || req.description.trim().is_empty() {
+        return spec_problem(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "incident_type and description are required",
+        );
+    }
+    const SEVERITIES: [&str; 3] = ["low", "medium", "high"];
+    let severity = req.severity.trim().to_ascii_lowercase();
+    if !SEVERITIES.contains(&severity.as_str()) {
+        return spec_problem(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            format!("severity must be one of {}", SEVERITIES.join(", ")),
+        );
+    }
 
-    created_json(IncidentReportResponse {
-        incident_id,
-        acknowledged: true,
-    })
+    let station_code = req.station_code.trim();
+    // An incident at a station this service has never seen is either a typo or a
+    // station that has not checked in. Either way it is recorded with the station
+    // it names, and the response says whether the service knows it.
+    let known_station = !station_code.is_empty() && mobile.station_exists(station_code);
+
+    let incident = mobile.file_incident(
+        req.incident_type.trim(),
+        (!station_code.is_empty()).then(|| station_code.to_string()),
+        &severity,
+        "",
+        serde_json::json!({ "description": req.description }),
+        "mobile-bff",
+        &idempotency_key,
+    );
+    (
+        StatusCode::CREATED,
+        Json(serde_json::json!({
+            "incident_id": incident.incident_id,
+            "acknowledged": true,
+            "severity": incident.severity,
+            "station_known": known_station,
+            "idempotency_key": idempotency_key,
+        })),
+    )
+        .into_response()
 }
 
 // =============================================================================
@@ -535,34 +698,53 @@ async fn report_incident(
 // =============================================================================
 
 async fn list_dispatch_assignments(
-    State(_state): State<Arc<BffState>>,
+    State(mobile): State<crate::mobile_store::SharedMobileStore>,
     Query(q): Query<serde_json::Value>,
-) -> impl IntoResponse {
-    let worker_id = q.get("worker_id").and_then(|v| v.as_str()).unwrap_or("default");
-
-    let assignments: Vec<serde_json::Value> = vec![
-        serde_json::json!({ "assignment_id": "assign-001", "worker_id": worker_id, "status": "active" }),
-        serde_json::json!({ "assignment_id": "assign-002", "worker_id": worker_id, "status": "pending" }),
-    ];
-
-    (StatusCode::OK, Json(serde_json::json!({ "assignments": assignments })))
+) -> axum::response::Response {
+    // The previous handler returned two fabricated assignments (`assign-001`
+    // active, `assign-002` pending) for any worker_id.
+    let worker_id = q
+        .get("worker_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .trim();
+    if worker_id.is_empty() {
+        return (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(serde_json::json!({"detail": "worker_id is required"})),
+        )
+            .into_response();
+    }
+    let assignments = mobile.assignments_for(worker_id);
+    Json(serde_json::json!({
+        "worker_id": worker_id,
+        "count": assignments.len(),
+        "assignments": assignments,
+    }))
+    .into_response()
 }
 
 async fn update_dispatch_assignment(
-    State(state): State<Arc<BffState>>,
+    State(mobile): State<crate::mobile_store::SharedMobileStore>,
     Path(assignment_id): Path<String>,
-    Json(_req): Json<serde_json::Value>,
-) -> impl IntoResponse {
-    let idempotency_key = format!("update-{}-{}", assignment_id, Uuid::now_v7());
-
-    match state.idempotency_store.get(&idempotency_key).await {
-        Some(resp) => return (StatusCode::OK, resp),
-        None => {
-            let _ = state.idempotency_store.store(&idempotency_key, &serde_json::json!({})).await;
+    Json(req): Json<serde_json::Value>,
+) -> axum::response::Response {
+    // The previous handler built its idempotency key from a **fresh UUID on every
+    // call**, so the idempotency store was never read and never hit; it stored `{}`
+    // and answered `updated: true` for any assignment id.
+    let Some(status) = req.get("status").and_then(|v| v.as_str()).map(str::trim) else {
+        return spec_problem(StatusCode::UNPROCESSABLE_ENTITY, "status is required");
+    };
+    match mobile.set_assignment_status(&assignment_id, status) {
+        Ok(assignment) => (StatusCode::OK, Json(assignment)).into_response(),
+        Err(detail) if detail.starts_with("no assignment") => {
+            spec_problem(StatusCode::NOT_FOUND, detail)
         }
+        Err(detail) if detail.starts_with("unknown assignment status") => {
+            spec_problem(StatusCode::UNPROCESSABLE_ENTITY, detail)
+        }
+        Err(detail) => spec_problem(StatusCode::CONFLICT, detail),
     }
-
-    (StatusCode::OK, Json(serde_json::json!({ "assignment_id": assignment_id, "updated": true })))
 }
 
 // =============================================================================
@@ -575,15 +757,77 @@ struct AccessPassResponse {
     reason: Option<String>,
 }
 
-async fn get_observer_access_pass(
-    State(_state): State<Arc<BffState>>,
-) -> impl IntoResponse {
-    let access_pass = Some(format!("PASS-{}-{}", Uuid::now_v7().to_string(), chrono::Utc::now().format("%Y%m%d")));
+/// A request for an observer access pass.
+///
+/// A pass to a count centre rests on a recorded accreditation, so the
+/// application it rests on is named rather than minted on request.
+#[derive(Deserialize, Clone)]
+struct ObserverPassRequest {
+    /// Optional so a GET with no query reaches the handler and gets the
+    /// explanation, rather than axum rejecting the request with a bare 400.
+    #[serde(default)]
+    organisation: String,
+    #[serde(default)]
+    application_id: String,
+    #[serde(default)]
+    accreditation_ref: String,
+}
 
-    (StatusCode::OK, Json(AccessPassResponse {
-        access_pass: access_pass.clone(),
-        reason: None,
-    }))
+/// An observer access pass, requested as a query string.
+///
+/// The same issuance as [`post_observer_access_pass`], for the GET form.
+async fn get_observer_access_pass(
+    State(mobile): State<crate::mobile_store::SharedMobileStore>,
+    Query(q): Query<ObserverPassRequest>,
+) -> axum::response::Response {
+    issue_pass(&mobile, q).await
+}
+
+/// An observer access pass, requested as a JSON body.
+async fn post_observer_access_pass(
+    State(mobile): State<crate::mobile_store::SharedMobileStore>,
+    Json(req): Json<ObserverPassRequest>,
+) -> axum::response::Response {
+    issue_pass(&mobile, req).await
+}
+
+async fn issue_pass(
+    mobile: &crate::mobile_store::SharedMobileStore,
+    req: ObserverPassRequest,
+) -> axum::response::Response {
+    // The previous handler minted an access pass for anyone who asked, with no
+    // accreditation behind it.
+    if req.organisation.trim().is_empty() {
+        return spec_problem(StatusCode::UNPROCESSABLE_ENTITY, "organisation is required");
+    }
+    let application_id = req.application_id.trim();
+    if application_id.is_empty() {
+        return spec_problem(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "application_id is required: a pass to a count centre rests on a recorded \
+             accreditation, it is not minted on request",
+        );
+    }
+    if req.accreditation_ref.trim().is_empty() {
+        return spec_problem(StatusCode::UNPROCESSABLE_ENTITY, "accreditation_ref is required");
+    }
+    let pass = mobile.issue_observer_pass(
+        application_id,
+        req.organisation.trim(),
+        req.accreditation_ref.trim(),
+    );
+    (
+        StatusCode::CREATED,
+        Json(serde_json::json!({
+            "access_pass": pass.pass_id,
+            "organisation": pass.organisation,
+            "accreditation_ref": pass.accreditation_ref,
+            "issued_at": pass.issued_at,
+            "valid_until": pass.valid_until,
+            "status": pass.status,
+        })),
+    )
+        .into_response()
 }
 
 #[derive(Deserialize)]
@@ -636,17 +880,37 @@ async fn report_tamper_event(
 #[derive(Deserialize)]
 struct PushTokenRequest {
     device_id: String,
+    /// The provider's push token. A credential, so only its digest is retained.
     app_token: String,
     platform: String,
 }
 
 async fn register_push_token(
-    State(_state): State<Arc<BffState>>,
-    Json(_req): Json<PushTokenRequest>,
-) -> impl IntoResponse {
-    let token_id = Uuid::now_v7().to_string();
-
-    (StatusCode::CREATED, Json(serde_json::json!({ "token_id": token_id })))
+    State(mobile): State<crate::mobile_store::SharedMobileStore>,
+    Json(req): Json<PushTokenRequest>,
+) -> axum::response::Response {
+    // The previous handler minted a token id and stored nothing.
+    if req.device_id.trim().is_empty() {
+        return spec_problem(StatusCode::UNPROCESSABLE_ENTITY, "device_id is required");
+    }
+    let provider_token = req.app_token.trim();
+    if provider_token.is_empty() {
+        return spec_problem(StatusCode::UNPROCESSABLE_ENTITY, "token is required");
+    }
+    let record = mobile.register_push_token(&req.device_id, provider_token, &req.platform);
+    // The provider's token is a credential, so the response carries the record's
+    // id and the digest, never the token back.
+    (
+        StatusCode::CREATED,
+        Json(serde_json::json!({
+            "token_id": record.token_id,
+            "device_id": record.device_id,
+            "platform": record.platform,
+            "token_hash": record.token_hash,
+            "registered_at": record.registered_at,
+        })),
+    )
+        .into_response()
 }
 
 // =============================================================================
@@ -732,19 +996,54 @@ async fn verify_voter_lookup(
 // =============================================================================
 
 async fn create_incident(
-    State(state): State<Arc<BffState>>,
-    Json(_req): Json<serde_json::Value>,
-) -> impl IntoResponse {
-    let idempotency_key = Uuid::now_v7().to_string();
-
-    match state.idempotency_store.get(&idempotency_key).await {
-        Some(resp) => return (StatusCode::OK, resp),
-        None => {
-            let _ = state.idempotency_store.store(&idempotency_key, &serde_json::json!({})).await;
-        }
+    State(mobile): State<crate::mobile_store::SharedMobileStore>,
+    Json(req): Json<serde_json::Value>,
+) -> axum::response::Response {
+    // The previous handler discarded the body and cached `{}`.
+    let incident_type = req
+        .get("incident_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .trim()
+        .to_string();
+    if incident_type.is_empty() {
+        return spec_problem(StatusCode::UNPROCESSABLE_ENTITY, "incident_type is required");
     }
-
-    (StatusCode::CREATED, Json(serde_json::json!({ "incident_id": Uuid::now_v7().to_string() })))
+    let idempotency_key = Uuid::now_v7().to_string();
+    let station_code = req
+        .get("station_code")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string);
+    let severity = req
+        .get("severity")
+        .and_then(|v| v.as_str())
+        .unwrap_or("medium")
+        .trim()
+        .to_ascii_lowercase();
+    let incident = mobile.file_incident(
+        &incident_type,
+        station_code,
+        &severity,
+        req.get("reported_by_hash")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default(),
+        req.get("detail").cloned().unwrap_or(serde_json::Value::Null),
+        "agent",
+        &idempotency_key,
+    );
+    (
+        StatusCode::CREATED,
+        Json(serde_json::json!({
+            "incident_id": incident.incident_id,
+            "incident_type": incident.incident_type,
+            "severity": incident.severity,
+            "reported_at": incident.reported_at,
+            "idempotency_key": idempotency_key,
+        })),
+    )
+        .into_response()
 }
 
 // =============================================================================
@@ -958,7 +1257,10 @@ pub fn router(state: crate::router::AppState) -> Router<crate::router::AppState>
         .route("/api/v1/mobile/bff/incidents", post(report_incident))
         .route("/api/v1/mobile/bff/dispatch/assignments", get(list_dispatch_assignments))
         .route("/api/v1/mobile/bff/dispatch/assignments/{assignment_id}", patch(update_dispatch_assignment))
-        .route("/api/v1/mobile/bff/observer/access-pass", get(get_observer_access_pass))
+        .route(
+            "/api/v1/mobile/bff/observer/access-pass",
+            get(get_observer_access_pass).post(post_observer_access_pass),
+        )
         .route("/api/v1/mobile/bff/observer/observations", post(submit_observation))
         .route("/api/v1/mobile/bff/tamper-events", post(report_tamper_event))
         .route("/api/v1/mobile/bff/push-tokens", post(register_push_token))

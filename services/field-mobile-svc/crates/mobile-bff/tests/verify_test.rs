@@ -34,19 +34,30 @@ async fn results_endpoint_returns_200() {
 
 #[tokio::test]
 // #[trace("FR-M13-030", "AC-M13-05")]
-async fn results_by_scope_returns_200() {
+///
+/// **This previously returned 200 with `data: null` for any constituency**,
+/// described as a relay from a service not in this workspace. A constituency with
+/// no recorded tokens is a 404.
+async fn results_by_scope_requires_recorded_tokens() {
 	let app = make_router();
 	let req = Request::builder()
 		.uri("/verify/v1/results/constituency/001")
 		.body(axum::body::Body::empty())
 		.unwrap();
 	let resp = app.oneshot(req).await.unwrap();
-	assert_eq!(resp.status(), StatusCode::OK);
+	assert_eq!(
+		resp.status(),
+		StatusCode::NOT_FOUND,
+		"no tokens have been recorded for this constituency"
+	);
 }
 
 #[tokio::test]
 // #[trace("FR-M13-022", "AC-M13-06")]
-async fn clone_report_returns_200() {
+///
+/// A filed clone report is a new record, so `201 Created` is the honest status.
+/// It previously returned 200 for a report that was minted and stored nowhere.
+async fn clone_report_is_created() {
 	let app = make_router();
 	let body = serde_json::json!({
 		"app_id": "com.eel.citizenverify",
@@ -61,7 +72,7 @@ async fn clone_report_returns_200() {
 		.body(axum::body::Body::from(body.to_string()))
 		.unwrap();
 	let resp = app.oneshot(req).await.unwrap();
-	assert_eq!(resp.status(), StatusCode::OK);
+	assert_eq!(resp.status(), StatusCode::CREATED);
 }
 
 #[tokio::test]

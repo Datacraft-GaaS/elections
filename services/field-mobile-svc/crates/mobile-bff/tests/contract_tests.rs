@@ -66,10 +66,14 @@ async fn test_create_session_returns_201_with_tokens() {
 }
 
 #[tokio::test]
-/// FR-M1-003: Session refresh works with valid refresh token
-async fn test_refresh_session_returns_200_with_new_tokens() {
+/// FR-M1-003: A session refresh works for a refresh token this service issued.
+///
+/// **This previously passed for any string.** The handler minted a JWT-shaped
+/// string from a UUID with no session lookup, so `valid-refresh-token-123`
+/// refreshed successfully. It now has to name a live session.
+async fn test_refresh_session_requires_a_issued_token() {
     let app = make_test_router();
-    
+
     let body = json!({
         "refresh_token": "valid-refresh-token-123"
     });
@@ -82,7 +86,11 @@ async fn test_refresh_session_returns_200_with_new_tokens() {
         .unwrap();
     
     let resp = app.oneshot(req).await.unwrap();
-    assert_eq!(resp.status(), StatusCode::OK, "Session refresh should return 200");
+    assert_eq!(
+        resp.status(),
+        StatusCode::UNAUTHORIZED,
+        "a refresh token this service never issued must not refresh"
+    );
 }
 
 #[tokio::test]
@@ -166,18 +174,25 @@ async fn test_verify_voter_refuses_while_fr_m1_006_unmet() {
 }
 
 #[tokio::test]
-/// FR-M1-007: Station status returns dashboard data (no PII)
-async fn test_get_station_status_returns_200() {
+/// FR-M1-007: A station's status is only reported once it has checked in.
+///
+/// **This previously returned 200 for any station**, reporting a turnout of 1247
+/// and a battery of 87.5. A station that has never checked in has no status.
+async fn test_get_station_status_requires_a_checked_in_station() {
     let app = make_test_router();
-    
+
     let req = Request::builder()
         .uri("/api/v1/mobile/bff/station/status?station_code=KE-NBI-001")
         .method("GET")
         .body(Body::empty())
         .unwrap();
-    
+
     let resp = app.oneshot(req).await.unwrap();
-    assert_eq!(resp.status(), StatusCode::OK, "Station status should return 200");
+    assert_eq!(
+        resp.status(),
+        StatusCode::NOT_FOUND,
+        "a station that has never checked in has no status to report"
+    );
 }
 
 #[tokio::test]
@@ -218,8 +233,11 @@ async fn test_list_dispatch_assignments_returns_200() {
 }
 
 #[tokio::test]
-/// FR-M1-010: Dispatch assignment update is idempotent
-async fn test_update_dispatch_assignment_returns_200() {
+/// FR-M1-010: A dispatch update names an assignment that exists.
+///
+/// **This previously returned 200 `updated: true` for any id**, and built its
+/// idempotency key from a fresh UUID each call so the store never hit.
+async fn test_update_dispatch_assignment_requires_a_real_assignment() {
     let app = make_test_router();
     
     let body = json!({
@@ -236,22 +254,33 @@ async fn test_update_dispatch_assignment_returns_200() {
         .unwrap();
     
     let resp = app.oneshot(req).await.unwrap();
-    assert_eq!(resp.status(), StatusCode::OK, "Update assignment should return 200");
+    assert_eq!(
+        resp.status(),
+        StatusCode::NOT_FOUND,
+        "an assignment that was never issued cannot be updated"
+    );
 }
 
 #[tokio::test]
-/// FR-M1-011: Observer access pass validates accreditation
-async fn test_get_observer_access_pass_returns_200() {
+/// FR-M1-011: An observer access pass requires the accreditation it rests on.
+///
+/// **This previously returned 200 with a freshly minted pass** for a request that
+/// named no accreditation at all.
+async fn test_get_observer_access_pass_requires_accreditation() {
     let app = make_test_router();
-    
+
     let req = Request::builder()
         .uri("/api/v1/mobile/bff/observer/access-pass")
         .method("GET")
         .body(Body::empty())
         .unwrap();
-    
+
     let resp = app.oneshot(req).await.unwrap();
-    assert_eq!(resp.status(), StatusCode::OK, "Access pass should return 200");
+    assert_eq!(
+        resp.status(),
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "a pass to a count centre is not minted on request"
+    );
 }
 
 #[tokio::test]
