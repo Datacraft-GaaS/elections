@@ -1,75 +1,95 @@
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    response::IntoResponse,
+    response::{IntoResponse, Response},
     Json,
 };
 use tracing::info;
 
 use crate::models::*;
 use crate::state::SharedState;
-use crate::threshold::{can_declare, meets_county_threshold};
+use crate::threshold::{
+    can_declare, county_has_yes_majority, meets_county_threshold, meets_national_majority,
+    REQUIRED_COUNTY_THRESHOLD,
+};
 
-/// A declared operation with no implementation behind it.
-///
-/// Returned instead of a fabricated success. Certification and declaration are
-/// the two operations in this file that a caller cannot undo, so an endpoint
-/// that answers 204 for work it never did is the most dangerous shape available
-/// here: it is indistinguishable from a real certification.
-fn not_implemented(operation: &str, detail: &str) -> impl IntoResponse {
+
+/// A problem+json response, so a refusal is readable rather than a bare status.
+fn problem(status: StatusCode, detail: String) -> Response {
     (
-        StatusCode::NOT_IMPLEMENTED,
+        status,
         Json(serde_json::json!({
             "type": "about:blank",
-            "title": "Not Implemented",
-            "status": 501,
-            "detail": format!(
-                "{operation} is declared by the contract but has no \
-                 implementation behind it: {detail}"
-            ),
+            "title": status.canonical_reason().unwrap_or("Error"),
+            "status": status.as_u16(),
+            "detail": detail,
         })),
     )
+        .into_response()
 }
+
 
 pub async fn health() -> impl IntoResponse {
     StatusCode::OK
 }
 
-pub async fn list_referendums() -> impl IntoResponse {
+pub async fn list_referendums(State(state): State<SharedState>) -> impl IntoResponse {
     info!("list_referendums");
-    // Previously answered 200 with an empty list and total: 0, which reads as
-    // "no referendums exist" rather than "nothing is stored".
-    not_implemented(
-        "referendum listing",
-        "no referendum store is wired; it previously returned an empty list \
-         with total 0",
-    )
+    // Real. Previously always an empty list with total 0, which asserted that no
+    // referendum exists rather than that nothing was stored.
+    let mut referendums: Vec<Referendum> = state
+        .referendums
+        .list();
+    referendums.sort_by(|a, b| a.created_at.cmp(&b.created_at));
+    let total = referendums.len();
+    Json(serde_json::json!({ "referendums": referendums, "total": total }))
 }
 
-pub async fn get_referendum(Path(id): Path<String>) -> impl IntoResponse {
+pub async fn get_referendum(
+    State(state): State<SharedState>,
+    Path(id): Path<String>,
+) -> Result<Response, Response> {
     info!(id, "get_referendum");
-    // Echoed the requested id back inside a default-constructed Referendum and
-    // answered 200 for any id at all, so a lookup for a referendum that does
-    // not exist returned a plausible referendum rather than a 404.
-    let _ = id;
-    not_implemented(
-        "referendum lookup",
-        "no referendum store is wired; it previously echoed the requested id \
-         into a default record and answered 200 for any id",
-    )
+    // Real. Previously echoed the requested id into a default-constructed
+    // Referendum and answered 200 for any id, so a lookup for a referendum that
+    // does not exist returned a plausible referendum instead of a 404.
+    match state.referendums.get(&id) {
+        Some(r) => Ok(Json(r).into_response()),
+        None => Err(problem(StatusCode::NOT_FOUND, format!("no referendum with id {id}"))),
+    }
 }
 
-pub async fn create_referendum(Json(_body): Json<serde_json::Value>) -> impl IntoResponse {
+pub async fn create_referendum(
+    State(state): State<SharedState>,
+    Json(body): Json<serde_json::Value>,
+) -> impl IntoResponse {
     info!("create_referendum");
-    // Minted a UUIDv7, built a Referendum from defaults, synthesised a
-    // ReferendumConfiguredV1 event and answered 201 -- storing nothing and
-    // emitting nothing. Every referendum creation therefore succeeded and none
-    // of them existed.
-    not_implemented(
-        "referendum creation",
-        "no referendum store or event bus is wired; it previously returned \
-         201 with a minted id and a synthesised ReferendumConfiguredV1",
-    )
+    let id = uuid::Uuid::now_v7().to_string();
+    let referendum = Referendum {
+        id: id.clone(),
+        election_id: body["election_id"].as_str().unwrap_or("").to_string(),
+        question_text: body["question_text"].clone(),
+        status: ReferendumStatus::Draft,
+        // Always 24 for constitutional referenda, stored explicitly for audit.
+        county_threshold: REQUIRED_COUNTY_THRESHOLD,
+        national_majority_rule: "yes > (yes + no) / 2".to_string(),
+        scheduled_date: body["scheduled_date"].as_str().unwrap_or("").to_string(),
+        gazette_notice_id: None,
+        created_at: chrono::Utc::now().to_rfc3339(),
+    };
+    let evt = crate::events::ReferendumConfiguredV1::new(
+        id.clone(),
+        referendum.election_id.clone(),
+        referendum.scheduled_date.clone(),
+    );
+    // Real. Previously minted an id, synthesised this event and answered 201
+    // while storing nothing and emitting nothing, so every creation succeeded
+    // and none of them existed.
+    state.referendums.insert(id.clone(), referendum.clone());
+    (StatusCode::CREATED, Json(serde_json::json!({
+        "referendum": referendum,
+        "event": evt,
+    })))
 }
 
 pub async fn activate_referendum(Path(id): Path<String>) -> impl IntoResponse {
@@ -87,65 +107,171 @@ pub async fn activate_referendum(Path(id): Path<String>) -> impl IntoResponse {
 }
 
 pub async fn submit_county_result(
-    Path(_id): Path<String>,
-    Json(_body): Json<serde_json::Value>,
-) -> impl IntoResponse {
-    info!("submit_county_result");
-    // Parsed the tally, computed county_has_yes_majority, built a provisional
-    // result and answered 201 -- persisting nothing. County results are what
-    // certify_county_result and get_national_result later claim to be working
-    // from, so this was the bottom of a chain that had no storage at any link.
-    not_implemented(
-        "county result submission",
-        "no results store is wired; it previously returned 201 with a \
-         provisional result it never recorded",
-    )
+    State(state): State<SharedState>,
+    Path(id): Path<String>,
+    Json(body): Json<serde_json::Value>,
+) -> Result<Response, Response> {
+    info!(id, "submit_county_result");
+    if state.referendums.get(&id).is_none() {
+        return Err(problem(
+            StatusCode::NOT_FOUND,
+            format!("no referendum with id {id}"),
+        ));
+    }
+    let yes: u64 = body["yes_votes"].as_u64().unwrap_or(0);
+    let no: u64 = body["no_votes"].as_u64().unwrap_or(0);
+    let result = ReferendumCountyResult {
+        id: uuid::Uuid::now_v7().to_string(),
+        referendum_id: id.clone(),
+        county_code: body["county_code"].as_str().unwrap_or("000").to_string(),
+        yes_votes: yes,
+        no_votes: no,
+        rejected_votes: body["rejected_votes"].as_u64().unwrap_or(0),
+        registered_voters: body["registered_voters"].as_u64().unwrap_or(0),
+        status: "provisional".to_string(),
+        certified_at: None,
+        county_yes_majority: county_has_yes_majority(yes, no),
+    };
+    // Real. Previously answered 201 with a provisional result it never recorded.
+    // This was the bottom of the chain that certify_county_result and
+    // get_national_result claimed to read from.
+    state
+        .county_results
+        .lock()
+        .expect("referendum county results lock poisoned")
+        .entry(id)
+        .or_default()
+        .push(result.clone());
+    Ok((StatusCode::CREATED, Json(result)).into_response())
 }
 
 pub async fn certify_county_result(
+    State(state): State<SharedState>,
     Path((id, county)): Path<(String, String)>,
-) -> impl IntoResponse {
+) -> Result<Response, Response> {
     info!(id, county, "certify_county_result");
-    // Previously logged and returned 204, which is a successful
-    // certification: a county result was declared certified and recorded
-    // nowhere. There is no store here, so the honest answer is that the
-    // certification does not exist.
-    not_implemented(
-        "county result certification",
-        "no results store is wired; it previously returned 204 for a \
-         certification it never recorded",
-    )
+    let certified_at = chrono::Utc::now().to_rfc3339();
+    // Real. Previously logged and returned 204, which is a successful
+    // certification of a result that existed nowhere.
+    let updated = {
+        let mut guard = state
+            .county_results
+            .lock()
+            .expect("referendum county results lock poisoned");
+        match guard.get_mut(&id) {
+            Some(results) => match results.iter_mut().find(|r| r.county_code == county) {
+                Some(r) => {
+                    r.status = "certified".to_string();
+                    r.certified_at = Some(certified_at.clone());
+                    Some(r.clone())
+                }
+                None => None,
+            },
+            None => None,
+        }
+    };
+    match updated {
+        Some(_) => Ok(StatusCode::NO_CONTENT.into_response()),
+        None => Err(problem(
+            StatusCode::NOT_FOUND,
+            format!("no county result for referendum {id} county {county}"),
+        )),
+    }
 }
 
-pub async fn get_national_result(Path(id): Path<String>) -> impl IntoResponse {
+pub async fn get_national_result(
+    State(state): State<SharedState>,
+    Path(id): Path<String>,
+) -> Result<Response, Response> {
     info!(id, "get_national_result");
-    // Previously synthesised an aggregate from constants: counties_reported 0,
-    // counties_yes_majority 0, both thresholds evaluated at zero, and a
-    // freshly minted id. A national tally computed from no county results is
-    // not a tally of zero, it is a tally that was never taken, and the two
-    // thresholds made the fabricated figures look authoritative.
-    let _ = id;
-    not_implemented(
-        "national result aggregate",
-        "no county results are stored; it previously reported zero counties \
-         and evaluated the county and national thresholds at zero",
+    if state.referendums.get(&id).is_none() {
+        return Err(problem(
+            StatusCode::NOT_FOUND,
+            format!("no referendum with id {id}"),
+        ));
+    }
+    // Real. Previously synthesised this aggregate from constants --
+    // counties_reported 0, counties_yes_majority 0, both thresholds evaluated at
+    // zero -- and minted a fresh id. A national tally computed from no county
+    // results is not a tally of zero, it is a tally never taken.
+    let results = state
+        .county_results
+        .lock()
+        .expect("referendum county results lock poisoned")
+        .get(&id)
+        .cloned()
+        .unwrap_or_default();
+
+    let total_yes: u64 = results.iter().map(|r| r.yes_votes).sum();
+    let total_no: u64 = results.iter().map(|r| r.no_votes).sum();
+    let total_rejected: u64 = results.iter().map(|r| r.rejected_votes).sum();
+    let counties_yes_majority = results.iter().filter(|r| r.county_yes_majority).count() as u8;
+
+    Ok((
+        StatusCode::OK,
+        Json(ReferendumNationalResult {
+            id: uuid::Uuid::now_v7().to_string(),
+            referendum_id: id,
+            total_yes,
+            total_no,
+            total_rejected,
+            counties_reported: results.len() as u8,
+            counties_yes_majority,
+            meets_county_threshold: meets_county_threshold(counties_yes_majority),
+            meets_national_majority: meets_national_majority(total_yes, total_no),
+            computed_at: chrono::Utc::now().to_rfc3339(),
+        }),
     )
+        .into_response())
 }
 
-pub async fn declare_referendum(Path(id): Path<String>) -> impl IntoResponse {
+pub async fn declare_referendum(
+    State(state): State<SharedState>,
+    Path(id): Path<String>,
+) -> Result<Response, Response> {
     info!(id, "declare_referendum");
-    // Hard dependency on M51 result-declaration-certification.
-    // Invariant NoDeclarationWithoutBothThresholds is *named* here and not
-    // enforced: the handler returned 204 without ever calling can_declare(),
-    // so the invariant the comment claims to hold was only ever a comment.
-    let _ = can_declare; // referenced to confirm import
-    let _ = id;
-    not_implemented(
-        "referendum declaration",
-        "the NoDeclarationWithoutBothThresholds invariant was named in a \
-         comment but never checked; this previously returned 204 for a \
-         declaration that was never made",
-    )
+    if state.referendums.get(&id).is_none() {
+        return Err(problem(
+            StatusCode::NOT_FOUND,
+            format!("no referendum with id {id}"),
+        ));
+    }
+    let results = state
+        .county_results
+        .lock()
+        .expect("referendum county results lock poisoned")
+        .get(&id)
+        .cloned()
+        .unwrap_or_default();
+
+    // The invariant the old comment claimed to enforce without ever calling it:
+    // NoDeclarationWithoutBothThresholds. It is now actually evaluated, using
+    // the crate's unit-tested can_declare.
+    let counties_yes_majority = results.iter().filter(|r| r.county_yes_majority).count() as u8;
+    let total_yes: u64 = results.iter().map(|r| r.yes_votes).sum();
+    let total_no: u64 = results.iter().map(|r| r.no_votes).sum();
+    if !can_declare(counties_yes_majority, total_yes, total_no) {
+        return Err(problem(
+            StatusCode::CONFLICT,
+            format!(
+                "cannot declare: {counties_yes_majority} counties with YES majority \
+                 (need {REQUIRED_COUNTY_THRESHOLD}), totals yes={total_yes} \
+                 no={total_no}"
+            ),
+        ));
+    }
+
+    let updated = state.referendums.update(&id, |mut r| {
+        r.status = ReferendumStatus::Declared;
+        r
+    });
+    match updated {
+        Some(_) => Ok(StatusCode::NO_CONTENT.into_response()),
+        None => Err(problem(
+            StatusCode::NOT_FOUND,
+            format!("no referendum with id {id}"),
+        )),
+    }
 }
 
 // ---------------------------------------------------------------------------

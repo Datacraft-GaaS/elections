@@ -8,7 +8,9 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use crate::explainer::ReferendumExplainer;
-use crate::models::{ReferendumCountyResult, ReferendumQuestion};
+use eel_memstore_rs::Collection;
+
+use crate::models::{Referendum, ReferendumCountyResult, ReferendumQuestion};
 
 /// Shared application state.
 #[derive(Default)]
@@ -19,6 +21,9 @@ pub struct AppState {
     pub county_results: Mutex<HashMap<String, Vec<ReferendumCountyResult>>>,
     /// Referendum explainers by `question_id`.
     pub explainers: Mutex<HashMap<String, ReferendumExplainer>>,
+    /// Configured referendums by `id`, so list and get read real records
+    /// rather than echoing whatever id was asked for.
+    pub referendums: Collection<Referendum>,
 }
 
 /// Shared state handle threaded through the router.

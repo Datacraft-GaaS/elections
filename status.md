@@ -304,6 +304,28 @@ signature hash, so both are written to the audit log instead of being dropped.
 The signer and hash used to reach only a log line while the response was 204 for
 anything.
 
+`referendum` is the third, and it is where the chain matters most. Every link of
+submit -> certify -> aggregate -> declare was severed, and the crate already had
+the real, unit-tested logic to close them:
+
+| handler | before | now |
+|---|---|---|
+| `create_referendum` | 201 with a minted id and a synthesised `ReferendumConfiguredV1`, stored and emitted nothing | stores it; `list_referendums` sees it |
+| `get_referendum` | echoed **any** id into a default record, 200 | 404 unless it exists |
+| `submit_county_result` | 201 with a provisional result it never recorded | appends; majority computed by `county_has_yes_majority` |
+| `certify_county_result` | **204, certifying nothing** | sets `certified` + `certified_at`; 404 if no such county |
+| `get_national_result` | **aggregate from constants**, both thresholds evaluated at zero | aggregates real rows via `meets_county_threshold` / `meets_national_majority` |
+| `declare_referendum` | 204, naming `NoDeclarationWithoutBothThresholds` in a comment without ever calling `can_declare` | **actually calls `can_declare`**; 409 with the counts when it fails |
+
+That last row is the one to read twice. The invariant existed as a sentence in a
+comment while the handler returned 204 regardless. It is now enforced by the
+crate's own tested function, and `declaration_is_refused_when_the_threshold_is_not_met`
+asserts 409 on 1 of 24 counties while
+`declaration_is_permitted_once_both_thresholds_are_met` submits 24 YES-majority
+counties plus one NO-majority county and gets 204. Both thresholds are real:
+`meets_county_threshold` needs 24 of 47 counties, `meets_national_majority` needs
+yes > no of votes cast.
+
 `recall` is the second crate implemented this way, and it is where the payoff is
 largest. The 30 handlers converted to 501 across the sweep were refusals; these
 are the same endpoints working:
