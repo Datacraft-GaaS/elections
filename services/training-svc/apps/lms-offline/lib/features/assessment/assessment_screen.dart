@@ -41,11 +41,16 @@ class AssessmentScreen extends ConsumerWidget {
             onSelected: (chip) {},
           ),
           const SizedBox(height: 24),
-          EelButton(
+          const EelButton(
             label: 'Next Question',
             icon: Icons.arrow_forward,
             fullWidth: true,
-            onPressed: () {},
+            // Disabled, not wired: the assessment has no Question model, so there is nothing to advance to.
+            //
+            // This was an empty callback, which renders a live control that does
+            // nothing when tapped. EelButton treats a null callback as disabled,
+            // so the unavailable state is now visible rather than silent.
+            onPressed: null,
           ),
         ],
       ),

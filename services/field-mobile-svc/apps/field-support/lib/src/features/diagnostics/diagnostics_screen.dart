@@ -25,17 +25,25 @@ class DiagnosticsScreen extends ConsumerWidget {
             Text(kitSerial!, style: EelTextStyle.bodySmall),
           ],
           const SizedBox(height: 24),
-          const EelStatusChip(label: 'Kit Health: OK', severity: EelSeverity.success),
-          const SizedBox(height: 8),
-          const EelStatusChip(label: 'Battery: 78%', severity: EelSeverity.success),
-          const SizedBox(height: 8),
-          const EelStatusChip(label: 'Firmware: Current', severity: EelSeverity.success),
+          // These were `Kit Health: OK`, `Battery: 78%` and `Firmware: Current`
+          // as literals. A kit-health screen that always says OK is worse than one
+          // that says it has not checked: the first tells an officer the kit is
+          // ready when nothing has been read from it.
+          const EelStatusChip(
+            label: 'Kit health not read — no health source is wired into this app.',
+            severity: EelSeverity.warning,
+          ),
           const SizedBox(height: 16),
-          EelButton(
+          const EelButton(
             label: 'Run Diagnostics',
             icon: Icons.settings,
             fullWidth: true,
-            onPressed: () {},
+            // Disabled, not wired: this screen has no domain client for the call it describes.
+            //
+            // This was an empty callback, which renders a live control that does
+            // nothing when tapped. EelButton treats a null callback as disabled,
+            // so the unavailable state is now visible rather than silent.
+            onPressed: null,
           ),
         ],
       ),

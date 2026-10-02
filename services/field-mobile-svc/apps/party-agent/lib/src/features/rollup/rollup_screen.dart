@@ -26,11 +26,16 @@ class RollupScreen extends ConsumerWidget {
             subtitle: const Text('All forms consolidated', style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 16),
-          EelButton(
+          const EelButton(
             label: 'Submit Rollup',
             icon: Icons.send,
             fullWidth: true,
-            onPressed: () {},
+            // Disabled, not wired: this screen has no domain client for the call it describes.
+            //
+            // This was an empty callback, which renders a live control that does
+            // nothing when tapped. EelButton treats a null callback as disabled,
+            // so the unavailable state is now visible rather than silent.
+            onPressed: null,
           ),
         ],
       ),

@@ -9,36 +9,41 @@ class StationVisitScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return EelScaffold(
+    return const EelScaffold(
       title: 'Station Visit',
       variant: EelScaffoldVariant.scrollable,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Record Station Visit', style: EelTextStyle.titleLarge, textAlign: TextAlign.center),
-          const SizedBox(height: 24),
-          const EelTextField(
+          Text('Record Station Visit', style: EelTextStyle.titleLarge, textAlign: TextAlign.center),
+          SizedBox(height: 24),
+          EelTextField(
             label: 'Station Code',
             hintText: 'Enter station code',
           ),
-          const SizedBox(height: 16),
-          const EelTextField(
+          SizedBox(height: 16),
+          EelTextField(
             label: 'Arrival Time',
             hintText: 'Select time',
           ),
-          const SizedBox(height: 16),
-          const EelTextField(
+          SizedBox(height: 16),
+          EelTextField(
             label: 'Notes',
             maxLines: 3,
             hintText: 'Add visit notes',
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           EelButton(
             label: 'Submit Visit',
             icon: Icons.check,
             fullWidth: true,
-            onPressed: () {},
+            // Disabled, not wired: this screen has no domain client for the call it describes.
+            //
+            // This was an empty callback, which renders a live control that does
+            // nothing when tapped. EelButton treats a null callback as disabled,
+            // so the unavailable state is now visible rather than silent.
+            onPressed: null,
           ),
         ],
       ),

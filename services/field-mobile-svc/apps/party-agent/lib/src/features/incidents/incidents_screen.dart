@@ -24,11 +24,16 @@ class IncidentsScreen extends ConsumerWidget {
             subtitle: const Text('3 incidents reported', style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 16),
-          EelButton(
+          const EelButton(
             label: 'Report New Incident',
             icon: Icons.add,
             fullWidth: true,
-            onPressed: () {},
+            // Disabled, not wired: this screen has no domain client for the call it describes.
+            //
+            // This was an empty callback, which renders a live control that does
+            // nothing when tapped. EelButton treats a null callback as disabled,
+            // so the unavailable state is now visible rather than silent.
+            onPressed: null,
           ),
         ],
       ),

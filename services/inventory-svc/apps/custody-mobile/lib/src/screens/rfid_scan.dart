@@ -129,9 +129,12 @@ class _RfidScanScreenState extends State<RfidScanScreen> {
       await widget.onTransitionSubmit?.call(scan.epc, widget.officerId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('State transition submitted — awaiting receipt.'),
-            action: SnackBarAction(label: 'View queue', onPressed: () {}),
+          const SnackBar(
+            content: Text('State transition submitted — awaiting receipt.'),
+            // No "View queue" action: there is no scanned queue to view yet, and an
+            // action labelled for a destination that does not exist is a dead
+            // control whether its callback is empty or not. The snackbar still says
+            // what happened and what to do next.
           ),
         );
         setState(() {

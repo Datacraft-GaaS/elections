@@ -30,11 +30,16 @@ class ModuleScreen extends ConsumerWidget {
             subtitle: const Text('Training material and assessment', style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 16),
-          EelButton(
+          const EelButton(
             label: 'Start Assessment',
             icon: Icons.quiz,
             fullWidth: true,
-            onPressed: () {},
+            // Disabled, not wired: the module list is not loaded from anywhere, so there is no assessment to start.
+            //
+            // This was an empty callback, which renders a live control that does
+            // nothing when tapped. EelButton treats a null callback as disabled,
+            // so the unavailable state is now visible rather than silent.
+            onPressed: null,
           ),
         ],
       ),

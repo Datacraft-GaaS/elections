@@ -24,11 +24,16 @@ class QRVerifyScreen extends ConsumerWidget {
             subtitle: const Text('Ready to scan QR codes', style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 16),
-          EelButton(
+          const EelButton(
             label: 'Start Scanner',
             icon: Icons.camera_alt,
             fullWidth: true,
-            onPressed: () {},
+            // Disabled, not wired: this screen has no domain client for the call it describes.
+            //
+            // This was an empty callback, which renders a live control that does
+            // nothing when tapped. EelButton treats a null callback as disabled,
+            // so the unavailable state is now visible rather than silent.
+            onPressed: null,
           ),
         ],
       ),

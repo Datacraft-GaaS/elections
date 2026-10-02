@@ -21,7 +21,12 @@ class KioskScreen extends ConsumerWidget {
           EelResultCard(
             leading: Icon(Icons.terminal, color: EelColors.of(context).primary, size: 32),
             title: const Text('Kiosk Active', style: EelTextStyle.titleMedium),
-            subtitle: const Text('Operational - 100% uptime', style: EelTextStyle.bodyMedium),
+            // Was `Operational - 100% uptime`, a literal. An uptime figure nobody
+            // measured is a claim about the availability of the election.
+            subtitle: const Text(
+                'No health source is wired into this app, so uptime is not measured.',
+                style: EelTextStyle.bodyMedium,
+            ),
           ),
           const SizedBox(height: 16),
           EelResultCard(
@@ -33,13 +38,23 @@ class KioskScreen extends ConsumerWidget {
           EelResultCard(
             leading: Icon(Icons.list_alt, color: EelColors.of(context).primaryMuted, size: 32),
             title: const Text('Report Summary', style: EelTextStyle.titleMedium),
-            subtitle: const Text('Total voters: 12,450 • Turnout: 87% • EOD: 18:00', style: EelTextStyle.bodyMedium),
+            // Was `Total voters: 12,450 • Turnout: 87% • EOD: 18:00`, a literal.
+            // A turnout figure on a report summary is read as a count of voters.
+            subtitle: const Text(
+                'Unavailable — no tally source is wired into this app.',
+                style: EelTextStyle.bodyMedium,
+            ),
           ),
           const SizedBox(height: 16),
-          EelButton(
+          const EelButton(
             label: 'Exit Kiosk',
             fullWidth: true,
-            onPressed: () {},
+            // Disabled, not wired: this screen has no domain client for the call it describes.
+            //
+            // This was an empty callback, which renders a live control that does
+            // nothing when tapped. EelButton treats a null callback as disabled,
+            // so the unavailable state is now visible rather than silent.
+            onPressed: null,
           ),
         ],
       ),

@@ -153,6 +153,53 @@ because an earlier version of the Flutter harness scored a package whose
     duress beacon. The first three found that the collaborator existed but was
     itself a fake, and the register lookup needed an OTP token that the OTP
     screen was discarding.
+
+    **Item 18 is now closed.** 33 empty handlers, not 38 — five were in
+    `design-system`'s widget and golden tests, where a no-op callback is the point
+    of testing how a button renders, and one is in a `SnackBarAction`. All 33 are
+    now `onPressed: null`, which `EelButton` already renders as disabled, each with
+    a comment naming the collaborator that is missing. The `SnackBarAction` was
+    removed rather than disabled: an action labelled for a destination that does
+    not exist is a dead control whether its callback is empty or not.
+
+    `flutter_health.py` now reports empty interaction handlers, because nothing else
+    did. `flutter analyze` cannot see this — an empty closure is valid Dart, and
+    `EelButton` takes a nullable `VoidCallback`, so passing one type-checks and
+    renders a live-looking control. The completeness rule at
+    `tools/completeness/rules/dart_stub_ui.dart` does not see it either: it matches
+    `Text('...stub')` string literals. Test files are exempt, which is why the count
+    is 33 rather than 39.
+
+### Six screens were reporting figures nobody measured
+
+The dead buttons were the visible half of item 18. The worse half was six screens
+rendering operational figures as `const` literals, which the analyzer has no reason
+to object to and which no test asserted against:
+
+| screen | rendered |
+|---|---|
+| poll-clerk `QueueScreen` | `Total in queue: 5`, `Avg wait: 4 min`, `Position 3 of 5 • Turnout: 45%` |
+| poll-clerk `KioskScreen` | `Operational - 100% uptime`, `Total voters: 12,450 • Turnout: 87% • EOD: 18:00` |
+| poll-clerk `EODReportScreen` | the same two literals, twice |
+| field-support `DiagnosticsScreen` | `Kit Health: OK`, `Battery: 78%`, `Firmware: Current` |
+| field-support `ShiftReportScreen` | `Kit health: OK • Battery: 78% • Firmware current` |
+| observer `StatusScreen` | `Kit battery: 78%`, `Incidents open: 1` |
+
+These are the Dart counterpart of the zeroed Rust handlers, and worse in one
+respect: `Turnout: 87%` is a **count of people who have voted**, and an election
+official reading it has no way to tell a measured value from a typed one. A
+diagnostics screen that always reports `Kit Health: OK` tells an officer a kit is
+ready when nothing has been read from it. Each now states that the figure is not
+measured, and says which source is absent.
+
+`no_fabricated_figures_test.dart` pins all three poll-clerk screens: no rendered
+string may contain a label followed by a digit, the queue screen must say the data
+is unavailable, and every `EelButton` on it must have a null `onPressed`. The
+pattern deliberately requires a digit after the label — a bare `uptime` matched the
+honest disclaimer "so uptime is not measured", which is the right thing to render.
+
+Rebreaks: restoring `Position 3 of 5 • Turnout: 45%` fails the queue test; restoring
+an empty callback fails the disabled-control test.
 19. **field-mobile-verify has no implementation.** The orphan Dart tree that
     sat in it has been removed; what remains is a migration, README and
     TRACEABILITY and nothing else. Its README describes a fully implemented sqlx

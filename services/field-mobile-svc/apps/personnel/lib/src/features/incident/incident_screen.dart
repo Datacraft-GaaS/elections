@@ -29,11 +29,16 @@ class IncidentScreen extends ConsumerWidget {
             hintText: 'Intimidation, Bribery, Turned Away, Other',
           ),
           const SizedBox(height: 16),
-          EelButton(
+          const EelButton(
             label: 'Submit Incident',
             icon: Icons.report,
             fullWidth: true,
-            onPressed: () {},
+            // Disabled, not wired: this screen has no domain client for the call it describes.
+            //
+            // This was an empty callback, which renders a live control that does
+            // nothing when tapped. EelButton treats a null callback as disabled,
+            // so the unavailable state is now visible rather than silent.
+            onPressed: null,
           ),
           const SizedBox(height: 12),
           EelButton(

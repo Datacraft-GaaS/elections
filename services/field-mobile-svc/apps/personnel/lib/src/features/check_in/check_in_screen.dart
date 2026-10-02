@@ -9,30 +9,35 @@ class CheckInScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return EelScaffold(
+    return const EelScaffold(
       title: 'Check-In',
       variant: EelScaffoldVariant.scrollable,
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(24),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Personnel Check-In', style: EelTextStyle.titleLarge, textAlign: TextAlign.center),
-          const SizedBox(height: 24),
-          const EelTextField(
+          Text('Personnel Check-In', style: EelTextStyle.titleLarge, textAlign: TextAlign.center),
+          SizedBox(height: 24),
+          EelTextField(
             label: 'Personnel ID',
             hintText: 'Enter your personnel ID',
           ),
-          const SizedBox(height: 16),
-          const EelTextField(
+          SizedBox(height: 16),
+          EelTextField(
             label: 'Station Code',
             hintText: 'Enter station code',
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
           EelButton(
             label: 'Check In',
             icon: Icons.login,
             fullWidth: true,
-            onPressed: () {},
+            // Disabled, not wired: this screen has no domain client for the call it describes.
+            //
+            // This was an empty callback, which renders a live control that does
+            // nothing when tapped. EelButton treats a null callback as disabled,
+            // so the unavailable state is now visible rather than silent.
+            onPressed: null,
           ),
         ],
       ),

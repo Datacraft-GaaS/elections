@@ -29,9 +29,19 @@ class ObserverStatusScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           const EelStatusChip(label: 'Forms synced: Yes', severity: EelSeverity.success),
           const SizedBox(height: 8),
-          const EelStatusChip(label: 'Kit battery: 78%', severity: EelSeverity.success),
+          // Was `Kit battery: 78%`, a literal. Nothing reads the battery, so
+          // reporting a level asserts one.
+          const EelStatusChip(
+            label: 'Kit battery not read — no health source is wired into this app.',
+            severity: EelSeverity.warning,
+          ),
           const SizedBox(height: 8),
-          const EelStatusChip(label: 'Incidents open: 1', severity: EelSeverity.warning),
+          // Was `Incidents open: 1`, a literal. A fabricated open-incident count
+          // is read as something an observer must act on.
+          const EelStatusChip(
+            label: 'Open incidents not read — no incident source is wired into this app.',
+            severity: EelSeverity.warning,
+          ),
           const SizedBox(height: 16),
           // Security banner.
           const EelBanner(
@@ -45,11 +55,16 @@ class ObserverStatusScreen extends ConsumerWidget {
             severity: EelSeverity.info,
           ),
           const SizedBox(height: 24),
-          EelButton(
+          const EelButton(
             label: 'Refresh Status',
             icon: Icons.refresh,
             fullWidth: true,
-            onPressed: () {},
+            // Disabled, not wired: this screen has no domain client for the call it describes.
+            //
+            // This was an empty callback, which renders a live control that does
+            // nothing when tapped. EelButton treats a null callback as disabled,
+            // so the unavailable state is now visible rather than silent.
+            onPressed: null,
           ),
         ],
       ),

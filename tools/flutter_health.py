@@ -17,6 +17,7 @@ An unmeasurable package is a failure of the build, not a pass.
 """
 
 import os
+import pathlib
 import re
 import subprocess
 import sys
@@ -40,6 +41,53 @@ def flutter_env():
     env = dict(os.environ)
     env.pop("SDKROOT", None)
     return env
+
+
+# An interaction handler with an empty body: `onPressed: () {}`.
+#
+# `flutter analyze` cannot see this -- an empty closure is valid Dart, and
+# `EelButton` takes a nullable `VoidCallback`, so passing one type-checks and
+# renders a live-looking control that does nothing when tapped. 34 of these sat
+# across 9 apps, and neither the analyzer nor the completeness rule caught them:
+# `tools/completeness/rules/dart_stub_ui.dart` looks for `Text('...stub')` string
+# literals, not empty callbacks.
+#
+# A control that cannot do the thing must not look like it can. `EelButton` already
+# treats `onPressed: null` as disabled, so the honest form needs no new API.
+EMPTY_CALLBACK = re.compile(r"\b(?:onPressed|onTap|onLongPress)\s*:\s*\(\s*\)\s*\{\s*\}")
+
+# Widgets under test legitimately pass an empty callback: a golden test is checking
+# how a button *renders*, and a no-op is the point.
+CALLBACK_EXEMPT = ("/test/", "/fixtures/", "design-system/flutter/test")
+
+
+def empty_callbacks(path):
+    """(line number, line) for every empty interaction handler in a Dart file."""
+    try:
+        text = pathlib.Path(path).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return []
+    if any(marker in path.replace(os.sep, "/") for marker in CALLBACK_EXEMPT):
+        return []
+    return [(n, ln.strip()) for n, ln in enumerate(text.splitlines(), 1)
+            if EMPTY_CALLBACK.search(ln)]
+
+
+def stub_callbacks(dirs):
+    """Every empty interaction handler across a set of package lib trees."""
+    found = []
+    for d in dirs:
+        lib = os.path.join(d, "lib")
+        if not os.path.isdir(lib):
+            continue
+        for dirpath, dirnames, filenames in os.walk(lib):
+            dirnames[:] = [x for x in dirnames if x not in (".dart_tool", "build")]
+            for fn in filenames:
+                if fn.endswith(".dart"):
+                    for lineno, line in empty_callbacks(os.path.join(dirpath, fn)):
+                        found.append((os.path.relpath(os.path.join(dirpath, fn), ROOT),
+                                      lineno, line))
+    return found
 
 
 ROOT = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
@@ -125,6 +173,15 @@ def main():
         total_warnings += warnings
         total_infos += infos
         rows.append((rel, errors, warnings, infos))
+
+    stubs = stub_callbacks(dirs)
+    if stubs:
+        print(f"empty interaction handlers (a control that looks live and does nothing): {len(stubs)}")
+        print("-" * 78)
+        for path, lineno, line in stubs:
+            print(f"  {path}:{lineno}")
+            print(f"      {line[:90]}")
+        print()
 
     for rel, errors, warnings, infos in rows:
         if errors is None:

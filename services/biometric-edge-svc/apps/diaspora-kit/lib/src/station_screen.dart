@@ -86,7 +86,12 @@ class StationScreen extends ConsumerWidget {
               label: 'Open Session',
               icon: Icons.play_arrow,
               fullWidth: true,
-              onPressed: () {},
+              // Disabled, not wired: no station-session client exists, so no session can be opened.
+              //
+              // This was an empty callback, which renders a live control that does
+              // nothing when tapped. EelButton treats a null callback as disabled,
+              // so the unavailable state is now visible rather than silent.
+              onPressed: null,
             ),
             const SizedBox(height: 16),
           ],

@@ -4,6 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eel_design/eel_design.dart';
 
+/// Stated on the screen rather than rendered as a figure.
+const String unavailable = 'Queue data unavailable';
+const String queueUnavailable =
+    'Unavailable — no queue source is wired into this app, so nothing here is measured.';
+
 class QueueScreen extends ConsumerWidget {
   const QueueScreen({super.key});
 
@@ -18,20 +23,28 @@ class QueueScreen extends ConsumerWidget {
         children: [
           const Text('Queue Management', style: EelTextStyle.titleLarge),
           const SizedBox(height: 16),
-          const EelStatusChip(label: 'Total in queue: 5', severity: EelSeverity.success),
-          const SizedBox(height: 8),
-          const EelStatusChip(label: 'Avg wait: 4 min', severity: EelSeverity.success),
+          // These were `Total in queue: 5`, `Avg wait: 4 min` and
+          // `Position 3 of 5 • Turnout: 45%` as literals. An election official
+          // reading a turnout figure has no way to tell a measured value from a
+          // typed one, so a zeroed or invented figure is worse than an absent one:
+          // it is a claim about the count of people who have voted.
+          const EelStatusChip(label: unavailable, severity: EelSeverity.warning),
           const SizedBox(height: 16),
           EelResultCard(
             leading: Icon(Icons.list, color: EelColors.of(context).primaryMuted, size: 32),
             title: const Text('Queue Position', style: EelTextStyle.titleSmall),
-            subtitle: const Text('Position 3 of 5 • Turnout: 45%', style: EelTextStyle.bodyMedium),
+            subtitle: const Text(queueUnavailable, style: EelTextStyle.bodyMedium),
           ),
           const SizedBox(height: 16),
-          EelButton(
+          const EelButton(
             label: 'Refresh Queue',
             icon: Icons.refresh,
-            onPressed: () {},
+            // Disabled, not wired: no queue endpoint or client exists, and the figures this screen renders are literals.
+            //
+            // This was an empty callback, which renders a live control that does
+            // nothing when tapped. EelButton treats a null callback as disabled,
+            // so the unavailable state is now visible rather than silent.
+            onPressed: null,
           ),
         ],
       ),

@@ -62,11 +62,16 @@ class AgentDashboardScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           // Primary action.
-          EelButton(
+          const EelButton(
             label: 'Start Tally Verification',
             icon: Icons.verified,
             fullWidth: true,
-            onPressed: () {},
+            // Disabled, not wired: this screen has no domain client for the call it describes.
+            //
+            // This was an empty callback, which renders a live control that does
+            // nothing when tapped. EelButton treats a null callback as disabled,
+            // so the unavailable state is now visible rather than silent.
+            onPressed: null,
           ),
         ],
       ),

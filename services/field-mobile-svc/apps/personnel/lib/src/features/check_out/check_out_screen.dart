@@ -23,11 +23,16 @@ class CheckOutScreen extends ConsumerWidget {
             severity: EelSeverity.info,
           ),
           const SizedBox(height: 24),
-          EelButton(
+          const EelButton(
             label: 'Check Out',
             icon: Icons.logout,
             fullWidth: true,
-            onPressed: () {},
+            // Disabled, not wired: this screen has no domain client for the call it describes.
+            //
+            // This was an empty callback, which renders a live control that does
+            // nothing when tapped. EelButton treats a null callback as disabled,
+            // so the unavailable state is now visible rather than silent.
+            onPressed: null,
           ),
           const SizedBox(height: 12),
           EelButton(

@@ -42,8 +42,10 @@ class ShiftReportScreen extends ConsumerWidget {
                   leading: Icon(Icons.troubleshoot,
                       color: colors.primaryMuted, size: 32),
                   title: const Text('Diagnostics', style: EelTextStyle.titleMedium),
+                  // Was `Kit health: OK • Battery: 78% • Firmware current`, a
+                  // literal, on a shift report a supervisor signs off against.
                   subtitle: const Text(
-                      'Kit health: OK • Battery: 78% • Firmware current',
+                      'Not measured — no health source is wired into this app.',
                       style: EelTextStyle.bodyMedium),
                 ),
                 const SizedBox(height: 16),
@@ -66,10 +68,15 @@ class ShiftReportScreen extends ConsumerWidget {
                   onSelected: (_) {},
                 ),
                 const SizedBox(height: 16),
-                EelButton(
+                const EelButton(
                   label: 'Finalize Shift Report',
                   fullWidth: true,
-                  onPressed: () {},
+                  // Disabled, not wired: this screen has no domain client for the call it describes.
+                  //
+                  // This was an empty callback, which renders a live control that does
+                  // nothing when tapped. EelButton treats a null callback as disabled,
+                  // so the unavailable state is now visible rather than silent.
+                  onPressed: null,
                 ),
               ],
             ),
