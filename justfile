@@ -57,23 +57,14 @@ test: test-unit test-integration
 # Unit tests across all Rust crates
 test-unit:
     @echo "[test-unit] running Rust unit tests..."
-    @for ws in $$(just _rust-workspaces); do \
-      if cargo metadata --no-deps --quiet --manifest-path "$$ws" 2>/dev/null | python3 -c \
-          "import sys,json; w=json.load(sys.stdin); exit(0 if w['workspace_members'] else 1)" 2>/dev/null; then \
-        echo "[test-unit] workspace: $$ws"; \
-        if command -v cargo-nextest >/dev/null 2>&1; then \
-          cargo nextest run --lib --bins --manifest-path "$$ws" -q || exit 1; \
-        else \
-          cargo test --lib --bins --manifest-path "$$ws" -q || exit 1; \
-        fi; \
-      else \
-        echo "[test-unit] workspace $$ws has no members, skipping"; \
-      fi; \
-    done
+    @tools/foreach-workspace.sh test-unit ./tools/cargo-workspace-test.sh lib bins
     @echo "[test-unit] running Python tests..."
     @if find services -name "pyproject.toml" -maxdepth 5 | grep -q .; then \
       find services -name "pyproject.toml" -maxdepth 5 -exec dirname {} \; | \
-        xargs -I{} sh -c 'cd {} && if [ -d tests/ci ]; then uv run pytest -q tests/ci --suppress-no-test-exit-code 2>/dev/null; fi'; \
+        xargs -I{} sh -c 'cd {} && if [ -d tests/ci ]; then \
+          uv sync --extra dev --quiet || exit 1; \
+          uv run pytest -q tests/ci --suppress-no-test-exit-code || exit 1; \
+        fi'; \
     else \
       echo "[test-unit] no Python projects yet, skipping"; \
     fi
@@ -88,19 +79,7 @@ test-unit:
 # Integration tests (require cluster up)
 test-integration:
     @echo "[test-integration] running integration tests..."
-    @for ws in $$(just _rust-workspaces); do \
-      if cargo metadata --no-deps --quiet --manifest-path "$$ws" 2>/dev/null | python3 -c \
-          "import sys,json; w=json.load(sys.stdin); exit(0 if w['workspace_members'] else 1)" 2>/dev/null; then \
-        echo "[test-integration] workspace: $$ws"; \
-        if command -v cargo-nextest >/dev/null 2>&1; then \
-          cargo nextest run --test '*' --manifest-path "$$ws" -q 2>/dev/null || echo "[test-integration] no integration tests in $$ws"; \
-        else \
-          cargo test --test '*' --manifest-path "$$ws" -q 2>/dev/null || echo "[test-integration] no integration tests in $$ws"; \
-        fi; \
-      else \
-        echo "[test-integration] workspace $$ws has no members, skipping"; \
-      fi; \
-    done
+    @tools/foreach-workspace.sh test-integration ./tools/cargo-workspace-test.sh integration
 
 # ---------------------------------------------------------------------------
 # Quality
@@ -111,16 +90,7 @@ lint: _lint-rust _lint-python _lint-elixir _lint-contracts
 
 _lint-rust:
     @echo "[lint] Rust..."
-    @for ws in $$(just _rust-workspaces); do \
-      if cargo metadata --no-deps --quiet --manifest-path "$$ws" 2>/dev/null | python3 -c \
-          "import sys,json; w=json.load(sys.stdin); exit(0 if w['workspace_members'] else 1)" 2>/dev/null; then \
-        echo "[lint] workspace: $$ws"; \
-        cargo clippy --all-targets --all-features --manifest-path "$$ws" -- -D warnings -q || exit 1; \
-        cargo fmt --all --check --manifest-path "$$ws" || exit 1; \
-      else \
-        echo "[lint] workspace $$ws has no members, skipping"; \
-      fi; \
-    done
+    @tools/foreach-workspace.sh lint ./tools/cargo-workspace-lint.sh
 
 _lint-python:
     @echo "[lint] Python..."
@@ -154,9 +124,7 @@ _lint-contracts:
 # Format everything
 fmt:
     @echo "[fmt] formatting..."
-    @for ws in $$(just _rust-workspaces); do \
-      cargo fmt --all --manifest-path "$$ws" 2>/dev/null || true; \
-    done
+    @tools/foreach-workspace.sh fmt ./tools/cargo-workspace-fmt.sh
     @if find services packages -name "*.py" -maxdepth 8 2>/dev/null | grep -q .; then \
       ruff format .; \
     fi
@@ -172,15 +140,7 @@ fmt:
 # Build all services (release mode for Rust)
 build:
     @echo "[build] building..."
-    @for ws in $$(just _rust-workspaces); do \
-      if cargo metadata --no-deps --quiet --manifest-path "$$ws" 2>/dev/null | python3 -c \
-          "import sys,json; w=json.load(sys.stdin); exit(0 if w['workspace_members'] else 1)" 2>/dev/null; then \
-        echo "[build] workspace: $$ws"; \
-        cargo build --release --workspace --manifest-path "$$ws" -q || exit 1; \
-      else \
-        echo "[build] workspace $$ws has no members, skipping"; \
-      fi; \
-    done
+    @tools/foreach-workspace.sh build ./tools/cargo-workspace-build.sh
     @if find services -name "pyproject.toml" -maxdepth 5 2>/dev/null | grep -q .; then \
       find services -name "pyproject.toml" -maxdepth 5 -exec dirname {} \; | \
         xargs -I{} sh -c 'cd {} && uv build 2>/dev/null || true'; \

@@ -288,7 +288,7 @@ mod tests {
 	#[tokio::test]
 	async fn anchor_config_default_values() {
 		let config = GazetteAnchorConfig::default();
-		assert!(config.gazette_base_url.contains("commission"));
+		assert!(config.gazette_base_url.contains("gazette.eel.example"));
 		assert!(config.transparency_log_url.contains("audit"));
 		assert!(config.hsm_signer_url.contains("hsm"));
 		assert_eq!(config.fetch_timeout_secs, 30);

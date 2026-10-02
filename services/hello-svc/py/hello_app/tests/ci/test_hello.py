@@ -28,5 +28,6 @@ async def test_root_returns_ok():
 
 
 def test_root_sync():
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(test_root_returns_ok())
+    # asyncio.run, not get_event_loop(): since 3.12 get_event_loop raises
+    # RuntimeError when there is no running loop in this thread.
+    asyncio.run(test_root_returns_ok())

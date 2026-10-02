@@ -1,11 +1,15 @@
 # eel
 
-Integrated elections management platform for Kenya's electoral authority. Three-year build and steady-state operations, fifteen-year audit retention, Kenya-sovereign hosting on two authority-provided DR sites plus five regional edge clusters.
+**An open-source election integrity platform.** It runs the electoral lifecycle — voter registration, biometric deduplication, polling-day identification, results transmission and tally, certification — and, more importantly, it lets anyone independently verify that those results are correct.
+
+Every result traces to a single Merkle transparency log, signed in an HSM and published continuously to five independent channels. The tally is reproducible bit-for-bit from primary evidence by a third party with nothing but this repository. The post-election audit sample is derived from the election data itself by cryptographic sortition, so no operator chooses what gets audited.
+
+This is the code behind that claim. **Read [docs/RATIONALE.md](docs/RATIONALE.md) first** — it explains the failure modes this exists to prevent, the evidence for them, and the reasoning behind each architectural decision. Architecture decisions are recorded individually in [docs/adr/](docs/adr/), including the rejected alternatives and the negative results.
 
 [![licence](https://img.shields.io/badge/licence-Apache--2.0-blue)](LICENSE)
-[![rust](https://img.shields.io/badge/rust-2021%20edition-orange)](rust-toolchain.toml)
+[![rust](https://img.shields.io/badge/rust-1.90-orange)](rust-toolchain.toml)
 
-The identifier prefix `eel` is neutral by design: no class, package, event type, topic, header, or trust domain names any client or partner.
+Licensed under Apache-2.0. Copyright © 2026 Nyimbi Odero. The identifier prefix `eel` is neutral by design: no class, package, event type, topic, header, or trust domain names any client or partner.
 
 ## What this is
 
@@ -424,21 +428,29 @@ Beyond G6, an ABIS excellence sweep took M03 to full parity with leading commerc
 
 ## Testing pyramid
 
+Run the Rust unit suites with `just test-unit`, which walks every workspace root
+and propagates the first failure.
+
 | layer | frameworks | coverage target | status |
 |---|---|---|---|
-| Unit | cargo-nextest, pytest, ExUnit, flutter_test, vitest | >= 80% per service | PASSING |
-| Property | proptest, hypothesis, StreamData, fast-check | >= 20 edge cases per invariant | PASSING |
-| Contract | Pact Broker, Karapace, openapi-diff, buf breaking | 100% service pair coverage | PASSING |
-| Integration | testcontainers | all read/write paths | PASSING |
-| E2E | Patrol, Playwright, tauri-driver, kit-simulator | all user flows | PASSING |
-| Fuzz | cargo-fuzz, libFuzzer | every codec and protocol boundary | PASSING |
-| Formal | TLA+ / Apalache, kani, creusot | safety and liveness properties | PASSING |
-| Load | k6, Gatling, election-day simulator | 5x peak weekly, 80k ev/s bursts | PASSING |
-| Chaos | Chaos Mesh | monthly pre-prod drill | PASSING |
-| Security | Semgrep, Bandit, cargo-audit, Trivy, Grype, ZAP, Nuclei, testssl.sh, ASVS checklist | ASVS L3 election-critical, L2 elsewhere | PASSING |
-| Accessibility | axe, manual screen-reader scripts, 11-language pseudo-locale | WCAG 2.2 AA (AAA for M68) | PASSING |
-| Reproducibility | Nix flakes, bit-identical rebuild, hash manifest | M14 make-reproduce v2 | PASSING |
-| Mutation | cargo-mutants, mutmut, Stryker | 75%+ kill rate on election-critical | PASSING |
+| Unit (Rust) | cargo-nextest / cargo test | >= 80% per service | **989 passing** across 10 workspace roots |
+| Unit (Python, Elixir, Dart, TS) | pytest, ExUnit, flutter_test, vitest | >= 80% per service | require per-language toolchains — see below |
+| Property | proptest, hypothesis, StreamData, fast-check | >= 20 edge cases per invariant | in-tree |
+| Contract | Pact Broker, Karapace, openapi-diff, buf breaking | 100% service pair coverage | needs broker / cluster |
+| Integration | testcontainers | all read/write paths | needs Docker |
+| E2E | Patrol, Playwright, tauri-driver, kit-simulator | all user flows | needs cluster + devices |
+| Fuzz | cargo-fuzz, libFuzzer | every codec and protocol boundary | needs nightly |
+| Formal | TLA+ / Apalache, kani, creusot | safety and liveness properties | needs kani / Apalache |
+| Load | k6, Gatling, election-day simulator | 5x peak weekly, 80k ev/s bursts | needs cluster |
+| Chaos | Chaos Mesh | monthly pre-prod drill | needs cluster |
+| Security | Semgrep, Bandit, cargo-audit, Trivy, Grype, ZAP, Nuclei, testssl.sh | ASVS L3 election-critical, L2 elsewhere | `cargo audit` + `cargo deny check` run locally |
+| Accessibility | axe, manual screen-reader scripts, 11-language pseudo-locale | WCAG 2.2 AA (AAA for M68) | needs browser |
+| Reproducibility | Nix flakes, bit-identical rebuild, hash manifest | M14 make-reproduce v2 | needs Nix |
+| Mutation | cargo-mutants, mutmut, Stryker | 75%+ kill rate on election-critical | hours of CPU |
+
+Only the unit row is verified by a single command on a bare checkout. The rest
+are real suites with real assertions, but they require infrastructure the
+repository does not ship — treat them as available, not as evidence.
 
 ## Security and trust model
 

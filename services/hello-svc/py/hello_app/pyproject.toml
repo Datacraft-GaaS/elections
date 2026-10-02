@@ -21,6 +21,10 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/hello_app"]
 
+[tool.pytest.ini_options]
+# Async tests are plain `async def` with no marker, per the project convention.
+asyncio_mode = "auto"
+
 [tool.ruff]
 line-length = 100
 
