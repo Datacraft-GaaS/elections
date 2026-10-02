@@ -1857,3 +1857,127 @@ remain: the transactional outbox (`edge-api::distress`, both `rts-device-api`
 handlers), the M02 BVR snapshot client (`get_voter_qr`, `family_notify`), HSM and
 Valkey (`post_ingest_read`, `sign_gazette_notice`), and object storage
 (`portal-api::snapshots_bulk`).
+
+## Fixed: a countersignature that was never checked, and three empty lists
+
+Twenty fabricated at the start of this pass. Fifteen now. Six handlers across four
+crates, and two of them are the same defect class — a claim of verification that
+never happened.
+
+| handler | was | now |
+|---|---|---|
+| `rts-ro-api::verify_form34a` | discarded `ro_signature`, logged the RO id, answered `status: "verified"` | really verifies the Ed25519 countersignature, or refuses |
+| `rts-device-api::participation_tokens` | `kit_serial: "STUB-KIT"` and a fake digest | 501, naming the absent kit registry |
+| `ecc-api::get_turnout_heatmap` | `{"entries": []}` | 501, naming the absent geometry and the absent denominator |
+| `portal-api::snapshots_bulk` | 302 to `https://minio.eel.internal/...` | 501, naming the absent object storage |
+| `telemetry-query::list_presets_handler` | flagged | pinned VERIFIED — it reads the crate's own preset library |
+
+### `verify_form34a` said "verified" without reading the signature
+
+The request carries `ro_signature`, an Ed25519 countersignature from the RO desktop
+HSM. The handler discarded it, logged the RO id and the idempotency key, and
+answered `status: "verified"`. So a countersignature was never read and the answer
+said it had been — and "verified" on a form a returning officer signs is the most
+consequential string on the endpoint.
+
+The Ed25519 verification is now real, using the repo's own
+`eel_crypto_rs::ed25519`, over a canonical message
+(`eel.rts.form34a.countersigned.v1\n{form}\n{ro}\n{verified_at}`) fixed in one place
+rather than assembled ad hoc — a countersignature is only meaningful over an agreed
+message, and a signer and verifier that disagree about what was signed will disagree
+about whether it is valid.
+
+What is genuinely missing is the trust anchor: the public keys of the RO desktop
+HSMs are provisioned per officer and are not in this workspace. So the endpoint
+carries an `RoTrust` store, empty by default, and refuses with 503 when the officer
+is not provisioned. With a key configured it verifies; a signature from a different
+officer's HSM is a 401; a signature over a different form is a 401; an absent or
+malformed signature is a 422. The five tests install a **real generated Ed25519
+keypair**, so the positive path is a genuine signature check rather than a stub.
+
+The trust store went into the router as an `Extension` rather than a process-wide
+`OnceLock`. The `OnceLock` version was tried first and is untestable: the first test
+to install a key wins, so the *unconfigured* path — the state the process actually
+ships in — could never be reached. A global that cannot be exercised is not a
+default; it is a race.
+
+### Two redirects and an empty list
+
+`participation_tokens` returned `kit_serial: "STUB-KIT"` and a `token_sha256`
+computed as `format!("{:064x}", Uuid::new_v4().as_u128())` — a UUID's 128 bits
+zero-padded to look like a SHA-256 digest, which is 256 bits of the wrong thing. It
+read as a hash and was not one, so nothing could ever have verified it. A
+participation token binds a voter device to one ballot kit, so it is only meaningful
+against a kit that exists, and the kit registry is not here. The old comment said
+"stubbed", which was the honest description.
+
+`snapshots_bulk` redirected to `https://minio.eel.internal/portal-snapshots/latest.tar.gz`.
+A 302 is a **successful** answer: a client follows it and gets a DNS failure, having
+been told the snapshot was ready to download. The old comment said "Stub returns
+302". **Two separate tests asserted `TEMPORARY_REDIRECT`** — the tests were pinning
+the fabrication.
+
+`get_turnout_heatmap` returned `{"entries": []}`, which is not even the contract's
+shape. The contract's `TurnoutHeatmap` is a GeoJSON FeatureCollection: one county
+*polygon* per feature carrying `turnout_pct`, `stations_reporting` and
+`stations_total`. County boundary geometry is a GIS dataset not in this workspace,
+and turnout is votes cast over registered voters, where `Station` here carries
+neither — no numerator and no denominator.
+
+### A third blind spot in the classifier, and two false passes it created
+
+Pinning `list_presets_handler` failed at first: it was reported FABRICATED, not
+VERIFIED. The reason was a third gap — **`delegates_elsewhere` could not see
+path-qualified calls at all.** Its lookbehind excludes a preceding `.` and `:`, so
+`PresetLibrary::list()` and `crate::nfc::nfc("x")` were invisible, and a handler that
+delegates entirely to another module's type read as fabricated. That is the same
+blind spot that let `bvr-api::get_voter` through in the other direction.
+
+Fixing it moved the count from 20 to 13 — and that is exactly why it needed checking
+rather than accepting. Two of the five handlers it cleared were **false passes**:
+
+- `snapshots_bulk` became VERIFIED because `Redirect::temporary("https://...")` is a
+  call whose only argument is a literal — and a redirect to a dead host is not
+  delegation.
+- `submit_spoilt_ballot` became VERIFIED because `Uuid::now_v7()` is a
+  path-qualified call with an *empty* argument list, which the literal-only rule
+  treated as delegation. It is a generator: a 201 with a minted `spoilt_id` and
+  nothing recorded.
+
+Two rules came out of that. A literal-only call is not a delegation, because the work
+is in the source — and the identifier generators (`now_v7`, `new_v4`, `now_v1`, `nil`)
+are explicitly **not** delegation, since minting an id is not the handler's work.
+Both were then confirmed against the code by re-reading every handler the change
+moved, rather than trusting the number. That is the third time in this effort a
+count drop turned out to be a measurement defect rather than a code fix.
+
+Also pinned: `lookup_voter_registration` IGNORES_INPUT, because the roll is absent
+and the handler validates the hash and then cannot look anything up.
+
+### Measured
+
+```
+registered handlers judged : 639
+fabricated                 : 15   (was 20)
+  contract-bound           :  1
+  contract-unbound         : 14
+unverified (UNKNOWN)       :  0
+
+implementable   8   (was 12)
+needs build     1
+blocked         6   (was 7)
+```
+
+`rts-ro-api` 19 tests, `rts-device-api` 10, `ecc-api` 21, `portal-api` 18,
+`eel-ecc-telemetry-query` 34 — all green. Classifier self-test 13/13; rustfmt parse
+9/9; manifests 242/0 broken.
+
+Rebreaks: answering `verified` without checking the signature fails 4 tests;
+restoring `{"entries": []}` fails 1; restoring the redirect fails 1.
+
+The eight implementable: `abis-reports::schedule_preview`, `telemetry-analytics::
+list_rules` and `::replay`, `verifier-api::lookup_voter_registration` (pinned),
+`rfid-cover-custody::get_tamper_alerts`, `portal-api::snapshot_verify`,
+`intent::list_adjudication_catalogue`. The six blocked: the transactional outbox
+(`edge-api::distress`, `dual_sim_resubmit`), the M02 BVR snapshot client
+(`family_notify`), HSM and Valkey (`post_ingest_read`, `sign_gazette_notice`).

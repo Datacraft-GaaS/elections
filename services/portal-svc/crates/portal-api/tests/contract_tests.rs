@@ -43,9 +43,14 @@ async fn latest_snapshot_shape() {
 }
 
 #[tokio::test]
-async fn bulk_redirects_to_object_store() {
-    let (status, _) = get("/api/v1/portal/snapshots/bulk.tar.gz").await;
-    assert_eq!(status, StatusCode::TEMPORARY_REDIRECT);
+async fn bulk_does_not_redirect_when_there_is_no_object_store() {
+    // This asserted TEMPORARY_REDIRECT, which is what pinned the fabrication: the
+    // handler redirected to `https://minio.eel.internal/portal-snapshots/latest.tar.gz`,
+    // a hardcoded path on a host that does not resolve. A 302 tells a client the
+    // download is ready and then fails at the host name.
+    let (status, body) = get("/api/v1/portal/snapshots/bulk.tar.gz").await;
+    assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
+    assert_eq!(body["status"], 501);
 }
 
 #[tokio::test]

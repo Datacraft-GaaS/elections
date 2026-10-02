@@ -6,7 +6,19 @@ use axum::{
     Json, Router,
 };
 
+/// The router with an empty HSM trust anchor.
+///
+/// `verify_form34a` will refuse: the RO desktop HSM public keys are provisioned per
+/// officer and are not in this workspace. Use [`build_router_with`] to supply them.
 pub fn build_router() -> Router {
+    build_router_with(crate::ro_trust::RoTrust::new().shared())
+}
+
+/// The router, trusting the given RO HSM keys.
+pub fn build_router_with(trust: crate::ro_trust::SharedRoTrust) -> Router {
+    // The layer goes on LAST: in axum a `layer` applies only to the routes added
+    // before it, so putting it first would leave every route without the trust
+    // anchor and `Extension` would reject the request with a 500.
     Router::new()
         .route("/health", get(health))
         // M09: pending 34As awaiting RO review
@@ -40,6 +52,7 @@ pub fn build_router() -> Router {
             "/api/v1/rts/forms/commitments",
             get(commit_reveal::list_commitments),
         )
+        .layer(axum::Extension(trust))
 }
 
 // POST /api/v1/rts/ro/session-recording/certify

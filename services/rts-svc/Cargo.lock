@@ -3269,6 +3269,7 @@ dependencies = [
  "chrono",
  "ed25519-dalek",
  "eel-api-server-rs",
+ "eel-crypto-rs",
  "eel-outbox-rs",
  "garde",
  "hex",

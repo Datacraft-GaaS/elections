@@ -167,8 +167,35 @@ pub async fn patch_escalation(
     }
 }
 
-pub async fn get_turnout_heatmap() -> impl IntoResponse {
-    Json(serde_json::json!({ "entries": [] }))
+// The contract's `TurnoutHeatmap` is a GeoJSON FeatureCollection: one county
+// *polygon* per feature, each carrying turnout_pct, stations_reporting and
+// stations_total.
+//
+// Two things this crate does not have. County boundary geometry is a GIS dataset
+// and is not in this workspace. And turnout is votes cast over registered voters,
+// where `Station` here holds neither -- it carries a code, a name, a constituency,
+// a county and a status. So there is no numerator and no denominator.
+//
+// The previous response was `{"entries": []}`, which is not even the contract's
+// shape: it told a client that no county has turnout data, in a shape no generated
+// client can read. An empty FeatureCollection would have been the right way to
+// claim the same untrue thing.
+pub async fn get_turnout_heatmap() -> Response {
+    (
+        StatusCode::NOT_IMPLEMENTED,
+        Json(serde_json::json!({
+            "type": "about:blank",
+            "title": "Not Implemented",
+            "status": 501,
+            "detail": "county boundary geometry is a GIS dataset that is not in this \
+                       workspace, and turnout_pct needs votes cast over registered voters \
+                       per county, which the tally service and the BVR snapshot hold rather \
+                       than this crate. This handler previously returned {\"entries\": []}, \
+                       which is not the contract's GeoJSON FeatureCollection and reads as no \
+                       county having turnout data",
+        })),
+    )
+        .into_response()
 }
 
 pub async fn get_audit_log(Extension(records): Extension<crate::records::Records>) -> impl IntoResponse {

@@ -24,6 +24,7 @@ serde_json        = { workspace = true }
 utoipa            = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
 uuid              = { workspace = true }
+eel-crypto-rs      = { path = "../../../../packages/eel-crypto-rs" }
 ed25519-dalek     = { workspace = true }
 hex               = "0.4"
 thiserror         = { workspace = true }
@@ -35,4 +36,5 @@ eel-api-server-rs = { workspace = true }
 eel-outbox-rs     = { workspace = true }
 
 [dev-dependencies]
+eel-crypto-rs = { path = "../../../../packages/eel-crypto-rs" }
 tokio = { workspace = true }

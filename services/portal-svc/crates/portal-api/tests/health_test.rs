@@ -40,14 +40,19 @@ async fn snapshot_bad_uuid_returns_400() {
 }
 
 #[tokio::test]
-async fn snapshots_bulk_redirects() {
+async fn snapshots_bulk_does_not_redirect_to_a_dead_host() {
+    // This asserted TEMPORARY_REDIRECT, which is what pinned the fabrication: the
+    // redirect target was a hardcoded path on minio.eel.internal, which does not
+    // resolve. Object storage is not in this workspace, so there is no presigned
+    // URL to hand out and the endpoint says so.
     let app = portal_api::app();
     let req = Request::builder()
         .uri("/api/v1/portal/snapshots/bulk.tar.gz")
         .body(Body::empty())
         .unwrap();
     let resp = app.oneshot(req).await.unwrap();
-    assert_eq!(resp.status(), StatusCode::TEMPORARY_REDIRECT);
+    assert_eq!(resp.status(), StatusCode::NOT_IMPLEMENTED);
+    assert!(resp.headers().get("location").is_none());
 }
 
 /// Cache-poisoning defence (AC-M11-05): a snapshot response must carry

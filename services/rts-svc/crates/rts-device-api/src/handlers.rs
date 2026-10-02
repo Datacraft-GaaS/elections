@@ -1,7 +1,7 @@
 use axum::{
     extract::{Multipart, Path},
     http::StatusCode,
-    response::{IntoResponse, Json},
+    response::{IntoResponse, Json, Response},
 };
 use tracing::info;
 use uuid::Uuid;
@@ -150,16 +150,37 @@ pub async fn transmission_attempt(
 // GET /api/v1/rts/device/participation-tokens/{station}
 pub async fn participation_tokens(
     Path(station): Path<String>,
-) -> impl IntoResponse {
+) -> Response {
     info!(station_code = %station, "participation_tokens: issuing");
-    // Bounded random token: SHA-256(voter_ref || station_nonce) - stubbed.
-    let token_sha256 = format!("{:064x}", Uuid::new_v4().as_u128());
-    Json(ParticipationTokenResponse {
-        station_code: station,
-        token_sha256,
-        issued_at: chrono::Utc::now().to_rfc3339(),
-        kit_serial: "STUB-KIT".into(),
-    })
+    // A participation token binds a voter device to one ballot kit at one station,
+    // so it is only meaningful against a kit that exists. The kit registry is not in
+    // this workspace, and the previous handler said so in its own response: it
+    // returned `kit_serial: "STUB-KIT"` and a `token_sha256` computed as
+    // `format!("{:064x}", Uuid::new_v4().as_u128())` -- a UUID's 128 bits zero-padded
+    // to look like a SHA-256 digest, which is 256 bits of the wrong thing. It looked
+    // like a hash and was not one, so nothing could ever have checked it.
+    let _ = station;
+    problem(
+        StatusCode::NOT_IMPLEMENTED,
+        "a participation token is bound to a ballot kit, and the kit registry is not in \
+         this workspace, so there is no kit to bind one to. This handler previously \
+         returned kit_serial STUB-KIT and a token_sha256 that was a UUID zero-padded to 64 \
+         hex characters rather than a SHA-256 digest, so nothing could have verified it",
+    )
+}
+
+/// A problem+json response.
+fn problem(status: StatusCode, detail: &str) -> Response {
+    (
+        status,
+        Json(serde_json::json!({
+            "type": "about:blank",
+            "title": status.canonical_reason().unwrap_or("Error"),
+            "status": status.as_u16(),
+            "detail": detail,
+        })),
+    )
+        .into_response()
 }
 
 // POST /api/v1/rts/device/dual-sim-resubmit

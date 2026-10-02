@@ -179,10 +179,34 @@ async fn snapshot_by_id(Path(id): Path<String>) -> impl IntoResponse {
     (StatusCode::OK, headers, Json(snap)).into_response()
 }
 
-async fn snapshots_bulk() -> impl IntoResponse {
-    // Redirects to a MinIO pre-signed URL. In production the URL is generated
-    // per-request with a short TTL (ADR-0011 Tier 4). Stub returns 302.
-    Redirect::temporary("https://minio.eel.internal/portal-snapshots/latest.tar.gz")
+async fn snapshots_bulk() -> axum::response::Response {
+    // A bulk snapshot download is a pre-signed MinIO URL with a short TTL
+    // (ADR-0011 Tier 4), so it has to be generated per request against a bucket
+    // that exists. Object storage is not in this workspace.
+    //
+    // This redirected to `https://minio.eel.internal/portal-snapshots/latest.tar.gz`
+    // -- a hardcoded path on a host that does not resolve. A 302 is a successful
+    // answer: a client follows it and gets a DNS failure, having been told the
+    // snapshot was ready to download. The old comment said "Stub returns 302",
+    // which is the honest description of a fabrication.
+    // Built inline rather than via a helper: `ProblemDetail` in this crate has
+    // only not_found and bad_request constructors, and neither is the right status
+    // for "this process cannot issue the URL at all".
+    (
+        StatusCode::NOT_IMPLEMENTED,
+        Json(ProblemDetail {
+            problem_type: "https://eel.local/problems/not-implemented".into(),
+            title: "Not Implemented".into(),
+            status: 501,
+            detail: "a bulk snapshot download is a pre-signed MinIO URL generated per \
+                     request, and object storage is not in this workspace. This handler \
+                     previously redirected to a hardcoded path on minio.eel.internal, \
+                     which does not resolve: a 302 tells a client the download is ready \
+                     and then fails at the host name"
+                .into(),
+        }),
+    )
+        .into_response()
 }
 
 async fn snapshot_verify(Path(id): Path<String>) -> impl IntoResponse {

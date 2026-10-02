@@ -315,6 +315,12 @@ NOT_A_DELEGATION = {
     "is_some", "map", "and_then", "filter", "collect", "iter", "len", "push",
     "insert", "get", "remove", "contains", "starts_with", "to_rfc3339", "now",
     "parse", "read", "write", "lock", "await", "println", "eprintln", "write_all",
+    # Minting an identifier is not the handler's work. `submit_spoilt_ballot` was
+    # `Uuid::now_v7().to_string()` and a 201: a ticket for a spoilt ballot that was
+    # never recorded. Once path-qualified calls became visible, the zero-argument
+    # `Uuid::now_v7()` was read as a delegation and passed it. These are generators,
+    # not domain logic, so they do not earn a handler the VERIFIED verdict.
+    "now_v7", "new_v4", "now_v1", "nil", "from_u128",
 }
 
 # `fn name(` calls in a handler body.
@@ -356,6 +362,15 @@ def reaches_store_via_local_helper(
 # The lookbehind is the same as FN_CALL: only bare calls, never method calls, so
 # `c.begin_ro_review()` is not mistaken for a free function.
 CALL_SPAN = re.compile(r"(?<![.:\w])([a-z_][a-z0-9_]{2,})\s*\(([^()]*)\)")
+
+# A path-qualified call: `PresetLibrary::list()`, `eel_crypto_rs::blake3::hash(x)`,
+# `crate::nfc::nfc("x")`. FN_CALL's lookbehind excludes a preceding `.` and `:`, so
+# these were invisible to it, and a handler that delegates entirely to another
+# module's type read as fabricated.
+#
+# Macros are not calls here: `json!` is followed by `!`, not `(`, so it does not
+# match.
+QUALIFIED_CALL = re.compile(r"(?:\b[A-Za-z_][A-Za-z0-9_]*::)+([a-z_][a-z0-9_]{2,})\s*\(([^()]*)\)")
 
 # An argument list made only of literals: string, char, number, bool, and the
 # obvious decorations around them.
@@ -413,14 +428,20 @@ def delegates_elsewhere(body: str, local_fns: set[str]) -> bool:
         if name in NOT_A_DELEGATION or name in local_fns:
             continue
         return True
-    for name, arg_text in CALL_SPAN.findall(body):
-        if name in NOT_A_DELEGATION or name in local_fns:
-            continue
-        if _all_literal_args(arg_text):
-            # A literal-only call is the handler writing its own answer. Skip it
-            # and keep looking for a call that actually reaches logic.
-            continue
-        return True
+    for pattern in (CALL_SPAN, QUALIFIED_CALL):
+        for name, arg_text in pattern.findall(body):
+            if name in NOT_A_DELEGATION or name in local_fns:
+                continue
+            if _all_literal_args(arg_text):
+                # A literal-only call is the handler writing its own answer. Skip it
+                # and keep looking for a call that actually reaches logic.
+                #
+                # A SQL string is a literal too, and `sqlx::query("SELECT ...")` does
+                # reach a database -- but such a handler carries `sqlx` or `query` as
+                # a WORK_MARKER, or reads `state.pool`, so it is already VERIFIED by
+                # the time this runs. The exception costs nothing there.
+                continue
+            return True
     return False
 
 
@@ -728,6 +749,13 @@ SELF_TEST = [
     # hash or starts asserting a registration status.
     ("lookup_voter_registration", "services/bvr-svc/crates/verifier-api/src/http.rs",
      "/api/v1/verifier/lookups", "IGNORES_INPUT"),
+    # A catalogue read of the crate's own preset library, and the same library
+    # run_preset_handler builds and executes against, so a client can discover
+    # exactly what is runnable. Flagged because the body is one line and
+    # PresetLibrary::list() is a path-qualified call, which the delegation
+    # heuristic cannot see -- the same blind spot that let get_voter through.
+    ("list_presets_handler", "services/ecc-svc/crates/telemetry-query/src/api.rs",
+     "/v1/telemetry/presets", "VERIFIED"),
 ]
 
 

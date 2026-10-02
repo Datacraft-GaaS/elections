@@ -94,3 +94,27 @@ async fn s44a_dual_officer_flow_completes() {
     let resp = app.oneshot(req).await.unwrap();
     assert_eq!(resp.status(), StatusCode::CONFLICT);
 }
+
+#[tokio::test]
+async fn turnout_heatmap_refuses_rather_than_claiming_no_counties() {
+    // The contract's TurnoutHeatmap is a GeoJSON FeatureCollection: one county
+    // *polygon* per feature carrying turnout_pct, stations_reporting and
+    // stations_total. County boundary geometry is a GIS dataset not in this
+    // workspace, and `Station` here carries neither votes cast nor registered
+    // voters -- so there is no numerator and no denominator.
+    //
+    // The old response was `{"entries": []}`: not the contract's shape at all, and
+    // it told a client no county had turnout data.
+    let app = ecc_api::router::build_router(ecc_api::store::Store::Mem(Default::default()));
+    let req = Request::builder()
+        .uri("/ecc/turnout-heatmap")
+        .body(Body::empty())
+        .unwrap();
+    let resp = app.oneshot(req).await.unwrap();
+    assert_eq!(resp.status(), StatusCode::NOT_IMPLEMENTED);
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert!(body["detail"].as_str().unwrap().contains("GIS dataset"));
+    // And nothing in the body is shaped like a FeatureCollection.
+    assert!(body.get("features").is_none());
+}
