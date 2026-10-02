@@ -59,22 +59,9 @@ test-unit:
     @echo "[test-unit] running Rust unit tests..."
     @tools/foreach-workspace.sh test-unit ./tools/cargo-workspace-test.sh lib bins
     @echo "[test-unit] running Python tests..."
-    @if find services -name "pyproject.toml" -maxdepth 5 | grep -q .; then \
-      find services -name "pyproject.toml" -maxdepth 5 -exec dirname {} \; | \
-        xargs -I{} sh -c 'cd {} && if [ -d tests/ci ]; then \
-          uv sync --extra dev --quiet || exit 1; \
-          uv run pytest -q tests/ci --suppress-no-test-exit-code || exit 1; \
-        fi'; \
-    else \
-      echo "[test-unit] no Python projects yet, skipping"; \
-    fi
+    @tools/test-python-projects.sh
     @echo "[test-unit] running Elixir tests..."
-    @if find services -name "mix.exs" -maxdepth 6 | grep -q .; then \
-      find services -name "mix.exs" -maxdepth 6 -exec dirname {} \; | \
-        xargs -I{} sh -c 'cd {} && mix test --no-color 2>/dev/null || exit 1'; \
-    else \
-      echo "[test-unit] no Elixir projects yet, skipping"; \
-    fi
+    @tools/test-elixir-projects.sh
 
 # Integration tests (require cluster up)
 test-integration:

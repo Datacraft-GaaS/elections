@@ -475,7 +475,7 @@ make replay-tally BUNDLE=/path/to/eel-release.tar.gz
 
 ## Contributing
 
-- **No client names in code**: use the `eel` prefix for packages, events, topics, headers, and trust domains. the Commission appears only in prose.
+- **No client names in code**: use the `eel` prefix for packages, events, topics, headers, and trust domains. The client is referred to only as "the Commission", and only in prose.
 - **No em/en dashes**: use commas, colons, or periods. This file and all documentation enforce this.
 - **Commit conventions**: conventional commits (feat, fix, docs, refactor, test, chore). Include module IDs and ticket refs where applicable.
 - **DCO sign-off**: all commits must include `Signed-off-by: Your Name <your.email@example.com>` (`git commit -s`).
