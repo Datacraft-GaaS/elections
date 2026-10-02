@@ -35,11 +35,16 @@ async fn health_shape() {
 }
 
 #[tokio::test]
-async fn latest_snapshot_shape() {
+async fn latest_snapshot_is_not_reported_as_a_zero_root() {
+    // This asserted 200 with a merkle_root and snapshot_id present, which is what
+    // pinned the fabrication: the handler returned Uuid::nil(), a 64-zero
+    // merkle_root, an empty signature and `stale: false`. It said the newest
+    // snapshot does not exist and is not stale, and it put the zero root in an
+    // X-Eel-Merkle-Root header that edge caches are meant to key on (AC-M11-05).
     let (status, body) = get("/api/v1/portal/snapshots/latest").await;
-    assert_eq!(status, StatusCode::OK);
-    assert!(body.get("merkle_root").is_some());
-    assert!(body.get("snapshot_id").is_some());
+    assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
+    assert_eq!(body["status"], 501);
+    assert!(body["detail"].as_str().unwrap().contains("Uuid::nil()"));
 }
 
 #[tokio::test]
@@ -60,11 +65,14 @@ async fn snapshot_by_id_rejects_non_uuid() {
 }
 
 #[tokio::test]
-async fn snapshot_by_id_accepts_uuid() {
+async fn snapshot_by_id_is_not_echoed_back_as_if_it_existed() {
+    // This asserted 200 with the caller's own id echoed back, alongside a zero
+    // root. It is an addressed-looking response for a snapshot that does not exist,
+    // and there is no store here to look the id up against.
     let (status, body) =
         get("/api/v1/portal/snapshots/123e4567-e89b-12d3-a456-426614174000").await;
-    assert_eq!(status, StatusCode::OK);
-    assert_eq!(body["snapshot_id"], "123e4567-e89b-12d3-a456-426614174000");
+    assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
+    assert!(body.get("merkle_root").is_none());
 }
 
 #[tokio::test]

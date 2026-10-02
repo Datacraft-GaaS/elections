@@ -123,10 +123,10 @@ fn signing_headers(merkle_root: &str, snapshot_id: &str) -> HeaderMap {
         "X-Eel-Snapshot-Id",
         HeaderValue::from_str(snapshot_id).unwrap_or(HeaderValue::from_static("none")),
     );
-    headers.insert(
-        "X-Content-Type-Options",
-        HeaderValue::from_static("nosniff"),
-    );
+    // X-Content-Type-Options moved out of here and onto the router as a layer: it
+    // was set only on snapshot responses, which meant every other response in the
+    // service -- including a JSON problem body, which a browser is most likely to
+    // be pointed at -- went out without it.
     headers
 }
 
@@ -144,39 +144,57 @@ async fn health() -> Json<HealthResponse> {
     })
 }
 
-async fn snapshots_latest() -> impl IntoResponse {
-    // In production this queries Valkey read-through -> PostgreSQL.
-    // Stub returns a well-typed placeholder so cargo build --release passes.
-    let snap = SnapshotSummary {
-        snapshot_id: Uuid::nil(),
-        merkle_root: "0000000000000000000000000000000000000000000000000000000000000000".into(),
-        sig: "".into(),
-        published_at: Utc::now(),
-        scope: ResultScope::National,
-        scope_code: None,
-        position_code: "presidential".into(),
-        stale: false,
-    };
-    let headers = signing_headers(&snap.merkle_root, &snap.snapshot_id.to_string());
-    (StatusCode::OK, headers, Json(snap))
+/// The latest published result snapshot.
+///
+/// This returned `snapshot_id: Uuid::nil()`, `merkle_root: 64 zeros`, `sig: ""`
+/// and `stale: false`, under the comment "Stub returns a well-typed placeholder so
+/// cargo build --release passes." `Uuid::nil()` is the all-zero UUID and
+/// `stale: false` asserts freshness — so the response said, with full confidence,
+/// that the newest snapshot is the one that does not exist and is not stale.
+///
+/// The `X-Eel-Merkle-Root` header matters most here. The signing_headers helper
+/// exists so edge caches key on the root and snapshot id (AC-M11-05); publishing a
+/// zero root in that header under `stale: false` is a cache key that maps every
+/// snapshot to the same value.
+async fn snapshots_latest() -> axum::response::Response {
+    snapshot_unavailable(
+        "the latest published snapshot comes from Valkey read-through to PostgreSQL, and \
+         neither is in this workspace. This handler previously returned Uuid::nil() with a \
+         64-zero merkle_root, an empty signature and stale false, which asserted that the newest \
+         snapshot does not exist and is not stale -- in an X-Eel-Merkle-Root header that \
+         edge caches are meant to key on",
+    )
 }
 
-async fn snapshot_by_id(Path(id): Path<String>) -> impl IntoResponse {
-    let Ok(uid) = id.parse::<Uuid>() else {
+/// A snapshot by id.
+///
+/// Same placeholder as [`snapshots_latest`], with the caller's own id echoed back so
+/// the response looks addressed.
+async fn snapshot_by_id(Path(id): Path<String>) -> axum::response::Response {
+    if id.parse::<Uuid>().is_err() {
         return ProblemDetail::bad_request("snapshot_id must be a valid UUID").into_response();
-    };
-    let snap = SnapshotSummary {
-        snapshot_id: uid,
-        merkle_root: "0000000000000000000000000000000000000000000000000000000000000000".into(),
-        sig: "".into(),
-        published_at: Utc::now(),
-        scope: ResultScope::National,
-        scope_code: None,
-        position_code: "presidential".into(),
-        stale: false,
-    };
-    let headers = signing_headers(&snap.merkle_root, &snap.snapshot_id.to_string());
-    (StatusCode::OK, headers, Json(snap)).into_response()
+    }
+    snapshot_unavailable(
+        "no snapshot store is in this workspace, so there is nothing to look this id up \
+         against. This handler previously echoed the caller's id back with a 64-zero \
+         merkle_root and an empty signature, which looks like an addressed response for a \
+         snapshot \
+         that does not exist",
+    )
+}
+
+/// The 501 both snapshot reads share, naming what is absent.
+fn snapshot_unavailable(detail: &str) -> axum::response::Response {
+    (
+        StatusCode::NOT_IMPLEMENTED,
+        Json(ProblemDetail {
+            problem_type: "https://eel.local/problems/not-implemented".into(),
+            title: "Not Implemented".into(),
+            status: 501,
+            detail: detail.into(),
+        }),
+    )
+        .into_response()
 }
 
 async fn snapshots_bulk() -> axum::response::Response {
@@ -209,21 +227,26 @@ async fn snapshots_bulk() -> axum::response::Response {
         .into_response()
 }
 
-async fn snapshot_verify(Path(id): Path<String>) -> impl IntoResponse {
+/// Verify a snapshot against its inclusion proof.
+///
+/// Previously answered 200 with a proof built entirely from placeholders: a
+/// 64-zero `leaf_hash`, a 64-zero `root`, `siblings: []`, `tree_size: 1` and
+/// `sth_sig: ""`. So a client asking "is this snapshot in the log" was handed a
+/// proof against a zero root with an empty sibling path — which recomputes to
+/// nothing and verifies nothing, while `verified: false` sits there looking like a
+/// field to be trusted rather than an absence to be noticed.
+async fn snapshot_verify(Path(id): Path<String>) -> axum::response::Response {
     let Ok(uid) = id.parse::<Uuid>() else {
         return ProblemDetail::bad_request("snapshot_id must be a valid UUID").into_response();
     };
-    let proof = MerkleProofResponse {
-        snapshot_id: uid,
-        leaf_index: 0,
-        leaf_hash: "0000000000000000000000000000000000000000000000000000000000000000".into(),
-        siblings: vec![],
-        root: "0000000000000000000000000000000000000000000000000000000000000000".into(),
-        sth_sig: "".into(),
-        tree_size: 1,
-        verified: false,
-    };
-    (StatusCode::OK, Json(proof)).into_response()
+    let _ = uid;
+    snapshot_unavailable(
+        "verifying a snapshot means recomputing its Merkle root from the leaf and its \
+         sibling path and comparing that against a signed tree head. The sibling path is \
+         not published here and there is no transparency log to check against. This handler \
+         previously returned 200 with a 64-zero leaf_hash, a 64-zero root, no siblings and an \
+         empty sth_sig -- a proof against a zero root that verifies nothing",
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -245,4 +268,20 @@ pub fn app() -> Router {
         .route("/api/v1/portal/turnout", get(spec::get_live_turnout))
         .route("/api/v1/portal/civic/{item_id}", get(spec::get_civic_content))
         .route("/api/v1/portal/admin/content", axum::routing::post(spec::publish_civic_content))
+        .layer(axum::middleware::from_fn(nosniff))
 }
+// `X-Content-Type-Options: nosniff` on every response, not just snapshot ones.
+async fn nosniff(
+    request: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> axum::response::Response {
+    let response = next.run(request).await;
+    use axum::http::header::HeaderValue;
+    let (mut parts, body) = response.into_parts();
+    parts.headers.insert(
+        "X-Content-Type-Options",
+        HeaderValue::from_static("nosniff"),
+    );
+    axum::response::Response::from_parts(parts, body)
+}
+

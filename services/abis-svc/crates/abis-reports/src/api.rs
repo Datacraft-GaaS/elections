@@ -227,11 +227,35 @@ async fn verify_artifact(
 // Schedule dry-run
 // ---------------------------------------------------------------------------
 
+/// Preview when a cron expression would next fire.
+///
+/// The `next_fire` computation was already real -- it runs the crate's own parser
+/// over the expression. What was missing is that the `{slug}` in the route was
+/// discarded, so a preview would be returned for a report definition that does not
+/// exist. An operator tuning the schedule for a retired report would get a
+/// perfectly valid-looking next fire time for something that is gone.
 async fn schedule_preview(
-	State(_s): State<ApiState>,
-	Path(_slug): Path<String>,
+	State(s): State<ApiState>,
+	Path(slug): Path<String>,
 	Json(body): Json<serde_json::Value>,
 ) -> Response {
+	match repository::fetch_definition_by_slug(&s.pool, &slug).await {
+		Ok(None) | Err(_) => {
+			return (
+				axum::http::StatusCode::NOT_FOUND,
+				Json(serde_json::json!({
+					"detail": format!(
+						"no report definition with slug {slug}; a schedule preview is \
+                         scoped to one definition, and this handler previously ignored the \
+                         slug entirely and previewed any expression under any path"
+					),
+				})),
+			)
+				.into_response()
+		}
+		Ok(Some(_)) => {}
+	}
+
 	let cron_expr = body
 		.get("cron")
 		.and_then(|v| v.as_str())

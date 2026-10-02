@@ -776,7 +776,7 @@ async fn api_rules_crud_roundtrip() {
 }
 
 #[tokio::test]
-async fn api_replay_returns_accepted() {
+async fn api_replay_refuses_rather_than_being_accepted_and_dropped() {
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use eel_ai_platform_telemetry_analytics::api::{router, ApiState};
@@ -798,6 +798,8 @@ async fn api_replay_returns_accepted() {
         .header("content-type", "application/json")
         .body(Body::from(body.to_string()))
         .unwrap();
+    // Previously 202 Accepted: the handler logged the request and returned, so a
+    // caller held a receipt for a replay that was never run.
     let resp = app.oneshot(req).await.unwrap();
-    assert_eq!(resp.status(), StatusCode::ACCEPTED);
+    assert_eq!(resp.status(), StatusCode::NOT_IMPLEMENTED);
 }

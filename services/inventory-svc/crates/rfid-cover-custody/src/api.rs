@@ -301,9 +301,12 @@ async fn get_tag_history(
 
 async fn get_tamper_alerts(
     State(state): State<AppState>,
-    Query(_q): Query<PendingAlertsQuery>,
+    Query(q): Query<PendingAlertsQuery>,
 ) -> impl IntoResponse {
-    match crate::repository::fetch_pending_alerts(&state.pool).await {
+    // The `status` filter was accepted and dropped: `Query(_q)`. So
+    // `?status=critical` returned every unresolved alert, which is worse than
+    // ignoring the parameter, because it answers the narrower question wrongly.
+    match crate::repository::fetch_pending_alerts(&state.pool, q.status.as_deref()).await {
         Ok(v) => Json(serde_json::json!({ "alerts": v })).into_response(),
         Err(e) => rfid_error_response(e).into_response(),
     }

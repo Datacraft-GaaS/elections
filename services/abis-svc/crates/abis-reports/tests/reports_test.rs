@@ -412,3 +412,38 @@ fn template_bundle_default_empty() {
     assert!(tmpl.html_template_path.is_none());
     assert!(tmpl.chart_svg.is_none());
 }
+
+#[tokio::test]
+async fn a_schedule_preview_is_scoped_to_a_definition_that_exists() {
+    use axum::body::Body;
+    use axum::http::{Request, StatusCode};
+    use tower::ServiceExt;
+
+    // The `next_fire` computation was already real. What was missing is that the
+    // `{slug}` in the route was discarded (`Path(_slug)`), so a preview came back for
+    // a report definition that does not exist -- an operator tuning the schedule for a
+    // retired report got a perfectly valid-looking next fire time.
+    let app = eel_abis_reports::api::router(eel_abis_reports::api::ApiState {
+        pool: sqlx::postgres::PgPoolOptions::new()
+            .connect_lazy("postgres://localhost/reports")
+            .expect("lazy pool"),
+    });
+    let resp = app
+        .oneshot(
+            Request::builder()
+                .uri("/v1/reports/definitions/no-such-report/schedule")
+                .method("POST")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"cron":"0 2 * * *"}"#))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert!(
+        body["detail"].as_str().unwrap().contains("no-such-report"),
+        "{body}"
+    );
+}

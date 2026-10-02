@@ -87,10 +87,14 @@ async fn ota_check_shape() {
 }
 
 #[tokio::test]
-async fn config_shape() {
+async fn config_is_not_served_as_a_stub_signed_bundle() {
+    // This asserted 200 with a `manifest_sig` field present, which is what pinned
+    // the fabrication: the value in that field was a literal placeholder, and it
+    // exists to carry an Ed25519 manifest signature a kit trusts.
     let (status, body) = get("/api/v1/biometric-edge/config").await;
-    assert_eq!(status, StatusCode::OK);
-    assert!(body.get("manifest_sig").is_some() || body.get("config").is_some());
+    assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
+    assert!(body.get("manifest_sig").is_none());
+    assert!(body.get("config").is_none());
 }
 
 #[tokio::test]

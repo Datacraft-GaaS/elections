@@ -1981,3 +1981,123 @@ list_rules` and `::replay`, `verifier-api::lookup_voter_registration` (pinned),
 `intent::list_adjudication_catalogue`. The six blocked: the transactional outbox
 (`edge-api::distress`, `dual_sim_resubmit`), the M02 BVR snapshot client
 (`family_notify`), HSM and Valkey (`post_ingest_read`, `sign_gazette_notice`).
+
+## Fixed: an empty catalogue, a dropped ticket, a filter read and thrown away
+
+Fifteen fabricated at the start of this pass; eight now. Seven handlers across five
+crates. Two of them were in `portal-api` publishing a zero Merkle root, which the
+classifier had passed — and finding that turned up three more defects in the
+measurement itself.
+
+| handler | was | now |
+|---|---|---|
+| `intent::list_adjudication_catalogue` | `{ "catalogue": [] }` | the crate's own `CATALOGUE` (A1-A8, V1-V3) |
+| `intent::submit_spoilt_ballot` | minted a `spoilt_id`, answered 201, recorded nothing | recorded, with the reason code validated against the catalogue |
+| `abis-reports::schedule_preview` | ignored `{slug}` entirely | 404 for a definition that does not exist |
+| `rfid-cover-custody::get_tamper_alerts` | ignored `?status=` | the filter reaches the query |
+| `telemetry-analytics::replay` | logged and answered 202 | 501, naming the absent event store and backtest harness |
+| `portal-api::snapshots_latest` | `Uuid::nil()`, 64-zero root, `stale: false` | 501 |
+| `portal-api::snapshot_by_id` | echoed the caller's id with a zero root | 501 |
+| `portal-api::snapshot_verify` | 200 with a proof against a zero root, no siblings | 501 |
+| `edge-api::get_config_default` | `manifest_sig` set to a literal placeholder | 501 |
+
+### Three zero Merkle roots, one cache header
+
+`snapshots_latest` answered 200 with `snapshot_id: Uuid::nil()` (the all-zero UUID),
+`merkle_root` of 64 zeros, an empty signature and `stale: false`, under the comment
+"Stub returns a well-typed placeholder so cargo build --release passes." So it
+asserted, with full confidence, that the newest snapshot does not exist and is not
+stale.
+
+The `X-Eel-Merkle-Root` header is what makes it worse. `signing_headers` exists so
+edge caches key on the root and snapshot id — that is AC-M11-05, the
+cache-poisoning defence — and **three tests asserted those headers were present**.
+So the zero root was not merely returned; it was asserted to be present, in the one
+header a cache is told to trust. The defence was inverted: it was the delivery
+mechanism for the placeholder.
+
+`snapshot_verify` returned 200 with a proof built entirely from placeholders: a
+64-zero `leaf_hash`, a 64-zero `root`, no siblings, `tree_size: 1` and an empty
+`sth_sig`. A client asking "is this snapshot in the log" was handed something that
+recomputes to nothing, with `verified: false` sitting there looking like a field to
+trust rather than an absence to notice. There is no sibling path published here and
+no transparency log to check against, so all three now refuse and the tests assert
+that a refusal carries nothing proof-shaped.
+
+One real improvement came out of it: `X-Content-Type-Options: nosniff` was set only
+on snapshot responses, so every other response in the service — including a JSON
+problem body, which is what a browser is most likely to be pointed at — went out
+without it. It is a router layer now, on every response.
+
+### A filter that was read and thrown away
+
+`get_tamper_alerts` took `Query(_q)` and called `fetch_pending_alerts(&pool)` with
+no filter, so `?status=critical` returned every unresolved alert. That is worse than
+ignoring the parameter, because it answers the narrower question wrongly: an
+operator filtering for critical alerts gets everything and cannot tell.
+
+`schedule_preview` had the same shape in a different place. Its `next_fire`
+computation was already real — it runs the crate's own cron parser — but
+`Path(_slug)` was discarded, so a preview came back for a report definition that
+does not exist. An operator tuning the schedule for a retired report got a
+perfectly valid-looking next fire time for something that is gone.
+
+### `stub-sig` in the field a kit trusts
+
+`edge-api::get_config_default` answered 200 with `station_code: "unknown"`,
+`config_version: 1` and a `manifest_sig` whose value was the literal placeholder
+`stub`+`sig`. That field exists to carry an Ed25519 manifest signature, and a kit
+has no way to tell a placeholder from a real signature except by knowing the
+manifest — which it does not, because the signature is what it trusts. The bundle is
+proxied from `bvi-config`, which signs it; that service is not in this workspace.
+
+Two tests asserted 200 on this endpoint, one of them named `config_shape` and
+satisfied by either `manifest_sig` or `config` being present.
+
+### Three more defects in the classifier, one of them the reason a fabrication survived
+
+- **A comment could produce a finding.** `get_tamper_alerts` was fixed to stop
+  discarding its filter, and the fix included a comment saying it used to be
+  `Query(_q)` — so `IGNORED_EXTRACTOR` matched the *comment* and kept reporting the
+  handler as ignoring its input. Comments are now stripped before anything is
+  matched. This is how `edge-api::get_config_default` was finally surfaced: it had
+  been hidden behind its own comments for the whole of its life.
+- **`ERROR_BRANCH` did not include `NOT_IMPLEMENTED`.** So a handler or a same-file
+  helper that returns 501 — the honest refusal this whole effort moves towards — was
+  not seen as having an error branch. `snapshots_latest` delegates to a helper that
+  returns exactly 501 and was reported as fabricating.
+- **`registry`/`catalog`/`catalogue` were not store markers.** `STATE_MARKERS` looks
+  for `state.` or `store.`, so `s.registry.all()` — a genuine read — was flagged.
+
+And one measurement fix exposed the zero-root cluster in the first place: fixing
+`portal-api` made `snapshots_latest` a 501, and the helper it delegates to is a
+**synchronous** `fn`, which is why `reaches_store_via_local_helper` had not seen it.
+
+### Measured
+
+```
+registered handlers judged : 639
+fabricated                 :  8   (was 15)
+  contract-bound           :  1
+  contract-unbound         :  7
+unverified (UNKNOWN)       :  0
+
+implementable   0   (was 8)
+needs build     1
+blocked         6
+```
+
+**There are no implementable fabrications left.** The eight are one pinned
+(`lookup_voter_registration`, where the roll is absent and the contract has no 501
+but does define `roll_not_published`), one needing a key
+(`mobile-bff::verify_voter`, the attestation trust anchor), and six blocked on
+things absent from this workspace: the transactional outbox (`edge-api::distress`,
+`dual_sim_resubmit`, `transmission_attempt`), the M02 BVR snapshot client
+(`cvr::family_notify`), HSM and Valkey (`post_ingest_read`, `sign_gazette_notice`).
+
+`intent` 18, `eel-abis-reports` 28, `rfid-cover-custody` 50, `edge-api` 24,
+`portal-api` 19, `telemetry-analytics` 43 tests — all green. Classifier self-test
+13/13; rustfmt parse 14/14; manifests 242/0 broken.
+
+Rebreaks: minting a spoilt ballot without recording it fails 1 test; emptying the
+catalogue fails 1; accepting a replay without running it fails 1.

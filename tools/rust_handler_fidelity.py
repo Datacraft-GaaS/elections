@@ -44,6 +44,10 @@ CONTRACTS = ROOT / "packages" / "openapi-contracts"
 # store, a database, or a downstream service.
 WORK_MARKERS = re.compile(
     r"\b(repo|repos|store|storage|db|pool|client|svc|service|dao|"
+    # `registry`/`catalog`/`catalogue` are stores under other names. A handler that
+    # reads `s.registry.all()` was flagged because `STATE_MARKERS` looks for
+    # `state.` or `store.` and this state is bound to `s`.
+    r"registry|registries|catalog|catalogue|"
     r"query|fetch_|insert|upsert|delete_from|execute|commit|"
     r"sqlx|rusqlite|diesel|repository)\b",
     re.I,
@@ -76,9 +80,14 @@ STATE_MARKERS = re.compile(
 # missing key or propagating Err is evidence of a lookup, and it is the
 # cheapest reliable signal that a response was derived rather than invented.
 ERROR_BRANCH = re.compile(
+    # NOT_IMPLEMENTED belongs here and was missing. A handler (or a same-file
+    # helper it calls) that returns 501 is naming the thing it cannot do, which is
+    # the honest refusal this whole effort is moving towards -- and without the
+    # branch it read as fabricated. `portal-api::snapshots_latest` delegates to a
+    # helper that returns exactly 501 and was reported as fabricating.
     r"StatusCode::(?:NOT_FOUND|BAD_REQUEST|UNAUTHORIZED|FORBIDDEN|CONFLICT|"
-    r"UNPROCESSABLE_ENTITY|SERVICE_UNAVAILABLE|INTERNAL_SERVER_ERROR|"
-    r"TOO_MANY_REQUESTS|NOT_ACCEPTABLE)\b"
+    r"UNPROCESSABLE_ENTITY|NOT_IMPLEMENTED|SERVICE_UNAVAILABLE|"
+    r"INTERNAL_SERVER_ERROR|TOO_MANY_REQUESTS|NOT_ACCEPTABLE)\b"
     r"|\bNone\s*=>|\bErr\(|\.is_err\(\)|\bSome\("
 )
 
@@ -278,6 +287,9 @@ PROBE_OPERATION = re.compile(r"healthz|health|readyz|readiness|liveness|ping", r
 # the unused-variable warning, so the handler compiles clean while discarding
 # the request it was given. A handler that ignores its own input cannot be
 # honest about the answer, whatever it returns.
+# `//` to end of line. Doc comments (`///`) and ordinary comments both go.
+LINE_COMMENT = re.compile(r"//[^\n]*")
+
 IGNORED_EXTRACTOR = re.compile(
     r"\b(Json|Query|Path|State|Form|Extension)\(\s*_\w+", re.M
 )
@@ -465,7 +477,15 @@ def classify(
     honest 501 stops being counted as fabricated, even though its signature
     still carries the underscore-prefixed extractors it never used.
     """
-    lines = [ln for ln in body.splitlines() if ln.strip() and not ln.strip().startswith("//")]
+    # Comments are stripped before anything is matched against the body.
+    #
+    # This was not hypothetical: `get_tamper_alerts` was fixed to stop discarding its
+    # `status` filter, and the fix included a comment saying it used to be
+    # `Query(_q)` -- so `IGNORED_EXTRACTOR` matched the *comment* and kept reporting
+    # the handler as ignoring its input. A measurement that can be triggered by
+    # prose describing the old behaviour is measuring the prose.
+    body = LINE_COMMENT.sub("", body)
+    lines = [ln for ln in body.splitlines() if ln.strip()]
     if not lines:
         return "FABRICATED"
     if DECLARES_UNIMPLEMENTED.search(body):

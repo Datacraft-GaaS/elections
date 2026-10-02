@@ -16,16 +16,23 @@ async fn health_returns_ok() {
 }
 
 #[tokio::test]
-async fn snapshots_latest_returns_ok() {
+async fn snapshots_latest_does_not_publish_a_zero_root() {
+    // This asserted 200 *and* that the cache-keying headers were present, which is
+    // how a 64-zero merkle_root got published: the handler returned Uuid::nil()
+    // with `stale: false`, and the headers the AC-M11-05 cache defence depends on
+    // carried that zero to the edge.
     let app = portal_api::app();
     let req = Request::builder()
         .uri("/api/v1/portal/snapshots/latest")
         .body(Body::empty())
         .unwrap();
     let resp = app.oneshot(req).await.unwrap();
-    assert_eq!(resp.status(), StatusCode::OK);
-    assert!(resp.headers().contains_key("x-eel-merkle-root"));
-    assert!(resp.headers().contains_key("x-eel-snapshot-id"));
+    assert_eq!(resp.status(), StatusCode::NOT_IMPLEMENTED);
+    // The cache-keying headers must not be present at all: there is no root, so
+    // there is nothing to key on, and a zero there collapses every snapshot onto
+    // one cache entry.
+    assert!(!resp.headers().contains_key("x-eel-merkle-root"));
+    assert!(!resp.headers().contains_key("x-eel-snapshot-id"));
 }
 
 #[tokio::test]
@@ -67,14 +74,23 @@ async fn snapshot_response_carries_signing_headers() {
         .unwrap();
     let resp = app.oneshot(req).await.unwrap();
     let hdrs = resp.headers();
-    assert!(
-        hdrs.contains_key("x-eel-merkle-root"),
-        "missing X-Eel-Merkle-Root header"
-    );
-    assert!(
-        hdrs.contains_key("x-eel-snapshot-id"),
-        "missing X-Eel-Snapshot-Id header"
-    );
+    // AC-M11-05 requires a snapshot response to carry both headers so edge caches
+    // key on them. There is no snapshot to respond with here, so the requirement is
+    // met by refusing rather than by publishing a placeholder root -- and the check
+    // that matters is that no all-zero root is ever emitted.
+    if hdrs.contains_key("x-eel-merkle-root") {
+        let root = hdrs
+            .get("x-eel-merkle-root")
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+        assert_ne!(
+            root,
+            "0".repeat(64),
+            "an all-zero Merkle root must never be published to a cache"
+        );
+    }
     // X-Content-Type-Options must be present to prevent MIME sniffing.
     assert_eq!(
         hdrs.get("x-content-type-options").map(|v| v.as_bytes()),
@@ -94,11 +110,19 @@ async fn merkle_proof_round_trip() {
         .body(Body::empty())
         .unwrap();
     let resp = app.oneshot(req).await.unwrap();
-    assert_eq!(resp.status(), StatusCode::OK);
+    // Previously 200 with a proof assembled from placeholders: a 64-zero
+    // leaf_hash, a 64-zero root, no siblings, tree_size 1 and an empty sth_sig.
+    // A client asking "is this snapshot in the log" got a proof that verifies
+    // nothing, with `verified: false` looking like a field to trust rather than an
+    // absence to notice. There is no sibling path or transparency log here to check
+    // against, so the endpoint says so and returns nothing proof-shaped.
+    assert_eq!(resp.status(), StatusCode::NOT_IMPLEMENTED);
     let body = to_bytes(resp.into_body(), 65_536).await.unwrap();
     let proof: serde_json::Value = serde_json::from_slice(&body).unwrap();
-    assert!(proof.get("leaf_hash").is_some());
-    assert!(proof.get("siblings").is_some());
-    assert!(proof.get("root").is_some());
-    assert!(proof.get("verified").is_some());
+    for field in ["leaf_hash", "siblings", "root", "verified"] {
+        assert!(
+            proof.get(field).is_none(),
+            "a refusal must not carry {field}"
+        );
+    }
 }

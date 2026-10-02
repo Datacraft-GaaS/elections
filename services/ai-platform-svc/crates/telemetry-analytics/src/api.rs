@@ -13,10 +13,12 @@ use axum::{
     extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
+    response::Response,
     routing::{get, post},
     Json, Router,
 };
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -111,17 +113,48 @@ async fn detector_status(
         .ok_or_else(|| (StatusCode::NOT_FOUND, ApiError::new("detector not found")))
 }
 
+/// Run a detector over a historical window.
+///
+/// Previously logged the detector id and the window and answered 202, with the
+/// comment "In production this triggers the backtest harness asynchronously. For
+/// now we acknowledge the request and return accepted." So a replay was accepted
+/// and never run, and the caller was left holding a 202 for a result that did not
+/// exist.
+///
+/// Replaying a window means reading the stored event stream for that window and
+/// running the detector over it. Neither the event store nor the backtest harness
+/// is in this workspace, so the honest answer is a refusal that names them.
 async fn replay(
     State(_s): State<ApiState>,
     Json(req): Json<ReplayRequest>,
-) -> impl IntoResponse {
-    // In production this triggers the backtest harness asynchronously.
-    // For now we acknowledge the request and return accepted.
-    tracing::info!(
-        detector = %req.detector_id,
-        window_start = %req.window_start,
-        window_end = %req.window_end,
-        "replay requested"
-    );
-    StatusCode::ACCEPTED
+) -> Response {
+    // The window bounds are RFC 3339 strings on the contract. Checked here because
+    // an unparseable window cannot be replayed and saying so is more useful than a
+    // blanket refusal.
+    if chrono::DateTime::parse_from_rfc3339(&req.window_start).is_err()
+        || chrono::DateTime::parse_from_rfc3339(&req.window_end).is_err()
+    {
+        return (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            ApiError::new("window_start and window_end must be RFC 3339 timestamps"),
+        )
+            .into_response();
+    }
+    if req.detector_id.trim().is_empty() {
+        return (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            ApiError::new("detector_id is required"),
+        )
+            .into_response();
+    }
+    (
+        StatusCode::NOT_IMPLEMENTED,
+        ApiError::new(
+            "replaying a window needs the stored event stream for that window and the \
+             detector backtest harness, and neither is in this workspace. This handler \
+             previously answered 202 Accepted, so a caller held a receipt for a replay \
+             that was never run",
+        ),
+    )
+        .into_response()
 }

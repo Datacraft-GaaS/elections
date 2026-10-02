@@ -276,20 +276,47 @@ pub async fn insert_alert(pool: &PgPool, alert: &CoverTamperAlert) -> Result<(),
     Ok(())
 }
 
-/// Fetch all pending (unresolved) tamper alerts.
-pub async fn fetch_pending_alerts(pool: &PgPool) -> Result<Vec<CoverTamperAlert>, RfidError> {
-    let rows = sqlx::query(
-        r#"
-        SELECT alert_id, tag_id, detected_at, triggering_read,
-               expected_state, observed_state, severity, ecc_dispatched,
-               ecc_dispatched_at, resolved_at, resolution_note
-        FROM eel_cover_tamper_alerts
-        WHERE resolved_at IS NULL
-        ORDER BY detected_at DESC
-        "#,
-    )
-    .fetch_all(pool)
-    .await?;
+/// Pending (unresolved) tamper alerts, optionally narrowed by severity.
+///
+/// The `status` query parameter narrows by **severity**, which is the field its
+/// OpenAPI description names. `resolved_at IS NULL` is what makes an alert pending
+/// and is not negotiable: this endpoint is the pending queue, so a caller asking
+/// for resolved alerts gets the unresolved ones rather than the other way round.
+pub async fn fetch_pending_alerts(
+    pool: &PgPool,
+    status: Option<&str>,
+) -> Result<Vec<CoverTamperAlert>, RfidError> {
+    let rows = match status.map(str::trim).filter(|s| !s.is_empty()) {
+        Some(severity) => {
+            sqlx::query(
+                r#"
+                SELECT alert_id, tag_id, detected_at, triggering_read,
+                       expected_state, observed_state, severity, ecc_dispatched,
+                       ecc_dispatched_at, resolved_at, resolution_note
+                FROM eel_cover_tamper_alerts
+                WHERE resolved_at IS NULL AND severity = $1
+                ORDER BY detected_at DESC
+                "#,
+            )
+            .bind(severity)
+            .fetch_all(pool)
+            .await?
+        }
+        None => {
+            sqlx::query(
+                r#"
+                SELECT alert_id, tag_id, detected_at, triggering_read,
+                       expected_state, observed_state, severity, ecc_dispatched,
+                       ecc_dispatched_at, resolved_at, resolution_note
+                FROM eel_cover_tamper_alerts
+                WHERE resolved_at IS NULL
+                ORDER BY detected_at DESC
+                "#,
+            )
+            .fetch_all(pool)
+            .await?
+        }
+    };
 
     use sqlx::Row;
     rows.into_iter()

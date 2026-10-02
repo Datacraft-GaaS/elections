@@ -30,16 +30,23 @@ pub fn router() -> Router {
         )
 }
 
+/// The default config bundle a kit fetches at enrolment.
+///
+/// This answered 200 with `station_code: "unknown"`, `config_version: 1` and a
+/// `manifest_sig` whose value was the literal placeholder `stub` + `sig`. That field
+/// exists to carry an Ed25519 manifest signature, and a kit has no way to tell a
+/// placeholder from a real signature except by knowing the manifest, which it does
+/// not: the signature is what it trusts.
+///
+/// The bundle is proxied from `bvi-config` and signed there. That service is not in
+/// this workspace, so there is no manifest and no signature to forward.
 async fn get_config_default() -> Result<(StatusCode, Json<ConfigBundle>), ApiError> {
-    // Used by kits that include their station_code in the SVID.
-    Ok((
-        StatusCode::OK,
-        Json(ConfigBundle {
-            station_code: "unknown".into(),
-            config_version: 1,
-            manifest_sig: "stub-sig".into(),
-            payload_url: "https://bvi-svc.eel.local/api/v1/bvi/config/latest".into(),
-        }),
+    Err(ApiError::NotImplemented(
+        "a config bundle is proxied from bvi-config, which signs the manifest, and that \
+         service is not in this workspace. This handler previously answered 200 with \
+         station_code unknown, config_version 1 and a literal placeholder in \
+         manifest_sig -- the one field a kit trusts to authenticate the bundle"
+            .into(),
     ))
 }
 
@@ -82,13 +89,16 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn config_endpoint_returns_200() {
+    async fn config_endpoint_refuses_rather_than_stub_signing() {
+        // This asserted 200, which is what let the stub-signed bundle through: the
+        // handler returned 200 with `manifest_sig` set to a literal placeholder, and
+        // that field exists to carry an Ed25519 manifest signature.
         let app = router();
         let req = Request::builder()
             .uri("/api/v1/biometric-edge/config")
             .body(Body::empty())
             .unwrap();
         let resp = app.oneshot(req).await.unwrap();
-        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(resp.status(), StatusCode::NOT_IMPLEMENTED);
     }
 }

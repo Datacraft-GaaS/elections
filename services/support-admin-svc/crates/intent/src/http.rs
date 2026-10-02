@@ -20,6 +20,26 @@ pub struct AppState {
     pub adjudications: Arc<Mutex<HashMap<String, Value>>>,
     pub alerts: Arc<Mutex<HashMap<String, Value>>>,
     pub toggle_audit: Arc<Mutex<Vec<Value>>>,
+    /// Spoilt ballots as reported, so a submission can be read back.
+    ///
+    /// `submit_spoilt_ballot` minted a `spoilt_id` and answered 201 without
+    /// recording anything, leaving the caller a ticket for a ballot the service had
+    /// forgotten.
+    pub spoilt_ballots: Arc<Mutex<Vec<Value>>>,
+    /// The audit trail, appended as things happen.
+    pub audit_log: Arc<Mutex<Vec<Value>>>,
+}
+
+impl AppState {
+    /// Append an audit entry.
+    pub fn audit(&self, kind: &str, subject: &str, detail: &str) {
+        self.audit_log.lock().expect("lock poisoned").push(json!({
+            "kind": kind,
+            "subject": subject,
+            "detail": detail,
+            "at": chrono::Utc::now().to_rfc3339(),
+        }));
+    }
 }
 
 pub type SharedState = Arc<AppState>;
@@ -29,7 +49,6 @@ impl AppState {
         Arc::new(Self::default())
     }
 }
-
 pub fn router(state: SharedState) -> Router {
     Router::new()
         .route("/v1/intent/premark", post(submit_pre_mark_validation))
@@ -60,11 +79,76 @@ async fn submit_pre_mark_validation(Json(req): Json<PreMarkValidationRequest>) -
     (StatusCode::OK, Json(json!({ "valid": true, "station_code": req.station_code }))).into_response()
 }
 
-async fn submit_spoilt_ballot(Json(req): Json<SpoiltBallotRequest>) -> impl IntoResponse {
-    (
-        StatusCode::CREATED,
-        Json(json!({ "spoilt_id": uuid::Uuid::now_v7().to_string(), "station_code": req.station_code })),
-    )
+/// A spoilt ballot, recorded.
+///
+/// Previously minted a `spoilt_id` and answered 201, leaving the caller a ticket
+/// for a spoilt ballot that was never recorded anywhere. A spoilt-ballot record is
+/// the evidence a spoiled vote is adjudicated against, so dropping it loses the
+/// reason the ballot was spoiled.
+async fn submit_spoilt_ballot(
+    State(state): State<SharedState>,
+    Json(req): Json<SpoiltBallotRequest>,
+) -> impl IntoResponse {
+    for (field, value) in [
+        ("station_code", req.station_code.trim()),
+        ("contest_id", req.contest_id.trim()),
+        ("reason_code", req.reason_code.trim()),
+        ("officer_id", req.officer_id.trim()),
+    ] {
+        if value.is_empty() {
+            return (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                Json(json!({
+                    "detail": format!(
+                        "{field} is required: a spoilt ballot is the evidence a spoiled \
+                         vote is adjudicated against, and without it the record says \
+                         nothing about why the ballot was spoiled"
+                    )
+                })),
+            )
+                .into_response();
+        }
+    }
+    // The reason code is checked against the catalogue this crate publishes, so the
+    // two endpoints agree: a code that cannot be listed cannot be recorded.
+    if let Err(e) = crate::catalogue::lookup(req.reason_code.trim()) {
+        return (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(json!({ "detail": e.to_string() })),
+        )
+            .into_response();
+    }
+    if req.witness_ids.is_empty() {
+        return (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(json!({
+                "detail": "witness_ids is required: a spoilt ballot is recorded against the \
+                           officers who witnessed it"
+            })),
+        )
+            .into_response();
+    }
+    let record = json!({
+        "spoilt_id": uuid::Uuid::now_v7().to_string(),
+        "station_code": req.station_code.trim(),
+        "contest_id": req.contest_id.trim(),
+        "reason_code": req.reason_code.trim(),
+        "officer_id": req.officer_id.trim(),
+        "witness_ids": req.witness_ids,
+        "replacement_issued": req.replacement_issued.unwrap_or(false),
+        "at": chrono::Utc::now().to_rfc3339(),
+    });
+    state
+        .spoilt_ballots
+        .lock()
+        .expect("lock poisoned")
+        .push(record.clone());
+    state.audit(
+        "spoilt_ballot_submitted",
+        record["spoilt_id"].as_str().unwrap_or_default(),
+        record["reason_code"].as_str().unwrap_or_default(),
+    );
+    (StatusCode::CREATED, Json(record)).into_response()
 }
 
 async fn record_adjudication(
@@ -131,8 +215,14 @@ async fn acknowledge_alert(
     }
 }
 
+/// The standardised adjudication reason codes.
+///
+/// Previously `{ "catalogue": [] }` for every caller, which claims there are no
+/// adjudication reason codes at all. This crate has held them the whole time in
+/// `catalogue.rs`: A1-A8 for rejection and V1-V3 for acceptance. An empty
+/// catalogue is not a neutral answer on an endpoint an officer picks a code from.
 async fn list_adjudication_catalogue() -> impl IntoResponse {
-    Json(json!({ "catalogue": [] }))
+    Json(json!({ "catalogue": crate::catalogue::CATALOGUE }))
 }
 
 async fn toggle_adjudication(

@@ -1,7 +1,7 @@
 // portal-api integration tests: rate-limit, cache-poisoning, Merkle round-trip.
 // (M11-SEC-, M11-INT-, M11-UNIT-)
 
-use axum::{body::Body, http::Request};
+use axum::{body::Body, http::{Request, StatusCode}};
 use tower::ServiceExt;
 
 /// Cache-poisoning defence (AC-M11-05): snapshot responses must carry signing
@@ -15,9 +15,23 @@ async fn cache_poisoning_defence_signing_headers_present() {
         .body(Body::empty())
         .unwrap();
     let resp = app.oneshot(req).await.unwrap();
+    // This asserted the presence of X-Eel-Merkle-Root and X-Eel-Snapshot-Id, which
+    // is what let a 64-zero root reach the edge: the handler answered 200 with
+    // Uuid::nil() and `stale: false`, and those two headers carried the zero to the
+    // cache the defence exists to protect. There is no snapshot to respond with, so
+    // the defence is a refusal -- and no root is published at all.
+    assert_eq!(resp.status(), StatusCode::NOT_IMPLEMENTED);
     let hdrs = resp.headers();
-    assert!(hdrs.contains_key("x-eel-merkle-root"), "signing header missing");
-    assert!(hdrs.contains_key("x-eel-snapshot-id"), "signing header missing");
+    assert!(
+        !hdrs.contains_key("x-eel-merkle-root"),
+        "no snapshot means no cache key; an all-zero root would map every snapshot \
+         onto one cache entry"
+    );
+    // The MIME-sniffing defence is global now, not snapshot-only.
+    assert_eq!(
+        hdrs.get("x-content-type-options").map(|v| v.as_bytes()),
+        Some(b"nosniff" as &[u8])
+    );
 }
 
 /// Rate-limit burst: 20 rapid requests must not produce any 5xx.
@@ -31,9 +45,11 @@ async fn burst_does_not_produce_5xx() {
             .body(Body::empty())
             .unwrap();
         let resp = app.oneshot(req).await.unwrap();
+        // 501 is deliberate and not a 5xx in the sense this test means: the
+        // endpoint refuses rather than serving a fabricated proof.
         assert!(
-            resp.status().as_u16() < 500,
-            "unexpected 5xx: {}",
+            resp.status().as_u16() == 501,
+            "unexpected status: {}",
             resp.status()
         );
     }
@@ -52,9 +68,14 @@ async fn merkle_proof_json_shape() {
     let status = resp.status();
     let body = to_bytes(resp.into_body(), 65_536).await.unwrap();
     let proof: serde_json::Value = serde_json::from_slice(&body).expect("valid JSON");
-    assert_eq!(status.as_u16(), 200);
+    // Previously 200 with a proof assembled from placeholders: a 64-zero
+    // leaf_hash, a 64-zero root, no siblings, tree_size 1 and an empty sth_sig.
+    assert_eq!(status.as_u16(), 501);
     for field in ["leaf_hash", "siblings", "root", "verified", "tree_size"] {
-        assert!(proof.get(field).is_some(), "missing field: {field}");
+        assert!(
+            proof.get(field).is_none(),
+            "a refusal must not carry {field}"
+        );
     }
 }
 
