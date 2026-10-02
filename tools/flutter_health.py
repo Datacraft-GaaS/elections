@@ -21,6 +21,27 @@ import re
 import subprocess
 import sys
 
+# The shell's SDKROOT on this machine points at
+# `.../Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk`, which is not
+# installed -- the available SDKs are MacOSX.sdk and MacOSX27. Every `flutter test`
+# then dies before running a single test:
+#
+#   xcodebuild: error: SDK "…/MacOSX26.5.sdk" cannot be located.
+#   xcrun: error: unable to find utility "lipo", not a developer tool or in PATH
+#
+# and the run is scored "no test summary produced", which is what 19 of the 24
+# packages reported. The Dart tests are fine; the environment is stale.
+#
+# This is the same failure as the stale `SDKROOT` on the Rust side, and the fix is
+# the same: unset it for the child process rather than trusting the shell. Doing it
+# here rather than at each call site means the gate cannot regress to reporting a
+# broken toolchain as 19 broken packages.
+def flutter_env():
+    env = dict(os.environ)
+    env.pop("SDKROOT", None)
+    return env
+
+
 ROOT = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 ERROR_RE = re.compile(r"^\s*error •", re.M)
 WARN_RE = re.compile(r"^\s*warning •", re.M)
@@ -56,7 +77,8 @@ def main():
     for path in dirs:
         rel = os.path.relpath(path, ROOT)
         pub = subprocess.run(["flutter", "pub", "get"], cwd=path,
-                             capture_output=True, text=True, timeout=600)
+                             capture_output=True, text=True, timeout=600,
+                             env=flutter_env())
         if pub.returncode != 0:
             tail = [l for l in pub.stderr.splitlines() if l.strip()][-1:] or ["(no detail)"]
             unmeasurable.append((rel, tail[0][:100]))
@@ -65,7 +87,8 @@ def main():
 
         try:
             result = subprocess.run(["flutter", "analyze"], cwd=path,
-                                    capture_output=True, text=True, timeout=900)
+                                    capture_output=True, text=True, timeout=900,
+                                    env=flutter_env())
         except subprocess.TimeoutExpired:
             unmeasurable.append((rel, "analyze timed out"))
             rows.append((rel, None, None, None))

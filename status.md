@@ -2101,3 +2101,40 @@ things absent from this workspace: the transactional outbox (`edge-api::distress
 
 Rebreaks: minting a spoilt ballot without recording it fails 1 test; emptying the
 catalogue fails 1; accepting a replay without running it fails 1.
+
+## The Flutter gate was reporting a stale toolchain as 19 broken packages
+
+`tools/flutter_tests.py` reported `green: 5  broken: 19` and 53 tests passing,
+against a recorded state of 24 green and 374. Nothing had changed in Dart.
+
+The shell's `SDKROOT` on this machine points at
+`…/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk`, which is **not
+installed** — the available SDKs are `MacOSX.sdk` and `MacOSX27`. Every
+`flutter test` died before running a test:
+
+```
+xcodebuild: error: SDK "…/MacOSX26.5.sdk" cannot be located.
+xcrun: error: unable to find utility "lipo", not a developer tool or in PATH
+```
+
+and the run was scored "no test summary produced". So 19 of the 24 packages were
+reported broken because of an environment variable, and the gate was honest about
+what it saw while being wrong about the cause — the worst combination, because the
+number looks like a regression in the code.
+
+This is the **same failure as the stale `SDKROOT` on the Rust side**, which cost a
+build cycle to find earlier and is now handled by `env -u SDKROOT` on every cargo
+invocation. The Dart side had no such handling, so the same stale variable went
+unnoticed until it was reported as a 19-package regression. Both gates now unset it
+for the child process:
+
+```
+packages: 24  green: 24  failing: 0  broken: 0
+tests passed: 374  failed: 0
+errors: 0  warnings: 0  infos: 0   (flutter_health.py)
+```
+
+The fix is in the tools rather than at each call site, so the gate cannot drift back
+into scoring a stale toolchain as broken packages. A gate that reports an
+environment fault as a code fault will eventually be ignored, and then it reports
+nothing at all.
