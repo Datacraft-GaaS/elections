@@ -2305,3 +2305,83 @@ the transparency log (`amend_form34a`, `get_voter_qr`, `get_register_snapshot`,
 
 `ecc-api` 28 tests green. Classifier self-test 13/13; manifests 242/0 broken;
 rustfmt parse clean.
+
+## Completion audit
+
+Every requirement of the objective, against a command that was actually run.
+
+**(1) Every fabricated or dead handler implemented, or recorded as blocked.**
+`python3 tools/rust_handler_fidelity.py --all-routes` → **8 fabricated of 639
+registered, 0 unverified, 0 implementable.** All eight are recorded here with their
+blocker, and all ten handler names appear above:
+
+| handler | state | blocker |
+|---|---|---|
+| `cvr::family_notify` | blocked | M02 BVR snapshot client |
+| `edge-api::distress` | blocked | transactional outbox |
+| `rts-device-api::dual_sim_resubmit` | blocked | transactional outbox |
+| `rts-device-api::transmission_attempt` | blocked | transactional outbox |
+| `rfid-cover-custody::post_ingest_read` | blocked | HSM signature verification, Valkey |
+| `gazette::sign_gazette_notice` | blocked | HSM signature verification |
+| `verifier-api::lookup_voter_registration` | pinned | the roll; the contract has no 501 but defines `roll_not_published` |
+| `mobile-bff::verify_voter` | needs build | the attestation trust anchor |
+
+**(2) The 501 refusals converted back to working capability, court-interface first.**
+Handlers declaring an unimplemented operation: **28 → 21.** Seven were converted
+(the six-handler adjudication lifecycle, and ECC's WhatsApp webhook). `court-interface`
+— named in the objective as the priority — is at **0 fabrications across 10
+handlers**, as are `recall` (11), `by-election` (10), `review` (16), `county-coord`
+(11), `referendum` (12) and `ecc-api` (23). Each of the 21 remaining refusals was
+re-audited this pass, and three of their stated blockers were found to be **factually
+wrong** and corrected — see the section above. The rest name an absence that is
+genuinely absent, and `MockMatcher` is explicitly not wired into any of them.
+
+**(3) Flutter and manifests.** `tools/flutter_health.py` → 24 packages measured, 0
+errors, 0 warnings, 0 infos. `tools/flutter_tests.py` → **24 green, 374 tests
+passing, 0 failing, 0 broken.** `tools/cargo_manifests.py` → **242 manifests checked,
+0 broken** (the objective said 241; the actual count is 242 and it has been for some
+time).
+
+**(4) Verification.** Every Rust change in this pass was verified with
+`env -u SDKROOT cargo check --all-targets` and `cargo test` on the affected crate
+before commit. No Dart was changed; the Flutter gates were run and both pass. The
+stale-`SDKROOT` handling the objective requires of cargo is now also applied inside
+`flutter_tests.py` and `flutter_health.py`, which is what the Flutter half of the
+requirement needs on this machine.
+
+**(5) Classifier self-test and pins.** 13/13. Every conversion that moved a pinned
+expectation moved it in the same commit — `assign_adjudication` visibly so: its pin
+took the self-test to 12/13 until it was updated alongside the implementation.
+
+**(6) Disk.** 270 GiB free; nothing deleted. No workspace-wide build was run —
+crates were checked individually with their own manifests, because the nested
+workspaces (`rts-svc`, `bvr-svc`, `abis-svc`, `support-admin-svc`, and
+`ai-platform-svc/crates/telemetry-analytics`) each need their own `--manifest-path`.
+
+### The measurement changed more than the code did
+
+Eight handler fabrications were removed across the last commits, but **seven defects
+in the classifier itself** were found and fixed, and every count drop was checked
+against the source rather than accepted:
+
+1. `delegates_elsewhere` could not see path-qualified calls (`PresetLibrary::list()`).
+2. A bare call whose arguments are all literals was read as delegation — which is
+   how `snapshots_bulk`'s redirect to a dead host passed.
+3. Identifier generators (`Uuid::now_v7()`) were read as delegation — which is how a
+   201 with a minted `spoilt_id` and nothing recorded passed.
+4. `ERROR_BRANCH` did not include `NOT_IMPLEMENTED`, so a 501 refusal was not seen
+   as an error branch.
+5. A **comment** could produce a finding, because `IGNORED_EXTRACTOR` ran on raw
+   text. This is what finally surfaced `get_config_default`, hidden behind its own
+   comments.
+6. `registry`/`catalog`/`catalogue` were not store markers.
+7. The report only listed contract-**unbound** fabrications, so a contract-bound one
+   was counted and never shown — which is how `cvr::family_notify` stayed invisible
+   in every previous run.
+
+And `UNKNOWN` verdicts were being dropped entirely; they are now reported as "no
+evidence either way". There are none.
+
+Three separate times a count fell and the fall turned out to be a measurement
+defect rather than a code fix. Each was caught by reading every handler the change
+moved, which is the only reason they were caught at all.
