@@ -102,7 +102,12 @@ pub async fn get_fmr_fnmr(
 	// False match and false non-match rates are what determine whether a biometric
 	// system is fit for electoral use, and they are measured against a test corpus
 	// of known genuine and known impostor presentations. There is no such corpus
-	// in this workspace and the matcher is not reachable from this process.
+	// in this workspace.
+	//
+	// `abis_matcher::fmr_fnmr::compute_fmr_fnmr` is the real function for this and it
+	// is present -- but it takes a `&dyn MatchPipeline` plus genuine and impostor
+	// *pair lists*, so both the matcher and the corpus are inputs rather than
+	// internals. Neither is reachable from this process.
 	//
 	// A 200 with plausible-looking rates is the worst possible answer here: a
 	// reader has no way to tell 0.001 from a measured value, and a dashboard will
@@ -171,11 +176,21 @@ pub async fn get_fairness(
 	Query(_q): Query<FairnessQuery>,
 ) -> ApiError {
 	// Previously returned empty groups, which reads as "no disparity was found".
+	//
+	// The engine is present and the earlier version of this comment said it was not:
+	// `abis_matcher::fairness::FairnessReport::compute` derives per-demographic FMR and
+	// FNMR, and `detect_breaches` finds equalised-odds breaches. Neither needs a
+	// matcher. What they need is **labelled match records** -- a `MatchRecord` per
+	// attempt, carrying the demographic and the ground truth -- and those come from
+	// real comparisons. There is no capture corpus behind this service, so an empty
+	// slice list would be the fabrication this already used to be: it would read as
+	// "no disparity was found" rather than as "nothing has been compared".
 	ApiError::NotImplemented(
-		"a fairness report needs per-demographic FMR and FNMR, which require both the \
-		 captured demographics and the matcher; neither is reachable from this process. \
-		 It previously returned an empty group list for any dimension, which reads as \
-		 no disparity"
+		"a fairness report needs labelled match records -- per attempt, the demographic \
+		 and the ground truth -- and no capture corpus is reachable from this service. The \
+		 fairness engine itself is present (abis_matcher::fairness::FairnessReport); what \
+		 is absent is the records it consumes. It previously returned an empty group list \
+		 for any dimension, which reads as no disparity"
 			.to_string(),
 	)
 }

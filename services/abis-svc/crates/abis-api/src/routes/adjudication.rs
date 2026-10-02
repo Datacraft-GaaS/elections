@@ -304,10 +304,24 @@ pub async fn resolve_adjudication(
 	// probe/gallery refs naming records it never read. On an ABIS endpoint a
 	// caller cannot distinguish that from a real biometric comparison, which
 	// is a worse failure than refusing: 501 says the answer does not exist.
+	//
+	// The earlier version of this comment said "no comparison engine ... behind it".
+	// That was wrong, and it was the kind of wrong that costs the next reader an
+	// afternoon: `abis-matcher::adjudication` provides `open_adjudication_case` and
+	// `record_decision`, and `abis-adjudication` is a whole crate. What is missing
+	// is a **MatchResult over real templates** -- the input `open_adjudication_case`
+	// takes -- and there is no template store or capture corpus behind this service.
+	// The only matcher in the workspace is `abis_matcher::mock_matcher::MockMatcher`,
+	// and wiring that into a citizen-facing endpoint would be the same fabrication
+	// with a different number.
 	ApiError::NotImplemented(
-		"adjudication resolution is declared by the abis contract but has no \
-		 comparison engine or store behind it; it previously returned a \
-		 fabricated match_score and outcome for any case id"
+		"adjudication resolution needs a match result over real biometric templates, \
+		 and no template store or capture corpus is reachable from this service. The \
+		 adjudication engine itself is present (abis-matcher::adjudication, and the \
+		 abis-adjudication crate); what is absent is the MatchResult it consumes. The \
+		 only matcher in the workspace is MockMatcher, which must not answer this \
+		 endpoint. This previously returned a fabricated match_score and outcome for \
+		 any case id"
 			.to_string(),
 	)
 }

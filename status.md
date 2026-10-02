@@ -2193,9 +2193,45 @@ that way rather than inventing a route the contract does not have.
 
 `resolve_adjudication` on the legacy PATCH route is still a 501 and stays one: it
 used to answer 200 with a fabricated `match_score: 0.65` and `outcome: "no_match"`
-for any case id, naming probe and gallery records it never read. Producing a real
-score means comparing templates, and the comparison engine and template store are
-not in this workspace.
+for any case id, naming probe and gallery records it never read.
+
+### Three stated blockers were factually wrong, and correcting them mattered more than fixing them
+
+Having just written that "the refusal had become a habit", the next thing to do was
+apply the same check to the refusals themselves: **is the capability they claim is
+absent actually absent?** Three were not.
+
+- `resolve_adjudication` said "no comparison engine behind it".
+  `abis-matcher::adjudication` provides `open_adjudication_case` and
+  `record_decision`, and `abis-adjudication` is a whole crate with an FSM, a
+  repository, an assignment module and an audit module.
+- `get_fairness` said fairness "requires … the matcher".
+  `abis_matcher::fairness::FairnessReport::compute` derives per-demographic FMR and
+  FNMR from labelled match records and needs **no matcher at all**.
+- `get_fmr_fnmr` said "the matcher is not reachable".
+  `abis_matcher::fmr_fnmr::compute_fmr_fnmr` exists — but it takes a
+  `&dyn MatchPipeline` and genuine/impostor pair lists as *inputs*, so both the
+  matcher and the corpus are arguments rather than internals.
+
+The refusals all still stand, but for a narrower and more accurate reason, and the
+distinction is the useful part:
+
+| handler | stated blocker | actual blocker |
+|---|---|---|
+| `resolve_adjudication` | no comparison engine | the engine is there; a **`MatchResult` over real templates** is not, and there is no template store or capture corpus behind the service |
+| `get_fairness` | needs the matcher | needs **labelled match records**; the engine needs no matcher |
+| `get_fmr_fnmr` | needs a matcher and a corpus | correct as stated — both are function arguments |
+
+The trap worth naming: **`MockMatcher` exists.** `abis_matcher::mock_matcher::
+MockMatcher` would satisfy `&dyn MatchPipeline` and let all three handlers return
+plausible numbers today. Wiring it into a citizen-facing ABIS endpoint would be the
+original fabrication with a different constant in it, and it would look like
+progress. It is the reason "the engine is present" is not the same finding as "the
+capability is reachable".
+
+The corrected reasons are now in the handler comments and in the 501 bodies, because
+a wrong blocker costs the next reader an afternoon of looking for something that is
+already there.
 
 ### A pin that moved, which is what it is for
 
