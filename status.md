@@ -2385,3 +2385,29 @@ evidence either way". There are none.
 Three separate times a count fell and the fall turned out to be a measurement
 defect rather than a code fix. Each was caught by reading every handler the change
 moved, which is the only reason they were caught at all.
+
+## Flutter: the package count included a stray scaffold
+
+A closing check on the Flutter side found that "24 packages, 374 tests" included
+`test_flutter_tmp` — a `flutter create` scaffold committed in full: pubspec, Android
+manifest, launcher icons at five densities, the default counter `widget_test.dart`,
+and a README that still reads "A new Flutter project".
+
+It is not a product, and the analyzer cannot tell the difference: an empty scaffold
+analyzes clean. So it was counted, and one package and one test in those numbers
+were boilerplate. The gates now exclude it, on the same reasoning as the Cargo
+gate's `tools/__pycache__` exclusion — a count that includes it is not a count of
+anything.
+
+**Excluded rather than deleted.** It is tracked, so removing 24 files is a decision
+for whoever owns it. What was clearly wrong was measuring it as a package.
+
+```
+flutter_health.py -> packages: 23  measured: 23  unmeasurable: 0
+                     errors: 0  warnings: 0  infos: 0
+flutter_tests.py  -> packages: 23  green: 23  failing: 0  broken: 0
+                     tests passed: 373  failed: 0
+```
+
+373 rather than 374 is the scaffold's default counter test leaving the count. Every
+real package was already clean.

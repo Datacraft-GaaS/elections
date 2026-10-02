@@ -51,6 +51,17 @@ INFO_RE = re.compile(r"^\s*info •", re.M)
 SUMMARY_RE = re.compile(r"\bissues? found", re.I)
 
 
+# A stray `flutter create` scaffold, committed in full -- pubspec, Android
+# manifest, launcher icons at five densities, and the default counter widget test.
+# Its README still reads "A new Flutter project". It is not a product, and it was
+# being measured as one: the gates reported 24 packages and 374 tests, of which one
+# package and one test were this scaffold's boilerplate.
+#
+# Excluded rather than deleted. It is tracked, so removing it is a decision for
+# whoever owns it; but a count that includes it is not a count of anything, which is
+# the same reason the Cargo gate excludes tools/__pycache__.
+EXCLUDE_DIRS = {"test_flutter_tmp"}
+
 SKIP = {".dart_tool", "build", "node_modules", ".git", "target"}
 
 
@@ -60,6 +71,9 @@ def package_dirs(targets):
         for dirpath, dirnames, filenames in os.walk(os.path.join(ROOT, base)):
             dirnames[:] = [d for d in dirnames if d not in SKIP]
             if "pubspec.yaml" in filenames:
+                rel = os.path.relpath(dirpath, ROOT)
+                if rel.split(os.sep)[0] in EXCLUDE_DIRS:
+                    continue
                 found.append(dirpath)
     return sorted(found)
 

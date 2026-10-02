@@ -33,6 +33,15 @@ def flutter_env():
     return env
 
 
+# A stray `flutter create` scaffold, committed in full, whose README still reads
+# "A new Flutter project" and whose only test is the default counter widget test. It
+# is not a product, and it was being measured as one -- 24 packages and 374 tests,
+# of which one package and one test were this scaffold's boilerplate.
+#
+# Excluded rather than deleted: it is tracked, so removing it is a decision for
+# whoever owns it. Same reasoning as the Cargo gate's tools/__pycache__ exclusion.
+EXCLUDE_DIRS = {"test_flutter_tmp"}
+
 ROOT = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 COUNT = re.compile(r"\+(\d+)(?:\s+-(\d+))?:\s*(?:All tests passed|Some tests failed)")
 
@@ -45,6 +54,9 @@ def package_dirs(targets):
                            if d not in (".dart_tool", "build", "node_modules",
                                         ".git", "target")]
             if "pubspec.yaml" in filenames:
+                rel = os.path.relpath(dirpath, ROOT)
+                if rel.split(os.sep)[0] in EXCLUDE_DIRS:
+                    continue
                 out.append(dirpath)
     return sorted(out)
 
