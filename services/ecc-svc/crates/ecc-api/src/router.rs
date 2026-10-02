@@ -6,7 +6,29 @@ use axum::{
     Extension, Router,
 };
 
+/// The router, with Meta's app secret read from configuration.
+///
+/// The secret is issued by Meta and must not live in a repository, so it is
+/// configuration and not code. With none set, `whatsapp_webhook` says it cannot
+/// verify the payload -- which is the honest answer, and not the 200 it used to
+/// return for any body at all.
 pub fn build_router(store: Store) -> Router {
+    let secret = std::env::var("WHATSAPP_APP_SECRET")
+        .ok()
+        .filter(|s| !s.trim().is_empty());
+    build_router_with(store, secret)
+}
+
+/// The router, with an explicitly supplied Meta app secret.
+pub fn build_router_with(store: Store, whatsapp_app_secret: Option<String>) -> Router {
+    build_router_inner(store, whatsapp_app_secret)
+}
+
+/// The original route chain, plus the Meta app secret as an `Extension`.
+///
+/// The layer goes last: in axum a `layer` applies only to the routes added before
+/// it, so putting it first would leave every route without the secret.
+fn build_router_inner(store: Store, whatsapp_app_secret: Option<String>) -> Router {
     // Constructed per call so each router -- including every test's -- gets its
     // own records. A shared store would let one test's complaint appear in
     // another's list and make the round-trip pass for the wrong reason.
@@ -62,4 +84,5 @@ pub fn build_router(store: Store) -> Router {
         .route("/speech/reports/summary", get(speech::get_speech_summary_report))
         .with_state(store)
         .layer(Extension(records))
+        .layer(axum::Extension(whatsapp_app_secret))
 }

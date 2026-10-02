@@ -1,3 +1,4 @@
+use hmac::Mac;
 use axum::{
     extract::{Extension, Path},
     http::StatusCode,
@@ -11,14 +12,14 @@ use crate::models::*;
 // Health
 
 /// A problem+json response, so a refusal is readable rather than a bare status.
-fn problem(status: StatusCode, detail: String) -> Response {
+fn problem(status: StatusCode, detail: impl Into<String>) -> Response {
     (
         status,
         Json(serde_json::json!({
             "type": "about:blank",
             "title": status.canonical_reason().unwrap_or("Error"),
             "status": status.as_u16(),
-            "detail": detail,
+            "detail": detail.into(),
         })),
     )
         .into_response()
@@ -473,20 +474,116 @@ pub async fn ussd_session(Extension(records): Extension<crate::records::Records>
     })
 }
 
-pub async fn whatsapp_webhook(Json(payload): Json<WhatsappWebhookPayload>) -> Response {
-    // Refused, and the refusal is the honest one. Meta's webhook signature check
-    // (X-Hub-Signature-256 over the raw body against the app secret) is not
-    // implemented here, and this handler previously answered 200 OK for any
-    // payload at all while discarding it -- so a caller posting to this endpoint
-    // learned nothing, and any caller could post to it. Accepting the payload
-    // without verifying it would be worse than refusing.
+/// Meta's WhatsApp Cloud API webhook.
+///
+/// This refused, and the refusal was honest — but the *algorithm* was available,
+/// so refusing outright was too strong. Meta signs `{raw_body}` with HMAC-SHA256
+/// keyed by the app secret and sends the lowercase hex in
+/// `X-Hub-Signature-256`; the repo already depends on `hmac` and `sha2`, and the
+/// same check is implemented in `verifier-api`.
+///
+/// What is missing is the key: the app secret is issued by Meta and must not live
+/// in a repository. So this verifies the signature when a secret is configured,
+/// and says plainly that it cannot verify when one is not — which is a different
+/// answer from the 200 this used to return for any payload at all.
+///
+/// The raw body is required, not the parsed JSON: re-serialising would change the
+/// bytes and the digest would no longer match.
+pub async fn whatsapp_webhook(
+    axum::Extension(secret): axum::Extension<Option<String>>,
+    headers: axum::http::HeaderMap,
+    body: axum::body::Bytes,
+) -> Response {
+    let signature = headers
+        .get("x-hub-signature-256")
+        .and_then(|v| v.to_str().ok())
+        .map(str::to_string);
+    match verify_hub_signature(secret.as_deref(), &body, signature.as_deref()) {
+        SignatureVerdict::Valid => {}
+        SignatureVerdict::Unverifiable => {
+            return problem(
+                StatusCode::SERVICE_UNAVAILABLE,
+                "no WhatsApp app secret is configured, so this payload cannot be \
+                 authenticated. The HMAC-SHA256 check is implemented; the key is issued \
+                 by Meta and must not live in a repository. Accepting the payload \
+                 without verifying it would let anyone post to this endpoint",
+            )
+        }
+        SignatureVerdict::Invalid => {
+            return problem(
+                StatusCode::UNAUTHORIZED,
+                "the X-Hub-Signature-256 header does not match the body under the \
+                 configured app secret",
+            )
+        }
+        SignatureVerdict::Missing => {
+            return problem(
+                StatusCode::UNAUTHORIZED,
+                "no X-Hub-Signature-256 header was sent",
+            )
+        }
+    }
+    let payload: serde_json::Value = match serde_json::from_slice(&body) {
+        Ok(v) => v,
+        Err(e) => {
+            return problem(
+                StatusCode::BAD_REQUEST,
+                format!("the body is not JSON: {e}"),
+            )
+        }
+    };
+    // Meta requires a 200 within 20 s and reads nothing else from the body.
     let _ = payload;
-    problem(
-        StatusCode::NOT_IMPLEMENTED,
-        "whatsapp webhook signature verification is not implemented; accepting \
-         unverified payloads would let anyone post to this endpoint"
-            .to_string(),
-    )
+    StatusCode::OK.into_response()
+}
+
+/// Verify an `X-Hub-Signature-256` header over the raw body.
+///
+/// The header format is `sha256=<lowercase hex>`.
+fn verify_hub_signature(
+    secret: Option<&str>,
+    raw_body: &[u8],
+    header: Option<&str>,
+) -> SignatureVerdict {
+    type HmacSha256 = hmac::Hmac<sha2::Sha256>;
+    // The secret is checked first: a missing secret is a configuration problem that
+    // no header can fix, and answering "valid" without one is the fabrication.
+    let Some(secret) = secret else {
+        return SignatureVerdict::Unverifiable;
+    };
+    let Some(header) = header.map(str::trim).filter(|h| !h.is_empty()) else {
+        return SignatureVerdict::Missing;
+    };
+    let Some(digest) = header.strip_prefix("sha256=") else {
+        return SignatureVerdict::Invalid;
+    };
+    let Ok(expected) = hex::decode(digest) else {
+        return SignatureVerdict::Invalid;
+    };
+    let Ok(mut mac) = <HmacSha256 as Mac>::new_from_slice(secret.as_bytes()) else {
+        return SignatureVerdict::Invalid;
+    };
+    mac.update(raw_body);
+    if mac.verify_slice(&expected).is_ok() {
+        SignatureVerdict::Valid
+    } else {
+        SignatureVerdict::Invalid
+    }
+}
+
+/// The outcome of a webhook signature check.
+#[derive(Debug, PartialEq, Eq)]
+enum SignatureVerdict {
+    /// The signature matches the body under the configured secret.
+    Valid,
+    /// A signature was supplied and does not match.
+    Invalid,
+    /// A signature was supplied but no secret is configured to check it against.
+    ///
+    /// Deliberately distinct from `Valid`.
+    Unverifiable,
+    /// No signature was supplied at all.
+    Missing,
 }
 
 // Section 44A handlers

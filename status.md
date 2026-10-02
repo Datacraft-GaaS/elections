@@ -2220,3 +2220,52 @@ handlers declaring an unimplemented operation: 22   (was 28)
 `abis-api` 52 tests green, up from 42. Rebreaks: echoing an assignment without
 storing it fails 4 tests; minting an evidence id without recording it fails 1.
 Manifests 242/0 broken; rustfmt parse clean; classifier self-test 13/13.
+
+## The last refusal whose algorithm was available: ECC's WhatsApp webhook
+
+`ecc-api::whatsapp_webhook` refused with "signature verification is not
+implemented". That was honest, and it was also too strong: **the algorithm was
+available**. `hmac` and `sha2` were already dependencies of the crate, and the
+identical check had just been implemented in `verifier-api`. What is missing is the
+key, not the capability — and the WhatsApp handler in `verifier-api` already
+established the right shape for that: verify the signature when a secret is
+configured, and say plainly that it cannot verify when one is not.
+
+Meta signs the **raw** body with HMAC-SHA256 keyed by the app secret and sends
+`X-Hub-Signature-256` as `sha256=<hex>`. Raw matters: re-serialising the parsed
+JSON would change the bytes and the digest would stop matching. So the handler
+takes `Bytes` and checks before parsing.
+
+The app secret is issued by Meta and must not live in a repository, so it comes
+from configuration and is carried as an `Extension` applied **last** in the router —
+in axum a `layer` only applies to routes added before it, so putting it first would
+leave every route without the secret. That is the same trap as `rts-ro-api`, where
+the first attempt returned 500 on every call for exactly this reason.
+
+Seven tests cover the matrix: correct signature accepted; signature over a different
+body refused; signature from a different secret refused; unsigned refused; header
+without the `sha256=` prefix refused; correctly signed but malformed JSON is a 400;
+and with no secret configured the endpoint reports `unverifiable` — deliberately
+distinct from `valid`.
+
+The refusal had become a habit by this point, and that is worth recording. "The
+check is not implemented" was true when written and became false the moment `hmac`
+was in the dependency tree. An honest refusal is right when the capability is
+absent; it is not a substitute for noticing when the capability turns out to be
+present.
+
+**21 handlers now declare an unimplemented operation, down from 28.** The rest are
+blocked on things that are genuinely absent from this workspace: the comparison
+engine (`resolve_adjudication`), the biometric matcher and gallery (`get_reports`,
+`get_fairness`, `get_fmr_fnmr`), an HSM (`update_policy`, `sign_gazette_notice`),
+a training pipeline (`trigger_model_retrain`), a dedup queue
+(`submit_batch_dedup`), a voter list (`search_voter_list`), the register
+(`voter_lookup`, `verify_voter_lookup`), an outbox (`distress`,
+`dual_sim_resubmit`, `transmission_attempt`), object storage (`snapshots_bulk`),
+the transparency log (`amend_form34a`, `get_voter_qr`, `get_register_snapshot`,
+`get_register_stats`, `get_turnout_heatmap`, `get_config_default`,
+`participation_tokens`, `process_handoff`), and the attestation trust anchor
+(`verify_voter`).
+
+`ecc-api` 28 tests green. Classifier self-test 13/13; manifests 242/0 broken;
+rustfmt parse clean.

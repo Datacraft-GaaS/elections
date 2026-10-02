@@ -417,9 +417,13 @@ async fn ussd_session_advances_and_can_end() {
 }
 
 #[tokio::test]
-async fn whatsapp_webhook_refuses_without_signature_verification() {
-    // Previously 200 OK for any payload, discarded. Accepting unverified payloads
-    // would let anyone post to this endpoint.
+async fn whatsapp_webhook_refuses_an_unsigned_payload() {
+    // Previously 200 OK for any payload, discarded -- and then 501, because the
+    // signature check was not implemented even though `hmac` and `sha2` were
+    // already dependencies. The check is implemented now; with no app secret
+    // configured the endpoint cannot verify and says so.
+    //
+    // The full signature matrix is in `whatsapp_signature_test.rs`.
     let app = app();
     let resp = send(
         &app,
@@ -430,8 +434,8 @@ async fn whatsapp_webhook_refuses_without_signature_verification() {
     .await;
     assert_eq!(
         resp.status(),
-        StatusCode::NOT_IMPLEMENTED,
-        "an unverified webhook must not be accepted as processed"
+        StatusCode::SERVICE_UNAVAILABLE,
+        "with no app secret the endpoint cannot authenticate the payload"
     );
 }
 
