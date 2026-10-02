@@ -37,12 +37,27 @@ pub struct EscalateRequest {
 	pub escalated_by: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
+/// One piece of evidence attached to a case.
+///
+/// `evidence_id` and `added_at` are assigned by the service: a caller that had to
+/// supply them would be handing back its own receipt, which is the fabrication this
+/// endpoint used to perform by minting an id for an upload it never received.
+#[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct EvidenceItem {
 	pub evidence_id: String,
 	pub kind: String,
 	pub url: String,
 	pub added_at: String,
+}
+
+/// The body of an evidence upload: what the artefact is and where it lives.
+///
+/// The artefact itself is in object storage, so `url` is a reference and not a
+/// payload.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct UploadEvidenceRequest {
+	pub kind: String,
+	pub url: String,
 }
 
 // ---------------------------------------------------------------------------
@@ -66,15 +81,35 @@ pub struct EvidenceItem {
     )
 )]
 pub async fn list_adjudication(
-	State(_state): State<Arc<AppState>>,
-	Query(_q): Query<ListAdjudicationQuery>,
-) -> ApiError {
-	ApiError::NotImplemented(
-		"adjudication case listing is declared by the abis contract but has no \
-		 store behind it; it previously answered 200 with an empty page and \
-		 total: 0, which read as a real query that found nothing"
-			.to_string(),
+	State(state): State<Arc<AppState>>,
+	Query(q): Query<ListAdjudicationQuery>,
+) -> Response {
+	// Previously answered 200 with an empty page and `total: 0`, which read as a
+	// real query that found nothing rather than as a service holding no cases.
+	//
+	// `min_score` is a real filter and not an ignored parameter: a case that has not
+	// been decided has no comparison behind it, so it has no score and cannot
+	// satisfy a minimum. That is why an undecided case is not returned by
+	// `min_score=0`.
+	let cases = state
+		.adjudication
+		.cases_matching(q.status.as_deref(), q.min_score.map(f64::from));
+	let page_size = q.page_size.unwrap_or(50).max(1) as usize;
+	let page_no = q.page.unwrap_or(1).max(1) as usize;
+	let total = cases.len();
+	let start = (page_no - 1) * page_size;
+	let items: Vec<&crate::adjudication::Case> =
+		cases.iter().skip(start).take(page_size).collect();
+	(
+		axum::http::StatusCode::OK,
+		Json(serde_json::json!({
+			"items": items,
+			"total": total,
+			"page": page_no,
+			"page_size": page_size,
+		})),
 	)
+		.into_response()
 }
 
 /// POST /v1/adjudication/cases/{id}/assign
@@ -89,18 +124,21 @@ pub async fn list_adjudication(
     )
 )]
 pub async fn assign_adjudication(
-	State(_state): State<Arc<AppState>>,
-	Path(_case_id): Path<String>,
-	Json(_req): Json<AssignRequest>,
-) -> ApiError {
-	// Echoed the request back as status "in_review" without storing the
-	// assignment, so the case looked assigned to an adjudicator who was never
-	// notified and whose queue does not exist.
-	 ApiError::NotImplemented(
-		"adjudication assignment is declared by the contract but has no store \
-		 behind it; it previously echoed the request back as in_review"
-			.to_string(),
-	)
+	State(state): State<Arc<AppState>>,
+	Path(case_id): Path<String>,
+	Json(req): Json<AssignRequest>,
+) -> Response {
+	// Previously echoed the request back as `status: "in_review"` without storing
+	// the assignment, so the case looked assigned to an adjudicator who was never
+	// notified and whose queue did not exist.
+	if req.adjudicator_id.trim().is_empty() {
+		return ApiError::Validation("adjudicator_id is required".to_string()).into_response();
+	}
+	match state.adjudication.assign(&case_id, req.adjudicator_id.trim()) {
+		Ok(case) => (axum::http::StatusCode::OK, Json(case)).into_response(),
+		Err(e) if e.starts_with("no case") => ApiError::NotFound(e).into_response(),
+		Err(e) => ApiError::Conflict(e).into_response(),
+	}
 }
 
 /// POST /v1/adjudication/cases/{id}/decide
@@ -116,12 +154,12 @@ pub async fn assign_adjudication(
     )
 )]
 pub async fn decide_adjudication(
-	State(_state): State<Arc<AppState>>,
+	State(state): State<Arc<AppState>>,
 	Path(case_id): Path<String>,
 	Json(req): Json<DecideRequest>,
 ) -> Response {
-	// The tier3 dual sign-off check below is real and is kept: a tier3 decision
-	// without a second adjudicator is genuinely rejected with 400.
+	// The tier3 dual sign-off check is real and is kept: a tier3 decision without a
+	// second adjudicator is genuinely rejected.
 	if req.second_adjudicator_id.is_none() && req.adjudicator_id == "tier3" {
 		return ApiError::Validation(
 			"Tier3 decision requires second_adjudicator_id".to_string(),
@@ -129,15 +167,24 @@ pub async fn decide_adjudication(
 		.into_response();
 	}
 	// What it used to do next was echo the caller's own outcome back as
-	// status "resolved", storing nothing. So the guard decided nothing: the
+	// `status: "resolved"`, storing nothing. So the guard decided nothing: the
 	// request passed validation and the case was never adjudicated.
-	let _ = case_id;
-	ApiError::NotImplemented(
-		"adjudication decision is declared by the contract but has no store \
-		 behind it; it previously echoed the caller's outcome back as resolved"
-			.to_string(),
-	)
-	.into_response()
+	//
+	// `match_score` is not accepted from the caller. This endpoint decides a case; it
+	// does not compare templates, so a caller-supplied score would be the same
+	// fabrication as the old hardcoded 0.65, just arriving over the wire.
+	match state.adjudication.decide(
+		&case_id,
+		req.outcome.trim(),
+		req.adjudicator_id.trim(),
+		req.second_adjudicator_id.as_deref().map(str::trim),
+		req.resolution_notes.trim(),
+		None,
+	) {
+		Ok(case) => (axum::http::StatusCode::OK, Json(case)).into_response(),
+		Err(e) if e.starts_with("no case") => ApiError::NotFound(e).into_response(),
+		Err(e) => ApiError::Conflict(e).into_response(),
+	}
 }
 
 /// POST /v1/adjudication/cases/{id}/escalate
@@ -152,18 +199,27 @@ pub async fn decide_adjudication(
     )
 )]
 pub async fn escalate_adjudication(
-	State(_state): State<Arc<AppState>>,
-	Path(_case_id): Path<String>,
-	Json(_req): Json<EscalateRequest>,
-) -> ApiError {
-	// Answered 200 with status "escalated" and the reason echoed back. Nothing
-	// was escalated: an escalation that reaches no adjudicator reads, from the
-	// response, exactly like one that did.
-	ApiError::NotImplemented(
-		"adjudication escalation is declared by the contract but has no store \
-		 behind it; it previously answered 200 with status escalated"
-			.to_string(),
-	)
+	State(state): State<Arc<AppState>>,
+	Path(case_id): Path<String>,
+	Json(req): Json<EscalateRequest>,
+) -> Response {
+	// Previously answered 200 with `status: "escalated"` and the reason echoed back.
+	// Nothing was escalated, and an escalation that reaches no adjudicator reads,
+	// from the response, exactly like one that did.
+	let reason = req.reason.trim();
+	if reason.is_empty() || req.escalated_by.trim().is_empty() {
+		return ApiError::Validation(
+			"reason and escalated_by are required: an escalation names who sent it and \
+			 why, or it is an anonymous escalation that no queue can triage"
+				.to_string(),
+		)
+		.into_response();
+	}
+	match state.adjudication.escalate(&case_id, reason) {
+		Ok(case) => (axum::http::StatusCode::OK, Json(case)).into_response(),
+		Err(e) if e.starts_with("no case") => ApiError::NotFound(e).into_response(),
+		Err(e) => ApiError::Conflict(e).into_response(),
+	}
 }
 
 /// GET /v1/adjudication/cases/{id}/evidence
@@ -177,16 +233,16 @@ pub async fn escalate_adjudication(
     )
 )]
 pub async fn list_evidence(
-	State(_state): State<Arc<AppState>>,
-	Path(_case_id): Path<String>,
-) -> ApiError {
-	// An empty list reads as "this case has no evidence", which is a claim
-	// about the case rather than about storage.
-	ApiError::NotImplemented(
-		"evidence listing is declared by the contract but has no store behind \
-		 it; it previously returned an empty list"
-			.to_string(),
-	)
+	State(state): State<Arc<AppState>>,
+	Path(case_id): Path<String>,
+) -> Response {
+	// An empty list reads as "this case has no evidence", which is a claim about
+	// the case rather than about storage. An unknown case must be distinguishable
+	// from a case with no evidence, so this 404s rather than returning `[]`.
+	match state.adjudication.case(&case_id) {
+		Some(case) => Json(serde_json::json!({ "evidence": case.evidence })).into_response(),
+		None => ApiError::NotFound(format!("no case {case_id}")).into_response(),
+	}
 }
 
 /// POST /v1/adjudication/cases/{id}/evidence
@@ -200,17 +256,41 @@ pub async fn list_evidence(
     )
 )]
 pub async fn upload_evidence(
-	State(_state): State<Arc<AppState>>,
-	Path(_case_id): Path<String>,
-) -> ApiError {
-	// Accepted no upload, stored nothing, and minted an evidence_id so the
-	// caller held a receipt for an artefact that was never received.
-	ApiError::NotImplemented(
-		"evidence upload is declared by the contract but has no store behind \
-		 it; it previously returned 202 with a minted evidence_id for an upload \
-		 it never received"
-			.to_string(),
-	)
+	State(state): State<Arc<AppState>>,
+	Path(case_id): Path<String>,
+	Json(req): Json<UploadEvidenceRequest>,
+) -> Response {
+	// Previously accepted no upload, stored nothing, and minted an evidence_id, so
+	// the caller held a receipt for an artefact that was never received.
+	//
+	// This records that evidence exists and where it lives. The artefact itself is
+	// in object storage, so `url` is a reference and not a payload -- and an empty
+	// one is refused rather than recorded.
+	let kind = req.kind.trim();
+	let url = req.url.trim();
+	if kind.is_empty() || url.is_empty() {
+		return ApiError::Validation(
+			"kind and url are required: this endpoint records that evidence exists and \
+			 where it is, so an entry with neither is a receipt for nothing"
+				.to_string(),
+		)
+		.into_response();
+	}
+	match state.adjudication.attach_evidence(&case_id, kind, url) {
+		Ok(evidence) => (
+			axum::http::StatusCode::CREATED,
+			Json(serde_json::json!({
+				"case_id": case_id,
+				"evidence_id": evidence.evidence_id,
+				"kind": evidence.kind,
+				"url": evidence.url,
+				"added_at": evidence.added_at,
+			})),
+		)
+			.into_response(),
+		Err(e) if e.starts_with("no case") => ApiError::NotFound(e).into_response(),
+		Err(e) => ApiError::Conflict(e).into_response(),
+	}
 }
 
 /// PATCH /v1/adjudication/{case_id} (legacy resolve endpoint, kept for compat)

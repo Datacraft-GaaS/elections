@@ -1,6 +1,7 @@
 //! ABIS API library: router and shared types.
 #![warn(missing_docs)]
 
+pub mod adjudication;
 pub mod error;
 pub mod idempotency;
 pub mod middleware;

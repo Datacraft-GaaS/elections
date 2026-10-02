@@ -34,6 +34,7 @@ fn app() -> axum::Router {
             .connect_lazy("postgres://127.0.0.1:1/none")
             .expect("connect_lazy cannot fail"),
         store: AbisStore::new(),
+        adjudication: abis_api::adjudication::AdjudicationStore::new().shared(),
     };
     build_app(Arc::new(state))
 }

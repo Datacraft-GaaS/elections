@@ -2138,3 +2138,85 @@ The fix is in the tools rather than at each call site, so the gate cannot drift 
 into scoring a stale toolchain as broken packages. A gate that reports an
 environment fault as a code fault will eventually be ignored, and then it reports
 nothing at all.
+
+## Six 501s converted back into working capability: the adjudication lifecycle
+
+Twenty-eight handlers declared an unimplemented operation at the start of this
+pass. Twenty-two now — five of them were buildable, and their stated reason for
+refusing had stopped being true.
+
+`abis-api`'s adjudication handlers all answered with the words "no store behind
+it". That was accurate when they were written. It stopped being accurate when the
+crate grew an `AbisStore` for enrolment jobs and vendors: a case, its assignment,
+its evidence and its decision are ordinary state, and `packages/eel-memstore-rs` is
+the whole requirement. So `adjudication.rs` now holds the lifecycle:
+
+```
+open_case → assign → escalate → attach evidence → decide   (decided is terminal)
+```
+
+| handler | was | now |
+|---|---|---|
+| `list_adjudication` | 200 with an empty page and `total: 0` | lists cases, with `status`, `min_score`, `page` and `page_size` applied |
+| `assign_adjudication` | echoed back `status: "in_review"` | assigns; idempotent for the same adjudicator, 409 to move it |
+| `escalate_adjudication` | 200 with `status: "escalated"` and the reason echoed | records who escalated and why, or refuses an anonymous one |
+| `list_evidence` | empty list | the case's evidence; **404** for an unknown case |
+| `upload_evidence` | 202 with a minted `evidence_id` | records the evidence and returns its id |
+| `decide_adjudication` | echoed the caller's outcome as `resolved` | records the decision, with the tier-3 dual sign-off kept |
+
+**The empty page was the same failure as the fake root.** `list_adjudication`
+answered 200 with `total: 0`, which reads as a real query that found nothing rather
+than a service that holds nothing. And `list_evidence` returned `[]`, which reads as
+"this case has no evidence" — a claim about the case, not about storage. An unknown
+case now 404s, so the two are distinguishable.
+
+Three decisions worth recording:
+
+- **`min_score` is a real filter, and an undecided case cannot satisfy it.** A case
+  that has not been decided has no comparison behind it, so it has no score — and
+  that holds at a threshold of zero too. The alternative would be treating a missing
+  score as zero, which would return every undecided case for `min_score=0` and look
+  like a working filter.
+- **`decide_adjudication` does not accept a `match_score` from the caller.** This
+  endpoint decides a case; it does not compare templates. Accepting one would be the
+  same fabrication as the hardcoded `0.65` the old handler used, only arriving over
+  the wire instead of being baked in.
+- **`upload_evidence` takes `{kind, url}`, not `evidence_id` and `added_at`.** The
+  first version reused the response struct as the request, which made every upload
+  422 — a caller would have had to supply a server-generated id. That is the
+  receipt-for-nothing shape the endpoint is supposed to have removed.
+
+There is no `POST /cases` on the contract, so there is deliberately no HTTP route
+that creates one. Cases are raised through `AdjudicationStore::open_case`, which is
+what the enrolment pipeline calls when a capture needs human review; the tests seed
+that way rather than inventing a route the contract does not have.
+
+`resolve_adjudication` on the legacy PATCH route is still a 501 and stays one: it
+used to answer 200 with a fabricated `match_score: 0.65` and `outcome: "no_match"`
+for any case id, naming probe and gallery records it never read. Producing a real
+score means comparing templates, and the comparison engine and template store are
+not in this workspace.
+
+### A pin that moved, which is what it is for
+
+`assign_adjudication` was pinned `DECLARES_UNIMPLEMENTED`. Implementing it dropped
+the check to 12/13, and the failure is the signal working: the expectation recorded
+the old behaviour and the handler had changed without it. The pin is now VERIFIED
+with the reasoning recorded, in the same commit as the implementation.
+
+### Measured
+
+```
+registered handlers judged : 639
+fabricated                 :  8   (unchanged -- these were honest 501s, not fabrications)
+unverified (UNKNOWN)       :  0
+implementable   1
+needs build     1
+blocked         6
+
+handlers declaring an unimplemented operation: 22   (was 28)
+```
+
+`abis-api` 52 tests green, up from 42. Rebreaks: echoing an assignment without
+storing it fails 4 tests; minting an evidence id without recording it fails 1.
+Manifests 242/0 broken; rustfmt parse clean; classifier self-test 13/13.

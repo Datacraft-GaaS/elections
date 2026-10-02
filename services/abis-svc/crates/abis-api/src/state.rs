@@ -15,6 +15,12 @@ pub struct AppState {
 	/// and `status: "processing"` for any id, and `get_quality_report` reported
 	/// `overall_pass: true` for any id.
 	pub store: crate::store::SharedAbisStore,
+	/// Adjudication cases, their assignments, evidence and decisions.
+	///
+	/// Five adjudication handlers answered 501 with "no store behind it", which was
+	/// true when they were written. A case, an assignment, evidence and a decision
+	/// are ordinary state.
+	pub adjudication: crate::adjudication::SharedAdjudicationStore,
 }
 
 impl AppState {
@@ -36,6 +42,7 @@ impl AppState {
 		Self {
 			db,
 			store: crate::store::AbisStore::new(),
+			adjudication: crate::adjudication::AdjudicationStore::new().shared(),
 		}
 	}
 }

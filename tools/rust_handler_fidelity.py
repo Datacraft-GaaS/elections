@@ -729,10 +729,16 @@ SELF_TEST = [
     # answer rather than minting an amendment_id.
     ("amend_form34a", "services/rts-svc/crates/rts-ro-api/src/handlers.rs",
      "/api/v1/rts/ro/form34a/{id}/amend", "DECLARES_UNIMPLEMENTED"),
-    # Converted to an honest 501; previously State(_state) unused while echoing
-    # the request back as "in_review".
+    # Pinned VERIFIED as of the adjudication lifecycle. It was converted to an
+    # honest 501 -- previously State(_state) unused while echoing the request back
+    # as "in_review", so a case looked assigned to an adjudicator who was never
+    # notified -- on the grounds that "no store behind it" was true. It stopped
+    # being true when the crate grew an AbisStore, so the case, its assignment, its
+    # evidence and its decision now live in abis-api/src/adjudication.rs. The pin
+    # moving is the signal: it caught the handler being implemented without the
+    # expectation being updated in the same commit, which is exactly what it is for.
     ("assign_adjudication", "services/abis-svc/crates/abis-api/src/routes/adjudication.rs",
-     "/cases/{id}/assign", "DECLARES_UNIMPLEMENTED"),
+     "/cases/{id}/assign", "VERIFIED"),
     # A probe may ignore its input, but not its checks: this answers
     # ready: true with {"database": "ok"} without touching the database.
     # Pinned VERIFIED as of the readiness fix. It used to answer

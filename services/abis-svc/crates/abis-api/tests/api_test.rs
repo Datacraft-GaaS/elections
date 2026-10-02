@@ -88,7 +88,7 @@ async fn test_match_1n() {
         return;
     };
     seed_probe(&pool, "p1").await;
-    let app = app(Arc::new(AppState { db: pool, store: abis_api::store::AbisStore::new() }));
+    let app = app(Arc::new(AppState { db: pool, store: abis_api::store::AbisStore::new(), adjudication: abis_api::adjudication::AdjudicationStore::new().shared() }));
     let body = r#"{"probe_ref":"p1","modality":"fingerprint","caller_id":"c1","election_id":"33333333-2222-3333-4444-555555555555"}"#;
     let resp = app
         .oneshot(
@@ -112,7 +112,7 @@ async fn test_match_11() {
         return;
     };
     seed_probe(&pool, "p1").await;
-    let app = app(Arc::new(AppState { db: pool, store: abis_api::store::AbisStore::new() }));
+    let app = app(Arc::new(AppState { db: pool, store: abis_api::store::AbisStore::new(), adjudication: abis_api::adjudication::AdjudicationStore::new().shared() }));
     let body = r#"{"probe_ref":"p1","gallery_ref":"g1","modality":"iris","caller_id":"c1"}"#;
     let resp = app
         .oneshot(
@@ -136,7 +136,7 @@ async fn test_get_match_result() {
         return;
     };
     seed_probe(&pool, "p2").await;
-    let app = app(Arc::new(AppState { db: pool, store: abis_api::store::AbisStore::new() }));
+    let app = app(Arc::new(AppState { db: pool, store: abis_api::store::AbisStore::new(), adjudication: abis_api::adjudication::AdjudicationStore::new().shared() }));
 
     // Mint a request row via 1:n, then fetch its result back.
     let body = r#"{"probe_ref":"p2","modality":"fingerprint","caller_id":"c1","election_id":"33333333-2222-3333-4444-555555555555"}"#;
@@ -210,14 +210,26 @@ async fn assert_refuses_not_invents(app: axum::Router, req: Request<Body>) {
 
 #[tokio::test]
 async fn test_list_adjudication() {
-    assert_refuses_not_invents(
-        test_app(),
-        Request::builder()
-            .uri("/api/v1/abis/adjudication")
-            .body(Body::empty())
-            .unwrap(),
-    )
-    .await;
+    // This asserted 501 with "no store behind it". That was true when it was
+    // written and stopped being true when the crate grew a store: a case, its
+    // assignment, its evidence and its decision are ordinary state. The endpoint is
+    // now real, so the test is real too -- see `adjudication_case_lifecycle` in
+    // `adjudication_contract_test.rs` for what it answers.
+    let resp = test_app()
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/abis/adjudication")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    // An empty queue is a real answer now: the store holds no cases, and it says so.
+    assert_eq!(body["total"], 0);
+    assert_eq!(body["items"].as_array().unwrap().len(), 0);
 }
 
 #[tokio::test]
