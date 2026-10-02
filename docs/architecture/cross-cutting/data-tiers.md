@@ -61,4 +61,4 @@ All PostgreSQL schemas use additive-only migrations via `sqlx` (Rust) or Alembic
 
 ## Data Sovereignty
 
-All T0/T1 data resides on Kenyan-hosted infrastructure (primary IEBC DC + mirror). No T0/T1 data transits international networks except diaspora station batches (encrypted in transit and at rest with HSM-derived keys).
+All T0/T1 data resides on Kenyan-hosted infrastructure (primary the Commission DC + mirror). No T0/T1 data transits international networks except diaspora station batches (encrypted in transit and at rest with HSM-derived keys).

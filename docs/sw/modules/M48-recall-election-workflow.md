@@ -2,16 +2,16 @@
 
 **Module ID:** M48
 **Name:** Recall Election Workflow
-**Runs on:** Central servers (Kenyan cloud) + IEBC back-office + public portal
+**Runs on:** Central servers (Kenyan cloud) + the Commission back-office + public portal
 **Owner:** Datacraft
 **Status:** Draft v1
-**IPR:** Custom Software vests in IEBC per GCC 15.4
+**IPR:** Custom Software vests in the Commission per GCC 15.4
 
 ---
 
 ## 1. Purpose
 
-Manage the end-to-end recall election process for Members of Parliament under Constitution of Kenya 2010 Art. 104. A recall is distinct from a general election (different trigger, sub-county scope, reduced voter roll, specific petition threshold) and from a by-election (M50). This module handles: petition receipt and threshold verification; IEBC recall election declaration; sub-county voter roll preparation; reduced-cycle KIEMS kit provisioning; vote tally; and result publication. Integrates with M50 By-Election for shared kit and tally infrastructure.
+Manage the end-to-end recall election process for Members of Parliament under Constitution of Kenya 2010 Art. 104. A recall is distinct from a general election (different trigger, sub-county scope, reduced voter roll, specific petition threshold) and from a by-election (M50). This module handles: petition receipt and threshold verification; the Commission recall election declaration; sub-county voter roll preparation; reduced-cycle KIEMS kit provisioning; vote tally; and result publication. Integrates with M50 By-Election for shared kit and tally infrastructure.
 
 Strategy reference: §XXI.C (Petition and Recall). Constitution Art. 104; Elections Act s.45; Elections (General) Regulations 2012 (applicable by reference).
 
@@ -21,10 +21,10 @@ Strategy reference: §XXI.C (Petition and Recall). Constitution Art. 104; Electi
 
 - **Petition Organiser** — submits recall petition with signatory list; tracks threshold verification
 - **Registered Voter (sub-county)** — signs petition digitally or on paper (paper import); votes in the recall election
-- **IEBC Petition Officer** — verifies petition signatures against voter roll; prepares threshold assessment
-- **IEBC Returning Officer (Recall)** — conducts the recall election; submits Form 34A equivalent (Recall Form R-34A)
+- **the Commission Petition Officer** — verifies petition signatures against voter roll; prepares threshold assessment
+- **the Commission Returning Officer (Recall)** — conducts the recall election; submits Form 34A equivalent (Recall Form R-34A)
 - **MP Subject to Recall** — notified of petition; may file a legal challenge; views petition progress
-- **High Court Registrar** — receives IEBC petition-threshold certificate; may hear constitutional challenge
+- **High Court Registrar** — receives the Commission petition-threshold certificate; may hear constitutional challenge
 - **M50 By-Election Module** — system-to-system: if recall vote succeeds, M50 is triggered for the by-election to fill the seat
 - **Public User** — views petition status and recall results on public portal
 
@@ -38,15 +38,15 @@ Strategy reference: §XXI.C (Petition and Recall). Constitution Art. 104; Electi
 - **FR-M48-002** Recall grounds validation: system checks grounds against Art. 104(1) closed list; rejects petition with reason if grounds are outside the statutory list; petition organiser notified.
 - **FR-M48-003** Signatory threshold: Constitution Art. 104(2) requires signatures from at least 30% of registered voters in the constituency. System cross-references uploaded signatory list against M02 CVR voter roll for that constituency; verifies that each signatory is a registered voter and has not signed more than once.
 - **FR-M48-004** Signatory list upload: CSV or scanned paper import (OCR-processed); per-row verification result (VALID / NOT_ON_ROLL / DUPLICATE); summary report issued to petition organiser.
-- **FR-M48-005** Threshold assessment report: IEBC Petition Officer reviews auto-computed percentage; signs off; report delivered to IEBC Commissioners within 7 days of petition submission.
-- **FR-M48-006** Petition outcome: if threshold met, IEBC issues a recall election declaration (gazette notice); if not met, petition rejected with written reason and public notice.
+- **FR-M48-005** Threshold assessment report: the Commission Petition Officer reviews auto-computed percentage; signs off; report delivered to the Commission Commissioners within 7 days of petition submission.
+- **FR-M48-006** Petition outcome: if threshold met, the Commission issues a recall election declaration (gazette notice); if not met, petition rejected with written reason and public notice.
 - **FR-M48-007** MP notification: automated formal notice to MP at registered address on petition submission and on threshold-assessment outcome; MP has 21-day window to file High Court challenge (per Elections Act s.45(5)).
 - **FR-M48-008** Legal challenge hold: if MP files a High Court petition (system receives court-reference number), recall election declaration held pending court determination; system displays pending-legal-challenge status on public portal.
 
 ### Recall Election
 
 - **FR-M48-009** Voter roll preparation: recall election voter roll scoped to the single constituency; snapshot of M02 CVR at date of recall declaration; signed snapshot published to IAB (M15) and public portal.
-- **FR-M48-010** Ballot: single binary question (Recall Yes / Recall No); ballot paper generated by M12 equivalent ballot-proof workflow (standalone; no candidates); printed per standard IEBC spec.
+- **FR-M48-010** Ballot: single binary question (Recall Yes / Recall No); ballot paper generated by M12 equivalent ballot-proof workflow (standalone; no candidates); printed per standard the Commission spec.
 - **FR-M48-011** Kit provisioning: KIEMS kits provisioned for the single constituency in recall mode; subset of standard KIEMS BVI workflow; biometric voter authentication against recall voter roll.
 - **FR-M48-012** Polling: full polling-day workflow per KIEMS standard (M05 / M06); M08 RTS device used for hourly turnout reporting to M16 and M44.
 - **FR-M48-013** Recall threshold for success: Constitution Art. 104(3) requires a majority of voters registered in the constituency (not just votes cast) to vote for recall for it to succeed. System computes this against the voter roll snapshot count; not just the turnout count.
@@ -71,20 +71,20 @@ Strategy reference: §XXI.C (Petition and Recall). Constitution Art. 104; Electi
 
 ---
 
-- **NFR-48-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `iebc-iems-48` (replace 48 with the module number); alert ruleset ID `iems-48-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
+- **NFR-48-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `commission-iems-48` (replace 48 with the module number); alert ruleset ID `iems-48-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
 
 ## 5. User Stories
 
 1. As a petition organiser, I upload a 40,000-row signatory CSV and receive a per-row verification report within 2 hours, showing which signatures are valid, which are not on the roll, and which are duplicates.
-2. As the IEBC Petition Officer, I review the auto-computed threshold percentage and sign off a threshold-assessment report within 5 working days of submission.
+2. As the Commission Petition Officer, I review the auto-computed threshold percentage and sign off a threshold-assessment report within 5 working days of submission.
 3. As the MP subject to recall, I receive a formal email and postal notice on petition submission and on the threshold-assessment outcome, with the 21-day challenge window clearly stated.
 4. As a registered voter in the constituency, I vote in the recall election using the same biometric KIEMS authentication I used at the last general election.
-5. As a member of the public, I track petition progress on the IEBC portal: organiser-submitted, signature verification in progress, threshold met or not met, election declared.
+5. As a member of the public, I track petition progress on the Commission portal: organiser-submitted, signature verification in progress, threshold met or not met, election declared.
 6. As a Returning Officer, I submit the Recall Form R-34A per polling station; the system automatically computes whether the Art. 104(3) majority threshold is met.
 7. As the M50 By-Election module, I receive an automatic trigger with constituency details when a recall is Successful, so I can initiate the by-election schedule.
-8. As an IAB observer, I download the signed voter roll snapshot from the IEBC portal within 24 hours of the recall declaration.
+8. As an IAB observer, I download the signed voter roll snapshot from the Commission portal within 24 hours of the recall declaration.
 9. As a journalist, I can view the real-time result determination (Recall Successful / Unsuccessful) on the public portal within 48 hours of poll close, with the Yes/No vote counts and the registered-voter count used for the threshold.
-10. As a High Court Registrar, the IEBC petition-threshold certificate is available as a signed PDF on the portal, serving as formal evidence in any legal challenge.
+10. As a High Court Registrar, the Commission petition-threshold certificate is available as a signed PDF on the portal, serving as formal evidence in any legal challenge.
 
 ---
 
@@ -227,7 +227,7 @@ paths:
 
 - Petition submission portal: grounds selector with Art. 104(1) clause descriptions; PDF upload; CSV signatory upload with drag-drop and progress bar; per-row error report viewer.
 - Public petition tracker: status timeline (submitted, verification, threshold, election declared, result); percentage-to-threshold meter; gazette notice download.
-- IEBC Petition Officer back-office: verification summary; threshold computation card; sign-off modal; legal-hold input.
+- the Commission Petition Officer back-office: verification summary; threshold computation card; sign-off modal; legal-hold input.
 - Results publication page: Yes/No bar chart; registered-voter count vs threshold visualisation; recall-determination badge; Merkle path verifier.
 - All public screens WCAG 2.2 AA; EN + SW.
 
@@ -241,7 +241,7 @@ paths:
 | Signature threshold | Constitution Art. 104(2) — 30% of registered voters | CVR cross-reference FR-M48-003 |
 | Recall success threshold | Constitution Art. 104(3) — majority of registered voters | Determination computation FR-M48-013 |
 | MP challenge window | Elections Act s.45(5) — 21 days | Legal-hold workflow FR-M48-008 |
-| IEBC election declaration | Elections Act s.45 | Gazette notice workflow FR-M48-006 |
+| the Commission election declaration | Elections Act s.45 | Gazette notice workflow FR-M48-006 |
 | DPA 2019 | s.30(1)(b) legal obligation | Signatory data not retained post-assessment; DPIA filed |
 
 ---
@@ -264,7 +264,7 @@ paths:
 - Unit: Art. 104(2) 30% threshold computation; Art. 104(3) majority-of-registered computation; legal-hold state machine; M50 trigger.
 - Integration: M02 CVR cross-reference mock; M50 trigger endpoint; P05 Merkle anchoring.
 - Load: 50,000-row signatory upload; concurrent signature verification.
-- UAT: IEBC Petition Officers; High Court Registrar liaison; M50 team cross-test.
+- UAT: the Commission Petition Officers; High Court Registrar liaison; M50 team cross-test.
 - Security: signatory data exposure after assessment; petition document access control.
 - Back-test: replay against any historical petition data if available.
 
@@ -279,7 +279,7 @@ Recall elections are triggered by petition, not by the fixed election calendar. 
 | Legal framework alignment workshop (Art. 104 implementation) | T-300 (2026-10-14) |
 | M02 signatory cross-reference API agreed | T-270 (2026-11-13) |
 | M50 by-election trigger API specified | T-210 (2027-01-12) |
-| Portal UAT with IEBC Petition Officers | T-120 (2027-04-12) |
+| Portal UAT with the Commission Petition Officers | T-120 (2027-04-12) |
 | Production-ready (pre-election) | T-60 (2027-06-11) |
 | Post-election on-call period (peak recall risk) | T+30 to T+180 |
 
@@ -291,7 +291,7 @@ Recall elections are triggered by petition, not by the fixed election calendar. 
 - M50 By-Election module by-election trigger endpoint (T-210).
 - M05/M06 BVI recall-mode firmware (T-90).
 - P05 Merkle log operational.
-- Legal interpretation of Art. 104(3) "majority of registered voters" confirmed with IEBC Legal (T-300).
+- Legal interpretation of Art. 104(3) "majority of registered voters" confirmed with the Commission Legal (T-300).
 
 ---
 
@@ -299,11 +299,11 @@ Recall elections are triggered by petition, not by the fixed election calendar. 
 
 | Risk | Likelihood | Mitigation |
 |---|---|---|
-| Art. 104(3) threshold interpretation dispute | Medium | IEBC Legal opinion obtained pre-launch; methodology published; formula in open source |
+| Art. 104(3) threshold interpretation dispute | Medium | the Commission Legal opinion obtained pre-launch; methodology published; formula in open source |
 | Signatory list contains non-voters (NIN mismatch) | High | Per-row verification report returned to organiser; re-upload permitted before deadline |
-| Legal challenge delays election indefinitely | Medium | Legal-hold state machine with court-reference tracking; IEBC alerts court on system hold status |
+| Legal challenge delays election indefinitely | Medium | Legal-hold state machine with court-reference tracking; the Commission alerts court on system hold status |
 | Paper-based signatory lists slow OCR processing | High | Batch OCR with progress tracker; parallel upload pathways; manual entry fallback for small volumes |
-| M50 trigger fails after recall success | Low | Synchronous trigger with retry; IEBC Operations Officer notified within 5 minutes of failure; manual trigger UI as fallback |
+| M50 trigger fails after recall success | Low | Synchronous trigger with retry; the Commission Operations Officer notified within 5 minutes of failure; manual trigger UI as fallback |
 
 ---
 
@@ -328,21 +328,21 @@ Recall elections are triggered by petition, not by the fixed election calendar. 
 | Constitution Art. 104(1) | Recall grounds (closed list) | FR-M48-001, FR-M48-002 |
 | Constitution Art. 104(2) | 30% signature threshold | FR-M48-003 to FR-M48-005 |
 | Constitution Art. 104(3) | Majority-of-registered-voters success threshold | FR-M48-013, FR-M48-014 |
-| Elections Act s.45 | IEBC recall declaration procedure | FR-M48-006 to FR-M48-008 |
+| Elections Act s.45 | the Commission recall declaration procedure | FR-M48-006 to FR-M48-008 |
 | DPA 2019 s.30(1)(b) | Lawful basis for signatory data processing | NFR-M48-007 |
 
 ## 18. Decommissioning
 
-**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if IEBC terminates the contract.
+**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if the Commission terminates the contract.
 
 **Steps:**
 
-1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and IEBC DPO.
+1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and the Commission DPO.
 2. **Service shutdown** — Kubernetes deployments scaled to zero; PersistentVolumeClaims retained for 30 days then deleted after confirmation of M69 transfer.
 3. **Credential revocation** — service account certificates, API keys, and HSM key handles revoked via P06 key-destruction ceremony within 48 hours of shutdown.
 4. **Source-code escrow** — final tagged release deposited to C04 escrow within 7 days of shutdown.
-5. **Runbook handover** — operational runbook and post-mortem notes delivered to IEBC ICT within 14 days.
+5. **Runbook handover** — operational runbook and post-mortem notes delivered to the Commission ICT within 14 days.
 
-**Owner:** SRE Lead. **Sign-off:** IEBC ICT Director + Datacraft Programme Director.
+**Owner:** SRE Lead. **Sign-off:** the Commission ICT Director + Datacraft Programme Director.
 
 > **RESOLUTION (F-23, 2026-08-21):** Decommissioning stub added per audit finding. Owner: SRE Lead. Target: FAT-07 gate.

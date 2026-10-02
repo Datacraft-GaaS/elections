@@ -11,7 +11,7 @@
 | Formal | TLA+/Apalache: tally 34A→B→C + exactly-once + amendments; referendum threshold; run-off/tie; register-freeze race. kani/creusot: Merkle append/inclusion/consistency, HLC merge, monotonic counter | | | | | nightly CI; independent review |
 | Load | k6 + Gatling; Rust election-day simulator | locust (ML) | | | | local 1/100 per WP; pre-prod 1x and 5x; regression gate |
 | Chaos | Chaos Mesh list in 5.9 | | | | | weekly staging; monthly pre-prod; T-7 full |
-| Security | cargo-audit/deny, Semgrep (IEBC rules), Trivy, Grype, cosign verify, ZAP, Nuclei, testssl.sh, ASVS L3/L2 | Bandit, pip-audit | Sobelow, mix_audit | MobSF | npm audit | zero critical/high; ASVS signed per WP |
+| Security | cargo-audit/deny, Semgrep (the Commission rules), Trivy, Grype, cosign verify, ZAP, Nuclei, testssl.sh, ASVS L3/L2 | Bandit, pip-audit | Sobelow, mix_audit | MobSF | npm audit | zero critical/high; ASVS signed per WP |
 | Accessibility | none |, | axe via Playwright | semantics tests | axe | AA all; AAA M68; manual SR scripts |
 | i18n | none |, | gettext snapshot | ARB snapshot | i18next snapshot | pseudo-locale 150% + 11 locales; zero missing keys |
 | Reproducibility | Nix-pinned, `--locked`, SOURCE_DATE_EPOCH, diffoscope | hashes | mix.lock | pinned | frozen | bit-identical on 3 targets; M14 cross-arch |

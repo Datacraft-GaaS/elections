@@ -8,7 +8,7 @@
 | Size | M |
 | Availability class | routine 99.5% |
 | Event-sourced | no (ADR-0013: only M08/M09/M10, M20, M51, M63) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M61-secrecy-assurance-testing.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M61-secrecy-assurance-testing.md |
 
 ## Purpose
 

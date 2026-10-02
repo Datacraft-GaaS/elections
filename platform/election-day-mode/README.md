@@ -57,7 +57,7 @@ kubectl kyverno validate platform/election-day-mode/freeze-window-policy.yaml
 ## Operator responsibilities
 
 - Activation and deactivation events are logged to the transparency log (transparency-svc).
-- The dual-approver requirement mirrors the four-eyes principle for IEBC result certification.
+- The dual-approver requirement mirrors the four-eyes principle for the Commission result certification.
 - Test activation and deactivation in the staging cluster at least 72 hours before election day.
 
 ## Related docs

@@ -90,7 +90,7 @@ AG mirror (within 24 h):
   -> eel.observer.ag_mirror_sent.v1 emitted
 
 USSD/SMS signal for systemic incident (no data):
-  observer sends USSD `*400*9#` or SMS keyword to IEBC number
+  observer sends USSD `*400*9#` or SMS keyword to the Commission number
   -> field-mobile-svc ecc adapter creates SystemicIncident from USSD/SMS
   -> IAB systemic incident dashboard notified within 5 min
 ```
@@ -124,7 +124,7 @@ Languages: EN + SW + French (for international observers). WCAG 2.2 AA on all we
 
 - **Observer Ed25519 signature** -- every VisitRecord, IncidentReport, and SamplingChecklist is signed by the observer's device cert; unsigned records are rejected by the sync endpoint; the observer cannot repudiate a signed report.
 - **Attachment P05 anchor** -- attachment hashes are anchored in the P05 transparency log within 60 s of sync; the AG or a court can verify the attachment has not been altered since the observer submitted it.
-- **AG mirror within 24 h** -- the batch job has a 24-hour SLA measured from polling day close; a breach triggers an alert to the IEBC AG liaison; the batch is retried until acked.
+- **AG mirror within 24 h** -- the batch job has a 24-hour SLA measured from polling day close; a breach triggers an alert to the Commission AG liaison; the batch is retried until acked.
 - **USSD/SMS systemic signal** -- the USSD/SMS path is independent of the Flutter app and the data network; an observer without data connectivity can still trigger the systemic incident detection pipeline.
 - **Exactly-once incident events** -- `IncidentReport.incident_id` is a UUID7 generated on the device at the moment of report creation; duplicate incident_ids on sync return the cached ack; network retries cannot create duplicate incidents.
 - **MissionPDF on-device generation** -- the PDF is generated locally from the signed local Isar records; it cannot be post-hoc modified; the pdf_hash is stored and anchored independently.
@@ -135,7 +135,7 @@ Languages: EN + SW + French (for international observers). WCAG 2.2 AA on all we
 - **EOA 2016 s.11 (AG access)** -- AG mirror within 24 h satisfies the statutory access obligation; the AG read-only portal provides county-scoped access.
 - **Elections Act s.44 (observer accreditation)** -- M34 verifies CRMS-issued accreditation at login; non-accredited devices are rejected.
 - **DPA 2019 s.26 (minimisation)** -- incident attachments store hashes only on the server; raw media stored only on the observer's device and purged 90 days after election; USSD/SMS signals contain no voter PII.
-- **CRPD Article 33** -- observer monitoring function includes accessibility compliance verification items in the SamplingChecklist; M34 collects data that contributes to the IEBC's CRPD reporting obligation.
+- **CRPD Article 33** -- observer monitoring function includes accessibility compliance verification items in the SamplingChecklist; M34 collects data that contributes to the Commission's CRPD reporting obligation.
 
 ## 9. Honest caveats + external prerequisites
 

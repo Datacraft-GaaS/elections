@@ -1,7 +1,7 @@
 # SA-001: OSS-hygiene consolidation: OpenBao, Valkey, Karapace
 
 Date: 2026-08-21
-Applies to: Datacraft bid documents under work_docs/01-Projects/IEBC/sw/ (our own earlier draft)
+Applies to: Datacraft bid documents under work_docs/01-Projects/the Commission/sw/ (our own earlier draft)
 Status: decided (ADR takes precedence; sw/ docs to be edited)
 
 ## Earlier draft (sw/) says
@@ -28,7 +28,7 @@ Substitute drop-in OSS-clean forks:
 
 1. **Licence hygiene**. Vault (BSL since Aug 2023), Redis (7.4+ SSPL/RSAL since Mar 2024), and Confluent CSR (Community License) are **source-available, not OSS**. All three violate the "OSS-first, no licensing/integration costs" principle the user has committed to.
 2. **Regulatory audit exposure**. In a 3-year contract with 15-year audit retention, licence changes by the upstream vendor are a supply-chain risk. All three have already changed their licence terms once; the direction is not reversing.
-3. **Client-fleet operational familiarity**. The client's existing infrastructure (per `~/.claude/CLAUDE.md` fleet inventory) already runs OpenBao at `62.169.25.77` and MinIO. Operational muscle exists.
+3. **Existing operational familiarity**. The deployment target already runs OpenBao and MinIO, so operational muscle exists.
 4. **Drop-in compatibility**. Each substitute is API-wire-compatible with what it replaces. No re-architecture; only re-pin.
 5. **Auditor-defensibility**. On a national-election contract, "Apache 2.0 + Linux Foundation" reads better than "BSL, may be relicensed by vendor" to security auditors.
 

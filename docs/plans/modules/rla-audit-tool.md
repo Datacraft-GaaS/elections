@@ -8,11 +8,11 @@
 | Size | M |
 | Availability class | cycle-critical 99.9% |
 | Event-sourced | no (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M21-rla-audit-tool.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M21-rla-audit-tool.md |
 
 ## Purpose
 
-Risk-Limiting Audit (RLA) tool: drive post-election statistical sampling of paper ballots against the digital tally using ballot-polling or comparison audit methods; generate NIST-compliant audit runs with cryptographically verifiable entropy sources; produce auditor reports and recount-trigger recommendations for IEBC and the courts.
+Risk-Limiting Audit (RLA) tool: drive post-election statistical sampling of paper ballots against the digital tally using ballot-polling or comparison audit methods; generate NIST-compliant audit runs with cryptographically verifiable entropy sources; produce auditor reports and recount-trigger recommendations for the Commission and the courts.
 
 ## Surfaces and languages
 
@@ -110,7 +110,7 @@ FR-M21-020: Running SHANGRLA T-statistic computed after each batch of tallied ba
 
 Conclusions and reporting:
 
-FR-M21-021: Stopping condition: if T-statistic fails to confirm at risk limit after maximum sample exhausted, RECOUNT_REQUIRED event generated immediately; published to IEBC Chair, IAB, and public portal; HSM-signed; forwarded to M40 election court interface.
+FR-M21-021: Stopping condition: if T-statistic fails to confirm at risk limit after maximum sample exhausted, RECOUNT_REQUIRED event generated immediately; published to the Commission Chair, IAB, and public portal; HSM-signed; forwarded to M40 election court interface.
 FR-M21-022: Audit conclusion: CONFIRMED (risk limit met) or RECOUNT_REQUIRED; conclusion computed deterministically from published inputs.
 FR-M21-023: Signed audit report on completion: seed values, sample manifest hash, tally data, T-statistic trajectory, outcome, party-agent and IAB signatures; HSM-signed PDF + JSON.
 FR-M21-024: Audit report published on public portal and submitted to Supreme Court IT Registrar by T+7 days post-election.
@@ -193,5 +193,5 @@ EC-HUM-06: Screen readers: audit portal fully navigable; WCAG 2.2 AA verified wi
 
 ## Open questions
 
-- Legal clarity on recount trigger: the Elections Act does not specify a binding threshold for IEBC to act on an RLA recommendation; IEBC legal team needs to clarify the legal effect of a recount recommendation before M reaches production.
+- Legal clarity on recount trigger: the Elections Act does not specify a binding threshold for the Commission to act on an RLA recommendation; the Commission legal team needs to clarify the legal effect of a recount recommendation before M reaches production.
 - SHANGRLA vs MINERVA: both algorithms are implemented; the choice per election cycle must be decided by the audit committee before sampling begins; the tool supports both but defaults to SHANGRLA.

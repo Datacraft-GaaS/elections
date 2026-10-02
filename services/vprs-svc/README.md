@@ -79,7 +79,7 @@ IPRS verification results cached for 24 hours with fallback to staged data durin
 
 Build Rust API and services:
 ```bash
-cd /Users/nyimbiodero/src/pjs/eel/services/vprs-svc
+cd ./services/vprs-svc
 cargo build --release
 ```
 

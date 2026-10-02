@@ -1,6 +1,6 @@
 //! G04 — Government Gazette Hash Anchoring.
 //!
-//! Fetches IEBC Government Gazette issues, computes SHA-256, and appends
+//! Fetches the Commission Government Gazette issues, computes SHA-256, and appends
 //! the (issue_id, published_date, sha256, gazette_url) entry to the transparency
 //! log via the HSM-signed append API.
 //!
@@ -40,7 +40,7 @@ pub struct AnchorResult {
 /// Configuration for the Gazette anchor.
 #[derive(Debug, Clone)]
 pub struct GazetteAnchorConfig {
-	/// Base URL of the IEBC Gazette website or API.
+	/// Base URL of the Commission Gazette website or API.
 	pub gazette_base_url: String,
 	/// Base URL of the transparency log ingest API.
 	pub transparency_log_url: String,
@@ -53,7 +53,7 @@ pub struct GazetteAnchorConfig {
 impl Default for GazetteAnchorConfig {
 	fn default() -> Self {
 		Self {
-			gazette_base_url: "https://gazette.iebc.or.ke/api/v1".into(),
+			gazette_base_url: "https://gazette.eel.example/api/v1".into(),
 			transparency_log_url: "https://audit.eel.local/v1/log/append".into(),
 			fetch_timeout_secs: 30,
 			hsm_signer_url: "https://hsm-signer.eel.local/v1/sign".into(),
@@ -188,7 +188,7 @@ pub async fn anchor_issue(
 	title: &str,
 ) -> anyhow::Result<AnchorResult> {
 	let client = Client::builder()
-		.user_agent("EEL-GazetteAnchor/1.0 (IEBC-IEMS)")
+		.user_agent("EEL-GazetteAnchor/1.0 (COMMISSION-IEMS)")
 		.build()?;
 
 	// 1. Fetch Gazette PDF.
@@ -274,7 +274,7 @@ mod tests {
 	#[tokio::test]
 	async fn anchor_config_default_values() {
 		let config = GazetteAnchorConfig::default();
-		assert!(config.gazette_base_url.contains("iebc"));
+		assert!(config.gazette_base_url.contains("commission"));
 		assert!(config.transparency_log_url.contains("audit"));
 		assert!(config.hsm_signer_url.contains("hsm"));
 		assert_eq!(config.fetch_timeout_secs, 30);

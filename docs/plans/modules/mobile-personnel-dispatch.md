@@ -8,7 +8,7 @@
 | Size | XL |
 | Availability class | routine 99.5% |
 | Event-sourced | no |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M33-mobile-personnel-dispatch.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M33-mobile-personnel-dispatch.md |
 
 ## Purpose
 
@@ -19,11 +19,11 @@ Dispatch, attend, and track every polling-day worker (~250,000 POs, DPOs, Clerks
 | surface | technology | path |
 |---|---|---|
 | Personnel Dispatch App (Android 8+ / iOS 14+ / PWA fallback) | Flutter | services/field-mobile-svc/apps/personnel-dispatch/ |
-| IEBC HR Dispatcher Console | Phoenix LiveView | services/field-mobile-svc/ex/dispatch_web/ |
-| IEBC Finance Payroll Panel | Django | services/field-mobile-svc/django/payroll_admin/ |
+| the Commission HR Dispatcher Console | Phoenix LiveView | services/field-mobile-svc/ex/dispatch_web/ |
+| the Commission Finance Payroll Panel | Django | services/field-mobile-svc/django/payroll_admin/ |
 | API | Rust (axum) | services/field-mobile-svc/crates/field-mobile-api/ |
 
-Distribution: private via IEBC MDM + signed APK for casual-worker devices. Languages: EN + SW; voice-guided workflow for low-literacy users.
+Distribution: private via Commission MDM + signed APK for casual-worker devices. Languages: EN + SW; voice-guided workflow for low-literacy users.
 
 ## Domain model
 
@@ -69,7 +69,7 @@ OpenAPI file: `packages/openapi-contracts/field/personnel-dispatch.yaml`
 | M06 BVI Back-End | internal | integrations/bvi/ | yes | polling-station status cross-reference at check-in |
 | M16 Election Command Centre | internal | integrations/ecc/ | yes | ECC sees real-time attendance feed; dispatches reassignments |
 | M20 Inventory Management | internal | integrations/inventory/ | yes | kit validation at check-in; assigned kit in system |
-| IEBC Finance | internal | integrations/finance/ | yes | payroll trigger on check-out; queue on failure; retry; alert Finance |
+| the Commission Finance | internal | integrations/finance/ | yes | payroll trigger on check-out; queue on failure; retry; alert Finance |
 | I08 SMS / USSD gateway | I08 | integrations/sms/ | yes | OTP fallback; assignment notification to feature-phone workers |
 
 ## ML and AI
@@ -84,7 +84,7 @@ OpenAPI file: `packages/openapi-contracts/field/personnel-dispatch.yaml`
 
 ## Feature checklist
 
-1. FR-M33-001: worker enrolment via IEBC HR staff ID + biometric template capture (fingerprint or face) on device; enrolment record signed and submitted to O05 HR back-end; duplicate enrolment detected and rejected
+1. FR-M33-001: worker enrolment via Commission HR staff ID + biometric template capture (fingerprint or face) on device; enrolment record signed and submitted to O05 HR back-end; duplicate enrolment detected and rejected
 2. FR-M33-002: MFA sign-in: platform biometric preferred; 6-digit PIN fallback rate-limited to 5 attempts then 30-minute lockout; session token bound to device attestation; no SMS OTP for supervisors
 3. FR-M33-003: DPA consent screen at first launch for location and attendance capture; consent text in EN + SW; required before any GPS use; worker can withdraw consent (triggers ABSENT status and HR notification)
 4. FR-M33-004: device attestation via Play Integrity or App Attest; soft-warn on citizen-tier devices (MEETS_BASIC); hard-fail for supervisor roles (MEETS_STRONG); attestation verdict logged per session
@@ -102,7 +102,7 @@ OpenAPI file: `packages/openapi-contracts/field/personnel-dispatch.yaml`
 16. FR-M33-016: quick-report incident form with categories MEDICAL, SECURITY, KIT_ISSUE, VOTER_DISPUTE, ELECTORAL_VIOLATION, OTHER; free-text description; photo and short-video evidence upload; GPS captured at submission
 17. FR-M33-017: escalation chain per incident severity: ROUTINE to supervisor, HIGH to county lead, CRITICAL to war-room; escalation target determined by severity matrix in ECC policy bundle; escalation immutable once set
 18. FR-M33-018: end-of-shift check-out with biometric capture + GPS fix; check-out blocked if check-in not confirmed in back-end; check-out timestamp signed with UUID7 idempotency key
-19. FR-M33-019: check-out triggers eel.field.payroll_triggered.v1 event delivered exactly-once to IEBC Finance integration; duplicate triggers prevented by UUID7 idempotency key; Finance notified of queue size on burst
+19. FR-M33-019: check-out triggers eel.field.payroll_triggered.v1 event delivered exactly-once to the Commission Finance integration; duplicate triggers prevented by UUID7 idempotency key; Finance notified of queue size on burst
 20. FR-M33-020: summary card shown immediately after check-out: hours worked, incidents reported, next assignment if any, payroll trigger status (PENDING/SUBMITTED/CONFIRMED); Finance reference number shown on CONFIRMED
 21. FR-M33-021: push notifications for: assignment received, reassignment, supervisor broadcast message, incident escalation acknowledgement, payroll trigger confirmed; notification delivery confirmed via FCM/APNs ack
 22. FR-M33-022: no PII in push notification payloads; all personal data fetched authenticated from back-end on notification receipt; payload contains only event type and record ID
@@ -127,11 +127,11 @@ OpenAPI file: `packages/openapi-contracts/field/personnel-dispatch.yaml`
 41. FR-M33-041: worker no-show alert generated after configurable grace period past report time; supervisor receives push notification; HR dispatcher sees alert in console; alert auto-escalates to county lead if unresolved after second threshold
 42. FR-M33-042: assignment conflict detection: two workers assigned same station-role pair surfaced as warning in O05 HR back-end at assignment-creation time; M33 app shows warning if conflict exists at check-in
 43. FR-M33-043: multi-election assignment support: worker may have accepted assignments in different elections within same session; assignment list shows election name and date; switching election clears GPS cache for prior session
-44. FR-M33-044: payroll trigger retry on IEBC Finance integration failure: trigger queued in Isar; retried with exponential backoff; Finance alerted when queue exceeds 100 pending triggers; no duplicate trigger on retry
+44. FR-M33-044: payroll trigger retry on the Commission Finance integration failure: trigger queued in Isar; retried with exponential backoff; Finance alerted when queue exceeds 100 pending triggers; no duplicate trigger on retry
 45. FR-M33-045: worker views payroll trigger status per assignment: PENDING, SUBMITTED, CONFIRMED, FAILED; Finance reference number and processed timestamp shown on CONFIRMED; worker notified via push on status change
 46. FR-M33-046: supervisor can broadcast message to all team members at a station via app; message delivered via push + SMS fallback for feature-phone workers; no PII in broadcast payload; message logged in audit trail
 47. FR-M33-047: emergency panic alert hidden under long-press gesture on status screen; alert delivered as eel.field.worker_incident.v1 with severity PANIC to supervisor and war-room; GPS captured at trigger; false-alarm acknowledgement required within 2 min
-48. FR-M33-048: complete audit trail for all assignment changes, reassignments, check-in overrides, and payroll adjustments; every event signed in eel.field.dispatch.v1 topic; immutable; queryable by HR dispatcher and IEBC ICT
+48. FR-M33-048: complete audit trail for all assignment changes, reassignments, check-in overrides, and payroll adjustments; every event signed in eel.field.dispatch.v1 topic; immutable; queryable by HR dispatcher and the Commission ICT
 49. FR-M33-049: screen-capture protection (FLAG_SECURE on Android) active on worker personal details and biometric screens; no worker ID or biometric hash in logs, crash reports, or OTel traces; log-scanner CI fixture enforces
 50. FR-M33-050: UUID7 idempotency keys on all write operations: check-in, status ping, check-out, incident report, payroll trigger, assignment accept/decline; back-end caches and returns identical response on re-send
 51. FR-M33-051: offline integrity: Isar WAL journaled before every state mutation including mid-check-in steps; OS-kill at any transition resumable on next launch without data loss or duplicate payroll trigger; power-cut harness validates every FSM state
@@ -139,7 +139,7 @@ OpenAPI file: `packages/openapi-contracts/field/personnel-dispatch.yaml`
 53. FR-M33-053: check-in flow completes in <= 30 s end-to-end on LTE including biometric capture, GPS fix, signature, and back-end confirmation; benchmark enforced in integration test harness
 54. FR-M33-054: status pings delivered at <= 15-minute interval while session active; on connectivity restoration, pings for offline gap submitted with original signed timestamps; gap entry created if no ping received for > 20 min
 55. FR-M33-055: worker reassignment received as real-time push update; app prompts worker to accept new station; old assignment marked REASSIGNED in local store with reason; supervisor of new station notified
-56. FR-M33-056: IEBC Finance payroll panel (Django) shows paginated list of payroll triggers per election; filterable by county, role, and status; CSV export; FINANCE role only; read-only; no write access from Finance panel
+56. FR-M33-056: the Commission Finance payroll panel (Django) shows paginated list of payroll triggers per election; filterable by county, role, and status; CSV export; FINANCE role only; read-only; no write access from Finance panel
 57. FR-M33-057: SpiceDB enforces role hierarchy: WORKER can only submit own check-in and check-out; HR_DISPATCHER can reassign within cluster; FINANCE can only read payroll triggers; SUPERVISOR can override check-in with dual-custody approval; all role checks enforced at API level
 58. FR-M33-058: all events in eel.field.dispatch.v1 topic signed with producer SVID; consumer verifies signature before processing; tampered or unsigned events routed to DLQ with tamper alert
 59. FR-M33-059: OTA app update: Android Managed Google Play silent update; iOS App Store update; minimum app version floor enforced by MDM policy bundle; local Isar queue and accepted assignments survive update; N-1 to N schema migration verified
@@ -159,7 +159,7 @@ OpenAPI file: `packages/openapi-contracts/field/personnel-dispatch.yaml`
 
 ## Acceptance criteria
 
-1. AC-M33-01: end-to-end assignment, check-in, status pings, check-out, and payroll trigger flow completed by a real worker on a real Android device; payroll trigger CONFIRMED by Finance stub; UAT sign-off with IEBC HR team
+1. AC-M33-01: end-to-end assignment, check-in, status pings, check-out, and payroll trigger flow completed by a real worker on a real Android device; payroll trigger CONFIRMED by Finance stub; UAT sign-off with the Commission HR team
 2. AC-M33-02: 250,000 synthetic worker check-ins processed within 90-minute k6 window; p99 check-in response <= 2 s; zero dropped events; back-end auto-scales; payroll triggers queued correctly; load test run in staging
 3. AC-M33-03: offline check-in queued, signed locally, submitted on reconnect, confirmed by back-end without duplicate; idempotency verified by re-send; supervisor sees "check-in confirmed" within 60 s of reconnect; airplane-mode integration test
 4. AC-M33-04: payroll trigger fires exactly once on check-out; Finance integration receives trigger with correct worker ID pseudonym, station code, and hours worked; trigger CONFIRMED with Finance reference number; integration test with Finance stub
@@ -253,6 +253,6 @@ Tags: `testWidgets('check-in [FR-M33-009,AC-M33-02,EC-MOB-07]')`
 ## Open questions
 
 - O05 Personnel Dispatch Back-End: scope as MeGuard-derived system or new service; API contract and data-model agreement required before integration sprint.
-- IEBC Finance integration: payroll API schema and authentication; Finance system must be confirmed and API spec delivered before M33 integration sprint; timeline risk.
+- the Commission Finance integration: payroll API schema and authentication; Finance system must be confirmed and API spec delivered before M33 integration sprint; timeline risk.
 - Assignment collision resolution: two workers assigned same station-role; HR back-office resolves; conflict-detection must be in O05, not M33; confirm responsibility boundary.
 - Feature-phone workers: SMS-only notification path for workers without smartphones; I08 gateway confirmed as sufficient; APK sideload for Android confirmed as fallback.

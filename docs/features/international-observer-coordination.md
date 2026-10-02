@@ -39,7 +39,7 @@ Four aggregates (per `services/governance-svc/crates/intl-observer/src/models.rs
 
 Each `ObserverMission` gets a dedicated `workspace_id` that is a row-security namespace in every M57 table. Postgres row-level security (RLS) policies enforce that a mission officer authenticated under one `workspace_id` cannot read another mission's `ObservationReport` or `Briefing`.
 
-IEBC coordination officers hold the `OBSERVER_COORDINATION_OFFICER` SpiceDB role and can read across all workspaces. Mission officers authenticate via SAML federation (their own body's IdP) and are issued a JWT scoped to their `workspace_id`.
+the Commission coordination officers hold the `OBSERVER_COORDINATION_OFFICER` SpiceDB role and can read across all workspaces. Mission officers authenticate via SAML federation (their own body's IdP) and are issued a JWT scoped to their `workspace_id`.
 
 JointStatements cross workspace boundaries by explicit consent: each mission's lead contact must approve inclusion of their mission in the statement before the draft is visible to other missions.
 
@@ -58,7 +58,7 @@ M43 emits eel.training.observer_accredited.v1 (international body)
       -> mission officers submit ObservationReports during election
             -> CREDIBLE_IRREGULARITY flag: emit eel.governance.credible_irregularity.v1
                -> ECC (M16) receives for situational awareness
-            -> reports visible only to submitting mission + IEBC coordination officers
+            -> reports visible only to submitting mission + the Commission coordination officers
       -> post-election: coordination officer proposes JointStatement
             -> draft shared with named missions
             -> each mission lead approves (or opts out)
@@ -87,7 +87,7 @@ Contract: `packages/openapi-contracts/governance/intl-observer.yaml`. All writes
 
 | Surface | Path | Purpose |
 |---|---|---|
-| Mission coordination console (Django) | `services/governance-svc/django/intl_observer_admin` | IEBC coordination officer: manage missions, schedule briefings |
+| Mission coordination console (Django) | `services/governance-svc/django/intl_observer_admin` | the Commission coordination officer: manage missions, schedule briefings |
 | Mission portal (Astro) | `services/governance-svc/astro/mission-portal` | Mission officer: briefings, report submission, statement approval |
 
 Languages: EN (primary); FR and PT available for mission portals (AU, EU contexts). WCAG 2.2 AA.
@@ -103,8 +103,8 @@ Languages: EN (primary); FR and PT available for mission portals (AU, EU context
 
 ## 8. Kenya statute alignment
 
-- **Elections Act §25 (observer access)**: observation reports and briefings support IEBC's obligation to facilitate observation by accredited international bodies.
-- **Vienna Convention on Diplomatic Relations 1961**: mission workspace isolation protects diplomatic communication confidentiality; IEBC coordination officers cannot see inter-mission communication.
+- **Elections Act §25 (observer access)**: observation reports and briefings support the Commission's obligation to facilitate observation by accredited international bodies.
+- **Vienna Convention on Diplomatic Relations 1961**: mission workspace isolation protects diplomatic communication confidentiality; the Commission coordination officers cannot see inter-mission communication.
 - **Kenya Data Protection Act §26 (minimisation)**: mission observer personal data (names, passport numbers) is stored in M43 only; M57 stores only `mission_id` and `lead_contact_name` for coordination purposes.
 - **Elections Act §74 (prohibition on disclosure of observer reports before closure of polls)**: `ObservationReport` submitted during polling hours is embargoed in the API until `eel.rts.polls_closed.v1` is received.
 
@@ -129,7 +129,7 @@ Related documents: full spec at `docs/plans/modules/international-observer-coord
 
 ### Observation report severity matrix
 
-| Flag | Meaning | IEBC action | ECC escalation |
+| Flag | Meaning | the Commission action | ECC escalation |
 |---|---|---|---|
 | COMMENDATION | Positive observation | No action required | No |
 | SYSTEMIC_CONCERN | Pattern across multiple stations | Coordination officer review | No |

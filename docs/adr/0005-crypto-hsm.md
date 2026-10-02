@@ -11,7 +11,7 @@ Election integrity requires HSM-anchored root of trust for kit provisioning, PKI
 
 - **HSM abstraction**: **PKCS#11 + KMIP**. Vendor (Thales Luna 7 vs Utimaco CryptoServer) is swappable. Rust `cryptoki` crate + Python `python-pkcs11`. No vendor-specific SDK code in application services.
 - **Level**: **FIPS 140-3 L3+** target; 140-2 L3 acceptable if procurement forces it. Codified as ADR-0005-a placeholder to close pre-award.
-- **Key ceremony**: M-of-N (Shamir 3-of-5) across three named custodians (IEBC Chair rep, CJ rep, AG rep, plus two operational alternates). Recorded in `docs/runbooks/hsm-key-ceremony.md`. Every ceremony operation writes to the transparency log (ADR-0017).
+- **Key ceremony**: M-of-N (Shamir 3-of-5) across three named custodians (the Commission Chair rep, CJ rep, AG rep, plus two operational alternates). Recorded in `docs/runbooks/hsm-key-ceremony.md`. Every ceremony operation writes to the transparency log (ADR-0017).
 - **Root usage**: HSM root signs (a) SPIRE trust bundle, (b) OpenBao seal, (c) Signed Tree Heads for the transparency log at 1s/60s/5min cadence, (d) result declarations under M-of-N ceremony, (e) kit provisioning ceremony credentials.
 - **Producer signing on the bus**: producers use **short-lived SPIFFE-issued Ed25519 keys** (rotated hourly, HSM-anchored trust chain). HSM does not sign individual events; only tree heads. See ADR-0015.
 - **Transport crypto**: **TLS 1.3 only** with **PQ hybrid ML-KEM + X25519** (via `oqs` provider for OpenSSL 3 / rustls with PQ providers). No TLS 1.2 anywhere.

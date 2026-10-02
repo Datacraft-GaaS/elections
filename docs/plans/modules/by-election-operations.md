@@ -8,7 +8,7 @@
 | Size | L |
 | Availability class | election-critical 99.99% |
 | Event-sourced | no (ADR-0013: only M08/M09/M10, M20, M51, M63) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M50-by-election-operations.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M50-by-election-operations.md |
 
 ## Purpose
 
@@ -120,7 +120,7 @@ Kit plan and deployment:
 Candidate nomination and campaign finance:
 29. FR-M50-029: Open nomination window in M12 CRMS at NOMINATIONS_OPEN transition; by-election flag and constituency code set on all nominations; general-election CRMS portal reused with no separate training path.
 30. FR-M50-030: Enforce same statutory nomination requirements as general election (deposit, signature count, clearance) via M12; no by-election exemptions.
-31. FR-M50-031: Trigger ECFA campaign finance window in M22 at NOMINATIONS_OPEN with weekly disclosure schedule from nomination close per ECFA 2013 s.22; non-compliant candidates flagged to IEBC officer at T+3.
+31. FR-M50-031: Trigger ECFA campaign finance window in M22 at NOMINATIONS_OPEN with weekly disclosure schedule from nomination close per ECFA 2013 s.22; non-compliant candidates flagged to the Commission officer at T+3.
 32. FR-M50-032: Apply per-seat ECFA ceiling tier to by-election candidates; same ceiling as general election for the same seat category; ceiling violation raises DisputeCase in M22.
 
 Tally, declaration, and certification:
@@ -243,4 +243,4 @@ Tags: `#[trace("FR-M50-007","AC-M50-01","EC-SCL-07")]`
 ## Open questions
 
 - Maximum concurrent by-elections: inventory confirms up to 10 but legal opinion on simultaneous recall + vacancy scenarios needed.
-- Whether cost ceiling is set by Treasury or IEBC Budget department; integration with M54 budget-expenditure module.
+- Whether cost ceiling is set by Treasury or the Commission Budget department; integration with M54 budget-expenditure module.

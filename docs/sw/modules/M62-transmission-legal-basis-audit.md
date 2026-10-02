@@ -4,7 +4,7 @@
 **Name:** Transmission Legal-Basis Audit
 **Owner:** Datacraft Limited — Platform Engineering Team
 **Status:** Draft v1
-**IP Classification:** Custom Software — IPR vests in IEBC per GCC 15.4
+**IP Classification:** Custom Software — IPR vests in the Commission per GCC 15.4
 
 **Strategy traceback:** Part II §PM-15, Part VII §VII.2, Part IX §IX.2.E, Part XII §XII.4, Part XXI.A.21
 
@@ -12,7 +12,7 @@
 
 ## 1. Purpose
 
-Elections Act §39 requires that electronic transmission of results complies with statutory requirements: prescribed form, authorised signatories, timing within the prescribed window, and complete chain of custody. §44A governs the declaration workflow. The Elections (Technology) Regulations prescribe format and authentication requirements for each transmission event. While M26 detects statistical anomalies in transmission data, M62 is a distinct legal-compliance audit: it verifies that each individual transmission event satisfies its statutory requirements, produces a per-transmission compliance verdict, and generates a complete §39 compliance record for every station. This record is admissible as pre-emptive evidence in a Supreme Court petition (Strategy Part XII.4) and is the technical basis for any IEBC response to a §39 challenge. Distinct from M26: M26 asks "is this statistically anomalous?"; M62 asks "did this transmission comply with the law?"
+Elections Act §39 requires that electronic transmission of results complies with statutory requirements: prescribed form, authorised signatories, timing within the prescribed window, and complete chain of custody. §44A governs the declaration workflow. The Elections (Technology) Regulations prescribe format and authentication requirements for each transmission event. While M26 detects statistical anomalies in transmission data, M62 is a distinct legal-compliance audit: it verifies that each individual transmission event satisfies its statutory requirements, produces a per-transmission compliance verdict, and generates a complete §39 compliance record for every station. This record is admissible as pre-emptive evidence in a Supreme Court petition (Strategy Part XII.4) and is the technical basis for any the Commission response to a §39 challenge. Distinct from M26: M26 asks "is this statistically anomalous?"; M62 asks "did this transmission comply with the law?"
 
 ---
 
@@ -20,12 +20,12 @@ Elections Act §39 requires that electronic transmission of results complies wit
 
 | Persona | Role | Access |
 |---|---|---|
-| IEBC Legal Counsel | Primary compliance consumer | Read-all compliance records; generate evidence bundles |
-| IEBC RTS Operations Lead | Operational monitoring | Read compliance dashboard; escalate non-compliance |
+| the Commission Legal Counsel | Primary compliance consumer | Read-all compliance records; generate evidence bundles |
+| the Commission RTS Operations Lead | Operational monitoring | Read compliance dashboard; escalate non-compliance |
 | Datacraft Compliance Lead | Audit rule maintenance | RW on audit rules; read all verdicts |
 | IAB Technical Member | Statutory compliance attestation | Read compliance summary; attestation sign-off |
 | M40 IT Liaison | Petition evidence preparation | Read compliance records for specified stations |
-| IEBC CISO | Security compliance layer | Read signature-verification verdicts |
+| the Commission CISO | Security compliance layer | Read signature-verification verdicts |
 | Party Agent (accredited) | Transparency consumer | Read own-party aggregate compliance summary only |
 
 ---
@@ -47,13 +47,13 @@ Elections Act §39 requires that electronic transmission of results complies wit
 
 **FR-M62-04 — Aggregated compliance dashboard:** Real-time aggregate view: total transmissions received, compliance rate by rule, non-compliant transmission queue, county-level compliance heat map. Updates in real time during election-day transmission window.
 
-**FR-M62-05 — Non-compliance escalation:** Any transmission verdict with overall fail or any critical-rule fail (signatory, signature, pre-close transmission) generates an immediate alert to IEBC RTS Operations Lead and IEBC Legal Counsel. Alert includes station code, failing rules, evidence hashes. Operations Lead can trigger a re-transmission request or initiate a manual verification workflow.
+**FR-M62-05 — Non-compliance escalation:** Any transmission verdict with overall fail or any critical-rule fail (signatory, signature, pre-close transmission) generates an immediate alert to the Commission RTS Operations Lead and the Commission Legal Counsel. Alert includes station code, failing rules, evidence hashes. Operations Lead can trigger a re-transmission request or initiate a manual verification workflow.
 
-**FR-M62-06 — §39 compliance record generation:** After transmission window closes (T+1 at latest), generate a per-station §39 compliance record: all transmissions for the station, verdict per transmission, final compliance status. Records signed by P06 HSM. Aggregate §39 compliance certificate for the full election generated on IEBC Legal Counsel request.
+**FR-M62-06 — §39 compliance record generation:** After transmission window closes (T+1 at latest), generate a per-station §39 compliance record: all transmissions for the station, verdict per transmission, final compliance status. Records signed by P06 HSM. Aggregate §39 compliance certificate for the full election generated on the Commission Legal Counsel request.
 
-**FR-M62-07 — Evidence bundle for petition:** On IEBC Legal Counsel request, generate a signed evidence bundle for specified stations or the full election: per-transmission verdicts, rule engine configuration at the time of audit, source event hashes, P05 Merkle inclusion proofs. Bundle generated within 4 hours of request. Feeds M40 for active-petition use.
+**FR-M62-07 — Evidence bundle for petition:** On the Commission Legal Counsel request, generate a signed evidence bundle for specified stations or the full election: per-transmission verdicts, rule engine configuration at the time of audit, source event hashes, P05 Merkle inclusion proofs. Bundle generated within 4 hours of request. Feeds M40 for active-petition use.
 
-**FR-M62-08 — Rule engine versioning:** Every change to the compliance rule set is version-controlled with author, change description, effective date, and IEBC Legal Counsel approval. Verdicts reference the rule-engine version active at the time of audit. Retrospective re-audit with a different rule version is possible for analysis; only the original-version verdict is authoritative.
+**FR-M62-08 — Rule engine versioning:** Every change to the compliance rule set is version-controlled with author, change description, effective date, and the Commission Legal Counsel approval. Verdicts reference the rule-engine version active at the time of audit. Retrospective re-audit with a different rule version is possible for analysis; only the original-version verdict is authoritative.
 
 **FR-M62-09 — Party-agent transparency:** Accredited party agents can query the aggregate compliance summary for their own party's contested stations (not individual transmission details). Summary: pass rate, most common failure reason, number of escalations. Supports M30 party-agent oversight without exposing internal operational details.
 
@@ -71,7 +71,7 @@ Elections Act §39 requires that electronic transmission of results complies wit
 
 **NFR-M62-04 — Immutability:** All verdicts appended to P05 Merkle chain immediately on generation. Retroactive modification impossible at API level; any attempt logged as security event.
 
-**NFR-M62-05 — Security:** M62 has read-only access to M10 event stream. No write path to any RTS component. Rule engine changes require IEBC Legal Counsel approval (audit trail in P05). Party-agent read access scoped to aggregate summaries only.
+**NFR-M62-05 — Security:** M62 has read-only access to M10 event stream. No write path to any RTS component. Rule engine changes require the Commission Legal Counsel approval (audit trail in P05). Party-agent read access scoped to aggregate summaries only.
 
 **NFR-M62-06 — DPA 2019 lawful basis:** Transmission metadata processed under s.30(1)(b) — legal obligation (Elections Act §39). Transmitting officer IDs processed under s.30(1)(d). Voter-level data is not in scope. Retention: 7 years post-election.
 
@@ -83,20 +83,20 @@ Elections Act §39 requires that electronic transmission of results complies wit
 
 ---
 
-- **NFR-62-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `iebc-iems-62` (replace 62 with the module number); alert ruleset ID `iems-62-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
+- **NFR-62-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `commission-iems-62` (replace 62 with the module number); alert ruleset ID `iems-62-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
 
 ## 5. User Stories
 
-1. As the IEBC RTS Operations Lead, I see a real-time compliance rate dashboard during the election-day transmission window, with non-compliant transmissions highlighted immediately.
-2. As the IEBC Legal Counsel, I receive an immediate alert when a transmission from any station fails the digital-signature check, so I can trigger a re-transmission request before the window closes.
-3. As the Datacraft Compliance Lead, I update the party-agent-notification rule to reflect a last-minute regulation amendment; the change is approved by IEBC Legal Counsel and takes effect at the specified time.
+1. As the Commission RTS Operations Lead, I see a real-time compliance rate dashboard during the election-day transmission window, with non-compliant transmissions highlighted immediately.
+2. As the Commission Legal Counsel, I receive an immediate alert when a transmission from any station fails the digital-signature check, so I can trigger a re-transmission request before the window closes.
+3. As the Datacraft Compliance Lead, I update the party-agent-notification rule to reflect a last-minute regulation amendment; the change is approved by the Commission Legal Counsel and takes effect at the specified time.
 4. As the IAB Technical Member, I view the aggregate §39 compliance summary at T+1 and counter-sign the compliance certificate for inclusion in the IAB report.
-5. As the IEBC Legal Counsel, I request an evidence bundle for all 47 Nairobi county stations and receive a signed HSM-timestamped package within 4 hours.
+5. As the Commission Legal Counsel, I request an evidence bundle for all 47 Nairobi county stations and receive a signed HSM-timestamped package within 4 hours.
 6. As the M40 IT Liaison, I retrieve the compliance records for ten contested stations and pass them to the election-petition response team.
 7. As an accredited party agent, I view the aggregate compliance rate for my party's contested seats and see that 98% of transmissions passed all statutory checks.
-8. As the IEBC Legal Counsel, I run a retrospective re-audit with the rule engine version active before a last-minute amendment, to produce an analysis supporting a petition response.
+8. As the Commission Legal Counsel, I run a retrospective re-audit with the rule engine version active before a last-minute amendment, to produce an analysis supporting a petition response.
 9. As the Datacraft Compliance Lead, I confirm that all §44A invocation events have been audited and that none violated the pre-agreed protocol.
-10. As the IEBC CISO, I review all transmissions where the signature-verification rule failed and confirm each was escalated and resolved before the transmission window closed.
+10. As the Commission CISO, I review all transmissions where the signature-verification rule failed and confirm each was escalated and resolved before the transmission window closed.
 11. As the IAB Technical Member, I use the M15 compliance panel to verify that M62's §44A audit results are consistent with the IAB's own anomaly review.
 
 ---
@@ -129,7 +129,7 @@ class ComplianceRule(BaseModel):
     statutory_basis: str     # e.g. "Elections Act s.39(3)"
     version: int
     effective_from: datetime
-    approved_by: str         # IEBC Legal Counsel ID
+    approved_by: str         # the Commission Legal Counsel ID
     active: bool
 
 class TransmissionVerdict(BaseModel):
@@ -182,17 +182,17 @@ class EvidenceBundle(BaseModel):
 
 | Method | Path | Auth | Rate limit | Notes |
 |---|---|---|---|---|
-| GET | `/api/v1/transmission-audit/verdicts` | IEBC_LEGAL or IEBC_RTS JWT | 200/min | List verdicts; filter by station, status, rule |
-| GET | `/api/v1/transmission-audit/verdicts/{id}` | IEBC_LEGAL JWT | 100/min | Verdict detail with rule results |
-| GET | `/api/v1/transmission-audit/dashboard` | IEBC_RTS JWT | 200/min | Aggregate compliance metrics |
-| GET | `/api/v1/transmission-audit/escalations` | IEBC_LEGAL JWT | 60/min | Non-compliance escalation queue |
-| PATCH | `/api/v1/transmission-audit/escalations/{id}` | IEBC_RTS JWT | 30/min | Update escalation resolution |
-| GET | `/api/v1/transmission-audit/s39-records` | IEBC_LEGAL or M40 JWT | 60/min | Per-station §39 compliance records |
-| POST | `/api/v1/transmission-audit/evidence-bundles` | IEBC_LEGAL JWT | 5/hr | Request evidence bundle |
-| GET | `/api/v1/transmission-audit/evidence-bundles/{id}` | IEBC_LEGAL or M40 JWT | 20/min | Bundle status and download hash |
-| GET | `/api/v1/transmission-audit/rules` | IEBC_LEGAL JWT | 30/min | Rule engine versions |
-| PATCH | `/api/v1/transmission-audit/rules/{id}` | IEBC_LEGAL JWT | 5/hr | Update rule (requires approval event) |
-| GET | `/api/v1/transmission-audit/s44a-audit` | IAB or IEBC_LEGAL JWT | 30/min | §44A invocation audit records |
+| GET | `/api/v1/transmission-audit/verdicts` | COMMISSION_LEGAL or COMMISSION_RTS JWT | 200/min | List verdicts; filter by station, status, rule |
+| GET | `/api/v1/transmission-audit/verdicts/{id}` | COMMISSION_LEGAL JWT | 100/min | Verdict detail with rule results |
+| GET | `/api/v1/transmission-audit/dashboard` | COMMISSION_RTS JWT | 200/min | Aggregate compliance metrics |
+| GET | `/api/v1/transmission-audit/escalations` | COMMISSION_LEGAL JWT | 60/min | Non-compliance escalation queue |
+| PATCH | `/api/v1/transmission-audit/escalations/{id}` | COMMISSION_RTS JWT | 30/min | Update escalation resolution |
+| GET | `/api/v1/transmission-audit/s39-records` | COMMISSION_LEGAL or M40 JWT | 60/min | Per-station §39 compliance records |
+| POST | `/api/v1/transmission-audit/evidence-bundles` | COMMISSION_LEGAL JWT | 5/hr | Request evidence bundle |
+| GET | `/api/v1/transmission-audit/evidence-bundles/{id}` | COMMISSION_LEGAL or M40 JWT | 20/min | Bundle status and download hash |
+| GET | `/api/v1/transmission-audit/rules` | COMMISSION_LEGAL JWT | 30/min | Rule engine versions |
+| PATCH | `/api/v1/transmission-audit/rules/{id}` | COMMISSION_LEGAL JWT | 5/hr | Update rule (requires approval event) |
+| GET | `/api/v1/transmission-audit/s44a-audit` | IAB or COMMISSION_LEGAL JWT | 30/min | §44A invocation audit records |
 | GET | `/api/v1/transmission-audit/party-summary` | PARTY_AGENT JWT | 30/min | Aggregate compliance summary for own party |
 | GET | `/api/v1/transmission-audit/stream` | M15 or IAB JWT | SSE | Real-time compliance event stream |
 
@@ -231,7 +231,7 @@ class EvidenceBundle(BaseModel):
 | Declaration procedure | Elections Act 2011 s.44A |
 | Technology transmission standards | Elections (Technology) Regulations 2017 reg. 6, 7, 10 |
 | Digital signature requirement | Kenya Information and Communications Act Cap 411A; Digital Security Act 2023 |
-| Pre-emptive evidence bundle | Strategy Part XII.4; Raila v IEBC [2017] eKLR para 274-280 |
+| Pre-emptive evidence bundle | Strategy Part XII.4; Raila v the Commission [2017] eKLR para 274-280 |
 | DPA 2019 lawful basis | DPA 2019 s.30(1)(b) — legal obligation |
 | Record retention | Public Archives and Documentation Service Act Cap 19 |
 
@@ -244,7 +244,7 @@ class EvidenceBundle(BaseModel):
 | Verdict generated per transmission | p99 < 5 s | Datacraft SRE |
 | Non-compliance alert delivered | p99 < 30 s from verdict generation | Datacraft SRE |
 | Evidence bundle for full election | < 4 hours from request | Datacraft Compliance Lead |
-| §39 records for all stations | Generated by T+2 | IEBC Legal Counsel |
+| §39 records for all stations | Generated by T+2 | the Commission Legal Counsel |
 | All verdicts in P05 Merkle chain | 100% | Datacraft SRE |
 | §44A audit coverage | 100% of §44A events audited | Datacraft Compliance Lead |
 | M62 availability during transmission window (T-1 to T+2) | 99.9% | Datacraft SRE |
@@ -285,7 +285,7 @@ class EvidenceBundle(BaseModel):
 - **M40 Election Court IT** — evidence bundle consumer
 - **M15 IAB Dashboard** — compliance stream consumer
 - **P05, P06** — audit log and HSM signing
-- IEBC Legal Counsel approval for rule engine changes — standing dependency
+- the Commission Legal Counsel approval for rule engine changes — standing dependency
 
 ---
 
@@ -326,16 +326,16 @@ class EvidenceBundle(BaseModel):
 
 ## 18. Decommissioning
 
-**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if IEBC terminates the contract.
+**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if the Commission terminates the contract.
 
 **Steps:**
 
-1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and IEBC DPO.
+1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and the Commission DPO.
 2. **Service shutdown** — Kubernetes deployments scaled to zero; PersistentVolumeClaims retained for 30 days then deleted after confirmation of M69 transfer.
 3. **Credential revocation** — service account certificates, API keys, and HSM key handles revoked via P06 key-destruction ceremony within 48 hours of shutdown.
 4. **Source-code escrow** — final tagged release deposited to C04 escrow within 7 days of shutdown.
-5. **Runbook handover** — operational runbook and post-mortem notes delivered to IEBC ICT within 14 days.
+5. **Runbook handover** — operational runbook and post-mortem notes delivered to the Commission ICT within 14 days.
 
-**Owner:** SRE Lead. **Sign-off:** IEBC ICT Director + Datacraft Programme Director.
+**Owner:** SRE Lead. **Sign-off:** the Commission ICT Director + Datacraft Programme Director.
 
 > **RESOLUTION (F-23, 2026-08-21):** Decommissioning stub added per audit finding. Owner: SRE Lead. Target: FAT-07 gate.

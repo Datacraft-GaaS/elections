@@ -116,7 +116,7 @@ Languages: English + Kiswahili minimum; extensible to 11. WCAG 2.1 AA; mobile-fi
 ## 9. Honest caveats + external prerequisites
 
 - **Africa's Touching SMS gateway** commercial arrangement required for OTP delivery; adapter written and double available; live allocation pending.
-- **IPRS MoU** is an external prerequisite; double is shipped under `integrations/iprs/`; live IPRS endpoint must be provisioned by IEBC.
+- **IPRS MoU** is an external prerequisite; double is shipped under `integrations/iprs/`; live IPRS endpoint must be provisioned by the Commission.
 - **OPA bundle distribution** depends on P04 (IAM platform); OPA policy source lives in `config/opa/`; bundle must be published before G3.
 - VPRS is optional: citizens who do not pre-register enrol directly at the BVR station with no degradation to register integrity.
 - Migration files for `vprs-svc` are confirmed present (`services/vprs-svc/migrations/`) but SQL filenames were not enumerated in the available listing; file count unverified.

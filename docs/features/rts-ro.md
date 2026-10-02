@@ -126,7 +126,7 @@ Languages: English + Kiswahili. WCAG 2.1 AA. Offline-capable: Tauri app bundles 
 
 - **Tauri desktop app** requires Windows / macOS / Linux distribution to RO offices; installer packaging and code-signing is an ops prerequisite.
 - **Session recording** capability requires camera/screen-capture permissions on RO laptops; privacy notice and consent required per KDPA.
-- **Agent countersign count** -- minimum count is configurable; value must be agreed with IEBC legal before G3.
+- **Agent countersign count** -- minimum count is configurable; value must be agreed with the Commission legal before G3.
 - **Form 34C** (county tally) depends on all constituency Form 34Bs being received; any incomplete Form 34B delays county declaration.
 - RO view projection (`rts-projections/src/ro_view.rs`) is a read model; correctness depends on M10 event-sourced stream being consistent; any M10 outage during tallying must be resolved before RO can compile Form 34B.
 

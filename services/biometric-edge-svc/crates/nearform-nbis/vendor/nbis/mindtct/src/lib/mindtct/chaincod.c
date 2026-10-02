@@ -140,7 +140,7 @@ int chain_code_loop(int **ochain, int *onchain,
 #cat:            determines if the codes are ordered clockwise or
 #cat:            counter-clockwise.
 #cat:            The routine also requires a default return value be
-#cat:            specified in the case the the routine is not able to
+#cat:            specified in the case the routine is not able to
 #cat:            definitively determine the chains direction.  This allows
 #cat:            the default response to be application-specific.
 

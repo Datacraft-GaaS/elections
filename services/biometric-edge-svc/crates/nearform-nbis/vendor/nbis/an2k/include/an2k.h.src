@@ -336,7 +336,7 @@ extern unsigned int binary_signature_records[];
 #define FGP3_ID                      13
 #define DAT2_ID             IMAGE_FIELD
 
-/* Type-10 field IDs, in addition the the common subset above... jck */
+/* Type-10 field IDs, in addition the common subset above... jck */
 #define IMT_ID                        3
 #define PHD_ID                        5
 /* 6 HLL, 7 VLL, 8 SLC, 9 HPS, 10 VPS, 11 CGA (TAG_CA_ID), 12CSP */

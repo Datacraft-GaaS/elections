@@ -5,7 +5,7 @@ Date: 2026-08-21
 
 ## Context
 
-`sw/ARCHITECTURE.md` §14.3 mandates blue-green with 15-minute hot rollback for stateful services and RTO ≤30min / RPO ≤5min for the results transmission service (`rts-svc`). Combined with the RFP-binding 30-day pre-election software freeze (ADR-0014) and two-site IEBC-provided DR mandate, this deserves its own ADR rather than being scattered across 0004/0014/0018.
+`sw/ARCHITECTURE.md` §14.3 mandates blue-green with 15-minute hot rollback for stateful services and RTO ≤30min / RPO ≤5min for the results transmission service (`rts-svc`). Combined with the RFP-binding 30-day pre-election software freeze (ADR-0014) and two-site Commission-provided DR mandate, this deserves its own ADR rather than being scattered across 0004/0014/0018.
 
 ## Decision
 
@@ -16,7 +16,7 @@ Date: 2026-08-21
   - `dev`, per-team ephemeral namespaces, no PII, synthetic voter register (ADR-0016).
   - `staging`, full production topology in shape (2 sites + 5 edges), reduced capacity, synthetic data.
   - `pre-prod`, full production topology at full capacity, synthetic data, load-test target, chaos-engineering target.
-  - `prod`, the two IEBC DR sites + five regional edges (ADR-0019).
+  - `prod`, the two the Commission DR sites + five regional edges (ADR-0019).
 - **Release train**:
   - Nightly deploy to `dev`.
   - Weekly deploy to `staging` on Wednesdays; must pass full CI + Pact contract tests + Semgrep/Bandit + Trivy/Grype.
@@ -27,7 +27,7 @@ Date: 2026-08-21
 
 ### DR posture
 
-- **Two IEBC DR sites** (primary + mirror, per RFP). Primary in Anniversary Towers (or IEBC-designated), mirror in Bomas of Kenya (or IEBC-designated).
+- **Two the Commission DR sites** (primary + mirror, per RFP). Primary in Anniversary Towers (or Commission-designated), mirror in Bomas of Kenya (or Commission-designated).
 - **Data replication**:
   - T1 clusters: **synchronous streaming replication** primary → mirror (Patroni + `synchronous_commit = remote_write`).
   - T2 clusters: **asynchronous logical replication**.

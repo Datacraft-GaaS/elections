@@ -8,7 +8,7 @@
 | Size | L |
 | Availability class | routine 99.5% |
 | Event-sourced | no (ADR-0013: only M08/M09/M10, M20, M51, M63) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M68-referendum-explainer.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M68-referendum-explainer.md |
 
 ## Purpose
 
@@ -88,11 +88,11 @@ Question registry:
 Explainer content authoring:
 
 4. FR-M68-004: Each explainer carries mandatory structured sections: plain-language summary (<= 150 words), Yes-vote legal effect, No-vote legal effect, constitutional context (Art. citation + <= 100 words), up to 10 FAQ pairs, fact-check status, and numbered source citations. (FR-68.02)
-5. FR-M68-005: IEBC Content Editor creates the explainer draft in the CMS; all mandatory sections must be populated before the draft can advance to Legal Review. (FR-68.03)
+5. FR-M68-005: the Commission Content Editor creates the explainer draft in the CMS; all mandatory sections must be populated before the draft can advance to Legal Review. (FR-68.03)
 6. FR-M68-006: Legal Reviewer confirms constitutional citation accuracy; approval recorded with reviewer UUID and timestamp; regression to Draft permitted with mandatory written reason. (FR-68.03)
 7. FR-M68-007: Commissioner signs off each explainer before publication; sign-off requires 2FA; digital signature appended to the version record and stored in T1-audit. (FR-68.03)
 8. FR-M68-008: Editorial state machine enforces sequence: Draft, Legal Review, Fact-Check Review, Commissioner Approval, Published; no stage may be skipped; reversion requires mandatory reason text. (FR-68.03)
-9. FR-M68-009: CMS shows a completion dashboard per question per language; any language below 100% at T-60 triggers an alert to IEBC Comms.
+9. FR-M68-009: CMS shows a completion dashboard per question per language; any language below 100% at T-60 triggers an alert to the Commission Comms.
 
 Fact-check partner integration:
 

@@ -4,7 +4,7 @@
 **Name:** Speech Integrity System
 **Owner:** Datacraft Limited — AI & Data Science Team
 **Status:** Draft v2
-**IP Classification:** Custom Software — IPR vests in IEBC per GCC 15.4
+**IP Classification:** Custom Software — IPR vests in the Commission per GCC 15.4
 
 **Strategy traceback:** Part X §X.2 (D1-D4), Part XVI §XVI.2, Part XVI §XVI.3, Part XVI §XVI.4, Part XVI §XVI.6
 
@@ -22,7 +22,7 @@ The Speech Integrity System monitors Kenya's online and broadcast information en
 |---|---|
 | CAOC Hate-Speech Analyst (x3, language clusters) | Content monitoring, flag triage, referral authorisation |
 | CAOC Disruption Analyst (x2, regional clusters) | Safety-incident monitoring, KNPS alert routing |
-| IEBC Communications Officer | Rapid-response comms; fact-check approval |
+| the Commission Communications Officer | Rapid-response comms; fact-check approval |
 | NCIC Liaison Officer | Legal referral recipient; incitement response coordination |
 | DCI CIRT-CC Liaison | Cybercrime referral; CIB takedown coordination |
 | ODPP Liaison | Evidence package receipt for prosecution |
@@ -44,29 +44,29 @@ Kenyan-context hate-speech classifier trained on annotated Kenyan election corpu
 Coordinated inauthentic behaviour detection: account-creation velocity clustering, cross-platform amplification graph analysis, engagement-pattern anomalies, bot-score integration. Model: graph neural network on account-interaction graph + velocity model on posting patterns. HIGH flags reviewed by DCI CIRT-CC liaison within 60 minutes. Evidence package auto-generated for any cluster with > 100 coordinated accounts.
 
 ### FR-17.04 — Deepfake detection
-Video and audio deepfake detection pipeline: FaceForensics-family CNN for visual deepfakes; voice-clone detection via mel-spectrogram analysis. Applied to viral content (> 10,000 engagements) featuring apparent IEBC officials, political figures, or election-critical claims. Confidence score reported with every flag. Human analyst confirms before any action taken. Detection accuracy target: > 95% on known deepfakes.
+Video and audio deepfake detection pipeline: FaceForensics-family CNN for visual deepfakes; voice-clone detection via mel-spectrogram analysis. Applied to viral content (> 10,000 engagements) featuring apparent the Commission officials, political figures, or election-critical claims. Confidence score reported with every flag. Human analyst confirms before any action taken. Detection accuracy target: > 95% on known deepfakes.
 
 ### FR-17.05 — Voter-suppression signal detection
-Classifier for false closure claims ("Station X is closed"), false eligibility claims ("your ID is invalid"), false security-threat claims ("area X is dangerous, do not go to vote"). Tuned on Kenyan election suppression case studies. HIGH flags routed to IEBC Communications for immediate counter-message + NCIC for legal consideration.
+Classifier for false closure claims ("Station X is closed"), false eligibility claims ("your ID is invalid"), false security-threat claims ("area X is dangerous, do not go to vote"). Tuned on Kenyan election suppression case studies. HIGH flags routed to the Commission Communications for immediate counter-message + NCIC for legal consideration.
 
 ### FR-17.06 — Violent-disruption detection (Part XVI.3)
-Multi-source incident feed: social media pipeline (FR-17.01), citizen-reported incidents via M13 panic button, KHRC/Amnesty/KEOG field reports, NPS SITREPs (via IEBC-KNPS MoU). Alert cascade:
+Multi-source incident feed: social media pipeline (FR-17.01), citizen-reported incidents via M13 panic button, KHRC/Amnesty/KEOG field reports, NPS SITREPs (via COMMISSION-KNPS MoU). Alert cascade:
 
 | Level | Trigger | Response | Time |
 |---|---|---|---|
 | MINOR | Single unverified incident | Aggregated hourly | Hourly |
-| SIGNIFICANT | Verified incident / pattern | Alert to IEBC Chair + KNPS + IAB | < 30 min |
+| SIGNIFICANT | Verified incident / pattern | Alert to the Commission Chair + KNPS + IAB | < 30 min |
 | MAJOR | Multi-location or casualty | Public dashboard update | < 10 min |
-| CATASTROPHIC | Mass-casualty event or polling shutdown | IEBC Chair + AG + KNPS IG + AU | Immediate |
+| CATASTROPHIC | Mass-casualty event or polling shutdown | the Commission Chair + AG + KNPS IG + AU | Immediate |
 
 ### FR-17.07 — Rapid-response workflow
-HIGH hate-speech and CIB flags: routed to NCIC + DCI + IEBC Communications within 15 minutes of human analyst confirmation. MEDIUM flags: within 60 minutes. LOW flags: daily situation report. Evidence package auto-generated per referral: URL, timestamp, SHA-256 hash of content at time of capture, screenshot (perceptual hash), cross-platform propagation trace, analyst ID, decision rationale. Package structured for admissibility under NCI Act 2008 s.13.
+HIGH hate-speech and CIB flags: routed to NCIC + DCI + the Commission Communications within 15 minutes of human analyst confirmation. MEDIUM flags: within 60 minutes. LOW flags: daily situation report. Evidence package auto-generated per referral: URL, timestamp, SHA-256 hash of content at time of capture, screenshot (perceptual hash), cross-platform propagation trace, analyst ID, decision rationale. Package structured for admissibility under NCI Act 2008 s.13.
 
 ### FR-17.08 — Prebunking network
-Pre-election explainer content addressing the top 20 known misinformation narratives (seeded from 2017 and 2022 post-election analysis + Oxford Internet Observatory Kenya reports). Distributed via: IEBC verified social accounts, community-influencer network (50 county-level trusted voices), radio partnerships, M13 Learn tab, WhatsApp official channel. Content produced in 11 languages. Prebunking reach target: > 60% of registered voters reached before E-Day.
+Pre-election explainer content addressing the top 20 known misinformation narratives (seeded from 2017 and 2022 post-election analysis + Oxford Internet Observatory Kenya reports). Distributed via: the Commission verified social accounts, community-influencer network (50 county-level trusted voices), radio partnerships, M13 Learn tab, WhatsApp official channel. Content produced in 11 languages. Prebunking reach target: > 60% of registered voters reached before E-Day.
 
 ### FR-17.09 — Fact-check desk
-CAOC fact-check liaison receives flags for time-sensitive false claims. Target: public correction within 30 minutes of HIGH-flag human confirmation. Correction published simultaneously via: IEBC Twitter/X, WhatsApp, M13 notification push, journalist feed, radio (pre-agreed slots). Correction logs provenance chain (original claim hash, correction timestamp, channels published).
+CAOC fact-check liaison receives flags for time-sensitive false claims. Target: public correction within 30 minutes of HIGH-flag human confirmation. Correction published simultaneously via: the Commission Twitter/X, WhatsApp, M13 notification push, journalist feed, radio (pre-agreed slots). Correction logs provenance chain (original claim hash, correction timestamp, channels published).
 
 ### FR-17.10 — Safety alert feed to M13
 Validated safety incidents (SIGNIFICANT and above) are pushed to M13's Safety tab as geo-tagged alerts visible to voters near the affected location. Voter can see station closure status and alternate station guidance. No unvalidated alerts are pushed; human analyst sign-off required.
@@ -75,7 +75,7 @@ Validated safety incidents (SIGNIFICANT and above) are pushed to M13's Safety ta
 All captured content (screenshots, URLs, timestamps, hashes, analysis metadata) stored in tamper-evident append-only store. Retained for 7 years. Chain-of-custody preserved for potential criminal proceedings. DPA 2019 lawful basis: public interest (NCI Act s.13; Elections Act s.7-8).
 
 ### FR-17.12 — Real-time NLP sentiment monitoring
-NLP pipeline on ingested content: net sentiment toward IEBC, election process, KIEMS technology. Baseline established at T-90. Alert when net sentiment drops > 20% from baseline during results window (possible narrative attack signal). Metric reported in M16 ECC CAOC workstation and IAB Dashboard.
+NLP pipeline on ingested content: net sentiment toward the Commission, election process, KIEMS technology. Baseline established at T-90. Alert when net sentiment drops > 20% from baseline during results window (possible narrative attack signal). Metric reported in M16 ECC CAOC workstation and IAB Dashboard.
 
 ---
 
@@ -104,12 +104,12 @@ Processing of public social media content: lawful basis is public interest (NCI 
 ## User Stories
 
 1. As a CAOC Hate-Speech Analyst, I want to review HIGH-flag content in a triage queue with one-click referral to NCIC, so that I can process high-priority flags within the 15-minute SLA.
-2. As the IEBC Communications Officer, I want to see the top 5 active false narratives in real time, so that I can prioritise counter-messaging resources.
+2. As the Commission Communications Officer, I want to see the top 5 active false narratives in real time, so that I can prioritise counter-messaging resources.
 3. As an NCIC Liaison, I want to receive court-ready evidence packages automatically when I accept a referral, so that legal action can proceed without manual evidence gathering.
 4. As an IAB Member, I want to review the detection model cards and confidence distributions, so that I can assess the reliability of the system's outputs for the quarterly report.
 5. As a voter near an incident area, I want to see a safety alert on the M13 Safety tab, so that I can make an informed decision about whether to travel to my polling station.
 6. As a DCI CIRT-CC Liaison, I want to receive CIB cluster reports with account lists and propagation graphs, so that I can coordinate platform takedown requests.
-7. As the CAOC Disruption Analyst, I want to trigger a MAJOR alert to the IEBC Chair within 10 minutes of a confirmed multi-location incident, so that the Commission can respond before the situation escalates.
+7. As the CAOC Disruption Analyst, I want to trigger a MAJOR alert to the Commission Chair within 10 minutes of a confirmed multi-location incident, so that the Commission can respond before the situation escalates.
 8. As a civil society field observer, I want to submit an incident report that feeds directly into the disruption-detection pipeline, so that on-the-ground intelligence reaches decision-makers without delay.
 
 ---
@@ -175,7 +175,7 @@ class EvidencePackage(BaseModel):
 | POST | `/api/v1/incidents/{id}/alert` | CAOC Analyst JWT | 5/s | Push to M13 Safety tab |
 | POST | `/api/v1/evidence/generate` | Analyst JWT | 2/s | Generate evidence package |
 | GET | `/api/v1/sentiment/trend` | Operator JWT | 20/s | NLP sentiment trend |
-| GET | `/api/v1/prebunking/coverage` | IEBC Comms JWT | 10/s | Prebunking reach metrics |
+| GET | `/api/v1/prebunking/coverage` | the Commission Comms JWT | 10/s | Prebunking reach metrics |
 | SSE | `/api/v1/flags/stream` | Analyst JWT | 1 per session | Real-time flag stream |
 
 ---
@@ -207,7 +207,7 @@ class EvidencePackage(BaseModel):
 4. **Safety incident map** — geo-heatmap of incidents by level; drill-down to incident detail; alert dispatch panel
 5. **Prebunking dashboard** — top active narratives ranked by spread; counter-content status per narrative; reach metrics
 6. **Evidence package builder** — flag selection; package preview; referral destination selection; one-click submit
-7. **Sentiment trend chart** — 7-day net sentiment toward IEBC/elections; baseline vs current; anomaly highlights
+7. **Sentiment trend chart** — 7-day net sentiment toward the Commission/elections; baseline vs current; anomaly highlights
 8. **Model health panel** — per-model precision/recall on daily evaluation set; false-positive rate; drift indicators
 
 ---
@@ -222,7 +222,7 @@ class EvidencePackage(BaseModel):
 | Evidence chain-of-custody | Evidence Act Cap. 80 s.106A; NCI Act s.13 |
 | Human-in-loop for speech classification | No statute mandates AI-only; best practice + DPA 2019 s.32 (automated decisions) |
 | DPA 2019 — processing of public social media | DPA 2019 s.30 (public interest basis); DPIA published |
-| Safety duties to voters | Constitution Art. 26 (right to life); IEBC Act s.4 |
+| Safety duties to voters | Constitution Art. 26 (right to life); the Commission Act s.4 |
 
 ---
 
@@ -233,7 +233,7 @@ class EvidencePackage(BaseModel):
 | HIGH-flag human review and decision | 100% within 15 min | CAOC Analyst |
 | MEDIUM-flag review | 100% within 60 min | CAOC Analyst |
 | NCIC/DCI referral transmission | 100% within 15 min of analyst confirmation | IAB |
-| Prebunking reach | > 60% of registered voters | IEBC Comms |
+| Prebunking reach | > 60% of registered voters | the Commission Comms |
 | Deepfake detection accuracy | > 95% on known test set | IAB Technical Member |
 | Hate-speech false-positive rate | < 5% | IAB Technical Member |
 | CATASTROPHIC incident alert time | < 10 min | ECC Director |
@@ -287,5 +287,5 @@ class EvidencePackage(BaseModel):
 | R1 | Social media platform API access revoked during election window | Pre-signed data-sharing agreements with legal clauses; IPFS caching of captured public content; web-scraping fallback for public pages |
 | R2 | Deepfake detection evaded by state-level adversary | Best-available model deployed; honest limitation disclosed in IAB model card; human analyst reviews all high-engagement flagged content regardless |
 | R3 | Analyst overwhelmed by volume during peak (election night) | Tiered alert queue prioritises by engagement velocity; LOW flags batched for daily report; reinforcement analyst on standby |
-| R4 | Prebunking content accused of being government propaganda | Content produced jointly with NCIC + civil society (ELOG, iHub); clearly attributed to partner organisations; no IEBC branding on prebunking content |
+| R4 | Prebunking content accused of being government propaganda | Content produced jointly with NCIC + civil society (ELOG, iHub); clearly attributed to partner organisations; no the Commission branding on prebunking content |
 | R5 | Evidence package chain-of-custody challenged in court | Hash of original content captured at ingestion; screenshot perceptual hash; timestamp from platform API; preserved in WORM store; IAB co-signs evidence packages |

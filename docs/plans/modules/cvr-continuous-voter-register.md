@@ -8,7 +8,7 @@
 | Size | L |
 | Availability class | cycle-critical 99.9% |
 | Event-sourced | no |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M35-cvr-continuous-voter-register.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M35-cvr-continuous-voter-register.md |
 
 ## Purpose
 
@@ -105,7 +105,7 @@ Matching and confidence scoring:
 
 8. FR-M35-008: National ID + biometric reference cross-match performed against voter register for every CRS death record; both fields required for confident match
 9. FR-M35-009: confidence score (0.0-1.0) computed per proposed removal using deterministic rule-based engine; high-confidence records surfaced first in triage queue
-10. FR-M35-010: auto-approve threshold configurable by IEBC policy; records below threshold mandatory for officer review before any action
+10. FR-M35-010: auto-approve threshold configurable by the Commission policy; records below threshold mandatory for officer review before any action
 11. FR-M35-011: deduplication: if voter already has a pending CRS event, incoming KRA dormancy flag is subordinated; no double triage event created; single queue entry maintained
 
 Family notification workflow:
@@ -142,7 +142,7 @@ Register snapshots:
 29. FR-M35-029: snapshot creation completes in <= 60 seconds for register of up to 22M entries; uses incrementally maintained Merkle tree; full recompute only at gazette
 30. FR-M35-030: any snapshot reproducible for audit or court submission; Merkle proof retrievable by COURT_REGISTRAR role via GET /v1/cvr/snapshots/{id}/proof
 31. FR-M35-031: Commissioner HSM-signs each new snapshot at creation time; unsigned or improperly signed snapshot rejected by P05 before anchoring
-32. FR-M35-032: snapshot list API paginated and rate-limited at 20 requests/hour for IEBC Admin role
+32. FR-M35-032: snapshot list API paginated and rate-limited at 20 requests/hour for the Commission Admin role
 33. FR-M35-033: court Merkle proof available within 2 hours of authenticated court-registrar request; measured end-to-end from API call to proof delivery
 
 Batch reporting:
@@ -187,7 +187,7 @@ Observability and operations:
 1. AC-M35-01: 100% of CRS batches processed end-to-end within 4 hours of SFTP receipt; measured by ingestion-to-reconciliation-report timestamp delta; no batch outstanding > 4 hours in any 30-day window
 2. AC-M35-02: officer triage queue backlog <= 500 pending events at any time during non-election periods; measured by queue-depth monitor on eel-iems-35 dashboard; sustained breach triggers P2 page
 3. AC-M35-03: register snapshot creation completes in <= 60 seconds for a register of up to 22M entries; measured by snapshot creation log; verified at OAT with production-scale synthetic dataset
-4. AC-M35-04: false-positive proposed removals <= 0.1% of total CRS matches per quarter; measured by post-quarter audit comparing proposed removals to confirmed CRS deaths; sign-off from IEBC Registration Director and CRS
+4. AC-M35-04: false-positive proposed removals <= 0.1% of total CRS matches per quarter; measured by post-quarter audit comparing proposed removals to confirmed CRS deaths; sign-off from the Commission Registration Director and CRS
 5. AC-M35-05: citizen self-check endpoint available >= 99.5% on a 30-day rolling window; SLO alert fires within 5 minutes if availability drops below threshold
 6. AC-M35-06: 100% of gazette notices anchored in P05 Merkle chain before M11 publication; verified by Merkle reconciliation report generated after each gazette run; zero gaps tolerated
 7. AC-M35-07: officer triage console p99 response <= 500 ms under 200 concurrent officers; verified by k6 load test at OAT gate; p99 must not exceed 550 ms at 3x load
@@ -254,7 +254,7 @@ Tags: `#[trace("FR-M35-005","AC-M35-04","EC-DAT-11")]`
 
 ## Open questions
 
-- CRS, NRB, KRA MoUs: IEBC must negotiate post-award; Datacraft delivers technical spec; timeline risk if MoUs delayed past 2026-12-01.
-- *400# USSD short-code: IEBC must reserve and test with Safaricom / Africa's Talking; process begins at contract start.
-- Register freeze boundary at T-40: confirm boundary with IEBC Elections Director; any exceptions (e.g. court-ordered reinstatements) need a protocol.
+- CRS, NRB, KRA MoUs: the Commission must negotiate post-award; Datacraft delivers technical spec; timeline risk if MoUs delayed past 2026-12-01.
+- *400# USSD short-code: the Commission must reserve and test with Safaricom / Africa's Talking; process begins at contract start.
+- Register freeze boundary at T-40: confirm boundary with the Commission Elections Director; any exceptions (e.g. court-ordered reinstatements) need a protocol.
 - Snapshot latency at 22M entries: incremental Merkle tree implementation must be benchmarked against production data volume before G3 gate.

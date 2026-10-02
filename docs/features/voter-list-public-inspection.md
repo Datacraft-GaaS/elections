@@ -1,6 +1,6 @@
 # Voter list public inspection (M64)
 
-Module M64 (`voter-list-public-inspection`) owned by `portal-svc`. Publishes verifiable roll snapshots for the statutory public inspection window (T-60 days before the election), accepts objections and correction claims from citizens, records IEBC determinations, and packages auto-referral packets for cases escalated to the courts or the Registrar of Voters.
+Module M64 (`voter-list-public-inspection`) owned by `portal-svc`. Publishes verifiable roll snapshots for the statutory public inspection window (T-60 days before the election), accepts objections and correction claims from citizens, records the Commission determinations, and packages auto-referral packets for cases escalated to the courts or the Registrar of Voters.
 
 ## Contents
 
@@ -33,7 +33,7 @@ Five aggregates (per `services/portal-svc/crates/voter-inspection/src/models.rs`
 | **RollSnapshot** | Point-in-time voter roll published for inspection: `snapshot_id`, `election_cycle_id`, `source_snapshot_id` (from M35 `RegisterSnapshot`), `published_at`, `inspection_window_start`, `inspection_window_end`, `total_registered`, `root_hash` (SHA-256), commissioner HSM signature. | A |
 | **Objection** | Citizen challenge to a voter's inclusion: `objection_id`, `snapshot_id`, `objector_national_id_hash`, `challenged_voter_national_id_hash`, `grounds` (DUPLICATE / DECEASED / NON_CITIZEN / INELIGIBLE), `evidence_urls` (MinIO), `submitted_at`. | B |
 | **CorrectionClaim** | Citizen claim that their own record is wrong: `claim_id`, `snapshot_id`, `claimant_national_id_hash`, `field` (NAME / DOB / ADDRESS / POLLING_STATION), `current_value_md5`, `proposed_value`, `evidence_urls` (MinIO), `submitted_at`. | B |
-| **Determination** | IEBC officer ruling on an Objection or CorrectionClaim: `determination_id`, `objection_id` or `claim_id`, `outcome` (UPHELD / DISMISSED / REFERRED_TO_COURT / REFERRED_TO_REGISTRAR), `reasoning_md`, `determined_by_officer`, `determined_at`. | A |
+| **Determination** | the Commission officer ruling on an Objection or CorrectionClaim: `determination_id`, `objection_id` or `claim_id`, `outcome` (UPHELD / DISMISSED / REFERRED_TO_COURT / REFERRED_TO_REGISTRAR), `reasoning_md`, `determined_by_officer`, `determined_at`. | A |
 | **AutoReferralPacket** | Evidence package assembled for court or registrar referral: `packet_id`, `determination_id`, `referral_type` (COURT / REGISTRAR), `content_urls` (MinIO), `referral_ref`, `submitted_at`. | B |
 
 ## 3. T-60 idempotent scheduler
@@ -56,7 +56,7 @@ T-60 cron fires (from election_calendar, M52)
             -> evidence uploaded to MinIO; URLs stored
             -> emit eel.portal.objection_submitted.v1
                or eel.portal.correction_claim_submitted.v1
-      -> IEBC officer reviews each submission
+      -> the Commission officer reviews each submission
             -> creates Determination (UPHELD / DISMISSED / REFERRED)
             -> emit eel.portal.determination_made.v1
             -> if UPHELD or DISMISSED:
@@ -79,9 +79,9 @@ Contract: `packages/openapi-contracts/portal/voter-inspection.yaml`. All writes 
 | `GET /v1/voter-inspection/snapshots/{id}/check/{national_id_hash}` | Public (rate-limited 30/hr) | Check if a hashed national ID is on the roll |
 | `POST /v1/voter-inspection/objections` | Citizen (public JWT, rate-limited 5/day) | Submit objection |
 | `POST /v1/voter-inspection/correction-claims` | Citizen (public JWT, rate-limited 5/day) | Submit correction claim |
-| `GET /v1/voter-inspection/objections` | IEBC officer (JWT + SpiceDB `INSPECTION_OFFICER`) | List objections for triage |
-| `GET /v1/voter-inspection/correction-claims` | IEBC officer | List correction claims for triage |
-| `POST /v1/voter-inspection/determinations` | IEBC officer | Record determination |
+| `GET /v1/voter-inspection/objections` | the Commission officer (JWT + SpiceDB `INSPECTION_OFFICER`) | List objections for triage |
+| `GET /v1/voter-inspection/correction-claims` | the Commission officer | List correction claims for triage |
+| `POST /v1/voter-inspection/determinations` | the Commission officer | Record determination |
 | `GET /v1/voter-inspection/determinations/{id}/referral` | Legal officer | Auto-referral packet status |
 
 ## 6. Human surfaces
@@ -89,7 +89,7 @@ Contract: `packages/openapi-contracts/portal/voter-inspection.yaml`. All writes 
 | Surface | Path | Purpose |
 |---|---|---|
 | Public inspection portal (Astro) | `services/portal-svc/astro/voter-inspection-public` | Citizens search the roll, submit objections and corrections |
-| IEBC officer triage console (Django) | `services/portal-svc/django/inspection_admin` | Review submissions, record determinations |
+| the Commission officer triage console (Django) | `services/portal-svc/django/inspection_admin` | Review submissions, record determinations |
 | Referral management (Django) | `services/portal-svc/django/inspection_admin` | Assemble and track auto-referral packets |
 
 Languages: EN + SW + Kikuyu + Luo + Kamba (public portal). WCAG 2.2 AA.
@@ -112,7 +112,7 @@ Languages: EN + SW + Kikuyu + Luo + Kamba (public portal). WCAG 2.2 AA.
 
 ## 9. Honest caveats + external prerequisites
 
-- The T-60 scheduler requires M52 to have gazetted the election date in the `election_calendar` table before T-60. If IEBC gazettes the election date late, the inspection window may open late, potentially breaching the Elections Act §6A requirement.
+- The T-60 scheduler requires M52 to have gazetted the election date in the `election_calendar` table before T-60. If the Commission gazettes the election date late, the inspection window may open late, potentially breaching the Elections Act §6A requirement.
 - Evidence upload (MinIO) for objections assumes internet access by citizens submitting evidence; citizens without internet access must visit a constituency office to submit physical evidence, which the officer uploads on their behalf.
 - The auto-referral packet is a digital evidence package; actual court filing may require physical delivery in addition to the digital submission. M64 records the digital submission; physical delivery is a manual operational step.
 - Objection and correction claim volumes may exceed expectations in high-turnout constituencies; the portal is load-tested at 10,000 concurrent users but actual peaks are hard to predict.
@@ -133,9 +133,9 @@ Related documents: full spec at `docs/plans/modules/voter-list-public-inspection
 
 ```
 T-60: RollSnapshot published; public portal opens; objections/corrections accepted
-T-45: Midpoint review; IEBC officer triage queue status report to commissioner
+T-45: Midpoint review; the Commission officer triage queue status report to commissioner
 T-30: Inspection window closes; no new objections or corrections accepted
-T-30 to T-14: IEBC officers make Determinations on all pending submissions
+T-30 to T-14: the Commission officers make Determinations on all pending submissions
 T-14: AutoReferralPackets submitted to court/registrar for REFERRED cases
 T-7: All determinations communicated to objectors via SMS
 ```

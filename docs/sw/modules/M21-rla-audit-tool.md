@@ -5,7 +5,7 @@
 **Runs on:** Central audit servers (Kenyan cloud) + IAB-issued audit laptops (offline-capable)
 **Owner:** Datacraft
 **Status:** Draft v2
-**IPR:** Custom Software vests in IEBC per GCC 15.4; SHANGRLA framework components OSS (MIT/Apache 2.0)
+**IPR:** Custom Software vests in the Commission per GCC 15.4; SHANGRLA framework components OSS (MIT/Apache 2.0)
 
 ## 1. Purpose
 
@@ -34,7 +34,7 @@ Strategy reference: §XIX.2 / §XV.1 / §XI.
 - **FR-M21-007** Provide a ballot-retrieval checklist per sampling-team member: station, box, ballot position, expected seal numbers, GPS coordinates for station. QR-code scannable confirmation for each retrieved ballot.
 - **FR-M21-008** Tally interface for retrieved ballots: sampling team member records which candidate each retrieved ballot votes for (or "undervote", "overvote", "unreadable"). Read-only display of Form 34A tallies for that station alongside.
 - **FR-M21-009** Compute running SHANGRLA T-statistic after each batch of tallied ballots. Display current confidence level, remaining sample needed to confirm (or "sample exhausted — trigger recount"), and stopping condition status.
-- **FR-M21-010** If at any point the T-statistic fails to confirm at the declared risk limit after the maximum planned sample is exhausted, generate a RECOUNT_REQUIRED event published immediately to the IEBC Chair, IAB, and the public audit portal.
+- **FR-M21-010** If at any point the T-statistic fails to confirm at the declared risk limit after the maximum planned sample is exhausted, generate a RECOUNT_REQUIRED event published immediately to the Commission Chair, IAB, and the public audit portal.
 - **FR-M21-011** Generate a signed audit report upon completion: seed values, sample manifest hash, tally data, T-statistic trajectory, outcome (CONFIRMED / RECOUNT_REQUIRED), and all party-agent + IAB signatures. Publish report on the public audit portal and submit to the Supreme Court IT Registrar.
 - **FR-M21-012** Offline mode: audit laptop can complete the statistical computation and tally entry without network. Syncs signed results on reconnect.
 - **FR-M21-013** All computation is reproducible from published inputs. Publish a reproduce-me script alongside every audit.
@@ -165,7 +165,7 @@ All endpoints: TLS 1.3, ECDSA-P384 response signing, OpenAPI 3.1 spec-first.
 | Public access to election information | Access to Information Act 2016 s.4 — all audit artefacts published |
 | Data minimisation | DPA 2019 s.26 — ballot records contain no voter-identifiable data |
 | Immutable audit log | Elections Act 2011 s.39; Election Technology Regulations 2017 |
-| IAB commission mandate | Tender IEBC/OIT/01/2026-2027 §XIX.4 |
+| IAB commission mandate | Tender the tender specification |
 
 References: Stark 2008 ("Conservative Statistical Post-Election Audits", JASA 103(483)); Stark 2020 ("SHANGRLA"); Lindeman & Stark 2012 ("A Gentle Introduction to Risk-Limiting Audits", IEEE Security and Privacy).
 

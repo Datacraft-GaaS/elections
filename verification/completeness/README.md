@@ -2,7 +2,7 @@
 
 # Module Completeness Checker
 
-Verifies that all 69 modules specified in the tender (IEBC/OIT/01/2026-2027) are implemented,
+Verifies that all 69 modules specified in the tender (the tender specification) are implemented,
 tested, documented, and traceable to requirements before gate G6.
 
 ## Purpose

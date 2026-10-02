@@ -64,7 +64,7 @@ c) System generates:
    {
      "event": "eel.inventory.opening_check.v1",
      "auditId": "<UUID7>",
-     "station_code": "IEBC-KE-001-A",
+     "station_code": "COMMISSION-KE-001-A",
      "assets_scanned": 12,
      "assets_missing": 0,
      "assets_damaged": 0,

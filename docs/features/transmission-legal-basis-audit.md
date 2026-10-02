@@ -120,7 +120,7 @@ Languages: EN. WCAG 2.2 AA.
 
 - CEL rule authoring requires legal staff with sufficient technical literacy to write predicate expressions; the LiveView rule authoring workspace provides test-against-sample functionality to reduce authoring errors.
 - Rule drift is flagged but not automatically resolved; legal officers must review drifted verdicts and determine whether remedial action (petition to court, regulatory clarification) is required.
-- The system evaluates legal rules as configured by IEBC legal officers; it is not a substitute for legal advice. Rules must be reviewed by the IEBC legal team and external counsel before each election cycle.
+- The system evaluates legal rules as configured by the Commission legal officers; it is not a substitute for legal advice. Rules must be reviewed by the Commission legal team and external counsel before each election cycle.
 - Coverage SLA (100%) assumes Kafka consumer lag is below 60 seconds; sustained Kafka lag can cause the coverage ratio to drop below 1.0 and trigger false positive alerts.
 - Historical verdict replay (after a rule change) is a long-running job; for a full election cycle (~50k transmission events), replay takes approximately 30 minutes.
 

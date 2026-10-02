@@ -12,7 +12,7 @@ export interface Props {
 
 const {
 	title,
-	description = 'IEBC IEMS Portal',
+	description = 'the Commission IEMS Portal',
 	locale = 'en',
 	canonical,
 	noIndex = false,
@@ -21,7 +21,7 @@ const {
 
 const nonce = generateCspNonce();
 const csp = buildCsp(nonce);
-const siteUrl = import.meta.env.SITE ?? 'https://iebc.or.ke';
+const siteUrl = import.meta.env.SITE ?? 'https://eel.example';
 const canonicalHref = canonical ?? new URL(Astro.url.pathname, siteUrl).href;
 ---
 

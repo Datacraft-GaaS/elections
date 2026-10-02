@@ -1,7 +1,7 @@
 # SA-003: Kenyan-sovereign edge: multi-ISP peering vs Cloudflare / Akamai
 
 Date: 2026-08-21
-Applies to: Datacraft bid documents under work_docs/01-Projects/IEBC/sw/ (our own earlier draft)
+Applies to: Datacraft bid documents under work_docs/01-Projects/the Commission/sw/ (our own earlier draft)
 Status: decided (ADR takes precedence; sw/ docs to be edited)
 
 ## Earlier draft (sw/) says

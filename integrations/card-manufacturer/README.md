@@ -85,7 +85,7 @@ curl -X POST https://api.cardmfr.com/batch/submit \
         "organization": "African Union"
       }
     ],
-    "deliveryLocation": "IEBC Headquarters, Nairobi",
+    "deliveryLocation": "the Commission Headquarters, Nairobi",
     "deliveryDate": "2025-07-20",
     "securityFeatures": ["hologram", "signature_panel"]
   }'

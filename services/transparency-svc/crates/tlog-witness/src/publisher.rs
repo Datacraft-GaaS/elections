@@ -1,6 +1,6 @@
 //! WitnessPublisher trait and NoopPublisher.
 //!
-//! WP-4.12 wires the IEBC website, GitHub, IPFS-KE, Gazette, and KBC channels.
+//! WP-4.12 wires the Commission website, GitHub, IPFS-KE, Gazette, and KBC channels.
 //! Here we define the contract only.
 
 use async_trait::async_trait;

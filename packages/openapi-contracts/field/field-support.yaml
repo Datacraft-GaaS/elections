@@ -159,7 +159,7 @@ paths:
     post:
       tags: [tickets]
       operationId: supportEscalateTicket
-      summary: Escalate a ticket to L2/L3/Mechrevo/IEBC ICT
+      summary: Escalate a ticket to L2/L3/Mechrevo/the Commission ICT
       description: >
         Escalates the ticket up the support chain with a mandatory reason.
         The escalation event is audited and notified to the target tier's
@@ -738,7 +738,7 @@ components:
           x-eel-data-class: D
         target_level:
           type: string
-          enum: [L2, L3, MECHREVO, IEBC_ICT]
+          enum: [L2, L3, MECHREVO, COMMISSION_ICT]
           x-eel-data-class: D
         reason:
           type: string
@@ -754,7 +754,7 @@ components:
           format: uuid
         escalated_to:
           type: string
-          enum: [L2, L3, MECHREVO, IEBC_ICT]
+          enum: [L2, L3, MECHREVO, COMMISSION_ICT]
           x-eel-data-class: D
         escalated_at:
           type: string

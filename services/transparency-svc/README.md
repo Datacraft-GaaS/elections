@@ -4,7 +4,7 @@ Election Merkle transparency log with HSM-signed Signed Tree Heads, campaign fin
 
 ## Purpose and modules
 
-Operates the T1 election transparency log (module M14 reproducibility-bundle, M22 campaign-finance-transparency, M17 speech-integrity contributions only, plus P05 transparency log and P06 HSM signer). Publishes Signed Tree Heads at 1s/60s/5min cadences to five channels (IEBC website, GitHub, IPFS Kenya, Kenya Gazette print anchor, KBC Radio hash bulletin). Coordinates witness cosigning by IAB day-1 and external observers day-2. Manages campaign finance disclosure ingestion. Orchestrates HSM key ceremony coordination (break-glass).
+Operates the T1 election transparency log (module M14 reproducibility-bundle, M22 campaign-finance-transparency, M17 speech-integrity contributions only, plus P05 transparency log and P06 HSM signer). Publishes Signed Tree Heads at 1s/60s/5min cadences to five channels (official website, GitHub, IPFS Kenya, Kenya Gazette print anchor, KBC Radio hash bulletin). Coordinates witness cosigning by IAB day-1 and external observers day-2. Manages campaign finance disclosure ingestion. Orchestrates HSM key ceremony coordination (break-glass).
 
 Tier: T1 (transparency log and HSM signer), T2 (campaign finance).
 
@@ -88,7 +88,7 @@ HSM key material stored in OpenBao; signing operations audit-logged to PostgreSQ
 
 Build the main service:
 ```bash
-cd /Users/nyimbiodero/src/pjs/eel/services/transparency-svc
+cd ./services/transparency-svc
 cargo build --release
 cargo build --release --bin hsm-signer  # HSM signer binary
 ```

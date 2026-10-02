@@ -26,5 +26,5 @@
   "results.verify": "Verify Results Signature",
   "results.merkle.proof": "View Merkle Proof",
   "results.snapshot.id": "Snapshot ID: {id}",
-  "results.signed.by": "Signed by IEBC at {time, time, medium}"
+  "results.signed.by": "Signed by the Electoral Authority at {time, time, medium}"
 }

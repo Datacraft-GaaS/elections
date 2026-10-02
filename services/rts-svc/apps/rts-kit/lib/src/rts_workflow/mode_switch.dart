@@ -5,7 +5,7 @@
 ///   - election_type: 'general' | 'referendum' | 'by_election'
 ///   - form_type: 'form34a' | 'referendum_results_form' | 'by_election_34a'
 ///   - valid_from / valid_until ISO-8601
-///   - ECDSA P-256 signature over canonical JSON (signed by IEBC bvi-config key)
+///   - ECDSA P-256 signature over canonical JSON (signed by the Commission bvi-config key)
 ///
 /// Mode switching mid-session resets the capture workflow to step 1 and
 /// re-validates any buffered entries against the new form schema.
@@ -238,7 +238,7 @@ class ModeSwitchScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'To switch modes, apply a signed mode bundle from the IEBC bvi-config endpoint.',
+              'To switch modes, apply a signed mode bundle from the Commission bvi-config endpoint.',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],

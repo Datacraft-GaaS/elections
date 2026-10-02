@@ -317,15 +317,15 @@ then rebuild.
 
 After successful build, the APKs can be found at:
 
-- **bvi-kit**: `/Users/nyimbiodero/src/pjs/eel/services/biometric-edge-svc/apps/bvi-kit/build/app/outputs/flutter-apk/app-debug.apk`
-- **bvr-kit**: `/Users/nyimbiodero/src/pjs/eel/services/biometric-edge-svc/apps/bvr-kit/build/app/outputs/flutter-apk/app-debug.apk`
-- **rts-kit**: `/Users/nyimbiodero/src/pjs/eel/services/rts-svc/apps/rts-kit/build/app/outputs/flutter-apk/app-debug.apk`
+- **bvi-kit**: `./services/biometric-edge-svc/apps/bvi-kit/build/app/outputs/flutter-apk/app-debug.apk`
+- **bvr-kit**: `./services/biometric-edge-svc/apps/bvr-kit/build/app/outputs/flutter-apk/app-debug.apk`
+- **rts-kit**: `./services/rts-svc/apps/rts-kit/build/app/outputs/flutter-apk/app-debug.apk`
 
 For convenience, copies have been placed in:
 
-- `/Users/nyimbiodero/src/pjs/eel/target/mobile/bvi-kit-debug.apk`
-- `/Users/nyimbiodero/src/pjs/eel/target/mobile/bvr-kit-debug.apk`
-- `/Users/nyimbiodero/src/pjs/eel/target/mobile/rts-kit-debug.apk`
+- `./target/mobile/bvi-kit-debug.apk`
+- `./target/mobile/bvr-kit-debug.apk`
+- `./target/mobile/rts-kit-debug.apk`
 
 ## Size note: debug (~160 MB) vs the 60 MB release budget
 

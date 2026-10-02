@@ -43,14 +43,14 @@ All tables in `inventory_ballots` schema, migrations under `services/inventory-s
 |---|---|---|---|
 | Print authorisation | Printer facility | `PRINT_COMPLETE` via MES webhook | MES double-sign + RFID batch hash |
 | KRA e-clearance | Customs | `PORT_CLEARED` via KRA customs API | KRA transaction reference stored in `PrintOrder.kra_clearance_ref` |
-| National warehouse in | IEBC warehouse | `WAREHOUSE_IN` via RFID scanner | RFID scan vs lot barcode range; mismatch alerts ops |
+| National warehouse in | the Commission warehouse | `WAREHOUSE_IN` via RFID scanner | RFID scan vs lot barcode range; mismatch alerts ops |
 | Constituency dispatch | Warehouse out | `WAREHOUSE_OUT` | Officer SVID + lot seal scan |
 | Constituency store in | Const. store | `CONST_IN` | RO SVID + RFID scan |
 | Polling station delivery | Station | `STATION_IN` | Presiding Officer SVID + RFID scan |
 | Post-election return | Station to const. store | `STATION_OUT` + `RETURN` | PO + ECC officer countersignature |
 | Spoilage | Station | `SPOILAGE` | PO SVID + reason code; counted in `StationReconciliation.spoiled` |
 
-The MES double-verification (`mes_double_verified`) follows the NIST SP 800-88 Rev.1 standard for media accountability: the printer's MES records lot output, and IEBC's adapter independently queries the MES API for the same lot before emitting `PRINT_COMPLETE`.
+The MES double-verification (`mes_double_verified`) follows the NIST SP 800-88 Rev.1 standard for media accountability: the printer's MES records lot output, and the Commission's adapter independently queries the MES API for the same lot before emitting `PRINT_COMPLETE`.
 
 ## 4. Pipeline
 
@@ -62,7 +62,7 @@ Commissioner + HSM authorises PrintOrder (status = AUTHORISED)
             -> CustodyEvent(PRINT_COMPLETE) signed by MES SVID
       -> KRA e-clearance API polled; ref stored
             -> CustodyEvent(PORT_CLEARED)
-      -> RFID scanners at IEBC warehouse
+      -> RFID scanners at the Commission warehouse
             -> WAREHOUSE_IN event per lot; mismatch alert if lot count off
       -> constituency allocation computed (ward_allocation per lot)
       -> WAREHOUSE_OUT + CONST_IN events as trucks depart + arrive
@@ -109,7 +109,7 @@ Languages: EN + SW on all staff surfaces. RFID scanner app displays lot ID and s
 
 ## 7. Integrity + anti-tamper
 
-- **MES double-verification** (NIST SP 800-88 Rev.1) - IEBC adapter independently queries MES for lot count before accepting `PRINT_COMPLETE`. A discrepancy halts the lot and alerts ops.
+- **MES double-verification** (NIST SP 800-88 Rev.1) - the Commission adapter independently queries MES for lot count before accepting `PRINT_COMPLETE`. A discrepancy halts the lot and alerts ops.
 - **RFID + barcode duality** - every lot has both an RFID tag (for warehouse scanners) and a printed barcode range (for manual verification if RFID fails). Both are stored in `LotData`; either can trigger a `CustodyEvent`.
 - **Merkle-anchored reconciliations** - each `StationReconciliation` is a P05 leaf; inclusion proof available for court proceedings. A gap in the Merkle tree (missing reconciliation) is flagged by the nightly audit job.
 - **HSM signatures on all critical events** - `PRINT_COMPLETE`, `STATION_IN`, and all reconciliation countersignatures carry HSM signatures verifiable against the Commissioner public key in the transparency log.
@@ -126,8 +126,8 @@ Languages: EN + SW on all staff surfaces. RFID scanner app displays lot ID and s
 
 ## 9. Honest caveats + external prerequisites
 
-- MES integration requires a formal MoU with the appointed ballot printer and provisioning of an IEBC SVID for the printer's MES system. The adapter at `integrations/ballot-mes/` is written to a documented webhook schema; the exact MES API endpoint is set at printer onboarding.
-- KRA customs API integration (`integrations/kra-customs/`) requires a KRA API key provisioned under the IEBC eTrade account. The adapter is ready; the live key is an external procurement dependency.
+- MES integration requires a formal MoU with the appointed ballot printer and provisioning of a Commission SVID for the printer's MES system. The adapter at `integrations/ballot-mes/` is written to a documented webhook schema; the exact MES API endpoint is set at printer onboarding.
+- KRA customs API integration (`integrations/kra-customs/`) requires a KRA API key provisioned under the Commission eTrade account. The adapter is ready; the live key is an external procurement dependency.
 - RFID scanner devices must be procured with the correct HF RFID standard (ISO/IEC 15693 for paper ballots). The Flutter app targets standard USB-HID RFID readers; proprietary SDKs are not supported.
 - Lot-to-ward allocation logic assumes constituency boundary data from M18 (boundary transparency) is settled before `WAREHOUSE_OUT` events are emitted. A boundary dispute that changes ward allocations after lots are dispatched requires a manual override procedure (documented in `docs/runbooks/ballot-chain-reallocation.md`).
 

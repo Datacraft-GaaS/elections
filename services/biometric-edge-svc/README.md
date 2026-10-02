@@ -207,7 +207,7 @@ Elections Act s.44 (voter identification), s.44A (complementary ID modality), s.
 - Kit offline resilience: 7-day local queue; automatic retry on connectivity restore
 - Attestation verification: Android Integrity verdict cached per kit; refreshed on app update
 - Register extract: Hash-verified; immutable until poll closure
-- Diaspora security: Form34AD countersigned by embassy staff and IEBC observers
+- Diaspora security: Form34AD countersigned by embassy staff and the Commission observers
 - Privacy: Offline queue cleared post-closure; no long-term device tracking
 
 ## Crate index

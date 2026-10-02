@@ -54,7 +54,7 @@ def definition(db):
         slug="test-daily-enrolment",
         title="Test Daily Enrolment",
         report_class="operational",
-        audience=["iebc_staff"],
+        audience=["commission_staff"],
         data_class="sensitive",
         renderer_pipeline=["json", "csv", "pdf"],
         retention_years=5,
@@ -102,7 +102,7 @@ def subscriber(db):
         channel="email",
         endpoint="test@example.org",
         endpoint_hash=b"\x00" * 32,
-        audience="iebc_staff",
+        audience="commission_staff",
         preferred_format="pdf",
         created_at=_now(),
     )

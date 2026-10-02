@@ -3,8 +3,8 @@ outputDir: generated
 additionalProperties:
   pubName: eel_api_client
   pubAuthor: eel
-  pubAuthorEmail: nyimbi@gmail.com
-  pubHomepage: https://github.com/nyimbi/eel
+  pubAuthorEmail: maintainers@eel.example
+  pubHomepage: https://github.com/Datacraft-GaaS/eel
   useEnumExtension: true
   nullableFields: true
   legacyDiscriminatorBehavior: false

@@ -43,7 +43,7 @@ entities:
     fields:
       - name: constituency_code
         type: string
-        description: "IEBC constituency code"
+        description: "the Commission constituency code"
       - name: compiled_stations
         type: array[string]
         description: "Station stream IDs included in this compilation"

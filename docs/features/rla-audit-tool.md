@@ -35,7 +35,7 @@ Five aggregates under `services/governance-svc/crates/rla-api/src/models.rs`:
 | **SampleBallot** | Selected ballot for physical inspection: ballot_id, polling_station_id, batch_seq, stratum, status (PENDING/COUNTED/DISCREPANT). | A |
 | **TallyReport** | Manual count for a sample ballot: auditor_id, candidate_tallies (JSON), discrepant (bool), sig (auditor Ed25519). | A |
 | **RiskBound** | Running SHANGRLA T-statistic per contest: T_value, risk_limit, round_number, auto_recount_triggered (bool). | A |
-| **FullRecount** | Auto-triggered recount order: contest_id, reason, chair_sig (HSM), routed_to (Judiciary / IEBC). | A |
+| **FullRecount** | Auto-triggered recount order: contest_id, reason, chair_sig (HSM), routed_to (Judiciary / the Commission). | A |
 
 ## 3. Ingest sources
 
@@ -87,7 +87,7 @@ Contract: `packages/openapi-contracts/governance/rla.yaml`. All write endpoints 
 | `GET /rla/v1/rounds/{id}/ballots` | IAB auditor (JWT) | Sample ballot list with location info |
 | `POST /rla/v1/rounds/{id}/tallies` | IAB auditor (JWT, device cert) | Submit TallyReport for a sample ballot |
 | `GET /rla/v1/rounds/{id}/risk` | IAB officer / public | Running risk bound; T-statistic |
-| `POST /rla/v1/rounds/{id}/recount` | IEBC Chair (JWT + HSM) | Sign and route FullRecount order |
+| `POST /rla/v1/rounds/{id}/recount` | the Commission Chair (JWT + HSM) | Sign and route FullRecount order |
 | `GET /rla/v1/seed/{round_id}/entropy` | IAB auditor / public | Full entropy source disclosure for seed audit |
 
 ## 6. Human surfaces
@@ -114,7 +114,7 @@ WCAG 2.2 AA on all surfaces. The Tauri app runs on Windows and macOS; Linux not 
 
 - **Elections Act s.83 (statutory risk limit)** -- risk limit value configurable but defaults enforced from s.83; any deviation from default requires Chair HSM + IAB commissioner cosignature and is logged.
 - **Elections (Technology) Regulations 2017** -- audit trail retention for 7 years; every TallyReport signed and Merkle-anchored.
-- **Independent Electoral and Boundaries Commission Act s.7** -- IAB independence guaranteed by the dual-key seed design; IEBC cannot unilaterally determine the sample.
+- **the electoral authority's establishing Act s.7** -- IAB independence guaranteed by the dual-key seed design; the Commission cannot unilaterally determine the sample.
 - **Constitution of Kenya 2010 Art. 86(c)** -- results accuracy and verifiability; SHANGRLA provides quantitative risk bound satisfying the verifiability obligation.
 - **DPA 2019 s.26** -- ballot physical identifiers are not retained in the digital store beyond the audit round; only ballot sequence numbers and batch references stored.
 
@@ -124,7 +124,7 @@ WCAG 2.2 AA on all surfaces. The Tauri app runs on Windows and macOS; Linux not 
 - The NIST Randomness Beacon is a US government service; network access must be confirmed from the audit environment. The circuit breaker fallback to local pseudo-random reduces verifiability; any such event must be publicly disclosed.
 - The Tauri desktop app requires Windows 10+ or macOS 13+; auditor device procurement must confirm OS compatibility.
 - The physical ballot retrieval workflow (matching the SampleBallot list to physical ballot boxes) depends on M20 custody chain completeness; an incomplete M20 chain means auditors cannot locate the sampled ballot and it is marked DISCREPANT.
-- The statutory risk limit value in Elections Act s.83 must be confirmed with IEBC legal before the first live round; the spec defaults to 5% but the Act's precise wording is interpreted differently by some practitioners.
+- The statutory risk limit value in Elections Act s.83 must be confirmed with the Commission legal before the first live round; the spec defaults to 5% but the Act's precise wording is interpreted differently by some practitioners.
 
 ## 10. Test coverage + operational runbooks
 
@@ -143,7 +143,7 @@ Performance targets: T-statistic update < 2 s per TallyReport submission; sample
 
 Seed verification: the published seed (five XOR sources) and ballot manifest are sufficient for any third party to independently recompute the sample list and verify that M21's sample was not cherry-picked. The Tauri desktop app ships with the sample-generation algorithm and the signed manifest for exactly this purpose.
 
-SHANGRLA risk limit default 5% per Elections Act s.83. Any change to the risk limit requires IEBC Commissioner resolution and a new HSM-signed AuditRound configuration record before the next round opens.
+SHANGRLA risk limit default 5% per Elections Act s.83. Any change to the risk limit requires the Commission Commissioner resolution and a new HSM-signed AuditRound configuration record before the next round opens.
 
 Auditor training requirement: each auditor must complete the RLA simulation in the Tauri desktop app against a synthetic election before being assigned to a live round; completion is recorded in the `AuditRound.auditor_roster` and the IAB chair must countersign the roster before the round opens.
 

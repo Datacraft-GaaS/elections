@@ -82,7 +82,7 @@ Model artifacts stored in MinIO with Ed25519 signature validation.
 
 Build the Rust gateway:
 ```bash
-cd /Users/nyimbiodero/src/pjs/eel/services/ai-platform-svc
+cd ./services/ai-platform-svc
 cargo build --release
 ```
 

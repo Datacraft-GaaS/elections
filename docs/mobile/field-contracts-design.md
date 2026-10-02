@@ -174,7 +174,7 @@ Schemas:
 | 6 | POST | `/v1/observer/stations/{code}/verify` | 3 | proof verified client-side |
 | 7 | POST | `/v1/observer/stations/{code}/verify/countersign` | 3 | category-gated; 403, 409 |
 | 8 | POST | `/v1/observer/incidents` | 3 | shared incident shape (§5) |
-| 9 | POST | `/v1/observer/incidents/{id}/systemic` | 3 | OBSERVER_CHIEF; immediate IEBC response; 403, 409 |
+| 9 | POST | `/v1/observer/incidents/{id}/systemic` | 3 | OBSERVER_CHIEF; immediate the Commission response; 403, 409 |
 | 10 | GET | `/v1/observer/end-of-mission` | 3 | report data → `EndOfMissionReport` |
 | 11 | GET | `/v1/observer/end-of-mission/pdf` | 3 | 200 content `application/pdf` (binary) |
 
@@ -199,7 +199,7 @@ Schemas:
 |---|---|---|---|
 | 1 | GET | `/v1/support/tickets` | query: `cluster_code`(C), `severity`(D), `status`(D) |
 | 2 | POST | `/v1/support/tickets/{id}/take` | take/assign; 409 (already taken) |
-| 3 | POST | `/v1/support/tickets/{id}/escalate` | L2/L3/Mechrevo/IEBC ICT; 409 |
+| 3 | POST | `/v1/support/tickets/{id}/escalate` | L2/L3/Mechrevo/the Commission ICT; 409 |
 | 4 | GET | `/v1/support/kits/{serial}` | kit health telemetry; 404 |
 | 5 | POST | `/v1/support/kits/{serial}/action` | signed, audited, kit-consent required; 202; 409 |
 | 6 | POST | `/v1/support/warranty` | warranty claim |
@@ -214,8 +214,8 @@ Schemas:
 - `TicketList { tickets!: [Ticket], total!: int }`
 - `TakeTicketRequest { engineer_id!: uuid(D), note: str≤512(D) }`
 - `TakeTicketResponse { ticket_id!: uuid, assigned_to!: uuid(D), taken_at!: rfc3339 }`
-- `EscalateRequest { engineer_id!(D), target_level!: enum[L2,L3,MECHREVO,IEBC_ICT](D), reason!: str≤1024(D) }`
-- `EscalateResponse { ticket_id!: uuid, escalated_to!: enum[L2,L3,MECHREVO,IEBC_ICT](D), escalated_at!: rfc3339 }`
+- `EscalateRequest { engineer_id!(D), target_level!: enum[L2,L3,MECHREVO,COMMISSION_ICT](D), reason!: str≤1024(D) }`
+- `EscalateResponse { ticket_id!: uuid, escalated_to!: enum[L2,L3,MECHREVO,COMMISSION_ICT](D), escalated_at!: rfc3339 }`
 - `KitHealth { kit_serial!(E), battery_level!: f32 0..1(E), storage_used_pct!: f32 0..100(E), connectivity!: enum[online,degraded,offline](D), firmware_version: str≤32(E), last_heartbeat_at!: rfc3339, anomalies: [str](D) }`
 - `KitActionRequest { engineer_id!(D), action!: enum[reboot,wipe_cache,sync_now,factory_reset](D), signature!: str(E), kit_consent_ref!: uuid(E) }`
 - `KitActionResponse { action_id!: uuid, status!: enum[ACCEPTED](D), accepted_at!: rfc3339 }`

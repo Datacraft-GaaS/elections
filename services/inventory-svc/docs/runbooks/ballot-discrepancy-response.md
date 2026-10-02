@@ -21,12 +21,12 @@ Fires within 1 min of lot-data submission when `variance_pct > 0.01%`.
 Steps:
 1. Check lot record in `lot_data`; compare `quantity_authorised` (from `print_orders`) vs `quantity_printed`.
 2. If within 0.01% tolerance: false alarm; verify and clear.
-3. If beyond tolerance: notify IEBC Commissioner immediately.
+3. If beyond tolerance: notify the Commission Commissioner immediately.
 4. Shipment flagged for hold; RFID spot-check required before allocation.
 
-## IEBC Commissioner notification
+## the Commission Commissioner notification
 
 For all P0 discrepancies:
 1. ECC sends signed alert via M16 to Commissioner on-call.
-2. Commissioner has 30 min to acknowledge before IEBC Ops Director escalation.
+2. Commissioner has 30 min to acknowledge before the Commission Ops Director escalation.
 3. All escalations logged with timestamp in `print_orders_audit`.

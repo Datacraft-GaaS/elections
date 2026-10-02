@@ -4,8 +4,8 @@
 **Name:** Voter ID Card Production
 **Runs on:** Central servers (Kenyan cloud) + NRB integration + card manufacturing partner integration
 **Owner:** Datacraft
-**Status:** Draft v1 (CONDITIONAL — module is INACTIVE by default; activated only if the signed 2027 IEMS tender scope or IEBC written instruction explicitly includes physical voter card production; SCOPE.md v3 must carry an explicit ACTIVE/INACTIVE flag for M53 before FAT gate; absent such instruction the module is out of scope and no engineering effort is allocated)
-**IPR:** Custom Software vests in IEBC per GCC 15.4
+**Status:** Draft v1 (CONDITIONAL — module is INACTIVE by default; activated only if the signed 2027 IEMS tender scope or the Commission written instruction explicitly includes physical voter card production; SCOPE.md v3 must carry an explicit ACTIVE/INACTIVE flag for M53 before FAT gate; absent such instruction the module is out of scope and no engineering effort is allocated)
+**IPR:** Custom Software vests in the Commission per GCC 15.4
 
 ## 1. Purpose
 
@@ -13,23 +13,23 @@ Manage the end-to-end lifecycle of per-voter physical voter ID cards, if include
 
 ## 2. User Personas
 
-- **IEBC Registration Officer** — triggers card production batch per registration cycle; confirms delivery
+- **the Commission Registration Officer** — triggers card production batch per registration cycle; confirms delivery
 - **NRB Data Officer** — provides base biographic data for card personalisation (NRB integration)
 - **Card Manufacturing Partner** — external secure printing facility; receives personalisation data via encrypted channel
 - **Voter** — receives card; uses it at polling station; requests replacement if lost
 - **Polling Clerk** — scans card QR at polling station via M08 kit (if card mode enabled)
-- **IEBC DPO** — oversees DPA 2019 DPIA for physical biometric card production; minimisation review
-- **IEBC Logistics Officer** — tracks card distribution to constituencies and collection points
+- **the Commission DPO** — oversees DPA 2019 DPIA for physical biometric card production; minimisation review
+- **the Commission Logistics Officer** — tracks card distribution to constituencies and collection points
 
 ## 3. Functional Requirements
 
 - **FR-M53-001** Voter eligibility check: before card issuance, verify voter is registered in M04 VPRS and NRB confirms national ID validity; flag duplicates.
 - **FR-M53-002** Card personalisation data package: extract per-voter record (name, DOB, constituency, polling station, voter number, photo from BVR M02); apply DPA 2019 minimisation — exclude biometric templates from card data package; generate QR payload (voter ID hash, constituency, polling station, card serial).
-- **FR-M53-003** RFID chip option: if tender includes RFID, generate contactless chip payload (same as QR; no biometric template on chip); chip content signed with IEBC HSM key; chip read at polling station verified against central record.
+- **FR-M53-003** RFID chip option: if tender includes RFID, generate contactless chip payload (same as QR; no biometric template on chip); chip content signed with the Commission HSM key; chip read at polling station verified against central record.
 - **FR-M53-004** Batch production order: group personalisation packages by county; encrypt per-batch with manufacturer's public key; transmit via mutually-authenticated secure channel; receive batch receipt and estimated delivery date.
 - **FR-M53-005** Production tracking: per-card status lifecycle (ORDERED, PRINTING, QUALITY_CHECK, DISPATCHED, DELIVERED, COLLECTED, ACTIVE, LOST_REPORTED, CANCELLED).
-- **FR-M53-006** Distribution workflow: cards dispatched to constituency collection points; IEBC officer at collection point scans batch receipt; voter collects card with biometric verification (M01 BVR device at collection point); card status set to COLLECTED and ACTIVE.
-- **FR-M53-007** Replacement workflow: voter reports lost/stolen card; IEBC officer verifies identity via biometric; previous card serial flagged as LOST in system (accepted no more at polling stations); new card issued with new serial.
+- **FR-M53-006** Distribution workflow: cards dispatched to constituency collection points; the Commission officer at collection point scans batch receipt; voter collects card with biometric verification (M01 BVR device at collection point); card status set to COLLECTED and ACTIVE.
+- **FR-M53-007** Replacement workflow: voter reports lost/stolen card; the Commission officer verifies identity via biometric; previous card serial flagged as LOST in system (accepted no more at polling stations); new card issued with new serial.
 - **FR-M53-008** Polling station integration: M08 kit reads QR or RFID; sends card serial to M06 BVI backend for verification (card active, voter eligible, not already voted); verification response in <= 2 s.
 - **FR-M53-009** Fallback without card: if voter arrives without card (lost, not yet collected), polling clerk can authenticate via biometric only (M01 mode) subject to RO authorisation; all fallback events logged.
 - **FR-M53-010** Post-election card management: after election, cards remain valid for next election cycle unless superseded; cancelled cards blacklisted.
@@ -46,17 +46,17 @@ Manage the end-to-end lifecycle of per-voter physical voter ID cards, if include
 - **NFR-M53-007** Availability of card verification endpoint at polling stations: >= 99.9% on polling day; offline fallback (card QR contains sufficient data for local verification if central server unreachable).
 - **NFR-M53-008** Lost-card blacklist propagated to all polling station caches within 30 minutes of report.
 
-- **NFR-53-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `iebc-iems-53` (replace 53 with the module number); alert ruleset ID `iems-53-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
+- **NFR-53-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `commission-iems-53` (replace 53 with the module number); alert ruleset ID `iems-53-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
 
 ## 5. User Stories
 
 1. As a voter, I receive a letter to my registered address and SMS notification that my voter card is ready for collection at my constituency office, with collection dates and biometric verification requirements.
 2. As a voter, I present my national ID at the collection point, verify with fingerprint, and collect my voter card in under 3 minutes.
 3. As a Polling Clerk, I scan the QR code on a voter's card with the kit camera; the system confirms "VOTER ELIGIBLE — NOT YET VOTED" in under 2 seconds.
-4. As a voter who lost their card, I go to the IEBC constituency office, verify biometrically, and receive a replacement card within 5 working days; the old serial is immediately blacklisted.
-5. As an IEBC Logistics Officer, I view a county-by-county dashboard showing collection rate (%) so I can target areas with low card uptake for additional mobile collection drives.
+4. As a voter who lost their card, I go to the Commission constituency office, verify biometrically, and receive a replacement card within 5 working days; the old serial is immediately blacklisted.
+5. As a Commission Logistics Officer, I view a county-by-county dashboard showing collection rate (%) so I can target areas with low card uptake for additional mobile collection drives.
 6. As a voter who arrives without their card, the Polling Clerk can authenticate me via biometric only after the Returning Officer authorises, ensuring I am not disenfranchised.
-7. As the IEBC DPO, I review the card production data package manifest to confirm no biometric templates are included before approving batch transmission to the manufacturer.
+7. As the Commission DPO, I review the card production data package manifest to confirm no biometric templates are included before approving batch transmission to the manufacturer.
 
 ## 6. Data Model
 
@@ -116,14 +116,14 @@ paths:
   /v1/voter-cards/batches:
     post:
       summary: Create card production batch for a county
-      security: [{IEBCAdminJWT: []}]
+      security: [{CommissionAdminJWT: []}]
     get:
       summary: List batches
       security: [{LogisticsOfficerJWT: []}]
   /v1/voter-cards/{serial}/status:
     get:
       summary: Get card status
-      security: [{IEBCStaffJWT: []}]
+      security: [{CommissionStaffJWT: []}]
   /v1/voter-cards/{serial}/collect:
     post:
       summary: Record voter collection with biometric confirmation
@@ -139,7 +139,7 @@ paths:
   /v1/voter-cards/stats:
     get:
       summary: Card production and collection statistics
-      security: [{IEBCStaffJWT: []}]
+      security: [{CommissionStaffJWT: []}]
 ```
 
 ## 8. Integrations
@@ -156,7 +156,7 @@ paths:
 ## 9. UI/UX Key Screens
 
 1. **Card Production Dashboard** — batch status by county; cards ordered/printed/dispatched/collected; coverage heatmap.
-2. **Voter Collection Portal** — IEBC officer view; scan voter national ID; biometric prompt; card handover confirmation with signature capture.
+2. **Voter Collection Portal** — the Commission officer view; scan voter national ID; biometric prompt; card handover confirmation with signature capture.
 3. **Lost Card Replacement Form** — voter details, biometric prompt, reason for replacement; immediate blacklist of old serial; replacement order triggered.
 4. **Polling Station Verification Screen** (M08 kit) — large YES/NO card eligibility result; fallback authorisation flow if card absent.
 5. **Card Statistics Dashboard** — per-county collection rate; percentage of registered voters with active card; low-uptake alert list.
@@ -169,9 +169,9 @@ paths:
 | Biometric data minimisation | DPA 2019 s.25 (data minimisation principle) |
 | Lawful basis for card data | DPA 2019 s.30(1)(b) (legal obligation) |
 | DPIA requirement | DPA 2019 s.31; ODPC DPIA Guidelines |
-| NRB data sharing | National Registration Act Cap 107; NRB-IEBC MoU |
+| NRB data sharing | National Registration Act Cap 107; NRB-the Commission MoU |
 | Card security standards | ISO/IEC 7816 (chip); ISO/IEC 14443 (RFID) |
-| Card data retention | IEBC data-retention schedule; 7 years max |
+| Card data retention | the Commission data-retention schedule; 7 years max |
 
 ## 11. Success Metrics + SLA
 
@@ -198,7 +198,7 @@ paths:
 |-----------|------|-------------|
 | Tender scope confirmed (card or no card) | 2026-10-01 | Module activated or deferred |
 | NRB MoU and integration | 2026-12-01 | Data sharing agreement |
-| DPIA registered with ODPC | 2027-01-15 | IEBC DPO sign-off |
+| DPIA registered with ODPC | 2027-01-15 | the Commission DPO sign-off |
 | Card manufacturer contracted | 2027-02-01 | Procurement via PPADA |
 | First county batch transmission | 2027-04-01 | Pilot county |
 | National batch complete | 2027-06-01 | T-70 before polling day |
@@ -221,7 +221,7 @@ paths:
 | Tender excludes physical card (module unused) | Medium | Low | Module designed as optional overlay; no impact on core IEMS if deactivated |
 | Low card collection rate disenfranchises voters | Medium | High | Biometric-fallback mode preserves access; mobile collection drives; SMS reminders |
 | Card manufacturer security breach (personalisation data leaked) | Low | Critical | Data package contains no biometric templates; QR payload is voter ID hash not raw data; minimisation DPIA pre-approved |
-| NRB MoU delays card production timeline | Medium | High | IEBC to engage NRB at contract award; backup: use M02 BVR data only without NRB cross-check |
+| NRB MoU delays card production timeline | Medium | High | the Commission to engage NRB at contract award; backup: use M02 BVR data only without NRB cross-check |
 | RFID card clone attack | Low | High | RFID payload HSM-signed; polling station verifies signature against central record; cloned card fails signature check |
 
 ## 16. Cross-References
@@ -236,21 +236,21 @@ paths:
 
 - Elections Act 2011 §62 — voter identification at polling station
 - DPA 2019 s.25, s.30(1)(b), s.31 — data minimisation, lawful basis, DPIA
-- NRB-IEBC MoU — national ID data sharing
+- NRB-the Commission MoU — national ID data sharing
 - ISO/IEC 7816, ISO/IEC 14443 — card and RFID standards
 
 ## 18. Decommissioning
 
-**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if IEBC terminates the contract.
+**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if the Commission terminates the contract.
 
 **Steps:**
 
-1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and IEBC DPO.
+1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and the Commission DPO.
 2. **Service shutdown** — Kubernetes deployments scaled to zero; PersistentVolumeClaims retained for 30 days then deleted after confirmation of M69 transfer.
 3. **Credential revocation** — service account certificates, API keys, and HSM key handles revoked via P06 key-destruction ceremony within 48 hours of shutdown.
 4. **Source-code escrow** — final tagged release deposited to C04 escrow within 7 days of shutdown.
-5. **Runbook handover** — operational runbook and post-mortem notes delivered to IEBC ICT within 14 days.
+5. **Runbook handover** — operational runbook and post-mortem notes delivered to the Commission ICT within 14 days.
 
-**Owner:** SRE Lead. **Sign-off:** IEBC ICT Director + Datacraft Programme Director.
+**Owner:** SRE Lead. **Sign-off:** the Commission ICT Director + Datacraft Programme Director.
 
 > **RESOLUTION (F-23, 2026-08-21):** Decommissioning stub added per audit finding. Owner: SRE Lead. Target: FAT-07 gate.

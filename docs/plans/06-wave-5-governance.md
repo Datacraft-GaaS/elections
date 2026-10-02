@@ -1,9 +1,9 @@
 # Wave 5: Governance, long tail, operations readiness
 
-Part of the IEBC IEMS full build plan. See `README.md` for conventions, `08-edge-case-matrix.md` for EC-IDs, `10-definition-of-done.md` for the WP exit bar.
+Part of the Commission IEMS full build plan. See `README.md` for conventions, `08-edge-case-matrix.md` for EC-IDs, `10-definition-of-done.md` for the WP exit bar.
 
 
-Gate G5 (architect + legal + IEBC OIT + ODPC liaison): pre-audit shows 69/69 modules with passing tagged acceptance tests; DR failover in staging within SLO; `make reproduce` bit-identical on x86_64 and aarch64; all 19 runbooks exercised; ASVS L3 checklist complete for election-critical modules.
+Gate G5 (architect + legal + the Commission OIT + ODPC liaison): pre-audit shows 69/69 modules with passing tagged acceptance tests; DR failover in staging within SLO; `make reproduce` bit-identical on x86_64 and aarch64; all 19 runbooks exercised; ASVS L3 checklist complete for election-critical modules.
 
 | WP | Name | Paths | Builds | Deps | Size |
 |---|---|---|---|---|---|

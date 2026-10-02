@@ -1,4 +1,4 @@
-"""Legacy ABIS adapter: wraps IEBC vendor SOAP/gRPC into eel-abis schema."""
+"""Legacy ABIS adapter: wraps the Commission vendor SOAP/gRPC into eel-abis schema."""
 
 from __future__ import annotations
 

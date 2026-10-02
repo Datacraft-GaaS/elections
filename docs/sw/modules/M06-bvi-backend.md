@@ -2,7 +2,7 @@
 
 **Runs on:** Primary + mirror DC
 **Owner:** Datacraft
-**IPR:** Custom Software vests in IEBC per GCC 15.4
+**IPR:** Custom Software vests in the Commission per GCC 15.4
 
 ## 1. Purpose
 
@@ -12,9 +12,9 @@ Central authority for polling-day operations: extract per-station register bundl
 
 - BVI Device (M05) — kit principal
 - Presiding Officer / Returning Officer — via read APIs
-- IEBC Command Centre — live dashboards
+- the Commission Command Centre — live dashboards
 - Party agent — read-only turnout counters
-- IEBC Administrator — kit-level remote actions
+- the Commission Administrator — kit-level remote actions
 
 ## 3. Functional Requirements
 

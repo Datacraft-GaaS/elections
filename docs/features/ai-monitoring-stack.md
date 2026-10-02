@@ -55,7 +55,7 @@ Model tier catalogue:
 | Consumer module inference calls | Real-time | gRPC / REST | SVID mTLS | Inference blocked if model not in registry or cosign invalid |
 | PII scanner (eel-pii-strip-rs) | Per inference | Internal | Library call | Circuit breaker trips on PII detection; inference halted; DPO alert |
 | DPO approval workflow (Django) | Per chatbot request | Form | JWT + SpiceDB DPO_OFFICER | Chatbot request held until approval received |
-| LiteLLM / NLLB router (62.169.25.77:4000) | Per E-tier request | REST | SVID mTLS | Fallback: LiteLLM -> NLLB -> local rule-based; circuit breaker on LiteLLM failure |
+| LiteLLM / NLLB router (192.0.2.11:4000) | Per E-tier request | REST | SVID mTLS | Fallback: LiteLLM -> NLLB -> local rule-based; circuit breaker on LiteLLM failure |
 
 ## 4. Pipeline
 
@@ -84,7 +84,7 @@ chatbot (E1/E2):
        dpo_approved = false: request held; DPO notified
        dpo_approved = true: proceed
   -> PII strip applied (mandatory; no bypass)
-  -> routed to LiteLLM (62.169.25.77:4000)
+  -> routed to LiteLLM (192.0.2.11:4000)
   -> if LiteLLM unavailable: NLLB (for translation tasks); rule-based fallback
   -> DecisionLog anchored; response_summary stored (no raw prompt/response)
 ```
@@ -116,7 +116,7 @@ WCAG 2.2 AA on all web surfaces. Languages: EN + SW.
 
 ## 7. Integrity + anti-tamper
 
-- **Cosign verification at load** -- every model inference call verifies the cosign digest against the registry before executing; a digest mismatch returns HTTP 409 and logs a `MODEL_TAMPER` event that pages the IEBC SOC.
+- **Cosign verification at load** -- every model inference call verifies the cosign digest against the registry before executing; a digest mismatch returns HTTP 409 and logs a `MODEL_TAMPER` event that pages the Commission SOC.
 - **PII strip circuit-breaker** -- the `eel-pii-strip-rs` library uses Named Entity Recognition to detect DPA 2019 Schedule 2 sensitive categories (voter ID, biometric reference, financial data) before any data reaches an ML or LLM layer; the breaker is not configurable by the consumer module; only DPO officers can update the detection corpus.
 - **Decision log P05 anchor** -- every `DecisionLog` is anchored in the P05 transparency log within 60 s; the anchor log is the authoritative record of what the AI systems processed during the election.
 - **Chatbot response not stored** -- the raw LLM response is not persisted; only a `response_summary` (operator-written) and the response hash are stored; this prevents the LLM output from becoming a long-term PII liability.
@@ -126,13 +126,13 @@ WCAG 2.2 AA on all web surfaces. Languages: EN + SW.
 
 - **DPA 2019 s.40 (automated processing)** -- every model that influences a decision affecting a voter's rights requires DPO review and is logged in the `ModelRecord.approved_by` field; the DPO review record is retained for 7 years.
 - **DPA 2019 s.26 (minimisation)** -- PII strip circuit-breaker enforces minimisation at the model boundary; no more data is passed to a model than its `data_classes_permitted` policy allows.
-- **DPA 2019 s.31 (data processor agreements)** -- LiteLLM routes to the Kenyan-jurisdiction double at 62.169.25.77:4000 by default; commercial models (OpenAI, Anthropic) are E-tier and require explicit DPO approval and a data processor agreement before being enabled.
+- **DPA 2019 s.31 (data processor agreements)** -- LiteLLM routes to the Kenyan-jurisdiction double at 192.0.2.11:4000 by default; commercial models (OpenAI, Anthropic) are E-tier and require explicit DPO approval and a data processor agreement before being enabled.
 - **Elections (Technology) Regulations 2017** -- AI model audit trail retained for 7 years; cosign signatures and decision logs form part of the statutory audit trail.
 
 ## 9. Honest caveats + external prerequisites
 
-- The NLLB model (on 62.169.25.77) covers Swahili, Kikuyu, and Luo but translation quality for legal and electoral terminology has not been independently evaluated; NLLB output must be reviewed by a human officer before being used in any public-facing communication.
-- The LiteLLM proxy at 62.169.25.77:4000 is a single point of failure for E-tier inference; the fallback to NLLB covers translation tasks only; chatbot requests cannot be served offline.
+- The NLLB model (on 192.0.2.11) covers Swahili, Kikuyu, and Luo but translation quality for legal and electoral terminology has not been independently evaluated; NLLB output must be reviewed by a human officer before being used in any public-facing communication.
+- The LiteLLM proxy at 192.0.2.11:4000 is a single point of failure for E-tier inference; the fallback to NLLB covers translation tasks only; chatbot requests cannot be served offline.
 - The DPO approval workflow adds latency to chatbot requests; any chatbot feature that requires real-time response cannot use the gated workflow and must be pre-approved for a specific prompt category.
 - The cosign keyless OIDC signing approach requires a working Sigstore Fulcio and Rekor instance; the infrastructure team must confirm these are accessible from the CI/CD environment before the first model release.
 - The PII strip NER model must be trained and evaluated on Kenyan electoral documents; using a generic English NER model without domain adaptation will produce false negatives for Kenyan names and ID number formats.

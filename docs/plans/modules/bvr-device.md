@@ -8,7 +8,7 @@
 | Size | L |
 | Availability class | election-critical 99.99% |
 | Event-sourced | no (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M01-bvr-device.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M01-bvr-device.md |
 
 ## Purpose
 
@@ -169,7 +169,7 @@ AC-M01-05: geo-fence violation blocks enrolment immediately and sends alert to b
 AC-M01-06: firmware attestation mismatch quarantines kit centrally within 60 s; kit refuses all new sessions after quarantine (chaos exercise).
 AC-M01-07: all 22 biographic fields present and validated; INTERSEX gender selectable; MRZ pre-populate correct for 2nd-gen ID, Maisha card, and passport (manual test).
 AC-M01-08: screen-reader traversal completes full enrolment flow on TalkBack; WCAG 2.1 AA audit passes with zero critical violations (accessibility audit by independent WCAG specialist).
-AC-M01-09: legacy Android feature-matrix executes with documented degradation on lowest-tier IEBC device; parity matrix signed off by IEBC ICT (bench on real IEBC device).
+AC-M01-09: legacy Android feature-matrix executes with documented degradation on lowest-tier the Commission device; parity matrix signed off by the Commission ICT (bench on real the Commission device).
 AC-M01-10: kit boot-to-ready within 90 s; >= 12 enrolments/hr sustained throughput over 10 h continuous operation (SLA bench).
 AC-M01-11: zero records lost on simulated power failure at every FSM transition; journal-before-act verified by property test with arbitrary cut-point corpus (proptest).
 AC-M01-12: kit certificate revocation propagated from central; kit refuses new sessions within 60 s of revocation event (chaos exercise).
@@ -255,7 +255,7 @@ EC-SCL-04: consumer lag > 60 s on submission sync channel; backpressure applied;
 | property | queue never drops on arbitrary power-cut sequence; ABIS-lite never returns false accept above threshold | proptest | M01-PROP- |
 | contract | bvr-backend ingest endpoint; attestation endpoint; VPRS handoff | Pact (consumer M01, provider M02/M04) | M01-PACT- |
 | integration | offline queue drain on reconnect; geo-fence enforcement with boundary-svc double | nextest + testcontainers | M01-INT- |
-| e2e | full enrolment flow on emulator and real IEBC kit; legacy Android matrix | patrol (Flutter) + HIL bench | M01-E2E- |
+| e2e | full enrolment flow on emulator and real the Commission kit; legacy Android matrix | patrol (Flutter) + HIL bench | M01-E2E- |
 | fuzz | MRZ parser; biographic field inputs; sync payload deserialiser | cargo-fuzz | M01-FUZZ- |
 | load | 12 enrolments/hr sustained 10 h; sync throughput at 1 000 records | k6 behind toxiproxy | M01-LOAD- |
 | chaos | power cut at every FSM transition; cert revocation; OTA interrupt | netem + kill -9 | M01-CHAOS- |
@@ -275,5 +275,5 @@ Tags follow pattern: `#[trace("FR-M01-001","AC-M01-01","EC-KIT-01")]`
 ## Open questions
 
 - Sensor SDK coupling: FBI IQS certification timeline for the shortlisted sensor vendor is not confirmed; affects FR-M01-002.
-- Legacy Android feature matrix: exact list of degraded modalities on lowest-tier IEBC devices needs sign-off from IEBC ICT before G3.
+- Legacy Android feature matrix: exact list of degraded modalities on lowest-tier the Commission devices needs sign-off from the Commission ICT before G3.
 - ISO/FBI cert for ABIS-lite on-device matcher is the same risk as M03; both should be resolved together.

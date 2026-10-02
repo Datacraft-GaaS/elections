@@ -1,4 +1,4 @@
-# Acceptance Criteria — IEBC IEMS Mobile Apps (sw/ Integration)
+# Acceptance Criteria — the Commission IEMS Mobile Apps (sw/ Integration)
 
 **Integration note.** This document is adapted from `mobile/ACCEPTANCE-CRITERIA.md` (source of truth pending stitching-pass consolidation). It is a companion to `../ACCEPTANCE-CRITERIA.md` (the main sw/ acceptance criteria). The stitching pass should add a "Mobile Suite" section to `../ACCEPTANCE-CRITERIA.md` referencing this file and the per-app criteria in the M29-M34 module specs.
 
@@ -26,7 +26,7 @@ Passing all criteria per gate is required to proceed.
 | MB-06 | Golden tests: no unintended UI regression | golden_toolkit | Diffs reviewed |
 | MB-07 | Static analysis clean (dart analyze + custom lints) | CI | Zero warnings |
 | MB-08 | SBOM (SPDX) generated + signed | cosign | Verifiable |
-| MB-09 | App-signing key stored in HSM or IEBC-controlled escrow | Ceremony | Attested |
+| MB-09 | App-signing key stored in HSM or Commission-controlled escrow | Ceremony | Attested |
 
 ---
 
@@ -119,7 +119,7 @@ Passing all criteria per gate is required to proceed.
 | MA-STORE-01 | Google Play submission passes review | Play Console | Approved |
 | MA-STORE-02 | Apple App Store submission passes review | App Store Connect | Approved |
 | MA-STORE-03 | Store screenshots accurately reflect app | Manual review | Accurate |
-| MA-STORE-04 | Signed APK direct-download available on iebc.or.ke with fingerprint publication | Manual | Available |
+| MA-STORE-04 | Signed APK direct-download available on eel.example with fingerprint publication | Manual | Available |
 
 ---
 
@@ -160,8 +160,8 @@ Passing all criteria per gate is required to proceed.
 
 | # | Criterion | Method | Pass condition |
 |---|---|---|---|
-| MH-01 | Source code + build scripts + docs handed to IEBC | Handover ceremony | Complete |
+| MH-01 | Source code + build scripts + docs handed to the Commission | Handover ceremony | Complete |
 | MH-02 | App-signing keys transferred or escrow procedure documented | Handover ceremony | Complete |
-| MH-03 | Google Play + Apple Developer accounts owned or transferable to IEBC | Handover ceremony | Complete |
-| MH-04 | Training complete for IEBC ICT mobile team | Certification | Complete |
+| MH-03 | Google Play + Apple Developer accounts owned or transferable to the Commission | Handover ceremony | Complete |
+| MH-04 | Training complete for the Commission ICT mobile team | Certification | Complete |
 | MH-05 | MDM console configuration handed over | Handover ceremony | Complete |

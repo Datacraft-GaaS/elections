@@ -39,8 +39,8 @@
 <!-- Arrow 2 -->
 <line x1="400" y1="270" x2="445" y2="270" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
 
-<!-- Human: IEBC Officer above clearance -->
-<text x="455" y="218" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#333">* IEBC Officer</text>
+<!-- Human: the Commission Officer above clearance -->
+<text x="455" y="218" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#333">* the Commission Officer</text>
 
 <!-- Clearance Double Check -->
 <rect x="450" y="230" width="150" height="80" rx="6" fill="#9467bd" stroke="#7a4fa0" stroke-width="2"/>

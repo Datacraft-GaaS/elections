@@ -8,7 +8,7 @@
 | Size | M |
 | Availability class | routine 99.5% |
 | Event-sourced | no (ADR-0013: only M08/M09/M10, M20, M51, M63) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M52-election-calendar-gazette.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M52-election-calendar-gazette.md |
 
 ## Purpose
 
@@ -123,7 +123,7 @@ Alerting, escalation, and observability:
 
 Internationalisation and accessibility:
 33. FR-M52-033: i18n of all calendar event labels and notice templates in 11 languages; no hardcoded strings; 11 locales + 150% pseudo-locale expansion pass.
-34. FR-M52-034: WCAG 2.2 AA compliance on public calendar portal and IEBC notice workspace; axe-core zero violations; manual screen-reader script signed off.
+34. FR-M52-034: WCAG 2.2 AA compliance on public calendar portal and the Commission notice workspace; axe-core zero violations; manual screen-reader script signed off.
 
 ## Acceptance criteria
 

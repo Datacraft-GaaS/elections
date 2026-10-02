@@ -50,7 +50,7 @@ describe('cache-poisoning defence (AC-M11-05)', () => {
   // The client must reject any snapshot where the declared root does not match
   // the value embedded in the cosign signature over the tarball.
   function verifySnapshotSignature(declaredRoot, signedRoot) {
-    // In production: Ed25519 verify(sig, canonical_json({root: signedRoot}), iebc_pubkey)
+    // In production: Ed25519 verify(sig, canonical_json({root: signedRoot}), commission_pubkey)
     return declaredRoot === signedRoot
   }
 

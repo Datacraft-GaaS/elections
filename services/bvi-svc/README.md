@@ -174,7 +174,7 @@ Elections Act s.44 (voter identification), s.44A (complementary ID modality supp
 
 ## Observer dashboard (Elixir LiveView)
 
-Real-time election turnout monitoring via `ex/` directory. LiveView app connects to PostgreSQL and Kafka consumers to stream live turnout aggregates to election observers and IEBC staff.
+Real-time election turnout monitoring via `ex/` directory. LiveView app connects to PostgreSQL and Kafka consumers to stream live turnout aggregates to election observers and the Commission staff.
 
 **Features**:
 - Live turnout % by station and constituency
@@ -214,7 +214,7 @@ Retry logic: Exponential backoff (1s, 2s, 4s, 8s) up to 5 attempts per batch. Ki
 **Turnout anomalies**:
 - Check for network partition (kits unable to sync)
 - Verify register extract hash matches source (check kit console logs)
-- Escalate to IEBC supervisor for manual verification
+- Escalate to the Commission supervisor for manual verification
 
 ## Architecture notes
 

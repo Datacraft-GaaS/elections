@@ -1,13 +1,13 @@
-# M33 — Mobile Personnel Dispatch (IEBC Dispatch App)
+# M33 — Mobile Personnel Dispatch (the Commission Dispatch App)
 
 **Module ID:** M33
-**Module Name:** Mobile Personnel Dispatch — IEBC Dispatch App
+**Module Name:** Mobile Personnel Dispatch — the Commission Dispatch App
 **Type:** Mobile Application (Flutter, Android 8.0+ / iOS 14+ / PWA fallback)
-**Distribution:** Private via IEBC MDM + signed APK for casual-worker devices
+**Distribution:** Private via Commission MDM + signed APK for casual-worker devices
 **Users:** ~250,000 polling-day personnel (POs, DPOs, Clerks, RO staff, security, cleaners, drivers)
 **Owner:** Datacraft
 **Status:** Specified — pending implementation
-**IPR:** Custom Software vests in IEBC per GCC 15.4 (Teaming §4)
+**IPR:** Custom Software vests in the Commission per GCC 15.4 (Teaming §4)
 
 Adapted from `mobile/apps/MA05-personnel-dispatch.md`, sw/-module renumbered as M33.
 
@@ -24,9 +24,9 @@ Dispatch, attend, and track every polling-day worker across ~46,000 polling stat
 ## 2. Personas
 
 - Polling-day worker (PO, DPO, Clerk, RO staff, security, driver)
-- IEBC HR dispatcher
-- IEBC County ICT (oversight per county)
-- IEBC Finance (payroll trigger)
+- the Commission HR dispatcher
+- the Commission County ICT (oversight per county)
+- the Commission Finance (payroll trigger)
 
 ---
 
@@ -34,7 +34,7 @@ Dispatch, attend, and track every polling-day worker across ~46,000 polling stat
 
 ### 3.1 Onboarding
 
-- **FR-M33-001** Enrolment via IEBC HR staff ID + biometric enrolment on device.
+- **FR-M33-001** Enrolment via Commission HR staff ID + biometric enrolment on device.
 - **FR-M33-002** MFA sign-in: biometric preferred; PIN fallback.
 - **FR-M33-003** Consent per Kenya DPA for location + attendance capture.
 - **FR-M33-004** Device attestation (soft-fail warn on citizen-tier devices; hard-fail for supervisor roles).
@@ -67,7 +67,7 @@ Dispatch, attend, and track every polling-day worker across ~46,000 polling stat
 ### 3.6 Check-Out
 
 - **FR-M33-018** End-of-shift check-out with biometric + GPS.
-- **FR-M33-019** Check-out triggers payroll milestone (integration with IEBC Finance).
+- **FR-M33-019** Check-out triggers payroll milestone (integration with the Commission Finance).
 - **FR-M33-020** Summary card: hours worked, incidents reported, next assignment (if any).
 
 ### 3.7 Notifications
@@ -101,9 +101,9 @@ Dispatch, attend, and track every polling-day worker across ~46,000 polling stat
 
 ## 5. Integrations
 
-- IEBC HR / staff directory
+- the Commission HR / staff directory
 - Personnel Dispatch back-end (O05, extended from MeGuard)
-- IEBC Finance for payroll trigger
+- the Commission Finance for payroll trigger
 - BVI back-end (M06) for cross-reference to polling-station status
 - Election Command Centre (M16) for real-time attendance feed and reassignment
 - Inventory Management (M20) for kit validation at check-in

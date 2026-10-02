@@ -8,7 +8,7 @@
 | Size | M |
 | Availability class | routine 99.5% |
 | Event-sourced | no (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M07-bvv.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M07-bvv.md |
 
 ## Purpose
 
@@ -38,7 +38,7 @@ OpenAPI file: packages/openapi-contracts/bvi/bvv.yaml
 | POST /bvv/v1/lookup | 2 live-per-user | JWT (OTP-verified session) | n/a | Self-lookup by ID + OTP; returns redacted record |
 | POST /bvv/v1/objections | 2 live-per-user | JWT | yes | File objection on own or third-party record |
 | GET /bvv/v1/objections/{id}/status | 2 live-per-user | JWT | n/a | Track objection status |
-| GET /bvv/v1/objections | 3 accredited | JWT+SpiceDB | n/a | IEBC back-office objection queue |
+| GET /bvv/v1/objections | 3 accredited | JWT+SpiceDB | n/a | the Commission back-office objection queue |
 | PATCH /bvv/v1/objections/{id} | 3 accredited | JWT+SpiceDB | yes | Adjudicate objection |
 
 ## Events

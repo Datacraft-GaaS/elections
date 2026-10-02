@@ -1,11 +1,11 @@
-# Product Requirements Document — IEBC Integrated Elections Management System
+# Product Requirements Document — the Commission Integrated Elections Management System
 
 **Version:** 3.0
 **Date:** 2026-08-21
 **Owner:** Datacraft Limited (software)
 **Consumer:** Independent Electoral & Boundaries Commission of Kenya
-**Contract reference:** IEBC/OIT/01/2026-2027, 3-year Framework Contract
-**IPR:** Custom Software vests in IEBC per GCC 15.4; Standard Software licensed perpetually + irrevocably to IEBC per GCC 16
+**Contract reference:** the tender specification, 3-year Framework Contract
+**IPR:** Custom Software vests in the Commission per GCC 15.4; Standard Software licensed perpetually + irrevocably to the Commission per GCC 16
 
 ---
 
@@ -74,7 +74,7 @@ Source strategy documents:
 ### 3.3 Non-goals
 
 - Voter education beyond what is specified in M13 and M17 digital channels.
-- Financial payment rails (kit-workers paid via IEBC HR/payroll, not this system).
+- Financial payment rails (kit-workers paid via Commission HR/payroll, not this system).
 - Ballot printing itself (CRMS generates ballot proofs; printing contracted separately via Tender 02).
 - Criminal prosecution (IMS, M17, and M18 produce evidence packages; prosecution is ODPP's function).
 
@@ -95,10 +95,10 @@ Source strategy documents:
 | Registered Voter | 30M | Web / mobile / kiosk / KIEMS | Self-register (VPRS), verify register (BVV), verify results (M13) |
 | Party Official | ~50 parties | Web portal | Nominate candidates (CRMS) |
 | Candidate | ~15K per general election | Web portal | Submit nomination + attend clearance |
-| IEBC Commissioner | 7 | Executive dashboard | Oversight, publication authorisation, s.14A declarations |
-| IEBC Secretariat | ~200 | Admin console | Operational management |
-| IEBC ICT Admin | ~30 | Privileged bastion | Infrastructure, configuration, deployment |
-| IEBC County ICT Officer | 47 | County console | County-level operations |
+| the Commission Commissioner | 7 | Executive dashboard | Oversight, publication authorisation, s.14A declarations |
+| the Commission Secretariat | ~200 | Admin console | Operational management |
+| the Commission ICT Admin | ~30 | Privileged bastion | Infrastructure, configuration, deployment |
+| the Commission County ICT Officer | 47 | County console | County-level operations |
 | Field Support Engineer (Datacraft) | ~200 election-day | Support console + phone | Level 1-3 troubleshooting + kit dispatch |
 | IAB Member | 7-10 | M15 IAB Dashboard | Continuous assurance, quarterly reports, escalation |
 | Auditor (independent) | ~5-20 | Read-only + escrow mirror | Continuous certification, post-election audit |
@@ -114,7 +114,7 @@ Source strategy documents:
 - **KRA** — tax-status queries on candidates.
 - **Telco carriers** — Safaricom, Airtel, Telkom Kenya; VPN endpoints, SMS gateways, eSIM.
 - **HSM appliance** — signing services.
-- **IEBC BI (Power BI)** — downstream analytics.
+- **the Commission BI (Power BI)** — downstream analytics.
 - **Mechrevo MES** — OEM factory system providing birth records and FAT data.
 - **Government Printer** — Kenya Gazette Merkle root publication.
 - **KBC Radio** — daily hash bulletin.
@@ -135,16 +135,16 @@ Source strategy documents:
 ### 5.2 Explicitly out of scope
 
 - KIEMS device manufacturing (Mechrevo + OEM).
-- Data-centre server, storage, networking hardware (IEBC-provided).
-- Telco VPN infrastructure (IEBC-provided).
-- The ~14,100 legacy Android devices themselves (IEBC-provided; must integrate).
+- Data-centre server, storage, networking hardware (Commission-provided).
+- Telco VPN infrastructure (Commission-provided).
+- The ~14,100 legacy Android devices themselves (Commission-provided; must integrate).
 - HSM appliance hardware (procured from Thales/Utimaco/Entrust; Datacraft integrates).
 - Physical printing of ballots (post-CRMS handoff).
 - Criminal prosecution (Datacraft produces evidence; ODPP prosecutes).
 
 ### 5.3 Boundary interfaces
 
-- **Northbound to IEBC**: administrative consoles, executive dashboards, audit exports.
+- **Northbound to the Commission**: administrative consoles, executive dashboards, audit exports.
 - **Eastbound to public**: VPRS, BVV, Public Results Portal, M13 Public Verifier, M18 Boundary Explorer.
 - **Southbound to devices**: KIEMS kits, tallying tablets, county workstations, field engineer mobile.
 - **Westbound to external systems**: IPRS, KRA, telcos, HSM, Power BI, transparency log, NCIC, DCI, ODPP, Auditor-General, Supreme Court IT Registrar.
@@ -181,7 +181,7 @@ Every requirement in this PRD complies with:
 
 Full detail in `ARCHITECTURE.md`. Highlights:
 
-- **Two-site active/mirror** deployment on IEBC-provided converged infrastructure (primary Anniversary Towers area, mirror at IEBC DR site). Synchronous replication for write-critical paths (register, results); asynchronous for BI marts.
+- **Two-site active/mirror** deployment on Commission-provided converged infrastructure (primary Anniversary Towers area, mirror at the Commission DR site). Synchronous replication for write-critical paths (register, results); asynchronous for BI marts.
 - **Zero-trust internal network** with mTLS for every service-to-service call, short-lived tokens issued by a central authorisation service (OPA policy engine).
 - **Per-kit digital certificates** issued by an internal PKI with air-gapped root CA, offline ceremony-signed with M-of-N quorum.
 - **Merkle-log-backed immutability** for every state-change event, with public transparency-log root published every 10 minutes to five independent channels, and daily Kenya Gazette anchoring.
@@ -230,7 +230,7 @@ Full functional and non-functional detail per module lives in `modules/*.md`. Be
 | # | Module | Description | Doc |
 |---|---|---|---|
 | M21 | RLA + SHANGRLA Audit Tool | Post-election risk-limiting audit with ballot-polling and comparison methods | `modules/M21-rla-audit.md` |
-| M22 | Campaign Finance Transparency | ECFA spending disclosure portal, real-time monitoring, IEBC + Registrar reporting | `modules/M22-campaign-finance.md` |
+| M22 | Campaign Finance Transparency | ECFA spending disclosure portal, real-time monitoring, the Commission + Registrar reporting | `modules/M22-campaign-finance.md` |
 | M23 | Grievance Channels | Multi-channel intake (app, SMS, WhatsApp, short-code), SLA tracking, evidence routing | `modules/M23-grievance-channels.md` |
 | M24 | Diaspora Voting | Embassy-hosted KIEMS, sealed-transmission queue, diplomatic network fallback | `modules/M24-diaspora-voting.md` |
 | M25 | Special Voter Workflows | Remand prisoners, hospital voters, KDF/GSU, IDP workflows | `modules/M25-special-voter-workflows.md` |
@@ -308,7 +308,7 @@ Full functional and non-functional detail per module lives in `modules/*.md`. Be
 | # | Module | Description | Doc | Related |
 |---|---|---|---|---|
 | M45 | Party Registration Management | Registrar of Political Parties workflow: constitution submission, membership verification, office-bearer records, deregistration process | `modules/M45-party-registration-management.md` | M12, M46, M67 |
-| M46 | Party Primaries Oversight | IEBC oversight of party primary elections: nomination schedule filing, results upload, dispute intake, gender-rule compliance check | `modules/M46-party-primaries-oversight.md` | M45, M12, M23 |
+| M46 | Party Primaries Oversight | the Commission oversight of party primary elections: nomination schedule filing, results upload, dispute intake, gender-rule compliance check | `modules/M46-party-primaries-oversight.md` | M45, M12, M23 |
 | M47 | Nomination Fee Payment | Candidate nomination fee collection: M-Pesa / bank-transfer integration, receipt generation, fee-waiver workflow for gender-rule candidates, refund tracking | `modules/M47-nomination-fee-payment.md` | M12, M45 |
 | M67 | Party Symbol and Colour Registry | Trademark-style registry for party visual identity: Tanimoto similarity check for symbols, perceptual-hash deduplication, colour exclusivity per cycle, ballot-design export API | `modules/M67-party-symbol-colour-registry.md` | M45, M12 |
 
@@ -316,7 +316,7 @@ Full functional and non-functional detail per module lives in `modules/*.md`. Be
 
 | # | Module | Description | Doc | Related |
 |---|---|---|---|---|
-| M48 | Recall Election Workflow | End-to-end workflow for constituency member recall: petition intake, signature verification, threshold calculation, IEBC gazette trigger, ballot generation | `modules/M48-recall-election-workflow.md` | M12, M35, M52 |
+| M48 | Recall Election Workflow | End-to-end workflow for constituency member recall: petition intake, signature verification, threshold calculation, the Commission gazette trigger, ballot generation | `modules/M48-recall-election-workflow.md` | M12, M35, M52 |
 | M49 | Referendum Mechanics | KIEMS mode-switch and back-end configuration for constitutional referenda: question registry, YES/NO tally logic, constitutional-threshold computation, result declaration | `modules/M49-referendum-mechanics.md` | M08, M10, M11, M68 |
 | M50 | By-Election Operations | Reduced-scope election operations for a single constituency: partial kit deployment, constrained nomination window, same cryptographic guarantees as general election | `modules/M50-by-election-operations.md` | M10, M12, M16 |
 | M65 | Diaspora Ballot Physical Logistics | Physical return leg for diaspora ballots: tamper-evident container packing, customs pre-clearance, diplomatic-pouch coordination, chain of custody, tally-centre arrival | `modules/M65-diaspora-ballot-physical-logistics.md` | M24, M10, M20 |
@@ -328,7 +328,7 @@ Full functional and non-functional detail per module lives in `modules/*.md`. Be
 |---|---|---|---|---|
 | M51 | Result Declaration and Certification | Formal result declaration workflow from constituency to national: Form 34-38 certification pipeline, Commissioner digital signature, gazette-ready export, Supreme Court notification | `modules/M51-result-declaration-certification.md` | M10, M09, M40 |
 | M52 | Election Calendar and Gazette Notice | Authoritative election-calendar store: gazetted dates, notice generation, Government Printer integration, cross-module date-authority API | `modules/M52-election-calendar-gazette.md` | M35, M48, M12 |
-| M54 | Election Budget and Expenditure Portal | IEBC budget tracking and public expenditure transparency: budget line management, expenditure upload, public dashboard, OAG export | `modules/M54-election-budget-expenditure.md` | M59, M54 |
+| M54 | Election Budget and Expenditure Portal | the Commission budget tracking and public expenditure transparency: budget line management, expenditure upload, public dashboard, OAG export | `modules/M54-election-budget-expenditure.md` | M59, M54 |
 | M55 | HR and Payroll for Temporary Election Staff | 290K temporary-staff lifecycle: engagement workflow, M-Pesa bulk-disbursement, tax withholding, dispute resolution, NHIF/NSSF integration | `modules/M55-hr-payroll-temporary-staff.md` | M33, M38 |
 | M56 | County and National Government Coordination | Secure data-sharing interface with county governments, Interior Ministry, and security agencies: pre-election logistical data, polling-day situation feeds, DPA-lawful-basis logging | `modules/M56-county-national-coordination.md` | M16, M18, M62 |
 | M60 | Medical and First-Response Coordination | Polling-day medical and security incident coordination: incident report from M33 feed, ambulance dispatch integration, hospital status, county health authority portal | `modules/M60-medical-first-response-coord.md` | M33, M16 |
@@ -347,7 +347,7 @@ Full functional and non-functional detail per module lives in `modules/*.md`. Be
 | P07 | Sandbox + change mgmt + rollback | Full-scale sandbox, blue-green orchestration, roll-back |
 | P08 | Monitoring / observability | SNMP + OpenTelemetry + alerting + dashboards |
 | P09 | Backup / restore / DR automation | Cross-site replication, backup cycle testing, failover |
-| P10 | BI + reporting fabric | Semantic model to IEBC Power BI |
+| P10 | BI + reporting fabric | Semantic model to the Commission Power BI |
 
 ### 8.5 Integrations
 
@@ -356,7 +356,7 @@ Full functional and non-functional detail per module lives in `modules/*.md`. Be
 | I01 | IPRS | Voter identity verification against national ID |
 | I02 | MRZ parsers | 2nd-gen ID, Maisha, Passport |
 | I03 | Telco VPN carriers | Traffic steering, cost metering |
-| I04 | IEBC Power BI | Downstream analytics consumer |
+| I04 | the Commission Power BI | Downstream analytics consumer |
 | I05 | Existing ABIS (if retained) | Integration adapter |
 | I06 | Legacy Android device port | Feature-matrix compatibility layer for ~14,100 units |
 | I07 | HSM integration | Signing operations |
@@ -526,7 +526,7 @@ Every module must exhibit these properties. Individual module PRDs may set stric
 
 - Kenya DPA 2019 compliant with ODPC registration in place at go-live.
 - Data minimisation: only fields the system genuinely needs are collected.
-- Purpose limitation: voter records used only for IEBC statutory mandate.
+- Purpose limitation: voter records used only for the Commission statutory mandate.
 - Storage limitation: retention scheduler enforces statutory limits.
 - Rights fulfilment: subject-access-request workflow with 30-day SLA.
 - Data-breach notification workflow to ODPC within 72 hours.
@@ -538,7 +538,7 @@ Every module must exhibit these properties. Individual module PRDs may set stric
 - All biometric data stored in ISO/IEC 19794 formats.
 - All exports available in CSV, JSON, and PDF with OpenAPI 3.1 specifications.
 - No proprietary binary formats for authoritative data.
-- IPR-transferred source code buildable and deployable by IEBC without vendor cooperation.
+- IPR-transferred source code buildable and deployable by the Commission without vendor cooperation.
 - M14 reproduce-me bundle: 15-year reproducibility commitment against Ubuntu 26.04 LTS.
 
 ### 10.7 Interoperability
@@ -588,7 +588,7 @@ Every module must exhibit these properties. Individual module PRDs may set stric
 - Metrics via OpenTelemetry, aggregated in Prometheus, visualised in Grafana.
 - Distributed traces on every request path exceeding two hops.
 - Alerting via multi-channel (email, SMS, WhatsApp, dashboard).
-- SLO dashboards public inside IEBC.
+- SLO dashboards public inside the Commission.
 - Live health page fed to M16 ECC during polling window.
 
 ---
@@ -601,10 +601,10 @@ All voter registration records, results data, candidate data, audit logs, invent
 
 ### 11.2 IPR classification
 
-- **Custom Software** (VPRS greenfield, all M13-M28 modules, integrations, compliance toolkits): IPR vests in IEBC per GCC 15.4 at Operational Acceptance.
+- **Custom Software** (VPRS greenfield, all M13-M28 modules, integrations, compliance toolkits): IPR vests in the Commission per GCC 15.4 at Operational Acceptance.
 - **Open-source releases** (M13 app source, M14 reproduce-me bundle, M18 boundary dataset, M18 simulator front-end): released under MIT licence / CC BY 4.0 as specified per module.
-- **Standard Software** (Datacraft pre-existing platforms: Lindela, Askari, Hyperion-X, dArchiva, Flowforge, MeGuard, Shule): licensed to IEBC on perpetual, fully paid-up, irrevocable terms per GCC 16.
-- **Third-party software** (HSM SDK, biometric matcher, ICR engine, monitoring stack): licensed to IEBC per each vendor's OEM terms.
+- **Standard Software** (Datacraft pre-existing platforms: Lindela, Askari, Hyperion-X, dArchiva, Flowforge, MeGuard, Shule): licensed to the Commission on perpetual, fully paid-up, irrevocable terms per GCC 16.
+- **Third-party software** (HSM SDK, biometric matcher, ICR engine, monitoring stack): licensed to the Commission per each vendor's OEM terms.
 
 ### 11.3 Data retention
 
@@ -639,9 +639,9 @@ All voter registration records, results data, candidate data, audit logs, invent
 | Chaos | Kill random components; measure survival | SRE | Weekly |
 | Security | SAST, DAST, dependency scanning, secret scanning | Security team | Per PR + annual pen test |
 | Penetration | Full-scope black-box + white-box | Independent accredited firm | Annual + T-90 pre-election |
-| Failover / DR | Primary-to-mirror failover exercise | SRE + IEBC | Quarterly |
-| Field trial | Geo-fencing, offline sync, cellular in Kenyan constituencies | Operations + IEBC | Pre-pilot |
-| User acceptance | End-to-end with IEBC operators | IEBC + Datacraft | Per milestone |
+| Failover / DR | Primary-to-mirror failover exercise | SRE + the Commission | Quarterly |
+| Field trial | Geo-fencing, offline sync, cellular in Kenyan constituencies | Operations + the Commission | Pre-pilot |
+| User acceptance | End-to-end with the Commission operators | the Commission + Datacraft | Per milestone |
 | Regulatory certification | Elections (Technology) Regulations 2017 | Independent certifier | Before every general election |
 | Biometric accuracy | FAR / FRR / throughput | Independent lab | Annual |
 | Accessibility | WCAG 2.2 AA automated (axe-core) + manual (screen reader) + independent audit | QA + Independent | T-90 pre-election |
@@ -653,7 +653,7 @@ All voter registration records, results data, candidate data, audit logs, invent
 ### 12.2 Acceptance gates
 
 - **Factory Acceptance Test (FAT)**: on Datacraft/Mechrevo premises.
-- **Site Acceptance Test (SAT)**: on IEBC infrastructure post-installation.
+- **Site Acceptance Test (SAT)**: on the Commission infrastructure post-installation.
 - **Operational Acceptance Test (OAT)**: full end-to-end after commissioning.
 - **Regulatory certification**: per Elections (Technology) Regulations 2017.
 - **Milestone-based acceptance** per Preliminary Project Plan.
@@ -664,14 +664,14 @@ All voter registration records, results data, candidate data, audit logs, invent
 
 | Phase | Indicative date | Key deliverables |
 |---|---|---|
-| Mobilisation | CED + 30 days | Project Plan, securities, PKI ceremony, sandbox, IEBC on-boarded, IAB chartered |
+| Mobilisation | CED + 30 days | Project Plan, securities, PKI ceremony, sandbox, the Commission on-boarded, IAB chartered |
 | IMS live (Nairobi provisioning centre) | CED + 90 days | M20 + M39 + M63 primary + mirror active; Mechrevo MES integration live |
 | Data migration | Weeks 3-8 from CED | Existing register migrated with reconciliation reports |
 | BVR readiness | Month 3 | M01, M02, M03 ready |
 | VPRS + CVR launch | Month 4 | M04 public portal live; M35 continuous register pipeline live |
 | CRMS + Party systems launch | Month 6-8 | M12 party portal + RO clearance; M45 party registration; M67 symbol registry |
 | Election calendar live | Month 4 | M52 gazette notice management active |
-| M13 + M29 public beta | Month 6 | Public Verifier app + IEBC Verify App in Play Store / App Store |
+| M13 + M29 public beta | Month 6 | Public Verifier app + the Commission Verify App in Play Store / App Store |
 | M18 open data live | Month 4 | Boundary explorer public |
 | Voter ID card system | Month 5 | M53 NRB integration live |
 | Party primaries oversight | Month 7 | M46 active for nomination season |
@@ -713,11 +713,11 @@ All voter registration records, results data, candidate data, audit logs, invent
 
 ### 14.1 Assumptions
 
-- IEBC provides the converged server + storage + networking + HSM.
-- IEBC provides telco VPN infrastructure and SIM/eSIM commercial arrangements.
+- the Commission provides the converged server + storage + networking + HSM.
+- the Commission provides telco VPN infrastructure and SIM/eSIM commercial arrangements.
 - IPRS test environment access granted within 30 days of CED.
 - ~14,100 legacy Android devices with known make/model/OS/SDK.
-- IEBC nominates an independent certifier under Elections (Technology) Regulations 2017.
+- the Commission nominates an independent certifier under Elections (Technology) Regulations 2017.
 - IAB chartered with genuine independence (not a rubber-stamp) per Strategy §PM-08.
 - Mechrevo MES API available for IMS birth-record ingestion from factory start.
 - Al Ghurair ballot printer provides RFID chip manifest compatible with IMS §2.3 ballot UID format.
@@ -725,7 +725,7 @@ All voter registration records, results data, candidate data, audit logs, invent
 ### 14.2 Constraints
 
 - Fixed-price 3-year contract; LDs 0.5%/week capped at 10%.
-- Custom Software IPR vests in IEBC; source-code transfer mandatory.
+- Custom Software IPR vests in the Commission; source-code transfer mandatory.
 - Kenyan data residency for all production data (including M17 AI models).
 - 40% local content per Form 8.
 - Six-week data-migration deadline from Contract Effective Date.
@@ -748,7 +748,7 @@ All voter registration records, results data, candidate data, audit logs, invent
 | R07 | Hate-speech-driven violence (repeat of 2007-2008) | M17 monitoring live from T-90; prebunking at scale; NCIC referral < 15 min SLA |
 | R08 | Social media platform API revoked during election | Pre-signed data-sharing agreements; web-scraping fallback for public content; M17 independence from any single platform |
 | R09 | M14 reproducibility bundle fails to be bit-identical | Determinism enforced by CI matrix (3 OS/arch combinations); second-implementation validation at T-60 |
-| R10 | IAB independence undermined by IEBC pressure | MoU with genuine independence provisions; IAB L4 emergency declaration routes directly to Supreme Court IT Registrar, bypassing IEBC |
+| R10 | IAB independence undermined by the Commission pressure | MoU with genuine independence provisions; IAB L4 emergency declaration routes directly to Supreme Court IT Registrar, bypassing the Commission |
 | R11 | 69-module integration complexity causes cascade failures | Service mesh Linkerd 2 isolates failures; circuit breakers on every dependency; chaos engineering weekly from T-300; module-boundary contracts enforced by OpenAPI contract tests |
 | R12 | M35 CVR data quality (life-event ingestion from CRS/NRB) introduces systematic register errors | Reconciliation checks at every CRS/NRB batch; anomaly-detection rules on unexpected change rates; M36 appeal pipeline as safety valve; M64 public inspection as final correction window |
 | R13 | M33 personnel dispatch GPS fraud (fake check-in) | Geofence cross-check with known station coordinates; photo-at-check-in with device EXIF; M16 ECC real-time anomaly flag on clustered check-ins |
@@ -777,7 +777,7 @@ All voter registration records, results data, candidate data, audit logs, invent
 | ECC | Election Command Centre (unified E-SOC + COC + CAOC) |
 | HSM | Hardware Security Module |
 | IAB | Independent Assurance Board |
-| IEBC | Independent Electoral and Boundaries Commission |
+| the Commission | the electoral authority |
 | IEMS | Integrated Elections Management System |
 | IMS | Inventory Management System (M20) |
 | IPRS | Integrated Population Registration System |
@@ -805,7 +805,7 @@ Full glossary in `glossary.md` (to be produced).
 - Post-award changes governed by the Configuration Control Board (`../POST_AWARD_PROGRAMME.md` §4).
 - No production configuration change deployed without dual-control sign-off.
 - Software freeze T-30 before every gazetted election event.
-- Emergency-change protocol: 3-hour window, joint IEBC + Datacraft + Security sign-off, post-hoc CCB ratification within 24 hours, entry in transparency log.
+- Emergency-change protocol: 3-hour window, joint the Commission + Datacraft + Security sign-off, post-hoc CCB ratification within 24 hours, entry in transparency log.
 - All CCB decisions HSM-signed and appended to the public audit trail (P05 + M15).
 
 ---

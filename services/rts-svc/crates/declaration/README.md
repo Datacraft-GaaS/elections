@@ -2,7 +2,7 @@
 
 Module M51 election declaration and certificate of election with HSM signing and witness tracking.
 
-Issues digital Declaration and CertificateOfElection from tallied results. Signs via HSM (Ed25519 + ML-DSA). Tracks witness cosignatures (Chairperson, IEBC Secretary, observers). Manages petition window (7-day deadline post-declaration). Emits rts.declaration.signed on signature completion.
+Issues digital Declaration and CertificateOfElection from tallied results. Signs via HSM (Ed25519 + ML-DSA). Tracks witness cosignatures (Chairperson, the Commission Secretary, observers). Manages petition window (7-day deadline post-declaration). Emits rts.declaration.signed on signature completion.
 
 Fits into rts-svc as the electoral authority signing path: RTS tally flows into declaration issuance, HSM signs, transparency log publishes.
 

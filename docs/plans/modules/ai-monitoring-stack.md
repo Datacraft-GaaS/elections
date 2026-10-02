@@ -8,7 +8,7 @@
 | Size | XL |
 | Availability class | cycle-critical 99.9% |
 | Event-sourced | no |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M28-ai-monitoring-stack.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M28-ai-monitoring-stack.md |
 
 ## Purpose
 
@@ -19,10 +19,10 @@ Deploy a governed ensemble of AI models around but never inside the result-deter
 | surface | technology | path |
 |---|---|---|
 | Public model registry | Astro | services/ai-platform-svc/astro/model-registry-public-site/ |
-| Form 34A OCR Review Console (IEBC Officer) | Phoenix LiveView | services/ai-platform-svc/ex/ocr_web/ |
+| Form 34A OCR Review Console (the Commission Officer) | Phoenix LiveView | services/ai-platform-svc/ex/ocr_web/ |
 | AI Decision Log Viewer (IAB) | Django | services/ai-platform-svc/django/iab_ai_log/ |
 | Disinformation Flag Dashboard (SOC Analyst) | Phoenix LiveView | services/ai-platform-svc/ex/soc_web/ |
-| Translation Approval Queue (IEBC Comms) | Django | services/ai-platform-svc/django/comms_approval/ |
+| Translation Approval Queue (the Commission Comms) | Django | services/ai-platform-svc/django/comms_approval/ |
 | Chatbot (WhatsApp / Web / SMS) | Python (FastAPI + LiteLLM) | services/ai-platform-svc/py/chatbot_worker/ |
 | API | Rust (axum) | services/ai-platform-svc/crates/ai-platform-api/ |
 
@@ -81,7 +81,7 @@ OpenAPI file: `packages/openapi-contracts/ai/ai-monitoring.yaml`
 | M26 Anomaly Detection | internal | integrations/detection/ | yes | B3/B5/B6/B7 central model outputs as detection layer inputs |
 | M27 Intent Preservation | internal | integrations/intent/ | yes | A7 pre-mark validation model |
 | P05 Merkle Chain | P05 | integrations/merkle/ | yes | model card and decision log anchoring |
-| P06 HSM | P06 | integrations/hsm/ | yes | model activation requires IEBC Chair HSM |
+| P06 HSM | P06 | integrations/hsm/ | yes | model activation requires the Commission Chair HSM |
 | M11 Public Portal | internal | integrations/portal/ | yes | model registry, model cards, public AI decision log summary |
 | LiteLLM (Kenyan cloud tenant) | internal | integrations/litellm/ | yes | C1 chatbot LLM routing; PII stripped before any call |
 | NLLB / NMT service | internal (Kenyan cloud) | integrations/nmt/ | yes | C2 translation |
@@ -109,13 +109,13 @@ Central-layer models (B-series, Kenyan-cloud-hosted):
 - B7 ML-assisted SIEM (Isolation Forest / unsupervised network anomaly): SOC analyst reviews all alerts; no autonomous network action
 
 Citizen-layer (C-series):
-- C1 multilingual chatbot (LLM with IEBC knowledge base): WhatsApp, Telegram, SMS; PII-stripped before any API call; escalates to human on complex or ambiguous queries; hosted on Kenyan-tenant LiteLLM
-- C2 real-time announcement translation (NLLB-family NMT): IEBC Comms Officer approves every translation before publication; back-translation QA on all sensitive content
+- C1 multilingual chatbot (LLM with the Commission knowledge base): WhatsApp, Telegram, SMS; PII-stripped before any API call; escalates to human on complex or ambiguous queries; hosted on Kenyan-tenant LiteLLM
+- C2 real-time announcement translation (NLLB-family NMT): the Commission Comms Officer approves every translation before publication; back-translation QA on all sensitive content
 - C3 TTS for radio and IVR: human reviews all scripts before production
 - C4 ASR for grievance intake (Kenyan-language fine-tuned): transcribes voice-note grievances; human agent reviews transcript; intake aid only
 
 Disinformation (D-series):
-- D1 CIB detection (graph + velocity model): human analyst reviews HIGH-confidence flags; daily summary to IAB and IEBC Comms
+- D1 CIB detection (graph + velocity model): human analyst reviews HIGH-confidence flags; daily summary to IAB and the Commission Comms
 - D2 deepfake detection (FaceForensics-family CNN): human analyst confirms before any action; limitation published in model card: state-level deepfakes may evade current detectors
 - D3 fake Form 34A detection (hash lookup + visual similarity): hash matches are deterministic; visual-similarity matches are advisory; public query via Public Verifier
 - D4 bot-network detection (network analysis + bot-score model): human analyst reviews; human distinguishes coordinated-inauthentic from legitimate coordinated campaigns
@@ -295,7 +295,7 @@ Tags: `#[trace("FR-M28-031","AC-M28-06","EC-SEC-04")]`
 ## Open questions
 
 - Kenyan-jurisdiction IaaS: Konza Technopolis / Icolo / Safaricom Cloud / Liquid Telecom Nairobi must be contracted and SLA agreed before central model deployment; timing risk.
-- NLLB-family NMT service: Kenyan-hosted instance at 62.169.25.77 (ml/vault server) may need migration to Konza/Icolo for DPA compliance; confirm with Datacraft CISO.
+- NLLB-family NMT service: Kenyan-hosted instance at 192.0.2.11 (ml/vault server) may need migration to Konza/Icolo for DPA compliance; confirm with Datacraft CISO.
 - Social media monitoring API: aggregated feed from which provider? No individual user data; sourcing and MoU must be agreed before D1/D4 integration sprint.
-- ODPC DPIA registration: five DPIAs required; IEBC DPO must lead; timeline risk if ODPC review takes > 90 days.
-- sw/ spec references LiteLLM at 62.169.25.77:4000; confirm this remains the designated Kenyan-tenant endpoint or flag migration required; ADR requires Kenyan-jurisdiction hosting.
+- ODPC DPIA registration: five DPIAs required; the Commission DPO must lead; timeline risk if ODPC review takes > 90 days.
+- sw/ spec references LiteLLM at 192.0.2.11:4000; confirm this remains the designated Kenyan-tenant endpoint or flag migration required; ADR requires Kenyan-jurisdiction hosting.

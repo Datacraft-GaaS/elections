@@ -2,16 +2,16 @@
 
 **Module ID:** M46
 **Name:** Party Primaries Oversight
-**Runs on:** Central servers (Kenyan cloud) + party-facing portal + IEBC oversight back-office
-**Owner:** Datacraft (pro-bono offering; outside IEBC tender scope)
+**Runs on:** Central servers (Kenyan cloud) + party-facing portal + the Commission oversight back-office
+**Owner:** Datacraft (pro-bono offering; outside the Commission tender scope)
 **Status:** Draft v1
-**IPR:** Custom Software vests in IEBC per GCC 15.4; pro-bono module; Datacraft retains right to productise separately
+**IPR:** Custom Software vests in the Commission per GCC 15.4; pro-bono module; Datacraft retains right to productise separately
 
 ---
 
 ## 1. Purpose
 
-Party primaries are the single highest-fraud-risk event in the Kenyan electoral cycle (Strategy §XXI.A.1). IEBC has no constitutional mandate to run primaries but has an oversight function to receive and publish results and adjudicate complaints. This module provides: a reduced-feature KIEMS-variant for parties that opt in; a primary-specific integrity dashboard for IEBC oversight; primary-result publication; and primary-dispute intake routed to PPDT and the Political Parties Liaison Committee. Pro-bono offering distinct from the IEBC tender scope.
+Party primaries are the single highest-fraud-risk event in the Kenyan electoral cycle (Strategy §XXI.A.1). the Commission has no constitutional mandate to run primaries but has an oversight function to receive and publish results and adjudicate complaints. This module provides: a reduced-feature KIEMS-variant for parties that opt in; a primary-specific integrity dashboard for the Commission oversight; primary-result publication; and primary-dispute intake routed to PPDT and the Political Parties Liaison Committee. Pro-bono offering distinct from the Commission tender scope.
 
 Strategy reference: §XXI.A.1 (Party Primaries). Political Parties Act 2011 s.22; Elections Act s.33.
 
@@ -21,7 +21,7 @@ Strategy reference: §XXI.A.1 (Party Primaries). Political Parties Act 2011 s.22
 
 - **Party Returning Officer** — operates the opt-in KIEMS-lite kit; submits primary results per ward/constituency
 - **Party Primary Observer** — independent observer admitted under party rules; views integrity dashboard
-- **IEBC Oversight Officer** — monitors primary-result publication; receives complaint flags; issues oversight notices
+- **the Commission Oversight Officer** — monitors primary-result publication; receives complaint flags; issues oversight notices
 - **PPDT Clerk** — receives primary-dispute referrals
 - **Candidate (Primary Contestant)** — views own primary results; submits disputes; tracks dispute status
 - **Public User** — reads published primary results; no login required
@@ -33,9 +33,9 @@ Strategy reference: §XXI.A.1 (Party Primaries). Political Parties Act 2011 s.22
 
 ### KIEMS-Lite Opt-In
 
-- **FR-M46-001** Party opt-in: registered party (ACTIVE status in M45) applies to use KIEMS-lite; IEBC Oversight Officer approves; party signs MoU committing to result publication and IEBC oversight.
+- **FR-M46-001** Party opt-in: registered party (ACTIVE status in M45) applies to use KIEMS-lite; the Commission Oversight Officer approves; party signs MoU committing to result publication and the Commission oversight.
 - **FR-M46-002** KIEMS-lite kit configuration: subset of M05 BVI functionality — voter-roll import (party-supplied, not CVR), biometric or PIN voter authentication (party choice), ballot casting, result tallying. No ABIS integration. No national network connectivity required. Offline-capable.
-- **FR-M46-003** Voter roll: party supplies voter roll per constituency (CSV; party members eligible to vote in that primary); system validates format but does not cross-reference against CVR (party-member data outside IEBC mandate).
+- **FR-M46-003** Voter roll: party supplies voter roll per constituency (CSV; party members eligible to vote in that primary); system validates format but does not cross-reference against CVR (party-member data outside the Commission mandate).
 - **FR-M46-004** Kit provisioning per constituency: kit serial bound to constituency code and primary election date; cannot be used at another constituency.
 - **FR-M46-005** Result submission: party Returning Officer submits constituency primary results (candidate names, votes received, spoilt ballots, total turnout) via signed JSON upload to M46 backend; signature verified against party-provisioned certificate.
 
@@ -43,13 +43,13 @@ Strategy reference: §XXI.A.1 (Party Primaries). Political Parties Act 2011 s.22
 
 - **FR-M46-006** Results published to public portal within 4 hours of submission; per-constituency breakdown; downloadable CSV/JSON.
 - **FR-M46-007** Results integrity: each result submission hash-anchored in P05 Merkle chain; public Merkle path verifiable.
-- **FR-M46-008** Result amendment: party may request amendment within 48 hours of publication with supporting documentation; IEBC Oversight Officer approves amendment; original and amended versions both retained.
+- **FR-M46-008** Result amendment: party may request amendment within 48 hours of publication with supporting documentation; the Commission Oversight Officer approves amendment; original and amended versions both retained.
 
 ### Primary Integrity Dashboard
 
-- **FR-M46-009** IEBC Oversight Officer dashboard: map view of primary result submission status per constituency (SUBMITTED / PENDING / LATE / DISPUTED); turnout anomaly flags (> 2 SD deviation from party's historical primary turnout where available).
-- **FR-M46-010** Complaint density heat map: complaints per constituency displayed as choropleth; hot-spots highlighted for IEBC Oversight Officer attention.
-- **FR-M46-011** IEBC oversight notice: Oversight Officer can issue a formal oversight notice to a party regarding specific constituency irregularities; notice published on the public portal alongside those constituency results.
+- **FR-M46-009** the Commission Oversight Officer dashboard: map view of primary result submission status per constituency (SUBMITTED / PENDING / LATE / DISPUTED); turnout anomaly flags (> 2 SD deviation from party's historical primary turnout where available).
+- **FR-M46-010** Complaint density heat map: complaints per constituency displayed as choropleth; hot-spots highlighted for the Commission Oversight Officer attention.
+- **FR-M46-011** the Commission oversight notice: Oversight Officer can issue a formal oversight notice to a party regarding specific constituency irregularities; notice published on the public portal alongside those constituency results.
 
 ### Primary Dispute Intake
 
@@ -67,25 +67,25 @@ Strategy reference: §XXI.A.1 (Party Primaries). Political Parties Act 2011 s.22
 - **NFR-M46-002** Result publication within 4 hours of submission; p99 upload response <= 2 s.
 - **NFR-M46-003** Public results portal p99 <= 2 s under 20,000 concurrent users (primary results draw significant public interest).
 - **NFR-M46-004** WCAG 2.2 AA for public portal and candidate portal; EN + SW.
-- **NFR-M46-005** DPA 2019: party-member voter rolls not stored beyond tallying session; only aggregate results retained by IEBC; DPIA registered.
+- **NFR-M46-005** DPA 2019: party-member voter rolls not stored beyond tallying session; only aggregate results retained by the Commission; DPIA registered.
 - **NFR-M46-006** Merkle-anchored result storage; tamper detection on any stored result hash.
 - **NFR-M46-007** Availability >= 99.5% during primary result submission windows (typically 2 weeks around primary election dates, T-90 to T-75).
 - **NFR-M46-008** PPDT referral dispatch within 24 hours of PDM escalation trigger.
 
 ---
 
-- **NFR-46-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `iebc-iems-46` (replace 46 with the module number); alert ruleset ID `iems-46-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
+- **NFR-46-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `commission-iems-46` (replace 46 with the module number); alert ruleset ID `iems-46-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
 
 ## 5. User Stories
 
 1. As a party Secretary-General, I opt our party into KIEMS-lite oversight, sign the MoU online, and receive provisioned kits 30 days before our primary election.
 2. As a party Returning Officer, I upload the constituency primary results after polls close and receive a Merkle receipt within 2 minutes.
 3. As a member of the public, I can view primary results per constituency within 4 hours of result submission and download the full results CSV.
-4. As an IEBC Oversight Officer, I see a map of which constituencies have submitted results and which are late, with turnout anomaly flags highlighted.
+4. As a Commission Oversight Officer, I see a map of which constituencies have submitted results and which are late, with turnout anomaly flags highlighted.
 5. As a losing candidate, I submit a primary dispute within 48 hours of result publication and receive a case reference number immediately.
 6. As a candidate, after 7 days without a party PDM resolution, my dispute is automatically elevated to PPDT with a structured case file; I do not need to re-submit documents.
 7. As the PPDT Clerk, I receive a pre-assembled referral package with the result PDF, dispute form, and PDM chronology, so I can open a case in 15 minutes.
-8. As an IEBC Oversight Officer, I issue a formal oversight notice to a party about irregularities in Mombasa County primary; the notice appears on the public portal next to those results within 1 hour.
+8. As a Commission Oversight Officer, I issue a formal oversight notice to a party about irregularities in Mombasa County primary; the notice appears on the public portal next to those results within 1 hour.
 9. As a journalist, I can verify that the published result JSON matches the Merkle hash published on the portal.
 10. As a candidate, if PPDT issues a determination correcting my result, I can see the updated published result with the determination reference linked.
 
@@ -189,7 +189,7 @@ paths:
         "200": { description: "PrimaryDispute with status timeline" }
   /api/v1/oversight/notices:
     post:
-      summary: IEBC issues oversight notice
+      summary: the Commission issues oversight notice
       security: [{ BearerAuth: [oversight_officer] }]
       responses:
         "201": { description: "Notice published" }
@@ -213,7 +213,7 @@ paths:
 ## 9. UI/UX
 
 - Party portal: opt-in wizard; kit request form; result upload with drag-drop JSON/CSV; receipt confirmation page.
-- IEBC oversight dashboard: constituency map with status chips; anomaly flag side panel; notice-composition modal.
+- the Commission oversight dashboard: constituency map with status chips; anomaly flag side panel; notice-composition modal.
 - Public results portal: searchable by party + constituency + position; Merkle path verifier; CSV/JSON download; oversight notice banner where issued.
 - Candidate dispute portal: 3-step dispute form; status timeline view; PPDT case tracker.
 - All public screens WCAG 2.2 AA; EN + SW.
@@ -224,11 +224,11 @@ paths:
 
 | Requirement | Provision | Implementation |
 |---|---|---|
-| IEBC oversight of primaries | Elections Act s.33 | Oversight dashboard + notice capability |
+| the Commission oversight of primaries | Elections Act s.33 | Oversight dashboard + notice capability |
 | Party primary obligation to publish results | PPA 2011 s.22 | Result publication FR-M46-006 |
 | Primary dispute to PPDT | PPA 2011 s.40 | Dispute intake + PPDT referral FR-M46-013 |
 | DPA 2019 party-member data | DPA 2019 s.26 | Voter rolls not retained post-tally; DPIA filed |
-| Merkle integrity | IEBC Audit Regulations | P05 hash anchoring for all result submissions |
+| Merkle integrity | the Commission Audit Regulations | P05 hash anchoring for all result submissions |
 
 ---
 
@@ -250,7 +250,7 @@ paths:
 - Unit: Merkle-receipt generation; result hash; PDM escalation timer.
 - Integration: M45 party status gate; P05 hash anchor; PPDT referral API.
 - Load: 200 result uploads in 2-hour window (typical primary close burst).
-- UAT: IEBC Oversight Officers; PPDT clerks; pilot party officials.
+- UAT: the Commission Oversight Officers; PPDT clerks; pilot party officials.
 - Offline KIEMS-lite kit: network-loss simulation; batch upload on reconnect.
 
 ---
@@ -283,7 +283,7 @@ paths:
 
 | Risk | Likelihood | Mitigation |
 |---|---|---|
-| Low party opt-in rate makes module underutilised | High | Outreach campaign; IEBC endorsement; results publication requirement applies to all parties regardless of opt-in |
+| Low party opt-in rate makes module underutilised | High | Outreach campaign; the Commission endorsement; results publication requirement applies to all parties regardless of opt-in |
 | Parties submit fraudulent results even with KIEMS-lite | Medium | Result hash + Merkle anchoring + published receipt; observer presence from M43 encouraged |
 | PPDT overwhelmed with primary disputes | High | Structured intake reduces manual work; PPDT capacity planning based on primary count |
 | Kit loss or compromise | Medium | Kit serial binding; remote-wipe capability; inventory tracked in M20 |
@@ -310,20 +310,20 @@ paths:
 | §XXI.A.1 Party Primaries (highest fraud risk) | Oversight infrastructure for primaries | FR-M46-001 to FR-M46-016 |
 | §XXI.A.4 Dispute Resolution | PPDT intake for primary disputes | FR-M46-012 to FR-M46-016 |
 | PPA 2011 s.22 | Party result publication obligation | FR-M46-006, FR-M46-007 |
-| Elections Act s.33 | IEBC oversight function | FR-M46-009 to FR-M46-011 |
+| Elections Act s.33 | the Commission oversight function | FR-M46-009 to FR-M46-011 |
 
 ## 18. Decommissioning
 
-**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if IEBC terminates the contract.
+**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if the Commission terminates the contract.
 
 **Steps:**
 
-1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and IEBC DPO.
+1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and the Commission DPO.
 2. **Service shutdown** — Kubernetes deployments scaled to zero; PersistentVolumeClaims retained for 30 days then deleted after confirmation of M69 transfer.
 3. **Credential revocation** — service account certificates, API keys, and HSM key handles revoked via P06 key-destruction ceremony within 48 hours of shutdown.
 4. **Source-code escrow** — final tagged release deposited to C04 escrow within 7 days of shutdown.
-5. **Runbook handover** — operational runbook and post-mortem notes delivered to IEBC ICT within 14 days.
+5. **Runbook handover** — operational runbook and post-mortem notes delivered to the Commission ICT within 14 days.
 
-**Owner:** SRE Lead. **Sign-off:** IEBC ICT Director + Datacraft Programme Director.
+**Owner:** SRE Lead. **Sign-off:** the Commission ICT Director + Datacraft Programme Director.
 
 > **RESOLUTION (F-23, 2026-08-21):** Decommissioning stub added per audit finding. Owner: SRE Lead. Target: FAT-07 gate.

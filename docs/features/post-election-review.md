@@ -112,16 +112,16 @@ Languages: EN + SW on staff surfaces. Public intake form: EN + SW + Kikuyu + Luo
 ## 8. Kenya statute alignment
 
 - **Elections Act §4(b)** - Commission shall promote public confidence in electoral processes; the public tracker operationalises accountability.
-- **Independent Electoral and Boundaries Commission Act §5(2)(d)** - Commission shall undertake continuous research into electoral matters; M41 formalises the research intake and tracking mechanism.
+- **the electoral authority's establishing Act §5(2)(d)** - Commission shall undertake continuous research into electoral matters; M41 formalises the research intake and tracking mechanism.
 - **Kenya Data Protection Act §26 (minimisation)** - only hashes in the DB; raw descriptions in S3 WORM with access restricted to review coordinators and above.
 - **Public Finance Management Act** - `ParliamentReferral` with outcome tracking supports the Commission's annual report obligations to Parliament under §§68-70.
 
 ## 9. Honest caveats + external prerequisites
 
-- The long-drip attack register's 180-day review interval is a policy choice, not a statutory requirement. IEBC security policy (referenced in the spec) sets this interval; it can be changed via a config value in `governance-svc` environment without a code change.
+- The long-drip attack register's 180-day review interval is a policy choice, not a statutory requirement. the Commission security policy (referenced in the spec) sets this interval; it can be changed via a config value in `governance-svc` environment without a code change.
 - Parliamentary referral is a letter-based process. There is no API integration with Parliament. The `acknowledged_at` and `outcome` fields are manually updated by Commission legal staff.
 - Anonymous public submissions cannot be followed up. The public tracker shows aggregate data only; individual submission status is not visible to the submitter unless they used OIDC.
-- Finding quality depends on observer debrief participation. IEBC must actively solicit debrief reports from M42/M43 accredited observers post-election; the system can ingest them but cannot compel them.
+- Finding quality depends on observer debrief participation. the Commission must actively solicit debrief reports from M42/M43 accredited observers post-election; the system can ingest them but cannot compel them.
 
 ## 10. Test coverage + operational runbooks
 

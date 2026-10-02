@@ -8,11 +8,11 @@
 | Size | M |
 | Availability class | routine 99.5% |
 | Event-sourced | no |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M32-mobile-field-support.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M32-mobile-field-support.md |
 
 ## Purpose
 
-Give every Datacraft field support engineer (~200 on election day) a mobile console for their assigned county or cluster of polling stations: support-ticket queue with SLA timers, remote kit diagnostics, KEBS and warranty-claim initiation, escalation to Datacraft L2/L3 and Mechrevo OEM and IEBC ICT, on-call rotation management, and end-of-shift signed reporting.
+Give every Datacraft field support engineer (~200 on election day) a mobile console for their assigned county or cluster of polling stations: support-ticket queue with SLA timers, remote kit diagnostics, KEBS and warranty-claim initiation, escalation to Datacraft L2/L3 and Mechrevo OEM and the Commission ICT, on-call rotation management, and end-of-shift signed reporting.
 
 ## Surfaces and languages
 
@@ -21,7 +21,7 @@ Give every Datacraft field support engineer (~200 on election day) a mobile cons
 | Field Support App (Android 10+ / iOS 15+) | Flutter | services/field-mobile-svc/apps/field-support/ |
 | API | Rust (axum) | services/field-mobile-svc/crates/field-mobile-api/ |
 
-Distribution: private via IEBC MDM (Datacraft device roster). Languages: EN + SW.
+Distribution: private via Commission MDM (Datacraft device roster). Languages: EN + SW.
 
 ## Domain model
 
@@ -40,7 +40,7 @@ OpenAPI file: `packages/openapi-contracts/field/field-support.yaml`
 |---|---|---|---|---|
 | GET /v1/support/tickets | 2 | JWT+SpiceDB (DATACRAFT_ENGINEER) | n/a | live ticket queue filtered by cluster + severity |
 | POST /v1/support/tickets/{id}/take | 2 | JWT+SpiceDB (DATACRAFT_ENGINEER) | yes | take / assign ticket |
-| POST /v1/support/tickets/{id}/escalate | 2 | JWT+SpiceDB (DATACRAFT_ENGINEER) | yes | escalate to L2/L3/Mechrevo/IEBC ICT |
+| POST /v1/support/tickets/{id}/escalate | 2 | JWT+SpiceDB (DATACRAFT_ENGINEER) | yes | escalate to L2/L3/Mechrevo/the Commission ICT |
 | GET /v1/support/kits/{serial} | 2 | JWT+SpiceDB (DATACRAFT_ENGINEER) | n/a | kit health telemetry |
 | POST /v1/support/kits/{serial}/action | 2 | JWT+SpiceDB (DATACRAFT_ENGINEER) | yes | remote diagnostic action (signed, audited, kit-consent required) |
 | POST /v1/support/warranty | 2 | JWT+SpiceDB (DATACRAFT_ENGINEER) | yes | initiate warranty claim |
@@ -97,18 +97,18 @@ OpenAPI file: `packages/openapi-contracts/field/field-support.yaml`
 14. FR-M32-014: warranty claim filing: OEM automatically identified from kit metadata; claim drafted with fault description, photo evidence, and engineer ID; submitted to O04 and Mechrevo via integrations/warranty/
 15. FR-M32-015: warranty claim status tracked in app; push notification when status changes; claim history retained for the election lifecycle
 16. FR-M32-016: spare-part shipment and hot-swap kit dispatch coordinated via M20 IMS API; nearest spare-holding constituency store shown on map; dispatch order created from app
-17. FR-M32-017: one-tap escalation to Datacraft L2, L3, Mechrevo OEM, and IEBC ICT per pre-configured escalation matrix; escalation level determined by ticket severity and elapsed SLA
+17. FR-M32-017: one-tap escalation to Datacraft L2, L3, Mechrevo OEM, and the Commission ICT per pre-configured escalation matrix; escalation level determined by ticket severity and elapsed SLA
 18. FR-M32-018: escalation carries full ticket context: description, attachments, all threaded messages, kit telemetry snapshot at time of escalation; no context rebuild needed by recipient
-19. FR-M32-019: every escalation logged permanently in eel.field.support_ticket_escalated.v1 event; record is immutable; queryable by IEBC ICT audit trail
+19. FR-M32-019: every escalation logged permanently in eel.field.support_ticket_escalated.v1 event; record is immutable; queryable by the Commission ICT audit trail
 20. FR-M32-020: on-call rotation schedule visible per engineer: current on-call, next handoff time, contact details; updated via O02 ticketing back-end
 21. FR-M32-021: push notification for new ticket assignment and approaching SLA breach (at 80% and 100% elapsed); notification delivery confirmed via FCM or Apple APNs ack
 22. FR-M32-022: shift handoff at shift boundary: outgoing engineer signs off; incoming engineer countersigns; open tickets transferred; handoff record submitted to O02; both signatures required to close shift
 23. FR-M32-023: diagnostic runbook library indexed by symptom keyword and kit error code; full-text search returns results in <= 2 s from pre-built on-device index; runbooks versioned and updated via MDM
-24. FR-M32-024: contact card for Presiding Officer, Returning Officer, county support desk, war-room hotline, Mechrevo field contact, and IEBC ICT hotline; cached offline
+24. FR-M32-024: contact card for Presiding Officer, Returning Officer, county support desk, war-room hotline, Mechrevo field contact, and the Commission ICT hotline; cached offline
 25. FR-M32-025: step-by-step kit reset and recovery guidance embedded offline; covers factory-reset-safe and data-preserving paths; links to relevant runbook section
 26. FR-M32-026: nearest spare-holding constituency store identified per cluster via M20; store address, stock count, and contact shown; map pin available offline from cached tile set
 27. FR-M32-027: automatic end-of-shift report compiled from local records: tickets handled by severity, SLA compliance percentage, escalations triggered, spares consumed, incidents reported, hours on shift
-28. FR-M32-028: shift report signed by engineer biometric; submitted to Datacraft Ops and IEBC ICT via field-mobile-api; queued with UUID7 idempotency key if offline; submission confirmed before session close
+28. FR-M32-028: shift report signed by engineer biometric; submitted to Datacraft Ops and the Commission ICT via field-mobile-api; queued with UUID7 idempotency key if offline; submission confirmed before session close
 29. FR-M32-029: diagnostic runbook library fully offline; no network dependency for any runbook read; runbook version displayed so engineer knows if content may be stale
 30. FR-M32-030: ticket queue readable offline from last-sync snapshot; stale-since timestamp displayed; new ticket creation and status updates require connectivity
 31. FR-M32-031: remote diagnostic actions queued in Isar + SQLCipher store if kit-gateway unreachable; retried on connectivity restoration with UUID7 idempotency key; no duplicate action executed
@@ -124,7 +124,7 @@ OpenAPI file: `packages/openapi-contracts/field/field-support.yaml`
 2. AC-M32-02: remote diagnostic action (fetch logs) signed by engineer biometric, audited in eel.field.diagnostic_action.v1 topic, kit-side confirmation sent to Presiding Officer, and audit record queryable in M06; verified in integration test
 3. AC-M32-03: SEV 1 escalation routes to Datacraft L2 within 2 h; escalation event carries full ticket context and all attachments; log entry immutable; verified in bench test with O02 stub
 4. AC-M32-04: diagnostic runbook library searchable in airplane mode; result returned in <= 2 s on mid-tier Android 10 device; verified in netem offline integration test
-5. AC-M32-05: end-of-shift report signed, counter-signed by incoming engineer, submitted to Datacraft Ops and IEBC ICT, and confirmed received; shift handoff requires both signatures; UAT sign-off
+5. AC-M32-05: end-of-shift report signed, counter-signed by incoming engineer, submitted to Datacraft Ops and the Commission ICT, and confirmed received; shift handoff requires both signatures; UAT sign-off
 6. AC-M32-06: MFA sign-in completes on Android 10+ and iOS 15+ real devices; attestation failure on rooted device blocks sign-in within 2 s and emits tamper event
 7. AC-M32-07: mTLS pinning refuses connection to MITM proxy presenting rogue CA cert; zero auth-header bytes observed in captive-portal intercept test
 8. AC-M32-08: remote diagnostic action queued while kit-gateway unreachable; retried on reconnect; no duplicate action executed; idempotency key verified by re-sending and confirming single audit record
@@ -180,7 +180,7 @@ OpenAPI file: `packages/openapi-contracts/field/field-support.yaml`
 
 **operations**
 - EC-OPS-02: kit unreachable for remote diagnostic action; action queued; escalation triggered automatically after N minutes per SEV SLA matrix; engineer notified
-- EC-OPS-06: SEV 1 SLA breach detected; automatic escalation cascade to Datacraft regional lead and IEBC ICT; cascade logged immutably in eel.field.support_ticket_escalated.v1
+- EC-OPS-06: SEV 1 SLA breach detected; automatic escalation cascade to Datacraft regional lead and the Commission ICT; cascade logged immutably in eel.field.support_ticket_escalated.v1
 
 ## Test plan
 
@@ -205,4 +205,4 @@ Tags: `testWidgets('diagnostic action [FR-M32-011,AC-M32-02]')`
 
 - O02 Support / Ticketing back-end: scope and provider for ticketing system must be confirmed; MeGuard-derived system or commercial ITSM; integration contract required before M32 integration sprint.
 - O04 Warranty back-end: Mechrevo OEM API for warranty claim submission; API spec and authentication must be obtained before integration sprint.
-- Kit diagnostic action policy engine: who defines the policy (IEBC ICT or Datacraft SOC)? Policy schema must be agreed before remote-action feature is built.
+- Kit diagnostic action policy engine: who defines the policy (the Commission ICT or Datacraft SOC)? Policy schema must be agreed before remote-action feature is built.

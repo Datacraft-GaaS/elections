@@ -8,11 +8,11 @@
 | Size | M |
 | Availability class | routine 99.5% |
 | Event-sourced | no |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M41-post-election-review.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M41-post-election-review.md |
 
 ## Purpose
 
-Capture structured lessons-learned from every stakeholder category (IEBC departments, IAB, KEOG, ELOG, accredited observers, media, and citizens) after each election cycle. Track each finding through a lifecycle from submission to recommendation status, parliamentary response, and IEBC Chair sign-off. Feed confirmed recommendations back into next-cycle planning. The long-drip attack register (§XXI.C.20) ensures systemic weaknesses are formally tracked with mandatory 6-month review intervals so institutional memory does not dissipate between cycles.
+Capture structured lessons-learned from every stakeholder category (the Commission departments, IAB, KEOG, ELOG, accredited observers, media, and citizens) after each election cycle. Track each finding through a lifecycle from submission to recommendation status, parliamentary response, and the Commission Chair sign-off. Feed confirmed recommendations back into next-cycle planning. The long-drip attack register (§XXI.C.20) ensures systemic weaknesses are formally tracked with mandatory 6-month review intervals so institutional memory does not dissipate between cycles.
 
 Strategy reference: §XXI.C.20 (long-drip attack mitigation), §XXI (post-election review cycle).
 
@@ -21,7 +21,7 @@ Strategy reference: §XXI.C.20 (long-drip attack mitigation), §XXI (post-electi
 | surface | technology | path |
 |---|---|---|
 | Internal Analyst Console | Phoenix LiveView | services/governance-svc/ex/review_web/ |
-| IEBC Chair Sign-Off Panel | Phoenix LiveView | services/governance-svc/ex/review_web/ |
+| the Commission Chair Sign-Off Panel | Phoenix LiveView | services/governance-svc/ex/review_web/ |
 | Observer and Stakeholder Portal | Astro | services/governance-svc/astro/review-portal/ |
 | Citizen Intake Form (WCAG 2.2 AA) | Astro | services/governance-svc/astro/review-portal/ |
 | Public Recommendation Tracker (WCAG 2.2 AA) | Astro | services/governance-svc/astro/review-portal/ |
@@ -94,7 +94,7 @@ OpenAPI file: `packages/openapi-contracts/governance/review.yaml`
 
 Intake:
 1. FR-M41-001: structured intake form with submitter category, election cycle reference, finding type (TECHNICAL/PROCESS/LEGAL/SECURITY/ACCESSIBILITY/COMMUNICATION), severity (HIGH/MEDIUM/LOW), description, evidence refs, recommended action, and long-drip flag
-2. FR-M41-002: multi-channel intake: internal portal for IEBC departments and IAB, credentialed observer portal for KEOG/ELOG/EU EOM, public form via M13 and web, bulk CSV/JSON upload for observer reports
+2. FR-M41-002: multi-channel intake: internal portal for the Commission departments and IAB, credentialed observer portal for KEOG/ELOG/EU EOM, public form via M13 and web, bulk CSV/JSON upload for observer reports
 3. FR-M41-003: anonymous citizen intake path: no PII collected, DPA 2019 s.30(1)(a) consent screen skipped on anonymous path, reference token returned on submission
 4. FR-M41-004: multi-language citizen intake: EN + SW + Kikuyu + Luo + Kamba + Kalenjin + Luhya; language selector on intake form; all 7 languages render without truncation
 5. FR-M41-005: finding deduplication: keyword matching always on; optional M28 AI semantic clustering invoked per submission and returns candidate duplicates within 10 seconds; analyst confirms or keeps separate; duplicate_of FK set on merged findings
@@ -103,17 +103,17 @@ Intake:
 
 Recommendation lifecycle:
 8. FR-M41-008: finding lifecycle: SUBMITTED -> TRIAGED -> DRAFT_RECOMMENDATION -> COMMISSION_RESPONSE -> STAKEHOLDER_REVIEW -> FINALISED -> ASSIGNED -> IN_PROGRESS -> PARLIAMENT_REFERRAL -> CLOSED; state transitions role-gated and immutable once made
-9. FR-M41-009: IEBC departmental response per recommendation: response type (ACCEPTED/ACCEPTED_WITH_MODIFICATION/DECLINED/DEFERRED), rationale, proposed implementation date, required resources; HIGH severity responses mandatory within T+30
-10. FR-M41-010: non-response alert: IEBC Chair receives alert at T+25 for any HIGH finding without departmental response; alert repeats daily until resolved
-11. FR-M41-011: stakeholder 30-day review window after IEBC response; IAB/KEOG/ELOG endorses or disputes; disputes escalated to IEBC Chair; Chair resolves within 14 days
-12. FR-M41-012: IEBC Chair sign-off (HSM): consolidated set submitted; gate blocks if any finding in STAKEHOLDER_REVIEW has unresolved dispute; Chair can approve, return to department, or escalate to Commissioner panel; sign-off triggers owner assignment and implementation date
+9. FR-M41-009: the Commission departmental response per recommendation: response type (ACCEPTED/ACCEPTED_WITH_MODIFICATION/DECLINED/DEFERRED), rationale, proposed implementation date, required resources; HIGH severity responses mandatory within T+30
+10. FR-M41-010: non-response alert: the Commission Chair receives alert at T+25 for any HIGH finding without departmental response; alert repeats daily until resolved
+11. FR-M41-011: stakeholder 30-day review window after the Commission response; IAB/KEOG/ELOG endorses or disputes; disputes escalated to the Commission Chair; Chair resolves within 14 days
+12. FR-M41-012: the Commission Chair sign-off (HSM): consolidated set submitted; gate blocks if any finding in STAKEHOLDER_REVIEW has unresolved dispute; Chair can approve, return to department, or escalate to Commissioner panel; sign-off triggers owner assignment and implementation date
 13. FR-M41-013: sign-off anchored to P05 Merkle chain; Chair certificate reference stored on Recommendation record; anchor confirmed before public tracker update
 14. FR-M41-014: Parliament referral package: legislative-action recommendations packaged as signed PDF with Chair HSM signature; transmitted to Parliament Clerk via eCitizen portal; fallback to encrypted email with manual confirmation
 15. FR-M41-015: Parliament Liaison records parliamentary response (ADOPTED/REJECTED/DEFERRED) with bill reference number; status and bill reference visible on public tracker
-16. FR-M41-016: non-response tracking: if Parliament does not respond within 90 days of referral dispatch, IEBC Chair publishes non-response status on public tracker
+16. FR-M41-016: non-response tracking: if Parliament does not respond within 90 days of referral dispatch, the Commission Chair publishes non-response status on public tracker
 
 Long-drip register:
-17. FR-M41-017: long-drip attack register (§XXI.C.20): dedicated register for slow-burn systemic threat findings; is_long_drip flag set at triage; IEBC Security Lead approval required before closure of any long-drip finding
+17. FR-M41-017: long-drip attack register (§XXI.C.20): dedicated register for slow-burn systemic threat findings; is_long_drip flag set at triage; the Commission Security Lead approval required before closure of any long-drip finding
 18. FR-M41-018: long-drip scheduler: durable scheduled job triggers review-due alert every 6 months post-closure; dead-letter queue on scheduler failures; daily health-check alert; tested by clock advance in integration suite
 19. FR-M41-019: second missed long-drip review auto-escalates to Commissioner panel within 24 hours; escalation event logged with timestamp and commissioner IDs
 20. FR-M41-020: long-drip register view: list of §XXI.C.20 findings, next-review-due countdown, owner, escalation status, review history per finding
@@ -123,13 +123,13 @@ Next-cycle handoff:
 22. FR-M41-022: handoff completeness check: system confirms 100% of ASSIGNED/IN_PROGRESS recommendations have been pulled; alert if any are missed; handoff report signed off by Planning Lead
 
 Public tracker:
-23. FR-M41-023: public recommendation tracker on M11: recommendation number, finding type, severity, IEBC response summary, current status, responsible department; updated at least weekly; no PII in any response field
+23. FR-M41-023: public recommendation tracker on M11: recommendation number, finding type, severity, the Commission response summary, current status, responsible department; updated at least weekly; no PII in any response field
 24. FR-M41-024: public tracker filterable by finding type, severity, status, and department; last-updated timestamp shown; public API rate-limited at 500 requests/minute
 25. FR-M41-025: intake window: platform live from T+2; citizen and web intake live from T+3; credentialed observer portal from T+5; public tracker first published at T+7
 
 Analytics:
 26. FR-M41-026: aggregate dashboards: findings by category, severity, submitter type; response rates; open vs closed; parliament referrals; by-election-cycle comparison charts
-27. FR-M41-027: audit trail: every state transition, IEBC response, Chair sign-off, and Parliament response immutably logged with actor, timestamp, role, and IP; appended to P05 Merkle chain
+27. FR-M41-027: audit trail: every state transition, the Commission response, Chair sign-off, and Parliament response immutably logged with actor, timestamp, role, and IP; appended to P05 Merkle chain
 
 Data and compliance:
 28. FR-M41-028: citizen submissions stored encrypted (AES-256-GCM at rest); 7-year retention; data class C; DPIA registered with ODPC; DPA 2019 s.30(1)(a) consent and s.30(1)(b) legal obligation bases documented
@@ -141,13 +141,13 @@ Data and compliance:
 
 ## Acceptance criteria
 
-1. AC-M41-01: findings intake platform live at T+2; citizen intake live at T+3; deployment timestamps verified by smoke test; UAT sign-off from IEBC Chair
+1. AC-M41-01: findings intake platform live at T+2; citizen intake live at T+3; deployment timestamps verified by smoke test; UAT sign-off from the Commission Chair
 2. AC-M41-02: citizen submits anonymous finding; no PII stored in any persisted field; automated PII scan returns clean on free text; anonymous path skips consent screen; verified by automated security test and DPA audit
-3. AC-M41-03: IEBC Chair signs consolidated recommendation set with HSM; P05 Merkle anchor recorded; sign-off gate blocks when any finding in STAKEHOLDER_REVIEW has unresolved dispute; verified by integration test
+3. AC-M41-03: the Commission Chair signs consolidated recommendation set with HSM; P05 Merkle anchor recorded; sign-off gate blocks when any finding in STAKEHOLDER_REVIEW has unresolved dispute; verified by integration test
 4. AC-M41-04: Parliament referral package dispatched within T+90; Parliament Liaison records response; bill reference and status visible on public tracker within 24 hours; verified by UAT
 5. AC-M41-05: long-drip 6-month scheduler alert fires within 1 hour of review-due timestamp; second missed review auto-escalates to Commissioner panel within 24 hours; verified by clock-advance integration test
 6. AC-M41-06: 20,000 citizen submissions processed within T+7 without queue starvation; deduplication queue drains within 1 hour of peak; p99 submission response <= 800 ms; verified by k6 load test
-7. AC-M41-07: M28 AI clustering unavailable; system falls back to keyword-match deduplication; no submission blocked; IEBC Analyst notification sent within 5 minutes; verified by fault-injection test
+7. AC-M41-07: M28 AI clustering unavailable; system falls back to keyword-match deduplication; no submission blocked; the Commission Analyst notification sent within 5 minutes; verified by fault-injection test
 8. AC-M41-08: WCAG 2.2 AA on citizen intake form, public recommendation tracker, and observer portal; verified by axe-core automated scan and manual audit; zero critical violations
 9. AC-M41-09: citizen intake available in 7 languages (EN + SW + Kikuyu + Luo + Kamba + Kalenjin + Luhya); all 7 language packs render without truncation; verified by 7-language smoke test
 10. AC-M41-10: HIGH-severity departmental responses 100% complete within T+30; non-response alert fires at T+25; mandatory response deadline enforced by system; verified by UAT
@@ -179,7 +179,7 @@ EC-SCL-04: consumer lag > 60 seconds on deduplication or recommendation processi
 EC-LEG-02: anonymous citizen submission; no PII collected or stored; DPA 2019 s.30(1)(a) consent screen skipped on anonymous path; automated PII scan confirms clean before store
 EC-LEG-04: finding amendment ordered (e.g., recount of consolidated findings after Chair return); compensating event creates new version; original record immutable; both versions visible with audit proofs
 EC-LEG-08: Parliament response to referral arrives near day 90 of 90-day window; accepted; no artificial freeze applied; PARLIAMENT_LIAISON can record response up to and including deadline date
-EC-OPS-05: M28 AI clustering service unavailable; keyword-match deduplication fallback activates automatically; IEBC Analyst notified; no submission blocked; M28 status restored on recover
+EC-OPS-05: M28 AI clustering service unavailable; keyword-match deduplication fallback activates automatically; the Commission Analyst notified; no submission blocked; M28 status restored on recover
 EC-OPS-08: disk full on evidence attachment blob store; 507 returned; queue bounded; no corruption; alert fires; existing records unaffected
 
 ## Test plan
@@ -208,4 +208,4 @@ Tags: `#[trace("FR-M41-009","AC-M41-04","EC-OPS-05")]`
 
 - Parliament eCitizen portal MoU: external; confirm referral delivery channel (API vs structured email) and authentication before T-180; fallback is encrypted email with manual confirmation.
 - PII scan tooling: M28 NLP-based PII scan must be confirmed as available for M41 use; if not, a simpler regex-based scanner is needed as fallback; confirm with M28 team.
-- Long-drip classification criteria: Strategy §XXI.C.20 defines the category but not a classification rubric; IEBC Security Lead must sign off on the decision criteria before the intake form is built.
+- Long-drip classification criteria: Strategy §XXI.C.20 defines the category but not a classification rubric; the Commission Security Lead must sign off on the decision criteria before the intake form is built.

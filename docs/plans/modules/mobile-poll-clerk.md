@@ -8,7 +8,7 @@
 | Size | M |
 | Availability class | routine 99.5% |
 | Event-sourced | no |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M31-mobile-poll-clerk.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M31-mobile-poll-clerk.md |
 
 ## Purpose
 
@@ -22,7 +22,7 @@ Give the Deputy Presiding Officer and polling clerks (~92,000 on polling day) a 
 | Kiosk Operator Mode (register inspection period) | Flutter | services/field-mobile-svc/apps/poll-clerk/ |
 | API | Rust (axum) | services/field-mobile-svc/crates/field-mobile-api/ |
 
-Distribution: private via IEBC MDM. Languages: EN + SW.
+Distribution: private via Commission MDM. Languages: EN + SW.
 
 ## Domain model
 
@@ -79,7 +79,7 @@ OpenAPI file: `packages/openapi-contracts/field/poll-clerk.yaml`
 
 ## Feature checklist
 
-1. FR-M31-001: staff enrolment via IEBC staff ID + biometric template capture + Play Integrity or App Attest device attestation; attestation failure blocks enrolment and emits a tamper event
+1. FR-M31-001: staff enrolment via Commission staff ID + biometric template capture + Play Integrity or App Attest device attestation; attestation failure blocks enrolment and emits a tamper event
 2. FR-M31-002: assignment scope bound to a specific station code and election ID; cross-station access denied; dual-role (DPO + KIOSK_OPERATOR) allowed only where HR MDM policy grants it
 3. FR-M31-003: MFA sign-in: platform biometric (fingerprint or face) + 6-digit PIN + device attestation; all three required; biometric failure falls back to PIN with rate limit of 5 attempts then 30-minute lockout
 4. FR-M31-004: polling manual (EN + SW) embedded offline; full-text search returns first result in <= 1 s from pre-built on-device index; manual versioned and updated via signed MDM push only
@@ -117,7 +117,7 @@ OpenAPI file: `packages/openapi-contracts/field/poll-clerk.yaml`
 1. AC-M31-01: end-of-day report auto-compiled, dual-signed by Presiding Officer and DPO biometrics, submitted to M06 BVI back-end, and confirmed by audit-trace query; verified in integration test and UAT sign-off with real clerks on real devices
 2. AC-M31-02: paper-backup workflow completed end-to-end by a real clerk in field trial with network disabled throughout; digital reconciliation queued and submitted correctly on reconnect; no data lost
 3. AC-M31-03: every voter-lookup fallback creates a permanent audit entry in M06 containing DPO biometric attestation hash, timestamp, reason, station code, and lookup result; audit-trace query confirms presence and immutability
-4. AC-M31-04: kiosk-mode objection flow reviewed and approved by IEBC Data Protection Officer for DPA 2019 compliance; lawful-basis documentation published and linked in app before kiosk mode activates in production
+4. AC-M31-04: kiosk-mode objection flow reviewed and approved by the Commission Data Protection Officer for DPA 2019 compliance; lawful-basis documentation published and linked in app before kiosk mode activates in production
 5. AC-M31-05: all reference materials searchable and accessible in airplane mode; full-text search returns first result in <= 1 s on mid-tier Android 10 device; verified in flutter_test offline benchmark
 6. AC-M31-06: MFA sign-in completes on Android 10+ and iOS 15+ real devices; attestation failure on rooted emulator blocks sign-in within 2 s and emits tamper event to M06 audit log
 7. AC-M31-07: mTLS pinning refuses connection to MITM proxy presenting rogue CA cert; zero auth-header bytes observed in captive-portal intercept test; verified with mitmproxy captive-mode harness
@@ -153,7 +153,7 @@ OpenAPI file: `packages/openapi-contracts/field/poll-clerk.yaml`
 
 **identity**
 - EC-IDN-02: JWT expires mid-request; in-flight request completes; silent token refresh on next call; no re-authentication prompt shown to clerk; Keycloak 5-second TTL used in Pact test
-- EC-IDN-04: device attestation fails (custom ROM or emulator MEETS_NONE); hard-fail blocks sign-in; support code shown for IEBC helpdesk; no partial access granted
+- EC-IDN-04: device attestation fails (custom ROM or emulator MEETS_NONE); hard-fail blocks sign-in; support code shown for the Commission helpdesk; no partial access granted
 - EC-IDN-05: rooted or Frida-attached device detected; RASP terminates session; local SQLCipher keys wiped from memory; tamper event emitted to M06 within 2 s; rooted AVD test
 - EC-IDN-06: cloned APK with resigned certificate; TLS pin mismatch closes connection; back-end rejects SVID digest; event emitted to M28 AI monitoring stack
 - EC-IDN-07: no SMS OTP used for accredited staff; FIDO2 device-bound credential required; new-device sign-in denied without MDM re-enrolment; ASVS V2 compliance
@@ -202,5 +202,5 @@ Tags: `testWidgets('lookup fallback [FR-M31-010,AC-M31-03]')`
 
 ## Open questions
 
-- ODPC review of kiosk-mode OTP lookup flow: DPA 2019 lawful basis (public task) must be documented before kiosk mode activates; IEBC DPO to lead.
+- ODPC review of kiosk-mode OTP lookup flow: DPA 2019 lawful basis (public task) must be documented before kiosk mode activates; the Commission DPO to lead.
 - Paper-backup workflow reconciliation protocol: who owns the digital reconciliation step after paper-backup session? Must be agreed with RO back-office team before field-trial.

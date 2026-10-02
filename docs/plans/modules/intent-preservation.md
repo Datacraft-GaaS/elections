@@ -8,7 +8,7 @@
 | Size | L |
 | Availability class | election-critical 99.99% |
 | Event-sourced | no |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M27-intent-preservation.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M27-intent-preservation.md |
 
 ## Purpose
 
@@ -20,7 +20,7 @@ Minimise rejected and spoilt ballots through seven complementary elements: optim
 |---|---|---|
 | Voter pre-mark opt-in prompt (on kit) | Flutter | services/support-admin-svc/apps/intent-kit/ |
 | Adjudication workflow (Presiding Officer, on kit) | Flutter | services/support-admin-svc/apps/intent-kit/ |
-| Rejection Rate Dashboard (IEBC Returning Officer) | Phoenix LiveView | services/support-admin-svc/ex/intent_web/ |
+| Rejection Rate Dashboard (the Commission Returning Officer) | Phoenix LiveView | services/support-admin-svc/ex/intent_web/ |
 | IAB Adjudication Audit panel | Django | services/support-admin-svc/django/iab_audit/ |
 | Public rejection analysis report | Astro | services/support-admin-svc/astro/intent-public-site/ |
 | API | Rust (axum) | services/support-admin-svc/crates/support-admin-api/ |
@@ -226,7 +226,7 @@ Tags: `#[trace("FR-M27-012","AC-M27-03","EC-ML-01")]`
 
 ## Open questions
 
-- Ballot design study (200-voter test) must be completed by 2026-10-31; IEBC Ballot Design Team responsible; Datacraft provides testing infrastructure.
-- Vision model training requires annotated synthetic ballot images from IEBC Ballot Design Team; timeline risk if team sign-off delayed.
+- Ballot design study (200-voter test) must be completed by 2026-10-31; the Commission Ballot Design Team responsible; Datacraft provides testing infrastructure.
+- Vision model training requires annotated synthetic ballot images from the Commission Ballot Design Team; timeline risk if team sign-off delayed.
 - National Languages Board / translators: 12-language pre-mark prompt translation must be contracted by 2026-12-01.
 - CRMS (M12) integration for training completion tracking: data schema for training records must be agreed with crms-svc team before M25 integration sprint.

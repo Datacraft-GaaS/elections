@@ -40,7 +40,7 @@ The schema is deliberately free of Protected Health Information. Design decision
 
 - `MedicalIncident` stores only `incident_type` and `severity`, not clinical notes, diagnosis, or treatment records.
 - `transfer_destination` is a facility name string, not a patient link; it does not identify the individual transferred.
-- `reported_by_officer_id` identifies the reporting officer (an IEBC staff member), not the patient.
+- `reported_by_officer_id` identifies the reporting officer (a Commission staff member), not the patient.
 - A Postgres `CHECK` constraint on `medical_incidents` enforces that columns for patient name, national ID, date of birth, and clinical notes are absent from the schema (enforced by confirming the constraint list in CI via `psql -c "\d medical_incidents"`).
 - Data sharing with county health authorities is limited to incident location and severity; county facilities issue their own patient records outside IEMS.
 
@@ -106,12 +106,12 @@ Languages: EN + SW. WCAG 2.2 AA on the dispatch console.
 
 - **Kenya Data Protection Act §25 (lawful processing)**: medical incident data (type + severity) is processed under legitimate interest (election safety); no sensitive personal data is processed, so no ODPC notification is required for M60 specifically.
 - **Kenya Data Protection Act §26 (minimisation)**: the no-PHI design means no health data about identifiable individuals is collected; the incident record is about the event at a station, not the individual patient.
-- **Occupational Safety and Health Act 2007 §13 (employer duty of care)**: IEBC's duty of care to election-day workers is partially discharged through M60's dispatch coordination capability.
+- **Occupational Safety and Health Act 2007 §13 (employer duty of care)**: the Commission's duty of care to election-day workers is partially discharged through M60's dispatch coordination capability.
 - **Public Health Act Cap 242 §36 (disease notification)**: if a cluster alert involves a communicable disease concern, the dispatch coordinator must notify the county public health officer via the standard MoH channels; M60 does not automate this notification, as it has no clinical diagnosis capability.
 
 ## 9. Honest caveats + external prerequisites
 
-- County health emergency line SMS depends on a commercial SMS gateway (Africa's Talking or Twilio) with IEBC account credentials. The gateway and short sender ID must be provisioned before election day.
+- County health emergency line SMS depends on a commercial SMS gateway (Africa's Talking or Twilio) with the Commission account credentials. The gateway and short sender ID must be provisioned before election day.
 - Dispatch agency selection is manual: the system shows proximity and agency availability, but the dispatch coordinator selects the agency. Fully automated dispatch is not implemented.
 - DBSCAN cluster detection runs every 5 minutes via cron; this means a cluster that forms and resolves within 5 minutes may not trigger an alert. The 5-minute window is a deliberate trade-off between alerting latency and false positive rate.
 - GPS coordinates for polling stations come from M18 (boundary registry). Stations without GPS coordinates (approximately 3% of stations in M18 at last count) are excluded from cluster detection; this is a known gap.

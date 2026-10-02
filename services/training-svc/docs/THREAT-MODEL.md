@@ -11,7 +11,7 @@ HSM signing required for certificates and badges (P06).
 | Threat | Mitigation |
 |---|---|
 | Unreviewed content published to M13 feed | SpiceDB COMMISSION_DIRECTOR gate on approve action; fact-check required before approval queue |
-| Badge forgery (QR tampering) | HSM-signed JWT in QR; scanner verifies signature offline with embedded IEBC public key |
+| Badge forgery (QR tampering) | HSM-signed JWT in QR; scanner verifies signature offline with embedded the Commission public key |
 | CRL stale (revoked badge accepted) | CRL TTL 5 min; scanner alerts if CRL age > 30 min; CRL signed by P06 |
 | PHI in medical incident | no-phi schema validator rejects patient name/ID fields; Semgrep CI rule enforced |
 | Assessment answer tampering | Score computed server-side only; client submits raw answers |

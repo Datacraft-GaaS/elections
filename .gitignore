@@ -100,3 +100,34 @@ tmp_new_*.txt
 # still live — including a pubspec.yaml and a Dart source file — where the
 # wrong one can easily be edited by mistake.
 *.bak
+
+# third-party vendor SDKs — proprietary binaries, fetched out of band
+/sdks/
+
+# commercial / legal dossier — local copy only, never published
+/docs/CLIENT-EXCELLENCE-STRATEGY.md
+/docs/datacraft-internal-backlog.md
+/docs/commission-clarifications-outstanding.md
+/docs/gaps/STRATEGY-GAP-ANALYSIS.md
+/docs/sw/DATACRAFT_SOFTWARE_SCOPE.md
+/docs/sw/INTEGRATION-AUDIT.md
+/docs/sw/expect.md
+/docs/legal/
+/docs/escrow/
+/docs/loi/
+/compliance/ipr-handover/
+/docs/architecture/decision-log.md
+/docs/adr/0023-rfp-alignment.md
+/integrations/mpesa-b2c/SHORTCODE_PROVISIONING.md
+/integrations/telco-sms/SHORTCODE_PROVISIONING.md
+/integrations/mpesa-daraja/README.md
+/integrations/datacite/README.md
+/integrations/rfid-vendors/impinj/README.md
+/integrations/rfid-vendors/cipherlab/README.md
+/integrations/rfid-vendors/cipherlab-ble/README.md
+/operations/warranty/coverage-matrix.yaml
+
+# scratch
+/test_flutter_tmp/
+erl_crash.dump
+tmp_new_section12.txt

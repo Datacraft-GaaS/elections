@@ -74,7 +74,7 @@ dispute recording:
 
 duress alert:
   agent holds power button for 5 s (configurable)
-  -> DuressAlert sent via: (1) app API (2) SMS to IEBC Security Coordinator
+  -> DuressAlert sent via: (1) app API (2) SMS to the Commission Security Coordinator
   -> alert logged; no visible UI change on device (silent)
 
 chief agent rollup:

@@ -99,7 +99,7 @@ Material You accessibility: minimum touch target 48dp; dynamic font scaling supp
 - **Rust FFI `libeel-verifier`** -- the Merkle inclusion proof verifier is a shared Rust library (`packages/libeel-verifier/`) compiled to native code and linked into the Flutter app; it cannot be overridden by app updates without a new signed binary; the library verifies the P05 tlog root against a list of trusted witness public keys bundled in the app.
 - **App cert pinning** -- the app pins the field-mobile-svc TLS certificate; a MITM presenting a different cert is rejected.
 - **Voter ref hash** -- the API never receives the raw national ID; only SHA-256(national_id + app_secret) is transmitted; the server cannot reverse this to identify the voter.
-- **SMS content integrity** -- SMS messages from the IEBC sender ID are signed with an HMAC in the message body; the app verifies the HMAC before displaying the message; spoofed messages without the HMAC are shown with a `UNVERIFIED` badge.
+- **SMS content integrity** -- SMS messages from the Commission sender ID are signed with an HMAC in the message body; the app verifies the HMAC before displaying the message; spoofed messages without the HMAC are shown with a `UNVERIFIED` badge.
 - **KES-10k device profile** -- all app features tested on a 2 GB RAM / 32 GB storage Android Go device; app bundle size capped at 50 MB; offline tile bundle uses vector tiles (Mapbox Protobuf format) to minimise storage.
 
 ## 8. Kenya statute alignment
@@ -139,7 +139,7 @@ KSL video accessibility: 11 KSL guide videos (registration lookup, station findi
 
 Verification rate monitoring: M26 consumes aggregated verification-rate data (no voter PII) as a Layer 2 anomaly signal; unexpected collapse (voter suppression pattern) or spike (stuffing preparation) at geographic cluster fires `eel.citizen.verification_rate_anomaly.v1`.
 
-CitizenReport privacy: description text is truncated to 500 characters before hashing; photos have EXIF metadata stripped on-device before upload; neither the description nor the original photo is stored by IEBC; only the hash and issue type are persisted.
+CitizenReport privacy: description text is truncated to 500 characters before hashing; photos have EXIF metadata stripped on-device before upload; neither the description nor the original photo is stored by the Commission; only the hash and issue type are persisted.
 
 App size budget: Flutter app target <= 25 MB installed (excluding KSL video bundle which is OTA-downloaded at first launch); PWA core <= 2 MB cached; libeel-verifier NDK binary <= 1.5 MB per ABI.
 

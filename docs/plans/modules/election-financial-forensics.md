@@ -8,7 +8,7 @@
 | Size | L |
 | Availability class | routine 99.5% |
 | Event-sourced | no (ADR-0013: only M08/M09/M10, M20, M51, M63) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M66-election-financial-forensics.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M66-election-financial-forensics.md |
 
 ## Purpose
 
@@ -272,4 +272,4 @@ Tags: `#[trace("FR-M66-006","AC-M66-01","EC-ML-05")]`
 ## Open questions
 
 - Econometric method contested: the upstream sw/ text may specify a method that conflicts with KNBS statistical standards; independent methodological review before cycle publication is required.
-- DataCite DOI minting requires IEBC DataCite membership; membership application status unknown.
+- DataCite DOI minting requires the Commission DataCite membership; membership application status unknown.

@@ -4,7 +4,7 @@
 **Code:** [`services/field-mobile-svc/apps/poll-clerk/`](../../services/field-mobile-svc/apps/poll-clerk)
 **Contract:** `packages/openapi-contracts/field/poll-clerk.yaml` (9 paths) · **BFF:** `mobile-bff §4.1`
 
-The Poll Clerk app is the primary field tool used by the Presiding Officer (PO) at a polling station on election day. It runs on a kiosk-locked Android device provided by IEBC, and is the authoritative interface for queue management, voter identity verification, incident escalation, and end-of-day reporting. The app is the technical enforcement point for the **DPA 2019** lawful-basis and the **Elections Act** identity-verification chain — every action it takes is biometrically attested, audit-logged, and reconciled against the BVI back-end.
+The Poll Clerk app is the primary field tool used by the Presiding Officer (PO) at a polling station on election day. It runs on a kiosk-locked Android device provided by the Commission, and is the authoritative interface for queue management, voter identity verification, incident escalation, and end-of-day reporting. The app is the technical enforcement point for the **DPA 2019** lawful-basis and the **Elections Act** identity-verification chain — every action it takes is biometrically attested, audit-logged, and reconciled against the BVI back-end.
 
 ---
 
@@ -31,7 +31,7 @@ On first launch the app calls `M3BootstrapService.bootstrap()` which loads:
 
 Sign-in is **two-factor**: (1) OIDC PKCE against Keycloak (agent ID + password) returns an OAuth code, which the BFF exchanges for an app JWT; the exchange requires an attestation verdict >= `WARN`. (2) Biometric prompt (`local_auth`) on every foreground-resume. A **5-fail PIN lockout** is enforced in secure storage (encrypted shared prefs) and persists across app restarts (30-min lockout per ADR-0018).
 
-If attestation fails (rooted device, emulator, debug build), the app is locked at the **HardAttestationFailedScreen** and shows a support code + IEBC support number. No guest mode exists.
+If attestation fails (rooted device, emulator, debug build), the app is locked at the **HardAttestationFailedScreen** and shows a support code + the Commission support number. No guest mode exists.
 
 ### F2 — Reference Library (FR-004–007, 025)
 

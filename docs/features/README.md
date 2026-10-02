@@ -29,7 +29,7 @@ This directory contains the runtime walkthrough for each IEMS module: how it wor
 | M13 | public-verifier-app | field-mobile-svc | Multi-channel citizen app to verify participation in the election. | [public-verifier-app.md](public-verifier-app.md) |
 | M14 | reproducibility-bundle | transparency-svc | Assemble and publish the statutory post-election reproducibility package. | [reproducibility-bundle.md](reproducibility-bundle.md) |
 | M15 | iab-dashboard | ecc-svc | Independent Audit Board real-time dashboard with hardware-key-authenticated access. | [iab-dashboard.md](iab-dashboard.md) |
-| M16 | election-command-centre | ecc-svc | National situational awareness loop for IEBC leadership on election day. | [election-command-centre.md](election-command-centre.md) |
+| M16 | election-command-centre | ecc-svc | National situational awareness loop for the Commission leadership on election day. | [election-command-centre.md](election-command-centre.md) |
 | M17 | speech-integrity | ai-platform-svc | Real-time monitoring of public discourse for incitement and disinformation. | [speech-integrity.md](speech-integrity.md) |
 | M18 | boundary-transparency | boundary-svc | Publish authoritative electoral boundary data: constituency, ward, polling centre. | [boundary-transparency.md](boundary-transparency.md) |
 | M19 | queue-transparency | queue-svc | Real-time polling station queue monitoring. | [queue-transparency.md](queue-transparency.md) |
@@ -67,7 +67,7 @@ This directory contains the runtime walkthrough for each IEMS module: how it wor
 | M51 | result-declaration-certification | rts-svc | Event-sourced declaration lifecycle producing HSM-countersigned certificates of election. | [result-declaration-certification.md](result-declaration-certification.md) |
 | M52 | election-calendar-gazette | portal-svc | Publish and manage the statutory election calendar and gazette notices. | [election-calendar-gazette.md](election-calendar-gazette.md) |
 | M53 | voter-id-card | bvr-svc | Voter ID card batch production, collection records, and blacklist propagation (<= 30 min SLA). | [voter-id-card.md](voter-id-card.md) |
-| M54 | budget-expenditure | support-admin-svc | IEBC budget planning, procurement, payment vouchers, CoB reports, IFMIS + PPRA integration. | [budget-expenditure.md](budget-expenditure.md) |
+| M54 | budget-expenditure | support-admin-svc | the Commission budget planning, procurement, payment vouchers, CoB reports, IFMIS + PPRA integration. | [budget-expenditure.md](budget-expenditure.md) |
 | M55 | hr-payroll | support-admin-svc | HR and payroll for ~250k election staff: applications, contracts, M-Pesa disbursement, KRA/NSSF/NHIF returns. | [hr-payroll.md](hr-payroll.md) |
 | M56 | county-national-coordination | governance-svc | MoUs, county dataset approvals, ministerial coordination, cross-agency incidents, SAML federation. | [county-national-coordination.md](county-national-coordination.md) |
 | M57 | international-observer-coordination | governance-svc | International observer mission management, briefings, observation reports, joint statements. | [international-observer-coordination.md](international-observer-coordination.md) |

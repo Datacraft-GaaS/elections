@@ -27,14 +27,14 @@
   <text x="450" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">(M43)</text>
 
   <circle cx="620" cy="115" r="18" fill="#1f77b4"/>
-  <text x="620" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">IEBC</text>
+  <text x="620" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">the Commission</text>
   <text x="620" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Supervisor</text>
 
   <!-- PrimaryOptIn -->
   <rect x="30" y="190" width="300" height="130" rx="8" fill="#fef9c3" stroke="#ff7f0e" stroke-width="2"/>
   <text x="180" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ff7f0e">PrimaryOptIn</text>
   <text x="180" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">party_id, contest_ids[], mode</text>
-  <text x="180" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">mode: IEBC_SUPERVISED / SELF_CONDUCTED</text>
+  <text x="180" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">mode: COMMISSION_SUPERVISED / SELF_CONDUCTED</text>
   <text x="180" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">deadline: T-90d before general election</text>
   <text x="180" y="296" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">POST /v1/primaries/opt-in</text>
   <text x="180" y="310" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">primary_opted_in.v1 emitted</text>
@@ -43,7 +43,7 @@
   <!-- Kit-Lite Mode -->
   <rect x="370" y="190" width="360" height="130" rx="8" fill="#dbeafe" stroke="#1f77b4" stroke-width="2"/>
   <text x="550" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f77b4">Kit-Lite Mode</text>
-  <text x="550" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">IEBC-supervised primaries only</text>
+  <text x="550" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">Commission-supervised primaries only</text>
   <text x="550" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">BVI device (M05) — reduced feature set</text>
   <text x="550" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">biometric auth + ballot image capture</text>
   <text x="550" y="296" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">offline queue → sync when connected</text>
@@ -66,7 +66,7 @@
   <text x="380" y="416" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">PrimaryResult</text>
   <text x="380" y="436" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">id, primary_id, station_code, candidate_tallies[]</text>
   <text x="380" y="456" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">form_hash (SHA-256), merkle_node_id</text>
-  <text x="380" y="476" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">submitted_by: party_agent | IEBC_clerk, signed_at (HSM P06)</text>
+  <text x="380" y="476" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">submitted_by: party_agent | commission_clerk, signed_at (HSM P06)</text>
   <text x="380" y="496" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">POST /v1/primaries/{id}/results — SVID mTLS</text>
   <text x="380" y="512" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">primary_result.v1 emitted (exactly-once) — data class A — T1-audit</text>
   <rect x="705" y="390" width="22" height="22" rx="3" fill="#9467bd"/>
@@ -80,7 +80,7 @@
   <text x="970" y="436" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">id, primary_id, complainant_hash</text>
   <text x="970" y="456" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">dispute_type: TALLY_DISCREPANCY/EXCLUSION</text>
   <text x="970" y="476" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">status: FILED → REVIEWED → DECIDED</text>
-  <text x="970" y="496" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">routes to: PPDT or IEBC Disputes</text>
+  <text x="970" y="496" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">routes to: PPDT or the Commission Disputes</text>
   <text x="970" y="512" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">primary_dispute.v1 emitted — 14-day SLA</text>
   <line x1="280" y1="133" x2="900" y2="390" stroke="#d62728" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow-red)"/>
 
@@ -96,7 +96,7 @@
 
   <!-- PPDT external -->
   <rect x="770" y="570" width="400" height="90" rx="8" fill="#fff" stroke="#7f7f7f" stroke-width="2" stroke-dasharray="6,3"/>
-  <text x="970" y="596" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#7f7f7f">PPDT / IEBC Disputes (external)</text>
+  <text x="970" y="596" font-family="Arial,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#7f7f7f">PPDT / the Commission Disputes (external)</text>
   <text x="970" y="616" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#7f7f7f">ruling delivered → ppdt_ruling.v1 consumed</text>
   <text x="970" y="636" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#7f7f7f">UPHELD: redo primary or override tally</text>
   <text x="970" y="650" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">DISMISSED: nomination gate unblocked</text>

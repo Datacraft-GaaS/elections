@@ -317,7 +317,7 @@ The S.14A mechanism operates within a legally bounded window per Kenya Elections
 
 ### 13.1 Encryption
 
-Snapshot data: no PII; stored in plaintext. S.14A recommendations: HSM-signed payload in `eel_s14a_recommendations.payload` (CBOR; plaintext station data only; no voter PII). CV density maps: not persisted (inference output discarded after head_count extraction; only the scalar count and confidence stored). CCTV RTSP stream credentials: stored in OpenBao (HashiCorp Vault-compatible) at the ml/vault server (62.169.25.77 per SERVICE_CATALOGUE.md); retrieved at CV pipeline startup via SPIRE SVID-authenticated token.
+Snapshot data: no PII; stored in plaintext. S.14A recommendations: HSM-signed payload in `eel_s14a_recommendations.payload` (CBOR; plaintext station data only; no voter PII). CV density maps: not persisted (inference output discarded after head_count extraction; only the scalar count and confidence stored). CCTV RTSP stream credentials: stored in OpenBao (HashiCorp Vault-compatible) at the ml/vault server (192.0.2.11 per SERVICE_CATALOGUE.md); retrieved at CV pipeline startup via SPIRE SVID-authenticated token.
 
 ### 13.2 Audit
 

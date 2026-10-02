@@ -8,11 +8,11 @@
 | Size | L |
 | Availability class | routine 99.5% |
 | Event-sourced | no |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M46-party-primaries-oversight.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M46-party-primaries-oversight.md |
 
 ## Purpose
 
-Party primaries are the single highest-fraud-risk event in the Kenyan electoral cycle (Strategy §XXI.A.1). IEBC has no constitutional mandate to run primaries but has an oversight function to receive and publish results and adjudicate complaints. This module provides: a reduced-feature KIEMS-lite kit for parties that opt in; a primary-specific integrity dashboard for IEBC oversight; primary-result publication with Merkle-anchored integrity; and primary-dispute intake routed to PPDT and the Political Parties Liaison Committee. The module is a pro-bono offering distinct from the IEBC tender scope; IPR vests in IEBC per GCC 15.4, and Datacraft retains the right to productise separately.
+Party primaries are the single highest-fraud-risk event in the Kenyan electoral cycle (Strategy §XXI.A.1). the Commission has no constitutional mandate to run primaries but has an oversight function to receive and publish results and adjudicate complaints. This module provides: a reduced-feature KIEMS-lite kit for parties that opt in; a primary-specific integrity dashboard for the Commission oversight; primary-result publication with Merkle-anchored integrity; and primary-dispute intake routed to PPDT and the Political Parties Liaison Committee. The module is a pro-bono offering distinct from the Commission tender scope; IPR vests in the Commission per GCC 15.4, and Datacraft retains the right to productise separately.
 
 Strategy reference: §XXI.A.1 (Party Primaries). Political Parties Act 2011 s.22; Elections Act s.33.
 
@@ -21,7 +21,7 @@ Strategy reference: §XXI.A.1 (Party Primaries). Political Parties Act 2011 s.22
 | surface | technology | path |
 |---|---|---|
 | Party Opt-In and Result Upload Portal | Astro | services/crms-svc/astro/primaries/ |
-| IEBC Oversight Dashboard | Phoenix LiveView | services/crms-svc/ex/primaries_web/ |
+| the Commission Oversight Dashboard | Phoenix LiveView | services/crms-svc/ex/primaries_web/ |
 | Public Primary Results Portal (WCAG 2.2 AA) | Astro | services/crms-svc/astro/primaries/ |
 | Candidate Dispute Portal (WCAG 2.2 AA) | Astro | services/crms-svc/astro/primaries/ |
 | API | Rust (axum) | services/crms-svc/crates/crms-api/ |
@@ -47,10 +47,10 @@ OpenAPI file: `packages/openapi-contracts/crms/primaries.yaml`
 | POST /v1/results | 2 | JWT+SpiceDB (PARTY_RETURNING_OFFICER) | yes | submit constituency primary result; Merkle receipt in response; <= 2 s |
 | GET /v1/results | 1 | public | n/a | public results listing (paginated; party + constituency + position filter) |
 | GET /v1/results/{id} | 1 | public | n/a | single constituency result with Merkle path |
-| PATCH /v1/results/{id} | 2 | JWT+SpiceDB (PARTY_RETURNING_OFFICER) | yes | request amendment within 48 hr; IEBC Oversight Officer approves; original retained |
+| PATCH /v1/results/{id} | 2 | JWT+SpiceDB (PARTY_RETURNING_OFFICER) | yes | request amendment within 48 hr; the Commission Oversight Officer approves; original retained |
 | POST /v1/disputes | 2 | public | yes | submit primary dispute; PDM clock started |
 | GET /v1/disputes/{id} | 2 | JWT+SpiceDB (COMPLAINANT/PPDT_CLERK) | n/a | dispute status with timeline |
-| POST /v1/oversight/notices | 2 | JWT+SpiceDB (OVERSIGHT_OFFICER) | yes | IEBC issues oversight notice; published to public portal |
+| POST /v1/oversight/notices | 2 | JWT+SpiceDB (OVERSIGHT_OFFICER) | yes | the Commission issues oversight notice; published to public portal |
 | GET /v1/oversight/dashboard | 2 | JWT+SpiceDB (OVERSIGHT_OFFICER) | n/a | constituency map: submission status, anomaly flags, complaint density |
 
 ## Events
@@ -90,7 +90,7 @@ OpenAPI file: `packages/openapi-contracts/crms/primaries.yaml`
 ## Feature checklist
 
 KIEMS-lite opt-in and provisioning:
-1. FR-M46-001: party opt-in: registered ACTIVE party (M45 status gate checked on each request) applies; IEBC Oversight Officer approves; party signs MOU committing to result publication and IEBC oversight
+1. FR-M46-001: party opt-in: registered ACTIVE party (M45 status gate checked on each request) applies; the Commission Oversight Officer approves; party signs MOU committing to result publication and the Commission oversight
 2. FR-M46-002: MOU signing via authenticated portal; MOU document stored; mou_signed_at timestamp recorded; party cannot submit results without approved opt-in
 3. FR-M46-003: KIEMS-lite kit configuration: voter-roll import (party-supplied CSV), biometric or PIN voter authentication (party choice), ballot casting, result tallying; no ABIS integration; offline-capable; no national network connectivity required
 4. FR-M46-004: voter roll supplied by party per constituency (party members eligible to vote); CSV validated (column schema, UTF-8 encoding, max 50,000 rows) but not CVR-cross-referenced
@@ -104,7 +104,7 @@ Result submission:
 10. FR-M46-010: result payload must include candidate tallies (list of {candidate_name, votes}), spoilt_ballots, total_turnout, constituency_code, position, submitted_at
 11. FR-M46-011: Merkle receipt returned within 2 minutes of submission; receipt includes result_hash (SHA-256 of canonical JSON) and merkle_leaf_id
 12. FR-M46-012: idempotent result submission: duplicate submission with same constituency_code, position, party_id, and primary date returns cached Merkle receipt; no second DB write
-13. FR-M46-013: result amendment within 48 hours of publication with supporting documentation; IEBC Oversight Officer approves amendment; original version retained; amendment_reason recorded
+13. FR-M46-013: result amendment within 48 hours of publication with supporting documentation; the Commission Oversight Officer approves amendment; original version retained; amendment_reason recorded
 14. FR-M46-014: both original and amended result versions retained; amendment chain visible on Oversight Officer dashboard and public portal
 
 Publication:
@@ -120,7 +120,7 @@ Oversight dashboard:
 22. FR-M46-022: complaint density heat map: disputes per constituency displayed as choropleth; hot-spots highlighted for Oversight Officer attention
 23. FR-M46-023: Oversight Officer can filter dashboard by party, county, position, and anomaly flag
 24. FR-M46-024: Oversight Officer receives alert when constituency result is LATE (> 6 hours post-primary-close without submission)
-25. FR-M46-025: IEBC oversight notice: Oversight Officer issues formal notice to party for specific constituency irregularities; mandatory structured reason field
+25. FR-M46-025: the Commission oversight notice: Oversight Officer issues formal notice to party for specific constituency irregularities; mandatory structured reason field
 26. FR-M46-026: oversight notice Merkle-anchored in P05; published to public portal alongside constituency results within 1 hour of issuance; eel.crms.oversight_notice_issued.v1 emitted
 27. FR-M46-027: Oversight Officer can retract oversight notice with reason; original notice retained; retraction recorded; retraction published on public portal
 
@@ -147,7 +147,7 @@ Access control and security:
 43. FR-M46-043: all dispute evidence uploads virus-scanned and format-validated before acceptance; malformed or infected files rejected with structured error
 
 Data protection and retention:
-44. FR-M46-044: party-member voter rolls not retained beyond tallying session; only aggregate results retained by IEBC; deletion confirmed within 1 hour of session end; DPIA registered
+44. FR-M46-044: party-member voter rolls not retained beyond tallying session; only aggregate results retained by the Commission; deletion confirmed within 1 hour of session end; DPIA registered
 45. FR-M46-045: public results portal contains no party-member PII; only candidate names, vote tallies, and aggregate turnout published
 46. FR-M46-046: all audit events appended to P05 Merkle chain: result submission, publication, amendment, dispute submission, PPDT referral, determination, oversight notice
 
@@ -211,7 +211,7 @@ legal:
 - EC-LEG-04: low opt-in rate; parties not using KIEMS-lite still obligated under PPA 2011 s.22; Oversight Officer uses manual result upload channel; results ingested via same API with manual flag; audit-logged
 
 operations:
-- EC-OPS-05: PPDT API unavailable; fallback to structured PDF email; dispute record marked PPDT_FALLBACK; case number manually entered by IEBC staff after PPDT responds
+- EC-OPS-05: PPDT API unavailable; fallback to structured PDF email; dispute record marked PPDT_FALLBACK; case number manually entered by the Commission staff after PPDT responds
 - EC-OPS-06: PDM 7-day deadline used by parties to delay legitimate disputes; hard deadline enforced by system scheduler; auto-escalation non-overridable; PPDT alerted
 
 human:
@@ -252,5 +252,5 @@ Tags: `#[trace("FR-M46-013","AC-M46-03","EC-OPS-06")]`
 
 - PPDT API MoU: same dependency as M45; if not signed by T-300, email-PDF fallback is the production path through the primary window; PPDT staff must be pre-trained on the structured referral format.
 - KIEMS-lite kit firmware: a subset of M05 BVI functionality must be extracted into a standalone firmware build; M05 team must confirm build timeline (target T-210); this is a hard dependency.
-- Pro-bono scope boundary: M46 is explicitly outside the IEBC tender scope; any IEBC request to extend KIEMS-lite functionality (e.g. ABIS integration) requires a separate change-control event and Datacraft sign-off.
-- Party opt-in outreach: expected opt-in rate is uncertain; the public-portal result-publication path (PPA 2011 s.22) applies to all parties regardless of opt-in; IEBC Oversight Officer must have a manual result-upload channel for non-opted-in parties to submit results in the standard format.
+- Pro-bono scope boundary: M46 is explicitly outside the Commission tender scope; any the Commission request to extend KIEMS-lite functionality (e.g. ABIS integration) requires a separate change-control event and Datacraft sign-off.
+- Party opt-in outreach: expected opt-in rate is uncertain; the public-portal result-publication path (PPA 2011 s.22) applies to all parties regardless of opt-in; the Commission Oversight Officer must have a manual result-upload channel for non-opted-in parties to submit results in the standard format.

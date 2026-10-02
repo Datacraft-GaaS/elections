@@ -1133,7 +1133,7 @@ int process_link_table(const int *link_table,
       minutia1 = minutiae->list[first];
       minutia2 = minutiae->list[second];
 
-      /* Check to make sure the the maximum score found in the current */
+      /* Check to make sure the maximum score found in the current */
       /* line is > 0 (just to be safe)  AND                            */
       /* If a "free path" exists between minutia pair ...              */
       if( /* (max_v >0) && */

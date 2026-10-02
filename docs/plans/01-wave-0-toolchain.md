@@ -1,6 +1,6 @@
 # Wave 0: Toolchain, local profile, contracts
 
-Part of the IEBC IEMS full build plan. See `README.md` for conventions, `08-edge-case-matrix.md` for EC-IDs, `10-definition-of-done.md` for the WP exit bar.
+Part of the Commission IEMS full build plan. See `README.md` for conventions, `08-edge-case-matrix.md` for EC-IDs, `10-definition-of-done.md` for the WP exit bar.
 
 
 Gate G0 (platform lead + architect): `just ci` green on a clean machine; contract lint passes for all 18 services; synthetic register regenerates deterministically; no PII anywhere (grep + data-dictionary check); stale ADR retired.

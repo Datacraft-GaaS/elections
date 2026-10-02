@@ -1,7 +1,7 @@
 # Harbor Helm values, staging and production.
 # Local dev variant is under platform/harbor/local/ (WP-0.2 scope, do not modify here).
 # Chart: harbor/harbor >= 1.14
-# Image name convention: eel/harbor-* (no iebc_ prefix)
+# Image name convention: eel/harbor-* (no client-name prefix)
 
 expose:
   type: ingress

@@ -117,7 +117,7 @@ Languages: English + Kiswahili. WCAG 2.1 AA; audio guidance. ICR review screen s
 
 ## 9. Honest caveats + external prerequisites
 
-- **ICR model accuracy** on handwritten Kenyan forms must be validated on a representative field corpus before G3; current model is ONNX placeholder awaiting fine-tuning on IEBC form samples.
+- **ICR model accuracy** on handwritten Kenyan forms must be validated on a representative field corpus before G3; current model is ONNX placeholder awaiting fine-tuning on the Commission form samples.
 - **SMS/USSD gateway commercial arrangement** (Safaricom / Africa's Touching) required; adapter written; live gateway allocation pending.
 - **90 s SLO** requires certified scanner hardware; scanner vendor and model must be finalised before hardware procurement gate.
 - **7-day offline capacity** assumes peak Form 34A volume (one form per station per election); actual capacity far exceeds this for normal elections but must be verified for multi-ballot days.

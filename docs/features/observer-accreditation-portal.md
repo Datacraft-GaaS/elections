@@ -145,7 +145,7 @@ Related documents: spec at `docs/plans/modules/observer-accreditation-portal.md`
 - An observer organisation that withdraws after badge issuance: the Commission suspends the org; all active `IndividualObserver` records are bulk-revoked; M34 tokens are invalidated. Badges already physically distributed cannot be recalled but will be rejected by scanners within 5 minutes of the CRL update.
 - An observer who loses their device with the M34 app: M34 session token revocation is independent of M43 badge revocation. Revoking the M34 token (via M34 admin) is a separate action from revoking the M43 badge; both should be done simultaneously by the accreditation officer.
 - Roster CSV validation failures: a CSV with 4,999 valid rows and 1 invalid row is rejected in its entirety. The error response lists all invalid rows with reasons. This prevents partial roster uploads that could cause quota ambiguity. Orgs should validate their CSV locally before upload using the CSV validation schema at `services/training-svc/docs/roster-schema.json`.
-- International observer visas: IEBC does not process visas; observers from international missions must have independent immigration clearance. The accreditation portal notes this requirement but cannot verify it. M43 records a `visa_status_note_hash` field for the officer to document the visa situation.
+- International observer visas: the Commission does not process visas; observers from international missions must have independent immigration clearance. The accreditation portal notes this requirement but cannot verify it. M43 records a `visa_status_note_hash` field for the officer to document the visa situation.
 
 ---
 

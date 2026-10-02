@@ -125,7 +125,7 @@ WCAG 2.2 AA on all surfaces. Languages: EN + SW.
 - **Model artefact signing** -- all detection models (IsolationForest weights, threshold configs) are cosign-signed; the ECC console verifies the cosign signature before loading any model; unsigned models are rejected.
 - **Decision log anchoring** -- every `LayerResult` and `AdjudicationRecord` is hashed and anchored in the P05 transparency log within 60 s; third parties can verify no signal was silently suppressed.
 - **PII stripping circuit-breaker** -- no voter or officer PII is passed to any ML model or LLM; the circuit-breaker (`packages/eel-pii-strip-rs`) is applied before any data reaches the model layer; a PII detection event halts the pipeline and alerts the DPO.
-- **Canary P0 alert** -- a Layer 5 canary mismatch triggers an immediate P0 page to the IEBC SOC; the ECC console highlights the affected Merkle root; no adjudication step is required before the alert fires.
+- **Canary P0 alert** -- a Layer 5 canary mismatch triggers an immediate P0 page to the Commission SOC; the ECC console highlights the affected Merkle root; no adjudication step is required before the alert fires.
 - **Isolation Forest baseline** -- the contamination parameter and training window are stored in the model registry; any change to these parameters requires a new cosign-signed model release; ad-hoc parameter changes are rejected.
 
 ## 8. Kenya statute alignment

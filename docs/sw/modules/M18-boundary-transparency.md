@@ -4,7 +4,7 @@
 **Name:** Boundary Transparency System
 **Owner:** Datacraft Limited — Geo-Intelligence Team
 **Status:** Draft v2
-**IP Classification:** Custom Software — IPR vests in IEBC per GCC 15.4; boundary dataset and simulator released as open data under CC BY 4.0
+**IP Classification:** Custom Software — IPR vests in the Commission per GCC 15.4; boundary dataset and simulator released as open data under CC BY 4.0
 
 **Strategy traceback:** Part XVI §XVI.1, Part XVI §XVI.6
 
@@ -24,9 +24,9 @@ The Boundary Transparency System operationalises Kenya's constitutional obligati
 | Data journalists | Web browser, API | Download GeoJSON; run efficiency-gap analysis; write stories |
 | Civil society researchers (Katiba Institute, KHRC, AfriCOG) | Web browser, API | Monitor for gerrymandering; submit boundary challenges |
 | Legal counsel / petitioners | Web browser | Evidence for redistricting petition |
-| IEBC Delimitation Officers | Internal console | Propose boundary changes; document justification |
-| IEBC Commissioners | Executive view | Approve proposed changes; sign change records |
-| Parliament (Boundaries Committee) | Read-only web | Review IEBC proposals with supporting fairness metrics |
+| the Commission Delimitation Officers | Internal console | Propose boundary changes; document justification |
+| the Commission Commissioners | Executive view | Approve proposed changes; sign change records |
+| Parliament (Boundaries Committee) | Read-only web | Review the Commission proposals with supporting fairness metrics |
 | IAB | Read-only | Audit boundary change history; monitor fairness metrics |
 
 ---
@@ -34,10 +34,10 @@ The Boundary Transparency System operationalises Kenya's constitutional obligati
 ## Functional Requirements
 
 ### FR-18.01 — Open boundary data platform
-All constituency, ward, county, and polling-station boundaries published as GeoJSON (EPSG:4326) with: boundary ID, name, population (2019 Census), registered voter count (live, updated each CVR cycle), area km², type (constituency / ward / county / station), effective date, gazette notice reference, and Merkle-anchored version hash. Updated within 24 hours of any IEBC action.
+All constituency, ward, county, and polling-station boundaries published as GeoJSON (EPSG:4326) with: boundary ID, name, population (2019 Census), registered voter count (live, updated each CVR cycle), area km², type (constituency / ward / county / station), effective date, gazette notice reference, and Merkle-anchored version hash. Updated within 24 hours of any the Commission action.
 
 ### FR-18.02 — Historical snapshots
-Boundary dataset published for every delimitation event since 2013. Historical snapshots downloadable individually. Each snapshot has a SHA-256 hash enabling independent verification that the published data matches the gazette. Provenance chain: gazette notice PDF hash, IEBC Commissioner signature, IMS event.
+Boundary dataset published for every delimitation event since 2013. Historical snapshots downloadable individually. Each snapshot has a SHA-256 hash enabling independent verification that the published data matches the gazette. Provenance chain: gazette notice PDF hash, the Commission Commissioner signature, IMS event.
 
 ### FR-18.03 — Public API
 RESTful GeoJSON API and bulk download endpoint. OpenAPI 3.1 spec published. WMS/WFS endpoint for GIS clients. Rate-limited public access; authenticated higher-rate access for civil society partners.
@@ -50,13 +50,13 @@ Interactive web tool: user draws alternative boundary configurations subject to 
 - Majority-minority ward preservation flag
 - Cracking/packing detection (constituencies with > 80% single-ethnicity composition flagged)
 
-Simulator outputs are clearly labelled as hypothetical; they are not IEBC proposals. Export: PDF report + GeoJSON of proposed configuration.
+Simulator outputs are clearly labelled as hypothetical; they are not the Commission proposals. Export: PDF report + GeoJSON of proposed configuration.
 
 ### FR-18.05 — Ex-post boundary impact analysis
 After every election: automatically compute and publish per-constituency metrics: vote-to-seat ratio, wasted-vote count (votes for losing candidate + votes above winning threshold), efficiency gap. Historical comparison chart (2013, 2017, 2022, 2027). Published to the open data platform within 30 days of Form 34C publication.
 
 ### FR-18.06 — Redistricting audit trail
-Every proposed boundary change by any IEBC officer logged with: author (IEBC staff ID), timestamp, change description, justification text, before/after fairness metrics (auto-computed), before-boundary hash, after-boundary hash. Append-only. Hash-chained and HSM-signed. Public comment portal: any registered user can submit a comment on a proposed change during a 30-day public notice period. Comments are logged and visible to IEBC Commissioners and the Boundaries Committee. Audit trail is readable by IAB in real time.
+Every proposed boundary change by any the Commission officer logged with: author (the Commission staff ID), timestamp, change description, justification text, before/after fairness metrics (auto-computed), before-boundary hash, after-boundary hash. Append-only. Hash-chained and HSM-signed. Public comment portal: any registered user can submit a comment on a proposed change during a 30-day public notice period. Comments are logged and visible to the Commission Commissioners and the Boundaries Committee. Audit trail is readable by IAB in real time.
 
 ### FR-18.07 — Gazette-linked version control
 Every gazette notice for a boundary change is: PDF-linked, hash-computed, and attached to the corresponding audit trail record. The Gazette PDF hash is published alongside the GeoJSON hash. Any discrepancy between gazette content and IEMS boundary data is an immediate alert to the IAB.
@@ -65,10 +65,10 @@ Every gazette notice for a boundary change is: PDF-linked, hash-computed, and at
 Boundary data service doubles as the geofencing engine for all KIEMS modules (M08 BVI device, M05 BVI back-end, M16 ECC kit-tracking). All station boundary polygons (55,393 stations + buffers) served as a low-latency geofence API consumed by other modules. Geofence queries: p99 < 20 ms.
 
 ### FR-18.09 — Fairness-metric monitoring
-Continuous monitoring of the registered-voter distribution across constituencies against Sixth Schedule quota. Monthly public report showing: top 10 most over-represented constituencies (registered voters per seat above national mean), top 10 most under-represented, and trend since last delimitation. Alert to IEBC Chair and IAB when any constituency exceeds ±40% of national quota — triggering constitutional delimitation obligation.
+Continuous monitoring of the registered-voter distribution across constituencies against Sixth Schedule quota. Monthly public report showing: top 10 most over-represented constituencies (registered voters per seat above national mean), top 10 most under-represented, and trend since last delimitation. Alert to the Commission Chair and IAB when any constituency exceeds ±40% of national quota — triggering constitutional delimitation obligation.
 
 ### FR-18.10 — Parliament and public submissions channel
-Structured submission portal where citizens, civil society organisations, or Parliament can formally submit boundary representations. Submissions logged, hashed, given reference numbers, and included in IEBC's statutory consultation record. Response from IEBC recorded per submission with reasoning.
+Structured submission portal where citizens, civil society organisations, or Parliament can formally submit boundary representations. Submissions logged, hashed, given reference numbers, and included in the Commission's statutory consultation record. Response from the Commission recorded per submission with reasoning.
 
 ---
 
@@ -94,13 +94,13 @@ Boundary dataset: Creative Commons Attribution 4.0 International (CC BY 4.0). AP
 ## User Stories
 
 1. As a citizen, I want to view my constituency boundary on a map and see how many registered voters it contains, so that I understand my electoral unit.
-2. As a civil society researcher, I want to download the complete GeoJSON boundary dataset and compute the efficiency gap myself, so that my analysis is independent of IEBC's published figures.
+2. As a civil society researcher, I want to download the complete GeoJSON boundary dataset and compute the efficiency gap myself, so that my analysis is independent of the Commission's published figures.
 3. As a journalist, I want to use the boundary simulator to test what the map would look like under an alternative configuration, so that I can illustrate gerrymandering claims with factual alternatives.
 4. As a legal counsel, I want to download the boundary change audit trail for constituency X, so that I have evidence of procedural compliance or failure for a petition.
-5. As an IEBC Delimitation Officer, I want to log a proposed boundary change with my justification and see the automatic fairness metrics, so that I can assess compliance with Sixth Schedule before proposing to Commissioners.
-6. As an IAB Member, I want to receive an alert whenever any constituency exceeds the ±40% population parity threshold, so that I can flag a constitutional delimitation obligation to IEBC.
+5. As a Commission Delimitation Officer, I want to log a proposed boundary change with my justification and see the automatic fairness metrics, so that I can assess compliance with Sixth Schedule before proposing to Commissioners.
+6. As an IAB Member, I want to receive an alert whenever any constituency exceeds the ±40% population parity threshold, so that I can flag a constitutional delimitation obligation to the Commission.
 7. As a member of the public, I want to submit a formal representation on a proposed boundary change and receive a reference number, so that my voice is part of the statutory consultation record.
-8. As an IEBC Commissioner, I want to review all public comments on a proposed change alongside the fairness metrics before signing, so that my decision is fully informed and documented.
+8. As a Commission Commissioner, I want to review all public comments on a proposed change alongside the fairness metrics before signing, so that my decision is fully informed and documented.
 
 ---
 
@@ -110,7 +110,7 @@ Boundary dataset: Creative Commons Attribution 4.0 International (CC BY 4.0). AP
 class Boundary(BaseModel):
     model_config = ConfigDict(extra='forbid')
     id: str  # UUID7
-    code: str  # official IEBC code
+    code: str  # official the Commission code
     name: str
     boundary_type: str  # constituency | ward | county | station
     parent_code: str | None
@@ -123,14 +123,14 @@ class Boundary(BaseModel):
     gazette_pdf_hash: str
     geojson_hash: str
     version: int
-    signed_by: str  # IEBC Commissioner UUID
+    signed_by: str  # the Commission Commissioner UUID
     merkle_seq: int
 
 class BoundaryChange(BaseModel):
     model_config = ConfigDict(extra='forbid')
     id: str  # UUID7
     boundary_id: str
-    proposed_by: str  # IEBC officer UUID
+    proposed_by: str  # the Commission officer UUID
     proposed_at: datetime
     justification: str
     before_hash: str
@@ -160,8 +160,8 @@ class BoundarySubmission(BaseModel):
     submission_type: str  # support | object | comment
     content: str
     evidence_hash: str | None
-    iebc_response: str | None
-    iebc_response_at: datetime | None
+    commission_response: str | None
+    commission_response_at: datetime | None
 ```
 
 ---
@@ -179,7 +179,7 @@ class BoundarySubmission(BaseModel):
 | GET | `/api/v1/metrics/fairness` | None (public) | 20/s | Current fairness metric summary |
 | GET | `/api/v1/metrics/impact/{election}` | None (public) | 10/s | Ex-post impact analysis for election year |
 | GET | `/api/v1/changes` | None (public) | 50/s | Boundary change audit log |
-| POST | `/api/v1/changes` | IEBC Officer JWT | 5/s | Propose boundary change |
+| POST | `/api/v1/changes` | the Commission Officer JWT | 5/s | Propose boundary change |
 | POST | `/api/v1/changes/{id}/approve` | Commissioner JWT | 2/s | Approve change (triggers gazette submission) |
 | POST | `/api/v1/submissions` | None (public, rate-limited) | 2/s per IP | Submit public representation |
 | GET | `/api/v1/submissions/{change_id}` | None (public) | 20/s | Read public submissions on a change |
@@ -212,7 +212,7 @@ class BoundarySubmission(BaseModel):
 2. **Simulator** — draw mode on top of base map; real-time fairness metrics update as user draws; constraint warnings (parity violation highlighted); export button
 3. **Change audit timeline** — chronological list of all boundary changes; click to see before/after map overlay, fairness metric comparison, public comments
 4. **Fairness metrics dashboard** — national summary cards; per-constituency deviation bar chart; efficiency gap trend line; top-10 over/under-represented
-5. **Public submission portal** — change listing; submission form; reference number confirmation; IEBC response tracker
+5. **Public submission portal** — change listing; submission form; reference number confirmation; the Commission response tracker
 6. **Ex-post impact report** — post-election per-constituency vote-to-seat ratio, wasted-vote count, efficiency gap; comparison to previous elections
 
 ---
@@ -223,9 +223,9 @@ class BoundarySubmission(BaseModel):
 |---|---|
 | Delimitation every 8-12 years; population parity ±40% | Constitution Art. 89; Sixth Schedule s.41 |
 | Procedural fairness in delimitation | Katiba Institute v AG [2017] eKLR |
-| Public consultation on boundary changes | IEBC Act s.27; Constitution Art. 10 |
+| Public consultation on boundary changes | the Commission Act s.27; Constitution Art. 10 |
 | Open access to government information | Access to Information Act 2016 s.4 |
-| Audit trail of administrative decisions | PPADA 2015; IEBC Act |
+| Audit trail of administrative decisions | PPADA 2015; the Commission Act |
 
 ---
 
@@ -233,13 +233,13 @@ class BoundarySubmission(BaseModel):
 
 | Metric | Target | Sign-off |
 |---|---|---|
-| Boundary data updated after IEBC action | Within 24 hours | IEBC Delimitation Office |
+| Boundary data updated after the Commission action | Within 24 hours | the Commission Delimitation Office |
 | Geofence API p99 latency | < 20 ms | Datacraft SRE |
 | Boundary explorer availability | 99.9% | Datacraft SRE |
 | Simulator fairness metric compute time | < 5 s | Datacraft Engineering |
-| Unique simulator users per year | > 100,000 | IEBC Comms |
-| Submission response rate | 100% of formal representations | IEBC Chair |
-| Ex-post impact analysis publication | Within 30 days of Form 34C | IEBC Delimitation Office |
+| Unique simulator users per year | > 100,000 | the Commission Comms |
+| Submission response rate | 100% of formal representations | the Commission Chair |
+| Ex-post impact analysis publication | Within 30 days of Form 34C | the Commission Delimitation Office |
 | ±40% parity alert delivery | Within 1 hour of threshold breach | IAB |
 
 ---
@@ -287,7 +287,7 @@ class BoundarySubmission(BaseModel):
 | # | Risk | Mitigation |
 |---|---|---|
 | R1 | Geofence service outage during kit activation window (T-7 to T-1) | 99.99% SLA; kit caches geofence polygon at provisioning; kit operates on cached polygon if service unreachable |
-| R2 | Boundary data dispute between IEBC dataset and gazette gazette | Gazette PDF hash stored alongside GeoJSON hash; any discrepancy triggers IAB alert and publication freeze until resolved |
-| R3 | Simulator misused to generate redistricting propaganda | Outputs clearly labelled as hypothetical; no IEBC branding; open-source code allows independent verification of fairness metrics |
-| R4 | Land Commission data is stale or incorrect | Annual data exchange MoU; IEBC Delimitation Office review of each boundary update before publication |
+| R2 | Boundary data dispute between the Commission dataset and gazette gazette | Gazette PDF hash stored alongside GeoJSON hash; any discrepancy triggers IAB alert and publication freeze until resolved |
+| R3 | Simulator misused to generate redistricting propaganda | Outputs clearly labelled as hypothetical; no the Commission branding; open-source code allows independent verification of fairness metrics |
+| R4 | Land Commission data is stale or incorrect | Annual data exchange MoU; the Commission Delimitation Office review of each boundary update before publication |
 | R5 | Public submission portal overwhelmed by organised campaign | Rate limiting per IP + per organisation; CAPTCHA; submissions batched for review; malicious submissions flagged and removed with IAB oversight |

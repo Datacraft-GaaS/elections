@@ -8,11 +8,11 @@
 | Size | M |
 | Availability class | routine 99.5% |
 | Event-sourced | no (ADR-0013: only M08/M09/M10, M20, M51, M63) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M56-county-national-coordination.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M56-county-national-coordination.md |
 
 ## Purpose
 
-Manages MoUs, county-level dataset approvals, ministerial coordination, and cross-tier incident escalation between county IEBC offices and the national Commission, with SAML brokering for heterogeneous county government identity providers.
+Manages MoUs, county-level dataset approvals, ministerial coordination, and cross-tier incident escalation between county the Commission offices and the national Commission, with SAML brokering for heterogeneous county government identity providers.
 
 ## Surfaces and languages
 

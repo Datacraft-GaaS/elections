@@ -1,4 +1,4 @@
-//! hsm-ceremony: CLI for IEBC custodians to manage HSM key ceremonies.
+//! hsm-ceremony: CLI for the Commission custodians to manage HSM key ceremonies.
 //!
 //! # Usage
 //!
@@ -33,7 +33,7 @@ use hsm_signer::proto::{
 #[derive(Parser)]
 #[command(
 	name = "hsm-ceremony",
-	about = "IEBC custodian CLI for eel HSM key ceremonies",
+	about = "Electoral Authority custodian CLI for eel HSM key ceremonies",
 	version
 )]
 struct Cli {

@@ -17,7 +17,7 @@ Status: DRAFT | UNDER_REVIEW | APPROVED
 - [Activity 2]
 - [Activity 3]
 
-**Data subjects:** [e.g., registered Kenyan voters, IEBC staff, accredited observers]
+**Data subjects:** [e.g., registered Kenyan voters, the Commission staff, accredited observers]
 
 **Trigger for this DPIA:** [New module / significant change / periodic review]
 
@@ -29,7 +29,7 @@ Status: DRAFT | UNDER_REVIEW | APPROVED
 
 | Field | Value |
 |---|---|
-| Controller name | Independent Electoral and Boundaries Commission (IEBC) |
+| Controller name | the electoral authority (the Commission) |
 | Registered address | Anniversary Towers, University Way, Nairobi, Kenya |
 | Contact email | [DPO_EMAIL] |
 | Data Protection Officer | [DPO_NAME] |

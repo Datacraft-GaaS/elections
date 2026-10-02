@@ -60,6 +60,6 @@ Follow patterns in `services/service-template-{rs,py,ex}/`:
 ## Sensitivity reminders
 
 - The RFP (`tender.txt`) is binding. No functional change without a traceable requirement.
-- Do not add `iebc` to identifiers; use `eel` prefix everywhere (see `docs/adr/README.md`).
+- Do not add `commission` to identifiers; use `eel` prefix everywhere (see `docs/adr/README.md`).
 - No em or en dashes in documentation or commit messages.
 - PII: use `eel-pii-*` libraries; never log T0/T1 data in plaintext.

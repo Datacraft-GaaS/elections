@@ -20,7 +20,7 @@ Module M58 (`parliamentary-judiciary-reporting`) owned by `governance-svc`. Mana
 ## 1. What Parliamentary and Judiciary Reporting does (vs M40 Election Court IT Interface)
 
 - **M40** (Election Court IT Interface) = petition evidence submission to the High Court and Supreme Court after an election petition has been filed. M40 is reactive: it responds to court orders.
-- **M58** = proactive statutory reporting: submits periodic and event-triggered reports to Parliament, prepares and logs IEBC officer testimony, and pre-registers certified results and Merkle proofs with the Supreme Court registry before any petition.
+- **M58** = proactive statutory reporting: submits periodic and event-triggered reports to Parliament, prepares and logs the Commission officer testimony, and pre-registers certified results and Merkle proofs with the Supreme Court registry before any petition.
 
 M58 and M40 share the `StatutoryReport` and `JudiciaryHandover` aggregates but write them for different triggers. M40 is petition-driven; M58 is schedule-driven and pre-registration-driven.
 
@@ -114,8 +114,8 @@ Languages: EN (all statutory documents). WCAG 2.2 AA.
 
 ## 8. Kenya statute alignment
 
-- **Elections Act §74 (IEBC annual report to Parliament)**: `StatutoryReport` with `report_type = ANNUAL` tabled within 90 days of financial year end; the pipeline has a cron trigger for this.
-- **Constitution of Kenya 2010 Art 163(8) (SC jurisdiction over presidential election)**: `SCPreRegistration` satisfies IEBC's obligation to provide certified results to the SC before petition window closes (14 days post-declaration, Art 140(1)).
+- **Elections Act §74 (the Commission annual report to Parliament)**: `StatutoryReport` with `report_type = ANNUAL` tabled within 90 days of financial year end; the pipeline has a cron trigger for this.
+- **Constitution of Kenya 2010 Art 163(8) (SC jurisdiction over presidential election)**: `SCPreRegistration` satisfies the Commission's obligation to provide certified results to the SC before petition window closes (14 days post-declaration, Art 140(1)).
 - **Evidence Act Cap 80 §78 (electronic evidence admissibility)**: `JudiciaryHandover.package_hash` is the hook for admissibility: the court can verify the hash against the registry submission to establish authenticity.
 - **Parliamentary Standing Orders SO 210 (committee reports)**: `StatutoryReport.committee` taxonomy maps to the official committee names in the 13th Parliament standing orders.
 
@@ -123,7 +123,7 @@ Languages: EN (all statutory documents). WCAG 2.2 AA.
 
 - Parliamentary portal API integration depends on National Assembly and Senate ICT departments providing stable API credentials. Where the portal lacks an API, report tabling falls to manual PDF delivery with `parliamentary_ref` recorded manually by the legal officer.
 - SC pre-registration assumes that `eel.rts.results_certified.v1` from M51 fires within 24 hours of the last county tally. If certification is delayed (e.g., prolonged dispute at tallying centre), the pre-registration timeline compresses against the 14-day petition window.
-- Testimony recordings are stored in MinIO under the `iebc-testimony` bucket with a 10-year retention policy aligned to the Elections Act records retention schedule. Actual bucket creation and retention policy activation is an operational task at first deployment.
+- Testimony recordings are stored in MinIO under the `commission-testimony` bucket with a 10-year retention policy aligned to the Elections Act records retention schedule. Actual bucket creation and retention policy activation is an operational task at first deployment.
 - High Court e-filing integration uses the High Court's online filing system API. The API version is pinned; updates to the court's system require adapter updates.
 
 ## 10. Test coverage + operational runbooks

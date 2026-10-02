@@ -109,7 +109,7 @@ class AdjudicationCatalogueEntry(models.Model):
     """Projection of the adjudication reason-code catalogue (M27, A1-A8 / V1-V3).
 
     Rows are seeded from the Rust catalogue; the Django UI is read-only for
-    standard codes but allows IEBC legal team to add jurisdiction-specific
+    standard codes but allows the Commission legal team to add jurisdiction-specific
     supplementary codes (prefix S1-S9) via admin.
     """
 

@@ -4,7 +4,7 @@
 
 name: election-day
 description: >
-  Full IEBC election day: 65k KIEMS kits performing BVI 1:1 identification and
+  Full the Commission election day: 65k KIEMS kits performing BVI 1:1 identification and
   RTS 34A form submission across morning + evening bimodal peaks, with telco
   impairment profiles and a results-flood phase after 17:00 EAT.
 

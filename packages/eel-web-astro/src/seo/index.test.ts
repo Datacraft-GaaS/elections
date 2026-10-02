@@ -28,7 +28,7 @@ describe('buildCsp', () => {
 
 describe('jsonLdScript', () => {
 	it('includes @context', () => {
-		const s = jsonLdScript({ '@type': 'Organization', name: 'IEBC' });
+		const s = jsonLdScript({ '@type': 'Organization', name: 'Electoral Authority' });
 		const parsed = JSON.parse(s) as Record<string, unknown>;
 		expect(parsed['@context']).toBe('https://schema.org');
 		expect(parsed['@type']).toBe('Organization');
@@ -37,7 +37,7 @@ describe('jsonLdScript', () => {
 
 describe('canonicalUrl', () => {
 	it('joins base and path correctly', () => {
-		expect(canonicalUrl('https://iebc.or.ke', '/results')).toBe('https://iebc.or.ke/results');
-		expect(canonicalUrl('https://iebc.or.ke/', '/voter/')).toBe('https://iebc.or.ke/voter/');
+		expect(canonicalUrl('https://eel.example', '/results')).toBe('https://eel.example/results');
+		expect(canonicalUrl('https://eel.example/', '/voter/')).toBe('https://eel.example/voter/');
 	});
 });

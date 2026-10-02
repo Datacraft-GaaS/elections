@@ -15,7 +15,7 @@ OpenAI-compatible LLM proxy hosted on-premises for chat and embeddings with opti
 
 Protocol: REST (HTTPS)
 Authentication: API-key
-Endpoints: Self-hosted LiteLLM proxy at 62.169.25.77:4000
+Endpoints: Self-hosted LiteLLM proxy at 192.0.2.11:4000
 
 ### Endpoints
 
@@ -57,7 +57,7 @@ Endpoints: Self-hosted LiteLLM proxy at 62.169.25.77:4000
 
 ```bash
 # Chat completion (requires API-key)
-curl -X POST http://62.169.25.77:4000/v1/chat/completions \
+curl -X POST http://192.0.2.11:4000/v1/chat/completions \
   -H "Authorization: Bearer $LITELLM_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -70,7 +70,7 @@ curl -X POST http://62.169.25.77:4000/v1/chat/completions \
   }'
 
 # Generate embeddings
-curl -X POST http://62.169.25.77:4000/v1/embeddings \
+curl -X POST http://192.0.2.11:4000/v1/embeddings \
   -H "Authorization: Bearer $LITELLM_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -82,7 +82,7 @@ curl -X POST http://62.169.25.77:4000/v1/embeddings \
 ## Health and readiness
 
 ```bash
-curl -s http://62.169.25.77:4000/health
+curl -s http://192.0.2.11:4000/health
 # Response: {"status": "ready", "models": 5}
 ```
 
@@ -122,7 +122,7 @@ Circuit open: fall back to on-device Ollama instance running smaller model (Phi 
 
 | Variable | Required | Default | Purpose |
 |---|---|---|---|
-| LITELLM_HOST | yes | 62.169.25.77 | LiteLLM proxy hostname |
+| LITELLM_HOST | yes | 192.0.2.11 | LiteLLM proxy hostname |
 | LITELLM_PORT | yes | 4000 | LiteLLM proxy port |
 | LITELLM_API_KEY | yes | - | API key for authentication |
 | LITELLM_CHAOS | no | false | Chaos mode (timeout/error/slow) |

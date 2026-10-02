@@ -1,6 +1,6 @@
 # Mobile field support (M32)
 
-Module M32 (`mobile-field-support`) owned by `field-mobile-svc`. A Flutter Android/iOS app for Datacraft engineers and IEBC IT field technicians. Supports ticket creation and resolution with signed diagnostics, safe remote actions (kit-consent required), warranty logging under O04, escalation matrix, offline runbook access, and shift handoff with dual-officer sign-off.
+Module M32 (`mobile-field-support`) owned by `field-mobile-svc`. A Flutter Android/iOS app for Datacraft engineers and the Commission IT field technicians. Supports ticket creation and resolution with signed diagnostics, safe remote actions (kit-consent required), warranty logging under O04, escalation matrix, offline runbook access, and shift handoff with dual-officer sign-off.
 
 ## Contents
 
@@ -129,7 +129,7 @@ Languages: EN + SW. Material You accessibility. WCAG 2.2 AA on all screens. Offl
 
 - The O04 warranty API endpoint must be confirmed with the hardware vendor before election day; the adapter and stub are ready but the live endpoint URL is pending contract finalisation.
 - Remote action consent from the DPO requires M31 connectivity; if the DPO's M31 device is offline, the consent request is queued and the remote action is blocked until consent is received; this may delay critical repairs.
-- The escalation matrix thresholds (SLA per fault_type) must be configured by IEBC IT before election day; defaults are provided but may not match operational reality.
+- The escalation matrix thresholds (SLA per fault_type) must be configured by the Commission IT before election day; defaults are provided but may not match operational reality.
 - Shift handoff requires both engineers to be physically present with the incoming engineer's device; if the incoming engineer is remote, the handoff must use an alternative procedure (documented in the runbook).
 - The DiagnosticReport JSON schema covers the biometric kit's documented diagnostic interface; any firmware update that changes the diagnostic API requires a corresponding app update.
 
@@ -143,7 +143,7 @@ Runbooks under `docs/runbooks/`:
 
 Dashboards: `platform/observability/field-mobile-svc/grafana-fieldsupport.json` (ticket creation rate, resolution time, remote action count, warranty claim count, handoff completion rate). SLO: diagnostic sync <60 s; remote action consent response <5 min; shift handoff completion before shift end.
 
-Escalation matrix (condensed): SEV1 unresolved at 20 min -> Datacraft L2 (auto-ticket); 30 min -> IEBC ICT national (auto-notify); 60 min -> IEBC Commissioner briefing note. SEV2 unresolved at 4 h -> county coordinator + L2. SEV3 unresolved at 24 h -> ops review.
+Escalation matrix (condensed): SEV1 unresolved at 20 min -> Datacraft L2 (auto-ticket); 30 min -> the Commission ICT national (auto-notify); 60 min -> the Commission Commissioner briefing note. SEV2 unresolved at 4 h -> county coordinator + L2. SEV3 unresolved at 24 h -> ops review.
 
 Runbook library: all runbooks signed at pre-election bulk push; library covers BVR kit failure, biometric sensor replacement, network adapter swap, scanner calibration, and firmware rollback; new runbooks can be pushed via OTA without app update.
 

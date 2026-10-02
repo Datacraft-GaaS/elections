@@ -1,8 +1,0 @@
-# Build artifacts and archives — keep extracted source + libs only
-.gradle/
-build/
-.idea/
-*.rar
-*.zip
-*.apk
-*.docx

@@ -8,7 +8,7 @@
 | Size | M |
 | Availability class | routine 99.5% |
 | Event-sourced | no (ADR-0013: only M08/M09/M10, M20, M51, M63) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M67-party-symbol-colour-registry.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M67-party-symbol-colour-registry.md |
 
 ## Purpose
 
@@ -208,4 +208,4 @@ Tags: `#[trace("FR-M67-002","AC-M67-01","EC-HUM-09")]`
 ## Open questions
 
 - Pantone API access and licensing for digital Delta-E reference values; manual entry fallback must be ready for go-live.
-- Minimum Delta-E threshold is currently not specified in the spec; requires agreement between IEBC design team and accessibility auditors.
+- Minimum Delta-E threshold is currently not specified in the spec; requires agreement between the Commission design team and accessibility auditors.

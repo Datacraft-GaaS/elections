@@ -2,7 +2,7 @@
 
 **Runs on:** CDN edge (static-first), origin in primary DC (update generator only)
 **Owner:** Datacraft
-**IPR:** Custom Software vests in IEBC per GCC 15.4
+**IPR:** Custom Software vests in the Commission per GCC 15.4
 
 ## 1. Purpose
 
@@ -32,7 +32,7 @@ Publish every scanned Form 34A / 34B / 34C / 35 / 36 / 37 / 38 with cryptographi
 - **FR-M11-013** RSS / Atom feed of published forms for automation-friendly consumers.
 - **FR-M11-014** OpenAPI JSON endpoints for programmatic access with rate limit.
 - **FR-M11-015** No PII exposure: forms show only what statute requires; agent identities anonymised.
-- **FR-M11-016** Provenance overlay on each form: "Verified by IEBC HSM signature · Merkle-included in transparency log at index N · Escrow-mirrored to [custodian]".
+- **FR-M11-016** Provenance overlay on each form: "Verified by the Commission HSM signature · Merkle-included in transparency log at index N · Escrow-mirrored to [custodian]".
 - **FR-M11-017** Live turnout feed with delayed / aggregated policy to prevent gaming.
 
 ## 4. Non-Functional Requirements
@@ -41,7 +41,7 @@ Publish every scanned Form 34A / 34B / 34C / 35 / 36 / 37 / 38 with cryptographi
 - **NFR-M11-002** Page load p99 ≤ 2 s at peak.
 - **NFR-M11-003** Origin protected by upstream DDoS scrubbing + anycast + WAF + L7 challenge for anonymous read traffic during publication windows.
 - **NFR-M11-004** 99.99% availability read; degrade to signed static snapshots on origin loss.
-- **NFR-M11-005** Every response carries a signature verifiable against IEBC public key published on canonical domains.
+- **NFR-M11-005** Every response carries a signature verifiable against the Commission public key published on canonical domains.
 - **NFR-M11-006** Active-active HA: M11 is a hub module with 18+ downstream dependents (M13, M14, M15, M21, M22, M26, M34, M41, M44, M49, M51, M63, M66, M68). CDN edge serves read traffic; origin is active-active across primary and mirror DCs. Active-passive is insufficient given downstream dependency count. Verified at FAT.
 
 ## 5. Integrations
@@ -70,7 +70,7 @@ Publish every scanned Form 34A / 34B / 34C / 35 / 36 / 37 / 38 with cryptographi
 | A-M11-02 | DDoS on origin does not stop portal | Chaos exercise |
 | A-M11-03 | Merkle-inclusion proof retrievable ≤ 30 s per request | Bench |
 | A-M11-04 | WCAG 2.2 AA audit pass | Independent audit |
-| A-M11-05 | Signed snapshot verifiable via IEBC public key | Independent verification |
+| A-M11-05 | Signed snapshot verifiable via Commission public key | Independent verification |
 | A-M11-06 | No PII exposure in any published surface | Manual + automated scan |
 | A-M11-07 | Multilingual switch works EN / SW | UAT |
 

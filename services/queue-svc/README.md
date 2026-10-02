@@ -71,7 +71,7 @@ Time-series data optimized for 30s interval snapshots. CV estimates stored separ
 
 Build the service:
 ```bash
-cd /Users/nyimbiodero/src/pjs/eel/services/queue-svc
+cd ./services/queue-svc
 cargo build --release
 ```
 

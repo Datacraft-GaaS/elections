@@ -4,7 +4,7 @@ M41 Post-election review: findings documentation, recommendations tracking, parl
 
 ## What it does
 
-Manages post-election review findings and recommendations: IEBC internal review teams document issues found during election operations, tag recommendations (procedural changes, policy, training, technology), escalate significant findings (>3 counties affected or T1 system failure) to Parliament, and track implementation status. Integrates with incident reporting (field-mobile.incident.created events) and RLA audit findings (governance.rla.recount.triggered events).
+Manages post-election review findings and recommendations: the Commission internal review teams document issues found during election operations, tag recommendations (procedural changes, policy, training, technology), escalate significant findings (>3 counties affected or T1 system failure) to Parliament, and track implementation status. Integrates with incident reporting (field-mobile.incident.created events) and RLA audit findings (governance.rla.recount.triggered events).
 
 Fits in governance-svc as the findings aggregation layer. Runs on port 8094 (shared with reporting); emits governance.parliament.referral.issued on escalation; consumes field-mobile and governance events.
 

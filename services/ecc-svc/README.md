@@ -85,7 +85,7 @@ Read-model projections materialized via Kafka event sourcing. Grievance NLP tria
 
 Build the service:
 ```bash
-cd /Users/nyimbiodero/src/pjs/eel/services/ecc-svc
+cd ./services/ecc-svc
 cargo build --release
 ```
 

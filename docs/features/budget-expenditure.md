@@ -1,6 +1,6 @@
 # Budget and expenditure (M54)
 
-Module M54 (`budget-expenditure`) owned by `support-admin-svc`. Manages IEBC election budgets, procurement records, payment vouchers, and Controller of Budget (CoB) / OAG reports; integrates with IFMIS and the PPRA e-procurement portal; enforces separation-of-duties (SoD) on every approval step.
+Module M54 (`budget-expenditure`) owned by `support-admin-svc`. Manages the Commission election budgets, procurement records, payment vouchers, and Controller of Budget (CoB) / OAG reports; integrates with IFMIS and the PPRA e-procurement portal; enforces separation-of-duties (SoD) on every approval step.
 
 ## Contents
 
@@ -20,7 +20,7 @@ Module M54 (`budget-expenditure`) owned by `support-admin-svc`. Manages IEBC ele
 ## 1. What Budget and Expenditure does (vs external IFMIS)
 
 - **IFMIS** (Government Integrated Financial Management Information System) = the National Treasury's authoritative commitment and payment ledger; M54 cannot replace it.
-- **M54** = IEBC's internal budget planning, line-item tracking, procurement workflow, and statutory reporting layer that feeds into IFMIS and generates CoB quarterly reports.
+- **M54** = the Commission's internal budget planning, line-item tracking, procurement workflow, and statutory reporting layer that feeds into IFMIS and generates CoB quarterly reports.
 
 M54 is the pre-commitment control plane: it enforces SoD before any payment reaches IFMIS and produces the audit trail that the OAG and CoB require.
 
@@ -119,10 +119,10 @@ Languages: EN only (internal staff). WCAG 2.2 AA.
 
 ## 9. Honest caveats + external prerequisites
 
-- IFMIS integration depends on National Treasury provisioning an OAuth2 client for IEBC. The adapter is written to the IFMIS REST API documented version; breaking changes in Treasury's API require adapter updates.
+- IFMIS integration depends on National Treasury provisioning an OAuth2 client for the Commission. The adapter is written to the IFMIS REST API documented version; breaking changes in Treasury's API require adapter updates.
 - PPRA portal integration uses the PPRA Open Contracting Data Standard (OCDS) adapter; if PPRA changes their schema the adapter must be updated before procurement records can be submitted.
 - CoB reporting format is modelled on the 2022 CoB circular; if CoB revises the format, the report builder must be updated before the next filing deadline.
-- The three-officer SoD rule is configurable (threshold for which voucher amounts require all three vs. two) but IEBC CFO must formally set these thresholds in `config/sod_thresholds.toml` before go-live.
+- The three-officer SoD rule is configurable (threshold for which voucher amounts require all three vs. two) but the Commission CFO must formally set these thresholds in `config/sod_thresholds.toml` before go-live.
 - No integration with the National Treasury's Single Treasury Account (STA) for cash management; M54 tracks commitments and payments but does not manage the bank account.
 
 ## 10. Test coverage + operational runbooks

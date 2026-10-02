@@ -55,7 +55,7 @@ party officer submits SymbolSubmission (image upload to MinIO)
       -> if nearest distance <= 10:
             -> create SimilarityAlert: SYMBOL_SIMILAR
             -> submission status = PENDING (blocked)
-            -> IEBC officer reviews alert: REJECTED or EXEMPTED
+            -> the Commission officer reviews alert: REJECTED or EXEMPTED
       -> if nearest distance > 10 (or exempted):
             -> submission status = APPROVED
             -> emit eel.crms.symbol_approved.v1
@@ -66,7 +66,7 @@ party officer submits ColourRegistration (hex codes)
       -> if nearest Delta-E < 5:
             -> create SimilarityAlert: COLOUR_SIMILAR
             -> registration status = PENDING (blocked)
-            -> IEBC officer reviews: REJECTED or EXEMPTED
+            -> the Commission officer reviews: REJECTED or EXEMPTED
       -> if Delta-E >= 5 (or exempted):
             -> registration status = APPROVED
             -> emit eel.crms.colour_approved.v1
@@ -84,21 +84,21 @@ Contract: `packages/openapi-contracts/crms/symbol-registry.yaml`. All writes enf
 | Method + path | Persona | Purpose |
 |---|---|---|
 | `POST /v1/symbol-registry/symbols` | Party officer (JWT + SpiceDB `PARTY_OFFICER`) | Submit party symbol |
-| `GET /v1/symbol-registry/symbols/{id}` | Party officer, IEBC officer | Symbol submission status + pHash distance |
-| `PATCH /v1/symbol-registry/symbols/{id}/review` | IEBC officer (SpiceDB `CRMS_OFFICER`) | Approve, reject, or exempt symbol |
+| `GET /v1/symbol-registry/symbols/{id}` | Party officer, the Commission officer | Symbol submission status + pHash distance |
+| `PATCH /v1/symbol-registry/symbols/{id}/review` | the Commission officer (SpiceDB `CRMS_OFFICER`) | Approve, reject, or exempt symbol |
 | `POST /v1/symbol-registry/colours` | Party officer | Submit party colour registration |
-| `GET /v1/symbol-registry/colours/{id}` | Party officer, IEBC officer | Colour registration status + Delta-E distance |
-| `PATCH /v1/symbol-registry/colours/{id}/review` | IEBC officer | Approve, reject, or exempt colour |
+| `GET /v1/symbol-registry/colours/{id}` | Party officer, the Commission officer | Colour registration status + Delta-E distance |
+| `PATCH /v1/symbol-registry/colours/{id}/review` | the Commission officer | Approve, reject, or exempt colour |
 | `POST /v1/symbol-registry/ballot-designs` | System (triggered when symbol + colour approved) | Assemble ballot design package |
-| `GET /v1/symbol-registry/ballot-designs/{id}` | IEBC officer, M39 system | Package PDF URL + hash |
-| `GET /v1/symbol-registry/alerts` | IEBC officer | Active similarity alerts |
+| `GET /v1/symbol-registry/ballot-designs/{id}` | the Commission officer, M39 system | Package PDF URL + hash |
+| `GET /v1/symbol-registry/alerts` | the Commission officer | Active similarity alerts |
 
 ## 6. Human surfaces
 
 | Surface | Path | Purpose |
 |---|---|---|
 | Party submission portal (Astro) | `services/crms-svc/astro/party-portal` | Party officers: submit symbol image and colour codes |
-| IEBC symbol registry console (Django) | `services/crms-svc/django/symbol_admin` | Review submissions, manage alerts, approve designs |
+| the Commission symbol registry console (Django) | `services/crms-svc/django/symbol_admin` | Review submissions, manage alerts, approve designs |
 | Ballot design preview (LiveView) | `services/crms-svc/ex/ballot_design_web` | Side-by-side preview of ballot layout before package assembly |
 
 Languages: EN + SW (party portal). WCAG 2.2 AA.
@@ -107,7 +107,7 @@ Languages: EN + SW (party portal). WCAG 2.2 AA.
 
 - **Immutable approved registrations**: once a `SymbolSubmission` or `ColourRegistration` reaches `APPROVED`, its `phash` or CIELAB values cannot be updated without creating a new submission (the party must re-submit). The old submission is marked `SUPERSEDED`.
 - **Package hash verification**: `BallotDesignPackage.package_hash` is SHA-256 of the PDF; M39 re-verifies the hash before printing.
-- **HSM-signed design package**: commissioner signature over `(package_id || party_id || election_cycle_id || package_hash)` ensures the ballot design cannot be substituted between IEBC approval and the printer.
+- **HSM-signed design package**: commissioner signature over `(package_id || party_id || election_cycle_id || package_hash)` ensures the ballot design cannot be substituted between the Commission approval and the printer.
 - **pHash computation is server-side**: the API accepts the raw image; pHash is computed by the server, not by the submitting party. This prevents parties from pre-computing a hash that narrowly avoids the Hamming distance threshold.
 - **Similarity alert audit trail**: every alert resolution (REJECTED or EXEMPTED_BY_COMMISSIONER) is logged to `eel_crms_audit_shadow` with the deciding officer's identity.
 
@@ -121,9 +121,9 @@ Languages: EN + SW (party portal). WCAG 2.2 AA.
 ## 9. Honest caveats + external prerequisites
 
 - pHash similarity is effective for raster images; for vector SVG symbols, the image is rasterised to 64x64 before hashing. Stylised SVG symbols with thin lines may hash differently across rasterisation engines; the rasteriser version is pinned in `services/crms-svc/config/rasteriser.toml`.
-- The Hamming distance threshold of 10 is derived from the literature (Zauner, VCDB 2010) as a reasonable JND threshold for logos; it is configurable but IEBC legal team must approve changes to the threshold because it affects which symbols are considered confusingly similar under the Elections Act.
+- The Hamming distance threshold of 10 is derived from the literature (Zauner, VCDB 2010) as a reasonable JND threshold for logos; it is configurable but the Commission legal team must approve changes to the threshold because it affects which symbols are considered confusingly similar under the Elections Act.
 - Delta-E 2000 is a perceptual metric calibrated for standard viewing conditions (D65 illuminant, 2-degree observer). Ballot papers printed on different paper stocks may produce different perceived colour distances; the threshold of 5 is conservative (JND is approximately 2-3 in controlled conditions) to account for printing variation.
-- The 99% target for distinctive colour pairs is a system-level target; as more parties register colours, the probability of collisions increases. The IEBC officer role must actively reject or request modification of colours that approach the threshold.
+- The 99% target for distinctive colour pairs is a system-level target; as more parties register colours, the probability of collisions increases. The Commission officer role must actively reject or request modification of colours that approach the threshold.
 
 ## 10. Test coverage + operational runbooks
 

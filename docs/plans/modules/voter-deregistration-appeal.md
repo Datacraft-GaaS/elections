@@ -8,7 +8,7 @@
 | Size | M |
 | Availability class | routine 99.5% |
 | Event-sourced | no |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M36-voter-deregistration-appeal.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M36-voter-deregistration-appeal.md |
 
 ## Purpose
 
@@ -77,7 +77,7 @@ OpenAPI file: `packages/openapi-contracts/bvr/deregistration-appeal.yaml`
 | M40 Election Court IT Interface | internal | integrations/court/ | yes | adjudicator decisions for petitioners |
 | P05 Merkle Chain | P05 | integrations/merkle/ | yes | quarterly report anchoring |
 | P06 HSM | P06 | integrations/hsm/ | yes | Commissioner countersigning |
-| Safaricom / Africa's Talking | I08 | integrations/ussd-gateway/ | yes | *IEBC# USSD appeal intake |
+| Safaricom / Africa's Talking | I08 | integrations/ussd-gateway/ | yes | *the Commission# USSD appeal intake |
 | ODPC | external | integrations/odpc/ | yes (stub) | DPIA register lookup; compliance receipt submission |
 
 ## ML and AI
@@ -104,13 +104,13 @@ Notice generation and dispatch:
 Appeal intake:
 
 7. FR-M36-007: appeal intake via M13 Public Verifier App; authenticated by OTP to voter's registered phone; case reference pre-filled from notification link
-8. FR-M36-008: appeal intake via web form at public appeal URL; accessible without IEBC account; case reference required to proceed
-9. FR-M36-009: appeal intake via *IEBC# USSD; voter enters case reference and grounds in <= 5 numeric menu steps; case reference SMS returned within 5 minutes
+8. FR-M36-008: appeal intake via web form at public appeal URL; accessible without the Commission account; case reference required to proceed
+9. FR-M36-009: appeal intake via *the Commission# USSD; voter enters case reference and grounds in <= 5 numeric menu steps; case reference SMS returned within 5 minutes
 10. FR-M36-010: appeal intake in-person at IAB office; officer creates record on behalf of voter; identity verified by document; intake channel recorded as IN_PERSON
 11. FR-M36-011: legal representative appeal: power of attorney PDF uploaded and stored against appeal record; representative identity and relationship logged; system accepts authorisation before creating case
 12. FR-M36-012: appeal record created with uuid7 appeal_id; fields include intake_channel, appellant_id_hash (SHA-256 of National ID), grounds (IDENTITY_ERROR/ALIVE_AND_PRESENT/DATA_MATCH_ERROR/FAMILY_DISPUTE/OTHER), grounds_detail, supporting_doc_ids, language (BCP-47), filed_at
 13. FR-M36-013: appeal acknowledgment delivered to appellant within 5 minutes of submission; includes case reference and hearing-scheduled advisory; delivery via SMS and M13 push
-14. FR-M36-014: raw CRS/NRB/KRA source documents never stored in appeal case file; adjudicator sees only IEBC-generated summary of source data
+14. FR-M36-014: raw CRS/NRB/KRA source documents never stored in appeal case file; adjudicator sees only Commission-generated summary of source data
 
 Case officer triage:
 
@@ -157,7 +157,7 @@ Deadline and SLA tracking:
 
 38. FR-M36-038: 30-day notice deadline tracked per case; supervisor alert fired when < 3 days remain without appeal filed or expiry confirmed
 39. FR-M36-039: 14-day adjudication SLA tracked per appeal; supervisor alert fired when < 48 hours remain without decision issued
-40. FR-M36-040: SLA breach dashboard available to IEBC Supervisor showing red-flagged cases; sortable by breach severity
+40. FR-M36-040: SLA breach dashboard available to the Commission Supervisor showing red-flagged cases; sortable by breach severity
 
 Accessibility and language:
 
@@ -168,7 +168,7 @@ Accessibility and language:
 
 1. AC-M36-01: notice dispatched to voter within 1 hour of M35 approval event; measured by dispatch_timestamp minus m35_approval_timestamp; 100% of cases within SLA; SLO alert fires when any case exceeds 1 hour
 2. AC-M36-02: appeal acknowledgment (case reference by SMS) delivered within 5 minutes of submission; measured by case_created_at minus filed_at; verified in integration test across USSD, web, and M13 channels
-3. AC-M36-03: adjudication SLA compliance >= 95% of appeals decided within 14 days of filing; measured from filed_at to adjudicator_decision_at; reported weekly to IEBC Commissioner; breach triggers P1 page
+3. AC-M36-03: adjudication SLA compliance >= 95% of appeals decided within 14 days of filing; measured from filed_at to adjudicator_decision_at; reported weekly to the Commission Commissioner; breach triggers P1 page
 4. AC-M36-04: data-minimisation action completed for 100% of DEREGISTERED cases within 30 days of terminal status; measured from deregistered_at to data_minimisation_at; ODPC audit log confirms with zero gaps
 5. AC-M36-05: quarterly deregistration report published within T+7 of quarter-end; measured by published_at minus quarter_end; failure triggers P2 alert
 6. AC-M36-06: 100% of quarterly reports anchored in P05 Merkle chain before M11 publication; Merkle reconciliation report confirms zero gaps after each publish cycle
@@ -206,7 +206,7 @@ Accessibility and language:
 - EC-LEG-06: adjudicator decision challenged in election court; written decision required and present; Merkle-anchored evidence trail admissible; proof retrievable via M40 court interface
 - EC-LEG-08: adjudicator evidence request arrives at T+6d 23h relative to appeal deadline; 24-hour evidence response clock active; not blocked by register freeze; adjudicator retrieves without error
 - EC-TIM-08: 30-day notice period deadline falls at midnight EAT (UTC+3); boundary table enforces inclusive semantics; one-second boundary test confirms no off-by-one rejection of valid same-day appeals
-- EC-OPS-04: high appeal volume overwhelming adjudicator pool; case officer pre-filters weak appeals; IEBC Commissioner assigns additional adjudicators via admin console; caseload redistributed without data loss
+- EC-OPS-04: high appeal volume overwhelming adjudicator pool; case officer pre-filters weak appeals; the Commission Commissioner assigns additional adjudicators via admin console; caseload redistributed without data loss
 - EC-CON-05: flapping link during notice SMS dispatch; backoff plus jitter retry; retry budget prevents duplicate SMS; final failure triggers postal fallback and alert
 
 ## Test plan
@@ -228,14 +228,14 @@ Tags: `#[trace("FR-M36-004","AC-M36-03","EC-LEG-06")]`
 ## Runbooks and dashboards
 
 - `docs/runbooks/bvr-svc-degradation.md` - extend with deregistration appeal paths
-- `docs/runbooks/adjudicator-sla-breach.md` - new runbook; alert escalation to IEBC Commissioner; emergency adjudicator assignment
+- `docs/runbooks/adjudicator-sla-breach.md` - new runbook; alert escalation to the Commission Commissioner; emergency adjudicator assignment
 - `docs/runbooks/data-minimisation-audit.md` - new runbook; ODPC audit trail retrieval; breach notification steps
 - Grafana dashboard: `platform/observability/bvr-svc/deregistration-dashboard.json` (named `eel-iems-36`)
 - SLO alerts: `platform/observability/bvr-svc/deregistration-slo-alerts.yaml` (alert ruleset `iems-36-alerts`; notice 1 h, adjudication 14 d)
 
 ## Open questions
 
-- ODPC DPIA registration: Datacraft prepares draft DPIA at contract start; IEBC submits within 30 days of award; delays risk blocking final deregistrations.
-- *IEBC# USSD short-code: same gateway as *400# or separate? Confirm with Safaricom; short-code reservation has 6-8 week lead time.
-- Adjudicator pool size: IEBC must confirm number of commissioners available as adjudicators; scalability under post-census catch-up batches depends on this.
+- ODPC DPIA registration: Datacraft prepares draft DPIA at contract start; the Commission submits within 30 days of award; delays risk blocking final deregistrations.
+- *the Commission# USSD short-code: same gateway as *400# or separate? Confirm with Safaricom; short-code reservation has 6-8 week lead time.
+- Adjudicator pool size: the Commission must confirm number of commissioners available as adjudicators; scalability under post-census catch-up batches depends on this.
 - Court petition right advisory text: legal team must approve EN + SW + 7-language versions of the right-to-petition advisory before go-live.

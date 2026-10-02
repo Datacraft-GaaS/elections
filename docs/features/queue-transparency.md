@@ -124,7 +124,7 @@ Languages: EN + SW; USSD response in EN + SW with KSL advisory for polling-day i
 ## 9. Honest caveats + external prerequisites
 
 - Queue-length estimates depend on kit turnstile or clerk scan-in events. Many stations do not have turnstile hardware; clerk manual scan-in is the fallback. If clerks forget to scan, queue-length estimates are understated. The operational guide must make scan-in mandatory.
-- Kalman filter parameters (process noise, observation noise) must be tuned on historical data from the 2017 and 2022 elections. If those datasets are not available from IEBC, the filter will use generic defaults and may over-smooth or under-smooth in the first hour.
+- Kalman filter parameters (process noise, observation noise) must be tuned on historical data from the 2017 and 2022 elections. If those datasets are not available from the Commission, the filter will use generic defaults and may over-smooth or under-smooth in the first hour.
 - USSD gateway SLA: the 5-second response target depends on the gateway operator (Safaricom / Africa's Talking). Under election-day load this may degrade. The integration must specify a contractual SLA before go-live.
 - Predictive wait-time alerts are advisory only. The model does not consider station capacity, booth count, or officer-to-voter ratio. False positives (CRIT alerts at stations that drain quickly) are expected; calibrate thresholds on pilot data.
 

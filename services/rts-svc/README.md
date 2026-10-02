@@ -96,7 +96,7 @@ TLA+ models verify tally correctness, referendum threshold, run-off, and tie sce
 
 Build the main service:
 ```bash
-cd /Users/nyimbiodero/src/pjs/eel/services/rts-svc
+cd ./services/rts-svc
 cargo build --release
 ```
 

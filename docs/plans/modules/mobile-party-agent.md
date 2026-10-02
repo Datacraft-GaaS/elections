@@ -8,7 +8,7 @@
 | Size | M |
 | Availability class | routine 99.5% |
 | Event-sourced | no |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M30-mobile-party-agent.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M30-mobile-party-agent.md |
 
 ## Purpose
 

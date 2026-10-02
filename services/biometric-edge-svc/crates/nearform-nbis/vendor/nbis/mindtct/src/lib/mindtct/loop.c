@@ -474,7 +474,7 @@ int on_hook(const MINUTIA *minutia1, const MINUTIA *minutia2,
 #cat: is_loop_clockwise - Takes a feature's contour points and determines if
 #cat:            the points are ordered clockwise or counter-clockwise about
 #cat:            the feature.  The routine also requires a default return
-#cat:            value be specified in the case the the routine is not able
+#cat:            value be specified in the case the routine is not able
 #cat:            to definitively determine the contour's order.  This allows
 #cat:            the default response to be application-specific.
 

@@ -79,9 +79,9 @@
 <line x1="700" y1="470" x2="755" y2="430" stroke="#aaa" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arrow)"/>
 <line x1="700" y1="490" x2="755" y2="510" stroke="#aaa" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arrow)"/>
 
-<!-- IEBC Commission -->
+<!-- the Commission Commission -->
 <rect x="760" y="400" width="150" height="60" rx="6" fill="none" stroke="#7f7f7f" stroke-dasharray="4 2" stroke-width="2"/>
-<text x="835" y="428" font-family="Arial,sans-serif" font-size="14" fill="#7f7f7f" text-anchor="middle">IEBC Commission</text>
+<text x="835" y="428" font-family="Arial,sans-serif" font-size="14" fill="#7f7f7f" text-anchor="middle">the Commission Commission</text>
 
 <!-- AG Office -->
 <rect x="760" y="480" width="150" height="60" rx="6" fill="none" stroke="#7f7f7f" stroke-dasharray="4 2" stroke-width="2"/>

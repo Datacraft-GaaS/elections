@@ -412,7 +412,7 @@ paths:
         - name: station_code
           in: path
           required: true
-          description: "IEBC polling station code (e.g. KE-047-0042)."
+          description: "the Commission polling station code (e.g. KE-047-0042)."
           schema:
             type: string
             maxLength: 20

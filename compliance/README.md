@@ -3,7 +3,7 @@
 # Compliance Programme
 
 Evidence, mappings, and toolkits for four compliance obligations that apply to the Kenya elections
-platform (tender IEBC/OIT/01/2026-2027):
+platform:
 
 1. Kenya Data Protection Act 2019 (DPA) and the Data Protection (General) Regulations 2021
 2. ISO 27001:2022 information security management

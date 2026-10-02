@@ -1,15 +1,15 @@
-# M29 — Mobile Citizen Verify (IEBC Verify App)
+# M29 — Mobile Citizen Verify (the Commission Verify App)
 
 **Module ID:** M29
-**Module Name:** Mobile Citizen Verify — IEBC Verify App
+**Module Name:** Mobile Citizen Verify — the Commission Verify App
 **Type:** Mobile Application (Flutter, Android 8.0+ / iOS 14+ / PWA fallback)
-**Distribution:** Google Play, Apple App Store, signed APK from iebc.or.ke
+**Distribution:** Google Play, Apple App Store, signed APK from eel.example
 **Users:** Registered and prospective voters (~35M reachable Kenyans)
 **Owner:** Datacraft
 **Status:** Specified — pending implementation
-**IPR:** Custom Software vests in IEBC per GCC 15.4 (Teaming §4)
+**IPR:** Custom Software vests in the Commission per GCC 15.4 (Teaming §4)
 
-Adapted from `mobile/apps/MA01-iebc-verify.md`, sw/-module renumbered as M29.
+Adapted from `mobile/apps/MA01-commission-verify.md`, sw/-module renumbered as M29.
 
 ---
 
@@ -19,7 +19,7 @@ Put the entire IEMS in the pocket of every Kenyan who cares to hold the election
 
 Flagship user-visible expression of the IEMS transparency posture. Success = >= 10% of voters use it to verify results within 24h of publication.
 
-**Relationship to M13 (Public Verifier App):** M29 is the native-mobile, IEBC-branded implementation targeting the widest handset base (Android 8+ including KES 10,000 budget devices). M13 is the multi-channel superset covering short-code, SMS, WhatsApp, and PWA paths. Both modules persist as distinct specifications; the stitching pass may consolidate shared code into a common verifier library. See `sw/MOBILE-INTEGRATION-NOTES.md` §3.1.
+**Relationship to M13 (Public Verifier App):** M29 is the native-mobile, Commission-branded implementation targeting the widest handset base (Android 8+ including KES 10,000 budget devices). M13 is the multi-channel superset covering short-code, SMS, WhatsApp, and PWA paths. Both modules persist as distinct specifications; the stitching pass may consolidate shared code into a common verifier library. See `sw/MOBILE-INTEGRATION-NOTES.md` §3.1.
 
 ---
 
@@ -81,8 +81,8 @@ Flagship user-visible expression of the IEMS transparency posture. Success = >= 
 
 ### 3.7 Civic Information
 
-- **FR-M29-029** Curated civic information from IEBC: how to vote, what to bring, polling hours, rights.
-- **FR-M29-030** Content managed by IEBC; app fetches signed content bundles.
+- **FR-M29-029** Curated civic information from the Commission: how to vote, what to bring, polling hours, rights.
+- **FR-M29-030** Content managed by the Commission; app fetches signed content bundles.
 
 ### 3.8 Report an Issue
 
@@ -107,7 +107,7 @@ Flagship user-visible expression of the IEMS transparency posture. Success = >= 
 
 ### 3.11 Verify Authenticity
 
-- **FR-M29-043** In-app "Verify this app" screen shows signing-key fingerprint + version + build info; matches public fingerprints published on iebc.or.ke + multiple canonical domains.
+- **FR-M29-043** In-app "Verify this app" screen shows signing-key fingerprint + version + build info; matches public fingerprints published on eel.example + multiple canonical domains.
 
 ---
 
@@ -132,7 +132,7 @@ Flagship user-visible expression of the IEMS transparency posture. Success = >= 
 - Transparency log service
 - IPRS via VPRS
 - SMS Gateway (I08)
-- IEBC-controlled telemetry endpoint
+- Commission-controlled telemetry endpoint
 
 ---
 
@@ -188,7 +188,7 @@ Flagship user-visible expression of the IEMS transparency posture. Success = >= 
 | M07 (BVV) | Register lookup, objection filing |
 | M10 (RTS Backend) | Merkle-inclusion proof retrieval |
 | M11 (Public Portal) | Results data, Form 34A images, transparency-log roots |
-| M13 (Public Verifier App) | Multi-channel superset; shared Merkle-proof API; **shared library required**: extract Rust verifier crate into `libiebc-verifier` (Android JNI + iOS XCFramework) before either module ships; see MOBILE-INTEGRATION-NOTES.md §8 |
+| M13 (Public Verifier App) | Multi-channel superset; shared Merkle-proof API; **shared library required**: extract Rust verifier crate into `libcommission-verifier` (Android JNI + iOS XCFramework) before either module ships; see MOBILE-INTEGRATION-NOTES.md §8 |
 | M14 (Reproducibility Bundle) | Published roots cross-checked during client-side verification |
 | M23 (Grievance) | Issue reports from citizens escalate through Grievance module |
 
@@ -208,4 +208,4 @@ Flagship user-visible expression of the IEMS transparency posture. Success = >= 
 
 ## 11. Source Traceability
 
-Adapted from `mobile/apps/MA01-iebc-verify.md`. References to "MA01" in the source file correspond to "M29" in this sw/-module. Source file is the canonical pre-stitching specification; this file is the sw/-integrated form.
+Adapted from `mobile/apps/MA01-commission-verify.md`. References to "MA01" in the source file correspond to "M29" in this sw/-module. Source file is the canonical pre-stitching specification; this file is the sw/-integrated form.

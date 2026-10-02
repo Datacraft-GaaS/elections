@@ -8,11 +8,11 @@
 | Size | XL |
 | Availability class | cycle-critical 99.9% |
 | Event-sourced | no (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M16-election-command-centre.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M16-election-command-centre.md |
 
 ## Purpose
 
-The National Intelligence and Situational Awareness (NIS) loop for IEBC leadership and operations teams: aggregate telemetry from all kit streams, results, anomalies, grievances, speech flags, queue data, and inventory into a unified command view, enabling real-time dispatch decisions, s.44A authorisations, and coordinated incident response.
+The National Intelligence and Situational Awareness (NIS) loop for the Commission leadership and operations teams: aggregate telemetry from all kit streams, results, anomalies, grievances, speech flags, queue data, and inventory into a unified command view, enabling real-time dispatch decisions, s.44A authorisations, and coordinated incident response.
 
 ## Surfaces and languages
 
@@ -265,5 +265,5 @@ EC-MOB-03: mobile app receives simultaneous push notification and in-app WebSock
 
 ## Open questions
 
-- RBAC role matrix: the 8+ roles (national, regional, county, field, legal, IAB, press, observer) need formal sign-off from IEBC HR and legal before implementation.
+- RBAC role matrix: the 8+ roles (national, regional, county, field, legal, IAB, press, observer) need formal sign-off from the Commission HR and legal before implementation.
 - NIS loop aggregation: consolidating 14+ source feeds into a single coherent alert model needs an architecture decision on priority weighting; current design uses static severity weights.

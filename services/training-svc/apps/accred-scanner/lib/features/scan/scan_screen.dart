@@ -12,13 +12,13 @@ import 'scan_result.dart';
 
 final _crlRepoProvider = Provider((ref) {
   return CrlRepository(
-    dio: Dio(BaseOptions(baseUrl: 'https://accred.eel.iebc.go.ke')),
+    dio: Dio(BaseOptions(baseUrl: 'https://accred.eel.example')),
   );
 });
 
 final _dioProvider = Provider((ref) {
   return Dio(BaseOptions(
-    baseUrl: 'https://accred.eel.iebc.go.ke',
+    baseUrl: 'https://accred.eel.example',
     connectTimeout: const Duration(milliseconds: 300),
     receiveTimeout: const Duration(milliseconds: 300),
   ));

@@ -370,7 +370,7 @@ All boundary changes follow a multi-step governance workflow before they are app
 6. **Portal rebuild**: The Astro portal is rebuilt and redeployed within 15 minutes of anchoring.
 7. **Rejection**: If the change is rejected, `boundary_changes.status = 'rejected'` is set; the original boundary geometry is preserved unchanged; the rejection reason is logged.
 
-This workflow ensures no boundary change can be applied without a valid Gazette reference and dual authorization (technical + legal), providing an audit trail that satisfies the Independent Electoral and Boundaries Commission Act requirements.
+This workflow ensures no boundary change can be applied without a valid Gazette reference and dual authorization (technical + legal), providing an audit trail that satisfies the electoral authority's establishing Act requirements.
 
 ---
 

@@ -8,7 +8,7 @@
 | Size | XL (flagged) |
 | Availability class | routine 99.5% |
 | Event-sourced | no (ADR-0013: only M08/M09/M10, M20, M51, M63) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M53-voter-id-card.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M53-voter-id-card.md |
 
 ## Purpose
 

@@ -8,7 +8,7 @@
 | Size | L |
 | Availability class | cycle-critical 99.9% |
 | Event-sourced | no (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M11-public-portal.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M11-public-portal.md |
 
 ## Purpose
 
@@ -89,7 +89,7 @@ Downloads and exports:
 9. FR-M11-009: bulk download of signed forms per constituency, county, and national with Ed25519 signature bundles. (spec FR-M11-004)
 10. FR-M11-010: transparency-log root retrieval: any citizen can fetch current root and any historical root. (spec FR-M11-005)
 11. FR-M11-011: inclusion-proof retrieval: given form_id or station code, return Merkle-inclusion proof verifiable client-side. (spec FR-M11-006)
-12. FR-M11-012: signed snapshot download: JSON plus detached Ed25519 signature file verifiable against IEBC public key. (spec FR-M11-008)
+12. FR-M11-012: signed snapshot download: JSON plus detached Ed25519 signature file verifiable against the Commission public key. (spec FR-M11-008)
 13. FR-M11-013: RSS/Atom feed of published forms for automation-friendly consumers. (spec FR-M11-013)
 14. FR-M11-014: OpenAPI JSON endpoints for programmatic access with rate limit. (spec FR-M11-014)
 15. FR-M11-015: machine-readable CSV/JSON bulk export with inclusion proofs (tier 4 accredited only).
@@ -106,7 +106,7 @@ Architecture and reliability:
 
 Security and integrity:
 24. FR-M11-024: cache key includes Merkle root and signature version; no stale poisoning on CDN or Valkey. (spec FR-M11-012)
-25. FR-M11-025: every response carries Ed25519 signature verifiable against IEBC public key on canonical domains. (spec NFR-M11-005)
+25. FR-M11-025: every response carries Ed25519 signature verifiable against the Commission public key on canonical domains. (spec NFR-M11-005)
 26. FR-M11-026: no PII: forms show only statutorily required data; agent identities anonymised. (spec FR-M11-015)
 27. FR-M11-027: rate limit on proof and bulk-download endpoints; key by IP and /64; priority shed on burst.
 28. FR-M11-028: SSRF prevention on civic CMS URL fields: allowlist only; no private IP ranges.
@@ -188,7 +188,7 @@ EC-SEC-05: injection on CMS admin inputs and API query params; parameterised onl
 EC-SEC-06: SSRF via civic CMS URL fields; allowlist; no private IP ranges.
 EC-SEC-09: rate-limit evasion on proof and bulk-download endpoints; key by IP+/64; priority shed.
 EC-SEC-12: Valkey cache poisoning; cache keys and ETags include Merkle root and sig version.
-EC-SEC-16: secrets in logs refused; no IEBC signing keys in telemetry.
+EC-SEC-16: secrets in logs refused; no the Commission signing keys in telemetry.
 
 scale:
 EC-SCL-01: CDN cache stampede on snapshot publish; staggered TTL jitter; origin p99 <= 500 ms.
@@ -226,5 +226,5 @@ EC-LEG-07: referendum 24-of-47 county threshold; exact >= semantics enforced; vi
 
 ## Open questions
 
-- CDN provider: the platform CDN edge is to be specified by IEBC IT; design assumes generic HTTP/2 CDN; specific configuration TBD.
-- Petition-window traffic model: 5M concurrent is the current peak estimate; actual petition-window surge model needs review with IEBC before G3 capacity planning.
+- CDN provider: the platform CDN edge is to be specified by the Commission IT; design assumes generic HTTP/2 CDN; specific configuration TBD.
+- Petition-window traffic model: 5M concurrent is the current peak estimate; actual petition-window surge model needs review with the Commission before G3 capacity planning.

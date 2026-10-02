@@ -2,7 +2,7 @@
 /// Wraps FUFingerSDK (USB scanner) + FPAPI (algorithm: capture/template/compare).
 /// Per SDK docs: VID=0x0507, PID=0x0581; image 1600x1500; quality score 0-100.
 /// Hardware: FAP60 fingerprint scanner.
-/// SDK source: /Users/nyimbiodero/src/pjs/eel/sdks/2.fap60-android/
+/// SDK source: ./sdks/2.fap60-android/
 
 package com.eel.biometric
 

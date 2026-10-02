@@ -6,7 +6,7 @@
 CREATE TABLE IF NOT EXISTS snapshot_index (
     snapshot_id         UUID        NOT NULL,
     scope               TEXT        NOT NULL,   -- national|county|constituency|ward|...
-    scope_code          TEXT,                   -- IEBC scope code; NULL for national
+    scope_code          TEXT,                   -- the Commission scope code; NULL for national
     position_code       TEXT        NOT NULL,   -- presidential|governor|senator|...
     merkle_root         TEXT        NOT NULL,
     cosign_sig          TEXT        NOT NULL,   -- base64url-encoded cosign bundle

@@ -19,7 +19,7 @@
   <text x="280" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Point</text>
 
   <circle cx="450" cy="115" r="18" fill="#1f77b4"/>
-  <text x="450" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">IEBC</text>
+  <text x="450" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">the Commission</text>
   <text x="450" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Accreditation</text>
 
   <!-- ObserverOrganisation -->
@@ -54,9 +54,9 @@
   <text x="980" y="306" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">max 10% of org quota</text>
   <line x1="750" y1="250" x2="790" y2="250" stroke="#ff7f0e" stroke-width="1.5" marker-end="url(#arrow)"/>
 
-  <!-- IEBC Review Flow -->
+  <!-- the Commission Review Flow -->
   <rect x="30" y="380" width="300" height="110" rx="8" fill="#fce7f3" stroke="#d62728" stroke-width="2"/>
-  <text x="180" y="406" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">IEBC Review Flow</text>
+  <text x="180" y="406" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#d62728">the Commission Review Flow</text>
   <text x="180" y="426" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">background check integration</text>
   <text x="180" y="446" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">DCI / Interpol stub (external)</text>
   <text x="180" y="466" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">PATCH /v1/observers/{id}/decide</text>

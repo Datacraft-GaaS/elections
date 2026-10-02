@@ -54,7 +54,7 @@ This rebuilds images from the pinned flake, re-derives the tally and Merkle root
 
 ### 6. Promote to production
 
-Production promotion requires two approvals (tech lead + IEBC OIT representative). The Argo Rollout uses blue-green for stateful services and canary for portal-svc/vprs-svc. Rollback takes less than 15 min (ADR-0022 RTO).
+Production promotion requires two approvals (tech lead + the Commission OIT representative). The Argo Rollout uses blue-green for stateful services and canary for portal-svc/vprs-svc. Rollback takes less than 15 min (ADR-0022 RTO).
 
 ## Election-day freeze
 

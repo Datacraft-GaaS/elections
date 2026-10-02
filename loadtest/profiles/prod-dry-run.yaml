@@ -6,7 +6,7 @@
 #   1. Drain the slice (remove from LB rotation).
 #   2. Confirm no real voter data in the slice's DB partition.
 #   3. Have an on-call engineer monitoring Grafana dashboard eel-loadtest.
-#   4. Agree a hard stop time with IEBC ops (never run within 7 days of election day).
+#   4. Agree a hard stop time with the Commission ops (never run within 7 days of election day).
 #
 # Use: kit-simulator run --profile prod-dry-run --duration 2h --scenario loadtest/scenarios/election-day.yaml
 

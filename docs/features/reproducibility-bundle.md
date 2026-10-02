@@ -128,8 +128,8 @@ Contract: `packages/openapi-contracts/transparency/openapi.yaml`.
 - **Gov Printer SFTP endpoint** and **KBC SFTP endpoint** are external prerequisites; adapters written; credentials and access provisioning pending.
 - **SLSA provenance** for reproducible builds requires CI/CD pipeline configuration (Nix flakes referenced in `flake.nix`); reproducibility of Rust crates depends on pinned toolchain versions.
 - **make reproduce v2** has not been end-to-end tested against a full 30M-voter, 46k-station election event set; a pre-election rehearsal drill is required.
-- **Bug-bounty program** scope, rewards, and legal terms are outside this repo and require IEBC legal sign-off before launch.
-- **Participation token distribution** mechanism (who qualifies as "accredited independent verifier") is an IEBC policy decision.
+- **Bug-bounty program** scope, rewards, and legal terms are outside this repo and require the Commission legal sign-off before launch.
+- **Participation token distribution** mechanism (who qualifies as "accredited independent verifier") is a Commission policy decision.
 
 ## 10. Test coverage + operational runbooks
 

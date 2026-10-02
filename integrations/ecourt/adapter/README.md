@@ -41,4 +41,4 @@ uv run pyright
 
 ## mTLS setup
 
-Client cert and key must be provisioned by operations via NDA process. Store in secure vault (not git). Rotate annually per IEBC security policy.
+Client cert and key must be provisioned by operations via NDA process. Store in secure vault (not git). Rotate annually per the Commission security policy.

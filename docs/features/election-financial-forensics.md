@@ -110,7 +110,7 @@ Languages: EN. WCAG 2.2 AA.
 
 ## 8. Kenya statute alignment
 
-- **Election Campaign Financing Act 2013 §23 (enforcement)**: the FRC is the statutory body for enforcing campaign finance limits; `ReferralPacket` is the formal mechanism for IEBC to refer anomalous candidates to the FRC.
+- **Election Campaign Financing Act 2013 §23 (enforcement)**: the FRC is the statutory body for enforcing campaign finance limits; `ReferralPacket` is the formal mechanism for the Commission to refer anomalous candidates to the FRC.
 - **Election Campaign Financing Act 2013 §6 (disclosure)**: M22 disclosures (the input to M66) are the statutory returns that candidates must file.
 - **Kenya Data Protection Act §26 (minimisation)**: candidate-level estimates use constituency-level aggregates from M10, not individual voter data; no personal data about voters enters the forensics pipeline.
 - **Statistics Act 2006 §23 (KNBS data sharing)**: KNBS census data used as IV baseline requires a data-sharing agreement with KNBS; M66 records the `knbs_dataset_version` to prove which agreed dataset was used.

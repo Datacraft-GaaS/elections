@@ -8,7 +8,7 @@
 | Size | XL |
 | Availability class | cycle-critical 99.9% |
 | Event-sourced | yes (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M20-inventory-management.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M20-inventory-management.md |
 
 ## Purpose
 
@@ -146,7 +146,7 @@ FR-M20-035: Reserve alert delivered to ECC within 60 s of pool dropping below th
 Merkle chain:
 
 FR-M20-036: Every CustodyEvent, ConditionEvent, and LocationEvent appended to Merkle tree; Merkle root computed and published every 10 min.
-FR-M20-037: Merkle root published every 10 min to five independent channels: IEBC.or.ke, GitHub, IAB domain, Twitter/X, IPFS; 100% of windows during election period.
+FR-M20-037: Merkle root published every 10 min to five independent channels: the Commission.or.ke, GitHub, IAB domain, Twitter/X, IPFS; 100% of windows during election period.
 FR-M20-038: Any channel showing a different Merkle root triggers IAB P0 alert within 5 min.
 FR-M20-039: Merkle root delivered to M15 IAB Dashboard for live display.
 FR-M20-040: Merkle chain integrity verified on every read and monitored continuously; any break triggers P0 alert within 5 min.
@@ -154,7 +154,7 @@ FR-M20-040: Merkle chain integrity verified on every read and monitored continuo
 Alert engine:
 
 FR-M20-041: Rule-based alerts: missing kit (not returned on schedule), late delivery (off SLA), tampered item (seal broken outside custody event), out-of-geofence, expired consumable, weight variance at pallet load, container door-open outside expected location.
-FR-M20-042: Alert severity tiers: P0/P1/P2/P3; P0 routes immediately to ECC and IEBC Ops Director.
+FR-M20-042: Alert severity tiers: P0/P1/P2/P3; P0 routes immediately to ECC and the Commission Ops Director.
 FR-M20-043: Seal-break P0 alert delivered to ECC p99 <5 min.
 
 Issue management:
@@ -162,7 +162,7 @@ Issue management:
 FR-M20-044: Issue taxonomy: hardware fault, missing, tampered, consumable issue, environmental damage, DOA.
 FR-M20-045: Issue SLAs: P0 2 h, P1 8 h, P2 24 h, P3 72 h; SLA countdown timer visible in ticket; automated escalation on breach.
 FR-M20-046: Ticket lifecycle: open, assigned, in_progress, resolved, closed; every transition audit-logged.
-FR-M20-047: Escalation ladder: unacknowledged P0 escalates to IEBC Ops Director at 30 min; further escalation to IEBC Commissioner at 1 h.
+FR-M20-047: Escalation ladder: unacknowledged P0 escalates to the Commission Ops Director at 30 min; further escalation to the Commission Commissioner at 1 h.
 
 Auditor-General access:
 
@@ -217,7 +217,7 @@ AC-M20-08: Out-of-geofence custody transfer location triggers P0 alert; transfer
 AC-M20-09: Container door-open outside Mombasa port geofence triggers P0 alert within 5 min (integration test with container-tracker stub).
 AC-M20-10: Biometric erasure certificate generated for 100% of decommissioned kits; DPA 2019 s.41 attestation signed by DPO and IAB representative (process audit).
 AC-M20-11: Auditor-General daily extract hash published and independently verifiable via IAB domain (integration test; hash comparison).
-AC-M20-12: Geographic access scoping enforced: IEBC Procurement JWT blocked from writing to kit outside its jurisdiction (penetration test at data layer).
+AC-M20-12: Geographic access scoping enforced: the Commission Procurement JWT blocked from writing to kit outside its jurisdiction (penetration test at data layer).
 AC-M20-13: Ballot-box smart-lid discrepancy >0.1% between deposited ballots and authentications triggers result hold (integration test with injected mismatch at exactly 0.1%).
 AC-M20-14: Provisioning throughput sustained at 686 kits/day across 20 parallel lines without IMS API p99 degradation (load test).
 AC-M20-15: 99.9% availability during election cycle; county edge caches operational in read-only offline mode when primary unreachable (SLO measurement per appendix cycle-critical class).

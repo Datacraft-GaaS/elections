@@ -57,7 +57,7 @@ pub fn check_two_thirds_rule(
     Ok(())
 }
 
-/// Youth threshold per IEBC regulations: under 35 at nomination date.
+/// Youth threshold per the Commission regulations: under 35 at nomination date.
 pub fn is_youth(date_of_birth: &str, nomination_date: &str) -> bool {
     // Simple year-based check for domain logic; UI and integrations use full date.
     let birth_year: i32 = date_of_birth

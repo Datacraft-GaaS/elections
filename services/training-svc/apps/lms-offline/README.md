@@ -69,7 +69,7 @@ flutter test integration_test/
 
 ## Deployment Notes
 
-- Google Play internal track (ke.go.iebc.eel.lms_offline)
+- Google Play internal track (ke.go.commission.eel.lms_offline)
 - MDM policy: platform/mdm/eel-lms-mdm.json
 - Course bundles pre-downloaded at county training sessions
 

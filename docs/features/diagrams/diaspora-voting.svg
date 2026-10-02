@@ -30,10 +30,10 @@
   <text x="260" y="140" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Diaspora</text>
   <text x="260" y="155" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Voter</text>
 
-  <!-- IEBC Chair persona -->
+  <!-- the Commission Chair persona -->
   <circle cx="1100" cy="110" r="18" fill="#9467bd" stroke="#9467bd"/>
   <text x="1100" y="114" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white" font-weight="bold">👤</text>
-  <text x="1100" y="140" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">IEBC</text>
+  <text x="1100" y="140" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">the Commission</text>
   <text x="1100" y="155" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Chair</text>
 
   <!-- LAYER 2: Embassy Station (external, dashed) -->

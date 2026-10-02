@@ -1,6 +1,6 @@
 # Campaign finance transparency (M22)
 
-Module M22 (`campaign-finance-transparency`) owned by `transparency-svc`. Accepts statutory campaign finance disclosures from candidates and parties, cross-references them against CBK/FRC aggregated cash data, flags ceiling breaches and anomaly patterns, publishes aggregated public reports anchored in the Merkle log, and assembles HSM-signed evidence packages routed to ODPP and DCI under IEBC Chair authority.
+Module M22 (`campaign-finance-transparency`) owned by `transparency-svc`. Accepts statutory campaign finance disclosures from candidates and parties, cross-references them against CBK/FRC aggregated cash data, flags ceiling breaches and anomaly patterns, publishes aggregated public reports anchored in the Merkle log, and assembles HSM-signed evidence packages routed to ODPP and DCI under the Commission Chair authority.
 
 ## Contents
 
@@ -23,7 +23,7 @@ Module M22 (`campaign-finance-transparency`) owned by `transparency-svc`. Accept
 - **M22** = post-registration statutory finance disclosure: ingest weekly spending returns, compute ceilings, cross-reference with CBK/FRC constituency cash data, flag anomalies, route evidence to regulators.
 - **M23 Grievance channels** = public complaint intake; finance complaints from M23 feed M22 as additional anomaly signals.
 
-M22 is the only module that can initiate an ODPP/DCI referral for election finance offences. All anomaly adjudication requires a named human officer; no automated referral occurs without officer review and IEBC Chair HSM signature.
+M22 is the only module that can initiate an ODPP/DCI referral for election finance offences. All anomaly adjudication requires a named human officer; no automated referral occurs without officer review and the Commission Chair HSM signature.
 
 ## 2. Data plane
 
@@ -35,7 +35,7 @@ Five aggregates (per `services/transparency-svc/crates/finance-api/src/models.rs
 | **CashAggregate** | Cumulative declared spending vs ECFA ceiling: total_in, total_out, ceiling_kes, status (BELOW/AMBER/BREACH), computed_at. | D |
 | **AnomalyFlag** | Detected anomaly linked to a disclosure or CBK cross-reference: reason, severity, cbk_ref, status (OPEN/ADJUDICATED/DISMISSED). | C |
 | **EvidencePackage** | HSM-signed PDF + JSON for regulator handoff: content_refs, chain_of_custody, sig, assembled_at. | C |
-| **AuditEvent** | Every IEBC officer action: actor, action, ts_hlc, sig (append-only). | C |
+| **AuditEvent** | Every the Commission officer action: actor, action, ts_hlc, sig (append-only). | C |
 
 Migrations land under `services/transparency-svc/migrations/`.
 
@@ -46,7 +46,7 @@ Migrations land under `services/transparency-svc/migrations/`.
 | Candidate bank statement | Weekly | PDF or OFX | JWT (candidate portal) | OCR retry 3x; officer override if extraction fails |
 | M-Pesa Paybill CSV | Weekly | CSV | JWT (candidate portal) | Parser rejects malformed; candidate notified |
 | Itemised expense receipts | Weekly | PDF | JWT (candidate portal) | OCR extracts totals; candidate confirms before submission |
-| CBK/FRC aggregated cash-out | Daily | REST/JSON under MoU | SVID mTLS | Circuit breaker; heat map shows last-known data with staleness warning; alert to IEBC finance desk if lag >48 h |
+| CBK/FRC aggregated cash-out | Daily | REST/JSON under MoU | SVID mTLS | Circuit breaker; heat map shows last-known data with staleness warning; alert to the Commission finance desk if lag >48 h |
 | M23 grievance finance signals | Real-time | Kafka event | Internal | At-least-once idempotent; queue on broker failure |
 
 Party finance officers may file on behalf of multiple candidates under one login; a separate `CandidateDisclosure` record with a per-candidate idempotency key is created for each.
@@ -71,9 +71,9 @@ candidate portal upload (PDF/OFX/CSV)
           -> FRC SAR alert draft within 30 min
         POCAMLA 2009 patterns (bulk cash-out near stations, rapid round-trip,
                                structuring)
-          -> AnomalyFlag; IEBC finance desk notified
+          -> AnomalyFlag; the Commission finance desk notified
   -> officer adjudication queue (django/finance-admin/)
-  -> IEBC Chair HSM signature required before EvidencePackage routed to ODPP/DCI
+  -> the Commission Chair HSM signature required before EvidencePackage routed to ODPP/DCI
   -> eel.finance.evidence_assembled.v1 (exactly-once)
   -> P05 Merkle anchor within 60 s of package creation
 ```
@@ -90,10 +90,10 @@ Contract: `packages/openapi-contracts/transparency/finance.yaml`. All write endp
 | `GET /finance/v1/disclosures/{id}` | Candidate (JWT) | Disclosure status |
 | `GET /finance/v1/candidates/{id}/summary` | Public (CDN-cached) | Aggregate ceiling status and spending percentage (no raw transactions) |
 | `GET /finance/v1/reports` | Public (CDN-cached) | Published election-cycle finance report |
-| `GET /finance/v1/flags` | IEBC finance desk (JWT + SpiceDB) | Anomaly flag feed |
-| `PATCH /finance/v1/flags/{id}` | IEBC finance desk | Adjudicate anomaly flag (accept / dismiss / escalate) |
-| `POST /finance/v1/evidence/{candidate_id}` | IEBC officer (JWT + SpiceDB) | Assemble evidence package |
-| `GET /finance/v1/evidence/{id}` | IEBC officer / FRC analyst | Evidence package for regulator |
+| `GET /finance/v1/flags` | the Commission finance desk (JWT + SpiceDB) | Anomaly flag feed |
+| `PATCH /finance/v1/flags/{id}` | the Commission finance desk | Adjudicate anomaly flag (accept / dismiss / escalate) |
+| `POST /finance/v1/evidence/{candidate_id}` | the Commission officer (JWT + SpiceDB) | Assemble evidence package |
+| `GET /finance/v1/evidence/{id}` | the Commission officer / FRC analyst | Evidence package for regulator |
 
 Every write is response-signed via the middleware in `packages/eel-api-server-rs`. Every access is audited into `eel_finance_audit_shadow`.
 
@@ -102,7 +102,7 @@ Every write is response-signed via the middleware in `packages/eel-api-server-rs
 | Surface | Path | Purpose |
 |---|---|---|
 | Candidate disclosure portal (Astro) | `services/transparency-svc/astro/finance-portal/` | Weekly upload wizard; ceiling status; compliance deadline calendar |
-| Anomaly adjudication back-office (Django) | `services/transparency-svc/django/finance-admin/` | IEBC finance desk reviews flags; assembles evidence packages |
+| Anomaly adjudication back-office (Django) | `services/transparency-svc/django/finance-admin/` | the Commission finance desk reviews flags; assembles evidence packages |
 | Public spending dashboard (Astro) | `services/transparency-svc/astro/finance-portal/` (public route) | Bar chart spending vs ceiling per candidate; constituency choropleth cash heat-map (z-score coloured); no raw bank data |
 | Read API (Rust axum) | `services/transparency-svc/crates/finance-api/` | REST surface for internal and external consumers |
 
@@ -110,12 +110,12 @@ Languages: EN + SW for candidate portal and public dashboard; WCAG 2.2 AA across
 
 ## 7. Integrity + anti-tamper
 
-- **Merkle-anchored evidence packages** -- every `EvidencePackage` is HSM-signed by the IEBC Chair (per-cycle KEK from `eel_kek_generations`) and its hash becomes a leaf in the P05 transparency log. Courts can verify the inclusion proof without system access.
-- **Dual-officer control** -- IEBC Chair HSM signature is required before an evidence package is routed to ODPP or DCI; a single officer attempt returns HTTP 403 and an audit log entry.
+- **Merkle-anchored evidence packages** -- every `EvidencePackage` is HSM-signed by the Commission Chair (per-cycle KEK from `eel_kek_generations`) and its hash becomes a leaf in the P05 transparency log. Courts can verify the inclusion proof without system access.
+- **Dual-officer control** -- the Commission Chair HSM signature is required before an evidence package is routed to ODPP or DCI; a single officer attempt returns HTTP 403 and an audit log entry.
 - **SAR pipeline** -- CBK/FRC spike alerts produce a draft SAR for FRC analyst review before submission; no automated SAR submission occurs without analyst sign-off.
 - **Ceiling computation audit** -- the valuation method for in-kind contributions is stored as a versioned configuration record; every ceiling computation is logged with the configuration version used so historical recomputation is possible.
 - **Idempotency** -- duplicate disclosure submission (same idempotency key + body) returns the cached response; the ceiling total is not double-counted. Same key with a different body returns HTTP 422 `idempotency-key-reuse`.
-- **PII minimisation** -- raw bank transactions are never stored beyond the cross-reference window; bank statements are encrypted at rest and accessible only to the filing candidate and the IEBC Compliance Officer under logged, purpose-coded access.
+- **PII minimisation** -- raw bank transactions are never stored beyond the cross-reference window; bank statements are encrypted at rest and accessible only to the filing candidate and the Commission Compliance Officer under logged, purpose-coded access.
 - **Circuit breakers** on CBK/FRC and CRMS adapters via `packages/eel-resilience-rs` prevent upstream outages from cascading into the disclosure pipeline.
 
 ## 8. Kenya statute alignment
@@ -125,14 +125,14 @@ Languages: EN + SW for candidate portal and public dashboard; WCAG 2.2 AA across
 - **Elections Act s.98** -- general finance offence; ceiling computation and referral basis logged against this provision.
 - **POCAMLA 2009** -- anti-money-laundering pattern detection applied to constituency cash-out data; SAR drafts reference POCAMLA suspicious-activity criteria.
 - **Whistleblower Protection Act 2022** -- whistleblower tips routed through M23 protected channel; tip identity stored hashed; legal-privilege annotation on records; tip records routed to DCI/ODPP within 6 h via evidence package endpoint.
-- **DPA 2019 s.26 (minimisation)** -- raw banking data not retained beyond cross-reference window; bank statements encrypted; individual transaction data not visible to any party other than the filing candidate and IEBC Compliance Officer.
+- **DPA 2019 s.26 (minimisation)** -- raw banking data not retained beyond cross-reference window; bank statements encrypted; individual transaction data not visible to any party other than the filing candidate and the Commission Compliance Officer.
 
 ## 9. Honest caveats + external prerequisites
 
 - CBK/FRC MoU has not been signed as of spec writing. The data-sharing agreement, data minimisation requirements, and liability framework must be confirmed before the CBK cross-reference is enabled in production. The adapter and stub are ready under `integrations/cbk/`.
-- The ceiling computation method for in-kind contributions is not fully specified in Elections Act s.98; IEBC legal must confirm the valuation method before the ceiling check can go live.
+- The ceiling computation method for in-kind contributions is not fully specified in Elections Act s.98; the Commission legal must confirm the valuation method before the ceiling check can go live.
 - OCR extraction accuracy on non-standard bank statement layouts is untested on all Kenyan commercial bank formats; the candidate-confirmation step is the mandatory human checkpoint before any ceiling computation uses extracted values.
-- The ECFA prosecution registry (public-facing list of s.12 cases) depends on IEBC Compliance Officer manually recording each judgment outcome within 14 days; no automated court-feed integration is in scope.
+- The ECFA prosecution registry (public-facing list of s.12 cases) depends on the Commission Compliance Officer manually recording each judgment outcome within 14 days; no automated court-feed integration is in scope.
 - WhatsApp whistleblower tip intake is shared with M23 and depends on the M23 WhatsApp Cloud API approval (6-8 week lead time).
 
 ## 10. Test coverage + operational runbooks

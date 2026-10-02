@@ -1,17 +1,17 @@
 # ISMS Scope Statement
 
-Document reference: IEBC-ISMS-SCOPE-001
+Document reference: COMMISSION-ISMS-SCOPE-001
 Version: 1.0
 Date: [YYYY-MM-DD]
-Approved by: [DG_NAME], Director-General, IEBC
+Approved by: [DG_NAME], Director-General, the Commission
 
 ---
 
 ## 1. Organisation
 
-The Independent Electoral and Boundaries Commission (IEBC) is a constitutional commission established under Article 88 of the Constitution of Kenya 2010. IEBC is responsible for the continuous registration of citizens as voters, the regulation of political parties, the settlement of electoral disputes, and the conduct of elections and referenda.
+The electoral authority (the Commission) is a constitutional commission established under Article 88 of the Constitution of Kenya 2010. the Commission is responsible for the continuous registration of citizens as voters, the regulation of political parties, the settlement of electoral disputes, and the conduct of elections and referenda.
 
-The eel (IEBC Integrated Election Management System) is the software platform designed, built, and operated to support all IEBC electoral functions. eel is developed under contract reference [CONTRACT_REF] pursuant to GCC 15.4.
+The eel (the Commission Integrated Election Management System) is the software platform designed, built, and operated to support all the Commission electoral functions. eel is developed under contract reference [CONTRACT_REF] pursuant to GCC 15.4.
 
 ---
 
@@ -28,8 +28,8 @@ The following are within the ISMS scope:
 - The data centre infrastructure hosting eel: primary DC, mirror DC (hot standby), and 5 edge sites
 - Developer workstations with MDM profiles from which eel code is developed, built, and deployed
 - The CI/CD pipeline (Gitea, Nix flake, ArgoCD, image registry)
-- The authentication and authorisation infrastructure: Keycloak (auth.lindela.io), SpiceDB, MinIO (auth.lindela.io)
-- The observability infrastructure: Grafana, Prometheus, Loki (mail.lindela.io)
+- The authentication and authorisation infrastructure: Keycloak (auth.eel.example), SpiceDB, MinIO (auth.eel.example)
+- The observability infrastructure: Grafana, Prometheus, Loki (mail.eel.example)
 - All personal data processed by eel, as classified in ADR-0016 and the DPA toolkit
 - All eel configuration, secrets management (OpenBao), and key management (HSM, LiteLLM proxy)
 
@@ -45,7 +45,7 @@ The following are outside the ISMS scope, though they are interfaced with eel:
 - KRA iTax system
 - Telco networks and infrastructure
 - Physical ballot papers, seals, and non-digital election materials
-- IEBC headquarters physical security (governed by separate physical security controls)
+- the Commission headquarters physical security (governed by separate physical security controls)
 
 Interfaces to excluded systems are governed by contracts (MoUs) with the respective agencies and are represented as adapter layers within the eel codebase (integrations/ directory).
 
@@ -83,12 +83,12 @@ All eel software components as listed in compliance/ipr-handover/source-inventor
 | Location | Role | In scope |
 |---|---|---|
 | Primary DC: [DC_ADDRESS] | All production services, primary PostgreSQL, primary Kafka | Yes |
-| Mirror DC: [MIRROR_DC_ADDRESS] | Hot standby, PG hot standby (144.91.112.190), Kafka mirror | Yes |
+| Mirror DC: [MIRROR_DC_ADDRESS] | Hot standby, PG hot standby (192.0.2.16), Kafka mirror | Yes |
 | Edge site 1-5: [EDGE_ADDRESSES] | Kafka edge relay, kit synchronisation, local result capture | Yes |
-| auth.lindela.io (62.84.181.55) | Keycloak, SpiceDB, MinIO | Yes |
-| ml/vault (62.169.25.77) | LiteLLM, OpenBao, Ollama, NLLB | Yes |
-| mail/monitoring (217.76.53.144) | Stalwart mail, Grafana, Prometheus, Loki | Yes |
-| search/tools (84.247.181.100) | SearXNG, Firecrawl, Docling, Soketi | Yes |
+| auth.eel.example (192.0.2.12) | Keycloak, SpiceDB, MinIO | Yes |
+| ml/vault (192.0.2.11) | LiteLLM, OpenBao, Ollama, NLLB | Yes |
+| mail/monitoring (192.0.2.13) | Stalwart mail, Grafana, Prometheus, Loki | Yes |
+| search/tools (192.0.2.14) | SearXNG, Firecrawl, Docling, Soketi | Yes |
 | Developer workstations | Code development, build, review | Yes (MDM) |
 | IPRS, NRB, CRS systems | External government systems | No |
 
@@ -103,7 +103,7 @@ All eel software components as listed in compliance/ipr-handover/source-inventor
 | Elections (Technology) Regulations certifier | Regulatory | Independent security certification |
 | Political parties and candidates | Stakeholders | Integrity and fairness of election results |
 | International and domestic observers | Stakeholders | Transparency and auditability |
-| IEBC commissioners and staff | Internal | Operational continuity, security of the platform |
+| the Commission commissioners and staff | Internal | Operational continuity, security of the platform |
 | Supplier/contractor | Contract party | Delivery of IPR per GCC 15.4, warranty obligations |
 | NCIC (National Cohesion and Integration Commission) | Regulatory | Hate speech and incitement monitoring (M17) |
 | ODPP, DCI, KDF, KPS | National security | Fraud and security incident response |

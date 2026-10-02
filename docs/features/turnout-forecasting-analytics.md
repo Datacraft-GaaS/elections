@@ -41,7 +41,7 @@ Gradient Boosted Trees (Chen and Guestrin, "XGBoost: A Scalable Tree Boosting Sy
 
 | Feature group | Source | Cadence |
 |---|---|---|
-| Historical turnout by constituency + hour of day | IEBC historical DB | Pre-election batch |
+| Historical turnout by constituency + hour of day | the Commission historical DB | Pre-election batch |
 | Queue depth at each station | M32 queue transparency API | Hourly pull |
 | BVI scan count (proxy for actual votes cast) | M06 BVI backend API | Hourly pull |
 | Weather risk score (rain, heat index) | KMD API (`integrations/kmd-weather/`) | Hourly pull |
@@ -123,10 +123,10 @@ Languages: EN + SW. ECC dashboard is EN-only (internal). Public forecast page is
 ## 9. Honest caveats + external prerequisites
 
 - Model accuracy is bounded by the quality of historical turnout data. If past elections had significant data quality issues (unreported stations, stuffed registers), the model inherits those biases. A model bias audit is recommended before each election cycle.
-- KMD API integration (`integrations/kmd-weather/`) requires a KMD API key provisioned under IEBC. The adapter is ready; the live key is an external dependency.
+- KMD API integration (`integrations/kmd-weather/`) requires a KMD API key provisioned under the Commission. The adapter is ready; the live key is an external dependency.
 - Queue depth from M32 is available only where queue-monitoring kits are deployed. Constituencies without M32 coverage have their `queue_depth` imputed using the historical median; imputed inputs are flagged in `HourlyTurnoutReport.queue_depth_imputed`.
 - The 90% CI is model-derived and does not account for systemic events (mass violence, voter suppression, infrastructure failure). ECC officers should treat the CI as a statistical range, not a safety guarantee.
-- MLflow model registry requires an MLflow server instance. The deployment config at `services/ai-platform-svc/deploy/` assumes a self-hosted MLflow on the ml/vault server (62.169.25.77).
+- MLflow model registry requires an MLflow server instance. The deployment config at `services/ai-platform-svc/deploy/` assumes a self-hosted MLflow on the ml/vault server (192.0.2.11).
 
 ## 10. Test coverage + operational runbooks
 

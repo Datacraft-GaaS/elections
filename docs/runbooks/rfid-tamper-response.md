@@ -33,9 +33,9 @@ The goal is: confirm, quarantine, and preserve custody chain evidence within the
 
 | Prerequisite | Location |
 |---|---|
-| ECC analyst role in Keycloak | `auth.lindela.io` realm `eel`, role `ecc_analyst` |
-| Access to ECC LiveView | `https://ecc.lindela.io/cover-tamper` |
-| Access to Django admin | `https://inventory-admin.lindela.io/rfid/tamper-triage/` |
+| ECC analyst role in Keycloak | `auth.eel.example` realm `eel`, role `ecc_analyst` |
+| Access to ECC LiveView | `https://ecc.eel.example/cover-tamper` |
+| Access to Django admin | `https://inventory-admin.eel.example/rfid/tamper-triage/` |
 | `kubectl` access to `eel-prod` cluster | `platform/kubeconfig/eel-prod.yaml` |
 | Knowledge of `services/inventory-svc/docs/CAPABILITIES.md` | M20 + M39 + M65 |
 
@@ -64,7 +64,7 @@ or when `challenge_valid=false` more than twice for the same tag within 10 minut
 Open the ECC LiveView tamper panel:
 
 ```
-https://ecc.lindela.io/cover-tamper
+https://ecc.eel.example/cover-tamper
 ```
 
 Find the alert card (CRITICAL alerts appear as full cards; others in the table).
@@ -76,11 +76,11 @@ Use the admin box-chain view or the API:
 
 ```bash
 # Django admin view
-https://inventory-admin.lindela.io/rfid/box-chain/?ballot_box_id=<BOX_SERIAL>
+https://inventory-admin.eel.example/rfid/box-chain/?ballot_box_id=<BOX_SERIAL>
 
 # Direct API query
 curl -s -H "Authorization: Bearer $ECC_TOKEN" \
-  https://inventory-svc.lindela.io/v1/rfid/tags/history?paired_with_box=<BOX_SERIAL> \
+  https://inventory-svc.eel.example/v1/rfid/tags/history?paired_with_box=<BOX_SERIAL> \
   | jq '.transitions[] | {from_state, to_state, officer_id, transitioned_at, chain_valid}'
 ```
 
@@ -90,7 +90,7 @@ Verify every `chain_valid` is `true`. A `false` entry is a chain break and must 
 
 ```bash
 curl -s -H "Authorization: Bearer $ECC_TOKEN" \
-  "https://inventory-svc.lindela.io/v1/rfid/tamper-alerts/<ALERT_ID>" \
+  "https://inventory-svc.eel.example/v1/rfid/tamper-alerts/<ALERT_ID>" \
   | jq '{severity, challenge_valid, tamper_indicator, expected_state, observed_state}'
 ```
 
@@ -102,7 +102,7 @@ Check the geo coordinates from the alert:
 
 ```bash
 curl -s -H "Authorization: Bearer $ECC_TOKEN" \
-  "https://inventory-svc.lindela.io/v1/rfid/tamper-alerts/<ALERT_ID>" \
+  "https://inventory-svc.eel.example/v1/rfid/tamper-alerts/<ALERT_ID>" \
   | jq '{geo_lat, geo_lon, paired_with_box}'
 ```
 
@@ -110,7 +110,7 @@ Cross-reference with the station assignment table:
 
 ```bash
 curl -s -H "Authorization: Bearer $ECC_TOKEN" \
-  "https://inventory-svc.lindela.io/v1/stations?box=<BOX_SERIAL>" \
+  "https://inventory-svc.eel.example/v1/stations?box=<BOX_SERIAL>" \
   | jq '{station_code, county, constituency, polling_centre}'
 ```
 
@@ -138,7 +138,7 @@ curl -s -X POST \
   -H "Authorization: Bearer $ECC_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"officer_id": "<ECC_OFFICER_ID>", "reason": "tamper_alert_<ALERT_ID>"}' \
-  https://inventory-svc.lindela.io/v1/rfid/tags/<TAG_ID>/quarantine
+  https://inventory-svc.eel.example/v1/rfid/tags/<TAG_ID>/quarantine
 ```
 
 ### Step 7: Preserve evidence
@@ -147,7 +147,7 @@ Snapshot the Merkle inclusion proof for the tag's state-transition chain:
 
 ```bash
 curl -s -H "Authorization: Bearer $ECC_TOKEN" \
-  "https://inventory-svc.lindela.io/v1/rfid/tags/<TAG_ID>/merkle-proof" \
+  "https://inventory-svc.eel.example/v1/rfid/tags/<TAG_ID>/merkle-proof" \
   | jq '.' > /tmp/rfid-merkle-<TAG_ID>-$(date +%Y%m%d-%H%M%S).json
 ```
 
@@ -173,12 +173,12 @@ curl -s -X PATCH \
   -H "Authorization: Bearer $ECC_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"resolution_note": "Physical inspection confirmed intact. Tag antenna interference from [cause]."}' \
-  https://inventory-svc.lindela.io/v1/rfid/tamper-alerts/<ALERT_ID>/resolve
+  https://inventory-svc.eel.example/v1/rfid/tamper-alerts/<ALERT_ID>/resolve
 ```
 
 Or use the Django admin bulk resolve:
 ```
-https://inventory-admin.lindela.io/rfid/tamper-triage/
+https://inventory-admin.eel.example/rfid/tamper-triage/
 ```
 Select the alert, choose "Bulk resolve selected alerts", submit.
 
@@ -190,11 +190,11 @@ After any tamper event, verify the reader that triggered the alert is functionin
 
 ```bash
 # Django admin reader health view
-https://inventory-admin.lindela.io/rfid/reader-health/
+https://inventory-admin.eel.example/rfid/reader-health/
 
 # API
 curl -s -H "Authorization: Bearer $ECC_TOKEN" \
-  "https://inventory-svc.lindela.io/v1/rfid/readers/health" \
+  "https://inventory-svc.eel.example/v1/rfid/readers/health" \
   | jq '.readers[] | select(.reader_serial == "<READER_SERIAL>")'
 ```
 
@@ -224,7 +224,7 @@ If a box was quarantined and inspection confirms no tampering:
 ```bash
 # 1. Confirm the previous valid state from the chain
 curl -s -H "Authorization: Bearer $ECC_TOKEN" \
-  "https://inventory-svc.lindela.io/v1/rfid/tags/<TAG_ID>/history" \
+  "https://inventory-svc.eel.example/v1/rfid/tags/<TAG_ID>/history" \
   | jq '.transitions[-2] | {to_state}'
 
 # 2. Transition tag back to the last valid state
@@ -237,14 +237,14 @@ curl -s -X POST \
     "officer_id": "<RO_OFFICER_ID>",
     "reason": "false_alarm_rfid_noise"
   }' \
-  https://inventory-svc.lindela.io/v1/rfid/tags/<TAG_ID>/transition
+  https://inventory-svc.eel.example/v1/rfid/tags/<TAG_ID>/transition
 
 # 3. Resolve the alert
 curl -s -X PATCH \
   -H "Authorization: Bearer $ECC_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"resolution_note": "False alarm. Physical inspection confirmed intact. Reinstated to <PREVIOUS_VALID_STATE>."}' \
-  https://inventory-svc.lindela.io/v1/rfid/tamper-alerts/<ALERT_ID>/resolve
+  https://inventory-svc.eel.example/v1/rfid/tamper-alerts/<ALERT_ID>/resolve
 ```
 
 Verify the new transition appears in the box chain view with a valid chain hash.
@@ -302,14 +302,14 @@ kubectl -n eel-prod exec -it deploy/chaos-agent -- \
   --station SIMULATED-STATION-001
 
 # Watch the LiveView panel for the injected alert
-open https://ecc.lindela.io/cover-tamper
+open https://ecc.eel.example/cover-tamper
 ```
 
 After the drill, review the timeline via:
 
 ```bash
 curl -s -H "Authorization: Bearer $ECC_TOKEN" \
-  "https://inventory-svc.lindela.io/v1/rfid/tamper-alerts?tag=SIMULATED&from=<DRILL_START_ISO>" \
+  "https://inventory-svc.eel.example/v1/rfid/tamper-alerts?tag=SIMULATED&from=<DRILL_START_ISO>" \
   | jq '.alerts[] | {alert_id, severity, detected_at, resolved_at}'
 ```
 

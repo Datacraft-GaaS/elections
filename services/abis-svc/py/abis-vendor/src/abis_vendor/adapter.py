@@ -7,7 +7,7 @@ from .models import MatchOutcome, MatchRequest, MatchResult, VendorConfig
 
 
 class LegacyAbisAdapter:
-    """Adapter for the legacy IEBC ABIS system via integrations/legacy-abis."""
+    """Adapter for the legacy the Commission ABIS system via integrations/legacy-abis."""
 
     def __init__(self, config: VendorConfig) -> None:
         self._config = config

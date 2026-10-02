@@ -2,7 +2,7 @@
 
 **Runs on:** Public web + mobile portal fronted by CDN + WAF; back-end in primary DC
 **Owner:** Datacraft — **greenfield build**
-**IPR:** Source code, documentation, and IPR transferred to IEBC on completion (Section V explicit mandate).
+**IPR:** Source code, documentation, and IPR transferred to the Commission on completion (Section V explicit mandate).
 
 ## 1. Purpose
 
@@ -12,7 +12,7 @@ Let a Kenyan citizen pre-fill their voter registration form online or via a mobi
 
 - Registered citizen (public applicant)
 - Enrolment Clerk (retrieves pre-filled form via KIEMS BVR device)
-- IEBC Administrator (analytics, cancellations)
+- the Commission Administrator (analytics, cancellations)
 - ODPC Officer (compliance oversight)
 
 ## 3. Functional Requirements
@@ -21,7 +21,7 @@ Let a Kenyan citizen pre-fill their voter registration form online or via a mobi
 - **FR-M04-002** Biographic capture form matching the 22 BVR fields (subset of biometric fields deferred to on-device capture).
 - **FR-M04-003** IPRS identity verification: applicant enters ID number; system calls IPRS; biographic fields pre-populated for confirmation.
 - **FR-M04-004** SMS OTP challenge to the mobile registered against the applicant's ID for verification.
-- **FR-M04-005** Consent capture per Kenya DPA 2019: explicit consent for IEBC + IPRS processing, retention terms disclosed, right-to-withdraw explained.
+- **FR-M04-005** Consent capture per Kenya DPA 2019: explicit consent for the Commission + IPRS processing, retention terms disclosed, right-to-withdraw explained.
 - **FR-M04-006** QR code / handoff token generation once application is verified. Token expires after 30 days; extendable to 90 days on request.
 - **FR-M04-007** KIEMS device API: BVR client scans the QR at the polling centre, retrieves pre-populated form via `/vprs/v1/applications/handoff/{token}`.
 - **FR-M04-008** Application status portal for citizen to check progress and cancel.
@@ -32,7 +32,7 @@ Let a Kenyan citizen pre-fill their voter registration form online or via a mobi
 - **FR-M04-013** RBAC + full audit trail + Kenya DPA + ISO 27001:2022 compliance.
 - **FR-M04-014** High availability + nationwide scalability (target: 500,000 applications in first month of a registration window).
 - **FR-M04-015** Every mutation signed + audit-logged.
-- **FR-M04-016** Source code + documentation transferred to IEBC on Operational Acceptance (mandatory Section V clause).
+- **FR-M04-016** Source code + documentation transferred to the Commission on Operational Acceptance (mandatory Section V clause).
 
 ## 4. Non-Functional Requirements
 
@@ -85,7 +85,7 @@ Let a Kenyan citizen pre-fill their voter registration form online or via a mobi
 | A-M04-03 | WCAG 2.2 AA audit pass | Independent accessibility audit |
 | A-M04-04 | IPRS circuit-breaker behaves per spec | Chaos exercise |
 | A-M04-05 | ODPC audit rated compliant | ODPC review |
-| A-M04-06 | Source code + docs + IPR transferred to IEBC at OAT | Handover certificate |
+| A-M04-06 | Source code + docs + IPR transferred to the Commission at OAT | Handover certificate |
 
 ## 10. Cross-References
 

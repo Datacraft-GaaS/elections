@@ -1,6 +1,6 @@
 defmodule Eel.Auth do
   @moduledoc """
-  Authentication and authorisation library for IEBC IEMS services.
+  Authentication and authorisation library for the Commission IEMS services.
 
   Provides Keycloak JWT verification, SpiceDB permission checks, a Plug
   for Phoenix/Cowboy pipelines, and a LiveView `on_mount` guard.

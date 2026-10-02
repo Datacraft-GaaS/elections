@@ -81,7 +81,7 @@ flutter test --machine test/ | patrol   # patrol e2e
 
 ## Deployment Notes
 
-- Distributed via Google Play internal track (package: ke.go.iebc.eel.rts_kit)
+- Distributed via Google Play internal track (package: ke.go.commission.eel.rts_kit)
 - MDM policy in platform/mdm/eel-rts-kit-mdm.json
 - Device provisioning: Jamf Mobile device enrollment before election day
 

@@ -13,7 +13,7 @@
 
 <!-- Human personas -->
 <text x="10" y="90" font-family="Arial,sans-serif" font-size="14" fill="#333">* Citizen / Complainant</text>
-<text x="680" y="90" font-family="Arial,sans-serif" font-size="14" fill="#333">* IEBC Case Manager</text>
+<text x="680" y="90" font-family="Arial,sans-serif" font-size="14" fill="#333">* the Commission Case Manager</text>
 <text x="1020" y="90" font-family="Arial,sans-serif" font-size="14" fill="#333">* DCI Officer</text>
 
 <!-- Chan 1: Web Portal -->
@@ -116,9 +116,9 @@
 <text x="1040" y="328" font-family="Arial,sans-serif" font-size="14" fill="#d62728" text-anchor="middle">ODPP</text>
 <text x="1040" y="348" font-family="Arial,sans-serif" font-size="14" fill="#d62728" text-anchor="middle">Referral</text>
 
-<!-- Out 3: IEBC Hearing Panel -->
+<!-- Out 3: the Commission Hearing Panel -->
 <rect x="960" y="400" width="160" height="70" rx="6" fill="#2ca02c" stroke="#1e7a1e" stroke-width="2"/>
-<text x="1040" y="428" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">IEBC</text>
+<text x="1040" y="428" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">the Commission</text>
 <text x="1040" y="446" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Hearing</text>
 <text x="1040" y="464" font-family="Arial,sans-serif" font-size="13" fill="#cec" text-anchor="middle">Panel</text>
 

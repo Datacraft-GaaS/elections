@@ -8,7 +8,7 @@
 | Size | M |
 | Availability class | routine 99.5% |
 | Event-sourced | no (ADR-0013: only M08/M09/M10, M20, M51, M63) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M64-voter-list-public-inspection.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M64-voter-list-public-inspection.md |
 
 ## Purpose
 
@@ -127,7 +127,7 @@ Deadline enforcement and auto-referral
 
 31. FR-M64-031: Auto-refer any objection not determined by T-60 23:59 EAT to Elections Court via structured referral packet. (FR-64.06)
 32. FR-M64-032: Idempotent auto-referral scheduler; double-fire at T-60 produces exactly one eCourt packet. (EC-LEG-09)
-33. FR-M64-033: Notify objector, subject voter's CRO, and IEBC Legal on auto-referral. (FR-64.06)
+33. FR-M64-033: Notify objector, subject voter's CRO, and the Commission Legal on auto-referral. (FR-64.06)
 34. FR-M64-034: Deliver auto-referral packet to Elections Court within 1 hour of T-60 breach; circuit breaker queues if eCourt unavailable. (NFR-64.06)
 
 Roll update after determination
@@ -138,7 +138,7 @@ Roll update after determination
 Compliance dashboard
 
 37. FR-M64-037: Internal dashboard: days remaining in window, objection counts by county (filed, pending, determined, lapsed), correction claim counts, on-time determination rate. (FR-64.08)
-38. FR-M64-038: Auto-alert to IEBC Chair when any county's lapsed-objection rate exceeds 5%. (FR-64.08)
+38. FR-M64-038: Auto-alert to the Commission Chair when any county's lapsed-objection rate exceeds 5%. (FR-64.08)
 39. FR-M64-039: IAB read access to compliance dashboard; daily lapsed-objection count per county emitted. (FR-64.08)
 
 Security and data protection
@@ -248,4 +248,4 @@ Tags: `#[trace("FR-M64-008","AC-M64-02","EC-LEG-09")]`
 ## Open questions
 
 - eCourt API specification not yet available; double gates development.
-- Whether biometric verification for correction claims requires the claimant to be physically present at an IEBC office or can be remote; affects M01 integration scope.
+- Whether biometric verification for correction claims requires the claimant to be physically present at a Commission office or can be remote; affects M01 integration scope.

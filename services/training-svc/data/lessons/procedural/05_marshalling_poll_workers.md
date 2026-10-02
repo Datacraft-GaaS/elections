@@ -19,7 +19,7 @@ A Marshaller is designated by the PO (with DPO support) from the station staff p
 ```
 a) M3 tablet → Workforce → Station Roster
 b) System displays assigned staff for this station:
-   - PO (assigned at national level by IEBC)
+   - PO (assigned at national level by the Commission)
    - DPO (assigned at county level)
    - Clerks (assigned by constituency)
    - Support staff (assigned by station)
@@ -54,7 +54,7 @@ Based on roster, assign roles:
 Record assignments in workforce-svc:
 {
   "event": "eel.workforce.assignment.v1",
-  "station_code": "IEBC-KE-001-A",
+  "station_code": "COMMISSION-KE-001-A",
   "worker_id": "<UUID7>",
   "role_assigned": "CLERK_VERIFICATION",
   "assigned_by": "PO-001",
@@ -136,7 +136,7 @@ c) Replacement workers confirm completion of full shift (or partial)
 Marshaller submits:
 {
   "event": "eel.workforce.endofshift.v1",
-  "station_code": "IEBC-KE-001-A",
+  "station_code": "COMMISSION-KE-001-A",
   "workers_present": 8,
   "workers_absent": 1,
   "workers_replaced": 1,

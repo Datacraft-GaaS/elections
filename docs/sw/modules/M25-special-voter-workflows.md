@@ -5,7 +5,7 @@
 **Runs on:** Kit-side (special-configuration mode) + central backend
 **Owner:** Datacraft
 **Status:** Draft v2
-**IPR:** Custom Software vests in IEBC per GCC 15.4
+**IPR:** Custom Software vests in the Commission per GCC 15.4
 
 ## 1. Purpose
 
@@ -20,10 +20,10 @@ Strategy reference: §XXI.A.3.
 - **Hospital Patient (Category B voter)** — eligible voter unable to travel to polling station
 - **Attending Clinician / Hospital Administrator** — impartial witness; not a family member
 - **KDF / GSU Service Member (Category C voter)** — votes at designated barracks station
-- **IEBC-Seconded Returning Officer (Category C)** — civilian-controlled; runs the barracks kit
+- **Commission-Seconded Returning Officer (Category C)** — civilian-controlled; runs the barracks kit
 - **Refugee (Category D voter, activation conditional)** — registered per Refugees Act 2021 and any court-ordered eligibility
 - **IDP (Category E voter)** — registered at IDP-designated station near displacement site
-- **IEBC Special Voter Coordinator** — central oversight of all special-category operations
+- **the Commission Special Voter Coordinator** — central oversight of all special-category operations
 - **IAB Special Voter Auditor** — audits a sample of special-category events post-election
 - **Party Agent (Special Category)** — one per party per facility; witnesses procedures
 
@@ -32,8 +32,8 @@ Strategy reference: §XXI.A.3.
 ### Category A — Remand Prisoners
 
 - **FR-M25-001** Kit provisioned in REMAND_PRISON mode: voter roll scoped to the registered prison's remand population (pre-trial detainees only; convicted prisoners currently excluded per Elections Act unless a court order extends the right). Roll sourced from Kenya Prisons Service CRS cross-reference under MoU.
-- **FR-M25-002** Prison Governor acts as Presiding Officer; IEBC-assigned deputy Presiding Officer present; kit cannot open without dual biometric sign-in of both.
-- **FR-M25-003** Party-agent complement reduced per IEBC regulation: minimum one party agent for the two leading presidential candidates; additional agents accommodated where facility permits.
+- **FR-M25-002** Prison Governor acts as Presiding Officer; Commission-assigned deputy Presiding Officer present; kit cannot open without dual biometric sign-in of both.
+- **FR-M25-003** Party-agent complement reduced per the Commission regulation: minimum one party agent for the two leading presidential candidates; additional agents accommodated where facility permits.
 - **FR-M25-004** Prisoner identity verification: fingerprint match against ABIS (same threshold as standard BVI); if fingerprints degraded (documented occupational damage), fallback to iris + face combination with Presiding Officer signed authorisation.
 - **FR-M25-005** Physical security protocol: kit arrives sealed with RFID tag; custody log shows prison gate entry; party agents sign custody certificate at gate.
 - **FR-M25-006** Voting schedule: published per facility in Kenya Gazette >= 14 days before election day.
@@ -53,23 +53,23 @@ Strategy reference: §XXI.A.3.
 ### Category C — KDF / GSU / Prison Service Voters
 
 - **FR-M25-016** Kit provisioned in BARRACKS mode: voter roll scoped to service-personnel registered at the barracks station under Elections Act s.5 special enrolment.
-- **FR-M25-017** Civilian control: IEBC-seconded Returning Officer acts as Presiding Officer; no officer in the military chain of command has authority over the kit or the vote. Kit's Presiding Officer biometric must match the IEBC-seconded officer, not any military credential.
+- **FR-M25-017** Civilian control: Commission-seconded Returning Officer acts as Presiding Officer; no officer in the military chain of command has authority over the kit or the vote. Kit's Presiding Officer biometric must match the Commission-seconded officer, not any military credential.
 - **FR-M25-018** Ballot secrecy enforcement: physical booth placed away from line-of-sight of any superior officer; party agents present as witnesses; any officer who approaches the booth is logged as a violation event.
-- **FR-M25-019** Special enrolment window: service-personnel registered during the barracks-specific BVR window (Elections Act s.5); roll compiled by IEBC from commanding officer's approved list; IEBC does not delegate roll compilation authority to military.
+- **FR-M25-019** Special enrolment window: service-personnel registered during the barracks-specific BVR window (Elections Act s.5); roll compiled by the Commission from commanding officer's approved list; the Commission does not delegate roll compilation authority to military.
 - **FR-M25-020** Results transmission: Form 34A-B (barracks variant) published within 30 minutes of close.
 - **FR-M25-021** Post-vote audit sample: IAB auditor reviews a 5% random sample of barracks authentication logs at T+7; any ballot-secrecy violation events reviewed at 100%.
 
 ### Category D — Refugees (Conditional Activation)
 
-- **FR-M25-022** Module built but activation-gated behind a configuration flag: REFUGEE_VOTING_ENABLED (default: false). Datacraft monitors litigation and court orders; if judicial expansion of refugee eligibility is confirmed before 2027, flag is activated via IEBC-authorised configuration change.
-- **FR-M25-023** When activated: refugee voter roll derived from UNHCR Kenya registration data cross-referenced with IEBC criteria (minimum residence period, no criminal conviction); roll compiled with UNHCR + Department of Refugee Services cooperation.
+- **FR-M25-022** Module built but activation-gated behind a configuration flag: REFUGEE_VOTING_ENABLED (default: false). Datacraft monitors litigation and court orders; if judicial expansion of refugee eligibility is confirmed before 2027, flag is activated via Commission-authorised configuration change.
+- **FR-M25-023** When activated: refugee voter roll derived from UNHCR Kenya registration data cross-referenced with the Commission criteria (minimum residence period, no criminal conviction); roll compiled with UNHCR + Department of Refugee Services cooperation.
 - **FR-M25-024** Verification: UNHCR biometric registration system (ProGres v4 or equivalent) provides a biometric match response via API; ABIS does not store refugee biometrics independently.
 - **FR-M25-025** Voting at designated refugee station within or adjacent to refugee camp.
 
 ### Category E — IDPs
 
 - **FR-M25-026** IDP register: compiled from UNHCR Kenya, NDOC, Kenya Red Cross displacement data cross-referenced with the standard voter register; any registered voter in an IDP camp who cannot travel to their registered station is offered re-assignment to an IDP-designated station.
-- **FR-M25-027** Pre-election IDP verification window: IDP-designated IEBC centres open for 15 days before election day for roll re-assignment; re-assignment recorded on the voter register and reflected in the BVI kit roll.
+- **FR-M25-027** Pre-election IDP verification window: IDP-designated the Commission centres open for 15 days before election day for roll re-assignment; re-assignment recorded on the voter register and reflected in the BVI kit roll.
 - **FR-M25-028** IDP station provisioned in IDP mode: voter roll contains re-assigned IDPs; standard BVI workflow applies.
 - **FR-M25-029** IDP station results published as Form 34A-I variants; included in the relevant constituency aggregation based on the voter's original registered constituency.
 
@@ -94,13 +94,13 @@ Strategy reference: §XXI.A.3.
 
 1. As a remand prisoner on election day, I authenticate with my fingerprint at the prison station, receive one ballot per contest I am registered for, and deposit it in the sealed ballot box without any prison official knowing how I voted.
 2. As a bedridden hospital patient, I consent to vote with the mobile kit at my bedside; the attending nurse witnesses my consent; I vote with biometric authentication without leaving my bed.
-3. As a KDF private, I vote at the barracks station with an IEBC officer — not my commanding officer — as the presiding officer, and no superior can see my ballot.
-4. As an IEBC Special Voter Coordinator, I see the live status of all special-category kits (deployed/voting/closed/synced) on a single dashboard.
+3. As a KDF private, I vote at the barracks station with a Commission officer — not my commanding officer — as the presiding officer, and no superior can see my ballot.
+4. As a Commission Special Voter Coordinator, I see the live status of all special-category kits (deployed/voting/closed/synced) on a single dashboard.
 5. As a party agent at a remand prison, I witness the kit arrival with intact RFID seals, the voting session, and the sealed result transmission.
 6. As an IAB Special Voter Auditor, I select a random 5% sample of remand-prison authentication events and verify each against the ABIS log at T+7.
-7. As an IDP in Eldoret camp, I visited the IEBC re-assignment centre 10 days ago; today I vote at the IDP station assigned to me; my vote is counted in my original Nairobi constituency.
-8. As a hospital administrator, I receive advance notice from IEBC of the mobile kit visit schedule so I can prepare a private space for voting.
-9. As the IEBC Chair, I see an alert immediately if any KDF ballot-secrecy violation event is logged.
+7. As an IDP in Eldoret camp, I visited the Commission re-assignment centre 10 days ago; today I vote at the IDP station assigned to me; my vote is counted in my original Nairobi constituency.
+8. As a hospital administrator, I receive advance notice from the Commission of the mobile kit visit schedule so I can prepare a private space for voting.
+9. As the Commission Chair, I see an alert immediately if any KDF ballot-secrecy violation event is logged.
 10. As a member of the public, I can see the total voter count per special-category facility on the portal (no patient or prisoner names), verifying no category is silently disenfranchised.
 
 ## 6. Data Model Additions
@@ -176,15 +176,15 @@ class IDPReassignment(BaseModel):
 
 | Method | Path | Auth | Rate limit | Description |
 |--------|------|------|------------|-------------|
-| GET | /v1/special/facilities | IEBC_ADMIN JWT | 100/hr | List all special voter facilities |
-| GET | /v1/special/facilities/{id} | IEBC_ADMIN JWT | 200/hr | Facility detail and status |
+| GET | /v1/special/facilities | COMMISSION_ADMIN JWT | 100/hr | List all special voter facilities |
+| GET | /v1/special/facilities/{id} | COMMISSION_ADMIN JWT | 200/hr | Facility detail and status |
 | POST | /v1/special/facilities/{id}/events | KIT_CERT mTLS | 500/min | Submit special voter event from kit |
-| GET | /v1/special/facilities/{id}/events | IEBC_ADMIN JWT | 100/hr | Event log for a facility |
+| GET | /v1/special/facilities/{id}/events | COMMISSION_ADMIN JWT | 100/hr | Event log for a facility |
 | POST | /v1/special/forms/34 | KIT_CERT mTLS | 50/hr | Submit special Form 34 |
 | GET | /v1/special/forms/34 | Public | 500/min | List published special forms |
 | GET | /v1/special/forms/34/{id} | Public | 500/min | Single form with Merkle proof |
-| POST | /v1/special/idp/reassignments | IEBC_OFFICER JWT | 200/hr | Record IDP voter reassignment |
-| GET | /v1/special/dashboard | IEBC_OPS JWT | 200/hr | Ops coordinator live status |
+| POST | /v1/special/idp/reassignments | COMMISSION_OFFICER JWT | 200/hr | Record IDP voter reassignment |
+| GET | /v1/special/dashboard | COMMISSION_OPS JWT | 200/hr | Ops coordinator live status |
 | GET | /v1/special/audit/sample/{category} | IAB_AUDITOR JWT | 10/hr | Pull IAB random-sample authentication logs |
 | GET | /v1/special/public/counts | Public | 500/min | Published voter counts per facility (no PII) |
 
@@ -204,12 +204,12 @@ class IDPReassignment(BaseModel):
 
 ## 9. UI/UX Key Screens
 
-1. **Special Voter Operations Dashboard** — IEBC coordinator view; map of all special facilities; status badges; live event feed; violation-event highlight panel.
+1. **Special Voter Operations Dashboard** — the Commission coordinator view; map of all special facilities; status badges; live event feed; violation-event highlight panel.
 2. **Category-Specific Kit UI** — each mode has a mode identifier banner (colour-coded: orange for remand, blue for hospital, green for barracks, purple for IDP); otherwise identical to standard BVI UX to minimise officer training delta.
 3. **Hospital Mobile Kit** — simplified large-text UI; audio guidance enabled by default; one-handed operation mode (tablet horizontal); "call for assistance" soft button triggers an alert to the presiding officer.
 4. **Witness Signature Screen** — sequential signature collection: presiding officer, then each party agent, with biometric tap; party agent count displayed with waiting status.
-5. **Violation Event Logger** — auto-triggered on secrecy-violation event; officer must acknowledge and add a note; auto-escalation to IEBC Chair within 5 minutes if unacknowledged.
-6. **IDP Re-assignment Centre Console** — IEBC officer view; search by voter ID or name; pull current station assignment; log displacement source; confirm new IDP facility assignment.
+5. **Violation Event Logger** — auto-triggered on secrecy-violation event; officer must acknowledge and add a note; auto-escalation to the Commission Chair within 5 minutes if unacknowledged.
+6. **IDP Re-assignment Centre Console** — the Commission officer view; search by voter ID or name; pull current station assignment; log displacement source; confirm new IDP facility assignment.
 7. **Public Special Voter Counts Page** — facility type filter; per-facility voter count and voting-day schedule; no patient or prisoner names.
 
 ## 10. Compliance Mapping
@@ -230,8 +230,8 @@ class IDPReassignment(BaseModel):
 
 | Metric | Target | Measurement | Sign-off |
 |--------|--------|-------------|----------|
-| Remand prisoners offered the vote at registered facilities | 100% of eligible remand facilities | Facility schedule vs gazette | IEBC Special Voter Coordinator |
-| Hospital voter sessions completed per schedule | >= 95% | Session completion log | IEBC Ops |
+| Remand prisoners offered the vote at registered facilities | 100% of eligible remand facilities | Facility schedule vs gazette | the Commission Special Voter Coordinator |
+| Hospital voter sessions completed per schedule | >= 95% | Session completion log | the Commission Ops |
 | KDF ballot-secrecy violation events reviewed within 24 hours | 100% | Violation event log | IAB |
 | Special Form 34 published within 30 minutes of close | >= 98% | Timestamp delta | Datacraft Technical |
 | IAB 5% audit sample reviewed at T+7 | 100% of sample | Audit completion log | IAB Special Voter Auditor |
@@ -253,7 +253,7 @@ class IDPReassignment(BaseModel):
 
 | Milestone | Date | Description |
 |-----------|------|-------------|
-| MoUs with Kenya Prisons Service, MoH, KDF signed | 2027-01-01 | IEBC-facilitated; Datacraft technical spec supplied |
+| MoUs with Kenya Prisons Service, MoH, KDF signed | 2027-01-01 | Commission-facilitated; Datacraft technical spec supplied |
 | Special mode kit firmware complete | 2027-02-01 | All five category modes in firmware |
 | Facility gazettement (T-90) | 2027-05-11 | All special facilities gazetted with voter counts |
 | Hospital voter roll cross-reference | 2027-07-01 | County returning officers confirm hospital rolls |
@@ -269,7 +269,7 @@ class IDPReassignment(BaseModel):
 - M10 RTS Back-End — Form 34 ingestion
 - Kenya Prisons Service MoU — remand roll data (external)
 - MoH / Hospital MoU — hospital voter scheduling (external)
-- KDF/GSU secondment MoU — IEBC officer deployment to barracks (external)
+- KDF/GSU secondment MoU — the Commission officer deployment to barracks (external)
 - UNHCR Kenya MoU — refugee category (conditional; external)
 - NDOC/Red Cross data-sharing — IDP category (external)
 
@@ -277,8 +277,8 @@ class IDPReassignment(BaseModel):
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|------------|
-| Kenya Prisons Service refuses to provide remand roll or kit access | Medium | High | Constitutional mandate is clear (Art. 83 + Kituo cha Sheria); IEBC escalates via AG's office; pre-election court order if necessary |
+| Kenya Prisons Service refuses to provide remand roll or kit access | Medium | High | Constitutional mandate is clear (Art. 83 + Kituo cha Sheria); the Commission escalates via AG's office; pre-election court order if necessary |
 | Hospital patient votes under duress from family member | Low | Medium | Clinician impartial-witness requirement; party agent present; s.72 consent protocol; voter has the right to request a private space |
-| KDF commanding officer attempts to observe individual votes | Low | High | Civilian presiding officer logs violation event immediately; IAB alert within 5 minutes; IEBC Chair escalation; DCI referral if conduct constitutes an offence under Election Offences Act |
+| KDF commanding officer attempts to observe individual votes | Low | High | Civilian presiding officer logs violation event immediately; IAB alert within 5 minutes; the Commission Chair escalation; DCI referral if conduct constitutes an offence under Election Offences Act |
 | IDP register inaccurate — IDPs turned away at assigned station | Medium | Medium | 15-day verification window; day-of s.44A complementary mechanism as fallback; overcounting guard at both old and new station |
 | Refugee eligibility judicially expanded after procurement deadline | Low | Medium | Module built and gated behind configuration flag; activation does not require a firmware update |

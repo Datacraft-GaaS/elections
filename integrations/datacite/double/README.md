@@ -41,7 +41,7 @@ DATACITE_CHAOS_ENABLED=true DATACITE_CHAOS_MINT_FAILURE_RATE=0.1 uv run python -
 ## Canned Responses
 
 **DOI Mint** (POST /dois):
-Returns `{"data":{"id":"10.eeelection/2027.001","type":"dois","attributes":{"doi":"10.eeelection/2027.001","url":"https://eel.iebc.or.ke/bundles/2027/results.zip","state":"registered","created":"2024-08-21T10:30:00Z"}}}`.
+Returns `{"data":{"id":"10.eeelection/2027.001","type":"dois","attributes":{"doi":"10.eeelection/2027.001","url":"https://eel.example/bundles/2027/results.zip","state":"registered","created":"2024-08-21T10:30:00Z"}}}`.
 On missing required field: returns 400 `{"errors":[{"title":"Invalid request"}]}`.
 On chaos: returns 400 failure at configured rate.
 
@@ -50,7 +50,7 @@ Returns `{"data":{"id":"10.eeelection/2027.001","attributes":{"state":"findable"
 On invalid DOI format: returns 400 `{"errors":[{"title":"Invalid DOI"}]}`.
 
 **DOI Resolve** (GET /dois/10.eeelection/2027.001):
-Returns `{"data":{"id":"10.eeelection/2027.001","type":"dois","attributes":{"doi":"10.eeelection/2027.001","url":"https://...","titles":[{"title":"Kenya 2027 Election Results"}],"creators":[{"name":"IEBC"}],"publicationYear":2027,"state":"findable"}}}`.
+Returns `{"data":{"id":"10.eeelection/2027.001","type":"dois","attributes":{"doi":"10.eeelection/2027.001","url":"https://...","titles":[{"title":"Kenya 2027 Election Results"}],"creators":[{"name":"the Commission"}],"publicationYear":2027,"state":"findable"}}}`.
 On missing DOI: returns 404 `{"errors":[{"title":"DOI not found"}]}`.
 
 **List DOIs** (GET /dois):

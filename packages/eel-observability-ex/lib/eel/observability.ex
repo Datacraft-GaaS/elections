@@ -1,6 +1,6 @@
 defmodule Eel.Observability do
   @moduledoc """
-  OpenTelemetry integration for IEBC IEMS services.
+  OpenTelemetry integration for the Commission IEMS services.
 
   Provides span lifecycle helpers, event recording, and error reporting
   built on the `opentelemetry_api` package.

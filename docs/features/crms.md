@@ -19,7 +19,7 @@ Module M12 (`crms`) owned by `crms-svc`. Candidate and Nomination Registration M
 
 ## 1. What M12 does
 
-M12 manages the lifecycle of candidates standing for election: party nomination, Independent Electoral and Boundaries Commission (IEBC) acceptance, statutory clearance from Kenya Revenue Authority (KRA), Ethics and Anti-Corruption Commission (EACC), and Directorate of Criminal Investigations (DCI), gender-quota verification, gazette publication of candidate lists, and generation of signed ballot proofs used by the ballot printing chain.
+M12 manages the lifecycle of candidates standing for election: party nomination, the electoral authority (the Commission) acceptance, statutory clearance from Kenya Revenue Authority (KRA), Ethics and Anti-Corruption Commission (EACC), and Directorate of Criminal Investigations (DCI), gender-quota verification, gazette publication of candidate lists, and generation of signed ballot proofs used by the ballot printing chain.
 
 ## 2. Data plane
 
@@ -124,7 +124,7 @@ Languages: English + Kiswahili. WCAG 2.1 AA. Quota dashboard shows gender distri
 
 ## 9. Honest caveats + external prerequisites
 
-- **KRA, EACC, DCI API MoUs** are external prerequisites; adapter doubles available under `integrations/{kra-itax,eacc,dci}/`; live endpoints require IEBC MoU.
+- **KRA, EACC, DCI API MoUs** are external prerequisites; adapter doubles available under `integrations/{kra-itax,eacc,dci}/`; live endpoints require the Commission MoU.
 - **Gov Printer XML schema** is documented in `integrations/gov-printer/`; exact schema locked at first live gazette submission.
 - **Clearance SLA** (48 h default) depends on the external agencies responding within that window; circuit-breaker logic handles delays but cannot force agency response.
 - **Primaries result attachment** -- CRMS stores party primaries result hash but does not run or verify primaries; that is the party's responsibility. CRMS only records the endorsed candidate.

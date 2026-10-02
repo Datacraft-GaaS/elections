@@ -14,8 +14,8 @@ Subject Access Request (SAR) and Data Subject Access Request (DSAR) handling und
 |---|---|---|
 | Online portal ([SAR_PORTAL_URL]) | Automated receipt; routed to DPO queue | Automated acknowledgement within 1 hour |
 | Email to [DPO_EMAIL] | DPO inbox monitor | Human acknowledgement within 1 working day |
-| Letter to IEBC headquarters | Scanning and digitisation on receipt | Human acknowledgement within 1 working day |
-| In person at IEBC county office | Officer logs the request and forwards to DPO | Human acknowledgement within 1 working day |
+| Letter to the Commission headquarters | Scanning and digitisation on receipt | Human acknowledgement within 1 working day |
+| In person at the Commission county office | Officer logs the request and forwards to DPO | Human acknowledgement within 1 working day |
 
 ### 1.2 Identity verification
 

@@ -1,8 +1,8 @@
 # Spec alignment
 
-The documents under `work_docs/01-Projects/IEBC/sw/` are Datacraft's own earlier drafts. Where they differ from the ADRs in this repo, the ADRs take precedence and the `sw/` documents are to be edited to match. Only IEBC's RFP (`tender.txt`, `PRE_BID_CLARIFICATIONS.md`) is binding; none of the items below are RFP-mandated.
+The documents under `work_docs/01-Projects/the Commission/sw/` are Datacraft's own earlier drafts. Where they differ from the ADRs in this repo, the ADRs take precedence and the `sw/` documents are to be edited to match. Only the Commission's RFP (`tender.txt`, `PRE_BID_CLARIFICATIONS.md`) is binding; none of the items below are RFP-mandated.
 
-Each note records: what the earlier draft says, the decision per ADR, confirmation that the RFP is silent, the technical rationale (kept for IEBC evaluators and auditors), trade-offs, and the concrete edits to apply to `sw/`.
+Each note records: what the earlier draft says, the decision per ADR, confirmation that the RFP is silent, the technical rationale (kept for the Commission evaluators and auditors), trade-offs, and the concrete edits to apply to `sw/`.
 
 | note | subject | sw/ sections to edit |
 |---|---|---|

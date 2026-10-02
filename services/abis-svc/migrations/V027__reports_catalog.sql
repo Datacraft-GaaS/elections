@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS eel_report_definitions (
 	                                    'operational','statistical','regulatory','legal',
 	                                    'public','financial','executive','ad_hoc'
 	                                )),
-	audience            TEXT[]      NOT NULL,          -- {'iebc_staff','iab','odpc','public','court'}
+	audience            TEXT[]      NOT NULL,          -- {'commission_staff','iab','odpc','public','court'}
 	data_class          TEXT        NOT NULL CHECK (data_class IN ('restricted','sensitive','public')),
 	sql_template_ref    TEXT,                          -- filesystem path to SQL template
 	renderer_pipeline   TEXT[]      NOT NULL,          -- {'json','csv','parquet','pdf','html','png'}
@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS eel_report_subscribers (
 	                                )),
 	endpoint            TEXT        NOT NULL,          -- URL / SFTP host / kafka topic / email address (hashed)
 	endpoint_hash       BYTEA       NOT NULL,          -- SHA-256 of endpoint (PII protection for emails)
-	audience            TEXT        NOT NULL,          -- 'iebc_staff','iab','odpc','court','public'
+	audience            TEXT        NOT NULL,          -- 'commission_staff','iab','odpc','court','public'
 	auth_ref            TEXT,                          -- OpenBao path to credentials
 	pgp_pubkey_ref      TEXT,                          -- optional signed delivery
 	preferred_format    TEXT        NOT NULL DEFAULT 'pdf',

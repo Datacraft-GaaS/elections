@@ -8,7 +8,7 @@
 | Size | L |
 | Availability class | election-critical 99.99% |
 | Event-sourced | yes (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M63-ballot-serial-chain.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M63-ballot-serial-chain.md |
 
 ## Purpose
 

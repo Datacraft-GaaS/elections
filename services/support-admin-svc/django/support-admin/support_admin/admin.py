@@ -96,7 +96,7 @@ class IDPReassignmentAdmin(admin.ModelAdmin):
 class AdjudicationCatalogueAdmin(admin.ModelAdmin):
     """Adjudication reason-code catalogue browser.
 
-    Standard codes (A1-A8, V1-V3) are read-only. IEBC legal may add
+    Standard codes (A1-A8, V1-V3) are read-only. the Commission legal may add
     supplementary S-codes via this panel.
     """
 
@@ -139,7 +139,7 @@ class AdjudicationEventAdmin(admin.ModelAdmin):
 
 @admin.register(RejectionRateAlert)
 class RejectionRateAlertAdmin(admin.ModelAdmin):
-    """Rejection-rate outlier dashboard surfaced to IEBC ECC (M27)."""
+    """Rejection-rate outlier dashboard surfaced to the Commission ECC (M27)."""
 
     list_display = (
         "id",

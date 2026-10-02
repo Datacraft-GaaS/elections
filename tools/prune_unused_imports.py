@@ -12,7 +12,7 @@ import re
 import subprocess
 import sys
 
-ROOT = "/Users/nyimbiodero/src/pjs/eel"
+ROOT = "."
 UNUSED = re.compile(r"^warning • Unused import: '([^']+)'.*• (\S+\.dart):(\d+):\d+")
 
 

@@ -125,7 +125,7 @@ Languages: English + Kiswahili. 11-language support in back-office; no truncatio
 
 - **IPRS SLA** is not contractually defined; circuit-breaker thresholds need agreement with NRB before G3.
 - **30M confidential-compute workers** for biometric matching (M03) need infrastructure allocation confirmed.
-- **Escrow custodian** identity referenced in spec is unnamed; IEBC decision required before G2.
+- **Escrow custodian** identity referenced in spec is unnamed; the Commission decision required before G2.
 - **ABIS p95 latency target** (5 s at 30M) depends on M03 infrastructure; measured as M03 integration, not M02 standalone.
 - `packages/openapi-contracts/bvr/backend.yaml` referenced in plan does not exist on disk; active contracts are in `packages/openapi-contracts/bvr/openapi.yaml` and `cvr/openapi.yaml`.
 

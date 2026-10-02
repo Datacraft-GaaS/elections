@@ -16,7 +16,7 @@
   <text x="100" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Secretary</text>
 
   <circle cx="280" cy="115" r="18" fill="#1f77b4"/>
-  <text x="280" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">IEBC</text>
+  <text x="280" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">the Commission</text>
   <text x="280" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Registrar</text>
 
   <circle cx="450" cy="115" r="18" fill="#9467bd"/>
@@ -63,7 +63,7 @@
   <text x="380" y="446" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">ComplianceScore: party_id, score (0–100)</text>
   <text x="380" y="466" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">dimensions: gender_quota, youth_quota, AGM_held, returns_filed, audit_submitted</text>
   <text x="380" y="486" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">score &lt; 60 → compliance_warning.v1 · score &lt; 30 → suspension_trigger.v1</text>
-  <text x="380" y="502" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">computed quarterly; GET /v1/parties/{id}/compliance — IEBC_REGISTRAR role</text>
+  <text x="380" y="502" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">computed quarterly; GET /v1/parties/{id}/compliance — COMMISSION_REGISTRAR role</text>
   <line x1="200" y1="340" x2="250" y2="400" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
   <line x1="580" y1="340" x2="500" y2="400" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
 

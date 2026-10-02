@@ -1,6 +1,6 @@
 # RFID ballot box covers (RFP requirement)
 
-Integration of tamper-evident RFID tagging on ballot box covers into the eel platform, per RFP IEBC/OIT/01/2026-2027 physical asset requirements. Owned by inventory-svc; cross-references M20 (inventory-management), M39 (ballot-printing-chain), M65 (diaspora-ballot-physical-logistics), and HARD-16 (physical seal binding).
+Integration of tamper-evident RFID tagging on ballot box covers into the eel platform, per RFP the tender specification physical asset requirements. Owned by inventory-svc; cross-references M20 (inventory-management), M39 (ballot-printing-chain), M65 (diaspora-ballot-physical-logistics), and HARD-16 (physical seal binding).
 
 ## Contents
 
@@ -70,7 +70,7 @@ Per-transition gate:
 | From | To | Required reader | Additional gates |
 |---|---|---|---|
 | MANUFACTURED | PRINTER | warehouse_gate at printer facility | pairing to box body recorded |
-| PRINTER | WAREHOUSE | warehouse_gate at IEBC warehouse | HARD-16 seal photo bound |
+| PRINTER | WAREHOUSE | warehouse_gate at the Commission warehouse | HARD-16 seal photo bound |
 | WAREHOUSE | DISPATCHED | warehouse_gate egress + officer four-eyes | dispatch manifest signed |
 | DISPATCHED | IN_TRANSIT | transit_checkpoint | window: dispatch_ts + 48 h |
 | IN_TRANSIT | STATION_RECEIVED | station_arrival at expected geo (M18 Geofence.Check) + within polling-day window | RO signature |
@@ -160,7 +160,7 @@ All 12 planned deliverables are shipped across 3 commits.
 | `services/inventory-svc/crates/rfid-cover-custody/src/metrics.rs` | 4 prometheus CounterVec (reads + tamper + transitions + hmac failures) | — |
 | `services/inventory-svc/crates/rfid-cover-custody/tests/rfid_test.rs` | 47 tests | 47 |
 
-Zero `unwrap()` in library src. Zero `iebc` identifiers. `cargo build --release` clean.
+Zero `unwrap()` in library src. Zero `commission` identifiers. `cargo build --release` clean.
 
 ### RFID-B — Python reader driver + 3 vendor adapters (commit `3e8eed8`)
 

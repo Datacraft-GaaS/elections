@@ -1,4 +1,4 @@
-# Security Requirements — IEBC IEMS 2027
+# Security Requirements — the Commission IEMS 2027
 
 **Version:** 2.0 — Full 69-module scope
 **Companion to:** `PRD.md`, `ARCHITECTURE.md`, `DATACRAFT_SOFTWARE_SCOPE.md`
@@ -13,7 +13,7 @@
 The Strategy paper (Part VIII) identifies over 100 distinct attack surfaces grouped below into nine threat categories. Each category maps to the modules that mitigate it.
 
 **T1 — Silicon and Firmware Supply Chain**
-An adversary (nation-state or commercial competitor) compromises the KIEMS kit firmware, RFID chip firmware, or biometric sensor firmware before delivery. Attack vectors: tampered factory ROM, malicious OTA, unsigned firmware accepted by boot chain. Mitigated by: M01, M05, M08, M27 (kit firmware); M14 (reproducibility verifies firmware hashes); M20 (asset-chain integrity); M61 (adversarial firmware testing). HARDWARE-REQUIREMENTS-FROM-MITIGATIONS §B4-B6 mandates TPM 2.0 + UEFI secure boot measured from IEBC Root CA.
+An adversary (nation-state or commercial competitor) compromises the KIEMS kit firmware, RFID chip firmware, or biometric sensor firmware before delivery. Attack vectors: tampered factory ROM, malicious OTA, unsigned firmware accepted by boot chain. Mitigated by: M01, M05, M08, M27 (kit firmware); M14 (reproducibility verifies firmware hashes); M20 (asset-chain integrity); M61 (adversarial firmware testing). HARDWARE-REQUIREMENTS-FROM-MITIGATIONS §B4-B6 mandates TPM 2.0 + UEFI secure boot measured from the Commission Root CA.
 
 **T2 — Software Supply Chain**
 Malicious dependency, compromised build worker, or unsigned artefact in the CI/CD pipeline. Attack vectors: dependency confusion, typosquatting, CI environment compromise. Mitigated by: all 69 modules (hermetic builds, internal mirror, Sigstore/Cosign signing); M14 (SBOM per artefact, reproducible builds).
@@ -40,7 +40,7 @@ Privileged operator modifying registers, tally, or audit logs; results-portal op
 DDoS on Public Results Portal or RTS ingress; targeted station outage; carrier exhaustion. Attack vectors: amplification attacks on public portal, SYN floods on RTS, deliberate station kit failure. Mitigated by: M11 (static-first CDN, origin-less public read), M10 (sharded ingress, back-pressure), M26 (anomaly detector), multi-carrier + SMS/USSD fallback (M08, M09), geo-redundant three-site deployment.
 
 **T10 — Social Engineering and Impersonation**
-Phishing poll clerks, impersonating helpdesk, spoof clone of citizen apps, lookalike domains. Attack vectors: SMS phishing, spoofed IEBC domain, fake Citizen Verify app (M29) on unofficial app stores. Mitigated by: FIDO2 mandatory for privileged users (SMS MFA prohibited on admin); helpdesk in-band challenge; M28 (clone-app detection); M17 (deepfake/disinformation detection); DMARC/DKIM/SPF strict; K1 hardware-signed app release (HSM code-signing for M13, M29).
+Phishing poll clerks, impersonating helpdesk, spoof clone of citizen apps, lookalike domains. Attack vectors: SMS phishing, spoofed the Commission domain, fake Citizen Verify app (M29) on unofficial app stores. Mitigated by: FIDO2 mandatory for privileged users (SMS MFA prohibited on admin); helpdesk in-band challenge; M28 (clone-app detection); M17 (deepfake/disinformation detection); DMARC/DKIM/SPF strict; K1 hardware-signed app release (HSM code-signing for M13, M29).
 
 **T11 — Ballot Secrecy**
 Inferring voter choice from RTS transmission sequence, party-agent app leaks, kit camera exfiltration. Attack vectors: traffic analysis, coerced voter photographing ballot, RTS metadata timing correlation. Mitigated by: M61 (dedicated secrecy assurance red-team); M08 (RTS transmission does not carry vote choices, only form images); M30 (party agent app shows only aggregate, no individual); M27 (intent preservation seals form before transmission).
@@ -116,13 +116,13 @@ SPIFFE/SPIRE provides workload identity. Every pod presents an SVID; no pod has 
 
 ### 3.3 Administrative Identity
 
-Privileged users (IEBC CISO, Datacraft Security Lead, DBA, SOC analyst): FIDO2 hardware token mandatory (YubiKey 5 NFC or equivalent). SMS MFA is prohibited on any admin account. JIT privileged access via Vault dynamic secrets: no standing production credentials; each elevated session is ticketed (change window required), dual-approved, time-limited (max 4 hours), and session-recorded.
+Privileged users (the Commission CISO, Datacraft Security Lead, DBA, SOC analyst): FIDO2 hardware token mandatory (YubiKey 5 NFC or equivalent). SMS MFA is prohibited on any admin account. JIT privileged access via Vault dynamic secrets: no standing production credentials; each elevated session is ticketed (change window required), dual-approved, time-limited (max 4 hours), and session-recorded.
 
 Break-glass accounts: dormant; activation requires court-attested order; activation event generates a public transparency-log entry immediately; session fully recorded. Deactivation is dual-custody. Used fewer than three times per year on average; each use triggers a post-activation review.
 
 ### 3.4 HSM Operations
 
-HSM administrative actions require hardware token from two custodians from separate organisations (IEBC + Datacraft). Every HSM admin session is recorded on tamper-evident video. CA operations require M-of-N quorum (minimum 3-of-5 custodians, two organisations).
+HSM administrative actions require hardware token from two custodians from separate organisations (the Commission + Datacraft). Every HSM admin session is recorded on tamper-evident video. CA operations require M-of-N quorum (minimum 3-of-5 custodians, two organisations).
 
 ### 3.5 Joiner-Mover-Leaver
 
@@ -178,7 +178,7 @@ Per-tenant KEK wrapping: each election cycle has an independent KEK. Post-electi
 
 ### 4.5 Key Ceremony
 
-Per Strategy Part XVIII §6: initial root CA key generation is an M-of-N quorum ceremony (3-of-5 custodians, minimum two organisations). Ceremony requirements: air-gapped HSM room, tamper-evident video, two IEBC witnesses, two Datacraft witnesses, one independent IAB witness. Ceremony log signed by all five custodians and published to transparency log within 24 hours. Subsequent CA operations require 3-of-5 quorum.
+Per Strategy Part XVIII §6: initial root CA key generation is an M-of-N quorum ceremony (3-of-5 custodians, minimum two organisations). Ceremony requirements: air-gapped HSM room, tamper-evident video, two the Commission witnesses, two Datacraft witnesses, one independent IAB witness. Ceremony log signed by all five custodians and published to transparency log within 24 hours. Subsequent CA operations require 3-of-5 quorum.
 
 Key ceremony for intermediate CAs: separate ceremony from root; minimum 2-of-4 quorum. Kit certificate bulk issuance: automated under intermediate CA authority after initial quorum ceremony authorises the batch signing policy.
 
@@ -199,7 +199,7 @@ Key ceremony for intermediate CAs: separate ceremony from root; minimum 2-of-4 q
 
 ### 5.1 Kenya DPA 2019 Scope
 
-IEBC is the Data Controller. Datacraft is a Data Processor under written Data Processing Agreement per DPA 2019 s.34. ODPC registration is required and held at go-live. All personal data processing is lawful, fair, and transparent per s.25.
+the Commission is the Data Controller. Datacraft is a Data Processor under written Data Processing Agreement per DPA 2019 s.34. ODPC registration is required and held at go-live. All personal data processing is lawful, fair, and transparent per s.25.
 
 DPA 2019 special-category data (s.29): biometric data (fingerprint, iris, face templates) is special-category. Processing is lawful under s.30(1)(b) (legal obligation — Elections Act §6 mandates biometric registration) only. No other basis applies to biometric templates. Processing is strictly purpose-limited to voter identification during registration (M01-M03) and authentication (M05-M06).
 
@@ -217,7 +217,7 @@ Analytics and monitoring systems (M26, M28, M44) receive pseudonymised or aggreg
 
 ### 5.5 DSAR Handling
 
-Data Subject Access Request workflow per DPA 2019 s.26 (right of access): request received via dedicated secure form → verified against identity evidence → response within 30 calendar days → response includes all personal data held, purposes, recipients, retention period. DSAR log is retained for 3 years post-response. Automated components of the response are generated from the voter register (M35 / M02); manual review by IEBC DPO before dispatch.
+Data Subject Access Request workflow per DPA 2019 s.26 (right of access): request received via dedicated secure form → verified against identity evidence → response within 30 calendar days → response includes all personal data held, purposes, recipients, retention period. DSAR log is retained for 3 years post-response. Automated components of the response are generated from the voter register (M35 / M02); manual review by the Commission DPO before dispatch.
 
 ### 5.6 Breach Notification
 
@@ -228,10 +228,10 @@ Data breach detection triggers an incident response (§10 below). If breach invo
 | Data category | Statutory basis | Retention period | Deletion mechanism |
 |---|---|---|---|
 | Biometric templates (enrolled) | Elections Act §6A | 5 years post-cycle | Cryptographic erasure (destroy DEK) per DPA s.41 |
-| Voter register (full) | Elections Act + IEBC Act | 6 years post-cycle | Archive to M69 + selective purge per court order |
+| Voter register (full) | Elections Act + the Commission Act | 6 years post-cycle | Archive to M69 + selective purge per court order |
 | RTS results + form images | Elections Act §39 | Permanent (national record) | No deletion; M69 long-term archive |
 | Merkle chain / signed events | Court petition basis | Permanent | No deletion; M69 |
-| Audit logs (operational) | ISO 27001 + IEBC policy | 7 years | Tiered: 90 days online, remainder in M69 |
+| Audit logs (operational) | ISO 27001 + the Commission policy | 7 years | Tiered: 90 days online, remainder in M69 |
 | CRMS nomination data | Elections Act §24-§27 | 6 years | Selective anonymisation after 3 years |
 | Campaign finance | Election Campaign Financing Act 2013 | 7 years | Archive |
 | DSAR records | DPA 2019 | 3 years | Delete after retention period |
@@ -302,7 +302,7 @@ CIS Kubernetes Benchmark Level 2 baseline enforced via automated scan (kube-benc
 ### 7.2 Kyverno Admission Policies
 
 Policies enforced on every pod admission:
-- Image must be signed (Cosign verified against IEBC public key)
+- Image must be signed (Cosign verified against the Commission public key)
 - No privileged containers
 - No hostPath volume mounts
 - No host network / host PID
@@ -324,7 +324,7 @@ HashiCorp Vault (BSL) as primary secrets store, sealed to HSM (Vault auto-unseal
 
 ### 8.1 Kenya-Jurisdiction Hosting
 
-All production voter data, biometric templates, RTS results, and signed events reside exclusively on IEBC-provided bare-metal infrastructure in Kenya per DPA 2019 s.18 and the sovereignty principle (M28 AI Monitoring Stack mandate). No production data is processed on non-Kenyan infrastructure. Remote support from Datacraft offshore personnel is permitted only via IEBC-controlled bastion, per-session IEBC approval, full session recording, no bulk data access, no production write.
+All production voter data, biometric templates, RTS results, and signed events reside exclusively on Commission-provided bare-metal infrastructure in Kenya per DPA 2019 s.18 and the sovereignty principle (M28 AI Monitoring Stack mandate). No production data is processed on non-Kenyan infrastructure. Remote support from Datacraft offshore personnel is permitted only via Commission-controlled bastion, per-session the Commission approval, full session recording, no bulk data access, no production write.
 
 ### 8.2 Three-Site Topology
 
@@ -332,7 +332,7 @@ All production voter data, biometric templates, RTS results, and signed events r
 |---|---|---|
 | Primary | Active production | Anniversary Towers, Nairobi |
 | Mirror | Hot standby | Bomas of Kenya, Nairobi |
-| Escrow | Cold backup + transparency log anchor | IEBC regional facility (county level, undisclosed) |
+| Escrow | Cold backup + transparency log anchor | the Commission regional facility (county level, undisclosed) |
 
 Primary and Mirror are active-active for RTS ingestion; active-passive for HSM operations. Escrow receives signed snapshots every 4 hours and at every election milestone. Escrow is air-gapped from public internet; data arrives via dedicated encrypted link.
 
@@ -369,7 +369,7 @@ Before onboarding any new vendor or open-source library in a critical path:
 
 ### 9.3 PGP-Signed Release Channels
 
-All Datacraft artefact releases (APK, firmware, container image, bundle) are delivered via internal OCI registry with Cosign signature verification. No artefact is accepted into production without a valid Cosign signature traceable to the IEBC Root CA or the Datacraft Artefact Signing Key (itself HSM-backed). Release channels for citizen-facing apps (M13, M29) additionally require HSM-backed code-signing certificate (K1).
+All Datacraft artefact releases (APK, firmware, container image, bundle) are delivered via internal OCI registry with Cosign signature verification. No artefact is accepted into production without a valid Cosign signature traceable to the Commission Root CA or the Datacraft Artefact Signing Key (itself HSM-backed). Release channels for citizen-facing apps (M13, M29) additionally require HSM-backed code-signing certificate (K1).
 
 ### 9.4 Reproducible Builds
 
@@ -377,7 +377,7 @@ M14 Reproducibility Bundle enforces that any observer can produce a byte-identic
 
 ### 9.5 Source-Code Escrow
 
-Per Teaming Agreement Clause 10: all source code is escrowed to a neutral custodian (escrow agent nominated by IEBC) within 24 hours of every tagged release. Escrow holds: source code, build manifests, dependency lock files, SBOM, signed hashes. IEBC has right to activate escrow upon contractual termination or insolvency. Escrow tested annually (IEBC legal team verifies build succeeds from escrow).
+Per Teaming Agreement Clause 10: all source code is escrowed to a neutral custodian (escrow agent nominated by the Commission) within 24 hours of every tagged release. Escrow holds: source code, build manifests, dependency lock files, SBOM, signed hashes. the Commission has right to activate escrow upon contractual termination or insolvency. Escrow tested annually (the Commission legal team verifies build succeeds from escrow).
 
 ---
 
@@ -385,7 +385,7 @@ Per Teaming Agreement Clause 10: all source code is escrowed to a neutral custod
 
 ### 10.1 SIEM
 
-OpenSearch (self-hosted, Kenya-jurisdiction) as SIEM. Sigma rule set (open-source detection catalogue) plus custom IEBC rules authored by Datacraft Security team and reviewed quarterly by IAB. Log sources: all Kubernetes pod logs, Linkerd access logs, Vault audit log, HSM audit log, Keycloak event log, Falco alerts, Tetragon events, WAF events, kit telemetry (M01, M05, M08, M27). Retention: 90 days hot in OpenSearch; 7 years archive in M69.
+OpenSearch (self-hosted, Kenya-jurisdiction) as SIEM. Sigma rule set (open-source detection catalogue) plus custom the Commission rules authored by Datacraft Security team and reviewed quarterly by IAB. Log sources: all Kubernetes pod logs, Linkerd access logs, Vault audit log, HSM audit log, Keycloak event log, Falco alerts, Tetragon events, WAF events, kit telemetry (M01, M05, M08, M27). Retention: 90 days hot in OpenSearch; 7 years archive in M69.
 
 ### 10.2 E-SOC (Electronic Security Operations Centre)
 
@@ -411,7 +411,7 @@ Per Strategy Part XVI §5: a dedicated E-SOC staffed 24×7 during the election w
 
 ### 10.4 Threat Intelligence Integration
 
-Commercial threat-intelligence feed (MISP or equivalent) subscribed; indicators of compromise ingested into SIEM daily. Kenyan-specific intelligence: NCCS (National Computer and Cybercrimes Coordination Committee) incident-sharing agreement. FIRST (Forum for Incident Response and Security Teams) membership for international sharing. Lookalike domain monitoring service: daily scan for iebc.or.ke variants; take-down pre-agreement with KE registry.
+Commercial threat-intelligence feed (MISP or equivalent) subscribed; indicators of compromise ingested into SIEM daily. Kenyan-specific intelligence: NCCS (National Computer and Cybercrimes Coordination Committee) incident-sharing agreement. FIRST (Forum for Incident Response and Security Teams) membership for international sharing. Lookalike domain monitoring service: daily scan for eel.example variants; take-down pre-agreement with KE registry.
 
 ### 10.5 Incident Response Playbook
 
@@ -419,8 +419,8 @@ Severity classification:
 
 | Tier | Definition | SLA | Escalation |
 |---|---|---|---|
-| P0 | Active integrity attack, confirmed tally tamper, PKI compromise, active DDoS impacting voting | Immediate (< 5 min) | Incident Commander + IEBC CISO + CEO + IAB Chair |
-| P1 | Security breach (data access), service degradation > SLA, crypto finding | < 1 hour | Incident Commander + IEBC CISO |
+| P0 | Active integrity attack, confirmed tally tamper, PKI compromise, active DDoS impacting voting | Immediate (< 5 min) | Incident Commander + the Commission CISO + CEO + IAB Chair |
+| P1 | Security breach (data access), service degradation > SLA, crypto finding | < 1 hour | Incident Commander + the Commission CISO |
 | P2 | Security finding (no active breach), performance degradation | < 4 hours | On-call team |
 | P3 | Low-severity anomaly, single-system minor failure | < 24 hours | Team lead |
 
@@ -443,9 +443,9 @@ Per M40 Election Court IT Interface: any forensic artefact for court use must ha
 | Art. 38 | Voter rights (register, vote, seek office) | M01-M12 (full voter lifecycle); M25 (special voter workflows) |
 | Art. 43 | Social and economic rights (data protection implied) | DPA 2019 compliance; M35, M04 (voter data handling) |
 | Art. 81 | Electoral system principles (secret ballot, free and fair) | M61 (secrecy assurance), M26, M27 |
-| Art. 86 | Conduct of elections (IEBC mandate) | All modules |
+| Art. 86 | Conduct of elections (the Commission mandate) | All modules |
 | Art. 87 | Petition right (24-hour evidence delivery) | M40 (court interface), M14, M63 |
-| Art. 88 | IEBC independence | Architecture sovereignty: Kenya-only hosting, Datacraft cannot unilaterally modify production |
+| Art. 88 | the Commission independence | Architecture sovereignty: Kenya-only hosting, Datacraft cannot unilaterally modify production |
 | Art. 138 | Presidential election procedure | M08, M09, M10, M51 (results chain); M61 (secrecy) |
 | Art. 140 | Presidential election dispute | M40 (court IT interface), M69 (archive) |
 
@@ -463,12 +463,12 @@ Per M40 Election Court IT Interface: any forensic artefact for court use must ha
 | §54 | Ballot secrecy | M61, M08, M27, M30 |
 | §72 | Secrecy obligation (officers) | M61, insider threat programme |
 | §75(1) | Petition filing (7 days) | M40 |
-| §83 | IEBC certification of results | M51 |
+| §83 | the Commission certification of results | M51 |
 | §85 | Referendum trigger | M49 |
 
 ### 11.3 Elections (Technology) Regulations 2017
 
-Mandatory testing: stress test, load test, penetration test, functional test before every general election. Datacraft compliance: all four tests are embedded in the OAT and Regulatory Certification gates (see ACCEPTANCE-CRITERIA.md §4). Independent certifier nominated by IEBC performs the regulatory certification run.
+Mandatory testing: stress test, load test, penetration test, functional test before every general election. Datacraft compliance: all four tests are embedded in the OAT and Regulatory Certification gates (see ACCEPTANCE-CRITERIA.md §4). Independent certifier nominated by the Commission performs the regulatory certification run.
 
 ### 11.4 Kenya Data Protection Act 2019 — Full Mapping
 
@@ -482,7 +482,7 @@ Mandatory testing: stress test, load test, penetration test, functional test bef
 | s.30 | Lawful bases | See §11.4.1 |
 | s.31 | Processing for research/statistics | Anonymised only; no voter PII; M44, M28 use synthetic/anonymised data |
 | s.33 | Children's data | Voters must be 18+; M35 age verification |
-| s.34 | Data Processing Agreement | Signed DPA between IEBC and Datacraft before go-live |
+| s.34 | Data Processing Agreement | Signed DPA between the Commission and Datacraft before go-live |
 | s.36 | Erasure | Right-to-erasure exceptions per §5.8 |
 | s.41 | Destruction of data | Cryptographic erasure; M01 kit decommission (M3 hardware requirement) |
 | s.43 | Breach notification (72 hours) | Incident response playbook §10.5 |
@@ -565,7 +565,7 @@ Mandatory testing: stress test, load test, penetration test, functional test bef
 
 | Statute | Key obligations | Controls |
 |---|---|---|
-| IEBC Act 2011 | IEBC mandate, governance, independence | Architecture sovereignty (§8.1) |
+| the Commission Act 2011 | the Commission mandate, governance, independence | Architecture sovereignty (§8.1) |
 | Election Offences Act §6-§12 | Bribery, impersonation, unlawful possession of kit | M20 (kit custody), M61 (physical attack testing) |
 | Political Parties Act 2011 | Party registration, reporting | M45, M22 |
 | Election Campaign Financing Act 2013 | Campaign finance limits and disclosure | M22, M66 |
@@ -587,7 +587,7 @@ Annual: independent pen-test by CREST-accredited firm. Pre-election: additional 
 
 ### 12.2 Internal Penetration Testing
 
-Quarterly internal pen-test by Datacraft Security team + IEBC ICT security officer. Scope rotated to cover different attack surfaces each quarter. Results reviewed by IAB.
+Quarterly internal pen-test by Datacraft Security team + the Commission ICT security officer. Scope rotated to cover different attack surfaces each quarter. Results reviewed by IAB.
 
 ### 12.3 Continuous Bug Bounty
 
@@ -599,7 +599,7 @@ Per Strategy Part XIX §2 Part D: cross-organisation red team engaged 90 days pr
 
 ### 12.5 M61 Secrecy Assurance Testing
 
-M61 is a dedicated continuous red-team programme focused exclusively on proving ballot secrecy holds under adversarial conditions. It runs independently of the main pen-test programme, with a separate mandate, separate findings tracker, and separate IAB attestation. M61 findings are classified RESTRICTED; proof-of-concept details are encrypted blobs accessible only to Datacraft Security Lead and IEBC CISO.
+M61 is a dedicated continuous red-team programme focused exclusively on proving ballot secrecy holds under adversarial conditions. It runs independently of the main pen-test programme, with a separate mandate, separate findings tracker, and separate IAB attestation. M61 findings are classified RESTRICTED; proof-of-concept details are encrypted blobs accessible only to Datacraft Security Lead and the Commission CISO.
 
 ### 12.6 SOC 2 Type II and ISO 27001
 
@@ -607,11 +607,11 @@ Targets for Datacraft's delivery organisation:
 - ISO 27001:2022 certification: initial certification before T-180; annual surveillance audit; full recertification at T+3 years
 - SOC 2 Type II: completed before T-90; covers Security, Availability, Confidentiality trust service criteria
 
-The IEBC IEMS platform itself undergoes ISO 27001 certification as a system (not just organisational); certification scope covers all 69 modules.
+The Commission IEMS platform itself undergoes ISO 27001 certification as a system (not just organisational); certification scope covers all 69 modules.
 
 ### 12.7 Datacraft Security Review Board
 
-Per Teaming Agreement §8: a Datacraft Security Review Board (SRB) convenes monthly. Membership: Datacraft CISO, Datacraft Security Lead, IEBC CISO, one IAB representative. Mandate: review all P0/P1 findings, approve waivers, sign off on security architecture changes, approve annual pen-test scope, review red-team findings. SRB minutes are countersigned by IEBC CISO and available to ODPC on request.
+Per Teaming Agreement §8: a Datacraft Security Review Board (SRB) convenes monthly. Membership: Datacraft CISO, Datacraft Security Lead, the Commission CISO, one IAB representative. Mandate: review all P0/P1 findings, approve waivers, sign off on security architecture changes, approve annual pen-test scope, review red-team findings. SRB minutes are countersigned by the Commission CISO and available to ODPC on request.
 
 ---
 
@@ -646,8 +646,8 @@ One row per module. Columns:
 | M14 Reproducibility Bundle | T2 T12 | FIDO2 admin only for bundle generation; public download | Cosign-signed bundle; SBOM in SPDX; hash published to transparency log | PUBLIC | Not applicable | Permanent | Every bundle generation event; every signing operation | TIER-2 | P1 |
 | M15 IAB Dashboard | T8 | FIDO2 mandatory for IAB members; SPIFFE SVID intra; RBAC IAB roles | TLS 1.3; AES-256-GCM; read-only replica of signed events | CONFIDENTIAL | s.30(1)(e) | 7 yr | Every IAB member access; every alert acknowledgement | TIER-1 | P1 |
 | M16 Election Command Centre | T8 T9 | FIDO2 + RBAC for ECC staff; SPIFFE SVID intra | TLS 1.3; AES-256-GCM; session recording for privileged actions | CONFIDENTIAL | s.30(1)(b) | 7 yr | Every command / escalation action; every alert; session recordings | TIER-1 | P1 |
-| M17 Speech Integrity | T10 | OIDC for IEBC analysts; SPIFFE SVID intra | TLS 1.3; AES-256-GCM; model inference results signed | OFFICIAL | s.30(1)(e) | 6 yr | Every content flagged + analyst disposition | TIER-2 | P2 |
-| M18 Boundary Transparency | T6 | OIDC for IEBC admin; public read anonymous | TLS 1.3; no personal data; GeoJSON signed with ECDSA | PUBLIC | Not applicable | Permanent | Every boundary update; every publication event | TIER-3 | P3 |
+| M17 Speech Integrity | T10 | OIDC for the Commission analysts; SPIFFE SVID intra | TLS 1.3; AES-256-GCM; model inference results signed | OFFICIAL | s.30(1)(e) | 6 yr | Every content flagged + analyst disposition | TIER-2 | P2 |
+| M18 Boundary Transparency | T6 | OIDC for the Commission admin; public read anonymous | TLS 1.3; no personal data; GeoJSON signed with ECDSA | PUBLIC | Not applicable | Permanent | Every boundary update; every publication event | TIER-3 | P3 |
 | M19 Queue Transparency | T6 | Anonymous public read; OIDC for data ingestion | TLS 1.3; aggregate only; no PII | PUBLIC | Not applicable | 7 yr (aggregate records) | Every aggregate push signed | TIER-3 | P3 |
 | M20 Inventory Management | T3 T6 | OIDC + MFA for logistics staff; SPIFFE SVID intra | TLS 1.3; AES-256-GCM; RFID tag chain cryptographically signed | OFFICIAL | s.30(1)(b) | 7 yr (asset lifecycle) | Every kit movement; every seal-break event | TIER-2 | P1 |
 | M21 RLA Audit Tool | T12 | FIDO2 for auditors; SPIFFE SVID intra | TLS 1.3; AES-256-GCM; audit results signed with ECDSA | OFFICIAL | Not applicable | Permanent | Every sample draw; every tally comparison; every RLA round result | TIER-2 | P1 |
@@ -664,30 +664,30 @@ One row per module. Columns:
 | M32 Mobile Field Support | T6 | OIDC + MFA; field engineer role | TLS 1.3; cert pinning | OFFICIAL | s.30(1)(b) | 3 yr | Every support ticket; every kit action | TIER-3 | P2 |
 | M33 Mobile Personnel Dispatch | T6 | OIDC + MFA; dispatch manager role | TLS 1.3; location data encrypted at rest | OFFICIAL | s.30(1)(b) | 3 yr | Every dispatch event; location ping log | TIER-3 | P2 |
 | M34 Mobile Observer | T6 | OIDC + accreditation token; observer role | TLS 1.3; cert pinning | OFFICIAL | s.30(1)(b) | 3 yr | Every observation submitted | TIER-3 | P3 |
-| M35 CVR | T7 T8 | OIDC + FIDO2 for IEBC register officers; SPIFFE intra | TLS 1.3; AES-256-GCM; voter record updates HSM-signed | RESTRICTED | s.30(1)(b) | 6 yr | Every register change; every access by officer 5-tuple | TIER-2 | P1 |
-| M36 Voter Deregistration Appeal | T7 | OIDC for voter + IEBC officer; dual approval for deregistration | TLS 1.3; AES-256-GCM; appeal record signed | CONFIDENTIAL | s.30(1)(b) | 6 yr | Every appeal submission; every decision | TIER-3 | P2 |
+| M35 CVR | T7 T8 | OIDC + FIDO2 for the Commission register officers; SPIFFE intra | TLS 1.3; AES-256-GCM; voter record updates HSM-signed | RESTRICTED | s.30(1)(b) | 6 yr | Every register change; every access by officer 5-tuple | TIER-2 | P1 |
+| M36 Voter Deregistration Appeal | T7 | OIDC for voter + the Commission officer; dual approval for deregistration | TLS 1.3; AES-256-GCM; appeal record signed | CONFIDENTIAL | s.30(1)(b) | 6 yr | Every appeal submission; every decision | TIER-3 | P2 |
 | M37 Voter Education CMS | T6 | OIDC for content authors; public anonymous read | TLS 1.3; CSP strict; no PII stored | PUBLIC | Not applicable | 7 yr (content versions) | Every publish action; every content change | TIER-3 | P3 |
 | M38 Poll Worker Training LMS | T6 | OIDC for trainees + instructors; MFA for instructors | TLS 1.3; AES-256-GCM; completion records signed | OFFICIAL | s.30(1)(b) | 7 yr (training records) | Every module completion; every assessment result | TIER-3 | P3 |
 | M39 Ballot Printing Chain | T3 T12 | OIDC + FIDO2 for print officers; printer API cert | TLS 1.3; AES-256-GCM; ballot spec signed; serial chain published to M63 | CONFIDENTIAL | s.30(1)(b) | Permanent (serial chain) | Every ballot proof generated; every serial number issued | TIER-2 | P1 |
 | M40 Election Court IT Interface | T12 | FIDO2 + court order verification; dual-custody for evidence bundle | TLS 1.3; evidence bundle signed with ECDSA; chain-of-custody record | RESTRICTED | s.30(1)(b) + judicial | Permanent | Every evidence request; every bundle generated; every court submission | TIER-1 | P0 |
 | M41 Post-Election Review | T8 | FIDO2 for review officers; read-only access to signed events | TLS 1.3; read-only replica; no write to live data | OFFICIAL | s.30(1)(b) | 7 yr | Every review session; every finding recorded | TIER-3 | P3 |
-| M42 Media Accreditation | T10 | OIDC; identity verification by IEBC press office | TLS 1.3; AES-256-GCM; accreditation badge signed | OFFICIAL | s.30(1)(a) | 3 yr | Every application; every badge issued/revoked | TIER-3 | P3 |
+| M42 Media Accreditation | T10 | OIDC; identity verification by the Commission press office | TLS 1.3; AES-256-GCM; accreditation badge signed | OFFICIAL | s.30(1)(a) | 3 yr | Every application; every badge issued/revoked | TIER-3 | P3 |
 | M43 Observer Accreditation | T10 | OIDC + MFA; organisation verification | TLS 1.3; AES-256-GCM; badge signed | OFFICIAL | s.30(1)(a) | 3 yr | Every application; every accreditation decision | TIER-3 | P3 |
 | M44 Turnout Forecasting Analytics | T7 | SPIFFE SVID intra; OIDC for analysts | TLS 1.3; pseudonymised station metrics only | OFFICIAL | Not applicable | 7 yr (model outputs) | Every model run; every forecast published | TIER-3 | P3 |
-| M45 Party Registration | T7 | OIDC + MFA for party officials + IEBC registrar | TLS 1.3; AES-256-GCM; registration documents signed | OFFICIAL | s.30(1)(b) | 7 yr | Every registration event; every status change | TIER-3 | P2 |
-| M46 Party Primaries Oversight | T7 | OIDC + MFA for party officials + IEBC observers | TLS 1.3; AES-256-GCM; results signed | OFFICIAL | s.30(1)(b) | 6 yr | Every result submission; every certification event | TIER-2 | P2 |
+| M45 Party Registration | T7 | OIDC + MFA for party officials + the Commission registrar | TLS 1.3; AES-256-GCM; registration documents signed | OFFICIAL | s.30(1)(b) | 7 yr | Every registration event; every status change | TIER-3 | P2 |
+| M46 Party Primaries Oversight | T7 | OIDC + MFA for party officials + the Commission observers | TLS 1.3; AES-256-GCM; results signed | OFFICIAL | s.30(1)(b) | 6 yr | Every result submission; every certification event | TIER-2 | P2 |
 | M47 Nomination Fee Payment | T7 | OIDC + MFA; payment gateway mTLS; PCI DSS scope | TLS 1.3; PCI DSS compliance for card processing; payment token not stored | CONFIDENTIAL | s.30(1)(b) | 7 yr (financial records) | Every payment attempt; every receipt issued | TIER-2 | P2 |
-| M48 Recall Election Workflow | T7 | OIDC + MFA for petition coordinators + IEBC | TLS 1.3; AES-256-GCM; petition signatures signed | CONFIDENTIAL | s.30(1)(b) | 6 yr | Every petition event; every signature submitted | TIER-2 | P2 |
+| M48 Recall Election Workflow | T7 | OIDC + MFA for petition coordinators + the Commission | TLS 1.3; AES-256-GCM; petition signatures signed | CONFIDENTIAL | s.30(1)(b) | 6 yr | Every petition event; every signature submitted | TIER-2 | P2 |
 | M49 Referendum Mechanics | T7 T11 | Same as general election modules (M05, M08, M10 reused) | Same as M05, M08, M10 | RESTRICTED | s.30(1)(b) | Permanent | Same as M08, M10 | TIER-1 | P0 |
 | M50 By-Election Operations | T7 | Same as general election | Same as election modules | RESTRICTED | s.30(1)(b) | Permanent | Same as election modules | TIER-1 | P0 |
 | M51 Result Declaration Certification | T8 T12 | FIDO2 + RO biometric; dual-custody certification | ECDSA P-384 signing; HSM-countersigned certificate; Merkle-anchored | RESTRICTED | s.30(1)(b) | Permanent | Every certification event; every signature | TIER-1 | P0 |
-| M52 Election Calendar & Gazette | T6 | OIDC for IEBC admin; public anonymous read | TLS 1.3; calendar events signed; no PII | PUBLIC | Not applicable | Permanent | Every calendar event published | TIER-3 | P3 |
+| M52 Election Calendar & Gazette | T6 | OIDC for the Commission admin; public anonymous read | TLS 1.3; calendar events signed; no PII | PUBLIC | Not applicable | Permanent | Every calendar event published | TIER-3 | P3 |
 | M53 Voter ID Card | T3 T7 | OIDC + FIDO2 for card issuance officers | TLS 1.3; AES-256-GCM; card data signed; photo biometric handled per M01-M03 rules | RESTRICTED | s.30(1)(b) | 6 yr | Every card issuance / revocation event | TIER-2 | P1 |
 | M54 Election Budget Expenditure | T8 | OIDC + MFA; finance officer role; dual approval for large transactions | TLS 1.3; AES-256-GCM; financial records signed | CONFIDENTIAL | s.30(1)(b) | 7 yr | Every expenditure entry; every approval | TIER-3 | P2 |
 | M55 HR Payroll Temporary Staff | T8 | OIDC + MFA; HR manager role; payroll system mTLS | TLS 1.3; AES-256-GCM; bank details field-encrypted | CONFIDENTIAL | s.30(1)(b) | 7 yr | Every payroll event; every bank detail change | TIER-3 | P2 |
 | M56 County-National Coordination | T6 | OIDC + MFA; county RO + national roles | TLS 1.3; AES-256-GCM | OFFICIAL | s.30(1)(b) | 6 yr | Every coordination message; every escalation | TIER-2 | P2 |
 | M57 International Observer Coordination | T10 | OIDC; accreditation token; MFA for sensitive briefings | TLS 1.3; AES-256-GCM; briefing materials signed | OFFICIAL | s.30(1)(a) | 3 yr | Every briefing access; every accreditation event | TIER-3 | P3 |
-| M58 Parliamentary & Judiciary Reporting | T8 | FIDO2 for IEBC officials; read-only to signed events | TLS 1.3; report signed with ECDSA before transmission | OFFICIAL | s.30(1)(b) | 7 yr | Every report generated; every submission | TIER-3 | P2 |
+| M58 Parliamentary & Judiciary Reporting | T8 | FIDO2 for the Commission officials; read-only to signed events | TLS 1.3; report signed with ECDSA before transmission | OFFICIAL | s.30(1)(b) | 7 yr | Every report generated; every submission | TIER-3 | P2 |
 | M59 Auditor General Interface | T8 | FIDO2 + AG office certificate; read-only to archive | TLS 1.3; mTLS to archive; evidence package signed | OFFICIAL | s.30(1)(b) + Access to Information Act | Permanent | Every evidence package delivered; every access | TIER-2 | P1 |
 | M60 Medical First Response | T6 | OIDC + MFA; medical coordinator role | TLS 1.3; AES-256-GCM; incident location minimised to station level | OFFICIAL | s.30(1)(c) vital interests | 7 yr | Every incident report; every dispatch | TIER-3 | P2 |
 | M61 Secrecy Assurance Testing | T11 | FIDO2 + CISO credentials; PoC blobs double-encrypted | TLS 1.3; finding PoCs encrypted (AES-256-GCM, dual-key); no live voter data | RESTRICTED | s.30(1)(b) | 7 yr | Every engagement; every finding; every remediation action | TIER-2 | P1 |
@@ -696,8 +696,8 @@ One row per module. Columns:
 | M64 Voter List Public Inspection | T7 | Anonymous public read (redacted list only); CAPTCHA; rate-limited | TLS 1.3; list signed; NID and biometric not exposed | PUBLIC | s.30(1)(b) | 6 yr (inspection records) | Every list published; IP + query hash log | TIER-3 | P2 |
 | M65 Diaspora Ballot Physical Logistics | T3 | OIDC + MFA; logistics manager role | TLS 1.3; AES-256-GCM; ballot serial tracking | CONFIDENTIAL | s.30(1)(b) | Permanent | Every ballot dispatch / return event | TIER-2 | P1 |
 | M66 Election Financial Forensics | T8 | FIDO2 + forensics officer role; dual-custody for case access | TLS 1.3; AES-256-GCM; forensic case files signed; chain-of-custody | CONFIDENTIAL | s.30(1)(b) + POCAMLA | 7 yr | Every case action; every file access | TIER-2 | P1 |
-| M67 Party Symbol & Colour Registry | T6 | OIDC for IEBC registrar; public anonymous read | TLS 1.3; registry entries signed | PUBLIC | s.30(1)(b) | Permanent | Every registry update | TIER-3 | P3 |
-| M68 Referendum Explainer Platform | T10 | Anonymous public read; OIDC for IEBC content authors | TLS 1.3; CSP strict; WCAG 2.2 AA (AAA target per module spec); no PII | PUBLIC | Not applicable | 7 yr (content versions) | Every content publish; every significant user interaction | TIER-3 | P3 |
+| M67 Party Symbol & Colour Registry | T6 | OIDC for the Commission registrar; public anonymous read | TLS 1.3; registry entries signed | PUBLIC | s.30(1)(b) | Permanent | Every registry update | TIER-3 | P3 |
+| M68 Referendum Explainer Platform | T10 | Anonymous public read; OIDC for the Commission content authors | TLS 1.3; CSP strict; WCAG 2.2 AA (AAA target per module spec); no PII | PUBLIC | Not applicable | 7 yr (content versions) | Every content publish; every significant user interaction | TIER-3 | P3 |
 | M69 Long-Term Archive | T4 T12 | FIDO2 + dual-custody for write; AG certificate for authorised read | TLS 1.3 + mTLS; AES-256-GCM + envelope encryption; SLH-DSA re-signing annually; WORM storage | RESTRICTED | s.30(1)(b) + statutory | Permanent | Every archive write; every access; every re-signing event | TIER-2 | P1 |
 
 ---
@@ -723,7 +723,7 @@ This section lists all SR-* requirements used as evidence criteria throughout th
 
 | Req | Statement | Evidence type |
 |---|---|---|
-| SR-PKI-001 | Root CA offline, air-gapped, ceremony-signed with M-of-N (3-of-5) IEBC + Datacraft dual-witnessed quorum | Ceremony video + signed ceremony log |
+| SR-PKI-001 | Root CA offline, air-gapped, ceremony-signed with M-of-N (3-of-5) the Commission + Datacraft dual-witnessed quorum | Ceremony video + signed ceremony log |
 | SR-PKI-002 | Two-level intermediate CAs: one kit, one server; blast radii separated | CA hierarchy diagram + cert inspection |
 | SR-PKI-003 | Every KIEMS kit has unique digital certificate bound to TPM/secure element, issued at kit-prep | Certificate inventory + TPM attestation report |
 | SR-PKI-004 | Certificate revocation propagates ≤ 60 seconds via CRL + OCSP-must-staple | Revocation timing test (kit→back-end refuse) |
@@ -758,7 +758,7 @@ This section lists all SR-* requirements used as evidence criteria throughout th
 
 | Req | Statement | Evidence type |
 |---|---|---|
-| SR-NET-001 | mTLS mandatory kit-to-back-end; both certificates from IEBC internal CA | Traffic capture (TLS inspection); cert chain verification |
+| SR-NET-001 | mTLS mandatory kit-to-back-end; both certificates from the Commission internal CA | Traffic capture (TLS inspection); cert chain verification |
 | SR-NET-002 | Certificate pinning on kits; hard-coded expected fingerprints | Pin bypass test; kit refuses non-matching chain |
 | SR-NET-003 | VPN encapsulation over telco carrier data channels; second auth layer on top of TLS | VPN config audit; traffic capture shows VPN layer |
 | SR-NET-004 | Multi-carrier redundancy: dual-SIM + eSIM (Safaricom / Airtel / Telkom); automatic failover | Carrier flap test; failover time ≤ 30 s |
@@ -778,7 +778,7 @@ This section lists all SR-* requirements used as evidence criteria throughout th
 | SR-PERIM-003 | Bastion-only administrative access; hardware-token MFA; session recording; JIT elevation; full audit | Bastion access log; session recording archive; no direct prod access |
 | SR-PERIM-004 | Egress control: back-end services reach only declared external endpoints | Network policy audit; undeclared egress blocked and alerted |
 | SR-PERIM-005 | Immutable infrastructure: servers from signed images; no in-place patching | Deployment log; GitOps diff; no SSH to prod nodes |
-| SR-PERIM-006 | Physical security per IEBC DC baseline: biometric entry, mantraps, 24×7 guard, environmental sensors, 72-hr UPS, Novec suppression | IEBC DC audit report; Datacraft on-site inspection record |
+| SR-PERIM-006 | Physical security per the Commission DC baseline: biometric entry, mantraps, 24×7 guard, environmental sensors, 72-hr UPS, Novec suppression | the Commission DC audit report; Datacraft on-site inspection record |
 | SR-PERIM-007 | Upstream DDoS scrubbing + on-prem WAF + L7 challenge for anonymous public traffic | DDoS simulation; WAF log; challenge trigger test |
 | SR-PERIM-008 | Anycast + per-IP rate limiting at ingress | Ingress config audit; rate-limit trigger test |
 
@@ -841,7 +841,7 @@ This section lists all SR-* requirements used as evidence criteria throughout th
 |---|---|---|
 | SR-PRIV-001 | Kenya DPA 2019 compliance; ODPC registration at go-live | ODPC registration certificate |
 | SR-PRIV-002 | DPIA per subsystem, reviewed annually | DPIA documents on file; ODPC acknowledgement |
-| SR-PRIV-003 | Purpose limitation: voter records used only for IEBC statutory mandate | Data flow diagram; no undeclared data sharing |
+| SR-PRIV-003 | Purpose limitation: voter records used only for the Commission statutory mandate | Data flow diagram; no undeclared data sharing |
 | SR-PRIV-004 | Consent management for VPRS pre-registration | Consent log; withdrawal test |
 | SR-PRIV-005 | DSAR workflow with 30-day SLA | DSAR test; response within 30 days confirmed |
 | SR-PRIV-006 | Retention scheduler enforces statutory limits automatically | Scheduler test; records deleted on schedule |
@@ -895,8 +895,8 @@ This section lists all SR-* requirements used as evidence criteria throughout th
 |---|---|---|
 | SR-SE-001 | FIDO2 hardware keys mandatory for privileged users; SMS MFA prohibited on admin | Config audit; SMS MFA bypass attempt fails |
 | SR-SE-002 | Anti-phish training + simulated-phish programme quarterly with metrics | Training completion records; phish campaign results |
-| SR-SE-003 | IEBC press releases signed with key on multiple canonical domains | Key publication on iebc.or.ke and escrow |
-| SR-SE-004 | DMARC/DKIM/SPF strict-enforce on iebc.or.ke | Email header inspection; DMARC reject policy |
+| SR-SE-003 | the Commission press releases signed with key on multiple canonical domains | Key publication on eel.example and escrow |
+| SR-SE-004 | DMARC/DKIM/SPF strict-enforce on eel.example | Email header inspection; DMARC reject policy |
 | SR-SE-005 | Poll clerks have no back-end credentials to steal; kits authenticate via certificate + biometric | Credential inventory; no clerk back-end credentials found |
 | SR-SE-006 | In-band-only support authentication: helpdesk asks for challenge only the clerk can produce from the kit | Helpdesk procedure audit; social-engineering drill |
 | SR-SE-007 | Look-alike-domain hunting service subscribed; take-down pre-agreed with registrars | Service subscription; take-down playbook |
@@ -910,7 +910,7 @@ This section lists all SR-* requirements used as evidence criteria throughout th
 | SR-TEST-003 | Biometric accuracy re-certification annually by independent lab | Lab report; FAR/FRR/throughput results |
 | SR-TEST-004 | ISO 27001:2022 surveillance audit annually | Audit letter or certificate |
 | SR-TEST-005 | DPIA review annually | DPIA revision log; ODPC acknowledgement |
-| SR-TEST-006 | Sandbox drill by IEBC operations quarterly | Drill log; IEBC sign-off |
+| SR-TEST-006 | Sandbox drill by the Commission operations quarterly | Drill log; the Commission sign-off |
 | SR-TEST-007 | Full election-day dress rehearsal 60 days pre-election | Dress rehearsal report; IAB observer sign-off |
 | SR-TEST-008 | Chaos engineering weekly | Chaos Mesh experiment log; SLO measurement |
 | SR-TEST-009 | Failover/DR exercise quarterly | DR exercise report; RTO/RPO metrics |
@@ -920,21 +920,21 @@ This section lists all SR-* requirements used as evidence criteria throughout th
 
 | Req | Statement | Evidence type |
 |---|---|---|
-| SR-IR-001 | Incident-response plan with severity classification, escalation, forensic preservation, IEBC notification | IR plan document; annual review |
+| SR-IR-001 | Incident-response plan with severity classification, escalation, forensic preservation, the Commission notification | IR plan document; annual review |
 | SR-IR-002 | War-room activation 30 days pre-election; 24×7 during polling window | War-room roster; activation record |
 | SR-IR-003 | Named Incident Commander per shift | Shift schedule; trained IC list |
-| SR-IR-004 | Communication rules of engagement pre-agreed with IEBC comms | Communication plan; sign-off by IEBC comms director |
-| SR-IR-005 | Court-order response playbook pre-approved by IEBC legal counsel | Playbook; legal counsel sign-off |
+| SR-IR-004 | Communication rules of engagement pre-agreed with the Commission comms | Communication plan; sign-off by the Commission comms director |
+| SR-IR-005 | Court-order response playbook pre-approved by the Commission legal counsel | Playbook; legal counsel sign-off |
 | SR-IR-006 | Post-incident review with public disclosure (redacted) within 30 days | Review report; publication record |
 
 ### 14.18 Data Residency (SR-RES)
 
 | Req | Statement | Evidence type |
 |---|---|---|
-| SR-RES-001 | Production voter and results data reside in Kenya on IEBC-provided infrastructure | Infrastructure audit; data-flow diagram |
+| SR-RES-001 | Production voter and results data reside in Kenya on Commission-provided infrastructure | Infrastructure audit; data-flow diagram |
 | SR-RES-002 | Backups stored in Kenya; off-site backup encrypted at mirror DC | Backup config; mirror DC location confirmation |
 | SR-RES-003 | Escrow mirror in Kenya at designated independent custodian | Escrow agreement; mirror sync verification |
-| SR-RES-004 | Offshore remote support only via IEBC-controlled bastion; per-session IEBC approval; full recording; no bulk data access; no production write | Bastion access log; session recordings; no prod write from offshore |
+| SR-RES-004 | Offshore remote support only via Commission-controlled bastion; per-session the Commission approval; full recording; no bulk data access; no production write | Bastion access log; session recordings; no prod write from offshore |
 
 ### 14.19 Governance and Transparency (SR-GOV)
 
@@ -953,7 +953,7 @@ Applies to M29-M34 (Flutter-based citizen, party-agent, poll-clerk, field-suppor
 
 | Req | Statement | Evidence type |
 |---|---|---|
-| SR-MOB-001 | All mobile apps submitted to Play Store under IEBC developer account; APKs also side-loadable via MDM for staff apps | Play Store listing; MDM enrolment record |
+| SR-MOB-001 | All mobile apps submitted to Play Store under the Commission developer account; APKs also side-loadable via MDM for staff apps | Play Store listing; MDM enrolment record |
 | SR-MOB-002 | Staff apps (M30-M34) require FIDO2 device-bound credential + Play Integrity API attestation on every session start; citizen app (M29) requires OTP tied to national ID + registered mobile number | Penetration test report; attestation server audit log |
 | SR-MOB-003 | Encrypted local storage: SQLCipher AES-256 for offline queue; keys derived from device-bound secret + user PIN (not solely device IMEI) | Static analysis report; key derivation spec |
 | SR-MOB-004 | Certificate pinning for all backend connections; mTLS for M30-M34 staff apps using MDM-provisioned client cert; JWT+OTP for M29 citizen app | TLS audit; MDM provisioning log |
@@ -961,8 +961,8 @@ Applies to M29-M34 (Flutter-based citizen, party-agent, poll-clerk, field-suppor
 | SR-MOB-006 | GPS spoofing detection: compare reported GPS against triangulated cell/WiFi position; flag discrepancy > 1 km as anomaly | Red-team GPS spoofing test |
 | SR-MOB-007 | Biometric data never stored on device beyond the active session; cleared on app backgrounding | Static analysis; OWASP Mobile L2 report |
 | SR-MOB-008 | All mobile apps pass OWASP Mobile Application Security Verification Standard (MASVS) Level 2 | Independent MASVS audit report |
-| SR-MOB-009 | Remote wipe command from M33 MDM layer erases all IEBC data within 60 s of command receipt; verified in FAT | MDM wipe test log |
-| SR-MOB-010 | `libiebc-verifier` Rust FFI library (shared between M13 and M29) is subject to same code-review and penetration-test cadence as backend services | Library audit report; dependency diff log |
+| SR-MOB-009 | Remote wipe command from M33 MDM layer erases all the Commission data within 60 s of command receipt; verified in FAT | MDM wipe test log |
+| SR-MOB-010 | `libcommission-verifier` Rust FFI library (shared between M13 and M29) is subject to same code-review and penetration-test cadence as backend services | Library audit report; dependency diff log |
 
 **Cross-reference:** `sw/mobile/SECURITY.md` (full mobile security architecture); MOBILE-INTEGRATION-NOTES.md §5.4; SR-DEV-* (physical device security for kits — separate from mobile app security).
 
@@ -970,13 +970,13 @@ Applies to M29-M34 (Flutter-based citizen, party-agent, poll-clerk, field-suppor
 
 ## 15. Security Control Implementation Priorities
 
-Controls are sequenced by election-cycle phase. This section gives the implementation order for Datacraft and IEBC teams.
+Controls are sequenced by election-cycle phase. This section gives the implementation order for Datacraft and the Commission teams.
 
 ### 15.1 Pre-Contract (before T-720)
 
 - Confirm HSM vendor and begin procurement (16-24 week lead time for Thales Luna 7 / Utimaco with ML-DSA firmware)
-- Confirm Kenya-jurisdiction data-centre availability (Anniversary Towers primary + Bomas mirror confirmed with IEBC)
-- Nominate HSM custodians from IEBC and Datacraft (5 total; vetting complete before key ceremony)
+- Confirm Kenya-jurisdiction data-centre availability (Anniversary Towers primary + Bomas mirror confirmed with the Commission)
+- Nominate HSM custodians from the Commission and Datacraft (5 total; vetting complete before key ceremony)
 - Agree escrow custodian (neutral third party, Kenya-based)
 - Stand up internal package mirror and air-gapped build environment
 
@@ -1032,14 +1032,14 @@ Controls are sequenced by election-cycle phase. This section gives the implement
 
 | Role | Organisation | Responsibilities |
 |---|---|---|
-| IEBC CISO | IEBC | Owns security policy; approves waivers; chairs SRB; signs off OAT security gate; receives all P0 notifications |
+| the Commission CISO | the Commission | Owns security policy; approves waivers; chairs SRB; signs off OAT security gate; receives all P0 notifications |
 | Datacraft Security Lead | Datacraft | Day-to-day ISMS operation; pen-test coordination; M61 red-team engagement; SAST/DAST toolchain; SBOM management |
-| IEBC DPO | IEBC | DPA 2019 compliance; DPIA filing; ODPC liaison; DSAR oversight; breach notification signatory |
+| the Commission DPO | the Commission | DPA 2019 compliance; DPIA filing; ODPC liaison; DSAR oversight; breach notification signatory |
 | IAB Chair (Technical) | Independent | Reviews all P0/P1 security findings; signs secrecy attestation; approves break-glass activation; quarterly SRB member |
-| HSM Custodians (3-of-5 quorum) | IEBC (2) + Datacraft (2) + IAB (1) | Key ceremony participation; CA operations quorum; HSM firmware approval |
+| HSM Custodians (3-of-5 quorum) | the Commission (2) + Datacraft (2) + IAB (1) | Key ceremony participation; CA operations quorum; HSM firmware approval |
 | E-SOC Manager | Datacraft | 24×7 SOC operations during election window; alert triage; incident escalation; threat intelligence |
-| Incident Commander | Datacraft / IEBC (co-named) | P0/P1 incident management; war-room lead; IEBC notification; media-rules enforcement |
-| Configuration Control Board | IEBC + Datacraft + IAB observer | Approves all production changes; model updates; security waiver decisions; CCB minutes are public |
+| Incident Commander | Datacraft / the Commission (co-named) | P0/P1 incident management; war-room lead; the Commission notification; media-rules enforcement |
+| Configuration Control Board | the Commission + Datacraft + IAB observer | Approves all production changes; model updates; security waiver decisions; CCB minutes are public |
 
 ---
 

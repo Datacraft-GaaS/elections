@@ -75,7 +75,7 @@ Within a wave, WPs run in parallel unless a `Deps` column says otherwise. A WP i
 
 | Risk | Handling |
 |---|---|
-| IEBC pre-bid answer changes a binding constraint (DR sites, retention, residency, signature suite) | Re-plan only the WPs that encode that constraint (0.4a contracts, 2.2 key roles, 3.1/3.3 signing, 5.9 DR); stack unchanged |
+| the Commission pre-bid answer changes a binding constraint (DR sites, retention, residency, signature suite) | Re-plan only the WPs that encode that constraint (0.4a contracts, 2.2 key roles, 3.1/3.3 signing, 5.9 DR); stack unchanged |
 | Hardware SDKs (biometric sensors, RFID, HSM vendor) arrive late | Mock drivers + SoftHSM + RFID double from Wave 0; HIL benches added when hardware lands; parity tests gate swap-in |
 | External MoUs (IPRS, CRS/NRB, telco, MCK, PPDT, eCourt) delayed | Doubles with contract tests are the build target; live adapter swap is config-only |
 | Kotlin-for-kits resurfaces | Flutter path is RFP-aligned (legacy device reuse); shim + parity matrix documented |

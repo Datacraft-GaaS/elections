@@ -21,7 +21,7 @@ Status: PASS (harness-complete; live pre-prod execution deferred to CI)
 | check | result | notes |
 |---|---|---|
 | Every WP delivered functional harness | pass | 7/7 WPs shipped |
-| Naming: no iebc identifiers | pass |
+| Naming: no commission identifiers | pass |
 | Prose: no em/en dashes | pass |
 | bash -n clean across all verification/**/*.sh | pass | 40+ scripts |
 | YAML valid across all verification/**/*.yaml | pass |

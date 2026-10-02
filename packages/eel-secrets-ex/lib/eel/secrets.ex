@@ -1,6 +1,6 @@
 defmodule Eel.Secrets do
   @moduledoc """
-  OpenBao (Vault-compatible) secrets client for IEBC IEMS services.
+  OpenBao (Vault-compatible) secrets client for the Commission IEMS services.
 
   Provides KV v2 secret reads and Transit encrypt/decrypt operations.
   All HTTP calls go through Finch (`Eel.Secrets.Finch`).

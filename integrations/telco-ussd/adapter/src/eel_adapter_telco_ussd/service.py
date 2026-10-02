@@ -20,7 +20,7 @@ app = FastAPI(title="eel-adapter-telco-ussd")
 _sessions: dict[str, list[str]] = {}
 
 _MENU_ROOT = (
-    "CON Welcome to IEBC USSD\n"
+    "CON Welcome to Electoral Services\n"
     "1. Verify registration\n"
     "2. Submit grievance\n"
     "3. Family CVR notification"

@@ -8,7 +8,7 @@
 | Size | M |
 | Availability class | routine 99.5% |
 | Event-sourced | no (ADR-0013: only M08/M09/M10, M20, M51, M63) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M47-nomination-fee-payment.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M47-nomination-fee-payment.md |
 
 ## Purpose
 
@@ -82,7 +82,7 @@ none
 ## Feature checklist
 
 Fee schedule:
-1. FR-M47-001: Fee schedule configured per contest tier (President, Governor, Senator, MP, CWR, MCA) per IEBC gazette notice; schedule version-controlled; active schedule drives all payment validations.
+1. FR-M47-001: Fee schedule configured per contest tier (President, Governor, Senator, MP, CWR, MCA) per the Commission gazette notice; schedule version-controlled; active schedule drives all payment validations.
 2. FR-M47-002: Fee schedule published on public portal (no login required) with gazette reference and effective date.
 3. FR-M47-019: Fee schedule management: create, publish, retire per election; changes require approval before activation.
 4. FR-M47-020: Fee schedule is versioned and HSM-signed; only one active schedule per category per election enforced.
@@ -108,18 +108,18 @@ Nomination gate:
 16. FR-M47-009: Payment window enforcement: references generated only within the gazetted nomination period; late requests rejected with statutory reference.
 
 Waiver:
-17. FR-M47-007: Candidate submits waiver application with grounds (financial hardship, disability, youth per IEBC Regulations) and supporting document URLs; evidence format-validated.
+17. FR-M47-007: Candidate submits waiver application with grounds (financial hardship, disability, youth per the Commission Regulations) and supporting document URLs; evidence format-validated.
 18. FR-M47-008: Waiver routed for dual approval (Finance Officer + Commissioner) above configurable threshold amount.
 19. FR-M47-010: Waiver grounds (gender, disability, youth) recorded with evidence reference; grounds immutable after submission.
 20. FR-M47-034: Waiver decision issued within 5 working days; decision letter (signed PDF via P06 HSM) sent to candidate; WAIVED status propagated to M12.
-21. FR-M47-035: Waiver anonymised statistics: IEBC publishes count by contest tier and county post-nomination window; no individual names published.
+21. FR-M47-035: Waiver anonymised statistics: the Commission publishes count by contest tier and county post-nomination window; no individual names published.
 
 Refund:
-22. FR-M47-011: B2C refund initiated on nomination disqualification (full refund, Elections Act s.22(4)) or withdrawal before gazette (50% refund per IEBC Regulations); refund basis recorded.
+22. FR-M47-011: B2C refund initiated on nomination disqualification (full refund, Elections Act s.22(4)) or withdrawal before gazette (50% refund per the Commission Regulations); refund basis recorded.
 23. FR-M47-012: Refund status tracked through Daraja B2C callback; PENDING -> APPROVED -> PAID state machine.
 24. FR-M47-013: Alert operations team when refund fails after three retries; escalation recorded in audit log.
 25. FR-M47-036: Refund PDF receipt: digitally signed via P06 HSM; downloadable from candidate portal on PAID status.
-26. FR-M47-037: Refund reconciliation: Finance Officer reconciles all refunds against IEBC designated account by T+30; reconciliation report archived with Merkle path.
+26. FR-M47-037: Refund reconciliation: Finance Officer reconciles all refunds against the Commission designated account by T+30; reconciliation report archived with Merkle path.
 
 Receipts and audit:
 27. FR-M47-022: Candidate views payment receipt with mpesa_reference, confirmed_at, and amount_kes on portal.
@@ -226,6 +226,6 @@ Tags: `#[trace("FR-M47-001","AC-M47-01","EC-LEG-10")]`
 
 ## Open questions
 
-- Daraja sandbox approval timeline for IEBC merchant account; double must gate development until live credentials arrive.
+- Daraja sandbox approval timeline for the Commission merchant account; double must gate development until live credentials arrive.
 - Legal confirmation on waiver grounds and required evidence types under Elections Act s.23.
 - Whether partial waivers (discounted fee) are in scope or only full waivers.

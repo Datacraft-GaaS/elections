@@ -18,5 +18,5 @@ async def register_lookup_flow(national_id_hash: str) -> str:
     return (
         f"Register lookup for ID ending ...{national_id_hash[-4:]}:\n"
         "FOUND: YES\n"
-        "Polling station: Confirm at iebc.or.ke"
+        "Polling station: Confirm at eel.example"
     )

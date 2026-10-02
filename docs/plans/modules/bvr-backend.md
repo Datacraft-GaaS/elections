@@ -8,7 +8,7 @@
 | Size | XL |
 | Availability class | election-critical 99.99% |
 | Event-sourced | no (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M02-bvr-backend.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M02-bvr-backend.md |
 
 ## Purpose
 
@@ -299,4 +299,4 @@ EC-SCL-08: Valkey eviction loses idempotency key from cache; PG-durable store se
 
 - IPRS variability: IPRS SLA is not contractually defined; circuit-breaker thresholds need agreement with NRB before G3.
 - 30M scale: confidential-compute workers for biometric matching (M03) need infrastructure allocation confirmed.
-- Escrow custodian identity: the sw/ spec references "escrow mirror" without naming a custodian; needs IEBC decision before G2.
+- Escrow custodian identity: the sw/ spec references "escrow mirror" without naming a custodian; needs the Commission decision before G2.

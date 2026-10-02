@@ -124,8 +124,8 @@ Languages: English + Kiswahili; WCAG 2.1 AA; audio guidance; >= 48 dp hit target
 ## 9. Honest caveats + external prerequisites
 
 - **Register extract pre-load SLA** -- extract for all 46k+ polling stations must reach kits before polls open; this is an operations prerequisite, not a code gap.
-- **Legacy Android feature matrix** -- biometric modality degradation on lowest-tier IEBC devices needs IEBC ICT sign-off before G3 (shared risk with M01).
-- **1:1 match threshold calibration** -- operating threshold must be set by IEBC against local population FAR/FRR data; ABIS FAR/FRR reports from M03 feed this calibration.
+- **Legacy Android feature matrix** -- biometric modality degradation on lowest-tier the Commission devices needs the Commission ICT sign-off before G3 (shared risk with M01).
+- **1:1 match threshold calibration** -- operating threshold must be set by the Commission against local population FAR/FRR data; ABIS FAR/FRR reports from M03 feed this calibration.
 - **s.44A manual path** -- supervisor countersign requires supervisor to be physically present; ECC remote co-sign (EC-OPS-04) is a fallback but requires connectivity.
 - Kit GPS + IMU spoofing in dense urban environments: alert rate may need threshold tuning in field trials.
 

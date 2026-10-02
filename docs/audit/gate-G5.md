@@ -28,7 +28,7 @@ Status: PASS
 | check | result | notes |
 |---|---|---|
 | Every WP delivered functional scaffolding | pass | 14/14 WPs shipped |
-| Naming: no iebc identifiers | pass | full-tree sweep clean |
+| Naming: no commission identifiers | pass | full-tree sweep clean |
 | Prose: no em/en dashes | pass |
 | 69 modules mapped in docs/modules/README.md | pass | 69/69 rows |
 | appset-gen recognises every Wave-5 service.yaml | pass | 19/19 ApplicationSets |

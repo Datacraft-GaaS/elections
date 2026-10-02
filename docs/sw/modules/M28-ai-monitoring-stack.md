@@ -5,7 +5,7 @@
 **Runs on:** KIEMS kit (on-device, INT8 quantised) + Central Kenyan cloud (model serving + monitoring)
 **Owner:** Datacraft
 **Status:** Draft v2
-**IPR:** Custom Software vests in IEBC per GCC 15.4; underlying OSS model bases under their respective licences (Apache 2.0, CC-BY-NC-4.0 as specified per model)
+**IPR:** Custom Software vests in the Commission per GCC 15.4; underlying OSS model bases under their respective licences (Apache 2.0, CC-BY-NC-4.0 as specified per model)
 
 ## 1. Purpose
 
@@ -24,13 +24,13 @@ Strategy reference: §X.
 
 - **Presiding Officer** — benefits from on-device quality feedback without operational overhead
 - **Voter** — benefits from improved accessibility (voice guidance, language support), faster throughput
-- **IEBC Form Processing Officer** — receives AI-assisted Form 34A OCR queue; all results human-confirmed
+- **the Commission Form Processing Officer** — receives AI-assisted Form 34A OCR queue; all results human-confirmed
 - **ECC Analyst** — receives anomaly alerts from central AI; all alerts advisory
 - **SOC Analyst** — benefits from AI-assisted SIEM; all alerts reviewed before action
-- **IEBC Communications Officer** — approves AI-assisted translations and summaries before publication
+- **the Commission Communications Officer** — approves AI-assisted translations and summaries before publication
 - **Datacraft AI Lead** — maintains model registry, model cards, eval harness, deployment pipeline
 - **IAB AI Observer** — receives notification of every production model change; has read access to all decision logs
-- **ODPC Data Protection Officer (IEBC)** — verifies DPA 2019 compliance for all AI processing activities
+- **ODPC Data Protection Officer (the Commission)** — verifies DPA 2019 compliance for all AI processing activities
 - **Researcher / Civil Society** — downloads model cards and AI decision logs from the public registry
 
 ## 3. Functional Requirements
@@ -58,14 +58,14 @@ Strategy reference: §X.
 
 ### Citizen-Layer (Public-Facing)
 
-- **FR-M28-016** C1 — Multilingual chatbot: LLM with IEBC election knowledge base. Deploys on WhatsApp, Telegram, and SMS. PII-stripped input (names, national ID numbers, biometric references, and location data below county level stripped before any API call). Escalates to a human agent on complex, sensitive, or ambiguous queries. Hosted on Kenyan-tenant LiteLLM instance (62.169.25.77:4000 or designated Kenyan cloud tenant).
-- **FR-M28-017** C2 — Real-time announcement translation: NMT model (NLLB-family or equivalent) for 15 Kenyan languages. IEBC Communications Officer approves every translated text before publication. Back-translation QA on all sensitive content.
+- **FR-M28-016** C1 — Multilingual chatbot: LLM with the Commission election knowledge base. Deploys on WhatsApp, Telegram, and SMS. PII-stripped input (names, national ID numbers, biometric references, and location data below county level stripped before any API call). Escalates to a human agent on complex, sensitive, or ambiguous queries. Hosted on Kenyan-tenant LiteLLM instance (192.0.2.11:4000 or designated Kenyan cloud tenant).
+- **FR-M28-017** C2 — Real-time announcement translation: NMT model (NLLB-family or equivalent) for 15 Kenyan languages. the Commission Communications Officer approves every translated text before publication. Back-translation QA on all sensitive content.
 - **FR-M28-018** C3 — Text-to-speech for radio and IVR: TTS with Kenyan-accented voices. Human reviews all scripts before production.
 - **FR-M28-019** C4 — Speech-to-text for grievance intake: ASR model fine-tuned for Kenyan languages. Transcribes voice-note grievances from M23 kit kiosk and WhatsApp voice messages. Human agent reviews transcript; transcript used as intake aid only.
 
 ### Disinformation Monitoring
 
-- **FR-M28-020** D1 — CIB detection: graph-based coordinated-inauthentic-behaviour classifier + velocity model on Kenyan social media. Human analyst reviews HIGH-confidence flags. Published daily summary to IAB and IEBC Comms.
+- **FR-M28-020** D1 — CIB detection: graph-based coordinated-inauthentic-behaviour classifier + velocity model on Kenyan social media. Human analyst reviews HIGH-confidence flags. Published daily summary to IAB and the Commission Comms.
 - **FR-M28-021** D2 — Deepfake detection: FaceForensics-family CNN on viral video flagged by analysts or social-media monitoring triggers. Human analyst confirms before any action. Honest limitation: state-level deepfakes may evade current detectors; this is a best-available deployment, not a guarantee.
 - **FR-M28-022** D3 — Fake Form 34A detection: hash lookup + visual similarity model. Compares circulating Form 34A images against published hashes. Any citizen can query via Public Verifier; results are deterministic for hash matches, advisory for visual-similarity matches.
 - **FR-M28-023** D4 — Bot-network detection on hashtag-hijacking: network analysis + bot-score model. Human analyst reviews patterns; distinction between coordinated-inauthentic and legitimate coordinated campaigns made by human.
@@ -105,12 +105,12 @@ Strategy reference: §X.
 
 1. As a voter presenting a printed photograph for impersonation, liveness detection alerts the Presiding Officer, who requests alternative verification; no voter is rejected without a human decision.
 2. As a voter with worn fingerprints (common in manual labourers), quality scoring prompts for iris capture as an alternative; the voter authenticates successfully.
-3. As an IEBC Form Processing Officer, I see a Form 34A flagged by B1 OCR because it is rotated 90 degrees; I confirm the rotation correction and approve publication.
+3. As a Commission Form Processing Officer, I see a Form 34A flagged by B1 OCR because it is rotated 90 degrees; I confirm the rotation correction and approve publication.
 4. As a Kenyan-language speaker in Dholuo, I interact with the chatbot on WhatsApp entirely in Dholuo and receive correct information about polling-station hours without switching to English.
 5. As an IAB AI Observer, I receive a 72-hour advance notice that Datacraft is updating the liveness detection model; I review the model card diff and approve deployment within the notice period.
 6. As a SOC Analyst, I see a B7 SIEM alert about an anomalous traffic pattern from a constituency's KIEMS cluster; I investigate and determine it is a misconfigured router; the AI did nothing autonomously.
 7. As a member of the public, I download the model card for the Form 34A OCR model and see its accuracy on a held-out test set and its known failure modes.
-8. As the IEBC Communications Officer, I approve a Gikuyu translation of a press release before it is published; the back-translation summary shows no material error.
+8. As the Commission Communications Officer, I approve a Gikuyu translation of a press release before it is published; the back-translation summary shows no material error.
 9. As a researcher, I query the AI decision log via the IAB read-only API and confirm that zero chatbot responses were published without human review.
 10. As the Datacraft CISO, I confirm in the IAB quarterly report that no biometric data touched a non-Kenyan cloud endpoint in the preceding quarter.
 
@@ -181,16 +181,16 @@ class PIIStrippingEvent(BaseModel):
 | GET | /v1/ai/models/{id} | Public | 500/min | Single model registry entry |
 | GET | /v1/ai/models/{id}/card | Public | 500/min | Download model card (markdown) |
 | POST | /v1/ai/models | DATACRAFT_AI_LEAD JWT + CCB_APPROVAL | 5/day | Register new model or version |
-| PATCH | /v1/ai/models/{id}/activate | DATACRAFT_AI_LEAD JWT + IEBC_CHAIR HSM | 5/day | Activate model version in production |
+| PATCH | /v1/ai/models/{id}/activate | DATACRAFT_AI_LEAD JWT + COMMISSION_CHAIR HSM | 5/day | Activate model version in production |
 | GET | /v1/ai/decision-log | IAB_OBSERVER JWT | 100/hr | Query AI decision log (no PII) |
 | POST | /v1/ai/chatbot/message | Authenticated user or public | 500/min | Send message to election chatbot (PII-stripped) |
-| POST | /v1/ai/translation/request | IEBC_COMMS JWT | 100/hr | Request NMT translation |
-| POST | /v1/ai/translation/{id}/approve | IEBC_COMMS JWT | 100/hr | Human-approve a translation before publication |
+| POST | /v1/ai/translation/request | COMMISSION_COMMS JWT | 100/hr | Request NMT translation |
+| POST | /v1/ai/translation/{id}/approve | COMMISSION_COMMS JWT | 100/hr | Human-approve a translation before publication |
 | GET | /v1/ai/disinformation/flags | SOC_ANALYST JWT | 100/hr | List disinformation detection flags |
 | PATCH | /v1/ai/disinformation/flags/{id} | SOC_ANALYST JWT | 100/hr | Record human analyst verdict |
 | POST | /v1/ai/form34a/submit-image | RTS_BACKEND_CERT | 500/hr | Submit Form 34A image for OCR processing |
-| GET | /v1/ai/form34a/{id}/ocr-result | IEBC_OFFICER JWT | 200/hr | Fetch OCR result for human review |
-| POST | /v1/ai/form34a/{id}/approve | IEBC_OFFICER JWT | 200/hr | Human-approve Form 34A after OCR review |
+| GET | /v1/ai/form34a/{id}/ocr-result | COMMISSION_OFFICER JWT | 200/hr | Fetch OCR result for human review |
+| POST | /v1/ai/form34a/{id}/approve | COMMISSION_OFFICER JWT | 200/hr | Human-approve Form 34A after OCR review |
 
 ## 8. Integration Points
 
@@ -201,7 +201,7 @@ class PIIStrippingEvent(BaseModel):
 - **M26 Anomaly Detection** — B3/B5/B6/B7 central AI models feed the anomaly detection layers
 - **M27 Intent Preservation** — A7 pre-mark validation model
 - **P05 Merkle Chain** — model card publications and AI decision logs anchored
-- **P06 HSM** — model activation requires IEBC Chair HSM
+- **P06 HSM** — model activation requires the Commission Chair HSM
 - **M11 Public Portal** — model registry, model cards, public AI decision log summary
 - **LiteLLM on Kenyan cloud tenant** — C1 chatbot LLM routing layer (PII-stripped)
 - **NLLB / NMT service** (Kenyan cloud) — C2 translation
@@ -211,11 +211,11 @@ class PIIStrippingEvent(BaseModel):
 
 1. **Model Registry (Public)** — searchable table of all deployed models; version, layer, deployment date, model card link, eval accuracy; badge for IAB-notified status.
 2. **Model Card Page** — structured markdown view: purpose, architecture summary, training data source, eval metrics, known limitations, human-in-loop controls, version history. Download as PDF. Language toggle (EN / SW).
-3. **Form 34A OCR Review Console (IEBC Officer)** — side-by-side: form image and OCR-extracted tallies; confidence score per field; one-click accept/correct per field; final approve button.
+3. **Form 34A OCR Review Console (the Commission Officer)** — side-by-side: form image and OCR-extracted tallies; confidence score per field; one-click accept/correct per field; final approve button.
 4. **AI Decision Log Viewer (IAB)** — filterable log: model, interaction type, date range, confidence band; no PII fields visible; export to CSV.
-5. **Chatbot Interface (WhatsApp/Web/SMS)** — standard chatbot UI; language selector; escalation path clearly labelled; powered-by disclosure ("This chatbot is powered by AI and may make mistakes — contact IEBC for official information").
+5. **Chatbot Interface (WhatsApp/Web/SMS)** — standard chatbot UI; language selector; escalation path clearly labelled; powered-by disclosure ("This chatbot is powered by AI and may make mistakes — contact the Commission for official information").
 6. **Disinformation Flag Dashboard (SOC Analyst)** — list of flagged items sorted by confidence; source attribution; flag type (CIB/deepfake/fake-form/bot-network); analyst verdict controls; timeline of flags by hour.
-7. **Translation Approval Queue (IEBC Comms Officer)** — pending translations list; source text + NMT output side-by-side; back-translation summary; approve/reject/edit controls.
+7. **Translation Approval Queue (the Commission Comms Officer)** — pending translations list; source text + NMT output side-by-side; back-translation summary; approve/reject/edit controls.
 
 ## 10. Compliance Mapping
 
@@ -236,14 +236,14 @@ class PIIStrippingEvent(BaseModel):
 | Metric | Target | Measurement | Sign-off |
 |--------|--------|-------------|----------|
 | On-device liveness false rejection rate | < 1% | Eval harness + election-day log | IAB |
-| Form 34A OCR pipeline accuracy | >= 98% on tally fields | Post-election OCR vs manual check | IEBC Chair |
+| Form 34A OCR pipeline accuracy | >= 98% on tally fields | Post-election OCR vs manual check | the Commission Chair |
 | AI decision log coverage | 100% of human-affecting AI decisions | Log completeness audit | IAB AI Observer |
 | Model cards published before production deployment | 100% | Registry timestamp vs deploy timestamp | Datacraft AI Lead |
 | IAB 72-hour advance notice compliance | 100% | Notification log | IAB |
 | Biometric data touching non-Kenyan endpoint | 0 incidents | CISO network audit | Datacraft CISO |
 | Autonomous voter rejections | 0 | Decision log audit | IAB |
 | Autonomous ballot rejections | 0 | Decision log audit | IAB |
-| Chatbot responses without human-approval loop | 0 for official communications | Decision log | IEBC Comms Officer |
+| Chatbot responses without human-approval loop | 0 for official communications | Decision log | the Commission Comms Officer |
 | PII tokens reaching LLM/NMT API | 0 | PII stripping log | Datacraft DPO |
 
 ## 12. Test Strategy
@@ -282,7 +282,7 @@ class PIIStrippingEvent(BaseModel):
 - P05 Merkle Chain — model card and decision log anchoring
 - P06 HSM — model activation signing
 - M11 Public Portal — model registry and public AI decision log
-- LiteLLM Kenyan-tenant deployment (infrastructure dependency — 62.169.25.77:4000 or migrated Kenyan cloud instance)
+- LiteLLM Kenyan-tenant deployment (infrastructure dependency — 192.0.2.11:4000 or migrated Kenyan cloud instance)
 - Kenyan cloud IaaS (Konza / Icolo / Safaricom Cloud / Liquid Telecom Nairobi) — central model hosting
 
 ## 15. Risks + Mitigations
@@ -290,7 +290,7 @@ class PIIStrippingEvent(BaseModel):
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|------------|
 | State-level deepfake evades D2 detection | Low | High | D2 is best-available-open-model deployment; human analyst required before any action; public commitment in model card that detection is not a guarantee for state-level deepfakes; detection gap is published, not concealed |
-| Chatbot hallucination provides incorrect election information to a voter | Medium | Medium | LLM knowledge base is structured from verified IEBC data only; LLM cannot access unverified external URLs; response includes "for official information contact IEBC on [number]"; escalation threshold is conservative |
+| Chatbot hallucination provides incorrect election information to a voter | Medium | Medium | LLM knowledge base is structured from verified the Commission data only; LLM cannot access unverified external URLs; response includes "for official information contact the Commission on [number]"; escalation threshold is conservative |
 | PII stripping middleware fails and voter identity reaches LLM endpoint | Low | High | PII stripping operates as a mandatory middleware layer with a circuit-breaker: if stripping service is unavailable, the downstream LLM call is rejected, not passed through with unstripped data; stripping log alerts on any bypass |
 | Model card published with incorrect eval metrics | Low | Medium | Eval harness is CI-integrated; eval metrics automatically pulled from CI output into the model card template; manual override requires dual-approval |
 | IAB objects to a model deployment within the 72-hour notice window | Medium | Low (operationally) | IAB objection triggers a 7-day hold and a written response from Datacraft; deployment proceeds only if IAB receives a written justification and does not seek a court order; this has never occurred in precedent elections with similar oversight frameworks |

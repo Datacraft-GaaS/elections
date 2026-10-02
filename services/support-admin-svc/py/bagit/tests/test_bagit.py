@@ -24,7 +24,7 @@ def test_create_bag_produces_required_files(
     manifest = builder.create_bag(
         source_path=sample_source,
         dest_path=dest,
-        metadata={"Source-Organization": "IEBC", "Contact-Name": "Archive Unit"},
+        metadata={"Source-Organization": "Electoral Authority", "Contact-Name": "Archive Unit"},
     )
 
     assert (dest / "bagit.txt").exists()
@@ -90,9 +90,9 @@ def test_bag_info_txt_contains_metadata(sample_source: Path, tmp_path: Path) -> 
     BagBuilder().create_bag(
         sample_source,
         dest,
-        metadata={"Source-Organization": "IEBC"},
+        metadata={"Source-Organization": "Electoral Authority"},
     )
     info = (dest / "bag-info.txt").read_text(encoding="utf-8")
-    assert "Source-Organization: IEBC" in info
+    assert "Source-Organization: the Commission" in info
     assert "Payload-Oxum:" in info
     assert "Bagging-Date:" in info

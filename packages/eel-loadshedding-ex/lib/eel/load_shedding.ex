@@ -1,6 +1,6 @@
 defmodule Eel.LoadShedding do
   @moduledoc """
-  Load shedding for IEBC IEMS services.
+  Load shedding for the Commission IEMS services.
 
   Provides a CoDel-inspired Plug and Controller that adaptively shed
   low-priority requests when latency exceeds acceptable thresholds.

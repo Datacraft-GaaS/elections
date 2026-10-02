@@ -59,7 +59,7 @@
 - Created `docs/escrow/deploy.sh` script that:
   - Configures dual-vault escrow (Nairobi Equinix NBO-1 + London Interxion LON-1)
   - Sets weekly deposit schedule (Friday 18:00 UTC)
-  - Defines release triggers (IEBC notice, 30-day inactivity, court order)
+  - Defines release triggers (the Commission notice, 30-day inactivity, court order)
   - Generates escrow configuration JSON
   - Includes verification via `reproduce-build.sh`
 

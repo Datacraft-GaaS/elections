@@ -1,6 +1,6 @@
 /// AntIris iris scanner Kotlin plugin (real SDK integration, M05 M3).
 /// Wraps USBControl (AntUSBCamera.jar) for USB connection + capture.
-/// SDK source: /Users/nyimbiodero/src/pjs/eel/sdks/AntIris_Android_SDK/
+/// SDK source: ./sdks/AntIris_Android_SDK/
 /// Hardware: AntIris iris scanner (K1/K2/K3/K7 capture modes).
 
 package com.eel.biometric

@@ -16,8 +16,8 @@
 <!-- Section label -->
 <text x="20" y="95" font-family="Arial,sans-serif" font-size="16" font-weight="bold" fill="#1a3a5c">Pipeline: Content Ingestion to Platform/NCIC Referral</text>
 
-<!-- Human: IEBC Monitor -->
-<text x="30" y="245" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#333">* IEBC Monitor</text>
+<!-- Human: the Commission Monitor -->
+<text x="30" y="245" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#333">* the Commission Monitor</text>
 
 <!-- Content Ingestion -->
 <rect x="30" y="260" width="160" height="90" rx="6" fill="#2ca02c" stroke="#1e7020" stroke-width="2"/>

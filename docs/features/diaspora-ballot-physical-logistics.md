@@ -1,6 +1,6 @@
 # Diaspora ballot physical logistics (M65)
 
-Module M65 (`diaspora-ballot-physical-logistics`) owned by `inventory-svc`. Manages the physical custody chain for diaspora ballot materials: from IEBC headquarters through freight handlers and airlines to embassy polling stations, and back. Every custody transfer requires multi-factor authentication (MFA) by the receiving officer and generates a signed `CustodyEvent`. Pre-clearance manifests are submitted to KRA and relevant airlines before dispatch.
+Module M65 (`diaspora-ballot-physical-logistics`) owned by `inventory-svc`. Manages the physical custody chain for diaspora ballot materials: from the Commission headquarters through freight handlers and airlines to embassy polling stations, and back. Every custody transfer requires multi-factor authentication (MFA) by the receiving officer and generates a signed `CustodyEvent`. Pre-clearance manifests are submitted to KRA and relevant airlines before dispatch.
 
 ## Contents
 
@@ -40,8 +40,8 @@ Four aggregates (per `services/inventory-svc/crates/diaspora-logistics/src/model
 Every custody transition requires the receiving officer to authenticate with MFA before the `CustodyEvent` is created:
 
 - **TOTP**: time-based one-time password (RFC 6238, M'Raihi et al., IETF 2011) via authenticator app; used by freight handlers and airline ground staff.
-- **HARDWARE_KEY**: FIDO2 hardware security key (FIDO Alliance FIDO2 Specification, 2019); used by IEBC officers at headquarters and embassies.
-- **BIOMETRIC**: fingerprint verification via the ABIS (M03) gRPC integration; used by IEBC officers at embassies.
+- **HARDWARE_KEY**: FIDO2 hardware security key (FIDO Alliance FIDO2 Specification, 2019); used by the Commission officers at headquarters and embassies.
+- **BIOMETRIC**: fingerprint verification via the ABIS (M03) gRPC integration; used by the Commission officers at embassies.
 
 A `CustodyEvent` with `mfa_verified = false` is rejected by the API. The container state does not advance without MFA confirmation.
 
@@ -121,7 +121,7 @@ Languages: EN + SW. WCAG 2.2 AA on web surfaces.
 
 ## 9. Honest caveats + external prerequisites
 
-- KRA customs clearance API integration requires IEBC to obtain KRA API credentials for the diplomatic shipments endpoint. Where the API is unavailable, customs ref is entered manually by the logistics officer.
+- KRA customs clearance API integration requires the Commission to obtain KRA API credentials for the diplomatic shipments endpoint. Where the API is unavailable, customs ref is entered manually by the logistics officer.
 - Airline integration is not automated; airline booking refs are entered manually, and airline check-in `CustodyEvent` entries are created by the ground staff's TOTP-authenticated device. Airlines must be briefed on the MFA custody recording process.
 - FIDO2 hardware key issuance to embassy officers requires physical distribution of hardware tokens before the election. Lost tokens require re-issuance via the key management runbook.
 - The overdue alert threshold (T-72h) may be too tight for distant embassy locations (e.g., South America, Asia) with limited direct flights; the threshold is configurable per embassy in `services/inventory-svc/config/embassy_overdue_thresholds.toml`.

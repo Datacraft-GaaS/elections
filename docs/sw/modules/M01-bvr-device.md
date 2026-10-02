@@ -2,7 +2,7 @@
 
 **Runs on:** KIEMS kit (and legacy Android with feature-matrix degradation)
 **Owner:** Datacraft
-**IPR:** Custom Software vests in IEBC per GCC 15.4
+**IPR:** Custom Software vests in the Commission per GCC 15.4
 
 ## 1. Purpose
 
@@ -117,7 +117,7 @@ Capture biographic + biometric data for every citizen registering to vote in Ken
 | A-M01-06 | Firmware attestation deviation quarantines kit centrally | Chaos exercise |
 | A-M01-07 | All 22 biographic fields present; INTERSEX gender selectable | Manual test |
 | A-M01-08 | Accessibility: screen-reader traversal complete flow | NVDA / TalkBack |
-| A-M01-09 | Legacy Android compatibility: kit runs on lowest-tier IEBC-supplied device with documented feature degradation | Bench on real IEBC device |
+| A-M01-09 | Legacy Android compatibility: kit runs on lowest-tier Commission-supplied device with documented feature degradation | Bench on real the Commission device |
 
 ## 11. Cross-References
 

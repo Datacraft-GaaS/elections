@@ -8,7 +8,7 @@
 | Size | M |
 | Availability class | routine 99.5% |
 | Event-sourced | no (ADR-0013: only M08/M09/M10, M20, M51, M63) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M60-medical-first-response.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M60-medical-first-response.md |
 
 ## Purpose
 
@@ -95,7 +95,7 @@ Dispatch coordination:
 
 13. FR-M60-013: Create dispatch request for any moderate or critical incident; request visible to county KRCS Dispatch Coordinator within 15 s p99 (FR-M60-03).
 14. FR-M60-014: Allow KRCS Dispatch Coordinator to assign nearest unit and enter ETA in minutes.
-15. FR-M60-015: Display ETA to IEBC Field Medical Liaison in real time.
+15. FR-M60-015: Display ETA to the Commission Field Medical Liaison in real time.
 16. FR-M60-016: Record dispatch status transitions: dispatch_requested, dispatch_en_route, on_scene, resolved with timestamps.
 17. FR-M60-017: Dispatch request idempotent; double-fire safe; exactly one dispatch record created.
 18. FR-M60-018: Alert operations when critical incident has no dispatch within 5 minutes.
@@ -170,7 +170,7 @@ EC-IDN-05: rooted or Frida-instrumented device attempts incident submission; RAS
 EC-HUM-05: incident involving assisted voting (accessibility need); incident type captures the operational need without any PHI.
 EC-HUM-06: field officer uses screen reader on M60 web interface; full task completion at WCAG 2.2 AA.
 EC-LEG-03: s.44A invoked at polling station where medical incident is active; medical incident continues independently; no cross-contamination of records.
-EC-OPS-07: IEBC Field Medical Liaison no-show; county coordinator assumes liaison role; credential reassignment exactly-once; old liaison access revoked.
+EC-OPS-07: the Commission Field Medical Liaison no-show; county coordinator assumes liaison role; credential reassignment exactly-once; old liaison access revoked.
 EC-OPS-08: disk full on training-svc node; bounded incident queue; 507 returned; SRE alert; no data corruption.
 
 ## Test plan

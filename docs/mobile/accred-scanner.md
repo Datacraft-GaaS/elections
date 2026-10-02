@@ -3,7 +3,7 @@
 Master plan: `docs/mobile/plan.md`. Module specs: `media-accreditation-portal.md`,
 `observer-accreditation-portal.md`. Backend: training-api accreditation
 routes exist; **CRL endpoint does not** (app fetches `/v1/crl` against
-`https://accred.eel.iebc.go.ke` — no such route). Est: 2 ED.
+`https://accred.eel.example` — no such route). Est: 2 ED.
 
 ## Current state
 

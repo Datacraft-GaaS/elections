@@ -1,6 +1,6 @@
 defmodule Eel.Outbox do
   @moduledoc """
-  Transactional outbox pattern for IEBC IEMS event publishing.
+  Transactional outbox pattern for the Commission IEMS event publishing.
 
   `emit/2` appends a CloudEvent to the `outbox` database table as part of an
   existing `Ecto.Multi`, ensuring atomicity with the surrounding business

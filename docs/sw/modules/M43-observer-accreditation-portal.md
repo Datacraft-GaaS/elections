@@ -2,10 +2,10 @@
 
 **Module ID:** M43
 **Name:** Observer Accreditation Portal
-**Runs on:** Central servers (Kenyan cloud) + IEBC back-office
+**Runs on:** Central servers (Kenyan cloud) + the Commission back-office
 **Owner:** Datacraft
 **Status:** Draft v1
-**IPR:** Custom Software vests in IEBC per GCC 15.4
+**IPR:** Custom Software vests in the Commission per GCC 15.4
 
 ---
 
@@ -13,7 +13,7 @@
 
 Upstream accreditation of domestic and international election observers. Distinct from M15 (IAB Dashboard — ongoing audit role) and M34 (Observer App — field data collection tool). This module gates entry: an observer organisation applies, is vetted, and receives credentials before any field activity. Covers domestic NGOs (KEOG, ELOG), international missions (EU EOM, AU, Carter Center, IFES, Commonwealth), and individual observers under accredited organisations.
 
-Strategy reference: §XVIII (Stakeholder Engagement). Elections Act s.21A; IEBC Observer Accreditation Regulations 2022.
+Strategy reference: §XVIII (Stakeholder Engagement). Elections Act s.21A; the Commission Observer Accreditation Regulations 2022.
 
 ---
 
@@ -21,8 +21,8 @@ Strategy reference: §XVIII (Stakeholder Engagement). Elections Act s.21A; IEBC 
 
 - **Observer Organisation Admin** — submits organisation accreditation; uploads MOU / legal documents; manages observer roster
 - **Individual Observer** — applies under an accredited organisation; downloads credential; deploys to assigned area
-- **IEBC Accreditation Officer** — reviews organisation and individual applications; runs background checks; issues or rejects
-- **IEBC Director of Legal** — approves international-mission MOUs; signs gazette notice
+- **the Commission Accreditation Officer** — reviews organisation and individual applications; runs background checks; issues or rejects
+- **the Commission Director of Legal** — approves international-mission MOUs; signs gazette notice
 - **M15 IAB Secretariat** — receives accredited-observer list for IAB parallel reporting
 - **Field Deployment Coordinator** — assigns accredited observers to constituencies; tracks field presence
 - **Results Centre Manager** — verifies observer credentials at entry
@@ -33,18 +33,18 @@ Strategy reference: §XVIII (Stakeholder Engagement). Elections Act s.21A; IEBC 
 
 - **FR-M43-001** Organisation application: legal name, jurisdiction, registration documents, mandate letter, contact focal point, total observer count, geographic deployment plan, prior Kenya election history.
 - **FR-M43-002** Organisation type classification: DOMESTIC_NGO / INTERNATIONAL_MISSION / DIPLOMATIC_MISSION / RELIGIOUS_BODY / ACADEMIC. Classification drives vetting depth and MOU requirement.
-- **FR-M43-003** MOU workflow for INTERNATIONAL_MISSION organisations: draft MOU generated from template; IEBC Director of Legal signs via HSM; counterpart uploads signed copy; status advances to MOU_SIGNED before individual observers can apply.
+- **FR-M43-003** MOU workflow for INTERNATIONAL_MISSION organisations: draft MOU generated from template; the Commission Director of Legal signs via HSM; counterpart uploads signed copy; status advances to MOU_SIGNED before individual observers can apply.
 - **FR-M43-004** Individual observer application under approved organisation: biographic details, NIN/Passport, photo (ICAO), language competencies, prior observer experience, deployment preference (region/county).
-- **FR-M43-005** Background check: NPS clearance advisory; IEBC internal watch-list; prior accreditation revocation history; criminal record self-declaration.
+- **FR-M43-005** Background check: NPS clearance advisory; the Commission internal watch-list; prior accreditation revocation history; criminal record self-declaration.
 - **FR-M43-006** Application lifecycle: SUBMITTED → DOCS_VERIFIED → BACKGROUND_CHECK → APPROVED / REJECTED → CREDENTIAL_ISSUED → DEPLOYED / SUSPENDED / REVOKED.
 - **FR-M43-007** Credential issuance: digitally signed PDF credential with observer name, photo, organisation, deployment county, validity window, credential serial (UUID7); signed via P06 HSM; QR verifiable offline.
-- **FR-M43-008** Field-deployment assignment: IEBC Coordinator assigns approved observers to specific constituencies; observer receives deployment letter with polling-station list; deployment data published to M34 Observer App (observer sees assigned stations).
+- **FR-M43-008** Field-deployment assignment: the Commission Coordinator assigns approved observers to specific constituencies; observer receives deployment letter with polling-station list; deployment data published to M34 Observer App (observer sees assigned stations).
 - **FR-M43-009** Observer quota management: per-station observer quotas enforced (Elections Act s.21A); system prevents assignment beyond quota.
 - **FR-M43-010** Observer organisation onboarding for known missions: pre-loaded profiles for KEOG, ELOG, EU EOM, AU, Carter Center, IFES, Commonwealth — org admin claims profile with document verification.
-- **FR-M43-011** Revocation workflow: IEBC Accreditation Officer initiates with reason; credential serial added to CRL; field coordinator notified; M34 app credentials for that observer invalidated.
-- **FR-M43-012** Accreditation window enforcement per IEBC gazette notice; late applications rejected.
-- **FR-M43-013** Public summary: IEBC publishes count of accredited observers per organisation and per county; no individual names without consent.
-- **FR-M43-014** Code-of-conduct acceptance: observer signs IEBC observer code digitally before credential issuance.
+- **FR-M43-011** Revocation workflow: the Commission Accreditation Officer initiates with reason; credential serial added to CRL; field coordinator notified; M34 app credentials for that observer invalidated.
+- **FR-M43-012** Accreditation window enforcement per the Commission gazette notice; late applications rejected.
+- **FR-M43-013** Public summary: the Commission publishes count of accredited observers per organisation and per county; no individual names without consent.
+- **FR-M43-014** Code-of-conduct acceptance: observer signs the Commission observer code digitally before credential issuance.
 - **FR-M43-015** All mutations audit-logged; appended to P05 Merkle chain.
 
 ---
@@ -62,21 +62,21 @@ Strategy reference: §XVIII (Stakeholder Engagement). Elections Act s.21A; IEBC 
 
 ---
 
-- **NFR-43-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `iebc-iems-43` (replace 43 with the module number); alert ruleset ID `iems-43-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
+- **NFR-43-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `commission-iems-43` (replace 43 with the module number); alert ruleset ID `iems-43-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
 
 ## 5. User Stories
 
 1. As the ELOG Kenya programme director, I submit our organisation's accreditation application with our NGO registration and mandate, and receive approval within 5 working days.
 2. As an EU EOM observer, I apply under the EU EOM accredited organisation using my passport, and download a credential QR within 48 hours of approval.
-3. As an IEBC Accreditation Officer, I see a vetting dashboard with NPS advisory, watch-list status, and prior revocation history before approving any individual.
-4. As the IEBC Director of Legal, I receive an auto-generated MOU draft for each international mission and sign it with my HSM token; the counterpart upload unlocks observer applications.
+3. As a Commission Accreditation Officer, I see a vetting dashboard with NPS advisory, watch-list status, and prior revocation history before approving any individual.
+4. As the Commission Director of Legal, I receive an auto-generated MOU draft for each international mission and sign it with my HSM token; the counterpart upload unlocks observer applications.
 5. As a Field Deployment Coordinator, I assign 200 observers to 200 constituencies in a batch CSV upload, and each observer receives a deployment letter automatically.
 6. As a Results Centre Manager, I scan an observer's QR and see their organisation, deployment county, and validity in under one second.
-7. As an IEBC Accreditation Officer, I revoke an observer's credential on a misconduct report; within 5 minutes all entry scanners reflect the revocation.
+7. As a Commission Accreditation Officer, I revoke an observer's credential on a misconduct report; within 5 minutes all entry scanners reflect the revocation.
 8. As a Carter Center observer, I can view my assigned polling stations in the M34 Observer App after my credential is issued.
 9. As a member of the public, I can see how many observers each organisation deployed per county, without accessing individual names.
 10. As an observer organisation admin, I upload a 3,000-row roster and track per-person approval status on a bulk dashboard.
-11. As an IEBC Commissioner, I receive a pre-election report showing accreditation rates per observer organisation and geographic coverage gaps.
+11. As a Commission Commissioner, I receive a pre-election report showing accreditation rates per observer organisation and geographic coverage gaps.
 
 ---
 
@@ -209,7 +209,7 @@ paths:
 
 - Organisation portal: multi-step wizard with document upload; MOU status tracker; roster bulk-upload with per-row error report.
 - Observer self-application: 4-step form; photo upload with ICAO guideline tooltip; language-preference selector.
-- IEBC vetting queue: card-based view with status chips; checklist side panel; approve/reject modal with statutory reason codes.
+- the Commission vetting queue: card-based view with status chips; checklist side panel; approve/reject modal with statutory reason codes.
 - Deployment board: map view of assigned observers per county with quota fill bars.
 - Scanner app: shared with M42; QR scan returns observer-specific credential type indicator.
 - All applicant screens WCAG 2.2 AA; EN + SW; French + Arabic optional display.
@@ -220,11 +220,11 @@ paths:
 
 | Requirement | Provision | Implementation |
 |---|---|---|
-| Accreditation authority | Elections Act s.21A | IEBC-controlled approval workflow |
-| Observer code of conduct | IEBC Regulations 2022 | Digital acknowledgement gate FR-M43-014 |
+| Accreditation authority | Elections Act s.21A | Commission-controlled approval workflow |
+| Observer code of conduct | the Commission Regulations 2022 | Digital acknowledgement gate FR-M43-014 |
 | Per-station observer quota | Elections Act s.21A | Quota enforcement FR-M43-009 |
 | DPA 2019 lawful basis | s.30(1)(b) legal obligation | DPIA filed; data minimisation on NPS data |
-| International mission MOU | IEBC Regulations | MOU workflow FR-M43-003 |
+| International mission MOU | the Commission Regulations | MOU workflow FR-M43-003 |
 
 ---
 
@@ -246,7 +246,7 @@ paths:
 - Unit: MOU template generation; credential signature; CRL generation.
 - Integration: NPS mock; M34 push API; M15 list sync.
 - Load: 5,000 concurrent roster uploads at window open.
-- UAT: KEOG, ELOG, EU EOM pilot cohorts; IEBC Accreditation Officers.
+- UAT: KEOG, ELOG, EU EOM pilot cohorts; the Commission Accreditation Officers.
 - Security: credential serial enumeration; revocation bypass; roster injection.
 
 ---
@@ -256,7 +256,7 @@ paths:
 | Milestone | Date |
 |---|---|
 | Observer regulation alignment workshop | T-300 (2026-10-14) |
-| MOU template approved by IEBC Legal | T-270 (2026-11-13) |
+| MOU template approved by the Commission Legal | T-270 (2026-11-13) |
 | Portal UAT with KEOG/ELOG | T-180 (2027-02-11) |
 | International mission outreach + MOU signing | T-150 (2027-03-13) |
 | Accreditation window opens | T-90 (2027-05-12) |
@@ -271,7 +271,7 @@ paths:
 - M34 Observer App credential-validation API ready (T-60).
 - M15 IAB Dashboard list-receive endpoint ready (T-45).
 - NPS API MoU signed (T-270).
-- IEBC Observer Accreditation Regulations 2022 confirmed unchanged for 2027 cycle.
+- the Commission Observer Accreditation Regulations 2022 confirmed unchanged for 2027 cycle.
 
 ---
 
@@ -304,21 +304,21 @@ paths:
 |---|---|---|
 | §XVIII Stakeholder Engagement | Observer accreditation framework | FR-M43-001 to FR-M43-015 |
 | §XVIII.3 International Observers | MOU requirement for international missions | FR-M43-003 |
-| Elections Act s.21A | IEBC sole accreditation authority; per-station quota | FR-M43-001, FR-M43-009 |
-| IEBC Accreditation Regulations 2022 | Code of conduct; revocation | FR-M43-011, FR-M43-014 |
+| Elections Act s.21A | the Commission sole accreditation authority; per-station quota | FR-M43-001, FR-M43-009 |
+| the Commission Accreditation Regulations 2022 | Code of conduct; revocation | FR-M43-011, FR-M43-014 |
 
 ## 18. Decommissioning
 
-**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if IEBC terminates the contract.
+**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if the Commission terminates the contract.
 
 **Steps:**
 
-1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and IEBC DPO.
+1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and the Commission DPO.
 2. **Service shutdown** — Kubernetes deployments scaled to zero; PersistentVolumeClaims retained for 30 days then deleted after confirmation of M69 transfer.
 3. **Credential revocation** — service account certificates, API keys, and HSM key handles revoked via P06 key-destruction ceremony within 48 hours of shutdown.
 4. **Source-code escrow** — final tagged release deposited to C04 escrow within 7 days of shutdown.
-5. **Runbook handover** — operational runbook and post-mortem notes delivered to IEBC ICT within 14 days.
+5. **Runbook handover** — operational runbook and post-mortem notes delivered to the Commission ICT within 14 days.
 
-**Owner:** SRE Lead. **Sign-off:** IEBC ICT Director + Datacraft Programme Director.
+**Owner:** SRE Lead. **Sign-off:** the Commission ICT Director + Datacraft Programme Director.
 
 > **RESOLUTION (F-23, 2026-08-21):** Decommissioning stub added per audit finding. Owner: SRE Lead. Target: FAT-07 gate.

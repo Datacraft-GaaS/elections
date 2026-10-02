@@ -36,7 +36,7 @@ Upon discovery or suspicion of a breach, follow this escalation sequence:
 1. Discoverer (any staff member or system alert) notifies the on-call security engineer immediately via the incident response channel (operations/helpdesk/).
 2. On-call security engineer performs initial triage within 1 hour: confirm whether a breach has occurred, estimate scope, classify severity.
 3. On-call security engineer escalates to the Data Protection Officer within 2 hours of confirmation.
-4. DPO notifies the IEBC Director-General and Legal Counsel within 3 hours.
+4. DPO notifies the Commission Director-General and Legal Counsel within 3 hours.
 5. DPO determines, with Legal Counsel, whether the 72-hour ODPC notification threshold is met.
 6. If yes: DPO initiates notification to ODPC. Target: notification sent within 48 hours of breach discovery to allow for any supplementary information before the 72-hour deadline.
 7. DPO initiates notification to affected data subjects if required.
@@ -46,17 +46,17 @@ Upon discovery or suspicion of a breach, follow this escalation sequence:
 
 ## 3. ODPC Notification Template
 
-Send via email to [odpc@odpc.go.ke](mailto:odpc@odpc.go.ke) with subject: "Personal Data Breach Notification - [IEBC_BREACH_REF] - [DATE]"
+Send via email to [odpc@odpc.go.ke](mailto:odpc@odpc.go.ke) with subject: "Personal Data Breach Notification - [COMMISSION_BREACH_REF] - [DATE]"
 
 ---
 
 **PERSONAL DATA BREACH NOTIFICATION**
 
 **To:** Office of the Data Protection Commissioner (ODPC)
-**From:** Independent Electoral and Boundaries Commission (IEBC)
+**From:** the electoral authority (the Commission)
 **Data Protection Officer:** [DPO_NAME], [DPO_EMAIL]
 **ODPC Registration Number:** [ODPC_REGISTRATION_NO]
-**IEBC Breach Reference:** [BREACH_REF, e.g., BREACH-2026-001]
+**the Commission Breach Reference:** [BREACH_REF, e.g., BREACH-2026-001]
 **Date of notification:** [YYYY-MM-DD HH:MM UTC]
 **Date and time breach was discovered:** [YYYY-MM-DD HH:MM UTC]
 **Date and time breach is believed to have commenced:** [YYYY-MM-DD HH:MM UTC or "Unknown - under investigation"]
@@ -70,7 +70,7 @@ Send via email to [odpc@odpc.go.ke](mailto:odpc@odpc.go.ke) with subject: "Perso
 | Category | Approximate number |
 |---|---|
 | Registered voters | [NUMBER or "Under investigation"] |
-| IEBC staff | [NUMBER or "N/A"] |
+| the Commission staff | [NUMBER or "N/A"] |
 | Accredited media/observers | [NUMBER or "N/A"] |
 | Other: [DESCRIBE] | [NUMBER or "N/A"] |
 
@@ -92,7 +92,7 @@ Send via email to [odpc@odpc.go.ke](mailto:odpc@odpc.go.ke) with subject: "Perso
 **6. Contact for further information**
 
 Name: [DPO_NAME]
-Role: Data Protection Officer, IEBC
+Role: Data Protection Officer, the Commission
 Email: [DPO_EMAIL]
 Phone: [DPO_PHONE]
 Available: [AVAILABILITY_HOURS]
@@ -105,17 +105,17 @@ Available: [AVAILABILITY_HOURS]
 
 ## 4. Data Subject Notification Template
 
-Use this template for notifying affected data subjects. Send via the most effective channel available (SMS to registered phone number, email, or publication on the IEBC website for large-scale breaches where individual contact is not feasible).
+Use this template for notifying affected data subjects. Send via the most effective channel available (SMS to registered phone number, email, or publication on the Commission website for large-scale breaches where individual contact is not feasible).
 
 ---
 
 **IMPORTANT NOTICE: Your Personal Data May Have Been Affected**
 
-From: Independent Electoral and Boundaries Commission (IEBC)
+From: the electoral authority (the Commission)
 Date: [YYYY-MM-DD]
 Reference: [BREACH_REF]
 
-We are writing to inform you that IEBC has experienced a personal data security incident that may have affected your personal information.
+We are writing to inform you that the Commission has experienced a personal data security incident that may have affected your personal information.
 
 **What happened**
 
@@ -127,17 +127,17 @@ We are writing to inform you that IEBC has experienced a personal data security 
 
 **What we are doing**
 
-[Describe the steps IEBC is taking to contain the breach, investigate it, and prevent recurrence.]
+[Describe the steps the Commission is taking to contain the breach, investigate it, and prevent recurrence.]
 
 **What you can do**
 
-- Be alert to any suspicious communications claiming to be from IEBC.
-- If you receive any unexpected requests for your personal information, do not provide it without verifying the request directly with IEBC using contact details on our official website [iebc.or.ke].
+- Be alert to any suspicious communications claiming to be from the Commission.
+- If you receive any unexpected requests for your personal information, do not provide it without verifying the request directly with the Commission using contact details on our official website [eel.example].
 - [Any other specific steps the data subject can take to protect themselves.]
 
 **Contact us**
 
-If you have questions about this incident, contact the IEBC Data Protection Office:
+If you have questions about this incident, contact the Commission Data Protection Office:
 Email: [DPO_EMAIL]
 Phone: [DPO_PHONE]
 Hours: [HOURS]
@@ -148,7 +148,7 @@ You also have the right to lodge a complaint with the ODPC at [odpc@odpc.go.ke](
 
 ## 5. Breach Drill Procedure
 
-IEBC must conduct at least one tabletop breach notification drill per year, before each election cycle where a General Election is anticipated.
+the Commission must conduct at least one tabletop breach notification drill per year, before each election cycle where a General Election is anticipated.
 
 ### 5.1 Drill schedule
 

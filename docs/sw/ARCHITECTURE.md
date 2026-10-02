@@ -1,4 +1,4 @@
-# System Architecture — IEBC IEMS
+# System Architecture — the Commission IEMS
 ## Full 69-Module Service Topology
 
 **Companion to:** `PRD.md`, `DATACRAFT_SOFTWARE_SCOPE.md`
@@ -10,12 +10,12 @@
 
 ## 1. Architectural Principles
 
-1. **Sovereign by design.** All production data resides in Kenya. Offshore access only via IEBC-controlled bastion with session recording and transparency-log entry.
+1. **Sovereign by design.** All production data resides in Kenya. Offshore access only via Commission-controlled bastion with session recording and transparency-log entry.
 2. **Zero-trust internal.** No implicit trust between services. Every service-to-service call uses mTLS (SVID from SPIFFE/SPIRE) + short-lived OPA-validated tokens. No shared credentials.
 3. **Offline-first devices.** BVR, BVI, RTS, and all six field mobile apps operate fully without network connectivity, with local encrypted queue and signed submission on reconnect.
 4. **Immutable infrastructure.** Every service runs from a signed OCI image. Deployments replace, never modify. GitOps via ArgoCD; all changes signed and logged.
 5. **Cryptographic transparency.** Every state-change event is signed, countersigned, timestamped, hash-chained, and Merkle-logged with public roots every 10 minutes.
-6. **Static-first public read.** Public Results Portal (M11), IEBC Verify App (M29), Referendum Explainer (M68), and Public Verifier (M13) serve signed static snapshots from CDN. Origin DDoS cannot stop citizen verification.
+6. **Static-first public read.** Public Results Portal (M11), the Commission Verify App (M29), Referendum Explainer (M68), and Public Verifier (M13) serve signed static snapshots from CDN. Origin DDoS cannot stop citizen verification.
 7. **Fail visibly.** Never silent failure. Every degradation surfaces to M16 ECC and SLO dashboards. Services expose structured health probes.
 8. **Two-person integrity.** No single account can move critical state. Register edits, CA operations, deployments, DR failover, and result declarations require quorum approval enforced by OPA policy engine.
 9. **Portability.** Standards-compliant biometric formats (WSQ, JPEG-2000, ISO 19794, ICAO 9303, ANSI/NIST-ITL). No proprietary lock-in on any data store or runtime.
@@ -54,14 +54,14 @@ The 69 modules compose into 18 deployable Kubernetes services. Grouping principl
 
 ### 3.1 Primary Data Centre
 
-- Hosted on IEBC-provided converged infrastructure (Anniversary Towers area, Nairobi).
+- Hosted on Commission-provided converged infrastructure (Anniversary Towers area, Nairobi).
 - Active for all read and write traffic.
 - Physical security: biometric entry, mantraps, 24x7 guard, environmental sensors, 72-hour generator + UPS, Novec 1230 fire suppression.
 - Network: dual-carrier internet (Safaricom + Liquid Telecom) with BGP diversity, upstream DDoS scrubbing (Cloudflare Magic Transit or Akamai Prolexic), WAF at edge.
 
 ### 3.2 Mirror Data Centre (DR Site)
 
-- Hosted on IEBC-provided infrastructure at a geographically separated site.
+- Hosted on Commission-provided infrastructure at a geographically separated site.
 - Synchronous replication for write-critical paths: voter register, results, HSM signing operations, kit certificate store.
 - Asynchronous replication for BI marts, audit warehouse, object store.
 - Active-active for read traffic; active-passive for writes. Failover on primary loss.
@@ -170,7 +170,7 @@ support-admin-svc → field-mobile-svc (M55 payroll trigger from M33)
 
 ## 5. Multi-Tenancy Model
 
-The IEMS is a single-tenant system (one IEBC) but has internal multi-tenancy axes:
+The IEMS is a single-tenant system (one the Commission) but has internal multi-tenancy axes:
 
 | Axis | Model | Implementation |
 |---|---|---|
@@ -248,7 +248,7 @@ Linkerd control plane
        |
   [Merkle builder → Transparency log → Escrow mirror]
        |
-  [Kafka outbox → BI mart (async)] → [IEBC Power BI]
+  [Kafka outbox → BI mart (async)] → [the Commission Power BI]
        |
   [M35 CVR: life-event continuous maintenance]
   [M36: deregistration appeal if voter removed]
@@ -319,7 +319,7 @@ Linkerd control plane
   |
   [M63 Ballot Serial Chain: warehouse → polling station]
   |  serial-range assignment per station at kit-prep time (T-30)
-  |  station assignment signed by IEBC Ops officer
+  |  station assignment signed by the Commission Ops officer
   |  spoilt/replaced/reconciled dispositions tracked per paper
   |
   [M08 RTS device: reconciliation report at station close]
@@ -365,16 +365,16 @@ Linkerd control plane
 
 | Topic | Producers | Consumers | Partitioning |
 |---|---|---|---|
-| `iebc.bvr.enrollments` | M01 (via bvr-svc ingest) | abis-svc, M35 CVR, P05 audit | By constituency_id (290 partitions) |
-| `iebc.bvi.events` | M05 (via bvi-svc) | M44 turnout, M19 queue, M16 ECC, M26 anomaly | By station_id (55,393 partitions, Kafka broker-managed segment) |
-| `iebc.rts.forms` | M08 (via rts-svc) | M10 national agg, M14 Merkle, M15 IAB, M21 RLA, M26 anomaly, M62 audit | By constituency_id |
-| `iebc.rts.tallies` | rts-svc M10 | portal-svc M11/M13/M29, M15 IAB, M44, M40 evidence | By election_cycle + position_id |
-| `iebc.inventory.custody` | inventory-svc M20/M39/M63/M65 | M16 ECC, M40 evidence, P05 audit | By kit_uid_prefix (hash) |
-| `iebc.calendar.events` | boundary-svc M52 | All 17 K8s services (cache invalidation) | Single partition (low volume, strict ordering) |
-| `iebc.governance.incidents` | governance-svc M23/M48-50, field-mobile-svc M30/M34 | M16 ECC, M15 IAB, M40 evidence | By incident_severity_bucket |
-| `iebc.ai.anomalies` | ai-platform-svc M26 | M16 ECC, M15 IAB, M40 evidence | By anomaly_type |
-| `iebc.audit.transmissions` | All services (via M62 SDK) | support-admin-svc M62 ClickHouse sink | By service_name |
-| `iebc.field.attendance` | field-mobile-svc M33 | M16 ECC, support-admin-svc M55 | By county_id |
+| `commission.bvr.enrollments` | M01 (via bvr-svc ingest) | abis-svc, M35 CVR, P05 audit | By constituency_id (290 partitions) |
+| `commission.bvi.events` | M05 (via bvi-svc) | M44 turnout, M19 queue, M16 ECC, M26 anomaly | By station_id (55,393 partitions, Kafka broker-managed segment) |
+| `commission.rts.forms` | M08 (via rts-svc) | M10 national agg, M14 Merkle, M15 IAB, M21 RLA, M26 anomaly, M62 audit | By constituency_id |
+| `commission.rts.tallies` | rts-svc M10 | portal-svc M11/M13/M29, M15 IAB, M44, M40 evidence | By election_cycle + position_id |
+| `commission.inventory.custody` | inventory-svc M20/M39/M63/M65 | M16 ECC, M40 evidence, P05 audit | By kit_uid_prefix (hash) |
+| `commission.calendar.events` | boundary-svc M52 | All 17 K8s services (cache invalidation) | Single partition (low volume, strict ordering) |
+| `commission.governance.incidents` | governance-svc M23/M48-50, field-mobile-svc M30/M34 | M16 ECC, M15 IAB, M40 evidence | By incident_severity_bucket |
+| `commission.ai.anomalies` | ai-platform-svc M26 | M16 ECC, M15 IAB, M40 evidence | By anomaly_type |
+| `commission.audit.transmissions` | All services (via M62 SDK) | support-admin-svc M62 ClickHouse sink | By service_name |
+| `commission.field.attendance` | field-mobile-svc M33 | M16 ECC, support-admin-svc M55 | By county_id |
 
 **Exactly-once semantics:** rts.forms and inventory.custody topics use Kafka transactions (idempotent producer + transactional consumer) to prevent duplicate tally or duplicate custody records. Other topics use at-least-once with idempotency keys in the event payload.
 
@@ -394,7 +394,7 @@ Linkerd control plane
 - Authentication: anonymous (public portal), OAuth2 PKCE (citizen self-service)
 - TLS termination: TLS 1.3; HSTS; certificate pinning for mobile apps
 
-**Tier 2 — Authenticated internal gateway** (faces IEBC operators, party agents, field officers):
+**Tier 2 — Authenticated internal gateway** (faces the Commission operators, party agents, field officers):
 - Routes to: crms-svc, bvr-svc admin, transparency-svc, ecc-svc, training-svc, support-admin-svc
 - Controls: FIDO2/OTP MFA enforced at Keycloak; short-lived JWT (15-min expiry); per-role rate limits; per-tenant namespace routing
 - Authentication: Keycloak OIDC; SPIFFE SVID for service-to-service
@@ -437,7 +437,7 @@ Five caching layers:
 | Read replica (PostgreSQL) | PostgreSQL 17 streaming replica | Register reads, results reads, inventory reads | Replica lag target ≤ 1 s |
 | In-process LRU (Rust hot path) | Custom Rust LRU in HSM signing wrapper | HSM key references (not keys); avoiding PKCS#11 round-trip for every sign | 60 s (key reference TTL) |
 
-**Cache invalidation:** All cache invalidations are event-driven via the `iebc.calendar.events` Kafka topic (for date-dependent data) or Debezium CDC events (for record-level invalidation). No TTL-only invalidation on critical paths; stale cache is always a degradation mode, never a correctness mode.
+**Cache invalidation:** All cache invalidations are event-driven via the `commission.calendar.events` Kafka topic (for date-dependent data) or Debezium CDC events (for record-level invalidation). No TTL-only invalidation on critical paths; stale cache is always a degradation mode, never a correctness mode.
 
 ---
 
@@ -471,7 +471,7 @@ Developer pushes to feature branch
   |    |-- M62 audit-SDK coverage check (blocks PR if <100%)
   |    |-- Container image build (multi-stage Dockerfile, distroless base)
   |    |-- Container image signed (cosign + Sigstore)
-  |    |-- Push to IEBC internal Harbor registry
+  |    |-- Push to the Commission internal Harbor registry
   |
 On merge to main:
   |-- Integration tests (Playwright + k6 smoke test against kind cluster)
@@ -480,7 +480,7 @@ On merge to main:
   |
 On tag (release/vX.Y.Z):
   |-- Canary rollout: 1% → 5% → 25% → 100% (automated regression gate)
-  |-- ArgoCD: sync to Production on IEBC Commissioner approval (GitOps PR merge)
+  |-- ArgoCD: sync to Production on the Commission Commissioner approval (GitOps PR merge)
   |-- Promotion event written to P05 audit log + transparency log
 ```
 
@@ -523,7 +523,7 @@ Full detail in `SECURITY.md`. Key controls at the architectural level:
 
 - **Human:** Keycloak 23+ OIDC/OAuth2. FIDO2 hardware key mandatory for all privileged accounts (Commissioner, ICT Admin, RO). SMS MFA prohibited on privileged accounts.
 - **Service:** SPIFFE/SPIRE. Every pod has a SPIFFE ID and short-lived SVID (X.509, 1-hour TTL, auto-rotated by SPIRE Agent). Linkerd 2 validates SVID on every inbound connection.
-- **Device:** Per-kit X.509 certificate issued at kit-prep time from the IEBC intermediate CA (device sub-CA). Certificate bound to kit TPM/secure element. Revocation in ≤ 60 s via OCSP must-staple + CRL push via MDM.
+- **Device:** Per-kit X.509 certificate issued at kit-prep time from the Commission intermediate CA (device sub-CA). Certificate bound to kit TPM/secure element. Revocation in ≤ 60 s via OCSP must-staple + CRL push via MDM.
 
 ### 14.2 PKI Structure
 
@@ -533,11 +533,11 @@ Root CA (air-gapped, HSM-resident, M-of-N quorum, Thales Luna 7)
   |- Intermediate CA: Services (issues SVIDs via SPIRE)
   |- Intermediate CA: Devices (issues per-kit certs at kit-prep time)
   |- Intermediate CA: TLS (issues server certs for all IEMS domains)
-  |    |- *.iebc.or.ke, *.iems.ke (wildcard SAN)
+  |    |- *.eel.example, *.iems.ke (wildcard SAN)
   |- Intermediate CA: Code-signing (signs KIEMS APKs, container images, reproducibility bundle)
 ```
 
-Root CA ceremony: M-of-N (5-of-9) offline ceremony; ceremony hardware stored at two geographically separate IEBC facilities.
+Root CA ceremony: M-of-N (5-of-9) offline ceremony; ceremony hardware stored at two geographically separate the Commission facilities.
 
 ### 14.3 Cryptographic Profile
 
@@ -574,8 +574,8 @@ Root CA ceremony: M-of-N (5-of-9) offline ceremony; ceremony hardware stored at 
 | Structured logs (JSON) | All 18 K8s services | Promtail (DaemonSet) | Loki | 90 days hot; Kafka topic for permanent archive |
 | Metrics | OpenTelemetry collector sidecar on every pod | Prometheus scrape | Prometheus (30-day hot); Thanos for long-term | 90 days |
 | Distributed traces | OpenTelemetry SDK in every service | OpenTelemetry collector | Tempo | 30 days |
-| Audit events (tamper-evident) | M62 SDK on every service | Kafka `iebc.audit.transmissions` | ClickHouse (append-only, hash-chained) | Permanent |
-| Kit telemetry | KIEMS heartbeat events | Kit gateway → Kafka `iebc.inventory.custody` | inventory-svc + M16 ECC | 7 years |
+| Audit events (tamper-evident) | M62 SDK on every service | Kafka `commission.audit.transmissions` | ClickHouse (append-only, hash-chained) | Permanent |
+| Kit telemetry | KIEMS heartbeat events | Kit gateway → Kafka `commission.inventory.custody` | inventory-svc + M16 ECC | 7 years |
 
 **SLO dashboards:**
 
@@ -614,38 +614,38 @@ Alerts routed via multi-channel: email (off-hours), SMS (P1/P2), WhatsApp (P1), 
 
 ### 17.1 Scope
 
-All production voter-register records, biometric templates, results data, audit logs, kit telemetry, and candidate data physically reside in Kenya on IEBC-provided infrastructure. This is a legal obligation under the Kenya Data Protection Act 2019 and an IEBC policy requirement. No production data is processed outside Kenya. No foreign-state actor has access to production systems.
+All production voter-register records, biometric templates, results data, audit logs, kit telemetry, and candidate data physically reside in Kenya on Commission-provided infrastructure. This is a legal obligation under the Kenya Data Protection Act 2019 and a Commission policy requirement. No production data is processed outside Kenya. No foreign-state actor has access to production systems.
 
 ### 17.2 Sovereignty Controls
 
 | Control | Implementation |
 |---|---|
-| Data residency | All K8s clusters, PostgreSQL primaries, Kafka brokers, MinIO buckets, Redis clusters, HSMs, and ClickHouse nodes physically located in Kenya (IEBC DC primary + IEBC DR site) |
+| Data residency | All K8s clusters, PostgreSQL primaries, Kafka brokers, MinIO buckets, Redis clusters, HSMs, and ClickHouse nodes physically located in Kenya (the Commission DC primary + the Commission DR site) |
 | CDN data residency | CDN serves signed static snapshots only — no voter PII, no biometric data, no results before formal publication. CDN edge nodes outside Kenya serve only pre-published signed data that is already public |
 | Escrow mirror | Located in Kenya at designated independent custodian; court-order response without granting access to operational systems |
-| Remote support access | All Datacraft, Mechrevo, or vendor remote access is via an IEBC-controlled bastion: per-session Commissioner approval; full session recording with cryptographic timestamp; no bulk data access; no unattended access; session duration capped at 4 hours; extension requires fresh approval |
-| Transparency log | Five publication channels: IEBC public website, GitHub (Datacraft account under IEBC supervision), IPFS pinned node in Kenya, daily Kenya Gazette print, KBC Radio daily hash bulletin. No channel requires trusting Datacraft |
+| Remote support access | All Datacraft, Mechrevo, or vendor remote access is via an Commission-controlled bastion: per-session Commissioner approval; full session recording with cryptographic timestamp; no bulk data access; no unattended access; session duration capped at 4 hours; extension requires fresh approval |
+| Transparency log | Five publication channels: the Commission public website, GitHub (Datacraft account under the Commission supervision), IPFS pinned node in Kenya, daily Kenya Gazette print, KBC Radio daily hash bulletin. No channel requires trusting Datacraft |
 | Biometric data | Never transmitted outside Kenya. Biometric templates never leave the confidential-compute enclave in abis-svc. Kit-side biometric data encrypted before any transmission; back-end decrypts only inside enclave |
-| AI models (M17, M26, M28) | Models trained on Kenya-local data; stored in MinIO on IEBC infrastructure; ONNX format ensures no proprietary inference runtime lock-in; model export capability vests in IEBC at handover |
+| AI models (M17, M26, M28) | Models trained on Kenya-local data; stored in MinIO on the Commission infrastructure; ONNX format ensures no proprietary inference runtime lock-in; model export capability vests in the Commission at handover |
 
 ### 17.3 Foreign-Vendor Software Supply Chain
 
 Third-party software components (ABIS engine SDK, HSM firmware, ONNX Runtime, Kafka, PostgreSQL) are supply-chain-controlled:
 
-- All container images pulled from an IEBC-internal registry (Harbor, mirroring approved upstream images); no live pull from Docker Hub or vendor registries in production.
+- All container images pulled from an Commission-internal registry (Harbor, mirroring approved upstream images); no live pull from Docker Hub or vendor registries in production.
 - SBOM (Software Bill of Materials) in CycloneDX format generated at every build; published at T-30 for public scrutiny.
 - Dependency pinning: all Python packages locked with content hashes in `requirements.lock`; all Kotlin packages pinned in `gradle.lockfile`; all Dart packages in `pubspec.lock`.
-- ABIS engine SDK sourced only under a signed contract specifying audit rights; source-code escrow for the SDK deposited with IEBC.
+- ABIS engine SDK sourced only under a signed contract specifying audit rights; source-code escrow for the SDK deposited with the Commission.
 
 ### 17.4 Post-Handover Sovereignty
 
-At Operational Acceptance, IEBC receives:
-- Root CA custody: air-gapped HSM transferred to IEBC physical control.
-- All Vault seal keys rotated; new Thales Luna 7 HSM seals held by IEBC Commissioner only.
+At Operational Acceptance, the Commission receives:
+- Root CA custody: air-gapped HSM transferred to the Commission physical control.
+- All Vault seal keys rotated; new Thales Luna 7 HSM seals held by the Commission Commissioner only.
 - All Keycloak admin credentials rotated; Datacraft admin accounts removed.
-- All GitHub repository ownership transferred to IEBC GitHub organisation.
-- All DNS records (iebc.or.ke subdomains) confirmed under IEBC DNS provider control.
-- M69 archive key material transferred: long-term archive signing keys held by IEBC and KNADS jointly.
+- All GitHub repository ownership transferred to the Commission GitHub organisation.
+- All DNS records (eel.example subdomains) confirmed under the Commission DNS provider control.
+- M69 archive key material transferred: long-term archive signing keys held by the Commission and KNADS jointly.
 
 ---
 
@@ -656,8 +656,8 @@ At Operational Acceptance, IEBC receives:
 | **Production** | Live IEMS | Real voter + results data | JIT admin, dual-control, full audit | Kenya sovereign perimeter only |
 | **Mirror (DR)** | Standby | Synchronous replica | Same as production; active-passive for writes | Failover ≤ 30 min |
 | **Escrow** | Independent custodian | Signed snapshots + Merkle roots | Read-only, designated custodian | Court-order ready |
-| **Staging** | Pre-production validation | Sanitised subset (never real biometrics) | Datacraft SRE + QA; IEBC ICT on request | Schema-identical to production |
-| **Sandbox** | Dress rehearsal + operator training | Fully synthetic (synthetic 30M voter register) | IEBC operators + Datacraft training | All 69 modules; scale-accurate |
+| **Staging** | Pre-production validation | Sanitised subset (never real biometrics) | Datacraft SRE + QA; the Commission ICT on request | Schema-identical to production |
+| **Sandbox** | Dress rehearsal + operator training | Fully synthetic (synthetic 30M voter register) | the Commission operators + Datacraft training | All 69 modules; scale-accurate |
 | **Development** | Datacraft build | Fully synthetic | Datacraft developers | Docker Compose local; Kubernetes kind for integration |
 | **CI** | Test execution | Fully synthetic | CI system only (GitHub Actions or GitLab CI) | Per-PR test suites |
 
@@ -669,16 +669,16 @@ Production data **never** leaves production. Sandbox uses synthetic data only, v
 
 | Choice | Rationale |
 |---|---|
-| Kubernetes 1.31 + containerd | Portability, immutable infrastructure, IEBC-teachable, strong Kenya ecosystem |
+| Kubernetes 1.31 + containerd | Portability, immutable infrastructure, Commission-teachable, strong Kenya ecosystem |
 | Linkerd 2 service mesh | Simpler than Istio; Rust data plane (low latency overhead); SPIFFE-native; CNCF graduated |
 | SPIFFE/SPIRE | Standard for workload identity; Kubernetes-native; integrates with Vault and Linkerd |
-| PostgreSQL 17 | Battle-tested at scale; TLA+-verified consistency; rich extension ecosystem; IEBC-operable post-handover |
+| PostgreSQL 17 | Battle-tested at scale; TLA+-verified consistency; rich extension ecosystem; Commission-operable post-handover |
 | Kafka 3.x | Durable event backbone; supports Merkle-log signing chain; well-understood operational model |
 | Redis 7 Cluster | Session cache; rate limiting; Pub/Sub for ECC WebSocket; no persistence risk (all Redis data is recoverable from PostgreSQL) |
 | ClickHouse | Purpose-built for append-only audit warehouse; 1B-row queries in seconds; open source |
-| MinIO | S3-compatible on-prem object store; sovereign; IEBC-operable; no vendor lock-in |
+| MinIO | S3-compatible on-prem object store; sovereign; Commission-operable; no vendor lock-in |
 | OpenSearch | Voter register search; evidence search; open source (Elasticsearch fork); Kenya-deployable |
-| Python 3.13 async | Datacraft house standard; mature async ecosystem; FastAPI + Starlette; IEBC ICT-readable for handover |
+| Python 3.13 async | Datacraft house standard; mature async ecosystem; FastAPI + Starlette; the Commission ICT-readable for handover |
 | Rust | Latency-critical paths: HSM signing wrapper, Merkle library (compiled to WASM for M13/M29), per-kit cert validator; memory safety without GC pauses |
 | Flutter/Dart | Single codebase for 7 apps (M01/M05/M08 kit-side + M29/M30/M31/M32/M33/M34 field mobile); strong offline-first primitives; Kenya has active Flutter developer community |
 | Next.js 14 | SSR + SSG for web portals; static export for CDN-backed public portals (M11, M13, M29, M68); server-side rendering for accessibility |
@@ -690,26 +690,26 @@ Production data **never** leaves production. Sandbox uses synthetic data only, v
 | BagIt (Library of Congress) | Standard archival packaging for M69; supported by KNADS and major institutional archives |
 | ML-DSA / ML-KEM (NIST FIPS 203/204) | Post-quantum algorithms for long-lived signatures and new session key exchange; standardised August 2024 |
 
-All choices are open-source-first where practical, with commercial support subscriptions (Confluent for Kafka, Kong Enterprise for gateway). All choices avoid vendor lock-in and are reproducible by IEBC without Datacraft.
+All choices are open-source-first where practical, with commercial support subscriptions (Confluent for Kafka, Kong Enterprise for gateway). All choices avoid vendor lock-in and are reproducible by the Commission without Datacraft.
 
 ---
 
 ## 19. Handover Architecture
 
-At Operational Acceptance, IEBC receives:
+At Operational Acceptance, the Commission receives:
 
 - **Source code** for all 69 modules and 18 deployable services under GCC 15.4.
 - **Build reproducibility:** signed manifest + build scripts that produce byte-identical OCI images from source. M14 `make reproduce` bundle included.
 - **GitOps state:** ArgoCD Application manifests that reconstitute all 18 services from scratch on any Kubernetes 1.31+ cluster.
 - **Documentation:** This file, PRD.md, SECURITY.md, DATA-MODEL.md, API-CATALOG.md, ACCEPTANCE-CRITERIA.md, INTEGRATION-AUDIT.md, all 69 module PRDs, all 18 service runbooks, ADRs.
-- **Credentials handover:** all secrets rotated at handover; held by IEBC alone; Vault root token ceremony.
-- **PKI transfer:** root CA custody transfers to IEBC in a formal M-of-N ceremony; all intermediate CA keys rotated.
-- **Sandbox:** complete sandbox environment (all 69 modules, synthetic 30M voter register, all field mobile apps in sandbox MDM) handed to IEBC for ongoing operator training, by-election drills, and referendum rehearsals.
+- **Credentials handover:** all secrets rotated at handover; held by the Commission alone; Vault root token ceremony.
+- **PKI transfer:** root CA custody transfers to the Commission in a formal M-of-N ceremony; all intermediate CA keys rotated.
+- **Sandbox:** complete sandbox environment (all 69 modules, synthetic 30M voter register, all field mobile apps in sandbox MDM) handed to the Commission for ongoing operator training, by-election drills, and referendum rehearsals.
 - **Knowledge transfer:** certified training for 23 HQ ICT + 47 County ICT + 200+ field engineers.
-- **Escrow continuity:** independent custodian relationship transferable to IEBC governance.
+- **Escrow continuity:** independent custodian relationship transferable to the Commission governance.
 - **M69 archive:** long-term archive ingestion pipeline operational; KNADS relationship established; format-migration pipeline documented and tested.
 
-The architecture ensures IEBC can operate, extend, audit, and archive the system without any Datacraft or Mechrevo dependency after handover.
+The architecture ensures the Commission can operate, extend, audit, and archive the system without any Datacraft or Mechrevo dependency after handover.
 
 ---
 
@@ -719,7 +719,7 @@ The architecture ensures IEBC can operate, extend, audit, and archive the system
 
 Each KIEMS kit connects via:
 
-1. **Primary:** LTE/4G SIM (Safaricom or Airtel); routed through IEBC-negotiated APN to carrier VPN endpoint in IEBC DC.
+1. **Primary:** LTE/4G SIM (Safaricom or Airtel); routed through Commission-negotiated APN to carrier VPN endpoint in the Commission DC.
 2. **Secondary:** eSIM carrier rotation (carrier determined by signal quality; M-of-N consensus between three carriers before rotation decision).
 3. **Fallback 1:** 3G / EDGE / HSPA on same SIM; reduced throughput but Form 34A image transmission still completes within 10 minutes.
 4. **Fallback 2:** SMS channel for Form 34A tally numbers only (image stored locally; transmitted when connectivity restores). SMS payload signed and encrypted; back-end stores as provisional pending image delivery.
@@ -728,16 +728,16 @@ Each KIEMS kit connects via:
 
 All six tiers are pre-configured at kit-prep time. The kit selects the best available tier automatically. Tier selection is logged in M20 kit telemetry for post-election analysis.
 
-### 20.2 IEBC DC Network Segmentation
+### 20.2 the Commission DC Network Segmentation
 
 ```
 INTERNET EDGE
   Cloudflare Magic Transit (DDoS scrubbing, anycast)
-  IEBC BGP AS (dual upstream: Safaricom + Liquid Telecom)
+  the Commission BGP AS (dual upstream: Safaricom + Liquid Telecom)
     |
 PERIMETER ZONE
   Edge load balancers (HA pair, ECMP)
-  WAF (OWASP CRS v4, custom IEBC rules)
+  WAF (OWASP CRS v4, custom the Commission rules)
   Kong API Gateway (public tier)
     |
 DMZ
@@ -773,8 +773,8 @@ HSM ZONE (physically separate rack, locked)
 - Three independent VPN tunnels per kit: Safaricom, Airtel, Telkom Kenya.
 - Kit uses the tunnel for the carrier whose SIM is active.
 - VPN protocol: IPsec IKEv2 with ECDSA P-384 authentication (kit certificate as IKE identity).
-- VPN concentrators at IEBC DC are hardware appliances (not software VPN); IEBC-owned; Datacraft integrates.
-- BGP failover between carriers at IEBC DC in ≤ 30 seconds on carrier link failure.
+- VPN concentrators at the Commission DC are hardware appliances (not software VPN); Commission-owned; Datacraft integrates.
+- BGP failover between carriers at the Commission DC in ≤ 30 seconds on carrier link failure.
 
 ---
 

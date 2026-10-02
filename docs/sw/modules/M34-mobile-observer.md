@@ -3,11 +3,11 @@
 **Module ID:** M34
 **Module Name:** Mobile Observer — Accredited Observer App
 **Type:** Mobile Application (Flutter, Android 10.0+ / iOS 15+)
-**Distribution:** Private via IEBC MDM
+**Distribution:** Private via Commission MDM
 **Users:** ~500 accredited observers (civil society, international bodies, academic, media)
 **Owner:** Datacraft
 **Status:** Specified — pending implementation
-**IPR:** Custom Software vests in IEBC per GCC 15.4 (Teaming §4)
+**IPR:** Custom Software vests in the Commission per GCC 15.4 (Teaming §4)
 
 Adapted from `mobile/apps/MA06-observer.md`, sw/-module renumbered as M34.
 
@@ -36,7 +36,7 @@ Support accredited observers with a structured mobile tool that mirrors the Publ
 
 ### 3.1 Onboarding and Accreditation
 
-- **FR-M34-001** Enrolment via IEBC accreditation ID + biometric + device attestation.
+- **FR-M34-001** Enrolment via Commission accreditation ID + biometric + device attestation.
 - **FR-M34-002** MFA sign-in with FIDO2 or platform authenticator.
 - **FR-M34-003** Accreditation category determines feature availability (some categories may not have countersignature rights).
 
@@ -52,14 +52,14 @@ Support accredited observers with a structured mobile tool that mirrors the Publ
 
 - **FR-M34-009** GPS check-in at a polling station observers visit.
 - **FR-M34-010** Time-boxed observation session; sign off when leaving.
-- **FR-M34-011** Signed observation record submitted to IEBC observer registry.
+- **FR-M34-011** Signed observation record submitted to the Commission observer registry.
 
 ### 3.4 Observer Incident Reporting
 
 - **FR-M34-012** Structured incident form: category (procedural, security, legal, operational, tampering, transparency, other), description, evidence upload, GPS.
-- **FR-M34-013** Reports encrypted locally, signed, queued, submitted to IEBC observer coordination + war-room + Auditor-General mirror.
-- **FR-M34-014** Anonymised aggregated observer-report dashboard visible on Public Portal (per IEBC-defined policy).
-- **FR-M34-015** Observer chief may signal a systemic incident that requires immediate IEBC response.
+- **FR-M34-013** Reports encrypted locally, signed, queued, submitted to the Commission observer coordination + war-room + Auditor-General mirror.
+- **FR-M34-014** Anonymised aggregated observer-report dashboard visible on Public Portal (per Commission-defined policy).
+- **FR-M34-015** Observer chief may signal a systemic incident that requires immediate the Commission response.
 
 ### 3.5 Verification Sampling
 
@@ -92,7 +92,7 @@ Support accredited observers with a structured mobile tool that mirrors the Publ
 
 ## 5. Integrations
 
-- IEBC accreditation database (observer registry)
+- the Commission accreditation database (observer registry)
 - Public Portal (M11) for results and Form 34A data
 - Public Verifier App (M13) shared Merkle-proof API
 - RTS back-end (M10) for Merkle-inclusion-proof verification

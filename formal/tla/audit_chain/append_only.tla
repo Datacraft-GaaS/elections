@@ -26,7 +26,7 @@ InvSig ==
 
 ==== TLA
 
-cat > /Users/nyimbiodero/src/pjs/eel/formal/tla/ballot_chain/BallotChain.tla << 'TLA'
+cat > ./formal/tla/ballot_chain/BallotChain.tla << 'TLA'
 ---- MODULE BallotChain ----
 \* Ballot paper chain-of-custody — sequential handover with HMAC integrity
 \* Applied to: inventory-svc/ballot_chain.py
@@ -56,7 +56,7 @@ InvUniqueId ==
 
 ==== TLA
 
-cat > /Users/nyimbiodero/src/pjs/eel/formal/tla/ccb/CcbMultiSig.tla << 'TLA'
+cat > ./formal/tla/ccb/CcbMultiSig.tla << 'TLA'
 ---- MODULE CcbMultiSig ----
 \* CCB multi-signature log — 2-of-3 HSM authorization
 \* Applied to: services/hsm-signer/ccb_log.rs
@@ -78,7 +78,7 @@ InvNoRetroactiveAmendment ==
 
 ==== TLA
 
-cat > /Users/nyimbiodero/src/pjs/eel/formal/tla/data_diode/DataDiode.tla << 'TLA'
+cat > ./formal/tla/data_diode/DataDiode.tla << 'TLA'
 ---- MODULE DataDiode ----
 \* Network data-diode — egress-only policy enforcement
 \* Applied to: platform/cilium/data-diode-policy.yaml
@@ -100,7 +100,7 @@ InvNoP2P ==
 
 ==== TLA
 
-cat > /Users/nyimbiodero/src/pjs/eel/formal/tla/form_quality/FormQualityGate.tla << 'TLA'
+cat > ./formal/tla/form_quality/FormQualityGate.tla << 'TLA'
 ---- MODULE FormQualityGate ----
 \* Form quality gate — threshold monotonicity
 \* Applied to: mobile-bff/handlers/form_quality_gate.rs

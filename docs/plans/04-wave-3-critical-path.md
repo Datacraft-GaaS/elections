@@ -1,9 +1,9 @@
 # Wave 3: Election-night critical path
 
-Part of the IEBC IEMS full build plan. See `README.md` for conventions, `08-edge-case-matrix.md` for EC-IDs, `10-definition-of-done.md` for the WP exit bar.
+Part of the Commission IEMS full build plan. See `README.md` for conventions, `08-edge-case-matrix.md` for EC-IDs, `10-definition-of-done.md` for the WP exit bar.
 
 
-Gate G3 (architect + IEBC ops rep + security): staging rehearsal v1 with 1k simulated kits: full 34A→34B→34C→declaration→portal with inclusion proofs; BVI 1:1 at scaled rate; TLA+ tally + run-off/tie models checked in CI; rts-svc RTO/RPO drill in staging; kit crash-consistency property suite green on both kit targets.
+Gate G3 (architect + the Commission ops rep + security): staging rehearsal v1 with 1k simulated kits: full 34A→34B→34C→declaration→portal with inclusion proofs; BVI 1:1 at scaled rate; TLA+ tally + run-off/tie models checked in CI; rts-svc RTO/RPO drill in staging; kit crash-consistency property suite green on both kit targets.
 
 | WP | Name | Paths | Builds | Deps | Done-criteria | Size |
 |---|---|---|---|---|---|---|

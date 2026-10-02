@@ -14,7 +14,7 @@ entities:
         notes: UUID7
       - name: station_code
         type: text
-        notes: IEBC station code
+        notes: the Commission station code
       - name: version
         type: int
         notes: monotonically increasing; kit rejects downgrade

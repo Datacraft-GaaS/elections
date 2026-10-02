@@ -1,7 +1,7 @@
 # Independent Security Certifier Submission Package
 
 Elections (Technology) Regulations 2017, Regulation 14
-Document reference: IEBC-CERT-SUBMIT-001
+Document reference: COMMISSION-CERT-SUBMIT-001
 Version: 1.0
 Prepared by: [AUTHOR_NAME], [ROLE]
 Date: [YYYY-MM-DD]
@@ -10,17 +10,17 @@ Date: [YYYY-MM-DD]
 
 ## 1. System Overview and Architecture Summary
 
-**System name:** IEBC Integrated Election Management System (eel)
-**Procuring entity:** Independent Electoral and Boundaries Commission (IEBC)
+**System name:** the Commission Integrated Election Management System (eel)
+**Procuring entity:** the electoral authority (the Commission)
 **Supplier/developer:** [SUPPLIER_NAME]
 **Contract reference:** [CONTRACT_REF]
 **Election for which certification is sought:** [ELECTION_NAME, e.g., "2027 General Election"]
 
 **System purpose:**
-eel is the software platform supporting all IEBC electoral functions: voter registration (biometric and online), voter identification at polling stations, results transmission and tallying, candidate registration, accreditation, training, and long-term archival. It processes personal data for approximately [VOTER_COUNT] registered voters.
+eel is the software platform supporting all the Commission electoral functions: voter registration (biometric and online), voter identification at polling stations, results transmission and tallying, candidate registration, accreditation, training, and long-term archival. It processes personal data for approximately [VOTER_COUNT] registered voters.
 
 **Architecture summary:**
-eel is a microservices platform deployed on IEBC-controlled infrastructure (primary DC and mirror DC with 5 edge sites). All services communicate over mTLS. Voter identity data is encrypted at rest using TDE and column-level encryption. All election-critical actions are committed to an append-only Merkle log in transparency-svc. The platform uses post-quantum cryptography (ML-DSA-65 for signatures, ML-KEM-768 for key encapsulation) for long-lived election records.
+eel is a microservices platform deployed on Commission-controlled infrastructure (primary DC and mirror DC with 5 edge sites). All services communicate over mTLS. Voter identity data is encrypted at rest using TDE and column-level encryption. All election-critical actions are committed to an append-only Merkle log in transparency-svc. The platform uses post-quantum cryptography (ML-DSA-65 for signatures, ML-KEM-768 for key encapsulation) for long-lived election records.
 
 Reference: `docs/architecture/` and `docs/adr/` (24 Architecture Decision Records).
 
@@ -36,7 +36,7 @@ Reference: `docs/architecture/` and `docs/adr/` (24 Architecture Decision Record
 | Kit devices (legacy Android) | Legacy KIEMS kit compatibility shim | [COUNT] | Selected polling stations |
 | HSM appliances | Hardware security modules for key custody | 2 (primary + mirror) | Primary DC, Mirror DC |
 | Server hardware | Application and database servers | [COUNT] | Primary DC, Mirror DC, 5 edge sites |
-| Developer workstations | MDM-managed developer machines | [COUNT] | IEBC premises and remote |
+| Developer workstations | MDM-managed developer machines | [COUNT] | the Commission premises and remote |
 
 ### 2.2 Software components
 
@@ -145,7 +145,7 @@ The version of eel certified in this submission corresponds to:
 - Git tag: [VERSION_TAG]
 - Gitea repository: gitea.internal/eel/eel
 
-The commit is signed and tagged by the release manager. The release tag is countersigned by the IEBC Head of ICT.
+The commit is signed and tagged by the release manager. The release tag is countersigned by the Commission Head of ICT.
 
 ---
 
@@ -222,7 +222,7 @@ Any party may verify log integrity by downloading the signed Merkle root and com
 
 ## 8. Incident Response Capability
 
-IEBC maintains documented incident response procedures in `docs/runbooks/`. Key procedures:
+the Commission maintains documented incident response procedures in `docs/runbooks/`. Key procedures:
 
 - Election-day incident command: ECC (M16) provides real-time incident visibility and escalation
 - ODPC breach notification: within 72 hours per DPA s.43 and the procedure in `compliance/dpa-toolkit/odpc-breach-notification.md`
@@ -261,12 +261,12 @@ All open-source dependencies are pinned by hash in the Nix flake (`flake.nix`). 
 
 ## 10. Declaration by Authorised Officer
 
-I, [NAME], [TITLE] of the Independent Electoral and Boundaries Commission, hereby declare that:
+I, [NAME], [TITLE] of the electoral authority, hereby declare that:
 
 1. The information provided in this submission package is accurate and complete to the best of my knowledge.
 2. The technology described in this package is the same technology that has been deployed (or is proposed for deployment) for use in the [ELECTION_NAME].
 3. The security testing described in section 3 was conducted by independent parties and the findings have been addressed as stated.
-4. IEBC will notify the independent security certifier of any material change to the technology after the date of this submission and before the election.
+4. the Commission will notify the independent security certifier of any material change to the technology after the date of this submission and before the election.
 
 | Field | Value |
 |---|---|
@@ -274,4 +274,4 @@ I, [NAME], [TITLE] of the Independent Electoral and Boundaries Commission, hereb
 | Title | [TITLE] |
 | Date | [YYYY-MM-DD] |
 | Signature | [SIGNATURE] |
-| IEBC stamp | [STAMP] |
+| the Commission stamp | [STAMP] |

@@ -1,7 +1,7 @@
 # SA-002: Portal stack: Path B (Astro + Django + LiveView + Tauri + Flutter) vs Next.js 14
 
 Date: 2026-08-21
-Applies to: Datacraft bid documents under work_docs/01-Projects/IEBC/sw/ (our own earlier draft)
+Applies to: Datacraft bid documents under work_docs/01-Projects/the Commission/sw/ (our own earlier draft)
 Status: decided (ADR takes precedence; sw/ docs to be edited)
 
 ## Earlier draft (sw/) says

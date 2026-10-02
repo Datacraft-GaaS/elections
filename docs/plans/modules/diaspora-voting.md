@@ -8,7 +8,7 @@
 | Size | L |
 | Availability class | cycle-critical 99.9% |
 | Event-sourced | no |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M24-diaspora-voting.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M24-diaspora-voting.md |
 
 ## Purpose
 
@@ -70,7 +70,7 @@ OpenAPI file: `packages/openapi-contracts/diaspora/diaspora.yaml`
 | M03 ABIS | internal | integrations/abis/ | yes | delayed-batch retry with alert |
 | M10 RTS Back-End | internal | integrations/rts/ | yes | circuit breaker; form queued |
 | P05 Merkle Chain | P05 | integrations/merkle/ | yes | queue; anchor on reconnect |
-| P06 HSM | P06 | integrations/hsm/ | yes | signing paused; alert to IEBC Chair |
+| P06 HSM | P06 | integrations/hsm/ | yes | signing paused; alert to the Commission Chair |
 | M11 Public Portal | internal | integrations/portal/ | yes | fallback to CDN static |
 | Foreign Ministry (diplomatic clearance) | external | integrations/foreign-ministry/ | yes (stub) | non-blocking; manual path |
 | RFID tracking (M10 shared) | internal | integrations/rfid/ | yes | offline scan queue |
@@ -94,22 +94,22 @@ Registration (BVR diaspora mode):
 2. FR-M24-002: Capture same 22 biographic fields as M01 plus: host-country city of residence, Kenyan ID or Passport number (mandatory), embassy registration date.
 3. FR-M24-003: Biometric capture: 10 fingerprints ISO/IEC 19794-2, iris ISO/IEC 19794-6, face ICAO 9303; all biometric data encrypted on-device; synced to central ABIS via encrypted delayed batch (not live streamed).
 4. FR-M24-004: On-device dedup against embassy-local cache during session; full ABIS dedup via delayed sync; dedup result published and confirmed before voter roll frozen.
-5. FR-M24-005: Embassy registration window enforced by kit; refuses new BVR enrolments outside IEBC-gazetted diaspora window; diaspora window dates gazetted separately from domestic dates.
-6. FR-M24-006: Voter roll freeze executed 14 days before diaspora voting day; signed snapshot published to IAB and public portal; requires IEBC Chair HSM card tap to execute; freeze is irreversible without a new signed bundle.
+5. FR-M24-005: Embassy registration window enforced by kit; refuses new BVR enrolments outside Commission-gazetted diaspora window; diaspora window dates gazetted separately from domestic dates.
+6. FR-M24-006: Voter roll freeze executed 14 days before diaspora voting day; signed snapshot published to IAB and public portal; requires the Commission Chair HSM card tap to execute; freeze is irreversible without a new signed bundle.
 7. FR-M24-007: Multi-language: EN + SW baseline on all screens; local-jurisdiction language as additional display option for voter-facing screens (Arabic for Middle East missions, French for Francophone Africa missions).
 
 Voting (BVI diaspora mode):
 
 8. FR-M24-008: DIASPORA_BVI mode uses frozen embassy roll; double-vote check performed against embassy-local signed roll snapshot; no live central ABIS sync required.
-9. FR-M24-009: Voting results stored in encrypted signed queue on-device; transmission scheduled within IEBC-published per-embassy transmission window (published 30 days before voting day).
+9. FR-M24-009: Voting results stored in encrypted signed queue on-device; transmission scheduled within Commission-published per-embassy transmission window (published 30 days before voting day).
 10. FR-M24-010: Transmission window management: on connectivity failure, kit generates DELAYED_TRANSMISSION event; data retained under continuous party-agent custody; retransmission attempted every 30 minutes for up to 6 hours after poll close.
-11. FR-M24-011: Physical ballot fallback: on digital transmission failure after 6-hour retry window, physical ballots sealed in RFID-tagged tamper-evident pouch dispatched to Nairobi under IEBC observer escort; party-agent custody certificate signed at embassy dispatch.
+11. FR-M24-011: Physical ballot fallback: on digital transmission failure after 6-hour retry window, physical ballots sealed in RFID-tagged tamper-evident pouch dispatched to Nairobi under the Commission observer escort; party-agent custody certificate signed at embassy dispatch.
 12. FR-M24-012: Cross-border chain of custody: physical-ballot pouch RFID custody events recorded at embassy dispatch, transit waypoints, JKIA arrival, bonded warehouse, and Nairobi counting centre; all events anchored to Merkle chain.
-13. FR-M24-013: Time zone handling: kit runs UTC; displays EAT to IEBC officers, local time to voters; transmission window published in both UTC and local time for each embassy.
+13. FR-M24-013: Time zone handling: kit runs UTC; displays EAT to the Commission officers, local time to voters; transmission window published in both UTC and local time for each embassy.
 14. FR-M24-014: Kit bound to exactly one embassy code; cannot operate at a different embassy; geo-fence enforced at embassy GPS coordinates with 5 km tolerance for large-venue voting days.
 15. FR-M24-015: Form 34A-D publication: digitally transmitted form published on public portal within 30 minutes of central receipt; physical-ballot form published within 24 hours of Nairobi receipt; 100% of missions.
 16. FR-M24-016: Diaspora results aggregated into dedicated "Diaspora Constituency" in national aggregation pipeline; presidential contest only (diaspora voters do not participate in constituency contests under current Elections Act framework).
-17. FR-M24-017: All IEBC instructions to embassy presiding officers published in EN + SW; embassy-country liaison language at IEBC discretion.
+17. FR-M24-017: All the Commission instructions to embassy presiding officers published in EN + SW; embassy-country liaison language at the Commission discretion.
 
 Availability and offline:
 
@@ -148,9 +148,9 @@ Events:
 
 UI screens:
 
-44. FR-M24-044: Embassy operations dashboard: list of all missions; status badge (green/amber/red) per mission; transmission-window countdown; transmission mode indicator (digital/physical/delayed); one-click escalation to IEBC Ops Officer.
+44. FR-M24-044: Embassy operations dashboard: list of all missions; status badge (green/amber/red) per mission; transmission-window countdown; transmission mode indicator (digital/physical/delayed); one-click escalation to the Commission Ops Officer.
 45. FR-M24-045: Diaspora BVR Wizard on-kit: identical UX to M01 registration; embassy-specific header; language toggle with local-jurisdiction language option; confirmation screen shows embassy code prominently.
-46. FR-M24-046: Voter roll freeze screen: IEBC Chair view; roll count, pending dedup status, freeze timestamp preview; HSM card tap required; confirmation dialog before execution.
+46. FR-M24-046: Voter roll freeze screen: the Commission Chair view; roll count, pending dedup status, freeze timestamp preview; HSM card tap required; confirmation dialog before execution.
 47. FR-M24-047: Diaspora BVI flow on-kit: identical to M05 BVI UX; offline mode banner showing "offline, voting will be transmitted within [window close time]" when no connectivity.
 48. FR-M24-048: Physical pouch custody screen: RFID scanner interface; custody event type selector; party-agent witness QR scan; automatic GPS capture; confirmation before record submission.
 49. FR-M24-049: Diaspora Form 34A-D public view: per-embassy result card with candidate tallies, transmission mode, timestamp, Merkle proof link; identical styling to domestic Form 34A view on public portal.
@@ -164,7 +164,7 @@ Integration and logistics:
 
 ## Acceptance criteria
 
-AC-M24-01: >= 90% of embassy missions achieve digital transmission within the declared per-embassy window; measured by transmission log signed by IEBC Diaspora Ops.
+AC-M24-01: >= 90% of embassy missions achieve digital transmission within the declared per-embassy window; measured by transmission log signed by the Commission Diaspora Ops.
 AC-M24-02: Zero physical pouch custody gaps >= 6 hours across all missions on election day; measured by RFID event log; IAB Diaspora Representative sign-off.
 AC-M24-03: Diaspora Form 34A-D published <= 30 minutes of digital receipt for 100% of missions; timestamp delta logged; Datacraft Technical sign-off.
 AC-M24-04: Physical-ballot Form 34A-D published <= 24 hours of Nairobi counting-centre receipt for 100% of missions; Returning Officer sign-off.
@@ -189,9 +189,9 @@ EC-CON-10: Dual-SIM failover mid-transmission at embassy; same signed batch retr
 EC-DAT-01: Duplicate Form 34A-D submission from kit on reconnect; cached response returned; no re-execution of aggregation pipeline.
 EC-DAT-02: Same idempotency key with different Form 34A-D body (e.g., corrected tally attempt); 422 idempotency-key-reuse error; Returning Officer must use amendment flow.
 EC-DAT-11: Spoilt > valid or candidate tallies > registered voters in embassy form; block with reason code; Returning Officer override creates DisputeCase.
-EC-SEC-01: Signature mismatch on Form 34A-D received from kit; form never applied to aggregation; tamper topic event emitted; alert to SOC + IEBC Chair.
+EC-SEC-01: Signature mismatch on Form 34A-D received from kit; form never applied to aggregation; tamper topic event emitted; alert to SOC + the Commission Chair.
 EC-SEC-02: Kit tamper seal broken in transit between embassy and counting centre; quarantine stream; RFID custody event raised; ECC alert triggered.
-EC-SEC-03: HSM unavailable during roll-freeze ceremony; signing queue pauses; alert to IEBC Chair; freeze postponed; ingest continues.
+EC-SEC-03: HSM unavailable during roll-freeze ceremony; signing queue pauses; alert to the Commission Chair; freeze postponed; ingest continues.
 EC-SEC-05: Injection in embassy station metadata field submitted via admin API; parameterised storage only; no dynamic query.
 EC-SEC-16: Biometric data or voter ID leaked to log lines; CI log-scanner fixture blocks deployment; telemetry refuses Tier A/B data.
 EC-IDN-01: Kit cert revoked mid-session due to suspected compromise; kit refuses further operations within 60 s; honey mode served; queue quarantined.
@@ -237,4 +237,4 @@ Tags: `#[trace("FR-M24-001","AC-M24-01")]`
 - How many active missions will be confirmed post-award? Planning estimate is 40, but Foreign Ministry spec exercise (due 2026-12-15) may change the count and affect kit provisioning.
 - sw/ spec names Kotlin for kit software; ADR stack mandates Flutter. Page written to ADR-0020 Flutter path; sw/ text should be corrected in the post-award spec exercise.
 - Legal opinion per mission cluster on host-country challenge to in-country Kenyan voting is pending; architecture is prepared but activation per mission is discretionary.
-- IATA chain-of-custody requirements for physical-ballot pouches need confirmation from IEBC Customs team.
+- IATA chain-of-custody requirements for physical-ballot pouches need confirmation from the Commission Customs team.

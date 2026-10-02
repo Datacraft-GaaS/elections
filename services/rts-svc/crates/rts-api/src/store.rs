@@ -291,7 +291,7 @@ impl AppState {
 
     /// The consolidated Form 34C for a constituency.
     ///
-    /// This is the actual IEBC consolidation: a candidate's votes across a
+    /// This is the actual the Commission consolidation: a candidate's votes across a
     /// constituency are the sum over every station that reported them, and a
     /// candidate is only included if at least one station returned a figure for
     /// them. Previously `get_snapshot` returned `form34c: None` for every scope.

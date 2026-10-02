@@ -8,20 +8,20 @@
 | Size | M |
 | Availability class | routine 99.5%; 99.9% during accreditation window and election day |
 | Event-sourced | no |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M42-media-accreditation-portal.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M42-media-accreditation-portal.md |
 
 ## Purpose
 
 Manage accreditation of journalists, photographers, broadcasters, and live-feed operators for election-period coverage. Issue tamper-evident digital credentials, control access to results centres and restricted polling areas, enforce Media Council Act 2013 code-of-conduct obligations, and provide a revocation workflow for accreditation breaches. Badge verification is offline-capable with a 5-minute CRL refresh cycle.
 
-Strategy reference: §XVIII (Stakeholder Engagement). Elections Act s.21A; Media Council of Kenya Act 2013 s.29; IEBC Media Accreditation Regulations.
+Strategy reference: §XVIII (Stakeholder Engagement). Elections Act s.21A; Media Council of Kenya Act 2013 s.29; the Commission Media Accreditation Regulations.
 
 ## Surfaces and languages
 
 | surface | technology | path |
 |---|---|---|
 | Media Applicant Portal (WCAG 2.2 AA) | Astro | services/training-svc/astro/media-accreditation/ |
-| IEBC Media Officer Back-Office | Phoenix LiveView | services/training-svc/ex/accreditation_web/ |
+| the Commission Media Officer Back-Office | Phoenix LiveView | services/training-svc/ex/accreditation_web/ |
 | Scanner App (mobile QR scanner) | Flutter | services/training-svc/apps/badge-scanner/ |
 | Public Organisation List | Astro | services/training-svc/astro/media-accreditation/ |
 | API | Rust (axum) | services/training-svc/crates/training-api/ |
@@ -86,16 +86,16 @@ OpenAPI file: `packages/openapi-contracts/training/media-accreditation.yaml`
 Application:
 1. FR-M42-001: online application: full name, NIN/Passport, employer organisation, MCK membership number, coverage scope (national/county/constituency), access zones requested (POLLING_STATION/TALLYING_CENTRE/NATIONAL_RESULTS_CENTRE/RESTRICTED_BRIEFING), ICAO-compliant photo
 2. FR-M42-002: MCK membership verification via MCK API on submission; non-MCK applicants flagged for enhanced vetting; mck_verified boolean stored on record
-3. FR-M42-003: background vetting checklist: NPS advisory clearance check (advisory only), IEBC internal watch-list cross-reference, prior accreditation revocation history; results visible only to IEBC Media Officer
+3. FR-M42-003: background vetting checklist: NPS advisory clearance check (advisory only), the Commission internal watch-list cross-reference, prior accreditation revocation history; results visible only to the Commission Media Officer
 4. FR-M42-004: application lifecycle: SUBMITTED -> UNDER_VETTING -> APPROVED/REJECTED -> BADGE_ISSUED -> ACTIVE/SUSPENDED/REVOKED; state transitions role-gated and immutable once made
-5. FR-M42-005: rejection notice: written reason citing specific regulatory clause (Elections Act s.21A, Media Council Act 2013 s.29, or IEBC Media Accreditation Regulations); delivered to applicant within 48 hours of rejection
+5. FR-M42-005: rejection notice: written reason citing specific regulatory clause (Elections Act s.21A, Media Council Act 2013 s.29, or the Commission Media Accreditation Regulations); delivered to applicant within 48 hours of rejection
 6. FR-M42-006: bulk organisation onboarding: broadcaster submits crew roster CSV/XLSX; system generates individual applications per crew member; organisation admin dashboard tracks per-person status
 7. FR-M42-007: bulk roster per-row error report: invalid rows listed with field-level error codes; valid rows queued independently; valid rows not blocked by invalid peer rows
 8. FR-M42-008: code-of-conduct digital acknowledgement before badge issuance; references Media Council Act 2013 s.29; timestamped and stored as AccreditationAuditEntry
 
 Badge:
 9. FR-M42-009: digital badge PDF: holder name, photo, organisation, access zones list, validity dates (valid_from, valid_to), badge serial (UUID7); QR encodes HSM-signed JWT claim; rendered using badge template service
-10. FR-M42-010: badge HSM-signed via P06; signature verifiable offline using IEBC public key embedded in scanner app; badge issuance pauses if HSM unavailable and queues for signing on restore
+10. FR-M42-010: badge HSM-signed via P06; signature verifiable offline using the Commission public key embedded in scanner app; badge issuance pauses if HSM unavailable and queues for signing on restore
 11. FR-M42-011: live-feed access permit: separate permit layer for broadcast crews needing fibre/VSAT access; permit linked to accreditation record; auto-populates M16 Election Command Centre network-access list via outbound integration
 12. FR-M42-012: accreditation window enforcement: portal accepts applications only within gazetted window; window dates configurable per gazette notice; late applications return 422 with gazette reference and statutory citation
 
@@ -105,7 +105,7 @@ Scanning and access:
 15. FR-M42-015: badge serial verification endpoint returns only pass/fail with zone info; no applicant name, photo, or personal data in public verification response
 
 Revocation:
-16. FR-M42-016: revocation workflow: IEBC Media Officer or Security Officer initiates with reason code (BREACH/MISCONDUCT/SECURITY/EXPIRED); second-officer confirmation required for non-emergency SECURITY and MISCONDUCT revocations; emergency SECURITY bypass logged with justification
+16. FR-M42-016: revocation workflow: the Commission Media Officer or Security Officer initiates with reason code (BREACH/MISCONDUCT/SECURITY/EXPIRED); second-officer confirmation required for non-emergency SECURITY and MISCONDUCT revocations; emergency SECURITY bypass logged with justification
 17. FR-M42-017: badge serial added to CRL within 5 minutes of revocation confirmed; CRL published to CDN; offline scanners sync CRL at next scan session start
 18. FR-M42-018: BREACH revocation triggers MCK referral package: signed PDF with badge serial, timestamp, breach description, officer details; transmitted via MCK API within 1 hour; fallback to encrypted email if MCK API unavailable
 19. FR-M42-019: CRL HSM-signed by P06; scanner app rejects any CRL whose signature fails verification; CRL schema includes generated_at timestamp and revoked_serials array
@@ -114,7 +114,7 @@ Audit and public:
 20. FR-M42-020: every accreditation action audit-logged with actor, timestamp, IP, and purpose code; each entry appended to P05 Merkle chain; immutable
 21. FR-M42-021: RBAC: Media Officer cannot self-approve application from their own organisation; Security Officer revocation requires second-officer confirmation for non-emergency events; conflict-of-interest declaration tracked per vetting decision
 22. FR-M42-022: public accredited-organisation list: organisation names only; no individual journalist names in any response field; updated daily during active window; downloadable CSV
-23. FR-M42-023: real-time presence count per results centre visible to Security Officers and Results Centre Managers on IEBC back-office; presence count derived from scanner app events
+23. FR-M42-023: real-time presence count per results centre visible to Security Officers and Results Centre Managers on the Commission back-office; presence count derived from scanner app events
 
 Data and compliance:
 24. FR-M42-024: DPA 2019 s.30(1)(b) lawful basis; biometric photo retained 7 years; NPS advisory data not stored beyond vetting session; only pass/fail advisory flag stored; DPIA registered with ODPC
@@ -124,7 +124,7 @@ Data and compliance:
 28. FR-M42-028: WCAG 2.2 AA on all applicant-facing screens and public organisation list; EN + SW language selector; verified by axe-core and manual audit
 29. FR-M42-029: NPS advisory data not stored post-vetting session; advisory pass/fail flag cleared on session close; no NPS fields in persisted MediaAccreditation record
 30. FR-M42-030: MCK API unavailability fallback: applicant can upload MCK membership certificate image; officer manually verifies; mck_verified flag updated when MCK API restores; manual path documented in vetting checklist
-31. FR-M42-031: accreditation window dates configurable by IEBC Media Officer per gazette notice; gazette reference stored per application batch; window closure enforced via durable date gate
+31. FR-M42-031: accreditation window dates configurable by the Commission Media Officer per gazette notice; gazette reference stored per application batch; window closure enforced via durable date gate
 
 ## Acceptance criteria
 
@@ -164,7 +164,7 @@ EC-SCL-02: surge applications at accreditation window open; auto-scaling portal 
 EC-SCL-04: consumer lag > 60 seconds on badge-issuance or CRL-publish queue; alert fires; backpressure applied; no OOM; CRL publish SLA re-evaluated
 EC-CON-01: scanner app offline; local CRL cache used for verification; alert fires if CRL age > 30 minutes; manual block list distributed via SMS to supervisors
 EC-OPS-05: MCK API unavailable during vetting; fallback to manual certificate upload activated; vetting continues without delay; mck_verified flag updated when MCK API restores
-EC-OPS-07: IEBC Media Officer absent during second-officer confirmation step; confirmation re-assigned to next available officer; credential revocation exactly-once on commit
+EC-OPS-07: the Commission Media Officer absent during second-officer confirmation step; confirmation re-assigned to next available officer; credential revocation exactly-once on commit
 EC-LEG-02: DPA 2019 s.30(1)(b) lawful basis; NPS advisory data not stored beyond vetting session; biometric photo retained 7 years; DPIA registered; ODPC notified of any breach within 72 hours
 EC-LEG-04: revocation disputed as arbitrary; compensating event records dispute; second-officer confirmation log produced as evidence; reason codes tied to specific regulation clauses
 EC-SEC-17: PQ hybrid negotiation failure on scanner-to-CRL CDN endpoint; scanner falls back to classical TLS 1.3 only; never negotiates TLS 1.2; verified by testssl.sh

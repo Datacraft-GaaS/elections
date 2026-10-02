@@ -469,10 +469,10 @@ paths:
     post:
       tags: [incidents]
       operationId: observerFlagSystemic
-      summary: Flag an incident as systemic (immediate IEBC response)
+      summary: Flag an incident as systemic (immediate the Commission response)
       description: >
         Escalates an existing incident to systemic status, triggering the
-        immediate-response workflow with IEBC. Requires OBSERVER_CHIEF role.
+        immediate-response workflow with the Commission. Requires OBSERVER_CHIEF role.
         Idempotent on Idempotency-Key.
       x-eel-tier: 3
       x-eel-auth: JWT+SpiceDB

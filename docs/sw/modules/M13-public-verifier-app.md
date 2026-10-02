@@ -4,7 +4,7 @@
 **Name:** Public Verifier App
 **Owner:** Datacraft Limited — Mobile & Citizen Engagement Team
 **Status:** Draft v2
-**IP Classification:** Custom Software — IPR vests in IEBC per GCC 15.4 at Operational Acceptance; source released as open-source (MIT licence) per Strategy PB-02 commitment
+**IP Classification:** Custom Software — IPR vests in the Commission per GCC 15.4 at Operational Acceptance; source released as open-source (MIT licence) per Strategy PB-02 commitment
 
 **Strategy traceback:** Part III §PB-02, Part III §PB-03, Part IX §IX.2.A1-A3, Part XII §XII.3.2, Part XV §XV.1, Part XVII §XVII.3 Element 5
 
@@ -12,7 +12,7 @@
 
 ## Purpose
 
-The Public Verifier App is Kenya's sovereign citizen-facing election integrity tool. Any Kenyan — smartphone or feature phone — can enter their polling station code and receive the official Form 34A tally, its cryptographic hash, and a Merkle inclusion proof verifiable against the IEBC public transparency log. The app removes the information asymmetry that made the "#WapiForm34A" narrative dispositive in Raila Odinga v IEBC [2017] eKLR and converts the citizenry into 30 million independent auditors. It also carries queue status, participation token lookup (M14 integration), safety alerts (M17 integration), and grievance filing in one place.
+The Public Verifier App is Kenya's sovereign citizen-facing election integrity tool. Any Kenyan — smartphone or feature phone — can enter their polling station code and receive the official Form 34A tally, its cryptographic hash, and a Merkle inclusion proof verifiable against the Commission public transparency log. The app removes the information asymmetry that made the "#WapiForm34A" narrative dispositive in Raila Odinga v the Commission [2017] eKLR and converts the citizenry into 30 million independent auditors. It also carries queue status, participation token lookup (M14 integration), safety alerts (M17 integration), and grievance filing in one place.
 
 ---
 
@@ -37,13 +37,13 @@ The Public Verifier App is Kenya's sovereign citizen-facing election integrity t
 A user who supplies a valid polling station code receives: candidate names, votes per candidate per contest (all six simultaneous contests), ballots issued, ballots cast, rejected ballots, the Form 34A PDF download link, the SHA-256 hash of that PDF, and the Merkle path from that hash to the published national root.
 
 ### FR-13.02 — Hash self-verification
-The app independently fetches the published Merkle root from the IEBC transparency log (and cross-checks against four secondary channels: GitHub, IPFS, IAB domain, Twitter/X) and displays VERIFIED / MISMATCH with explanation. Verification is client-side; no result data transits any third-party server.
+The app independently fetches the published Merkle root from the Commission transparency log (and cross-checks against four secondary channels: GitHub, IPFS, IAB domain, Twitter/X) and displays VERIFIED / MISMATCH with explanation. Verification is client-side; no result data transits any third-party server.
 
 ### FR-13.03 — Participation token lookup
 Integration with M14 reproducibility bundle: voter enters participation token received at polling station and confirms they appear in the participation roll (no voter name or ID visible in response — only "your token is recorded in station X's participation list").
 
 ### FR-13.04 — WhatsApp and SMS/USSD channels
-A WhatsApp Business API bot answers station code queries with a text summary + PDF link. A USSD short-code (*IEBC# or equivalent obtained from Communications Authority) answers the same query on any 2G/3G handset with no data plan. Both channels are backed by the same API as the app.
+A WhatsApp Business API bot answers station code queries with a text summary + PDF link. A USSD short-code (*the Commission# or equivalent obtained from Communications Authority) answers the same query on any 2G/3G handset with no data plan. Both channels are backed by the same API as the app.
 
 ### FR-13.05 — Live queue status
 The "Queue" tab shows current estimated wait time at the voter's home station (from M19 queue data), colour-coded green/amber/red, updated every 5 minutes. Opt-in SMS alert when wait drops below 30 minutes.
@@ -61,10 +61,10 @@ Interactive voter-education flow explaining the election process in 11 languages
 Core hash verification works offline if the app has cached the current Merkle root. Queue and safety data require connectivity but degrade gracefully (last known state displayed with timestamp).
 
 ### FR-13.10 — Open-source publication
-Complete Android and iOS source code published under MIT licence to the IEBC GitHub organisation at T-30, along with a reproducible build recipe (Docker, pinned SDK). Anyone can build and compare their binary to the published app store binary using the published APK hash.
+Complete Android and iOS source code published under MIT licence to the Commission GitHub organisation at T-30, along with a reproducible build recipe (Docker, pinned SDK). Anyone can build and compare their binary to the published app store binary using the published APK hash.
 
 ### FR-13.11 — Binary integrity check
-On each launch and every 24 hours: app computes SHA-256 of its own binary and compares against the signed hash published at `https://iebc.go.ke/verifier/integrity`. MISMATCH triggers a full-screen warning and reports to M16 SOC.
+On each launch and every 24 hours: app computes SHA-256 of its own binary and compares against the signed hash published at `https://eel.example/verifier/integrity`. MISMATCH triggers a full-screen warning and reports to M16 SOC.
 
 ### FR-13.12 — Accessibility
 Full WCAG 2.2 AA compliance. TalkBack and VoiceOver support. Font scaling up to 200% without layout breakage. High-contrast mode. Audio-guided station-code entry in EN, SW, plus 9 regional languages.
@@ -80,7 +80,7 @@ From the "Data" tab, any user can download the full signed Form 34A dataset (CSV
 ## Non-Functional Requirements
 
 ### NFR-13.01 — Availability
-99.99% during the polling window (E-Day through E+30). Served from three geographically separate read-only replicas (primary: IEBC DC; secondary: Mombasa CDN PoP; tertiary: Kampala or Dar CDN PoP). DDoS on primary does not take down service.
+99.99% during the polling window (E-Day through E+30). Served from three geographically separate read-only replicas (primary: the Commission DC; secondary: Mombasa CDN PoP; tertiary: Kampala or Dar CDN PoP). DDoS on primary does not take down service.
 
 ### NFR-13.02 — Performance
 Portal page load p99 < 2 s at 10M concurrent unique users. Form 34A hash lookup p99 < 500 ms. WhatsApp/SMS response p99 < 10 s.
@@ -89,7 +89,7 @@ Portal page load p99 < 2 s at 10M concurrent unique users. Form 34A hash lookup 
 Certificate pinning on API endpoint. Dual-board HSM-backed code signing. In-app binary integrity. Play Integrity API / App Attest check with visible warning (not a hard block) on non-compliant devices. Zero PII in transit for anonymous lookups. Participation token design is anonymous: no voter identity is derivable from the token.
 
 ### NFR-13.04 — Privacy (DPA 2019)
-Lawful basis: Article 88 IEBC public interest mandate + voter explicit consent for participation token. No biometric data. No voter-specific PII stored in the app beyond session. Participation tokens are cryptographically unlinkable to voter identity at the server.
+Lawful basis: Article 88 the Commission public interest mandate + voter explicit consent for participation token. No biometric data. No voter-specific PII stored in the app beyond session. Participation tokens are cryptographically unlinkable to voter identity at the server.
 
 ### NFR-13.05 — Scalability
 Backend auto-scales to 30M simultaneous active sessions during peak (Form 34C publication moment). Static-first CDN for read paths; write paths (grievance filing) rate-limited.
@@ -192,7 +192,7 @@ All endpoints: OpenAPI 3.1 spec at `/api/v1/openapi.json`. TLS 1.3. CORS: allow 
 **Third-party:**
 - WhatsApp Business API (Meta) — inbound/outbound WA messages
 - SMS aggregator (Safaricom / Airtel) — outbound SMS delivery for USSD fallback
-- Communications Authority of Kenya (CA) — non-premium USSD short-code assignment (e.g. *IEBC# or *400#); CA type-approval for the USSD application; SLA: CA short-code assignment requires formal written application 90 days before go-live; IEBC to submit application at T-270 minimum; type-approval clearance typically 30 days; CA also coordinates inter-operator USSD routing; dependency tracked in M13 rollout milestone at T-240
+- Communications Authority of Kenya (CA) — non-premium USSD short-code assignment (e.g. *the Commission# or *400#); CA type-approval for the USSD application; SLA: CA short-code assignment requires formal written application 90 days before go-live; the Commission to submit application at T-270 minimum; type-approval clearance typically 30 days; CA also coordinates inter-operator USSD routing; dependency tracked in M13 rollout milestone at T-240
 - Google Play Store + Apple App Store — distribution
 - IPFS node — Merkle root cross-publication
 
@@ -217,12 +217,12 @@ All endpoints: OpenAPI 3.1 spec at `/api/v1/openapi.json`. TLS 1.3. CORS: allow 
 | Requirement | Source |
 |---|---|
 | Verifiable and transparent election method | Constitution Art. 86(a) |
-| IEBC public accountability | Constitution Art. 88(4) |
+| the Commission public accountability | Constitution Art. 88(4) |
 | Voter right to information | Access to Information Act 2016 s.4 |
 | Anonymous participation (ballot secrecy) | Constitution Art. 86(d); Elections Act s.53 |
 | Data minimisation for anonymous lookups | DPA 2019 s.26 |
 | Accessibility for voters with disability | Constitution Art. 54; Art. 82 |
-| Grievance channel requirement | Elections Act s.78; IEBC Act s.12 |
+| Grievance channel requirement | Elections Act s.78; the Commission Act s.12 |
 | No biometric data in citizen-facing app | DPA 2019 s.47 (biometric as sensitive category) |
 
 ---
@@ -231,13 +231,13 @@ All endpoints: OpenAPI 3.1 spec at `/api/v1/openapi.json`. TLS 1.3. CORS: allow 
 
 | Metric | Target | Measurement | Sign-off |
 |---|---|---|---|
-| Unique verifications on E-Day + 7 days | > 5 million | API log count | IEBC Chair |
+| Unique verifications on E-Day + 7 days | > 5 million | API log count | the Commission Chair |
 | App store downloads by E-Day | > 2 million | Play/App Store analytics | Datacraft |
 | WhatsApp + SMS queries on E-Day | > 2 million combined | Aggregator logs | Datacraft |
-| Portal availability during E-Day through E+30 | >= 99.99% | Uptime robot (3 replica checks) | IEBC ICT |
+| Portal availability during E-Day through E+30 | >= 99.99% | Uptime robot (3 replica checks) | the Commission ICT |
 | Hash verification VERIFIED rate | 100% for all published forms | Automated test | IAB |
 | Grievance acknowledgement SLA | 100% within 2 hours | Ticket system | M23 owner |
-| Form 34A available on app within X of upload | <= 30 min | Timestamp diff | IEBC ICT |
+| Form 34A available on app within X of upload | <= 30 min | Timestamp diff | the Commission ICT |
 | p99 tally lookup latency | < 500 ms | APM (OpenTelemetry) | Datacraft SRE |
 
 ---
@@ -260,7 +260,7 @@ All endpoints: OpenAPI 3.1 spec at `/api/v1/openapi.json`. TLS 1.3. CORS: allow 
 | Phase | Date | Scope |
 |---|---|---|
 | Alpha (internal Datacraft) | 2026-11-01 | Core verify + hash check, EN only |
-| Beta (IEBC + IAB) | 2027-01-15 | All tabs; EN + SW; 10 testers |
+| Beta (the Commission + IAB) | 2027-01-15 | All tabs; EN + SW; 10 testers |
 | Public pilot (Nairobi + 2 counties) | 2027-03-01 | 100K users; all 11 languages |
 | Dry-run election | 2027-06-10 (T-60) | Full national; all channels live |
 | General availability | 2027-07-11 (T-30) | App stores; SMS; WhatsApp |
@@ -280,7 +280,7 @@ All endpoints: OpenAPI 3.1 spec at `/api/v1/openapi.json`. TLS 1.3. CORS: allow 
 - **M23** (Grievance Channels) — ticket API
 - **P06** (HSM) — Merkle root signing; binary code signing
 - **P04** (IAM) — IAB authenticated read feed
-- **M29** (Mobile Citizen Verify) — shares the same Rust client-side verification logic; the Rust verifier crate must be extracted into a shared library `libiebc-verifier` (Rust FFI + Android JNI + iOS XCFramework) per MOBILE-INTEGRATION-NOTES.md §8 before either M13 or M29 ships, to avoid divergent verification behaviour
+- **M29** (Mobile Citizen Verify) — shares the same Rust client-side verification logic; the Rust verifier crate must be extracted into a shared library `libcommission-verifier` (Rust FFI + Android JNI + iOS XCFramework) per MOBILE-INTEGRATION-NOTES.md §8 before either M13 or M29 ships, to avoid divergent verification behaviour
 - External: WhatsApp Business API; CA non-premium short-code; Google Play / Apple App Store
 
 ---
@@ -289,7 +289,7 @@ All endpoints: OpenAPI 3.1 spec at `/api/v1/openapi.json`. TLS 1.3. CORS: allow 
 
 | # | Risk | Mitigation |
 |---|---|---|
-| R1 | Clone apps in Play/App Store spreading disinformation | Weekly automated clone-scan; CA/IEBC pre-agreed expedited takedown; official install links on DNSSEC-protected domain |
+| R1 | Clone apps in Play/App Store spreading disinformation | Weekly automated clone-scan; CA/the Commission pre-agreed expedited takedown; official install links on DNSSEC-protected domain |
 | R2 | DDoS at Form 34C publication | 3-replica CDN-first architecture; upstream scrubbing; Cloudflare or equivalent |
 | R3 | WhatsApp Business API quota exceeded at peak | Pre-negotiated higher tier quota; SMS as fallback for all WA users |
 | R4 | Merkle root cross-publication channel failure | 5 independent channels; app verified against all 5; single-channel failure is non-critical |

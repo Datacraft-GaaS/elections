@@ -72,7 +72,7 @@ controls:
       - "docs/runbooks/"
     policies:
       - "Membership of FIRST or national CSIRT network to be confirmed"
-    notes: "Planned: IEBC to register with Kenya CSIRT and relevant electoral technology groups"
+    notes: "Planned: the Commission to register with Kenya CSIRT and relevant electoral technology groups"
 
   - control_id: "A.5.7"
     title: "Threat intelligence"
@@ -182,7 +182,7 @@ controls:
       - "platform/keycloak/"
       - "docs/adr/0007-authn-authz-secrets.md"
     policies:
-      - "Keycloak at auth.lindela.io manages all human identities; service identities via SPIFFE/SPIRE SVIDs"
+      - "Keycloak at auth.eel.example manages all human identities; service identities via SPIFFE/SPIRE SVIDs"
     notes: "MFA enforced for all privileged accounts; SVID rotation every 24 hours"
 
   - control_id: "A.5.17"
@@ -257,7 +257,7 @@ controls:
       - "platform/argocd/"
       - "environments/"
     policies:
-      - "All compute is on IEBC-controlled Contabo EU infrastructure; no public cloud SaaS for Tier A data"
+      - "All compute is on Commission-controlled Contabo EU infrastructure; no public cloud SaaS for Tier A data"
     notes: "Infrastructure is self-hosted; ArgoCD manages deployment; no Tier A/B data in public SaaS"
 
   - control_id: "A.5.24"
@@ -429,7 +429,7 @@ controls:
       - "compliance/ipr-handover/"
       - "services/support-admin-svc/crates/hr/"
     policies:
-      - "Background screening requirements for IEBC staff and contractors"
+      - "Background screening requirements for the Commission staff and contractors"
     notes: "M55 hr-payroll records employment screening status; policy document to be drafted"
 
   - control_id: "A.6.2"
@@ -524,7 +524,7 @@ controls:
     implementation_status: partial
     platform_artefacts: []
     policies:
-      - "DC access controls per colocation provider; IEBC office access controls per IEBC physical security policy"
+      - "DC access controls per colocation provider; the Commission office access controls per the Commission physical security policy"
     notes: "Evidence of DC provider physical security controls to be obtained and retained"
 
   - control_id: "A.7.3"
@@ -533,8 +533,8 @@ controls:
     implementation_status: partial
     platform_artefacts: []
     policies:
-      - "IEBC office physical security policy (to be referenced)"
-    notes: "Server rooms within IEBC premises to have access logs; covered by IEBC physical security policy"
+      - "the Commission office physical security policy (to be referenced)"
+    notes: "Server rooms within the Commission premises to have access logs; covered by the Commission physical security policy"
 
   - control_id: "A.7.4"
     title: "Physical security monitoring"
@@ -542,8 +542,8 @@ controls:
     implementation_status: partial
     platform_artefacts: []
     policies:
-      - "CCTV and access log monitoring at DC and IEBC premises"
-    notes: "DC CCTV evidence from provider; IEBC premises monitoring per physical security policy"
+      - "CCTV and access log monitoring at DC and the Commission premises"
+    notes: "DC CCTV evidence from provider; the Commission premises monitoring per physical security policy"
 
   - control_id: "A.7.5"
     title: "Protecting against physical and environmental threats"

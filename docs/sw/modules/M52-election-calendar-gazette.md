@@ -2,29 +2,29 @@
 
 **Module ID:** M52
 **Name:** Election Calendar and Gazette Notice Management
-**Runs on:** Central servers (Kenyan cloud) + IEBC back-office + Government Printer integration
+**Runs on:** Central servers (Kenyan cloud) + the Commission back-office + Government Printer integration
 **Owner:** Datacraft
 **Status:** Draft v1
-**IPR:** Custom Software vests in IEBC per GCC 15.4
+**IPR:** Custom Software vests in the Commission per GCC 15.4
 
 ## 1. Purpose
 
-Track and enforce every statutory notice period required by the Constitution and Elections Act. Every IEBC action that requires a Kenya Gazette notice must flow through this module: notice preparation, statutory-period compliance checking, Government Printer submission, cross-notification to all downstream IEMS systems, and confirmation of publication. Also maintains the master election calendar visible to all IEMS modules. Constitution Art 88; Elections Act 2011 throughout.
+Track and enforce every statutory notice period required by the Constitution and Elections Act. Every the Commission action that requires a Kenya Gazette notice must flow through this module: notice preparation, statutory-period compliance checking, Government Printer submission, cross-notification to all downstream IEMS systems, and confirmation of publication. Also maintains the master election calendar visible to all IEMS modules. Constitution Art 88; Elections Act 2011 throughout.
 
 ## 2. User Personas
 
-- **IEBC Calendar Officer** — creates and maintains statutory notice records; monitors pending obligations
-- **IEBC Legal Officer** — reviews notice text for statutory compliance before submission
-- **IEBC Commissioner (Chair)** — signs formal notice packages requiring Commissioner authority
+- **the Commission Calendar Officer** — creates and maintains statutory notice records; monitors pending obligations
+- **the Commission Legal Officer** — reviews notice text for statutory compliance before submission
+- **the Commission Commissioner (Chair)** — signs formal notice packages requiring Commissioner authority
 - **Government Printer API** — receives notice packages for publication
 - **RO / Constituency Officer** — reads calendar for their event; receives triggered alerts
 - **Public** — reads published election calendar (anonymised view); checks gazette notice links
 - **Downstream IEMS Modules** — subscribe to calendar events via event bus (voter register, CRMS, inventory, etc.)
-- **IEBC DPO** — oversight for any personal data appearing in gazette notices
+- **the Commission DPO** — oversight for any personal data appearing in gazette notices
 
 ## 3. Functional Requirements
 
-- **FR-M52-001** Election event master record: IEBC admin creates election event (general election, referendum, by-election); sets T-0 polling date; system auto-generates the full statutory notice calendar from a configurable rule set.
+- **FR-M52-001** Election event master record: the Commission admin creates election event (general election, referendum, by-election); sets T-0 polling date; system auto-generates the full statutory notice calendar from a configurable rule set.
 - **FR-M52-002** Statutory notice rule engine: for each notice type (voter register close, nomination period open/close, campaign period open/close, polling day gazette, result gazette, petition window close), system computes required publication date, statutory notice period (days before/after event), and earliest/latest permissible publication date. Rule set versioned and auditable.
 - **FR-M52-003** Notice preparation workflow: for each due notice, system generates a draft notice document (EN + SW) using a statutory template; Calendar Officer reviews; Legal Officer approves; Commissioner signs (where required); system submits to Government Printer API.
 - **FR-M52-004** Government Printer integration: submit signed notice package via API; receive publication confirmation with Gazette volume, issue number, and date; store confirmation and link in IEMS record.
@@ -43,23 +43,23 @@ Track and enforce every statutory notice period required by the Constitution and
 - **NFR-M52-002** Government Printer API submission <= 30 s round-trip; retry on failure with exponential backoff for up to 24 h.
 - **NFR-M52-003** Cross-notification bus event delivery to subscribers <= 60 s of gazette publication confirmation.
 - **NFR-M52-004** Public calendar page p99 <= 1 s; available 24/7 (99.9% uptime).
-- **NFR-M52-005** WCAG 2.2 AA for public calendar and IEBC internal screens.
+- **NFR-M52-005** WCAG 2.2 AA for public calendar and the Commission internal screens.
 - **NFR-M52-006** Languages: EN + SW for all notices and UI.
 - **NFR-M52-007** DPA 2019 lawful basis: personal data in gazette notices (candidate names) processed under s.30(1)(b) (legal obligation); minimised to what statute requires; DPIA registered with ODPC for the combined election dataset.
 - **NFR-M52-008** Statutory rule engine versioned: each rule change tracked with effective date; historical elections use the rule set applicable at the time.
 - **NFR-M52-009** Audit log append-only; no soft-delete; retained 10 years post-election.
 
-- **NFR-52-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `iebc-iems-52` (replace 52 with the module number); alert ruleset ID `iems-52-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
+- **NFR-52-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `commission-iems-52` (replace 52 with the module number); alert ruleset ID `iems-52-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
 
 ## 5. User Stories
 
-1. As an IEBC Calendar Officer, I create the 2027 general election event and the system immediately shows me a full statutory notice calendar with 47 required actions and their deadline dates.
-2. As an IEBC Legal Officer, I receive a draft gazette notice for review 14 days before its statutory deadline, giving me time to revise without risk of missing the window.
-3. As the IEBC Chair, I sign the nomination-period gazette notice via my HSM-backed signature in the back-office app; the system submits it to the Government Printer automatically.
+1. As a Commission Calendar Officer, I create the 2027 general election event and the system immediately shows me a full statutory notice calendar with 47 required actions and their deadline dates.
+2. As a Commission Legal Officer, I receive a draft gazette notice for review 14 days before its statutory deadline, giving me time to revise without risk of missing the window.
+3. As the Commission Chair, I sign the nomination-period gazette notice via my HSM-backed signature in the back-office app; the system submits it to the Government Printer automatically.
 4. As the M04 VPRS module, I receive a cross-notification event when the voter register close gazette notice is published, so I can freeze the register at the correct statutory date.
-5. As a member of the public, I view the election calendar on the IEBC portal and see all upcoming statutory dates with links to the relevant Kenya Gazette issue.
-6. As an IEBC Calendar Officer managing a by-election, I see a separate mini-calendar for the constituency event alongside the general election calendar.
-7. As the IEBC Commissioner, I receive an escalation alert when a gazette notice is T-1 day from its statutory deadline and has not been submitted, with one-click sign-and-submit.
+5. As a member of the public, I view the election calendar on the Commission portal and see all upcoming statutory dates with links to the relevant Kenya Gazette issue.
+6. As a Commission Calendar Officer managing a by-election, I see a separate mini-calendar for the constituency event alongside the general election calendar.
+7. As the Commission Commissioner, I receive an escalation alert when a gazette notice is T-1 day from its statutory deadline and has not been submitted, with one-click sign-and-submit.
 
 ## 6. Data Model
 
@@ -126,14 +126,14 @@ paths:
   /v1/calendar/events:
     post:
       summary: Create election event; auto-generate notice calendar
-      security: [{IEBCAdminJWT: []}]
+      security: [{CommissionAdminJWT: []}]
     get:
       summary: List election events
       security: [{PublicRead: []}]
   /v1/calendar/events/{id}/notices:
     get:
       summary: Get all gazette notices for an election event
-      security: [{IEBCStaffJWT: []}]
+      security: [{CommissionStaffJWT: []}]
   /v1/calendar/notices/{id}/legal-approve:
     post:
       summary: Legal Officer approves draft notice
@@ -175,13 +175,13 @@ paths:
 2. **Notice Preparation Workspace** — bilingual draft editor with statutory template; checklist of prerequisites; legal review + Commissioner sign-off workflow; submit button (disabled until all checks pass).
 3. **Government Printer Submission Tracker** — per-notice submission status; retry button; Gazette reference once published.
 4. **Public Calendar Page** — simplified chronological list of election events; gazette reference links; no internal workflow details.
-5. **Alert Dashboard** — IEBC Calendar Officer view; countdown widgets per pending notice; escalation history.
+5. **Alert Dashboard** — the Commission Calendar Officer view; countdown widgets per pending notice; escalation history.
 
 ## 10. Compliance Mapping
 
 | Requirement | Source |
 |-------------|--------|
-| IEBC mandate for gazette notices | Constitution Art 88(3)(b) |
+| the Commission mandate for gazette notices | Constitution Art 88(3)(b) |
 | Voter register close notice | Elections Act §5(2) |
 | Nomination period notice | Elections Act §22(1) |
 | Polling day notice | Elections Act §11(3) |
@@ -205,13 +205,13 @@ paths:
 - **Integration:** Full notice workflow from creation through GP submission and cross-notification; M04, M12, M22, M55 subscription receipts.
 - **E2E:** Simulate general election from event creation through all 47 required gazette notices.
 - **Regression:** Any rule engine change must pass a suite of historical election date computations.
-- **Accessibility:** WCAG 2.2 AA on public calendar page and IEBC notice workspace.
+- **Accessibility:** WCAG 2.2 AA on public calendar page and the Commission notice workspace.
 
 ## 13. Rollout (T-0 = 2027-08-10)
 
 | Milestone | Date | Description |
 |-----------|------|-------------|
-| Rule engine built + legal review | 2026-12-01 | IEBC Legal + Elections Act expert sign-off on rule set |
+| Rule engine built + legal review | 2026-12-01 | the Commission Legal + Elections Act expert sign-off on rule set |
 | Government Printer API MoU + integration | 2027-01-15 | Technical integration test |
 | General election calendar created | 2027-02-01 | First notices begin flowing |
 | First gazette notice published via system | 2027-03-01 | Voter register close notice |
@@ -219,7 +219,7 @@ paths:
 
 ## 14. Dependencies
 
-- Government Printer API (external MoU; IEBC to negotiate)
+- Government Printer API (external MoU; the Commission to negotiate)
 - P06 HSM (Commissioner signatures)
 - M49, M50, M51 (upstream notice triggers)
 - M04, M12, M22, M55, M20 (downstream subscribers)
@@ -246,23 +246,23 @@ paths:
 
 ## 17. Strategy Traceability
 
-- Constitution Art 88(3)(b) — IEBC mandate includes electoral calendar management
+- Constitution Art 88(3)(b) — the Commission mandate includes electoral calendar management
 - Elections Act 2011 §5, §11, §22, §86 — specific notice requirements
 - Referendum Regulations 2017 reg.5 — referendum question gazette
 - Interpretation and General Provisions Act Cap 2 — gazette as legal record
 
 ## 18. Decommissioning
 
-**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if IEBC terminates the contract.
+**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if the Commission terminates the contract.
 
 **Steps:**
 
-1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and IEBC DPO.
+1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and the Commission DPO.
 2. **Service shutdown** — Kubernetes deployments scaled to zero; PersistentVolumeClaims retained for 30 days then deleted after confirmation of M69 transfer.
 3. **Credential revocation** — service account certificates, API keys, and HSM key handles revoked via P06 key-destruction ceremony within 48 hours of shutdown.
 4. **Source-code escrow** — final tagged release deposited to C04 escrow within 7 days of shutdown.
-5. **Runbook handover** — operational runbook and post-mortem notes delivered to IEBC ICT within 14 days.
+5. **Runbook handover** — operational runbook and post-mortem notes delivered to the Commission ICT within 14 days.
 
-**Owner:** SRE Lead. **Sign-off:** IEBC ICT Director + Datacraft Programme Director.
+**Owner:** SRE Lead. **Sign-off:** the Commission ICT Director + Datacraft Programme Director.
 
 > **RESOLUTION (F-23, 2026-08-21):** Decommissioning stub added per audit finding. Owner: SRE Lead. Target: FAT-07 gate.

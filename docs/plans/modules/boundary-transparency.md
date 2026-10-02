@@ -8,7 +8,7 @@
 | Size | M |
 | Availability class | routine 99.5% |
 | Event-sourced | no (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M18-boundary-transparency.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M18-boundary-transparency.md |
 
 ## Purpose
 
@@ -192,4 +192,4 @@ EC-LEG-02: delimitation legal instrument not yet gazetted; boundary stays in dra
 ## Open questions
 
 - Shapefile currency: NLC does not have a machine-readable publication feed; the current plan polls the NLC Gazette PDF; reliability of PDF parsing for detecting new publications needs validation.
-- Boundary dispute handling: the legal process for freezing a disputed boundary polygon during an electoral petition is not specified in regulations; IEBC legal team must confirm the freeze mechanism.
+- Boundary dispute handling: the legal process for freezing a disputed boundary polygon during an electoral petition is not specified in regulations; the Commission legal team must confirm the freeze mechanism.

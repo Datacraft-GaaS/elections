@@ -30,7 +30,7 @@ Status: PASS
 | Golden authz tests per persona | pass | WP-2.3 verify subcommand asserts each (subject, permission, resource) tuple in packages/authz-schema/tests/ |
 | Break-glass runbook validated | pass | end-to-end procedure documented; ceremony state machine + rate limits verified |
 | appset-gen sees all Wave-2 service manifests | pass | services/transparency-svc/deploy/service.yaml and services/boundary-svc/deploy/service.yaml both accepted; platform/hsm-signer/ deployment recognised |
-| Naming: no iebc identifiers | pass | full-tree sweep clean |
+| Naming: no commission identifiers | pass | full-tree sweep clean |
 | Prose: no em/en dashes | pass | full-tree sweep clean |
 | eel-completeness scan | pass with allowlist | remaining errors are scanner self-refs, hello-svc, and .venv/ (all allowlisted) |
 

@@ -206,7 +206,7 @@ modules:
     tier: B
     entities:
       - PersonnelAttendanceRecord
-    lawful_basis: "public task - IEBC operational necessity; Employment Act s.74 (attendance records)"
+    lawful_basis: "public task - the Commission operational necessity; Employment Act s.74 (attendance records)"
     retention_election_years: 7
     post_retention: hard_purge
     erasure_applicable: false
@@ -258,7 +258,7 @@ modules:
     entities:
       - WorkerEnrollment
       - WorkerCertificate
-    lawful_basis: "public task - IEBC operational necessity; training records required for accreditation"
+    lawful_basis: "public task - the Commission operational necessity; training records required for accreditation"
     retention_election_years: 7
     post_retention: hard_purge
     erasure_applicable: false
@@ -292,7 +292,7 @@ modules:
     entities:
       - ObserverOrganisation
       - IndividualObserver
-    lawful_basis: "public task - Elections Act s.109 (observation); IEBC Observer Guidelines"
+    lawful_basis: "public task - Elections Act s.109 (observation); the Commission Observer Guidelines"
     retention_election_years: 5
     post_retention: hard_purge
     erasure_applicable: true

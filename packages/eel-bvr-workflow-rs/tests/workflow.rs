@@ -1,7 +1,7 @@
 //! Compile and validate behaviour for declarative BVR enrolment workflows.
 //!
 //! The fixtures here double as the reference example for the desktop client:
-//! `standard_ke_workflow()` is the shape an IEBC registration officer would
+//! `standard_ke_workflow()` is the shape a Commission registration officer would
 //! actually be handed.
 
 use eel_bvr_workflow_rs::{

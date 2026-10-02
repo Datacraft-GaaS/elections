@@ -8,7 +8,7 @@ defmodule EelHlc.MixProject do
       elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      description: "Hybrid Logical Clock for IEBC IEMS distributed systems"
+      description: "Hybrid Logical Clock for the Commission IEMS distributed systems"
     ]
   end
 

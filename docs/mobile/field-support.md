@@ -26,7 +26,7 @@ real route; no auth; no offline.
 | F8 | Remote diagnostics (logs/reboot/attest/self-test) — policy engine + kit consent + biometric-signed invocation + PO notification | 011–012 |
 | F9 | Warranty check + claim filing + status push (O04) | 013–015 |
 | F10 | Spares availability + dispatch (M20) + nearest store map (offline tiles) | 016, 026 |
-| F11 | Escalation matrix L2/L3/Mechrevo/IEBC ICT with full context carry | 017–019 |
+| F11 | Escalation matrix L2/L3/Mechrevo/the Commission ICT with full context carry | 017–019 |
 | F12 | On-call rotation view | 020 |
 | F13 | Shift handoff (dual sign-off) + auto shift report (signed) | 022, 027–028 |
 | F14 | Offline runbook library (symptom/error-code search ≤ 2 s) + reset guidance | 023, 025, 029 |

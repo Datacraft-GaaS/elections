@@ -2,7 +2,7 @@
 
 **Runs on:** Tallying tablet (constituency + county workstations)
 **Owner:** Datacraft
-**IPR:** Custom Software vests in IEBC per GCC 15.4
+**IPR:** Custom Software vests in the Commission per GCC 15.4
 
 ## 1. Purpose
 
@@ -12,7 +12,7 @@ Convert scanned Forms 34A into signed constituency-level Form 34B and county / n
 
 - Returning Officer (RO) — signs Form 34B per constituency
 - County Returning Officer (CRO) — signs Form 34C per county
-- IEBC national tally officer — Form 34C national
+- the Commission national tally officer — Form 34C national
 - Party Agent — witnesses + countersigns
 - Independent Auditor — witnesses + audits
 
@@ -45,7 +45,7 @@ Convert scanned Forms 34A into signed constituency-level Form 34B and county / n
 
 - RTS Back-End (M10)
 - Public Portal (M11)
-- HSM via IEBC signing service (P06)
+- HSM via Commission signing service (P06)
 - Audit + Merkle log (P05)
 
 ## 6. Failure Modes

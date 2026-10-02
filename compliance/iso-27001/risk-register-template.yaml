@@ -6,7 +6,7 @@
 risk_register_version: "1.0"
 date: "[YYYY-MM-DD]"
 next_review: "[YYYY-MM-DD]"
-owner: "Information Security Manager, IEBC"
+owner: "Information Security Manager, the Commission"
 
 risks:
   - risk_id: RISK-001
@@ -142,7 +142,7 @@ risks:
   - risk_id: RISK-007
     category: availability
     description: "Primary database (PostgreSQL) failure causes loss of voter registration access"
-    asset: "PostgreSQL primary database (db.lindela.io)"
+    asset: "PostgreSQL primary database (db.eel.example)"
     threat: "Hardware failure; software defect; data corruption"
     vulnerability: "Single primary node; complex JSONB schema"
     likelihood: 2
@@ -150,7 +150,7 @@ risks:
     risk_score: 10
     treatment: mitigate
     controls:
-      - "Hot standby at db-backup (144.91.112.190) with streaming replication (A.8.14)"
+      - "Hot standby at db-backup (192.0.2.16) with streaming replication (A.8.14)"
       - "pgBackRest continuous WAL archiving; RPO <= 5 min (A.8.13)"
       - "PG primary kill chaos scenario in WP-5.9 (A.5.29)"
       - "RTO <= 30 min measured and proven in staging (A.5.30)"
@@ -400,9 +400,9 @@ risks:
     treatment: mitigate
     controls:
       - "App signing certificate verification on install (A.8.5)"
-      - "Official download links published via IEBC website (iebc.or.ke) only (A.5.14)"
+      - "Official download links published via Commission website (eel.example) only (A.5.14)"
       - "Anti-clone detection in M13 citizen app (A.8.26)"
-      - "IEBC communications campaign on official app identification (A.6.3)"
+      - "the Commission communications campaign on official app identification (A.6.3)"
     residual_likelihood: 2
     residual_impact: 2
     residual_score: 4

@@ -8,7 +8,7 @@
 | Size | XL |
 | Availability class | election-critical 99.99% |
 | Event-sourced | yes (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M10-rts-backend.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M10-rts-backend.md |
 
 ## Purpose
 
@@ -292,5 +292,5 @@ EC-ML-06: unsigned or un-cosigned model pushed; refused at load; alert.
 ## Open questions
 
 - TLA+ scope: the formal model covers count monotonicity and no-publish-with-dispute; completeness of the model relative to the Elections Act s.39 needs legal review.
-- ICR handwriting samples: the training corpus needs IEBC sign-off on provenance and consent before use; current plan is to use synthetic + historical forms.
+- ICR handwriting samples: the training corpus needs the Commission sign-off on provenance and consent before use; current plan is to use synthetic + historical forms.
 - Kafka capacity: 100k events/s at peak tallying; partition count and retention size need capacity planning before G3.

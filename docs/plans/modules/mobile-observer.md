@@ -8,7 +8,7 @@
 | Size | M |
 | Availability class | routine 99.5% |
 | Event-sourced | no |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M34-mobile-observer.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M34-mobile-observer.md |
 
 ## Purpose
 
@@ -21,7 +21,7 @@ Support ~500 accredited observers (civil society, international bodies, academic
 | Observer App (Android 10+ / iOS 15+) | Flutter | services/field-mobile-svc/apps/observer/ |
 | API | Rust (axum) | services/field-mobile-svc/crates/field-mobile-api/ |
 
-Distribution: private via IEBC MDM. Languages: EN + SW; international language pack (French, Portuguese) subject to demand.
+Distribution: private via Commission MDM. Languages: EN + SW; international language pack (French, Portuguese) subject to demand.
 
 ## Domain model
 
@@ -47,7 +47,7 @@ OpenAPI file: `packages/openapi-contracts/field/observer.yaml`
 | POST /v1/observer/stations/{code}/verify | 3 | JWT+SpiceDB (OBSERVER) | yes | submit verification record (proof verified client-side) |
 | POST /v1/observer/stations/{code}/verify/countersign | 3 | JWT+SpiceDB (OBSERVER) | yes | countersign verification (if accreditation category permits) |
 | POST /v1/observer/incidents | 3 | JWT+SpiceDB (OBSERVER) | yes | structured incident report |
-| POST /v1/observer/incidents/{id}/systemic | 3 | JWT+SpiceDB (OBSERVER_CHIEF) | yes | flag systemic incident requiring immediate IEBC response |
+| POST /v1/observer/incidents/{id}/systemic | 3 | JWT+SpiceDB (OBSERVER_CHIEF) | yes | flag systemic incident requiring immediate the Commission response |
 | GET /v1/observer/end-of-mission | 3 | JWT+SpiceDB (OBSERVER) | n/a | end-of-mission report data |
 | GET /v1/observer/end-of-mission/pdf | 3 | JWT+SpiceDB (OBSERVER) | n/a | end-of-mission PDF download |
 
@@ -85,7 +85,7 @@ OpenAPI file: `packages/openapi-contracts/field/observer.yaml`
 
 ## Feature checklist
 
-1. FR-M34-001: observer enrolment via IEBC accreditation ID + biometric template capture + Play Integrity or App Attest device attestation; attestation failure blocks enrolment; accreditation category recorded and immutable after issue
+1. FR-M34-001: observer enrolment via Commission accreditation ID + biometric template capture + Play Integrity or App Attest device attestation; attestation failure blocks enrolment; accreditation category recorded and immutable after issue
 2. FR-M34-002: MFA sign-in with FIDO2 or platform biometric authenticator + device attestation; fallback to PIN rate-limited at 5 attempts then 30-minute lockout; no SMS OTP for accredited observers
 3. FR-M34-003: accreditation category (CIVIL_SOCIETY, INTERNATIONAL, ACADEMIC, MEDIA) determines feature availability at runtime via SpiceDB; only categories with countersign_rights flag receive countersignature UI
 4. FR-M34-004: full read of Public Portal (M11) data: national, county, constituency, and station-level results with signed Form 34A images; data fetched from M10 RTS back-end with CDN fallback
@@ -93,13 +93,13 @@ OpenAPI file: `packages/openapi-contracts/field/observer.yaml`
 6. FR-M34-006: independent verification of published snapshots against transparency-log (P05) roots; root hash pinned in app bundle at release; mismatch triggers automatic incident report
 7. FR-M34-007: bookmark polling stations of interest; bookmarked stations surface in a watch list with push notification when Form 34A published or results updated
 8. FR-M34-008: bulk download of signed forms per constituency (rate-limited per accreditation category per hour); download includes Form 34A images and Merkle proofs; progress shown
-9. FR-M34-009: GPS check-in on arrival at polling station; distance validated against station polygon; check-in timestamp signed with observer biometric; record submitted to IEBC observer registry
+9. FR-M34-009: GPS check-in on arrival at polling station; distance validated against station polygon; check-in timestamp signed with observer biometric; record submitted to the Commission observer registry
 10. FR-M34-010: time-boxed observation session per station; observer signs off with biometric when leaving; session duration and notes recorded; sign-off triggers submission of observation record
-11. FR-M34-011: signed observation record (visit log) submitted to IEBC observer registry with UUID7 idempotency key; queued if offline; submitted on reconnect
+11. FR-M34-011: signed observation record (visit log) submitted to the Commission observer registry with UUID7 idempotency key; queued if offline; submitted on reconnect
 12. FR-M34-012: structured incident form with 7 categories: PROCEDURAL, SECURITY, LEGAL, OPERATIONAL, TAMPERING, TRANSPARENCY, OTHER; free-text description; photo and short-video evidence upload; GPS coordinates captured at submission
-13. FR-M34-013: incident reports AES-256-GCM encrypted locally in Isar + SQLCipher; signed by observer biometric; queued with UUID7 idempotency key; submitted to IEBC observer coordination, war-room topic, and Auditor-General mirror on reconnect
-14. FR-M34-014: anonymised aggregated observer-report dashboard visible on Public Portal per IEBC policy; individual reports not linked back to observer identity in public view
-15. FR-M34-015: observer chief (OBSERVER_CHIEF role) can signal a systemic incident requiring immediate IEBC response; signal delivered via eel.field.systemic_incident_flagged.v1 exactly-once; SMS/USSD fallback if no network
+13. FR-M34-013: incident reports AES-256-GCM encrypted locally in Isar + SQLCipher; signed by observer biometric; queued with UUID7 idempotency key; submitted to the Commission observer coordination, war-room topic, and Auditor-General mirror on reconnect
+14. FR-M34-014: anonymised aggregated observer-report dashboard visible on Public Portal per the Commission policy; individual reports not linked back to observer identity in public view
+15. FR-M34-015: observer chief (OBSERVER_CHIEF role) can signal a systemic incident requiring immediate the Commission response; signal delivered via eel.field.systemic_incident_flagged.v1 exactly-once; SMS/USSD fallback if no network
 16. FR-M34-016: guided verification sampling workflow: n stations per constituency selected randomly using cryptographic seed per statistical protocol; protocol version recorded in each verification record
 17. FR-M34-017: structured verification checklist per sampled station: form-hash matches transmitted value, party-agent countersignatures present, geo-fence polygon intact, physical seals intact; each item Boolean with notes field
 18. FR-M34-018: observer countersignature attached to verification record where accreditation category permits; countersignature anchored to P05 Merkle chain; SpiceDB check enforced at API level
@@ -202,7 +202,7 @@ Tags: `testWidgets('verify station [FR-M34-005,AC-M34-01,EC-SEC-08]')`
 ## Runbooks and dashboards
 
 - `docs/runbooks/field-mobile-svc-degradation.md` - extend with observer-app offline paths
-- `docs/runbooks/systemic-incident-response.md` - new runbook; war-room escalation flow; IEBC Chair notification steps
+- `docs/runbooks/systemic-incident-response.md` - new runbook; war-room escalation flow; the Commission Chair notification steps
 - Grafana dashboard: `platform/observability/field-mobile-svc/observer-dashboard.json`
 - SLO alerts: `platform/observability/field-mobile-svc/observer-slo-alerts.yaml`
 

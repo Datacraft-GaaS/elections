@@ -3,11 +3,11 @@
 **Module ID:** M30
 **Module Name:** Mobile Party Agent — Agent App
 **Type:** Mobile Application (Flutter, Android 10.0+ / iOS 15+)
-**Distribution:** Private via IEBC MDM (Google Play Managed + Apple Business Manager)
+**Distribution:** Private via Commission MDM (Google Play Managed + Apple Business Manager)
 **Users:** Accredited party agents (~2K per party concurrent peak; national total 20K+ across all parties)
 **Owner:** Datacraft
 **Status:** Specified — pending implementation
-**IPR:** Custom Software vests in IEBC per GCC 15.4 (Teaming §4)
+**IPR:** Custom Software vests in the Commission per GCC 15.4 (Teaming §4)
 
 Adapted from `mobile/apps/MA02-agent.md`, sw/-module renumbered as M30.
 
@@ -15,7 +15,7 @@ Adapted from `mobile/apps/MA02-agent.md`, sw/-module renumbered as M30.
 
 ## 1. Purpose
 
-Give every accredited party agent a phone-in-hand tool that (a) authenticates them into their assigned polling station, (b) lets them independently verify that the Form 34A transmitted from the KIEMS matches the physical form in front of them, (c) countersigns that verification cryptographically, (d) retrieves and validates constituency + county rollups, and (e) reports incidents in a structured, signed way that reaches the IEBC war room.
+Give every accredited party agent a phone-in-hand tool that (a) authenticates them into their assigned polling station, (b) lets them independently verify that the Form 34A transmitted from the KIEMS matches the physical form in front of them, (c) countersigns that verification cryptographically, (d) retrieves and validates constituency + county rollups, and (e) reports incidents in a structured, signed way that reaches the Commission war room.
 
 The Agent app is the citizen-verifiability layer's institutional twin: agents witness in-person and cryptographically attest — building on the same signed-events chain the public sees in M29.
 
@@ -35,7 +35,7 @@ No direct overlap with M01-M28. New capability that adds agent-layer countersign
 
 ### 3.1 Onboarding and Accreditation
 
-- **FR-M30-001** Agent enrols via IEBC accreditation ID + party-issued token + biometric enrolment on device.
+- **FR-M30-001** Agent enrols via Commission accreditation ID + party-issued token + biometric enrolment on device.
 - **FR-M30-002** Assignment: agent bound to a specific polling station (or constituency scope for chief agent) per election.
 - **FR-M30-003** Device attestation required; refuses on rooted / jailbroken / attestation-fail devices.
 - **FR-M30-004** MFA sign-in: biometric + short PIN + device attestation.
@@ -71,12 +71,12 @@ No direct overlap with M01-M28. New capability that adds agent-layer countersign
 
 - **FR-M30-020** Structured incident form: type (obstruction, tampering, voter intimidation, kit malfunction, illegal campaigning, other), description, evidence upload (photo, short video, audio).
 - **FR-M30-021** Location auto-captured with consent per-report.
-- **FR-M30-022** Reports encrypted locally, queued, signed by agent, sent to IEBC war room.
-- **FR-M30-023** Report status tracked; IEBC responder can request more info via in-app messaging.
+- **FR-M30-022** Reports encrypted locally, queued, signed by agent, sent to the Commission war room.
+- **FR-M30-023** Report status tracked; the Commission responder can request more info via in-app messaging.
 
 ### 3.7 Notifications
 
-- **FR-M30-024** Push notifications for: assigned-station events (opening, closing, form submission), chief-agent rollup publication, IEBC broadcast messages.
+- **FR-M30-024** Push notifications for: assigned-station events (opening, closing, form submission), chief-agent rollup publication, the Commission broadcast messages.
 - **FR-M30-025** No PII in payloads.
 
 ### 3.8 Offline Behaviour
@@ -98,13 +98,13 @@ No direct overlap with M01-M28. New capability that adds agent-layer countersign
 
 ## 5. Integrations
 
-- IEBC accreditation database (agent registry)
+- the Commission accreditation database (agent registry)
 - RTS back-end (M10) for form retrieval + countersignature submission
 - BVI back-end (M06) for check-in notification
 - Public Portal (M11) for rollup snapshots (read-only, same feed as M15 IAB Dashboard but without IAB elevated privileges)
 - Transparency log service
 - HSM via signed-event submission
-- IEBC war-room incident-response channel
+- the Commission war-room incident-response channel
 
 ---
 

@@ -9,7 +9,7 @@ Scope: how the China factory (hardware prime) obtains, builds, tests, and loads 
 
 ### 1. Mandate and roles
 
-`eel` is the integrated elections management platform built under tender IEBC/OIT/01/2026-2027. Software prime: Datacraft. Hardware prime: Mechrevo. Data residency is Kenya (two IEBC DR sites + five regional edges); audit retention is fifteen years; T1 election-critical modules run at 99.99% with synchronous DR replication.
+`eel` is the integrated elections management platform. Data residency is Kenya (two authority-provided DR sites + five regional edges); audit retention is fifteen years; T1 election-critical modules run at 99.99% with synchronous DR replication.
 
 The factory's job is narrow: receive kit software, build it reproducibly where necessary, validate it on real devices (KIEMS kits + legacy Android), flash/load approved APKs via `adb`, run the scripted drills, and return signed test evidence. It does not tally, deduplicate biometrics, sign transparency-tree heads, operate HSMs, or deploy backend services.
 
@@ -28,13 +28,13 @@ The existing `factory_pack/` + `.woodpecker/` (`build/test/sign/sbom.yaml`) alre
 
 | Host | Public IP | WG | Role today | Relevance to this ADR |
 |---|---|---|---|---|
-| `spare-3` | `161.97.121.202` | `10.8.0.11` | Spare / unallocated, 200 GB, Caddy `:80/:443`, only loopback `8100/8110` live | **Authoritative factory host.** Only fleet member with spare capacity and a clean port map. |
-| `linode` (UK Nanode) | `88.80.188.224` | `10.8.0.14` | Egress node, Caddy live, user `nyimbi` (not root), Cloak/Nitter/StratEx | **Read mirror + artifact CDN failover.** Too small to build; correct size to mirror. |
-| `auth` | `62.84.181.55` | `10.8.0.3` | Keycloak, SpiceDB, MinIO (`s3.lindela.io` → `127.0.0.1:9002`), OpenBao, Temporal, Documenso | Identity, artifact bucket, release-key custody. |
-| `ml` | `62.169.25.77` | `10.8.0.4` | Ollama (`qwen3:4b`, `qwen3:8b`, `nomic-embed-text`), LiteLLM `:4000`, NLLB `:5500`, MOSS/STT; **no `:443` listener, Caddy installed but disabled** (2026-09-17) | Chat-with-code inference. Internal/WG only until TLS is restored. |
-| `appserver` | `84.46.253.178` | `10.8.0.10` | Product apps + Qdrant `:6333/:6334` loopback, Caddy gateway | Vector store for scoped code index. |
-| `mail` | `217.76.53.144` | `10.8.0.5` | Stalwart, Prometheus `:9090`, Grafana, Loki, Wazuh manager | Monitoring + SIEM. Factory host must be enrolled here. |
-| `db-main` / `db-backup` | `144.91.122.29` / `144.91.112.190` | replication pair | PostgreSQL 17 + pgBackRest to Linode Object Storage (`gb-lon-1`) | Pattern to reuse for `git bundle` backups. Not otherwise involved. |
+| `spare-3` | `192.0.2.17` | `10.8.0.11` | Spare / unallocated, 200 GB, Caddy `:80/:443`, only loopback `8100/8110` live | **Authoritative factory host.** Only fleet member with spare capacity and a clean port map. |
+| `linode` (UK Nanode) | `192.0.2.18` | `10.8.0.14` | Egress node, Caddy live, user `nyimbi` (not root), Cloak/Nitter/StratEx | **Read mirror + artifact CDN failover.** Too small to build; correct size to mirror. |
+| `auth` | `192.0.2.12` | `10.8.0.3` | Keycloak, SpiceDB, MinIO (`s3.eel.example` → `127.0.0.1:9002`), OpenBao, Temporal, Documenso | Identity, artifact bucket, release-key custody. |
+| `ml` | `192.0.2.11` | `10.8.0.4` | Ollama (`qwen3:4b`, `qwen3:8b`, `nomic-embed-text`), LiteLLM `:4000`, NLLB `:5500`, MOSS/STT; **no `:443` listener, Caddy installed but disabled** (2026-09-17) | Chat-with-code inference. Internal/WG only until TLS is restored. |
+| `appserver` | `192.0.2.19` | `10.8.0.10` | Product apps + Qdrant `:6333/:6334` loopback, Caddy gateway | Vector store for scoped code index. |
+| `mail` | `192.0.2.13` | `10.8.0.5` | Stalwart, Prometheus `:9090`, Grafana, Loki, Wazuh manager | Monitoring + SIEM. Factory host must be enrolled here. |
+| `db-main` / `db-backup` | `192.0.2.15` / `192.0.2.16` | replication pair | PostgreSQL 17 + pgBackRest to Linode Object Storage (`gb-lon-1`) | Pattern to reuse for `git bundle` backups. Not otherwise involved. |
 
 Firewall posture fleet-wide: UFW `deny incoming`, allow `22/80/443` + `51820/udp`, plus source-specific application rules (cf. `NETWORK_TOPOLOGY.md`). SSH is `root` + `~/.ssh/id_lindela` / `id_ed25519`; secrets live in local `pass` (`pjs/...`). Nothing in this ADR changes those primitives; it composes them.
 
@@ -47,10 +47,10 @@ Firewall posture fleet-wide: UFW `deny incoming`, allow `22/80/443` + `51820/udp
 
 ## Principles
 
-1. **Least privilege is design, not obscurity.** Kerckhoffs's principle requires the system to remain secure even if the adversary knows the algorithms. It does not require handing keys, HSM code, tally logic, and biometric enclaves to the hardware builder. Compartmentation between builder (Mechrevo) and verifier (Datacraft/IEBC) is the control; this ADR mechanises it.
+1. **Least privilege is design, not obscurity.** Kerckhoffs's principle requires the system to remain secure even if the adversary knows the algorithms. It does not require handing keys, HSM code, tally logic, and biometric enclaves to the hardware builder. Compartmentation between builder (Mechrevo) and verifier (Datacraft/the Commission) is the control; this ADR mechanises it.
 2. **Builder/verifier separation.** The factory builds kits and asserts "it runs on hardware." Only Kenya signs releases and promotes to MDM/production. No factory credential can promote.
 3. **Reproducibility over trust.** Acceptance is bit-identical rebuilds + `SHA256SUMS` + SLSA/in-toto provenance + drill evidence — not "factory says it works." Extends ADR-0006 (Nix, Woodpecker, cosign, SLSA L3) and the M14 reproducibility bundle.
-4. **Sovereignty by default.** Code the factory may see may transit EU mirrors; voter data, biometric templates, HSM keys, and `pass` secrets never leave Kenya/IEBC infrastructure. SaaS LLMs and SaaS CI that retain code are rejected for this corpus (see §8).
+4. **Sovereignty by default.** Code the factory may see may transit EU mirrors; voter data, biometric templates, HSM keys, and `pass` secrets never leave Kenya/the Commission infrastructure. SaaS LLMs and SaaS CI that retain code are rejected for this corpus (see §8).
 5. **Pull-only factory.** The factory has no push path to any authoritative branch. Its only upstream message is test-evidence upload. This single rule eliminates an entire class of supply-chain writes.
 6. **Bilingual operability.** A Chinese-speaking installer with `adb` and this ADR's download page must complete a load without asking Nairobi a question. Anything that fails that test is incomplete.
 
@@ -71,34 +71,34 @@ Firewall posture fleet-wide: UFW `deny incoming`, allow `22/80/443` + `51820/udp
 
 ```text
 Datacraft (Kenya) ──push──> spare-3 [AUTHORITATIVE eel-factory + evidence inbox]
-                              │  Forgejo loopback :3007 ← Caddy factory.datacraft.co.ke
+                              │  Forgejo loopback :3007 ← Caddy factory.eel.example
                               │  Woodpecker runner (authoritative signer)
                               │  artifacts → MinIO on auth, bucket: eel-factory
                               │  nightly git bundle → auth MinIO + Linode Object Storage
                               ╰──WG rsync──> linode [READ MIRROR + APK CDN]
-                                               Caddy factory-mirror.lindela.io → loopback :3008
+                                               Caddy factory-mirror.eel.example → loopback :3008
 China factory ──HTTPS pull (primary spare-3, failover linode)──> tags + APKs + SHA256SUMS
               ──HTTPS POST evidence JSON──> spare-3 inbox (no git push exists)
 ```
 
-- `spare-3` (`161.97.121.202`): Forgejo on loopback `127.0.0.1:3007` (free per `PORT_MAP.md`; only `8100/8110` live there today), fronted by existing Caddy as `factory.datacraft.co.ke → 127.0.0.1:3007`. One Woodpecker agent on the same host for authoritative (signing) builds. Static download vhost `factory-dl.datacraft.co.ke` serving the current tag's pack (redirects to MinIO presigned URLs; no MinIO credentials issued to factory).
-- `linode` (`88.80.188.224`): hourly `git push --mirror` + `rclone sync` of the current pack over WG (`10.8.0.11 → 10.8.0.14`). Caddy `factory-mirror.lindela.io → 127.0.0.1:3008` serving a static mirror + APK cache. No builders, no runners, no secrets on this host. If DE→CN stalls, factory retries UK with the same tag and same hashes.
-- `auth` (`62.84.181.55`): Keycloak realm/coins for factory service accounts, MinIO bucket `eel-factory` (versioned, object-lock for released tags), OpenBao custody of the release-signing key (cf. ADR-0005 M-of-N ceremony). Factory never talks to `auth` directly; `spare-3` mints short-lived presigned GET/PUT URLs.
+- `spare-3` (`192.0.2.17`): Forgejo on loopback `127.0.0.1:3007` (free per `PORT_MAP.md`; only `8100/8110` live there today), fronted by existing Caddy as `factory.eel.example → 127.0.0.1:3007`. One Woodpecker agent on the same host for authoritative (signing) builds. Static download vhost `factory-dl.eel.example` serving the current tag's pack (redirects to MinIO presigned URLs; no MinIO credentials issued to factory).
+- `linode` (`192.0.2.18`): hourly `git push --mirror` + `rclone sync` of the current pack over WG (`10.8.0.11 → 10.8.0.14`). Caddy `factory-mirror.eel.example → 127.0.0.1:3008` serving a static mirror + APK cache. No builders, no runners, no secrets on this host. If DE→CN stalls, factory retries UK with the same tag and same hashes.
+- `auth` (`192.0.2.12`): Keycloak realm/coins for factory service accounts, MinIO bucket `eel-factory` (versioned, object-lock for released tags), OpenBao custody of the release-signing key (cf. ADR-0005 M-of-N ceremony). Factory never talks to `auth` directly; `spare-3` mints short-lived presigned GET/PUT URLs.
 - No new hardware. A Singapore mirror is explicitly deferred: add it only if 30 days of pull metrics show DE+UK p95 tag-fetch time breaching the SLO (§D9).
 
 ### D3. DNS, Caddy, ports, firewall (concrete)
 
 | Record / route | Target | Notes |
 |---|---|---|
-| `factory.datacraft.co.ke` | `161.97.121.202` (spare-3) Caddy → `127.0.0.1:3007` | Forgejo HTTPS. HSTS, TLS via existing Caddy/ACME. |
-| `factory-dl.datacraft.co.ke` | spare-3 static → MinIO presigned | Download page + `SHA256SUMS`. Rate-limited (see below). |
-| `factory-mirror.lindela.io` | `88.80.188.224` (linode) Caddy → `127.0.0.1:3008` | Static git mirror + APK cache. |
+| `factory.eel.example` | `192.0.2.17` (spare-3) Caddy → `127.0.0.1:3007` | Forgejo HTTPS. HSTS, TLS via existing Caddy/ACME. |
+| `factory-dl.eel.example` | spare-3 static → MinIO presigned | Download page + `SHA256SUMS`. Rate-limited (see below). |
+| `factory-mirror.eel.example` | `192.0.2.18` (linode) Caddy → `127.0.0.1:3008` | Static git mirror + APK cache. |
 | Forgejo `:3007`, mirror `:3008` | loopback only | Matches fleet pattern (loopback app + Caddy 443). Never wildcard-bound. |
-| Evidence inbox | `factory.datacraft.co.ke/api/evidence` → loopback `:3009` | Authenticated POST, 10 MB cap, schema-validated. |
+| Evidence inbox | `factory.eel.example/api/evidence` → loopback `:3009` | Authenticated POST, 10 MB cap, schema-validated. |
 
 UFW (additive, following `NETWORK_TOPOLOGY.md` source-specific style; no `ufw enable` recipes, no default changes):
 
-- `spare-3`: allow `80,443/tcp` world; `51820/udp` to WG peers only; `3007/3009` from `127.0.0.1` only; `22/tcp` from Datacraft office/bastion only; `9100/tcp` from `mail` (`217.76.53.144`) for node_exporter (authorised monitoring pattern).
+- `spare-3`: allow `80,443/tcp` world; `51820/udp` to WG peers only; `3007/3009` from `127.0.0.1` only; `22/tcp` from Datacraft office/bastion only; `9100/tcp` from `mail` (`192.0.2.13`) for node_exporter (authorised monitoring pattern).
 - `linode`: allow `80,443/tcp` world; `51820/udp` to WG peers; `22/tcp` from Datacraft only; `3008` loopback only.
 - Caddy hardening on both factory vhosts: `rate_limit 20r/m per IP` on clone/zip endpoints, `max_body 10MB` on evidence, access logs shipped to Loki on `mail`, `X-Content-Type-Options`/`frame-ancestors 'none'`.
 
@@ -115,15 +115,15 @@ UFW (additive, following `NETWORK_TOPOLOGY.md` source-specific style; no `ufw en
 3. `spare-3` verifies hashes, serves the tag; WG job replicates to `linode`.
 4. Factory flow per device batch (unchanged scripts, hosted artifacts):
    ```bash
-   curl -O https://factory-dl.datacraft.co.ke/kit-v1.4.2/SHA256SUMS
-   curl -O https://factory-dl.datacraft.co.ke/kit-v1.4.2/<APP>-release.apk
+   curl -O https://factory-dl.eel.example/kit-v1.4.2/SHA256SUMS
+   curl -O https://factory-dl.eel.example/kit-v1.4.2/<APP>-release.apk
    sha256sum -c SHA256SUMS                  # hard fail on mismatch
    apksigner verify --verbose <APP>-release.apk
    adb install -r -g <APP>-release.apk
    ./factory_test.sh <APP> --device <serial>  # smoke → kill-drill → offline-drill → harness
    curl -F "report=@factory-report-<APP>-<serial>-<UTC>.json" \
         -H "Authorization: Bearer $EVIDENCE_TOKEN" \
-        https://factory.datacraft.co.ke/api/evidence
+        https://factory.eel.example/api/evidence
    ```
 5. Promotion to MDM/production is a Kenya-side dual-sign action reading the evidence inbox; factory credentials cannot promote. Debug APKs remain drill/test-harness only (`run-as` retrieval needs debuggable builds); release APKs in this channel carry the **factory-validation key**, never the production MDM key.
 
@@ -144,11 +144,11 @@ UFW (additive, following `NETWORK_TOPOLOGY.md` source-specific style; no `ufw en
 - Corpus is exactly the `eel-factory` tag + its docs (`ENGINEERING_FAQ`, `factory_guidance`, `compile_apks`, kit module pages). ABIS, HSM, tally, governance, and all secrets are never indexed. Redaction runs before embedding (`*.pem`, `HSM_*`, `pass …`, `pgbackrest.conf`, connection strings, `BuildConfig` secrets).
 - Stack reuses fleet capacity: embeddings `nomic-embed-text` on `ml`, vectors in Qdrant collection `eel-factory-v1` on `appserver` (`:6333` loopback, accessed over WG), chat via LiteLLM (`ml:4000`) with `qwen3:8b` (strong EN/中文 for factory support), NLLB (`:5500`) for glossary-grade translation of guides. Frontend is Open WebUI on `ml` loopback; public exposure waits on the `ml` TLS remediation (no `:443` today — §Context.3) and stays WG/internal until then.
 - Behaviour contract: read-only `search → read file:line` tool, every answer cites `path:line`, "out of scope — contact Datacraft" + logged refusal for anything outside the factory corpus, every Q&A logged (who/when/query/sources) to Loki and retained under the 15-year audit rule. No write, no shell, no artifact signing from the bot.
-- SaaS copilots (Copilot Chat, hosted Cody, ChatGPT) are rejected for this corpus: retention/training reuse, subpoena surface, and un-auditable exfiltration violate the sovereignty principle (§Principles.4), even though the algorithms themselves are not secret. If IEBC later approves full open source, that is a separate deliberate publication (scrubbed history, explicit licence), not a side effect of debugging prompts.
+- SaaS copilots (Copilot Chat, hosted Cody, ChatGPT) are rejected for this corpus: retention/training reuse, subpoena surface, and un-auditable exfiltration violate the sovereignty principle (§Principles.4), even though the algorithms themselves are not secret. If the Commission later approves full open source, that is a separate deliberate publication (scrubbed history, explicit licence), not a side effect of debugging prompts.
 
 ### D9. Observability, backup, audit, freeze
 
-- `spare-3` and `linode` factory vhosts join existing fleet monitoring: node_exporter → Prometheus on `mail`, Caddy access logs → Loki, Wazuh agent → `10.8.0.5:1514/1515`, Uptime-Kuma checks for `factory.datacraft.co.ke`, `factory-mirror.lindela.io`, and mirror-lag (`spare-3 tag != linode tag` > 2 h = page). SLOs: tag publish → mirror visible p95 < 2 h; pack download p95 < 10 min for 60 MB APK on CN broadband; evidence POST success > 99.5%.
+- `spare-3` and `linode` factory vhosts join existing fleet monitoring: node_exporter → Prometheus on `mail`, Caddy access logs → Loki, Wazuh agent → `10.8.0.5:1514/1515`, Uptime-Kuma checks for `factory.eel.example`, `factory-mirror.eel.example`, and mirror-lag (`spare-3 tag != linode tag` > 2 h = page). SLOs: tag publish → mirror visible p95 < 2 h; pack download p95 < 10 min for 60 MB APK on CN broadband; evidence POST success > 99.5%.
 - Backup: nightly `git bundle --all` + MinIO bucket versioning snapshot from `spare-3` → `auth` MinIO and onward to Linode Object Storage (`gb-lon-1`, same pattern as `pjs-pgbackrest` in `PLATFORM_ACCESS.md`); restore drill monthly; any drill failure blocks the next kit tag (mirrors ADR-0022's "drill failure blocks release").
 - Audit: every pull (token, tag, bytes), every evidence POST (schema result, hashes), every chatbot Q&A, and every promotion is appended to the audit store with the standard 5-axis reference + `proofHash` + `signature` + `auditId` (UUIDv7) required of all services.
 - Freeze: kit tags obey the 30-day pre-election freeze (ADR-0014/0022). Inside the window only CVE-critical kit fixes ride, with dual sign-off + tabletop note; the CI gate refuses all other merges to the split source.
@@ -179,8 +179,8 @@ What is deliberately absent (and why): `abis-svc/`, `transparency-svc/`, `hsm-si
 
 | Item | Value | Notes |
 |---|---|---|
-| Authoritative git + evidence | `spare-3`: Forgejo `127.0.0.1:3007`, inbox `:3009`, Caddy `factory.datacraft.co.ke` | 200 GB disk; current use trivial; APKs live in MinIO, not on root disk. |
-| Mirror + CDN | `linode`: static `:3008`, Caddy `factory-mirror.lindela.io` | Hourly WG sync; no secrets; Nanode-sized workload. |
+| Authoritative git + evidence | `spare-3`: Forgejo `127.0.0.1:3007`, inbox `:3009`, Caddy `factory.eel.example` | 200 GB disk; current use trivial; APKs live in MinIO, not on root disk. |
+| Mirror + CDN | `linode`: static `:3008`, Caddy `factory-mirror.eel.example` | Hourly WG sync; no secrets; Nanode-sized workload. |
 | Artifacts | `auth` MinIO bucket `eel-factory`, versioned + object-lock on releases | Presigned URLs only to factory. |
 | Identity | Keycloak service accounts `factory-shenzhen-ro`, `factory-evidence-w` | 90-day rotation, IP-pinned. |
 | Signing | HSM-anchored release key via OpenBao on `auth` (ADR-0005); CI keyless via SPIFFE (ADR-0006) | Factory holds public keys only. |
@@ -199,7 +199,7 @@ Negative: split-repo publishing is ongoing toil (allowlist maintenance, split-jo
 ## Alternatives rejected
 
 - **Full-monorepo access for factory.** Rejected: violates builder/verifier separation and sovereignty; converts any factory683 compromise into backend/HSM exposure; no voter-trust benefit beyond what the Merkle log + M14 bundle already provide.
-- **SaaS git + SaaS runners as authoritative (GitHub/GitLab.com).** Rejected as authoritative: US retention/subpoena surface, weaker 15-year audit story, upstream fetch on the build path. Accepted only as an optional *public* transparency mirror of released tags, after IEBC written approval — never as the signing path.
+- **SaaS git + SaaS runners as authoritative (GitHub/GitLab.com).** Rejected as authoritative: US retention/subpoena surface, weaker 15-year audit story, upstream fetch on the build path. Accepted only as an optional *public* transparency mirror of released tags, after the Commission written approval — never as the signing path.
 - **Factory laptops on the WG mesh / SSH accounts.** Rejected: GFW UDP instability, key-sprawl, and privilege far beyond pull+test. HTTPS tokens + presigned URLs cover every legitimate factory action.
 - **SaaS code chat (Copilot/Cody/ChatGPT) over the corpus.** Rejected: un-auditable retention and exfiltration of election IP; the self-hosted Qwen3/Qdrant stack answers the same questions within the audit boundary.
 - **New Singapore/China-adjacent host now.** Deferred, not rejected: revisit on metrics (§D9 SLOs). DE+UK plus vendoring is sufficient until proven otherwise.
@@ -216,8 +216,8 @@ Negative: split-repo publishing is ongoing toil (allowlist maintenance, split-jo
 - ADR-0004 (K8s/Harbor/Caddy platform), ADR-0005 (crypto/HSM/M-of-N), ADR-0006 (Nix/Woodpecker/Nexus/cosign/SLSA — extended here), ADR-0014 (schema freeze), ADR-0016 (PII tiers — why factory sees no PII), ADR-0017 (transparency log — public trust without backend disclosure), ADR-0022 (release/DR/election-day mode), ADR-0023 (RFP reconciliation), ADR-0024 (kit placement under services).
 - `factory_pack/{README,INSTALLER_TESTER_GUIDE,ENGINEERING_FAQ,factory_guidance,compile_apks}.md`, `.woodpecker/{build,mobile,test,sign,sbom}.yaml`, `infra/docs/{INFRASTRUCTURE,NETWORK_TOPOLOGY,PLATFORM_ACCESS,PORT_MAP}.md`.
 
-## Open questions (for IEBC sign-off, not blocking Week 1)
+## Open questions (for the Commission sign-off, not blocking Week 1)
 
 1. Confirm code-offshore scope: `eel-factory` subset on EU hosts approved; voter/biometric data and HSM keys remain Kenya-only — written confirmation.
-2. Confirm optional delayed *public* mirror of released kit tags (GitHub/IPFS, post-IEBC review) vs EU-private only.
+2. Confirm optional delayed *public* mirror of released kit tags (GitHub/IPFS, post-the Commission review) vs EU-private only.
 3. Confirm production MDM signing ceremony participants and whether factory-validation keys must be per-batch or per-release.

@@ -1,6 +1,6 @@
 # Grievance channels (M23)
 
-Module M23 (`grievance-channels`) owned by `ecc-svc`. Provides six intake channels for public complaints and whistleblower tips: web form, SMS, USSD, WhatsApp, call centre, and walk-in. A SHA-256 hashed whistleblower identity profile protects source anonymity. SLA tiers P0/P1/P2 govern response time. Evidence attachments are transparency-log hashed. DCI/ODPP referrals are routed under EOA ss.6-12 with IEBC officer sign-off.
+Module M23 (`grievance-channels`) owned by `ecc-svc`. Provides six intake channels for public complaints and whistleblower tips: web form, SMS, USSD, WhatsApp, call centre, and walk-in. A SHA-256 hashed whistleblower identity profile protects source anonymity. SLA tiers P0/P1/P2 govern response time. Evidence attachments are transparency-log hashed. DCI/ODPP referrals are routed under EOA ss.6-12 with the Commission officer sign-off.
 
 ## Contents
 
@@ -70,10 +70,10 @@ intake (web / SMS / USSD / WhatsApp / call / walk-in)
        OBSERVER -> IAB observer coordinator
   -> SLA timer started; breach warning at 80% of SLA window
   -> if P0 unacknowledged after 4 h:
-       SLAEvent(ESCALATED) created; IEBC Commissioner notified
+       SLAEvent(ESCALATED) created; the Commission Commissioner notified
   -> DCI/ODPP referral:
        officer triggers RegulatoryReferral assembly
-       IEBC Chair HSM signature required
+       the Commission Chair HSM signature required
        eel.ecc.referral_sent.v1 emitted (exactly-once)
        P05 Merkle anchor within 60 s
 ```
@@ -89,7 +89,7 @@ Contract: `packages/openapi-contracts/ecc/grievance.yaml`. All write endpoints e
 | `POST /ecc/v1/grievances/{id}/attachments` | Public (JWT-less, rate-limited) | Upload evidence |
 | `GET /ecc/v1/grievances` | ECC officer (JWT + SpiceDB) | Triage queue with SLA countdown |
 | `PATCH /ecc/v1/grievances/{id}` | ECC officer | Update status, add notes, route |
-| `POST /ecc/v1/grievances/{id}/referral` | IEBC officer + Chair (JWT + HSM) | Assemble and send regulatory referral |
+| `POST /ecc/v1/grievances/{id}/referral` | the Commission officer + Chair (JWT + HSM) | Assemble and send regulatory referral |
 | `GET /ecc/v1/stats` | Public (CDN-cached, 15 min) | Aggregated grievance counts by category and status |
 
 ## 6. Human surfaces
@@ -106,14 +106,14 @@ KSL video guidance available on the public web form for Deaf complainants. WCAG 
 ## 7. Integrity + anti-tamper
 
 - **SHA-256 whistleblower profile** -- raw contact details are hashed on ingestion and immediately discarded; the hash is stored for deduplication only; no pathway exists to reverse the hash; legal-privilege annotation on the `WhistleblowerProfile` row restricts database access to the ECC Compliance Officer only.
-- **Evidence content hash in tlog** -- every attachment hash is anchored in the P05 transparency log within 60 s of upload; a court can verify the attachment has not been altered since submission without accessing the IEBC systems.
+- **Evidence content hash in tlog** -- every attachment hash is anchored in the P05 transparency log within 60 s of upload; a court can verify the attachment has not been altered since submission without accessing the Commission systems.
 - **Exactly-once referral events** -- `eel.ecc.referral_sent.v1` uses the `eel-outbox-rs` transactional pattern; duplicate referral triggers are rejected using the idempotency key `grievance_id + referral_body`.
 - **SLA audit trail** -- every SLA event (`BREACH_WARN`, `BREACH`, `ESCALATED`) is append-only; no officer can suppress a breach record.
 - **Category classifier audit** -- M28 AI assist category decisions are logged with model_id, confidence, and prompt hash; human officer can override; override is logged separately.
 
 ## 8. Kenya statute alignment
 
-- **EOA ss.6-12 (IEBC jurisdiction over election offences)** -- referral pipeline implements the statutory pathway; Chair HSM signature records IEBC's formal referral decision.
+- **EOA ss.6-12 (the Commission jurisdiction over election offences)** -- referral pipeline implements the statutory pathway; Chair HSM signature records the Commission's formal referral decision.
 - **Elections Act s.79 (citizen right of complaint)** -- six intake channels satisfy the accessibility obligation; USSD and SMS serve low-bandwidth and feature phone users.
 - **Whistleblower Protection Act 2022** -- SHA-256 profile and no-raw-PII design satisfy source anonymity; legal-privilege annotation satisfies the privilege protection obligation.
 - **DPA 2019 s.26 (minimisation)** -- grievance description truncated to 2 000 characters; no additional personal data collected beyond what the complainant voluntarily provides; walk-in officer required to inform complainant of data use before submission.
@@ -144,7 +144,7 @@ Performance targets: intake endpoint p99 < 200 ms under 5 000 concurrent submiss
 
 Six-channel parity test: every CI run exercises all six intake paths (web, SMS, USSD, WhatsApp, call-centre, walk-in) with a synthetic grievance; any channel returning a non-200 status blocks deploy. USSD session timeout simulation included (Safaricom `*400#` has a 90-second inactivity timeout that requires graceful re-entry).
 
-Referral package format: DCI/ODPP referral is a PGP-encrypted ZIP containing grievance_id, evidence hashes, timeline, and the IEBC Chair HSM-signed transmittal letter; the ZIP is also registered in M22 if the grievance concerns campaign finance.
+Referral package format: DCI/ODPP referral is a PGP-encrypted ZIP containing grievance_id, evidence hashes, timeline, and the Commission Chair HSM-signed transmittal letter; the ZIP is also registered in M22 if the grievance concerns campaign finance.
 
 Walk-in officer data-collection obligation: the walk-in intake form includes a mandatory DPA 2019 s.26 notice read aloud by the officer before any details are entered; the officer records that the notice was given as a checkbox; this is audited in quarterly compliance reports.
 

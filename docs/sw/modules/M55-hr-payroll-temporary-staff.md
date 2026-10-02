@@ -2,10 +2,10 @@
 
 **Module ID:** M55
 **Name:** HR and Payroll for Temporary Election Staff
-**Runs on:** Central servers (Kenyan cloud) + IEBC HR back-office + M-Pesa disbursement integration
+**Runs on:** Central servers (Kenyan cloud) + the Commission HR back-office + M-Pesa disbursement integration
 **Owner:** Datacraft
 **Status:** Draft v1
-**IPR:** Custom Software vests in IEBC per GCC 15.4
+**IPR:** Custom Software vests in the Commission per GCC 15.4
 
 ## 1. Purpose
 
@@ -13,15 +13,15 @@ Manage recruitment, contracting, payroll, and statutory deductions for approxima
 
 ## 2. User Personas
 
-- **IEBC HR Officer** — manages recruitment campaigns; issues contracts; runs payroll
-- **IEBC Finance Officer** — approves payroll disbursement runs; reconciles with M54 budget line
+- **the Commission HR Officer** — manages recruitment campaigns; issues contracts; runs payroll
+- **the Commission Finance Officer** — approves payroll disbursement runs; reconciles with M54 budget line
 - **Temporary Staff Member (Applicant)** — applies online; receives contract; confirms acceptance; receives pay
 - **M38 LMS** — provides certification status per staff member (eligibility gate for contract issuance)
 - **KRA iTax** (external) — receives PAYE returns and payments
 - **NSSF Portal** (external) — receives contribution returns and payments
 - **NHIF/SHIF Portal** (external) — receives contribution returns and payments
 - **M-Pesa Bulk API** (Safaricom) — disburses per-diem and allowances to staff phone numbers
-- **IEBC DPO** — DPA 2019 DPIA oversight for staff personal and financial data
+- **the Commission DPO** — DPA 2019 DPIA oversight for staff personal and financial data
 - **Auditor-General** — reviews payroll records post-election via M54 audit package
 
 ## 3. Functional Requirements
@@ -29,13 +29,13 @@ Manage recruitment, contracting, payroll, and statutory deductions for approxima
 - **FR-M55-001** Recruitment portal: publish vacancy notices per role and county; online application form (name, national ID, phone, education qualifications, experience, county preference); application acknowledgement via SMS.
 - **FR-M55-002** Eligibility screening: cross-check applicant national ID against M03 ABIS and M12 CRMS to exclude registered candidates and their close relatives (Elections Act §27 conflicts); flag disqualified applicants.
 - **FR-M55-003** LMS certification gate: before contract issuance, verify applicant has completed and passed the required training module(s) in M38 LMS for their role type; block contract for uncertified applicants.
-- **FR-M55-004** Shortlisting and selection: IEBC HR Officer scores applications per published criteria; system generates shortlist; notifications to shortlisted applicants.
-- **FR-M55-005** Contract generation: auto-generate fixed-term employment contract (per role, county, election event, start/end dates, daily rate, statutory deductions schedule); PDF with IEBC digital signature; sent to applicant via email + SMS with acceptance link.
+- **FR-M55-004** Shortlisting and selection: the Commission HR Officer scores applications per published criteria; system generates shortlist; notifications to shortlisted applicants.
+- **FR-M55-005** Contract generation: auto-generate fixed-term employment contract (per role, county, election event, start/end dates, daily rate, statutory deductions schedule); PDF with the Commission digital signature; sent to applicant via email + SMS with acceptance link.
 - **FR-M55-006** Contract acceptance: applicant accepts digitally (OTP-confirmed) or submits wet-ink scan; contract status set to ACCEPTED; feeds into payroll roster.
-- **FR-M55-007** Per-diem and allowance calculation: compute gross pay per staff member = daily rate x days engaged + transport allowance + meal allowance per approved schedule; role-specific rates configurable by IEBC HR.
+- **FR-M55-007** Per-diem and allowance calculation: compute gross pay per staff member = daily rate x days engaged + transport allowance + meal allowance per approved schedule; role-specific rates configurable by the Commission HR.
 - **FR-M55-008** Statutory deductions: compute KRA PAYE per Kenya Revenue Authority tax bands for casual employment; NSSF Tier I + Tier II contributions per NSSF Act 2013 (amended 2023); NHIF/SHIF contribution per current rates; deductions itemised per staff member on payslip.
 - **FR-M55-009** Payroll run: Finance Officer initiates payroll run for a given event-phase (e.g. "Polling Day + 2 days"); system computes net pay per staff member; generates bulk M-Pesa payment file; Finance Officer approves; system submits to Safaricom M-Pesa Bulk API; records payment reference per staff member; SMS confirmation to each payee.
-- **FR-M55-010** Failed payment handling: M-Pesa failed payments (wrong number, SIM not registered) logged; IEBC HR Officer contacts staff for correction; re-run within 48 hours.
+- **FR-M55-010** Failed payment handling: M-Pesa failed payments (wrong number, SIM not registered) logged; the Commission HR Officer contacts staff for correction; re-run within 48 hours.
 - **FR-M55-011** KRA PAYE return: after each payroll run, generate PAYE P9 return per staff member; aggregate monthly PAYE liability; submit to KRA iTax API; record payment reference.
 - **FR-M55-012** NSSF and NHIF/SHIF returns: generate monthly contribution schedules; submit to respective portals; record confirmation.
 - **FR-M55-013** Payslip: each staff member receives a PDF payslip (gross, deductions, net) via SMS link or email.
@@ -54,17 +54,17 @@ Manage recruitment, contracting, payroll, and statutory deductions for approxima
 - **NFR-M55-008** Audit trail: every payroll run, deduction, and payment immutably logged; payslip hash stored; cannot be modified post-approval.
 - **NFR-M55-009** Availability: >= 99.5% during active election period (nomination close to T+30).
 
-- **NFR-55-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `iebc-iems-55` (replace 55 with the module number); alert ruleset ID `iems-55-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
+- **NFR-55-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `commission-iems-55` (replace 55 with the module number); alert ruleset ID `iems-55-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
 
 ## 5. User Stories
 
 1. As a temporary staff applicant, I apply online in 10 minutes, providing my national ID and selecting my preferred county; I receive an SMS confirming receipt.
-2. As an IEBC HR Officer, I see a dashboard showing LMS certification status per applicant pool for each role type, so I can identify under-certified groups before the shortlisting deadline.
-3. As a shortlisted Presiding Officer, I receive a contract via email and accept it with an OTP confirmation; I do not need to visit the IEBC office.
-4. As an IEBC Finance Officer, I approve the Polling Day payroll run; within 6 hours all 250,000 staff receive M-Pesa notifications confirming their payment.
+2. As a Commission HR Officer, I see a dashboard showing LMS certification status per applicant pool for each role type, so I can identify under-certified groups before the shortlisting deadline.
+3. As a shortlisted Presiding Officer, I receive a contract via email and accept it with an OTP confirmation; I do not need to visit the Commission office.
+4. As a Commission Finance Officer, I approve the Polling Day payroll run; within 6 hours all 250,000 staff receive M-Pesa notifications confirming their payment.
 5. As a Polling Clerk, I receive a PDF payslip via SMS link showing my gross pay, PAYE deduction, NSSF contribution, and net pay within 24 hours of the payroll run.
-6. As the IEBC HR Officer, I see a failed-payment list the morning after the payroll run and can re-run failed payments after correcting phone numbers.
-7. As an IEBC Legal Officer, I am alerted when an applicant's national ID matches a registered candidate's record, blocking their contract automatically.
+6. As the Commission HR Officer, I see a failed-payment list the morning after the payroll run and can re-run failed payments after correcting phone numbers.
+7. As a Commission Legal Officer, I am alerted when an applicant's national ID matches a registered candidate's record, blocking their contract automatically.
 8. As the KRA, I receive a complete PAYE P9 return for all 250,000 temporary staff via iTax API within 5 days of each payroll run.
 
 ## 6. Data Model
@@ -283,7 +283,7 @@ paths:
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|------------|
-| M-Pesa Bulk API failure on payday | Low | Critical | Fallback: bank transfer for failed staff via IEBC Finance; manual RTGS as last resort; Safaricom SLA in contract |
+| M-Pesa Bulk API failure on payday | Low | Critical | Fallback: bank transfer for failed staff via Commission Finance; manual RTGS as last resort; Safaricom SLA in contract |
 | KRA tax band change mid-election cycle | Medium | Medium | Tax engine reads rates from configurable table; update table without code deploy; legal team monitors Finance Act |
 | NSSF Act 2023 contribution calculation dispute | Medium | Medium | Statutory calculation logic reviewed by certified auditor before go-live; built-in rate versioning |
 | Applicant national ID fraud (fake ID) | Medium | High | NRB real-time ID verification at application; biometric at contract collection point for POs and above |
@@ -309,16 +309,16 @@ paths:
 
 ## 18. Decommissioning
 
-**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if IEBC terminates the contract.
+**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if the Commission terminates the contract.
 
 **Steps:**
 
-1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and IEBC DPO.
+1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and the Commission DPO.
 2. **Service shutdown** — Kubernetes deployments scaled to zero; PersistentVolumeClaims retained for 30 days then deleted after confirmation of M69 transfer.
 3. **Credential revocation** — service account certificates, API keys, and HSM key handles revoked via P06 key-destruction ceremony within 48 hours of shutdown.
 4. **Source-code escrow** — final tagged release deposited to C04 escrow within 7 days of shutdown.
-5. **Runbook handover** — operational runbook and post-mortem notes delivered to IEBC ICT within 14 days.
+5. **Runbook handover** — operational runbook and post-mortem notes delivered to the Commission ICT within 14 days.
 
-**Owner:** SRE Lead. **Sign-off:** IEBC ICT Director + Datacraft Programme Director.
+**Owner:** SRE Lead. **Sign-off:** the Commission ICT Director + Datacraft Programme Director.
 
 > **RESOLUTION (F-23, 2026-08-21):** Decommissioning stub added per audit finding. Owner: SRE Lead. Target: FAT-07 gate.

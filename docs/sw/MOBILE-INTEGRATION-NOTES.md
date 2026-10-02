@@ -14,11 +14,11 @@ Six mobile app specifications from `mobile/apps/` were imported into the sw/ mod
 
 | Source file | sw/ Module | App name | Users |
 |---|---|---|---|
-| `mobile/apps/MA01-iebc-verify.md` | M29 | IEBC Verify (Citizen) | ~35M reachable Kenyans |
+| `mobile/apps/MA01-commission-verify.md` | M29 | the Commission Verify (Citizen) | ~35M reachable Kenyans |
 | `mobile/apps/MA02-agent.md` | M30 | Agent (Party Agent) | ~20K agents on election day |
 | `mobile/apps/MA03-poll-clerk.md` | M31 | Poll Clerk Companion | ~92K Deputy POs + clerks |
 | `mobile/apps/MA04-field-support.md` | M32 | Field Support | ~200 Datacraft engineers |
-| `mobile/apps/MA05-personnel-dispatch.md` | M33 | IEBC Dispatch (Personnel) | ~250K polling-day workers |
+| `mobile/apps/MA05-personnel-dispatch.md` | M33 | the Commission Dispatch (Personnel) | ~250K polling-day workers |
 | `mobile/apps/MA06-observer.md` | M34 | Observer | ~500 accredited observers |
 
 Four cross-cutting mobile docs were adapted into `sw/mobile/`:
@@ -64,11 +64,11 @@ Inside the six new M29-M34 files, internal requirement IDs were renumbered from 
 
 **Overlap level:** Heavy.
 
-M13 is the multi-channel superset: short-code, SMS, WhatsApp, and PWA paths for verifying polling-station results. M29 is the native-mobile, IEBC-branded app targeting the widest handset base (Android 8+, including budget devices under KES 10,000) with full offline-first capabilities, biometric unlock, and a richer UX.
+M13 is the multi-channel superset: short-code, SMS, WhatsApp, and PWA paths for verifying polling-station results. M29 is the native-mobile, Commission-branded app targeting the widest handset base (Android 8+, including budget devices under KES 10,000) with full offline-first capabilities, biometric unlock, and a richer UX.
 
 **Decision:** Keep both as distinct modules for now. M29 is the native-mobile implementation; M13 is the multi-channel superset. They share the same back-end Merkle-proof API (via M10 and M11) and the same Rust FFI verifier logic.
 
-**Stitching-pass recommendation:** Extract the common Rust FFI verifier into a standalone shared library (`libiebc-verifier`) referenced by both M13 and M29. The stitching pass should also decide whether the PWA fallback for M29 is served by the same codebase as M13's PWA or is separately built. They may consolidate at that point.
+**Stitching-pass recommendation:** Extract the common Rust FFI verifier into a standalone shared library (`libcommission-verifier`) referenced by both M13 and M29. The stitching pass should also decide whether the PWA fallback for M29 is served by the same codebase as M13's PWA or is separately built. They may consolidate at that point.
 
 ### 3.2 M34 Observer vs M15 IAB Dashboard
 
@@ -114,7 +114,7 @@ M20 (Inventory Management System) is the back-end system of record for kit inven
 
 **Overlap level:** Operator-worker relationship.
 
-M16 (Election Command Centre) is the war-room dashboard that ECC operators use to monitor the election in real time and task field teams. M33 (IEBC Dispatch) is the worker-side app that receives assignments, records check-ins, and reports on-site status. ECC operators in M16 see the M33 attendance feed.
+M16 (Election Command Centre) is the war-room dashboard that ECC operators use to monitor the election in real time and task field teams. M33 (the Commission Dispatch) is the worker-side app that receives assignments, records check-ins, and reports on-site status. ECC operators in M16 see the M33 attendance feed.
 
 **Decision:** Keep separate. M16 is the command-side tool for ECC operators; M33 is the field-side tool for the 250K workers. They communicate via the Personnel Dispatch back-end (O05).
 
@@ -126,8 +126,8 @@ M16 (Election Command Centre) is the war-room dashboard that ECC operators use t
 
 | Decision | Rationale |
 |---|---|
-| Flutter 3.x for all six apps | Single codebase, IEBC-teachable, Datacraft house standard (CrowdAfrica, MeGuard), offline-first primitives, native camera/scanner |
-| Rust FFI for crypto-critical modules | Audited, deterministic, no GC pauses; shared across all six apps as libiebc-verifier |
+| Flutter 3.x for all six apps | Single codebase, Commission-teachable, Datacraft house standard (CrowdAfrica, MeGuard), offline-first primitives, native camera/scanner |
+| Rust FFI for crypto-critical modules | Audited, deterministic, no GC pauses; shared across all six apps as libcommission-verifier |
 | Riverpod for state management | Compile-time-safe, testable, Datacraft standard |
 | Isar + SQLCipher for local store | Encrypted at rest, schema-versioned, performant offline |
 | dio + mTLS interceptor chain | Unified retry, backoff, telemetry, certificate pinning |
@@ -147,7 +147,7 @@ The sw/PRD.md v2 (currently being written by a parallel agent) must include M29-
 
 ### 5.2 sw/ARCHITECTURE.md service-topology addition
 
-The sw/ARCHITECTURE.md must add a "Mobile App Layer" node to the service topology diagram showing the six apps connecting to the IEBC Edge layer via mTLS. Add a reference to `sw/mobile/ARCHITECTURE.md`.
+The sw/ARCHITECTURE.md must add a "Mobile App Layer" node to the service topology diagram showing the six apps connecting to the Commission Edge layer via mTLS. Add a reference to `sw/mobile/ARCHITECTURE.md`.
 
 ### 5.3 sw/DATA-MODEL.md entity additions
 
@@ -201,7 +201,7 @@ The following source files in `mobile/` remain the canonical specification pendi
 | `mobile/ARCHITECTURE.md` | SOURCE OF TRUTH — not modified |
 | `mobile/SECURITY.md` | SOURCE OF TRUTH — not modified |
 | `mobile/ACCEPTANCE-CRITERIA.md` | SOURCE OF TRUTH — not modified |
-| `mobile/apps/MA01-iebc-verify.md` | SOURCE OF TRUTH — not modified |
+| `mobile/apps/MA01-commission-verify.md` | SOURCE OF TRUTH — not modified |
 | `mobile/apps/MA02-agent.md` | SOURCE OF TRUTH — not modified |
 | `mobile/apps/MA03-poll-clerk.md` | SOURCE OF TRUTH — not modified |
 | `mobile/apps/MA04-field-support.md` | SOURCE OF TRUTH — not modified |
@@ -229,8 +229,8 @@ The following files were protected and were not touched during this integration:
 
 ## 8. Top-3 Recommendations for the Stitching Pass
 
-**1. Extract the Rust FFI verifier as a shared library.** Both M13 (Public Verifier App) and M29 (IEBC Verify) depend on the same Merkle-inclusion-proof validation and HSM-signature verification logic. M34 (Observer) and M30 (Agent) use the same verifier for countersignature flows. Creating a single `libiebc-verifier` Rust crate referenced by all four apps prevents drift and reduces the attack surface for cryptographic code.
+**1. Extract the Rust FFI verifier as a shared library.** Both M13 (Public Verifier App) and M29 (the Commission Verify) depend on the same Merkle-inclusion-proof validation and HSM-signature verification logic. M34 (Observer) and M30 (Agent) use the same verifier for countersignature flows. Creating a single `libcommission-verifier` Rust crate referenced by all four apps prevents drift and reduces the attack surface for cryptographic code.
 
-**2. Confirm O05 Personnel Dispatch Backend scope before contract signature.** M33 (IEBC Dispatch) is the largest by user volume (250K on peak day) and depends on a back-end that extends Datacraft's MeGuard pattern. If O05 is not yet fully scoped in DATACRAFT_SOFTWARE_SCOPE.md, the cost and effort estimate will be incomplete. This is the highest schedule risk in the mobile suite.
+**2. Confirm O05 Personnel Dispatch Backend scope before contract signature.** M33 (the Commission Dispatch) is the largest by user volume (250K on peak day) and depends on a back-end that extends Datacraft's MeGuard pattern. If O05 is not yet fully scoped in DATACRAFT_SOFTWARE_SCOPE.md, the cost and effort estimate will be incomplete. This is the highest schedule risk in the mobile suite.
 
 **3. Run a numbering collision check on M13-M28 before publishing the merged module index.** Three parallel agents wrote M13-M20, M21-M28, and DATACRAFT_SOFTWARE_SCOPE.md v2 concurrently with this agent. A simple `grep -r "M29\|M30\|M31\|M32\|M33\|M34" sw/modules/M1*.md sw/modules/M2*.md` will reveal any collisions before the index is published.

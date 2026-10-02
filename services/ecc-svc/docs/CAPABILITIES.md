@@ -345,7 +345,7 @@ Every IAB decision HSM-signed and appended to `eel_iab_escalations` (append-only
 
 ### 14.4 Key management
 
-DEK generation: `OsRng` (ring crate); 256-bit random key per case. KEK: stored in OpenBao (HashiCorp Vault-compatible) at `62.169.25.77` (per SERVICE_CATALOGUE.md). DEK wrapped under KEK using AES-256-KW (RFC 3394). KEK rotation: new KEK version generated annually; old DEKs re-wrapped under new KEK version by batch job with progress tracked in `eel_dek_rewrap_jobs`.
+DEK generation: `OsRng` (ring crate); 256-bit random key per case. KEK: stored in OpenBao (HashiCorp Vault-compatible) at `192.0.2.11` (per SERVICE_CATALOGUE.md). DEK wrapped under KEK using AES-256-KW (RFC 3394). KEK rotation: new KEK version generated annually; old DEKs re-wrapped under new KEK version by batch job with progress tracked in `eel_dek_rewrap_jobs`.
 
 ---
 

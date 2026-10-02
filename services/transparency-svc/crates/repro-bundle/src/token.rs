@@ -35,7 +35,7 @@ impl InclusionProof {
         Self {
             context: vec![
                 "https://www.w3.org/2018/credentials/v1".into(),
-                "https://transparency.iebc.go.ke/contexts/inclusion-proof/v1".into(),
+                "https://transparency.eel.example/contexts/inclusion-proof/v1".into(),
             ],
             token_sha256,
             leaf_index,

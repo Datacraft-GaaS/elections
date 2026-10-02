@@ -1501,7 +1501,7 @@ int read_rec_sel(FILE *fpin, REC_SEL **sel)
       } else if (cp > buffer) {	/* the end of a token was found */
 	 *cp = 0;		/* ... terminate it */
 
-	 /* determine the the type of token and its value, check
+	 /* determine the type of token and its value, check
 	   whether it is valid in the current context, then create the
 	   corresponding data structures */
 

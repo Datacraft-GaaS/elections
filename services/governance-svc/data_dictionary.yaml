@@ -112,7 +112,7 @@ tables:
       row_count:     { tier: D, description: "Number of rows extracted" }
 
   oag_responses:
-    description: "M59 IEBC responses to OAG queries."
+    description: "M59 the Commission responses to OAG queries."
     columns:
       response_id:     { tier: D, description: "UUID7 response identifier" }
       engagement_id:   { tier: D, description: "Parent engagement" }
@@ -120,7 +120,7 @@ tables:
       responder_hash:  { tier: A, description: "SHA-256 of responder identity (PII)" }
 
   oag_published_reports:
-    description: "M59 Registry of OAG published reports referencing IEBC."
+    description: "M59 Registry of OAG published reports referencing the Commission."
     columns:
       pub_report_id: { tier: D, description: "UUID7 published report identifier" }
       engagement_id: { tier: D, description: "Related OAG engagement (optional)" }

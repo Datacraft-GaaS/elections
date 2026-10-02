@@ -8,13 +8,13 @@
 | Size | M |
 | Availability class | routine 99.5%; 99.9% during accreditation window and election day |
 | Event-sourced | no |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M43-observer-accreditation-portal.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M43-observer-accreditation-portal.md |
 
 ## Purpose
 
 Upstream accreditation of domestic and international election observers. Distinct from M15 (IAB Dashboard, ongoing audit role) and M34 (Observer App, field data collection). This module gates entry: an observer organisation applies, is vetted, and receives credentials before any field activity. Covers domestic NGOs (KEOG, ELOG), international missions (EU EOM, AU, Carter Center, IFES, Commonwealth), and individual observers under accredited organisations.
 
-Strategy reference: §XVIII (Stakeholder Engagement). Elections Act s.21A; IEBC Observer Accreditation Regulations 2022.
+Strategy reference: §XVIII (Stakeholder Engagement). Elections Act s.21A; the Commission Observer Accreditation Regulations 2022.
 
 ## Surfaces and languages
 
@@ -22,7 +22,7 @@ Strategy reference: §XVIII (Stakeholder Engagement). Elections Act s.21A; IEBC 
 |---|---|---|
 | Observer Organisation Portal (WCAG 2.2 AA) | Astro | services/training-svc/astro/observer-accreditation/ |
 | Individual Observer Self-Application (WCAG 2.2 AA) | Astro | services/training-svc/astro/observer-accreditation/ |
-| IEBC Vetting Back-Office | Phoenix LiveView | services/training-svc/ex/accreditation_web/ |
+| the Commission Vetting Back-Office | Phoenix LiveView | services/training-svc/ex/accreditation_web/ |
 | Deployment Board | Phoenix LiveView | services/training-svc/ex/accreditation_web/ |
 | Scanner App (shared with M42) | Flutter | services/training-svc/apps/badge-scanner/ |
 | Public Observer Summary | Astro | services/training-svc/astro/observer-accreditation/ |
@@ -92,40 +92,40 @@ OpenAPI file: `packages/openapi-contracts/training/observer-accreditation.yaml`
 Organisation application:
 1. FR-M43-001: organisation application: legal name, jurisdiction, registration documents, mandate letter, contact focal point, total observer count, geographic deployment plan, prior Kenya election history; all documents stored in MinIO with reference FK
 2. FR-M43-002: organisation type classification (DOMESTIC_NGO/INTERNATIONAL_MISSION/DIPLOMATIC_MISSION/RELIGIOUS_BODY/ACADEMIC); classification drives vetting depth and MOU requirement; immutable once approved
-3. FR-M43-003: MOU workflow for INTERNATIONAL_MISSION organisations: draft MOU generated from approved template; IEBC Director of Legal signs via P06 HSM; counterpart uploads signed copy; status advances to MOU_SIGNED; individual observer applications blocked until MOU_SIGNED
+3. FR-M43-003: MOU workflow for INTERNATIONAL_MISSION organisations: draft MOU generated from approved template; the Commission Director of Legal signs via P06 HSM; counterpart uploads signed copy; status advances to MOU_SIGNED; individual observer applications blocked until MOU_SIGNED
 4. FR-M43-004: conditional organisation approval path: DOMESTIC_NGO organisations approved conditionally pending full document verification; individual applications queued and activated on final approval
 5. FR-M43-005: pre-loaded profiles for known missions (KEOG, ELOG, EU EOM, AU, Carter Center, IFES, Commonwealth); organisation admin claims profile with document verification; reduces onboarding time for returning organisations
-6. FR-M43-006: accreditation window enforcement per IEBC gazette notice; organisation applications accepted only within gazetted window; late applications return 422 with gazette reference; window dates configurable per gazette notice
+6. FR-M43-006: accreditation window enforcement per the Commission gazette notice; organisation applications accepted only within gazetted window; late applications return 422 with gazette reference; window dates configurable per gazette notice
 
 Individual observer application:
 7. FR-M43-007: individual observer application under approved organisation: biographic details, NIN/Passport, ICAO photo, language competencies, prior observer experience, deployment preference (region/county)
-8. FR-M43-008: background check: NPS advisory clearance, IEBC internal watch-list cross-reference, prior accreditation revocation history, criminal record self-declaration; advisory results visible only to IEBC Accreditation Officer; NPS data not stored post-vetting
+8. FR-M43-008: background check: NPS advisory clearance, the Commission internal watch-list cross-reference, prior accreditation revocation history, criminal record self-declaration; advisory results visible only to the Commission Accreditation Officer; NPS data not stored post-vetting
 9. FR-M43-009: application lifecycle: SUBMITTED -> DOCS_VERIFIED -> BACKGROUND_CHECK -> APPROVED/REJECTED -> CREDENTIAL_ISSUED -> DEPLOYED/SUSPENDED/REVOKED; state transitions role-gated and immutable once made
-10. FR-M43-010: rejection notice: written reason citing specific statutory provision (Elections Act s.21A, IEBC Observer Accreditation Regulations 2022); delivered within 48 hours of rejection
+10. FR-M43-010: rejection notice: written reason citing specific statutory provision (Elections Act s.21A, the Commission Observer Accreditation Regulations 2022); delivered within 48 hours of rejection
 11. FR-M43-011: bulk roster import: CSV/XLSX up to 5,000 rows; per-row error report with field-level codes; valid rows processed independently; total processing completes within 10 minutes
-12. FR-M43-012: code-of-conduct digital acceptance before credential issuance; references IEBC Observer Accreditation Regulations 2022; timestamped and stored as AccreditationAuditEntry appended to P05 Merkle chain
+12. FR-M43-012: code-of-conduct digital acceptance before credential issuance; references the Commission Observer Accreditation Regulations 2022; timestamped and stored as AccreditationAuditEntry appended to P05 Merkle chain
 
 Credential:
-13. FR-M43-013: digitally signed PDF credential: observer name, photo, organisation, deployment county, validity window (valid_from, valid_to), credential serial (UUID7); signed via P06 HSM; QR verifiable offline using IEBC public key embedded in scanner app
+13. FR-M43-013: digitally signed PDF credential: observer name, photo, organisation, deployment county, validity window (valid_from, valid_to), credential serial (UUID7); signed via P06 HSM; QR verifiable offline using the Commission public key embedded in scanner app
 14. FR-M43-014: credential QR verification response <= 300 ms; offline-capable with local CRL cache; scanner alert fires if local CRL age > 30 minutes
 15. FR-M43-015: credential issuance pauses if P06 HSM unavailable; applications continue to APPROVED state; signing queue drains on HSM restore; no credential lost
 
 Deployment:
-16. FR-M43-016: IEBC Coordinator assigns approved observers to specific constituencies via batch assignment CSV; observer receives PDF deployment letter with polling-station list auto-generated
+16. FR-M43-016: the Commission Coordinator assigns approved observers to specific constituencies via batch assignment CSV; observer receives PDF deployment letter with polling-station list auto-generated
 17. FR-M43-017: deployment data pushed to M34 Observer App within 5 minutes of assignment; observer sees assigned polling stations in app; circuit breaker handles M34 unavailability with queue-and-retry
 18. FR-M43-018: per-station observer quota enforcement per Elections Act s.21A; system prevents assignment beyond quota; over-quota assignment returns 422 with alternate constituency suggestion
 19. FR-M43-019: geographic coverage gap report on Deployment Board: constituencies with zero assigned observers flagged; coverage target >= 85% constituencies with at least one observer shown as dashboard metric
-20. FR-M43-020: pre-election coverage report for IEBC Commissioner: accreditation rates per organisation and geographic coverage gaps; generated on demand and on schedule at T-7 and T-1
+20. FR-M43-020: pre-election coverage report for the Commission Commissioner: accreditation rates per organisation and geographic coverage gaps; generated on demand and on schedule at T-7 and T-1
 
 Revocation:
-21. FR-M43-021: revocation workflow: IEBC Accreditation Officer initiates with reason; credential serial added to CRL within 5 minutes; field coordinator notified; M34 app credential for that observer invalidated
+21. FR-M43-021: revocation workflow: the Commission Accreditation Officer initiates with reason; credential serial added to CRL within 5 minutes; field coordinator notified; M34 app credential for that observer invalidated
 22. FR-M43-022: CRL published to CDN every 5 minutes; shared CDN with M42; scanner app (shared with M42) syncs at session start; CRL HSM-signed by P06; scanner rejects tampered CRL
 
 Audit and public:
 23. FR-M43-023: all mutations audit-logged with actor, timestamp, IP, and purpose code; appended to P05 Merkle chain; immutable
 24. FR-M43-024: RBAC: Accreditation Officer cannot approve application where conflict-of-interest declared; dual-control for revocation required; SpiceDB enforces all role gates
 25. FR-M43-025: public summary: observer counts per organisation and county; no individual observer names without consent; updated daily during active accreditation window; downloadable CSV
-26. FR-M43-026: MOU audit trail: IEBC Legal Director HSM signature recorded; counterpart upload timestamped; both stored as AccreditationAuditEntry appended to P05 Merkle chain; linked to OrganisationRecord
+26. FR-M43-026: MOU audit trail: the Commission Legal Director HSM signature recorded; counterpart upload timestamped; both stored as AccreditationAuditEntry appended to P05 Merkle chain; linked to OrganisationRecord
 
 Data and compliance:
 27. FR-M43-027: DPA 2019 s.30(1)(b) lawful basis; biometric photo retained 7 years; NPS advisory data not stored post-vetting; DPIA registered with ODPC; data class B for organisation and individual records
@@ -137,14 +137,14 @@ Data and compliance:
 ## Acceptance criteria
 
 1. AC-M43-01: ELOG submits organisation application; approved within 5 working days; individual observer credential issued within 48 hours of approval; verified by UAT
-2. AC-M43-02: EU EOM organisation approved via MOU workflow; IEBC Legal Director HSM signature applied; counterpart upload advances status to MOU_SIGNED; individual observer applications unblocked; verified by UAT
+2. AC-M43-02: EU EOM organisation approved via MOU workflow; the Commission Legal Director HSM signature applied; counterpart upload advances status to MOU_SIGNED; individual observer applications unblocked; verified by UAT
 3. AC-M43-03: deployment assignment pushed to M34 Observer App; observer sees assigned polling stations in app within 5 minutes of assignment; circuit breaker test confirms retry on M34 unavailability; verified by integration test
 4. AC-M43-04: observer credential revoked; credential serial added to CRL within 5 minutes; M34 app credential invalidated; offline scanner reflects revocation at next CRL sync; verified by integration test
 5. AC-M43-05: 3,000-row bulk roster processed within 10 minutes; per-row error report generated for invalid rows; valid rows receive credentials; verified by load test
 6. AC-M43-06: per-station observer quota enforced per Elections Act s.21A; over-quota assignment returns 422 with alternate constituency suggestion; verified by unit test covering boundary conditions
 7. AC-M43-07: credential QR verification p99 <= 300 ms including CRL lookup under normal scan load; verified by load test
 8. AC-M43-08: CRL propagation from revocation event to CDN update <= 5 minutes; verified by integration test comparing revocation timestamp to CRL generated_at on CDN
-9. AC-M43-09: geographic coverage gap report shows constituencies with zero observers flagged; >= 85% coverage target metric visible on Deployment Board; verified by UAT with IEBC Field Deployment Coordinator
+9. AC-M43-09: geographic coverage gap report shows constituencies with zero observers flagged; >= 85% coverage target metric visible on Deployment Board; verified by UAT with the Commission Field Deployment Coordinator
 10. AC-M43-10: system availability >= 99.9% during accreditation window and election day; SLO breach triggers alert within 5 minutes; verified by SLO dashboard report
 11. AC-M43-11: WCAG 2.2 AA on organisation portal, individual self-application, and public summary; EN + SW + French + Arabic display options verified by axe-core and manual audit; zero critical violations
 12. AC-M43-12: NPS advisory data not stored beyond vetting session; data-purge integration test confirms no NPS fields in persisted IndividualObserver records after session close
@@ -194,13 +194,13 @@ Tags: `#[trace("FR-M43-009","AC-M43-06","EC-LEG-04")]`
 ## Runbooks and dashboards
 
 - `docs/runbooks/training-svc-degradation.md` - extend with observer accreditation CRL sync failure and MOU workflow stalls
-- `docs/runbooks/observer-quota-override.md` - new runbook; quota contention resolution; IEBC Accreditation Officer manual override procedure
+- `docs/runbooks/observer-quota-override.md` - new runbook; quota contention resolution; the Commission Accreditation Officer manual override procedure
 - Grafana dashboard: `eel-iems-43` (alert ruleset: `iems-43-alerts`)
 - SLO alerts: CRL propagation <= 5 min; credential QR verification <= 300 ms; bulk import <= 10 min for 5,000 rows
 
 ## Open questions
 
-- IEBC Observer Accreditation Regulations 2022: must be confirmed unchanged for the 2027 cycle; any regulatory changes drive model and workflow changes; IEBC Legal Director sign-off required before spec is finalised.
+- the Commission Observer Accreditation Regulations 2022: must be confirmed unchanged for the 2027 cycle; any regulatory changes drive model and workflow changes; the Commission Legal Director sign-off required before spec is finalised.
 - Shared scanner app with M42: a single Flutter app configured per accreditation type (MEDIA vs OBSERVER) is the intended design; scanner app team ownership must be agreed in sprint planning.
-- NPS API MoU timeline: if not signed by T-270, the manual self-declaration fallback becomes the primary path for all vetting; confirm probability with IEBC Security.
-- Geographic coverage target: >= 85% constituencies with at least one observer; system does not auto-enforce this; IEBC Field Deployment Coordinator is responsible; gap report must be built into the Deployment Board.
+- NPS API MoU timeline: if not signed by T-270, the manual self-declaration fallback becomes the primary path for all vetting; confirm probability with the Commission Security.
+- Geographic coverage target: >= 85% constituencies with at least one observer; system does not auto-enforce this; the Commission Field Deployment Coordinator is responsible; gap report must be built into the Deployment Board.

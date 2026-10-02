@@ -43,7 +43,7 @@ def _make_cert(worker_id=None, **kwargs) -> WorkerCertificate:
         station_code="KE-NBI-001",
         modules_completed=[],
         expires_at=timezone.now() + timezone.timedelta(days=365),
-        qr_verification_url="https://verify.iebc.or.ke/cert/test",
+        qr_verification_url="https://verify.eel.example/cert/test",
     )
     defaults.update(kwargs)
     return WorkerCertificate.objects.create(**defaults)
@@ -152,7 +152,7 @@ class QRGeneratorTests(TestCase):
         assert "hash" in result
         assert "qr_url" in result
         assert len(result["hash"]) == 64
-        assert result["qr_url"].startswith("https://verify.iebc.or.ke/cert/")
+        assert result["qr_url"].startswith("https://verify.eel.example/cert/")
 
     def test_hash_differs_per_call(self):
         w1 = str(uuid7())

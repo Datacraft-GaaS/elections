@@ -2,9 +2,9 @@
 
 Module M36 voter deregistration appeals with ODPC-compliant right-to-erasure workflows.
 
-Handles voter deregistration appeals (voter requests erasure, challenges deregistration). Implements ODPC (Office of the Data Protection Commissioner, Kenya DPA 2019) right-to-erasure workflows: appeal submission, adjudication window (30 days), IEBC decision, erasure confirmation. Tracks appeal lifecycle and maintains audit trail. Emits bvr.deregistration.appealed event.
+Handles voter deregistration appeals (voter requests erasure, challenges deregistration). Implements ODPC (Office of the Data Protection Commissioner, Kenya DPA 2019) right-to-erasure workflows: appeal submission, adjudication window (30 days), the Commission decision, erasure confirmation. Tracks appeal lifecycle and maintains audit trail. Emits bvr.deregistration.appealed event.
 
-Fits into bvr-svc as the erasure request handler: voters file appeals, IEBC adjudicates, domain executes erasure with full audit.
+Fits into bvr-svc as the erasure request handler: voters file appeals, the Commission adjudicates, domain executes erasure with full audit.
 
 ## Public API
 

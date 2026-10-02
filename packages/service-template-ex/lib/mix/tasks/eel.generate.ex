@@ -1,8 +1,8 @@
 defmodule Mix.Tasks.Eel.Generate do
-  @shortdoc "Scaffolds a Phoenix + LiveView IEBC IEMS service"
+  @shortdoc "Scaffolds a Phoenix + LiveView the Commission IEMS service"
 
   @moduledoc """
-  Generates a complete Phoenix + LiveView service skeleton for an IEBC IEMS microservice.
+  Generates a complete Phoenix + LiveView service skeleton for a Commission IEMS microservice.
 
   ## Usage
 

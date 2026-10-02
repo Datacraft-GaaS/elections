@@ -8,7 +8,7 @@
 | Size | XL |
 | Availability class | election-critical 99.99% |
 | Event-sourced | no (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M03-abis.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M03-abis.md |
 
 ## Purpose
 
@@ -64,7 +64,7 @@ OpenAPI file: packages/openapi-contracts/abis/match.yaml
 |---|---|---|---|---|
 | BVR back-end (M02) | internal | integrations/bvr-backend/ | yes | match result queued; bvr-svc retries |
 | Confidential compute (TDX/SEV-SNP) | internal | crates/abis-enclave/ | yes (software simulation) | worker quarantined; redistributed to healthy enclaves |
-| Legacy IEBC ABIS | I05 | integrations/legacy-abis/ | yes (mock) | federation adapter fails closed; in-house matcher used |
+| Legacy the Commission ABIS | I05 | integrations/legacy-abis/ | yes (mock) | federation adapter fails closed; in-house matcher used |
 | HSM (P06) | I07 | integrations/hsm-pkcs11/ | yes (SoftHSM) | signing queued; alert fired |
 | Transparency log (P05) | internal | integrations/tlog/ | yes | anchoring queued on restore |
 

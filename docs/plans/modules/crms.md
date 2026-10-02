@@ -8,7 +8,7 @@
 | Size | M |
 | Availability class | cycle-critical 99.9% |
 | Event-sourced | no (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M12-crms.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M12-crms.md |
 
 ## Purpose
 
@@ -63,7 +63,7 @@ OpenAPI file: packages/openapi-contracts/crms/nomination.yaml
 | system | I-code or name | adapter path | double available in dev? | failure behaviour |
 |---|---|---|---|---|
 | IPRS | I01 | integrations/iprs/ | yes | fail-open on read; fail-closed on approval |
-| KRA iTax | I12 | integrations/kra/ | yes | circuit-breaker; IEBC officer manual override |
+| KRA iTax | I12 | integrations/kra/ | yes | circuit-breaker; the Commission officer manual override |
 | EACC | external | integrations/eacc/ | yes | clearance queued; async response |
 | HSM (P06) | I07 | integrations/hsm/ | yes (SoftHSM) | fail closed on ballot proof publish |
 | BVR back-end (M02) | internal | integrations/bvr-backend/ | yes | voter identity verify |
@@ -90,7 +90,7 @@ Registration and nomination:
 6. FR-M12-006: EACC integrity clearance check via adapter (advisory); similar circuit-breaker and override flow. (spec FR-M12-006)
 7. FR-M12-007: document upload: educational certificates, integrity clearance, ethics affidavits, party clearance; PDF only; malware scan; max 20 MB per document. (spec FR-M12-006)
 8. FR-M12-008: gender quota enforcement per Elections Act (two-thirds gender rule) at party and national level; alert on violation. (spec FR-M12-007)
-9. FR-M12-009: PWD and youth quota tracking: counts per party per position; dashboard for IEBC officers and parties. (spec FR-M12-007)
+9. FR-M12-009: PWD and youth quota tracking: counts per party per position; dashboard for the Commission officers and parties. (spec FR-M12-007)
 10. FR-M12-010: nominations window enforcement: OPA hard-close at gazetted deadline; no further submissions accepted. (spec FR-M12-013)
 
 Clearance workflow:
@@ -103,7 +103,7 @@ Clearance workflow:
 Publication and ballot:
 16. FR-M12-016: public gazette publication of cleared candidates with all statutory details; signed JSON and CSV. (spec FR-M12-010, FR-M12-008)
 17. FR-M12-017: ballot proof generation: PDF layout per position matching printer specifications; symbol plus portrait plus name plus party colour. (spec FR-M12-011)
-18. FR-M12-018: ballot lottery or registration-time ordering per IEBC policy; deterministic and reproducible. (spec FR-M12-011)
+18. FR-M12-018: ballot lottery or registration-time ordering per the Commission policy; deterministic and reproducible. (spec FR-M12-011)
 19. FR-M12-019: ballot proof preview and party sign-off required before printer handoff. (spec FR-M12-012)
 20. FR-M12-020: HSM-signed hash of ballot PDF published for public verifiability. (spec FR-M12-010)
 21. FR-M12-021: ballot proof delivered to printer within 24 h of nomination close.
@@ -111,7 +111,7 @@ Publication and ballot:
 
 Audit, access control, and monitoring:
 23. FR-M12-023: full audit trail: every status change signed and anchored to transparency log. (spec FR-M12-014)
-24. FR-M12-024: RBAC: party agents, IEBC officers, legal team, and printer liaison have scoped access; SpiceDB enforced. (spec FR-M12-013)
+24. FR-M12-024: RBAC: party agents, the Commission officers, legal team, and printer liaison have scoped access; SpiceDB enforced. (spec FR-M12-013)
 25. FR-M12-025: public candidate list CDN-cached; p95 <= 200 ms; no PII beyond statutory fields.
 26. FR-M12-026: candidate withdrawal post-ballot-print: status frozen on ballot; tallied and annotated per EC-LEG-01. (spec FR-M12-007)
 27. FR-M12-027: WCAG 2.2 AA on public gazette and party portal; screen-reader and keyboard-only support. (spec NFR-M12-003)
@@ -123,7 +123,7 @@ Audit, access control, and monitoring:
 
 ## Acceptance criteria
 
-AC-M12-01: end-to-end nomination + clearance + gazette flow passes UAT with real party and IEBC personas.
+AC-M12-01: end-to-end nomination + clearance + gazette flow passes UAT with real party and the Commission personas.
 AC-M12-02: voter-register cross-check prevents non-voter candidates at submission (bench).
 AC-M12-03: gender quota alert fires when two-thirds rule is breached (UAT).
 AC-M12-04: ballot proof matches printer specification; party sign-off captured (printer sign-off).

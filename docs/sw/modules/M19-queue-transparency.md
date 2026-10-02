@@ -4,7 +4,7 @@
 **Name:** Queue Transparency System
 **Owner:** Datacraft Limited — Operations Engineering Team
 **Status:** Draft v2
-**IP Classification:** Custom Software — IPR vests in IEBC per GCC 15.4
+**IP Classification:** Custom Software — IPR vests in the Commission per GCC 15.4
 
 **Strategy traceback:** Part XV §XV.3, Part XV §XV.2, Part XVI §XVI.4, Part XVIII §XVIII.2
 
@@ -25,7 +25,7 @@ The Queue Transparency System tracks real-time voter queue status at all 55,393 
 | ECC Operations Manager | M16 console | Receive escalation alerts; dispatch roving engineers; recommend extended hours |
 | County Coordinator | Web console | Monitor all stations in county; dispatch county spares |
 | Field Support Engineer | Mobile app | Navigate to assigned station; update queue status after arrival |
-| IEBC Chair | Executive console | Receive s.14A extended-hours recommendations; authorise declarations |
+| the Commission Chair | Executive console | Receive s.14A extended-hours recommendations; authorise declarations |
 | Party Agents | M16 party portal | Monitor queue status for stations in their constituency |
 | Journalists | M13 / journalist API | Report on national queue picture |
 
@@ -49,7 +49,7 @@ Voter optionally scans a QR code at station entrance (no ID required; generates 
 Every 5 minutes from three inputs: current queue length (estimate), current throughput rate (voters/minute, from Input 2), estimated wait time (queue length / throughput), estimated clear time (absolute EAT), alert flag.
 
 ### FR-19.03 — Live public queue map
-Public-facing map at M13 Queue tab and `queue.iebc.go.ke`: all 55,393 stations colour-coded by estimated wait time (green < 45 min, amber 45-120 min, red > 120 min). Updated every 5 minutes. Per-station detail page with wait-time trend chart. Opt-in SMS alert when a voter's home station drops below 30-minute wait.
+Public-facing map at M13 Queue tab and `queue.eel.example`: all 55,393 stations colour-coded by estimated wait time (green < 45 min, amber 45-120 min, red > 120 min). Updated every 5 minutes. Per-station detail page with wait-time trend chart. Opt-in SMS alert when a voter's home station drops below 30-minute wait.
 
 ### FR-19.04 — ECC escalation triggers (PM-04)
 Automatic alerts to M16 ECC on wait-time thresholds:
@@ -58,10 +58,10 @@ Automatic alerts to M16 ECC on wait-time thresholds:
 |---|---|---|
 | > 90 min | Dispatch alert to County Coordinator | ECC Ops Manager |
 | > 180 min | Deploy roving engineer with spare kit to increase throughput | ECC Ops Manager |
-| > 240 min | Escalate to IEBC Chair + notify all accredited party agents for that station | ECC Director |
-| > 300 min | Activate s.14A extended-voting-hours recommendation with documented evidence | IEBC Chair |
+| > 240 min | Escalate to the Commission Chair + notify all accredited party agents for that station | ECC Director |
+| > 300 min | Activate s.14A extended-voting-hours recommendation with documented evidence | the Commission Chair |
 
-Each threshold trigger creates a timestamped, HSM-signed ECC alert appended to the audit log. The > 300-min escalation includes a pre-formatted s.14A recommendation document with supporting data, ready for IEBC Chair signature.
+Each threshold trigger creates a timestamped, HSM-signed ECC alert appended to the audit log. The > 300-min escalation includes a pre-formatted s.14A recommendation document with supporting data, ready for the Commission Chair signature.
 
 ### FR-19.05 — Stations-clear-before-close tracking
 Kit records: at 17:00 EAT (or extended hours), did any voter in the queue fail to vote? A "queue-not-cleared" event is logged if Input 1 estimate shows > 0 queue at station close AND the station closed before all queued voters voted. Any such event is a disenfranchisement flag routed to the IAB and the M23 grievance channel.
@@ -115,8 +115,8 @@ All three inputs operate without connectivity. Queue estimates, headcounts, and 
 1. As a registered voter, I want to check the estimated wait time at my station before leaving home, so that I can time my arrival to minimise queuing.
 2. As a voter, I want to receive an SMS when the queue drops below 30 minutes, so that I can arrive at the right time without repeatedly checking the app.
 3. As a Presiding Officer, I want a 30-minute reminder to update my queue estimate on the kit, so that the ECC has current data without me needing to remember.
-4. As an ECC Operations Manager, I want an automatic alert when any station exceeds 240 minutes wait, so that I can escalate to the IEBC Chair before voters are turned away.
-5. As the IEBC Chair, I want to receive a pre-formatted s.14A recommendation when wait exceeds 300 minutes at a significant number of stations, so that I can authorise extended hours with documented justification.
+4. As an ECC Operations Manager, I want an automatic alert when any station exceeds 240 minutes wait, so that I can escalate to the Commission Chair before voters are turned away.
+5. As the Commission Chair, I want to receive a pre-formatted s.14A recommendation when wait exceeds 300 minutes at a significant number of stations, so that I can authorise extended hours with documented justification.
 6. As a party agent, I want to see queue status for all stations in my constituency, so that I can identify and report stations where voters may be disenfranchised.
 7. As a journalist, I want to see the national queue map in real time, so that I can report accurately on voter access during election day.
 8. As an IAB Member, I want to see all disenfranchisement flags (queue-not-cleared events) in the M15 audit feed, so that I can assess whether voters were turned away and include findings in the quarterly report.
@@ -176,7 +176,7 @@ class S14ARecommendation(BaseModel):
     recommended_extension_hours: int
     stations: list[str]  # station codes
     supporting_data_hash: str
-    iebc_chair_signed: bool
+    commission_chair_signed: bool
     signed_at: datetime | None
     declaration_gazette_ref: str | None
 ```
@@ -193,7 +193,7 @@ class S14ARecommendation(BaseModel):
 | GET | `/api/v1/attendance/{station_code}` | Operator JWT | 100/s | Attendance counts; reconciliation status |
 | GET | `/api/v1/disenfranchisement/flags` | Operator JWT | 50/s | All disenfranchisement flags |
 | GET | `/api/v1/s14a/recommendations` | ECC Director JWT | 10/s | s.14A recommendation documents |
-| POST | `/api/v1/s14a/{id}/sign` | IEBC Chair JWT + HSM | 2/s | Chair signs s.14A recommendation |
+| POST | `/api/v1/s14a/{id}/sign` | the Commission Chair JWT + HSM | 2/s | Chair signs s.14A recommendation |
 | GET | `/api/v1/analytics/queue-post-election` | None (public, post-election) | 20/s | Historical queue dataset |
 | SSE | `/api/v1/queue/stream` | Operator JWT | 1 per session | Live queue update stream for ECC |
 
@@ -221,7 +221,7 @@ class S14ARecommendation(BaseModel):
 2. **Per-station queue detail** — estimated wait, throughput rate trend chart, last updated timestamp, alert level badge
 3. **ECC queue panel** (within M16) — filtered to critical stations; s.14A trigger button when threshold met; dispatch integration
 4. **Attendance reconciliation panel** (operator, within M16) — per-station input comparison, flag highlighting, trend over polling day
-5. **s.14A recommendation document** — auto-populated with supporting data; IEBC Chair electronic signature workflow
+5. **s.14A recommendation document** — auto-populated with supporting data; the Commission Chair electronic signature workflow
 6. **Post-election analytics** — interactive charts: wait time by hour, by county; disenfranchisement event map; turnout correlation
 
 ---
@@ -243,8 +243,8 @@ class S14ARecommendation(BaseModel):
 
 | Metric | Target | Sign-off |
 |---|---|---|
-| Median queue wait during peak 09:00-13:00 | <= 45 minutes | IEBC Chair |
-| Stations with wait > 240 min at any point | <= 0.5% | IEBC Chair |
+| Median queue wait during peak 09:00-13:00 | <= 45 minutes | the Commission Chair |
+| Stations with wait > 240 min at any point | <= 0.5% | the Commission Chair |
 | Voters denied vote due to queue-at-close | 0 | IAB |
 | Queue map update latency | < 5 min | Datacraft SRE |
 | ECC escalation delivery after threshold | p99 < 2 min | Datacraft SRE |
@@ -299,5 +299,5 @@ class S14ARecommendation(BaseModel):
 | R1 | Presiding Officers skip the manual estimate prompt | Kit escalates to ECC if no estimate received for > 45 min; County Coordinator follows up; PO training curriculum includes this as mandatory step |
 | R2 | CV headcount triggers DPA 2019 challenge | No face recognition; no image storage; no transmission; visible consent signage; DPIA published; IAB confirms compliance |
 | R3 | Queue map causes voter pile-up at "green" stations | Data presented as estimated, not exact; app displays confidence indicator; media briefed on interpretation |
-| R4 | s.14A trigger fires erroneously (false-positive wait time) | Multiple input cross-check required before trigger; human ECC Ops Manager reviews before recommendation is generated; IEBC Chair has final authority |
+| R4 | s.14A trigger fires erroneously (false-positive wait time) | Multiple input cross-check required before trigger; human ECC Ops Manager reviews before recommendation is generated; the Commission Chair has final authority |
 | R5 | SMS gateway capacity exceeded on election morning | Pre-negotiated higher-tier quota with both Safaricom and Airtel; alerts batched by county if volume exceeds quota |

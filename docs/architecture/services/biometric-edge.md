@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Runs the on-device firmware for field kit hardware: biometric enrolment and voter registration (M01), biometric voter identification at polling stations (M05), and diaspora embassy voting stations (M24). It is the physical boundary between the IEBC network and field devices; it handles sensor SDK integration, device attestation, GNSS binding, and delayed-batch transmission for low-connectivity environments.
+Runs the on-device firmware for field kit hardware: biometric enrolment and voter registration (M01), biometric voter identification at polling stations (M05), and diaspora embassy voting stations (M24). It is the physical boundary between the Commission network and field devices; it handles sensor SDK integration, device attestation, GNSS binding, and delayed-batch transmission for low-connectivity environments.
 
 ## Modules Owned
 

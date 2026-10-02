@@ -8,7 +8,7 @@
 | Size | XL |
 | Availability class | routine 99.5% |
 | Event-sourced | no (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M17-speech-integrity.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M17-speech-integrity.md |
 
 ## Purpose
 
@@ -85,7 +85,7 @@ Primary models (managed by M28 AI monitoring stack):
 ## Dependencies
 
 - Modules: M13 (grievance content source), M15 (IAB flag consumer), M16 (ECC incident consumer), M28 (AI monitoring)
-- Platform: P05 (audit), NLLB via LiteLLM (62.169.25.77:4000)
+- Platform: P05 (audit), NLLB via LiteLLM (192.0.2.11:4000)
 - Packages: eel-crypto-rs, eel-outbox-rs
 
 ## Feature checklist
@@ -95,7 +95,7 @@ Primary models (managed by M28 AI monitoring stack):
 3. FR-M17-003: Ingest content from YouTube Data API (video metadata, captions, comments) with channel allowlist.
 4. FR-M17-004: Accept analyst-uploaded broadcast clips (MP4, MP3, WAV) via authenticated multipart upload endpoint.
 5. FR-M17-005: Detect content language using fast local model before routing to NLLB translation.
-6. FR-M17-006: Translate non-English, non-Kiswahili content to English via NLLB (LiteLLM proxy at 62.169.25.77:4000) with timeout circuit breaker; fail open to raw text.
+6. FR-M17-006: Translate non-English, non-Kiswahili content to English via NLLB (LiteLLM proxy at 192.0.2.11:4000) with timeout circuit breaker; fail open to raw text.
 7. FR-M17-007: Classify content for hate speech per NCIC Act categories (ethnicity, religion, gender, disability); output category list + per-category confidence score.
 8. FR-M17-008: Classify content for electoral incitement (calls to violence, voter intimidation, disenfranchisement); confidence score + severity: low/medium/high/critical.
 9. FR-M17-009: Detect disinformation via claim extraction and cross-reference against indexed fact-check corpus; return claim text + matched fact-check URL + contradiction score.

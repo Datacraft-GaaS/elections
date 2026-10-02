@@ -106,14 +106,14 @@ Languages: EN + SW. WCAG 2.2 AA.
 
 ## 8. Kenya statute alignment
 
-- **Elections Act §30 (voter identification)**: card issuance is optional where the register is the primary identification instrument; M53 is feature-flagged and activated only when IEBC formally adopts photo cards.
+- **Elections Act §30 (voter identification)**: card issuance is optional where the register is the primary identification instrument; M53 is feature-flagged and activated only when the Commission formally adopts photo cards.
 - **Kenya Data Protection Act §25 (lawful processing)**: card production data shared with NRB manufacturer is governed by a data-processing agreement; no biometrics leave ABIS.
 - **Kenya Data Protection Act §26 (data minimisation)**: manufacturer receives card number + photo reference only, not full voter demographics.
 - **Elections (Technology) Regulations 2017 Regulation 8**: blacklist propagation to all BVI nodes must complete before polls open on election day.
 
 ## 9. Honest caveats + external prerequisites
 
-- Feature flag: M53 is disabled by default. IEBC must issue a formal decision to activate card issuance before deployment proceeds beyond staging.
+- Feature flag: M53 is disabled by default. the Commission must issue a formal decision to activate card issuance before deployment proceeds beyond staging.
 - NRB card manufacturer contract is an external procurement. The SFTP adapter and manifest schema are ready; the vendor's exact export format locks at first live batch.
 - Biometric collection relies on ABIS (M03) uptime. If ABIS is unavailable, collection falls to manual with supervisor countersignature; this is a weaker assurance path.
 - 30-minute blacklist SLA assumes Kafka topic replication factor >= 3 and BVI nodes have working Kafka consumers. Offline BVI kits (election-day disconnection) must receive a full blacklist dump via `GET /v1/cards/blacklist/export` at kit initialisation.

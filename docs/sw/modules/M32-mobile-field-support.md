@@ -3,11 +3,11 @@
 **Module ID:** M32
 **Module Name:** Mobile Field Support — Datacraft Field Engineer App
 **Type:** Mobile Application (Flutter, Android 10.0+ / iOS 15+)
-**Distribution:** Private via IEBC MDM (Datacraft device roster)
+**Distribution:** Private via Commission MDM (Datacraft device roster)
 **Users:** Datacraft Field Support Engineers (~200 on election day)
 **Owner:** Datacraft
 **Status:** Specified — pending implementation
-**IPR:** Custom Software vests in IEBC per GCC 15.4 (Teaming §4)
+**IPR:** Custom Software vests in the Commission per GCC 15.4 (Teaming §4)
 
 Adapted from `mobile/apps/MA04-field-support.md`, sw/-module renumbered as M32.
 
@@ -15,7 +15,7 @@ Adapted from `mobile/apps/MA04-field-support.md`, sw/-module renumbered as M32.
 
 ## 1. Purpose
 
-Give every field engineer a mobile console for the assigned county / cluster of polling stations. Support-ticket queue, remote diagnostics against kits, KEBS / warranty claim initiation, escalation to Datacraft L2/L3 + Mechrevo OEM + IEBC ICT, on-call rotation, and end-of-day reporting.
+Give every field engineer a mobile console for the assigned county / cluster of polling stations. Support-ticket queue, remote diagnostics against kits, KEBS / warranty claim initiation, escalation to Datacraft L2/L3 + Mechrevo OEM + the Commission ICT, on-call rotation, and end-of-day reporting.
 
 **Relationship to M20 (Inventory Management):** M32 is the field-engineer mobile app that consumes the Inventory Management API (M20) to look up spares availability and locate the nearest spare-holding constituency store. M20 is the system of record; M32 is a consumer client. The two are distinct.
 
@@ -42,7 +42,7 @@ Give every field engineer a mobile console for the assigned county / cluster of 
 - **FR-M32-004** Live ticket queue filtered by engineer's cluster, severity, age.
 - **FR-M32-005** Sev 1 / 2 / 3 SLA timers visible (2h / 4h / 6h response; 1d / 2d / best-effort resolution).
 - **FR-M32-006** Take / assign / re-assign ticket with dual notification.
-- **FR-M32-007** In-app messaging with reporter (typically PO or IEBC County ICT).
+- **FR-M32-007** In-app messaging with reporter (typically PO or the Commission County ICT).
 - **FR-M32-008** Attach evidence: photo, short video, diagnostic log capture.
 
 ### 3.3 Kit Diagnostics
@@ -61,7 +61,7 @@ Give every field engineer a mobile console for the assigned county / cluster of 
 
 ### 3.5 Escalation
 
-- **FR-M32-017** One-tap escalation to Datacraft L2 → L3 → Mechrevo → OEM → IEBC ICT per matrix.
+- **FR-M32-017** One-tap escalation to Datacraft L2 → L3 → Mechrevo → OEM → the Commission ICT per matrix.
 - **FR-M32-018** Escalation carries ticket context + attachments.
 - **FR-M32-019** Escalation logged permanently.
 
@@ -81,7 +81,7 @@ Give every field engineer a mobile console for the assigned county / cluster of 
 ### 3.8 End-of-Day Report
 
 - **FR-M32-027** Automatic end-of-shift report: tickets handled, SLA compliance, escalations, spares consumed, incidents.
-- **FR-M32-028** Signed + submitted to Datacraft Ops + IEBC ICT.
+- **FR-M32-028** Signed + submitted to Datacraft Ops + the Commission ICT.
 
 ### 3.9 Offline Behaviour
 
@@ -109,8 +109,8 @@ Give every field engineer a mobile console for the assigned county / cluster of 
 - Warranty (O04)
 - BVI back-end (M06)
 - Datacraft escalation matrix
-- IEBC Election Command Centre (M16) for war-room dispatch visibility
-- IEBC War-Room dashboard
+- the Commission Election Command Centre (M16) for war-room dispatch visibility
+- the Commission War-Room dashboard
 
 ---
 

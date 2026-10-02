@@ -1,4 +1,4 @@
-# Data Model — IEBC IEMS (All 69 Modules)
+# Data Model — the Commission IEMS (All 69 Modules)
 
 **Companion to:** `PRD.md`, `ARCHITECTURE.md`, `API-CATALOG.md`.
 **Version:** 2.0 — Full 69-module canonical reference.
@@ -15,7 +15,7 @@ Conventions:
 
 ## 1. Executive Summary
 
-The IEBC IEMS data model covers **218 distinct entity types** across 12 bounded contexts, serving 69 software modules and the platform layer. The decision to build an **event-sourced core** (per `DATACRAFT_SOFTWARE_SCOPE.md` §0.4) means every critical state change is an immutable, hash-chained event appended to an append-only store. State views are derived by replaying events through deterministic projections. This architecture provides complete tamper-evident audit trails and allows deterministic re-derivation of any election result from signed source data.
+The Commission IEMS data model covers **218 distinct entity types** across 12 bounded contexts, serving 69 software modules and the platform layer. The decision to build an **event-sourced core** (per `DATACRAFT_SOFTWARE_SCOPE.md` §0.4) means every critical state change is an immutable, hash-chained event appended to an append-only store. State views are derived by replaying events through deterministic projections. This architecture provides complete tamper-evident audit trails and allows deterministic re-derivation of any election result from signed source data.
 
 Single-source-of-truth policy: each entity has exactly one **owner module** responsible for its schema, lifecycle, and migration. All other modules that read or reference that entity do so through the owner's API or a well-defined read-model projection. Cross-context references use UUID7 foreign keys; no embedded documents span context boundaries. Reference data (boundaries, statutory codes) is owned by the Electoral Administration context and treated as effectively immutable once gazetted; changes require dual-commissioner approval and a new version record.
 
@@ -184,7 +184,7 @@ Anti-corruption layers between contexts:
 | root_hash | str(64) | Y | SHA-256 of sorted voter_id list |
 | merkle_root | str(64) | Y | Merkle root of all active voter records |
 | gazette_notice_id | str | N | FK → GazetteNotice |
-| signed_by | str | Y | FK → User (IEBC Commissioner) |
+| signed_by | str | Y | FK → User (the Commission Commissioner) |
 | signed_at | datetime | N | |
 
 **Owner:** M35. **Lifecycle:** immutable once signed. **Retention:** permanent. **PII:** NONE.
@@ -307,7 +307,7 @@ Anti-corruption layers between contexts:
 | Field | Type | Req | Notes |
 |---|---|---|---|
 | county_id | str (UUID7) | Y | |
-| code | str(3) | Y | Statutory IEBC code (001–047) |
+| code | str(3) | Y | Statutory the Commission code (001–047) |
 | name | str(100) | Y | |
 | region | enum | Y | |
 | county_returning_officer_id | str (UUID7) | N | FK → User |
@@ -379,7 +379,7 @@ Anti-corruption layers between contexts:
 | Field | Type | Req | Notes |
 |---|---|---|---|
 | id | str (UUID7) | Y | |
-| code | str | Y | Official IEBC code |
+| code | str | Y | Official the Commission code |
 | name | str | Y | |
 | boundary_type | enum | Y | `CONSTITUENCY`, `WARD`, `COUNTY`, `STATION` |
 | parent_code | str | N | |
@@ -526,7 +526,7 @@ Anti-corruption layers between contexts:
 | votes_received | int | Y | |
 | total_valid_votes | int | Y | |
 | ro_signature_hash | str(64) | Y | |
-| iebc_seal_hash | str(64) | Y | |
+| commission_seal_hash | str(64) | Y | |
 
 **Owner:** M51. **Lifecycle:** immutable. **Retention:** permanent. **PII:** MED (candidate name).
 
@@ -761,7 +761,7 @@ Each has A (station), B (constituency/county), C (national/county summary) varia
 | snapshot_type | enum | Y | `PROVISIONAL`, `UPDATE`, `FINAL` |
 | covered_forms | jsonb | Y | Manifest of included Form 34A/B/C |
 | merkle_root | str(64) | Y | Root of everything in snapshot |
-| signature | str(1024) | Y | IEBC HSM signature |
+| signature | str(1024) | Y | the Commission HSM signature |
 | cdn_asset_url | str(500) | Y | Signed CDN URL |
 | transparency_log_index | int | Y | Position in national transparency log |
 
@@ -779,7 +779,7 @@ Each has A (station), B (constituency/county), C (national/county summary) varia
 | form_count | int | Y | |
 | bundle_size_bytes | int | Y | |
 | published_at | datetime | Y | |
-| publication_channels | list[str] | Y | URLs (IEBC site, GitHub, IPFS, Gazette, radio bulletin) |
+| publication_channels | list[str] | Y | URLs (the Commission site, GitHub, IPFS, Gazette, radio bulletin) |
 | expected_stage_hashes | dict | Y | stage_name → sha256 |
 
 **Owner:** M14. **Lifecycle:** immutable. **Retention:** permanent. **PII:** NONE.
@@ -1157,7 +1157,7 @@ Each has A (station), B (constituency/county), C (national/county summary) varia
 | triggered_at | datetime | Y | |
 | trigger_description | str | Y | |
 | linked_event_ids | list[str] | Y | AuditEvent UUIDs |
-| iebc_response_due | datetime | Y | |
+| commission_response_due | datetime | Y | |
 | public | bool | Y | Whether published to public |
 | signed_hash | str(64) | Y | HSM signature |
 
@@ -1402,7 +1402,7 @@ Each has A (station), B (constituency/county), C (national/county summary) varia
 | serial_range_end | str(20) | Y | Last ballot serial in run |
 | print_run_id | str(30) | Y | Printer-assigned run ID |
 | status | enum | Y | `ORDERED`, `PRINTING`, `QC_PASSED`, `QC_FAILED`, `SHIPPED`, `RECEIVED`, `DISTRIBUTED` |
-| countersigned_by | str (UUID7) | N | IEBC officer FK → User |
+| countersigned_by | str (UUID7) | N | the Commission officer FK → User |
 | rfid_manifest_id | str (UUID7) | N | FK → PrintLotManifest |
 
 **Owner:** M39 (Ballot Printing Chain). **Lifecycle:** versioned-mutable. **Retention:** permanent. **PII:** NONE.
@@ -1548,7 +1548,7 @@ Each has A (station), B (constituency/county), C (national/county summary) varia
 | Field | Type | Req | Notes |
 |---|---|---|---|
 | role_id | str (UUID7) | Y | |
-| name | enum | Y | `ENROLMENT_CLERK`, `PRESIDING_OFFICER`, `RETURNING_OFFICER`, `COUNTY_RETURNING_OFFICER`, `PARTY_AGENT`, `IEBC_ADMIN`, `IEBC_COMMISSIONER`, `AUDITOR`, `SUPPORT_L1`, `SUPPORT_L2`, `ODPC_OFFICER`, `OBSERVER`, `MEDIA`, `COURT_REGISTRAR`, `AG_OFFICE`, `HEALTH_OFFICER` |
+| name | enum | Y | `ENROLMENT_CLERK`, `PRESIDING_OFFICER`, `RETURNING_OFFICER`, `COUNTY_RETURNING_OFFICER`, `PARTY_AGENT`, `COMMISSION_ADMIN`, `COMMISSION_COMMISSIONER`, `AUDITOR`, `SUPPORT_L1`, `SUPPORT_L2`, `ODPC_OFFICER`, `OBSERVER`, `MEDIA`, `COURT_REGISTRAR`, `AG_OFFICE`, `HEALTH_OFFICER` |
 | description | str | Y | |
 
 **Owner:** P04. **Lifecycle:** immutable. **Retention:** permanent. **PII:** NONE.
@@ -1629,7 +1629,7 @@ Each has A (station), B (constituency/county), C (national/county summary) varia
 |---|---|---|---|
 | id | str (UUID7) | Y | |
 | election_cycle | str | Y | e.g. `2027-KE-GE` |
-| submitter_category | enum | Y | `IEBC_DEPT`, `IAB`, `KEOG`, `ELOG`, `EU_EOM`, `DOMESTIC_OBSERVER`, `MEDIA`, `CITIZEN` |
+| submitter_category | enum | Y | `COMMISSION_DEPT`, `IAB`, `KEOG`, `ELOG`, `EU_EOM`, `DOMESTIC_OBSERVER`, `MEDIA`, `CITIZEN` |
 | finding_type | enum | Y | `TECHNICAL`, `PROCESS`, `LEGAL`, `SECURITY`, `ACCESSIBILITY`, `COMMUNICATION` |
 | severity | enum | Y | `HIGH`, `MEDIUM`, `LOW` |
 | description | str | Y | |

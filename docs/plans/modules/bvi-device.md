@@ -8,7 +8,7 @@
 | Size | L |
 | Availability class | election-critical 99.99% |
 | Event-sourced | no (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M05-bvi-device.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M05-bvi-device.md |
 
 ## Purpose
 
@@ -267,5 +267,5 @@ EC-SCL-04: consumer lag > 60 s on bvi event topics: SRE paged; backpressure appl
 
 ## Open questions
 
-- GNSS spoof risk: multi-constellation + IMU policy needs sign-off from IEBC Security before G3; threshold for "agree vs disagree" between GNSS and IMU fix is not specified in sw/.
-- Legacy Android parity matrix: lowest-tier device specs from IEBC ICT needed before feature-matrix test suite can be completed.
+- GNSS spoof risk: multi-constellation + IMU policy needs sign-off from the Commission Security before G3; threshold for "agree vs disagree" between GNSS and IMU fix is not specified in sw/.
+- Legacy Android parity matrix: lowest-tier device specs from the Commission ICT needed before feature-matrix test suite can be completed.

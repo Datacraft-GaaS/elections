@@ -115,7 +115,7 @@ components:
           $ref: "#/components/schemas/ResultScope"
         scope_code:
           type: string
-          description: "IEBC/KNBS code for the scope (e.g. constituency code, county code)."
+          description: "the Commission/KNBS code for the scope (e.g. constituency code, county code)."
           maxLength: 20
           x-eel-data-class: C
           example: "290"

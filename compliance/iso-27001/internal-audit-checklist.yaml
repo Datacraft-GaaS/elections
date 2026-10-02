@@ -6,7 +6,7 @@
 checklist_version: "1.0"
 audit_date: "[YYYY-MM-DD]"
 auditor: "[AUDITOR_NAME]"
-auditee: "IEBC ICT Department"
+auditee: "the Commission ICT Department"
 scope: "eel platform ISMS"
 
 sections:

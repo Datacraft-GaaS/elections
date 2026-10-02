@@ -128,11 +128,11 @@ Languages: English (IAB is an international body; no Kiswahili requirement for t
 
 ## 9. Honest caveats + external prerequisites
 
-- **IAB composition and mandate** are defined by statute and IEBC regulation, not this repo; M15 implements the technical access surface but does not define IAB membership or authority.
+- **IAB composition and mandate** are defined by statute and the Commission regulation, not this repo; M15 implements the technical access surface but does not define IAB membership or authority.
 - **FIDO2 key provisioning** (YubiKey procurement, registration ceremony) is an operations prerequisite; M15 requires keys to be registered before election day.
 - **Quarterly report SLA** -- M15 provides the report builder; IAB decides when to publish; no automated publishing without IAB chair signature.
 - **Split-view response procedure** -- when `witness_divergence.v1` fires, resolution requires Commission and IAB agreement; `docs/runbooks/witness-divergence-response.md` documents the procedure (referenced from CVR doc, applies here too).
-- **tlog-witness co-sign quorum** -- default N=1, M=3 (1 of 3 IAB members); IEBC may require higher quorum; configurable before deployment.
+- **tlog-witness co-sign quorum** -- default N=1, M=3 (1 of 3 IAB members); the Commission may require higher quorum; configurable before deployment.
 
 ## 10. Test coverage + operational runbooks
 

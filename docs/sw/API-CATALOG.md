@@ -1,4 +1,4 @@
-# API Catalog — IEBC IEMS (All 69 Modules)
+# API Catalog — the Commission IEMS (All 69 Modules)
 
 **Companion to:** `PRD.md`, `ARCHITECTURE.md`, `DATA-MODEL.md`.
 **Version:** 2.0 — Full 69-module canonical reference.
@@ -8,7 +8,7 @@
 
 ## 1. API Design Principles
 
-The IEBC IEMS API surface is **spec-first OpenAPI 3.1**. Every endpoint's OpenAPI YAML is the contract; implementation must conform to the spec, not the other way around. Semantic versioning (`MAJOR.MINOR.PATCH`) governs all schemas; breaking changes always increment MAJOR and land on a new URI version.
+The Commission IEMS API surface is **spec-first OpenAPI 3.1**. Every endpoint's OpenAPI YAML is the contract; implementation must conform to the spec, not the other way around. Semantic versioning (`MAJOR.MINOR.PATCH`) governs all schemas; breaking changes always increment MAJOR and land on a new URI version.
 
 **Base conventions:**
 
@@ -35,7 +35,7 @@ All human-facing API calls use OAuth 2.1 / OIDC via Keycloak. Token format: shor
 
 MFA is mandatory for all roles above `PUBLIC`. Admin operations additionally require a dual-control countersignature from a second authorized user before the action is committed. The dual-control model is enforced in OPA policy, not in application code, making it auditable and testable independently of the service.
 
-Role claims are embedded in the JWT via a custom `iebc_roles` claim that lists `{role, scope_type, scope_id}` tuples. The OPA policy evaluator validates every request against the claim set.
+Role claims are embedded in the JWT via a custom `commission_roles` claim that lists `{role, scope_type, scope_id}` tuples. The OPA policy evaluator validates every request against the claim set.
 
 ### 2.2 Service-to-service
 
@@ -211,7 +211,7 @@ Device-side only. Consumes M06 for session management and identification logging
 | POST | `/bvv/v1/register/lookup` | Public+rate-limit+captcha | 30/min/IP | Voter looks up own register entry |
 | POST | `/bvv/v1/register/objection` | Public+OTP | 5/day/voter | File objection on register entry |
 | GET | `/bvv/v1/register/objection/{id}` | Public(owner) / Admin | 30/min | Track objection status |
-| POST | `/bvv/v1/kiosk/lookup` | Kiosk mTLS | 10/s/kiosk | In-person lookup at IEBC kiosk |
+| POST | `/bvv/v1/kiosk/lookup` | Kiosk mTLS | 10/s/kiosk | In-person lookup at the Commission kiosk |
 
 ---
 
@@ -242,7 +242,7 @@ Constituency tally officer interface. Consumes M10 for Form 34B generation and s
 | POST | `/rts/v1/form34b` | RO+MFA+dual | 10/hr | Generate constituency form |
 | POST | `/rts/v1/form34b/{id}/sign` | RO+MFA+biometric+HSM | 5/hr | Sign Form 34B |
 | POST | `/rts/v1/form34c` | CRO+MFA+dual | 5/hr | Generate county / national form |
-| POST | `/rts/v1/publish/snapshot` | IEBC Commissioner+MFA+M-of-N+HSM | 5/election | Publish results snapshot |
+| POST | `/rts/v1/publish/snapshot` | the Commission Commissioner+MFA+M-of-N+HSM | 5/election | Publish results snapshot |
 | GET | `/rts/v1/parallel-tally/status` | Admin / Auditor | 100/hr | Independent parallel-tally comparison |
 | GET | `/rts/v1/kits/{kit_id}/retry-queue` | Support+MFA | 50/hr | Inspect kit's pending transmissions |
 | POST | `/rts/v1/sms-fallback/inbound` | Telco webhook+HMAC | 500/s | Receive SMS-fallback form submission |
@@ -266,7 +266,7 @@ Constituency tally officer interface. Consumes M10 for Form 34B generation and s
 | GET | `/portal/v1/transparency-log/root/{index}` | Public | unlimited | Merkle root at index |
 | GET | `/portal/v1/transparency-log/proof/{event_id}` | Public | 50/min/IP | Inclusion proof for event |
 
-All responses signed by IEBC HSM. CDN-cached signed snapshots; origin is not directly accessible for public reads.
+All responses signed by the Commission HSM. CDN-cached signed snapshots; origin is not directly accessible for public reads.
 
 ---
 
@@ -330,7 +330,7 @@ All responses signed by IEBC HSM. CDN-cached signed snapshots; origin is not dir
 | GET | `/iab/v1/feed` | IAB Member+MFA | 200/hr | Hash-verified signed event feed |
 | GET | `/iab/v1/alerts` | IAB Member+MFA | 200/hr | Active alerts from M26, M16 |
 | POST | `/iab/v1/escalations` | IAB Member+MFA | 20/hr | File escalation |
-| GET | `/iab/v1/escalations/{id}` | IAB Member / Admin | 100/hr | Track escalation + IEBC response |
+| GET | `/iab/v1/escalations/{id}` | IAB Member / Admin | 100/hr | Track escalation + the Commission response |
 | POST | `/iab/v1/complaints` | IAB Member+MFA | 20/hr | File formal complaint |
 | GET | `/iab/v1/reports/live` | IAB Member+MFA | 100/hr | Live election dashboard (read-only mirror) |
 
@@ -342,13 +342,13 @@ IAB feed is a signed read-only mirror of AuditEvent stream; no write path from I
 
 | Method | Path | Auth | Rate limit | Notes |
 |---|---|---|---|---|
-| GET | `/ecc/v1/dashboard` | IEBC Commissioner / ICT Ops | 100/min | National situational view |
+| GET | `/ecc/v1/dashboard` | the Commission Commissioner / ICT Ops | 100/min | National situational view |
 | GET | `/ecc/v1/kits/telemetry` | War-room | 100/min | Fleet telemetry summary |
 | GET | `/ecc/v1/alerts` | War-room | 100/min | Active P0–P3 alerts |
 | POST | `/ecc/v1/alerts/{id}/acknowledge` | War-room | 200/min | Acknowledge alert |
 | POST | `/ecc/v1/alerts/{id}/resolve` | War-room | 200/min | Resolve alert |
 | GET | `/ecc/v1/stream` | War-room | 10/user | SSE stream of real-time events from all modules |
-| POST | `/ecc/v1/s44a/recommend` | IEBC Commissioner+MFA | 5/hr | Recommend polling extension per Elections Act §44A |
+| POST | `/ecc/v1/s44a/recommend` | the Commission Commissioner+MFA | 5/hr | Recommend polling extension per Elections Act §44A |
 | GET | `/ecc/v1/counties/{county_code}/status` | War-room | 200/min | County-level drill-down |
 
 ECC SSE stream aggregates events from M06, M19, M26, M10, and all other modules that emit on `security.incidents`.
@@ -425,14 +425,14 @@ ECC SSE stream aggregates events from M06, M19, M26, M10, and all other modules 
 
 | Method | Path | Auth | Rate limit | Notes |
 |---|---|---|---|---|
-| POST | `/rla/v1/runs` | IEBC Commissioner+MFA+dual | 2/election | Create audit run |
+| POST | `/rla/v1/runs` | the Commission Commissioner+MFA+dual | 2/election | Create audit run |
 | POST | `/rla/v1/runs/{id}/draw-seed` | Multi-party ceremony (public event) | 1/run | Draw seed from 5 independent sources |
 | GET | `/rla/v1/runs/{id}/sample` | Auditor+MFA | 100/hr | Sampled ballot list |
 | POST | `/rla/v1/runs/{id}/ballot-submissions` | Auditor+MFA | 200/hr | Submit physical count for sampled ballot |
 | GET | `/rla/v1/runs/{id}/status` | Public | 1000/hr | Audit run status + progress |
 | GET | `/rla/v1/runs/{id}/manifest/verify` | Public | 200/hr | Verify audit manifest hash |
 | GET | `/rla/v1/entropy-sources` | Public | 200/hr | Published entropy sources for current seed draw |
-| POST | `/rla/v1/runs/{id}/conclusion` | IEBC Commissioner+MFA+dual | 1/run | Sign and publish audit conclusion |
+| POST | `/rla/v1/runs/{id}/conclusion` | the Commission Commissioner+MFA+dual | 1/run | Sign and publish audit conclusion |
 | GET | `/rla/v1/bug-bounty` | Public | 100/hr | Public bug bounty submissions |
 | POST | `/rla/v1/bug-bounty` | Public | 5/day/IP | Submit bug bounty finding |
 | GET | `/rla/v1/runs/{id}/sampled-ballots/{ballot_id}` | Auditor+MFA | 100/hr | Individual sampled ballot detail |
@@ -487,7 +487,7 @@ ECC SSE stream aggregates events from M06, M19, M26, M10, and all other modules 
 | GET | `/diaspora/v1/forms/34ad/{id}` | Embassy Officer / Auditor | 100/hr | Form + Merkle proof |
 | POST | `/diaspora/v1/pouches/{id}/custody` | Diplomatic Officer+biometric | 20/hr | Ballot pouch custody event |
 | GET | `/diaspora/v1/pouches/{id}/chain` | Auditor | 100/hr | Full custody chain for pouch |
-| POST | `/diaspora/v1/pouches/{id}/receive` | IEBC HQ Officer+biometric | 10/hr | Receive pouch at IEBC HQ |
+| POST | `/diaspora/v1/pouches/{id}/receive` | the Commission HQ Officer+biometric | 10/hr | Receive pouch at the Commission HQ |
 | GET | `/diaspora/v1/status/{voter_id_hash}` | Public+OTP | 30/hr | Voter participation status check |
 | POST | `/diaspora/v1/webhooks/pouch-alert` | Logistics Provider HMAC | 100/s | Physical logistics tracking webhook |
 | GET | `/diaspora/v1/results/34ad` | Public (post-publish) | 200/hr | Published diaspora results |
@@ -525,7 +525,7 @@ ECC SSE stream aggregates events from M06, M19, M26, M10, and all other modules 
 | POST | `/detection/v1/telemetry` | Kit mTLS (via M06) | 10/s/kit | Ingest telemetry packet |
 | GET | `/detection/v1/thresholds` | Admin+MFA | 20/hr | Current detection thresholds |
 | PATCH | `/detection/v1/thresholds` | Admin+MFA+dual | 5/hr | Update thresholds (dual-commissioner) |
-| POST | `/detection/v1/override` | IEBC Commissioner+MFA+dual | 2/hr | Human override of detection suppression |
+| POST | `/detection/v1/override` | the Commission Commissioner+MFA+dual | 2/hr | Human override of detection suppression |
 | GET | `/detection/v1/distributions` | Analyst+MFA | 100/hr | Statistical distribution analysis results |
 
 ---
@@ -592,10 +592,10 @@ Mobile apps authenticate via Keycloak OIDC with PKCE on public clients. Local SQ
 | POST | `/cvr/v1/batches/crs` | CRS System mTLS | 5/day | Ingest CRS death-notification batch |
 | POST | `/cvr/v1/batches/nrb` | NRB System mTLS | 5/day | Ingest NRB ID-correction batch |
 | POST | `/cvr/v1/batches/kra` | KRA System mTLS | 5/quarter | Ingest KRA dormancy flags |
-| GET | `/cvr/v1/events` | IEBC Officer+MFA | 200/hr | Triage queue (proposed removals) |
-| PATCH | `/cvr/v1/events/{id}` | IEBC Officer+MFA | 100/hr | Approve / reject / hold event |
-| GET | `/cvr/v1/snapshots` | IEBC Admin+MFA | 20/hr | List register snapshots |
-| POST | `/cvr/v1/snapshots` | IEBC Commissioner+HSM | 2/day | Create and sign new snapshot |
+| GET | `/cvr/v1/events` | the Commission Officer+MFA | 200/hr | Triage queue (proposed removals) |
+| PATCH | `/cvr/v1/events/{id}` | the Commission Officer+MFA | 100/hr | Approve / reject / hold event |
+| GET | `/cvr/v1/snapshots` | the Commission Admin+MFA | 20/hr | List register snapshots |
+| POST | `/cvr/v1/snapshots` | the Commission Commissioner+HSM | 2/day | Create and sign new snapshot |
 | GET | `/cvr/v1/snapshots/{id}/proof` | Court Registrar+JWT | 10/hr | Merkle proof for snapshot |
 | POST | `/cvr/v1/family-notifications` | USSD Gateway secret | 1000/hr | `*400#` family death report |
 | GET | `/cvr/v1/status/{national_id_hash}` | Public+rate-limit | 30/hr | Voter self-check (status + last updated; no flags) |
@@ -608,11 +608,11 @@ Mobile apps authenticate via Keycloak OIDC with PKCE on public clients. Local SQ
 
 | Method | Path | Auth | Rate limit | Notes |
 |---|---|---|---|---|
-| GET | `/deregistration/v1/cases` | IEBC Officer+MFA | 200/hr | Deregistration case queue |
-| GET | `/deregistration/v1/cases/{id}` | IEBC Officer / Affected Voter+OTP | 100/hr | Case detail |
-| PATCH | `/deregistration/v1/cases/{id}` | IEBC Officer+MFA | 100/hr | Update status |
+| GET | `/deregistration/v1/cases` | the Commission Officer+MFA | 200/hr | Deregistration case queue |
+| GET | `/deregistration/v1/cases/{id}` | the Commission Officer / Affected Voter+OTP | 100/hr | Case detail |
+| PATCH | `/deregistration/v1/cases/{id}` | the Commission Officer+MFA | 100/hr | Update status |
 | POST | `/deregistration/v1/cases/{id}/appeal` | Public+OTP | 3/case | File appeal |
-| GET | `/deregistration/v1/cases/{id}/appeal` | IEBC Officer / Voter+OTP | 100/hr | Appeal status |
+| GET | `/deregistration/v1/cases/{id}/appeal` | the Commission Officer / Voter+OTP | 100/hr | Appeal status |
 | POST | `/deregistration/v1/cases/{id}/decision` | Senior Officer+MFA+dual | 20/hr | Record adjudication decision |
 | GET | `/deregistration/v1/reports/{id}` | Admin+MFA | 20/hr | Quarterly deregistration report |
 | POST | `/deregistration/v1/reports` | Admin+MFA | 4/year | Generate quarterly report |
@@ -661,7 +661,7 @@ Mobile apps authenticate via Keycloak OIDC with PKCE on public clients. Local SQ
 
 | Method | Path | Auth | Rate limit | Notes |
 |---|---|---|---|---|
-| POST | `/ballot-chain/v1/orders` | IEBC Commissioner+MFA+M-of-N+HSM | 1/election/position | Create print order |
+| POST | `/ballot-chain/v1/orders` | the Commission Commissioner+MFA+M-of-N+HSM | 1/election/position | Create print order |
 | GET | `/ballot-chain/v1/orders/{id}` | Auditor+MFA | 100/hr | Print order detail |
 | POST | `/ballot-chain/v1/lot-data` | Printer Vendor mTLS | 10/hr | Submit printed lot manifest |
 | GET | `/ballot-chain/v1/lot-data/{id}` | Auditor | 100/hr | Lot manifest + hash |
@@ -677,13 +677,13 @@ Mobile apps authenticate via Keycloak OIDC with PKCE on public clients. Local SQ
 
 | Method | Path | Auth | Rate limit | Notes |
 |---|---|---|---|---|
-| POST | `/court/v1/bundles` | IEBC Legal+MFA+dual | 5/petition | Create evidence bundle for petition |
+| POST | `/court/v1/bundles` | the Commission Legal+MFA+dual | 5/petition | Create evidence bundle for petition |
 | GET | `/court/v1/bundles/{id}` | Court Registrar+JWT / Petitioner+token | 50/hr | Bundle manifest |
 | GET | `/court/v1/bundles/{id}/index` | Court Registrar+JWT | 50/hr | Indexed evidence list |
 | GET | `/court/v1/bundles/{id}/items/{item_id}` | Court Registrar+JWT | 20/hr | Download evidence item |
-| PATCH | `/court/v1/supplementary/{id}` | IEBC Legal+MFA | 20/hr | Update supplementary request |
+| PATCH | `/court/v1/supplementary/{id}` | the Commission Legal+MFA | 20/hr | Update supplementary request |
 | GET | `/court/v1/petitions/{id}/status` | Petitioner+token | 50/hr | Petition status |
-| POST | `/court/v1/witnesses` | IEBC Legal+MFA | 10/hr | Register technical witness |
+| POST | `/court/v1/witnesses` | the Commission Legal+MFA | 10/hr | Register technical witness |
 | GET | `/court/v1/witnesses/{id}` | Court Registrar+JWT | 20/hr | Witness detail |
 | POST | `/court/v1/access-log` | System | automatic | Log every access to evidence bundle |
 | POST | `/court/v1/webhooks/judiciary` | Judiciary CTS HMAC | 100/s | Court case status updates |
@@ -802,7 +802,7 @@ Mobile apps authenticate via Keycloak OIDC with PKCE on public clients. Local SQ
 |---|---|---|---|---|
 | POST | `/recall/v1/petitions` | Petitioner+MFA | 5/year | Initiate recall petition |
 | GET | `/recall/v1/petitions/{id}` | Public | 200/hr | Petition status |
-| POST | `/recall/v1/petitions/{id}/signatures` | IEBC Officer+MTls | 200/hr | Submit signature batch for verification |
+| POST | `/recall/v1/petitions/{id}/signatures` | the Commission Officer+MTls | 200/hr | Submit signature batch for verification |
 | GET | `/recall/v1/petitions/{id}/threshold` | Public | 200/hr | Threshold status |
 | POST | `/recall/v1/petitions/{id}/challenge` | Respondent+MFA | 10/petition | Legal challenge hold |
 | GET | `/recall/v1/elections/{id}` | Public | 200/hr | Recall election status |
@@ -847,7 +847,7 @@ Mobile apps authenticate via Keycloak OIDC with PKCE on public clients. Local SQ
 | POST | `/declarations/v1/{id}/legal-review` | Legal Officer+MFA | 10/hr | Legal sign-off |
 | POST | `/declarations/v1/{id}/sign` | RO+HSM | 5/hr | HSM-signed declaration |
 | GET | `/declarations/v1/{id}/certificate` | Public (post-declaration) | unlimited | Certificate of Election PDF |
-| GET | `/declarations/v1/{id}/petition-window` | IEBC Legal+MFA | 100/hr | Petition window status |
+| GET | `/declarations/v1/{id}/petition-window` | the Commission Legal+MFA | 100/hr | Petition window status |
 | POST | `/declarations/v1/{id}/petition` | Judiciary API key | 10/hr | Record petition lodged |
 
 **Events:** `declaration.made`, `certificate.issued`.
@@ -876,7 +876,7 @@ Mobile apps authenticate via Keycloak OIDC with PKCE on public clients. Local SQ
 | POST | `/voter-id/v1/batches` | Admin+MFA+dual | 5/year | Create card production batch |
 | GET | `/voter-id/v1/batches/{id}` | Admin | 100/hr | Batch status |
 | GET | `/voter-id/v1/cards/{voter_id}` | RO+MFA | 100/hr | Card status for voter |
-| POST | `/voter-id/v1/cards/{voter_id}/collected` | IEBC Officer+biometric | 100/hr | Mark card collected |
+| POST | `/voter-id/v1/cards/{voter_id}/collected` | the Commission Officer+biometric | 100/hr | Mark card collected |
 | POST | `/voter-id/v1/cards/{voter_id}/replace` | Admin+MFA | 20/hr | Issue replacement card |
 | POST | `/voter-id/v1/verify` | Public (kiosk) | 1000/s | Verify card QR code |
 | POST | `/voter-id/v1/webhooks/printer` | Al Ghurair HMAC | 100/s | Printer delivery confirmation |
@@ -962,14 +962,14 @@ Mobile apps authenticate via Keycloak OIDC with PKCE on public clients. Local SQ
 
 | Method | Path | Auth | Rate limit | Notes |
 |---|---|---|---|---|
-| POST | `/statutory/v1/reports` | IEBC Legal+MFA+dual | 20/hr | Create statutory report |
+| POST | `/statutory/v1/reports` | the Commission Legal+MFA+dual | 20/hr | Create statutory report |
 | GET | `/statutory/v1/reports/{id}` | Parliament+JWT / AG / Public (after tabling) | 100/hr | Report detail |
 | POST | `/statutory/v1/reports/{id}/sign` | Commissioner+HSM | 5/hr | HSM-sign report |
-| GET | `/statutory/v1/testimony/{id}` | IEBC Legal+MFA / Court+JWT | 50/hr | Testimony workspace |
-| POST | `/statutory/v1/testimony/{id}/exhibit` | IEBC Legal+MFA | 50/hr | Upload exhibit |
-| POST | `/statutory/v1/judiciary-handoff/{id}` | IEBC Legal+MFA | 20/hr | Deliver to Judiciary CTS |
-| GET | `/statutory/v1/sc-preregistration` | IEBC Legal+MFA | 100/hr | Supreme Court pre-registration items |
-| POST | `/statutory/v1/sc-preregistration` | IEBC Legal+MFA+dual | 10/hr | Register SC pre-registration item |
+| GET | `/statutory/v1/testimony/{id}` | the Commission Legal+MFA / Court+JWT | 50/hr | Testimony workspace |
+| POST | `/statutory/v1/testimony/{id}/exhibit` | the Commission Legal+MFA | 50/hr | Upload exhibit |
+| POST | `/statutory/v1/judiciary-handoff/{id}` | the Commission Legal+MFA | 20/hr | Deliver to Judiciary CTS |
+| GET | `/statutory/v1/sc-preregistration` | the Commission Legal+MFA | 100/hr | Supreme Court pre-registration items |
+| POST | `/statutory/v1/sc-preregistration` | the Commission Legal+MFA+dual | 10/hr | Register SC pre-registration item |
 | POST | `/statutory/v1/webhooks/parliament` | Parliament HMAC | 100/s | Parliamentary confirmation callback |
 | GET | `/statutory/v1/webhooks/judiciary-cts` | Judiciary CTS HMAC | 100/s | CTS case status webhook |
 | POST | `/statutory/v1/webhooks/ag` | AG Office HMAC | 100/s | Attorney-General office callback |
@@ -984,15 +984,15 @@ Mobile apps authenticate via Keycloak OIDC with PKCE on public clients. Local SQ
 |---|---|---|---|---|
 | POST | `/oag/v1/engagements` | OAG Officer+JWT | 10/year | Create audit engagement |
 | GET | `/oag/v1/engagements/{id}` | OAG Officer+JWT | 100/hr | Engagement detail |
-| POST | `/oag/v1/evidence/{id}` | IEBC Legal+MFA | 50/hr | Submit evidence extract |
+| POST | `/oag/v1/evidence/{id}` | the Commission Legal+MFA | 50/hr | Submit evidence extract |
 | GET | `/oag/v1/evidence/{id}` | OAG Officer+JWT | 50/hr | Evidence extract (access logged) |
 | POST | `/oag/v1/queries/{id}` | OAG Officer+JWT | 50/hr | Submit audit query |
-| POST | `/oag/v1/responses/{query_id}` | IEBC Finance+MFA | 50/hr | Submit management response |
+| POST | `/oag/v1/responses/{query_id}` | the Commission Finance+MFA | 50/hr | Submit management response |
 | GET | `/oag/v1/follow-up` | OAG Officer+JWT | 100/hr | Outstanding follow-up items |
 | POST | `/oag/v1/access-log` | System | automatic | Log every OAG access |
 | GET | `/oag/v1/access-log/{engagement_id}` | Commissioner+MFA | 50/hr | Full access log |
 | POST | `/oag/v1/package-signed` | OAG HSM+JWT | 5/engagement | Sign off evidence package |
-| GET | `/oag/v1/public/reports` | Public | unlimited | Published OAG reports on IEBC |
+| GET | `/oag/v1/public/reports` | Public | unlimited | Published OAG reports on the Commission |
 | POST | `/oag/v1/webhooks/oag` | OAG HMAC | 100/s | OAG platform webhook |
 | GET | `/oag/v1/dashboards/expenditure` | OAG Officer+JWT | 100/hr | Expenditure dashboard (M54 integration) |
 
@@ -1020,7 +1020,7 @@ Mobile apps authenticate via Keycloak OIDC with PKCE on public clients. Local SQ
 | GET | `/secrecy/v1/engagements/{id}` | Commissioner+MFA | 50/hr | Engagement detail |
 | POST | `/secrecy/v1/findings` | Red Team Lead+JWT | 50/hr | Submit finding |
 | GET | `/secrecy/v1/findings` | Commissioner+MFA | 100/hr | Findings list |
-| PATCH | `/secrecy/v1/findings/{id}` | IEBC ICT+MFA | 50/hr | Mark remediated |
+| PATCH | `/secrecy/v1/findings/{id}` | the Commission ICT+MFA | 50/hr | Mark remediated |
 | POST | `/secrecy/v1/attestations` | Commissioner+HSM | 2/election | Sign secrecy attestation |
 | GET | `/secrecy/v1/attestations/{id}` | Public (post-publication) | 200/hr | Published attestation |
 | POST | `/secrecy/v1/rts-analysis` | ML Engineer+MFA | 10/hr | Submit RTS metadata analysis run |
@@ -1075,7 +1075,7 @@ Mobile apps authenticate via Keycloak OIDC with PKCE on public clients. Local SQ
 | GET | `/roll/v1/versions/{id}` | Public | 200/hr | Roll version + Merkle root |
 | POST | `/roll/v1/objections` | Public+OTP | 3/day/IP | File objection on roll entry |
 | GET | `/roll/v1/objections/{id}` | Objector+OTP / Admin | 100/hr | Objection status |
-| PATCH | `/roll/v1/objections/{id}` | IEBC Officer+MFA | 50/hr | Update objection |
+| PATCH | `/roll/v1/objections/{id}` | the Commission Officer+MFA | 50/hr | Update objection |
 | POST | `/roll/v1/corrections` | Public+OTP | 3/day/IP | File correction claim |
 | GET | `/roll/v1/corrections/{id}` | Requester+OTP / Admin | 100/hr | Correction status |
 
@@ -1202,7 +1202,7 @@ Mobile apps authenticate via Keycloak OIDC with PKCE on public clients. Local SQ
 
 | Method | Path | Auth | Notes |
 |---|---|---|---|
-| GET | `/compliance/v1/dpia` | ODPC Officer + IEBC | List DPIAs |
+| GET | `/compliance/v1/dpia` | ODPC Officer + the Commission | List DPIAs |
 | POST | `/compliance/v1/breach-notifications` | Admin+MFA+dual | File breach notification |
 | POST | `/compliance/v1/sar` | Public+OTP | Subject access request |
 | GET | `/compliance/v1/sar/{id}` | Requester / Admin | SAR status |
@@ -1245,11 +1245,11 @@ All logs are JSON with mandatory fields: `timestamp`, `level`, `service`, `trace
 ### 5.4 Event provenance
 
 Every Kafka event carries:
-- `source`: originating service (`/iebc/bvr-svc`)
+- `source`: originating service (`/commission/bvr-svc`)
 - `subject`: entity ID affected
 - `time`: RFC 3339 UTC
 - `signature`: HSM ECDSA-P384 over the CloudEvents envelope
-- `iemecid`: IEBC message correlation ID (same as `X-Request-Id` that triggered the event)
+- `iemecid`: the Commission message correlation ID (same as `X-Request-Id` that triggered the event)
 
 ### 5.5 Retry and back-off
 

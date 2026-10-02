@@ -11,7 +11,7 @@ def generate_certificate(worker_id: str, station_code: str, modules: list[str]) 
     raw = f"{worker_id}:{station_code}:{issued_at}"
     cert_hash = hashlib.sha256(raw.encode()).hexdigest()
     cert_id = uuid7str()
-    qr_url = f"https://verify.iebc.or.ke/cert/{cert_id}"
+    qr_url = f"https://verify.eel.example/cert/{cert_id}"
     return {
         "id": cert_id,
         "hash": cert_hash,

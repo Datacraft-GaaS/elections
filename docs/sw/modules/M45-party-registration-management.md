@@ -5,7 +5,7 @@
 **Runs on:** Central servers (Kenyan cloud) + Registrar of Political Parties back-office
 **Owner:** Datacraft
 **Status:** Draft v1
-**IPR:** Custom Software vests in IEBC per GCC 15.4
+**IPR:** Custom Software vests in the Commission per GCC 15.4
 
 ---
 
@@ -24,7 +24,7 @@ Strategy reference: §XXI.A (Political Party Ecosystem). Political Parties Act 2
 - **Registrar of Political Parties** — reviews applications; approves, conditionally approves, or rejects; issues gazette notice
 - **RPP Deputy Registrar** — handles routine renewals; flags disputes to Registrar
 - **PPDT Clerk** — receives faction-dispute referrals from this module; manages case numbers
-- **IEBC Commissioner** — views party compliance dashboard; approves coalition registrations requiring IEBC sign-off
+- **the Commission Commissioner** — views party compliance dashboard; approves coalition registrations requiring the Commission sign-off
 - **M12 CRMS Integration** — system-to-system consumer of party registration status
 - **Public User** — reads the public party register; no login required
 
@@ -40,7 +40,7 @@ Strategy reference: §XXI.A (Political Party Ecosystem). Political Parties Act 2
 - **FR-M45-004** Application lifecycle: DRAFT → SUBMITTED → DOCS_REVIEW → MEMBERSHIP_VERIFIED → REGISTRAR_REVIEW → APPROVED / CONDITIONAL / REJECTED → GAZETTED.
 - **FR-M45-005** Conditional approval: Registrar issues conditional approval with specific remediation items; party has 30 days to satisfy conditions or application lapses.
 - **FR-M45-006** Annual renewal: registered parties submit annual return (audited financial accounts, updated officials roster, membership count update, governance compliance self-declaration) by 31 March each year; failure triggers SUSPENDED status after 30-day grace period.
-- **FR-M45-007** Gazette publication: on approval, system generates gazette notice draft (PDF, IEBC standard format); Registrar signs via HSM; notice published to public register within 14 days of approval.
+- **FR-M45-007** Gazette publication: on approval, system generates gazette notice draft (PDF, the Commission standard format); Registrar signs via HSM; notice published to public register within 14 days of approval.
 - **FR-M45-008** Party deregistration: Registrar initiates deregistration with statutory ground (PPA 2011 s.17); party notified with 21-day appeal window; deregistration confirmed after window; downstream systems notified (M12, M47).
 
 ### Coalition Registration
@@ -74,7 +74,7 @@ Strategy reference: §XXI.A (Political Party Ecosystem). Political Parties Act 2
 
 ---
 
-- **NFR-45-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `iebc-iems-45` (replace 45 with the module number); alert ruleset ID `iems-45-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
+- **NFR-45-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `commission-iems-45` (replace 45 with the module number); alert ruleset ID `iems-45-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
 
 ## 5. User Stories
 
@@ -331,16 +331,16 @@ paths:
 
 ## 18. Decommissioning
 
-**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if IEBC terminates the contract.
+**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if the Commission terminates the contract.
 
 **Steps:**
 
-1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and IEBC DPO.
+1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and the Commission DPO.
 2. **Service shutdown** — Kubernetes deployments scaled to zero; PersistentVolumeClaims retained for 30 days then deleted after confirmation of M69 transfer.
 3. **Credential revocation** — service account certificates, API keys, and HSM key handles revoked via P06 key-destruction ceremony within 48 hours of shutdown.
 4. **Source-code escrow** — final tagged release deposited to C04 escrow within 7 days of shutdown.
-5. **Runbook handover** — operational runbook and post-mortem notes delivered to IEBC ICT within 14 days.
+5. **Runbook handover** — operational runbook and post-mortem notes delivered to the Commission ICT within 14 days.
 
-**Owner:** SRE Lead. **Sign-off:** IEBC ICT Director + Datacraft Programme Director.
+**Owner:** SRE Lead. **Sign-off:** the Commission ICT Director + Datacraft Programme Director.
 
 > **RESOLUTION (F-23, 2026-08-21):** Decommissioning stub added per audit finding. Owner: SRE Lead. Target: FAT-07 gate.

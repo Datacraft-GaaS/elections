@@ -11,7 +11,7 @@ Per service verification command (run in CI / deployment):
 
 ```bash
 # Rust services (19 of 20)
-cd /Users/nyimbiodero/src/pjs/eel/services/<svc>
+cd ./services/<svc>
 # 1. Lockfile consistency (prevents supply-chain drift)
 /usr/bin/env cargo check --locked 2>&1 | grep "^error" | wc -l | grep -q "^0$"
 # 2. Unit tests (functional correctness of implemented modules)

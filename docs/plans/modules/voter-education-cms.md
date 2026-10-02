@@ -8,17 +8,17 @@
 | Size | M |
 | Availability class | routine 99.5% |
 | Event-sourced | no |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M37-voter-education-cms.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M37-voter-education-cms.md |
 
 ## Purpose
 
-Manage, version-control, fact-check, translate, and distribute voter-facing educational materials across 11 Kenyan languages and four formats (video, radio/audio, print-PDF, WhatsApp-ready card); gate every asset behind a fact-check-partner review and IEBC Director approval before publication; distribute approved content to M13 Public Verifier App, M40 Media Portal, county-coordinator inboxes, and the WhatsApp campaign asset store; ensure no outdated or unreviewed content reaches voters.
+Manage, version-control, fact-check, translate, and distribute voter-facing educational materials across 11 Kenyan languages and four formats (video, radio/audio, print-PDF, WhatsApp-ready card); gate every asset behind a fact-check-partner review and the Commission Director approval before publication; distribute approved content to M13 Public Verifier App, M40 Media Portal, county-coordinator inboxes, and the WhatsApp campaign asset store; ensure no outdated or unreviewed content reaches voters.
 
 ## Surfaces and languages
 
 | surface | technology | path |
 |---|---|---|
-| CMS Authoring and Approval UI (IEBC officers, reviewers) | Phoenix LiveView | services/training-svc/ex/cms_web/ |
+| CMS Authoring and Approval UI (the Commission officers, reviewers) | Phoenix LiveView | services/training-svc/ex/cms_web/ |
 | Director Approval Queue | Phoenix LiveView | services/training-svc/ex/cms_web/ |
 | County Distribution Dashboard | Django | services/training-svc/django/county_admin/ |
 | ODPC Analytics Audit Panel | Django | services/training-svc/django/county_admin/ |
@@ -76,7 +76,7 @@ OpenAPI file: `packages/openapi-contracts/training/voter-education.yaml`
 
 ## ML and AI
 
-- Optional M28 E1-assisted plain-language check before fact-check submission; human IEBC officer reviews suggestion; not a gate.
+- Optional M28 E1-assisted plain-language check before fact-check submission; huma Commission officer reviews suggestion; not a gate.
 
 ## Dependencies
 
@@ -98,15 +98,15 @@ Authoring:
 
 Fact-check workflow:
 9. FR-M37-004: fact-check workflow; assigned to fact-check partner reviewer from rotation list; 5 business-day review SLA; reviewer approves or returns with annotated notes; author addresses each note before resubmission
-10. FR-M37-015: fact-check escalation to secondary reviewer at business day 4 if primary unresponsive; IEBC Director can override with documented justification
+10. FR-M37-015: fact-check escalation to secondary reviewer at business day 4 if primary unresponsive; the Commission Director can override with documented justification
 11. FR-M37-023: fact-check partner accounts scoped to read and annotate only; cannot publish, approve, or access content outside their assigned review queue; SpiceDB enforced
 
 Approval:
-12. FR-M37-005: IEBC Director approval gate; after fact-check pass, enters Director approval queue; Director can approve, return, or escalate to Commissioner; approved content immutably marked with approver ID and timestamp
-13. FR-M37-027: M28 optional plain-language check before fact-check submission; AI suggestion presented to IEBC officer; human review required; not a gate
+12. FR-M37-005: the Commission Director approval gate; after fact-check pass, enters Director approval queue; Director can approve, return, or escalate to Commissioner; approved content immutably marked with approver ID and timestamp
+13. FR-M37-027: M28 optional plain-language check before fact-check submission; AI suggestion presented to the Commission officer; human review required; not a gate
 
 Translation:
-14. FR-M37-006: translation workflow; approved EN master triggers translation tasks per configured target languages; translator uploads translated text; IEBC Education Officer reviews and publishes localised version independently per language
+14. FR-M37-006: translation workflow; approved EN master triggers translation tasks per configured target languages; translator uploads translated text; the Commission Education Officer reviews and publishes localised version independently per language
 15. FR-M37-007: 11 languages supported: EN + SW baseline; Kikuyu, Luo, Kamba, Kalenjin, Luhya, Mijikenda, Meru, Embu, Somali, Turkana
 16. FR-M37-016: two-step translation quality check for minority languages: translator uploads, community validator reviews; quality scorecard per language stored on version record
 
@@ -125,7 +125,7 @@ Search and discovery:
 24. FR-M37-012: search and discovery; topic, language, format; full-text search with language-aware stemming on M13 voter content feed
 
 Analytics and reporting:
-25. FR-M37-011: aggregate consumption metrics (views, downloads) per content item; no individual tracking; county-level aggregation only; daily report to IEBC Voter Education Officer
+25. FR-M37-011: aggregate consumption metrics (views, downloads) per content item; no individual tracking; county-level aggregation only; daily report to the Commission Voter Education Officer
 26. FR-M37-025: analytics DPIA compliance: no cookies beyond session on voter-facing pages; aggregate-only; ODPC-registered analytics plan; no PII in analytics store
 
 Physical distribution:
@@ -139,7 +139,7 @@ Accessibility and observability:
 ## Acceptance criteria
 
 1. AC-M37-01: >= 95% fact-check reviews completed within 5 business days; review completion timestamp recorded; Training Director report confirms
-2. AC-M37-02: >= 80% of core catalogue available in all 11 languages; language-coverage report exported; IEBC Director sign-off
+2. AC-M37-02: >= 80% of core catalogue available in all 11 languages; language-coverage report exported; the Commission Director sign-off
 3. AC-M37-03: M13 content feed availability >= 99.9%; CDN uptime monitor; SLO alert at 99.5% threshold
 4. AC-M37-04: physical distribution coverage >= 90% of target counties by T-30; distribution dashboard confirms per-county status
 5. AC-M37-05: zero unreviewed content published; automated SpiceDB gate check on every publish action; penetration test confirms reviewer cannot bypass
@@ -217,7 +217,7 @@ Tags: `#[trace("FR-M37-005","AC-M37-05","EC-DAT-13")]`
 
 ## Open questions
 
-- WhatsApp Business API approval: 6-8 week lead time; IEBC must initiate application at T-120; fallback plan (SMS + M13) must be documented before go-live.
+- WhatsApp Business API approval: 6-8 week lead time; the Commission must initiate application at T-120; fallback plan (SMS + M13) must be documented before go-live.
 - CDN provider: Cloudflare is ADR-forbidden; use Akamai-class or Kenyan CDN (Kenya-peered nodes); confirm provider selection before architecture review.
-- Community validators for minority languages: IEBC must contract per-language validators; contract terms and schedules required before translation pipeline activates.
-- Fact-check partner rotation list: IEBC must identify and onboard external CSO fact-check partners before CMS goes live; partner accounts are external and scoped read+annotate only.
+- Community validators for minority languages: the Commission must contract per-language validators; contract terms and schedules required before translation pipeline activates.
+- Fact-check partner rotation list: the Commission must identify and onboard external CSO fact-check partners before CMS goes live; partner accounts are external and scoped read+annotate only.

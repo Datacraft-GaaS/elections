@@ -129,7 +129,7 @@ Languages: EN. WCAG 2.2 AA.
 
 ## 9. Honest caveats + external prerequisites
 
-- DataCite DOI minting requires IEBC to be a registered DataCite member or to obtain DOI allocation through a Kenyan DataCite consortium member (e.g., a Kenyan research institution). The DataCite API adapter is ready; membership activation is a procurement task.
+- DataCite DOI minting requires the Commission to be a registered DataCite member or to obtain DOI allocation through a Kenyan DataCite consortium member (e.g., a Kenyan research institution). The DataCite API adapter is ready; membership activation is a procurement task.
 - KNADS digital transfer infrastructure depends on KNADS having an SFTP endpoint or API; M69 supports physical media transfer as a fallback. Physical media transfer requires courier logistics outside IEMS.
 - Format migration (when `format_migration_needed = true`) is a manual task: the archive officer downloads the bag, migrates formats using the recommended tool, and re-ingests. M69 tracks the migration decision but does not automate format conversion.
 - MinIO GOVERNANCE retention lock can be bypassed by an admin with `s3:BypassGovernanceRetention`. COMPLIANCE mode (immutable) would provide stronger guarantees but does not support early destruction for legal orders. The GOVERNANCE choice is a deliberate trade-off.

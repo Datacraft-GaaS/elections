@@ -5,7 +5,7 @@
 **Runs on:** Central analytics backend (Kenyan cloud) + public dashboard
 **Owner:** Datacraft
 **Status:** Draft v1
-**IPR:** Custom Software vests in IEBC per GCC 15.4
+**IPR:** Custom Software vests in the Commission per GCC 15.4
 
 ---
 
@@ -19,8 +19,8 @@ Strategy reference: §XIX.1 (Anomaly Detection); §XIX.3 (Post-Election Review).
 
 ## 2. User Personas
 
-- **IEBC Operations Analyst** — monitors election-day turnout trajectory; receives variance alerts
-- **IEBC Commissioner** — views executive summary dashboard; acts on low-turnout alerts
+- **the Commission Operations Analyst** — monitors election-day turnout trajectory; receives variance alerts
+- **the Commission Commissioner** — views executive summary dashboard; acts on low-turnout alerts
 - **M16 Election Command Centre Operator** — sees live turnout feed as operational context layer
 - **Journalist / Media** — reads public constituency-level dashboard; downloads aggregated data
 - **Academic / Researcher** — requests post-election dataset via data-access API (registration required)
@@ -44,7 +44,7 @@ Strategy reference: §XIX.1 (Anomaly Detection); §XIX.3 (Post-Election Review).
 
 - **FR-M44-007** Presiding Officers submit hourly voter count per polling station via M08 RTS device (structured field in existing hourly report); data flows to M44 aggregation pipeline.
 - **FR-M44-008** Constituency-level turnout computed every hour; compared against forecast trajectory.
-- **FR-M44-009** Variance alert: if observed turnout deviates from forecast by > 2 standard deviations (or > 15 percentage points) at any constituency at any hour mark, generate an alert to M16 Command Centre and IEBC Operations Analyst within 5 minutes.
+- **FR-M44-009** Variance alert: if observed turnout deviates from forecast by > 2 standard deviations (or > 15 percentage points) at any constituency at any hour mark, generate an alert to M16 Command Centre and the Commission Operations Analyst within 5 minutes.
 - **FR-M44-010** Public turnout dashboard updated every 30 minutes during polling hours (07:00-17:00 EAT); constituency-level only; no station-level data during polling hours.
 - **FR-M44-011** Final turnout figure per polling station published after polls close and RO Form 34A data is received; reconciled against CVR registered voter count.
 
@@ -52,7 +52,7 @@ Strategy reference: §XIX.1 (Anomaly Detection); §XIX.3 (Post-Election Review).
 
 - **FR-M44-012** Post-election dataset: per-constituency turnout, demographic breakdown (age-band, gender), weather index, historical delta, anomaly flags. Available for download T+7 via registered data-access API.
 - **FR-M44-013** Journalist API: read-only; aggregated per constituency; no individual voter data; rate-limited.
-- **FR-M44-014** Academic dataset API: same schema as public; additional sub-county breakdown available on request with IEBC DPO approval; DPA 2019 s.30(1)(e) (research) lawful basis; data-sharing agreement required.
+- **FR-M44-014** Academic dataset API: same schema as public; additional sub-county breakdown available on request with the Commission DPO approval; DPA 2019 s.30(1)(e) (research) lawful basis; data-sharing agreement required.
 - **FR-M44-015** Anomaly correlation report: cross-reference turnout anomaly flags with M41 post-election integrity events; delivered to M41 Review Officer as a structured JSON report within T+30.
 
 ---
@@ -71,20 +71,20 @@ Strategy reference: §XIX.1 (Anomaly Detection); §XIX.3 (Post-Election Review).
 
 ---
 
-- **NFR-44-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `iebc-iems-44` (replace 44 with the module number); alert ruleset ID `iems-44-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
+- **NFR-44-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `commission-iems-44` (replace 44 with the module number); alert ruleset ID `iems-44-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
 
 ## 5. User Stories
 
-1. As an IEBC Operations Analyst, I see a live constituency-level map on election day showing turnout trajectory vs forecast, with red alerts for constituencies deviating > 15 percentage points, so I can escalate resource deployment.
+1. As a Commission Operations Analyst, I see a live constituency-level map on election day showing turnout trajectory vs forecast, with red alerts for constituencies deviating > 15 percentage points, so I can escalate resource deployment.
 2. As a journalist, I can view and download hourly turnout figures per constituency during election day without creating an account.
-3. As an IEBC Commissioner, I receive a push notification when any county-level turnout drops more than 2 standard deviations below forecast at the 12:00 mark.
+3. As a Commission Commissioner, I receive a push notification when any county-level turnout drops more than 2 standard deviations below forecast at the 12:00 mark.
 4. As a presiding officer, my hourly voter count submitted on the M08 device is automatically factored into the national turnout dashboard without any additional step.
 5. As an academic researcher, I apply for the post-election sub-county dataset and receive access within 5 working days of DPO approval.
 6. As the M41 Post-Election Review Officer, I receive a structured anomaly-correlation report linking turnout variance flags to form-verification events.
 7. As a member of the public, I read the forecast methodology document published 30 days before election day, which explains in plain Swahili how the model was built.
 8. As an M16 Command Centre operator, I see the turnout anomaly feed as a layer on the operational map, so I can link deployment decisions to predicted low-turnout areas.
 9. As a researcher, I can verify that the published post-election dataset matches the Merkle-anchored aggregation snapshot.
-10. As an IEBC IT analyst, I can replay the forecast model with updated inputs on any past election-cycle dataset for audit purposes.
+10. As a Commission IT analyst, I can replay the forecast model with updated inputs on any past election-cycle dataset for audit purposes.
 
 ---
 
@@ -170,7 +170,7 @@ paths:
                   report_hour: { type: integer }
   /api/v1/turnout/alerts:
     get:
-      summary: Active variance alerts (IEBC internal)
+      summary: Active variance alerts (the Commission internal)
       security: [{ BearerAuth: [operations_analyst, command_centre] }]
       responses:
         "200": { description: "Array of TurnoutVarianceAlert" }
@@ -206,7 +206,7 @@ paths:
 ## 9. UI/UX
 
 - Public dashboard: choropleth map (constituency level) with animated hourly update; bar chart vs forecast; download button (CSV/JSON); methodology document link. No login required.
-- IEBC internal dashboard: same map with variance alert overlays; alert panel with acknowledge button; M16 integration layer toggle.
+- the Commission internal dashboard: same map with variance alert overlays; alert panel with acknowledge button; M16 integration layer toggle.
 - Forecast report page: data table with confidence intervals; chart per region; plain-language methodology section (EN + SW).
 - All public screens WCAG 2.2 AA; EN + SW toggle; responsive mobile layout.
 
@@ -218,7 +218,7 @@ paths:
 |---|---|---|
 | Individual voter data protection | DPA 2019 s.26 | CVR data aggregated before entering M44; no individual records |
 | Research data sharing | DPA 2019 s.30(1)(e) | Data-sharing agreement required for academic sub-county dataset |
-| Transparency of forecast methodology | IEBC Regulations | Methodology document published with each forecast release |
+| Transparency of forecast methodology | the Commission Regulations | Methodology document published with each forecast release |
 | Anomaly detection linkage | Strategy §XIX.1 | Variance alerts fed to M41 integrity pipeline |
 
 ---
@@ -242,7 +242,7 @@ paths:
 - Integration: M08 hourly report ingestion; M16 alert push; M41 report generation.
 - Load: 50,000 concurrent public dashboard reads during polling hours.
 - Back-test: run model against 2022 election data; evaluate MAE vs published turnout.
-- UAT: IEBC Operations Analysts; M16 operators; pilot journalist access.
+- UAT: the Commission Operations Analysts; M16 operators; pilot journalist access.
 
 ---
 
@@ -305,16 +305,16 @@ paths:
 
 ## 18. Decommissioning
 
-**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if IEBC terminates the contract.
+**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if the Commission terminates the contract.
 
 **Steps:**
 
-1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and IEBC DPO.
+1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and the Commission DPO.
 2. **Service shutdown** — Kubernetes deployments scaled to zero; PersistentVolumeClaims retained for 30 days then deleted after confirmation of M69 transfer.
 3. **Credential revocation** — service account certificates, API keys, and HSM key handles revoked via P06 key-destruction ceremony within 48 hours of shutdown.
 4. **Source-code escrow** — final tagged release deposited to C04 escrow within 7 days of shutdown.
-5. **Runbook handover** — operational runbook and post-mortem notes delivered to IEBC ICT within 14 days.
+5. **Runbook handover** — operational runbook and post-mortem notes delivered to the Commission ICT within 14 days.
 
-**Owner:** SRE Lead. **Sign-off:** IEBC ICT Director + Datacraft Programme Director.
+**Owner:** SRE Lead. **Sign-off:** the Commission ICT Director + Datacraft Programme Director.
 
 > **RESOLUTION (F-23, 2026-08-21):** Decommissioning stub added per audit finding. Owner: SRE Lead. Target: FAT-07 gate.

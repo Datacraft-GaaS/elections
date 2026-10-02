@@ -4,7 +4,7 @@
 **Name:** Election Financial Forensics
 **Owner:** Datacraft Limited — Analytics Engineering Team
 **Status:** Draft v1
-**IP Classification:** Custom Software — IPR vests in IEBC per GCC 15.4
+**IP Classification:** Custom Software — IPR vests in the Commission per GCC 15.4
 
 **Strategy traceback:** Strategy §XX.5; M22 Campaign Finance Transparency integration
 
@@ -20,7 +20,7 @@ Post-election published analytics estimating cost-per-vote conversion ratios by 
 
 | Persona | Access | Primary task |
 |---|---|---|
-| IEBC Research Officer | Write (analysis run) | Trigger analysis pipelines, review outputs |
+| the Commission Research Officer | Write (analysis run) | Trigger analysis pipelines, review outputs |
 | FRC Analyst | Read (aggregate data) | Contribute cash-movement estimates, consume forensic outputs |
 | Academic Researcher | Read (public API + download) | Replicate analysis, cite in peer-reviewed work |
 | Data Journalist | Read (public API) | Derive and publish constituency-level rankings |
@@ -48,7 +48,7 @@ For each candidate at each constituency: run RD using vote margin as running var
 IV approach: instrument for actual spending using FRC cash-flow anomaly index (assumed correlated with actual vote-buying spend, uncorrelated with innate candidate quality). Two-stage least squares: first stage predicts effective spend from IV; second stage estimates vote-share impact. F-statistic for instrument strength reported; weak-instrument test (Kleibergen-Paap) required.
 
 ### FR-66.04 — Difference-in-differences (panel)
-Across electoral cycles (2017, 2022, 2027): DID estimating change in cost-per-vote by constituency, controlling for time-fixed effects and constituency-fixed effects. Requires cleaned panel dataset from prior cycles (historical data import from M22 and legacy IEBC records).
+Across electoral cycles (2017, 2022, 2027): DID estimating change in cost-per-vote by constituency, controlling for time-fixed effects and constituency-fixed effects. Requires cleaned panel dataset from prior cycles (historical data import from M22 and legacy the Commission records).
 
 ### FR-66.05 — Cost-per-vote derivation
 Point estimate: `cost_per_vote = effective_spend_estimate / marginal_votes`. Marginal votes derived from LATE estimate scaled to constituency. Confidence interval propagated. Flagging rule: candidate whose cost-per-vote point estimate exceeds KES 2,000 and whose CI lower bound exceeds KES 1,000 is flagged for FRC/ODPP referral review.
@@ -85,15 +85,15 @@ All published estimates carry 95% CI and effect size. Null-effect findings publi
 Analysis pipeline: batch, no uptime SLA. Public report API: 99.5%.
 
 ### NFR-66.06 — Security
-Candidate-level raw outputs and ODPP referral packets: IEBC-RESTRICTED. TLS 1.3 + mTLS for FRC and ODPP integrations. Audit log on every data access.
+Candidate-level raw outputs and ODPP referral packets: COMMISSION-RESTRICTED. TLS 1.3 + mTLS for FRC and ODPP integrations. Audit log on every data access.
 
 ---
 
-- **NFR-M66-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `iebc-iems-M66`; alert ruleset ID `iems-M66-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
+- **NFR-M66-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `commission-iems-M66`; alert ruleset ID `iems-M66-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
 
 ## User Stories
 
-1. As an IEBC Research Officer, I want to run the full forensics pipeline on this cycle's data and have outputs ready for IAB review within 4 hours, so that the report can be published within the 90-day window.
+1. As a Commission Research Officer, I want to run the full forensics pipeline on this cycle's data and have outputs ready for IAB review within 4 hours, so that the report can be published within the 90-day window.
 2. As an FRC Analyst, I want to upload the constituency-level cash-flow anomaly index via authenticated API, so that it feeds into the IV estimation without sharing individual account data.
 3. As an IAB Member, I want to review the methodology report and reproduce the public-tier outputs, so that I can sign off on statistical validity before publication.
 4. As a Data Journalist, I want to download the constituency-level cost-per-vote distribution as JSON, so that I can build an interactive map for my readers.
@@ -102,7 +102,7 @@ Candidate-level raw outputs and ODPP referral packets: IEBC-RESTRICTED. TLS 1.3 
 7. As a Civil Society Observer, I want to see which constituencies have statistically significantly higher cost-per-vote estimates, so that I can prioritise monitoring in those areas in the next cycle.
 8. As a KEPSA Analyst, I want to submit field cash-flow estimates with confidence intervals, so that my organisation's data improves the IV instrument quality.
 9. As a Candidate's Campaign Team, I want to understand the methodology used to flag candidates, so that I can verify the data inputs attributed to my campaign are correctly sourced from M22.
-10. As a DPO (IEBC), I want to confirm that no individual voter or account-holder data enters any M66 output, so that the DPIA obligations are satisfied before publication.
+10. As a DPO (the Commission), I want to confirm that no individual voter or account-holder data enters any M66 output, so that the DPIA obligations are satisfied before publication.
 
 ---
 
@@ -249,7 +249,7 @@ paths:
 
 ## UI/UX — Key Screens
 
-1. **Analysis trigger dashboard** (IEBC Research) — cycle selection, method checkboxes, data source status indicators, run button; progress bar during run
+1. **Analysis trigger dashboard** (the Commission Research) — cycle selection, method checkboxes, data source status indicators, run button; progress bar during run
 2. **Constituency estimate map** — Kenya map with constituency colour-coded by cost-per-vote quartile; click for full estimate card with CI
 3. **Flagged-candidate list** (ODPP/IAB restricted) — table with candidate, constituency, estimate, CI, flag reason; download referral PDF button
 4. **Public report page** — national distribution chart, county-level bar chart, methodology summary, download links; EN and SW
@@ -274,10 +274,10 @@ paths:
 
 | Metric | Target | Sign-off |
 |---|---|---|
-| Report published within 90 days of election | 100% | IEBC Chair |
+| Report published within 90 days of election | 100% | the Commission Chair |
 | Replication package available within 90 days | 100% | IAB |
 | IAB methodology sign-off obtained before publication | 100% | IAB |
-| ODPP referral packet delivery | 100% of flagged candidates | IEBC Legal |
+| ODPP referral packet delivery | 100% of flagged candidates | the Commission Legal |
 | Null-effect findings published (no suppression) | 100% | IAB |
 | Analysis pipeline runtime | < 4h | Datacraft SRE |
 
@@ -321,7 +321,7 @@ paths:
 
 | # | Risk | Mitigation |
 |---|---|---|
-| R1 | FRC refuses to share anomaly index | MOU with IEBC under Elections Act §77A negotiated at T-365; fall back to IV exclusion restriction test if FRC data unavailable |
+| R1 | FRC refuses to share anomaly index | MOU with the Commission under Elections Act §77A negotiated at T-365; fall back to IV exclusion restriction test if FRC data unavailable |
 | R2 | Methodology challenged as politically biased | IAB sign-off on methodology pre-publication; null findings published equally; independent academic peer review of methods before T-0 |
 | R3 | KEPSA estimate quality too low for IV instrument | Instrument strength test (Kleibergen-Paap F > 10) before using KEPSA data; exclude weak instruments from published results |
 | R4 | Referral packet challenged in court as hearsay | Methodology documentation at expert-witness standard; IAB co-signs; statistical expert retained as ODPP technical advisor |
@@ -350,16 +350,16 @@ paths:
 
 ## 18. Decommissioning
 
-**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if IEBC terminates the contract.
+**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if the Commission terminates the contract.
 
 **Steps:**
 
-1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and IEBC DPO.
+1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and the Commission DPO.
 2. **Service shutdown** — Kubernetes deployments scaled to zero; PersistentVolumeClaims retained for 30 days then deleted after confirmation of M69 transfer.
 3. **Credential revocation** — service account certificates, API keys, and HSM key handles revoked via P06 key-destruction ceremony within 48 hours of shutdown.
 4. **Source-code escrow** — final tagged release deposited to C04 escrow within 7 days of shutdown.
-5. **Runbook handover** — operational runbook and post-mortem notes delivered to IEBC ICT within 14 days.
+5. **Runbook handover** — operational runbook and post-mortem notes delivered to the Commission ICT within 14 days.
 
-**Owner:** SRE Lead. **Sign-off:** IEBC ICT Director + Datacraft Programme Director.
+**Owner:** SRE Lead. **Sign-off:** the Commission ICT Director + Datacraft Programme Director.
 
 > **RESOLUTION (F-23, 2026-08-21):** Decommissioning stub added per audit finding. Owner: SRE Lead. Target: FAT-07 gate.

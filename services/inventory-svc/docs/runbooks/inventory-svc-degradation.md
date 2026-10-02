@@ -42,7 +42,7 @@ Steps:
 1. Alert in ECC: check tier (L1 county / L2 regional / L3 air-freight).
 2. L1: County Coordinator dispatches spare within 2h.
 3. L2: Regional Hub Coordinator dispatches within 4h.
-4. L3 air-freight emergency: 30-min activation SLA; engage IEBC Ops Director.
+4. L3 air-freight emergency: 30-min activation SLA; engage the Commission Ops Director.
 
 ## Ballot printing chain: offline queue (M39)
 

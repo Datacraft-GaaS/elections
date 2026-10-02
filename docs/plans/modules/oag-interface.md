@@ -8,7 +8,7 @@
 | Size | M |
 | Availability class | routine 99.5% |
 | Event-sourced | no (ADR-0013: only M08/M09/M10, M20, M51, M63) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M59-oag-interface.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M59-oag-interface.md |
 
 ## Purpose
 
@@ -188,5 +188,5 @@ Tags: `#[trace("FR-M59-004","AC-M59-01","EC-SEC-07")]`
 
 ## Open questions
 
-- Scope creep risk: OAG may request data beyond initially agreed scope; escalation process and technical boundary enforcement to be agreed with IEBC legal.
+- Scope creep risk: OAG may request data beyond initially agreed scope; escalation process and technical boundary enforcement to be agreed with the Commission legal.
 - Whether evidence packages must be retained for a minimum period post-engagement; retention policy to align with KNADS requirements.

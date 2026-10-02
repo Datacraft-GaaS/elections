@@ -8,7 +8,7 @@ defmodule EelOutbox.MixProject do
       elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      description: "Transactional outbox pattern for IEBC IEMS event publishing",
+      description: "Transactional outbox pattern for the Commission IEMS event publishing",
       elixirc_options: [warnings_as_errors: true]
     ]
   end

@@ -8,7 +8,7 @@
 | Size | M |
 | Availability class | routine 99.5%; 99.5% on public dashboard during polling hours |
 | Event-sourced | no |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M44-turnout-forecasting-analytics.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M44-turnout-forecasting-analytics.md |
 
 ## Purpose
 
@@ -21,7 +21,7 @@ Strategy reference: §XIX.1 (Anomaly Detection), §XIX.3 (Post-Election Review).
 | surface | technology | path |
 |---|---|---|
 | Public Turnout Dashboard (WCAG 2.2 AA) | Astro | services/ai-platform-svc/astro/turnout-dashboard/ |
-| IEBC Internal Analytics Console | Phoenix LiveView | services/ai-platform-svc/ex/analytics_web/ |
+| the Commission Internal Analytics Console | Phoenix LiveView | services/ai-platform-svc/ex/analytics_web/ |
 | API | Rust (axum) | services/ai-platform-svc/crates/ai-platform-api/ |
 | Model Training Pipeline | Python (async) | services/ai-platform-svc/py/turnout_forecasting/ |
 
@@ -45,7 +45,7 @@ OpenAPI file: `packages/openapi-contracts/ai-platform/turnout.yaml`
 | GET /v1/forecasts/latest | 1 | public | n/a | latest pre-election forecast all constituencies |
 | GET /v1/forecasts/{release_id} | 1 | public | n/a | specific forecast release |
 | GET /v1/turnout/live | 5 (SSE) | public | n/a | election-day live turnout per constituency (SSE stream); updated every 30 min |
-| GET /v1/turnout/alerts | 2 | JWT+SpiceDB (OPERATIONS_ANALYST/COMMAND_CENTRE) | n/a | active variance alerts (IEBC internal) |
+| GET /v1/turnout/alerts | 2 | JWT+SpiceDB (OPERATIONS_ANALYST/COMMAND_CENTRE) | n/a | active variance alerts (the Commission internal) |
 | POST /v1/turnout/alerts/{id}/acknowledge | 2 | JWT+SpiceDB (OPERATIONS_ANALYST) | yes | acknowledge alert |
 | GET /v1/datasets/post-election | 4 | JWT+SpiceDB (PUBLIC/JOURNALIST/ACADEMIC) | n/a | post-election constituency-level dataset; academic sub-county requires DPO approval |
 | POST /v1/datasets/academic-request | 2 | JWT+SpiceDB (ACADEMIC) | yes | request academic sub-county dataset; triggers DPO review |
@@ -106,7 +106,7 @@ Election-day tracking:
 11. FR-M44-011: Presiding Officers submit hourly voter count per polling station via M08 RTS device; structured hourly count field in existing M08 report format; data flows to M44 aggregation pipeline
 12. FR-M44-012: missing hourly report triggers RO supervisor alert within 5 minutes of submission deadline for that hour; alert routed via M16 Election Command Centre
 13. FR-M44-013: constituency-level turnout aggregated hourly; aggregation pipeline completes within 10 minutes of Presiding Officer submission deadline for each hour
-14. FR-M44-014: variance alert: observed turnout deviates > 2 SD or > 15 percentage points from forecast trajectory at any constituency at any hour mark; alert generated to M16 and IEBC Operations Analyst within 5 minutes
+14. FR-M44-014: variance alert: observed turnout deviates > 2 SD or > 15 percentage points from forecast trajectory at any constituency at any hour mark; alert generated to M16 and the Commission Operations Analyst within 5 minutes
 15. FR-M44-015: variance alert acknowledgement: Operations Analyst acknowledges alert with reason code; acknowledged_by (actor ID) and acknowledged_at (timestamp) recorded on TurnoutVarianceAlert record
 16. FR-M44-016: public turnout dashboard updated every 30 minutes during polling hours (07:00-17:00 EAT); shows constituency-level turnout trajectory vs forecast; no station-level data published during polling hours
 17. FR-M44-017: public dashboard: choropleth map (constituency level) with animated hourly update; bar chart vs forecast; download button (CSV/JSON); methodology document link; no login required
@@ -118,7 +118,7 @@ Post-election analytics:
 21. FR-M44-021: post-election constituency-level dataset: turnout, demographic breakdown (age-band, gender), weather index, historical delta, anomaly flags; available for download at T+7 via registered data-access API
 22. FR-M44-022: post-election dataset publication anchored to P05 Merkle Log; SHA-256 dataset hash published alongside download link; researcher can verify dataset against hash
 23. FR-M44-023: journalist API: read-only; aggregated per constituency; no individual voter data; rate-limited; no registration required; response includes dataset_hash for verification
-24. FR-M44-024: academic dataset API: sub-county breakdown on request with IEBC DPO approval; DPA 2019 s.30(1)(e) research lawful basis; data-sharing agreement required before access granted
+24. FR-M44-024: academic dataset API: sub-county breakdown on request with the Commission DPO approval; DPA 2019 s.30(1)(e) research lawful basis; data-sharing agreement required before access granted
 25. FR-M44-025: academic dataset request workflow: applicant submits request; DPO review triggered; access granted within 5 working days of DPO approval; batch DPO review slots published in advance at T+7
 26. FR-M44-026: anomaly-correlation report: cross-reference turnout anomaly flags with M41 post-election integrity events; structured JSON delivered to M41 Review Officer within T+30; queued if M41 anomaly-report ingest API not yet ready
 27. FR-M44-027: anomaly-correlation report schema versioned; M41 consumes via registered data-access API; report includes constituency_code, alert_hour, sigma_deviation, linked M41 finding_ids if available
@@ -132,7 +132,7 @@ Data and compliance:
 ## Acceptance criteria
 
 1. AC-M44-01: T-30 forecast published; methodology document live on public dashboard; point estimates and 80%/95% intervals correct for all constituencies; back-test MAE <= 5 percentage points on 2022 data; verified by back-test harness and UAT
-2. AC-M44-02: election-day variance alert delivered to M16 and IEBC Operations Analyst within 5 minutes of trigger threshold being met; verified by integration test with simulated hourly report crossing threshold
+2. AC-M44-02: election-day variance alert delivered to M16 and the Commission Operations Analyst within 5 minutes of trigger threshold being met; verified by integration test with simulated hourly report crossing threshold
 3. AC-M44-03: public dashboard updated within 30 minutes of each hourly aggregation during polling hours; p99 <= 2 s under 50,000 concurrent users; CDN cache-hit ratio >= 95%; verified by k6 load test
 4. AC-M44-04: post-election constituency-level dataset available at T+7; P05 Merkle hash published alongside download link; researcher successfully verifies dataset against hash; verified by integration test
 5. AC-M44-05: academic sub-county dataset request triggers DPO review workflow; sub-county data not served without confirmed DPO approval; 403 returned on unapproved access attempt; verified by security test
@@ -156,10 +156,10 @@ EC-SEC-05: injection on all API input fields (constituency_code filters, dataset
 EC-SEC-09: rate-limit evasion on journalist API and public dataset download; keyed by subject/IP-slash-64; dataset download rate-limited separately from dashboard reads; 429 returned with Retry-After
 EC-SEC-10: academic sub-county dataset requested without DPO approval; 403 returned; audit log entry created; no partial data served
 EC-SEC-16: secrets in logs/traces; no voter PII or individual CVR demographic fields in OTEL spans; log-scanner fixture in CI confirms clean traces
-EC-IDN-02: JWT expires mid-request on IEBC internal analytics console; in-flight request completes; next request returns 401 with silent refresh prompt
+EC-IDN-02: JWT expires mid-request on the Commission internal analytics console; in-flight request completes; next request returns 401 with silent refresh prompt
 EC-IDN-10: SpiceDB down during internal analytics console access; fail-closed; 503 problem+json returned; public read-only dashboard unaffected (no auth required)
 EC-SCL-01: 50,000 concurrent public dashboard users during election-day peak; CDN caches 30-minute snapshots; origin p99 <= 2 s; cache-hit ratio >= 95% measured by k6 5-region test
-EC-SCL-02: thundering herd at poll-close when final station counts published; CDN absorbs burst; dataset download rate-limited; IEBC internal analytics console scales separately behind auth
+EC-SCL-02: thundering herd at poll-close when final station counts published; CDN absorbs burst; dataset download rate-limited; the Commission internal analytics console scales separately behind auth
 EC-SCL-04: consumer lag > 60 seconds on hourly turnout ingestion queue; alert fires; backpressure applied; no OOM; variance alert delivery SLA preserved by priority lane
 EC-SCL-03: hot Kafka partition on high-frequency constituency updates during election day; stream-id spread applied at producer; lag alert fires; HPA scales consumers
 EC-CON-03: Presiding Officer on 2G only; M08 device submits hourly report via SMS/USSD path; M44 ingestion pipeline accepts SMS-formatted structured report via M08 adapter
@@ -190,7 +190,7 @@ Tags: `#[trace("FR-M44-009","AC-M44-02","EC-ML-01")]`
 ## Runbooks and dashboards
 
 - `docs/runbooks/ai-platform-svc-degradation.md` - extend with turnout forecast pipeline failures and KMD fallback procedure
-- `docs/runbooks/turnout-variance-alert-response.md` - new runbook; variance alert escalation; M16 coordination; IEBC Commissioner notification SLA
+- `docs/runbooks/turnout-variance-alert-response.md` - new runbook; variance alert escalation; M16 coordination; the Commission Commissioner notification SLA
 - Grafana dashboard: `eel-iems-44` (alert ruleset: `iems-44-alerts`)
 - SLO alerts: variance alert delivery <= 5 min; public dashboard update <= 30 min; post-election dataset published by T+7
 

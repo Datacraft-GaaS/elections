@@ -8,11 +8,11 @@
 | Size | L |
 | Availability class | routine 99.5% |
 | Event-sourced | no (ADR-0013: only M08/M09/M10, M20, M51, M63) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M65-diaspora-ballot-physical-logistics.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M65-diaspora-ballot-physical-logistics.md |
 
 ## Purpose
 
-Manages the physical custody chain for diaspora ballot materials from IEBC headquarters to embassy stations and back, including pre-clearance manifests, offline packing app, customs and airline cargo integration, and reconciliation with the M24 diaspora voting module.
+Manages the physical custody chain for diaspora ballot materials from the Commission headquarters to embassy stations and back, including pre-clearance manifests, offline packing app, customs and airline cargo integration, and reconciliation with the M24 diaspora voting module.
 
 ## Surfaces and languages
 
@@ -275,4 +275,4 @@ Tags: `#[trace("FR-M65-007","AC-M65-01","EC-OPS-03")]`
 ## Open questions
 
 - Customs embargo risk: if a country refuses ballot imports, alternative routing (DHL/courier) requires separate MoU; MFA engagement needed.
-- Return-journey chain: whether spoilt and unused ballots must be returned and reconciled or destroyed in-country; legal opinion from IEBC required.
+- Return-journey chain: whether spoilt and unused ballots must be returned and reconciled or destroyed in-country; legal opinion from the Commission required.

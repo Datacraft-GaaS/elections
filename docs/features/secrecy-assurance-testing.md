@@ -110,7 +110,7 @@ Languages: EN. WCAG 2.2 AA.
 
 - Red team testers must be formally contracted security professionals with non-disclosure agreements; M61 manages the engagement records but does not manage the procurement of red team services.
 - IAB members must have HSM tokens provisioned by the same key management infrastructure as commissioners. Provisioning IAB HSM tokens is an operational task.
-- Staging clone provisioning requires Kubernetes cluster capacity above the production baseline. IEBC infrastructure must have reserved capacity for clone namespaces during the pre-election testing window.
+- Staging clone provisioning requires Kubernetes cluster capacity above the production baseline. the Commission infrastructure must have reserved capacity for clone namespaces during the pre-election testing window.
 - M61 tests ballot secrecy in the software layer. Physical ballot secrecy (e.g., polling booth design, scrutineering rules) is outside scope.
 - A CRITICAL finding blocks the election system from proceeding to the next readiness gate until IAB attests it is fixed or risk-accepted. This creates a hard dependency between M61 and the election readiness timeline.
 

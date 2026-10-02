@@ -32,7 +32,7 @@ Multiple agents were terminated by the API session limit mid-flight during Wave 
 | check | result | notes |
 |---|---|---|
 | Every WP delivered functional scaffolding | pass | 14/14 WPs with substantial code and tests |
-| Naming: no iebc identifiers | pass | full sweep clean |
+| Naming: no commission identifiers | pass | full sweep clean |
 | Prose: no em/en dashes | pass |
 | appset-gen recognises every Wave-4 service.yaml | pass | 6 new services register with the 18-service topology |
 | eel-completeness scan | pass with allowlist | expected 501-stub warnings on the Wave-4 handler bodies; allowlist stub-patterns for these paths are noted for Wave 5 clean-up |

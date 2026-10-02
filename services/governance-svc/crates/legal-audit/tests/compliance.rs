@@ -62,7 +62,7 @@ async fn record(app: &axum::Router, sender: &str, basis: &str) -> Value {
         Some(json!({
             "event_type": "results-transmission",
             "sender": sender,
-            "recipient": "IEBC",
+            "recipient": "Electoral Authority",
             "legal_basis": basis,
             "payload": {"constituency": "047"}
         })),
@@ -146,7 +146,7 @@ async fn a_caller_supplied_hash_is_preserved() {
         Some(json!({
             "event_type": "results-transmission",
             "sender": "party-a",
-            "recipient": "IEBC",
+            "recipient": "Electoral Authority",
             "legal_basis": "s39-elections-act",
             "payload_hash": "sha256:already-computed-upstream"
         })),
@@ -165,7 +165,7 @@ async fn a_recorded_transmission_requires_its_parties() {
         &app,
         "POST",
         "/legal-audit/transmissions",
-        Some(json!({"event_type": "", "sender": "p", "recipient": "IEBC"})),
+        Some(json!({"event_type": "", "sender": "p", "recipient": "Electoral Authority"})),
     )
     .await;
     assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY);

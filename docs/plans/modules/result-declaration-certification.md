@@ -8,7 +8,7 @@
 | Size | L |
 | Availability class | election-critical 99.99% |
 | Event-sourced | yes (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M51-result-declaration-certification.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M51-result-declaration-certification.md |
 
 ## Purpose
 

@@ -4,7 +4,7 @@
 **Name:** Ballot Serial Chain of Custody
 **Owner:** Datacraft Limited — Operations Engineering Team
 **Status:** Draft v1
-**IP Classification:** Custom Software — IPR vests in IEBC per GCC 15.4
+**IP Classification:** Custom Software — IPR vests in the Commission per GCC 15.4
 
 **Strategy traceback:** Part XV §XV.4 Element 2, §XVII.3 Element 3; Elections Act §54
 
@@ -22,7 +22,7 @@ Tracks every individual ballot paper from warehouse inclusion to insertion in ba
 |---|---|---|
 | Presiding Officer | Own station ballots (write) | Receive serial range, record spoilt/replaced |
 | Constituency Returning Officer | Own constituency (write: consolidate) | Reconcile serial ranges across stations |
-| IEBC Operations (ECC) | All stations, read-only monitor | Track discrepancy alerts |
+| the Commission Operations (ECC) | All stations, read-only monitor | Track discrepancy alerts |
 | Independent Assurance Board | All, read-only | Audit serial continuity |
 | Auditor-General | Batch extract, read-only | Post-election reconciliation |
 | Party Agent (via M30) | Own station result, read-only | Verify serial range matches issued count |
@@ -80,7 +80,7 @@ Reconciliation report delivery to IAB: p99 < 2 hours post-station-close. Evident
 
 ---
 
-- **NFR-M63-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `iebc-iems-M63`; alert ruleset ID `iems-M63-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
+- **NFR-M63-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `commission-iems-M63`; alert ruleset ID `iems-M63-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
 
 ## User Stories
 
@@ -92,7 +92,7 @@ Reconciliation report delivery to IAB: p99 < 2 hours post-station-close. Evident
 6. As an ECC Operations Manager, I want a P1 alert when any station's deposited count diverges from its authenticated voter count, so that I can hold that station's result pending investigation.
 7. As a judicial officer, I want a signed PDF extract of all ballot events for a specific station within 2 hours of my order, so that petition proceedings can proceed on verified facts.
 8. As the Auditor-General, I want the national serial manifest available within 24 hours of election day, so that I can verify total ballot accountability for the annual audit.
-9. As an IEBC Commissioner, I want the national unused-ballot count to equal the difference between total assigned and total authenticated voters, so that I can demonstrate zero unaccounted ballots.
+9. As a Commission Commissioner, I want the national unused-ballot count to equal the difference between total assigned and total authenticated voters, so that I can demonstrate zero unaccounted ballots.
 10. As a Civil Society Observer, I want constituency-level serial range summaries published openly, so that I can independently verify that ballot counts are arithmetically consistent.
 
 ---
@@ -304,12 +304,12 @@ paths:
 
 | Metric | Target | Sign-off |
 |---|---|---|
-| Stations with complete reconciliation by T+2h | >= 99.9% | IEBC Operations |
+| Stations with complete reconciliation by T+2h | >= 99.9% | the Commission Operations |
 | Arithmetic discrepancy count post-election | 0 | Auditor-General |
 | IAB reconciliation record delivery | p99 < 2h per station | IAB |
-| Evidentiary extract delivery | p99 < 2h on order | IEBC Legal |
-| National manifest availability | T+24h | IEBC ICT |
-| Spoilt ballot serial recorded per §54 | 100% | IEBC Operations |
+| Evidentiary extract delivery | p99 < 2h on order | the Commission Legal |
+| National manifest availability | T+24h | the Commission ICT |
+| Spoilt ballot serial recorded per §54 | 100% | the Commission Operations |
 
 ---
 
@@ -357,7 +357,7 @@ paths:
 | R2 | Smart-lid RFID chip on ballot fails to read | Manual serial entry fallback on M31; barcode scan backup; any manual entry flagged for CRO review |
 | R3 | PO records wrong serial for spoilt ballot | Validation: spoilt serial must fall within assigned range; replacement must also be in range; both confirmed before commit |
 | R4 | Petition forces rapid evidentiary extract at scale | Pre-generation of station-level signed PDFs at T+4h; judiciary endpoint load-tested at 100 concurrent downloads |
-| R5 | M39 serial range arrives with gaps or overlaps | M63 ingestion validates range contiguity across all stations before election day; any gap triggers P0 alert to IEBC procurement |
+| R5 | M39 serial range arrives with gaps or overlaps | M63 ingestion validates range contiguity across all stations before election day; any gap triggers P0 alert to the Commission procurement |
 
 ---
 
@@ -386,16 +386,16 @@ paths:
 
 ## 18. Decommissioning
 
-**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if IEBC terminates the contract.
+**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if the Commission terminates the contract.
 
 **Steps:**
 
-1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and IEBC DPO.
+1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and the Commission DPO.
 2. **Service shutdown** — Kubernetes deployments scaled to zero; PersistentVolumeClaims retained for 30 days then deleted after confirmation of M69 transfer.
 3. **Credential revocation** — service account certificates, API keys, and HSM key handles revoked via P06 key-destruction ceremony within 48 hours of shutdown.
 4. **Source-code escrow** — final tagged release deposited to C04 escrow within 7 days of shutdown.
-5. **Runbook handover** — operational runbook and post-mortem notes delivered to IEBC ICT within 14 days.
+5. **Runbook handover** — operational runbook and post-mortem notes delivered to the Commission ICT within 14 days.
 
-**Owner:** SRE Lead. **Sign-off:** IEBC ICT Director + Datacraft Programme Director.
+**Owner:** SRE Lead. **Sign-off:** the Commission ICT Director + Datacraft Programme Director.
 
 > **RESOLUTION (F-23, 2026-08-21):** Decommissioning stub added per audit finding. Owner: SRE Lead. Target: FAT-07 gate.

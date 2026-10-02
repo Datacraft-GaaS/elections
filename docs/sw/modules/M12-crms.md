@@ -1,19 +1,19 @@
 # M12 — CRMS (Candidate Registration & Management System)
 
-**Runs on:** Party portal + IEBC RO back-office, primary + mirror DC
+**Runs on:** Party portal + the Commission RO back-office, primary + mirror DC
 **Owner:** Datacraft
-**IPR:** Custom Software vests in IEBC per GCC 15.4
+**IPR:** Custom Software vests in the Commission per GCC 15.4
 
 ## 1. Purpose
 
-End-to-end candidate nomination for every elective position (President, Governor, Senator, MP, CWR, MCA). Party officials submit nominations online with biographic + portrait + documents. IEBC Returning Officers clear them against statutory criteria. Cleared nominations feed ballot proof generation for the printer.
+End-to-end candidate nomination for every elective position (President, Governor, Senator, MP, CWR, MCA). Party officials submit nominations online with biographic + portrait + documents. the Commission Returning Officers clear them against statutory criteria. Cleared nominations feed ballot proof generation for the printer.
 
 ## 2. Personas
 
 - Party Official (party HQ user)
 - Independent Candidate (self-nomination)
 - Returning Officer (RO) clearance role
-- IEBC Administrator (gazette, oversight)
+- the Commission Administrator (gazette, oversight)
 - Auditor
 
 ## 3. Functional Requirements

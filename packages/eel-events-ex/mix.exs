@@ -8,7 +8,7 @@ defmodule EelEvents.MixProject do
       elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      description: "CloudEvents envelope with IEBC IEMS extensions",
+      description: "CloudEvents envelope with the Commission IEMS extensions",
       elixirc_options: [warnings_as_errors: true]
     ]
   end

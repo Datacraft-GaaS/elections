@@ -37,14 +37,14 @@ a) Power on BVP first, wait for green LED (biometric module ready)
 b) Power on BVR dock
 c) Insert PO smart card into M3 tablet
 d) Launch field-mobile-svc app → select Station Mode
-e) Enter station code (e.g., IEBC-KE-001-A)
+e) Enter station code (e.g., COMMISSION-KE-001-A)
 f) System displays: "Verified Election Mode Active — Audit shadow ENABLED"
 ```
 
 ### Step 3: Network and Time Sync
 ```
 a) Check signal strength — minimum 2 bars for 4G
-b) Run: Settings → Network → Sync Time (NTP: time.iebc.or.ke)
+b) Run: Settings → Network → Sync Time (NTP: time.eel.example)
 c) Confirm timestamp matches official election time ±1 second
 d) If NTP fails: proceed with local clock, flag for reconciliation
 ```
@@ -69,7 +69,7 @@ e) Log: canary_verified = true, token_hashes match dispatch manifest
 ### Step 6: HSM Attestation
 ```
 a) Insert PO smart card → triggers HSM key ceremony
-b) System displays: "Audit shadow active — OTEL endpoint: otel.iebc.or.ke"
+b) System displays: "Audit shadow active — OTEL endpoint: otel.eel.example"
 c) Record attestation event:
    auditId: <UUID7>
    proofHash: sha256(station_code + timestamp + device_id)
@@ -85,7 +85,7 @@ On successful completion, the system emits:
   "auditId": "018d0e8c-4f7a-6b9c-8000-000000000001",
   "proofHash": "sha256:3f4a9b2c1d0e5f8a7b3c2d4e5f6a7b8c",
   "M3_device_id": "M3-KE-001-A-001",
-  "station_code": "IEBC-KE-001-A",
+  "station_code": "COMMISSION-KE-001-A",
   "canary_tokens_verified": 17,
   "biometric_self_test_passed": true,
   "correlation_key": "falco-equip-check-01"

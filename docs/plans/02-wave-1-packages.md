@@ -1,6 +1,6 @@
 # Wave 1: Shared packages and templates
 
-Part of the IEBC IEMS full build plan. See `README.md` for conventions, `08-edge-case-matrix.md` for EC-IDs, `10-definition-of-done.md` for the WP exit bar.
+Part of the Commission IEMS full build plan. See `README.md` for conventions, `08-edge-case-matrix.md` for EC-IDs, `10-definition-of-done.md` for the WP exit bar.
 
 
 Gate G1 (architect + security): template service in each language deploys to kind via ArgoCD and passes the conformance suite (auth, SpiceDB, outbox, idempotency, signing, RFC 9457, OTel, degradation); cross-language interop (Rust emits → Python and Elixir verify signature + HLC, and back); fuzz targets exist for crypto, envelope, verifier; a11y + i18n lint green on design system.

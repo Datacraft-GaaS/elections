@@ -8,7 +8,7 @@
 | Size | M |
 | Availability class | election-critical 99.99% |
 | Event-sourced | yes (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M09-rts-ro.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M09-rts-ro.md |
 
 ## Purpose
 
@@ -224,5 +224,5 @@ EC-SCL-04: consumer lag > 60 s on form topic; backpressure applied; no OOM on ag
 
 ## Open questions
 
-- Session recording: screen-capture anchor cadence (60 s) needs IEBC legal sign-off on retention period and access controls.
+- Session recording: screen-capture anchor cadence (60 s) needs the Commission legal sign-off on retention period and access controls.
 - ICR confidence threshold: the threshold below which manual correction is mandatory needs tuning on real Kenyan handwriting samples before G3.

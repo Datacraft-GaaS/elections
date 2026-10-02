@@ -8,7 +8,7 @@
 | Size | M |
 | Availability class | routine 99.5%; 99.5% during annual return filing window (January-March) |
 | Event-sourced | no |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M45-party-registration-management.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M45-party-registration-management.md |
 
 ## Purpose
 
@@ -100,7 +100,7 @@ Party registration:
 8. FR-M45-008: 60-day advance reminder to party for annual return (31 March deadline); second reminder at 30 days; final notice at 7 days; all reminders logged
 9. FR-M45-009: annual return filing: audited accounts upload, updated officials roster, membership count update, governance compliance self-declaration; filing receipt issued
 10. FR-M45-010: SUSPENDED status applied automatically 30 days after annual return grace period expires; propagated to M12 and M47 via eel-outbox-rs within 5 minutes
-11. FR-M45-011: gazette notice PDF generated (IEBC standard format); Registrar HSM-signed via P06; published to public register within 14 days of approval
+11. FR-M45-011: gazette notice PDF generated (the Commission standard format); Registrar HSM-signed via P06; published to public register within 14 days of approval
 12. FR-M45-012: party deregistration: Registrar initiates with statutory ground (PPA 2011 s.17); party notified; 21-day appeal window; DEREGISTERED status confirmed after window; M12 and M47 notified via eel-outbox-rs
 13. FR-M45-013: deregistration appeal: party files appeal within 21-day window; Registrar reviews; appeal outcome recorded; all events audit-logged
 
@@ -218,5 +218,5 @@ Tags: `#[trace("FR-M45-002","AC-M45-01","EC-DAT-01")]`
 
 - M67 Symbol Registry: perceptual-hash API must be ready at T-270 for symbol uniqueness checks; if M67 is delayed, symbol uniqueness falls back to exact-match only; Registrar can override; confirm M67 readiness with that team.
 - PPDT API MoU: if not signed by T-270, the email-PDF fallback is the production path; RPP staff must be trained on manual case number entry.
-- Political Parties Act 2011 and 2022 Amendment: must be confirmed as the operative legal framework for 2027 cycle; any amendment changes drive data model and workflow changes; IEBC Legal Director sign-off required before spec is finalised.
-- Compliance score formula: §XXI.A and RPP policy define inputs but not weightings; IEBC Registrar must approve the scoring formula before implementation.
+- Political Parties Act 2011 and 2022 Amendment: must be confirmed as the operative legal framework for 2027 cycle; any amendment changes drive data model and workflow changes; the Commission Legal Director sign-off required before spec is finalised.
+- Compliance score formula: §XXI.A and RPP policy define inputs but not weightings; the Commission Registrar must approve the scoring formula before implementation.

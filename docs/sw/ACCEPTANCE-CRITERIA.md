@@ -1,4 +1,4 @@
-# Acceptance Criteria — IEBC IEMS 2027
+# Acceptance Criteria — the Commission IEMS 2027
 
 **Version:** 2.0 — Full 69-module scope
 **Companion to:** `PRD.md`, `SECURITY.md`, `DATACRAFT_SOFTWARE_SCOPE.md`
@@ -18,9 +18,9 @@ A module is "done" when all of the following are satisfied:
 3. Integration acceptance: all upstream and downstream modules with a declared dependency sign off on the contract.
 4. User acceptance: each named persona sign-off list for the module gives written acceptance (may be a structured UAT session record or a signed UAT report).
 5. Security acceptance: pen-test findings for this module are resolved to P2 or below; DPIA is filed with ODPC; relevant SR-* controls in `SECURITY.md` have evidence artefacts.
-6. Regulatory acceptance: applicable KEBS PVoC certificates (for hardware-adjacent software), ODPC DPIA on file, PPRA compliance, and IEBC Governance Board sign-off.
+6. Regulatory acceptance: applicable KEBS PVoC certificates (for hardware-adjacent software), ODPC DPIA on file, PPRA compliance, and the Commission Governance Board sign-off.
 7. Operational Acceptance: criteria in §1.3 below are met, triggering IP vesting per Teaming §4.1.
-8. Documentation: runbook, on-call playbook, ADR log, and user manual are complete and reviewed by IEBC ICT.
+8. Documentation: runbook, on-call playbook, ADR log, and user manual are complete and reviewed by the Commission ICT.
 
 ### 1.2 Acceptance Test Hierarchy
 
@@ -28,20 +28,20 @@ A module is "done" when all of the following are satisfied:
 |---|---|---|---|
 | Unit | Individual functions, classes, models | Datacraft developer | CI (isolated, no network) |
 | Integration | Service-to-service contracts, Kafka topics, DB schemas | Datacraft QA | Integration environment |
-| End-to-end (E2E) | Full user journey across modules | Datacraft QA + IEBC ICT | Staging environment |
-| User Acceptance (UAT) | Persona-driven scenario execution | IEBC business users + Datacraft | Staging environment |
-| Operational Acceptance (OAT) | Full system, SLA measurement, DR, security | Datacraft + IEBC + IAB | Pre-production environment |
-| Regulatory Certification | Independent certifier nominated by IEBC | Third party | Pre-production (clean) |
+| End-to-end (E2E) | Full user journey across modules | Datacraft QA + the Commission ICT | Staging environment |
+| User Acceptance (UAT) | Persona-driven scenario execution | the Commission business users + Datacraft | Staging environment |
+| Operational Acceptance (OAT) | Full system, SLA measurement, DR, security | Datacraft + the Commission + IAB | Pre-production environment |
+| Regulatory Certification | Independent certifier nominated by the Commission | Third party | Pre-production (clean) |
 
 ### 1.3 Operational Acceptance (Teaming §4.1 — IP Vesting Trigger)
 
-Per Teaming Agreement §4.1, Custom Software IP vests in IEBC at Operational Acceptance. Operational Acceptance is achieved when:
+Per Teaming Agreement §4.1, Custom Software IP vests in the Commission at Operational Acceptance. Operational Acceptance is achieved when:
 
-- (a) OAT certificate signed by IEBC Project Manager per GCC 27
+- (a) OAT certificate signed by the Commission Project Manager per GCC 27
 - (b) All OAT criteria in §3 pass for the module
 - (c) ISO 27001 surveillance audit covering the module shows no critical findings
 - (d) Source code deposit made to escrow custodian within 24 hours of OAT certificate
-- (e) Reproducibility build from escrow verified by IEBC ICT
+- (e) Reproducibility build from escrow verified by the Commission ICT
 
 Until OAT certificate, IP remains with Datacraft. Partial OAT certificates per module class are permissible per Teaming §4.1(b).
 
@@ -114,7 +114,7 @@ All modules must pass:
 Per module handling personal data:
 - DPA 2019 lawful basis documented per endpoint (see `SECURITY.md` §11.4.1)
 - DPIA filed with ODPC before any data processing begins in pre-production or production
-- Breach-notification runbook specific to the module reviewed and approved by IEBC DPO
+- Breach-notification runbook specific to the module reviewed and approved by the Commission DPO
 
 ### 2.6 Observability
 
@@ -135,7 +135,7 @@ Every module must produce a byte-identical build artefact from a tagged commit +
 - English (EN) + Kiswahili (SW): mandatory baseline for all user-facing modules
 - Additional Kenyan languages per module: see §3 (module-specific notes for M01, M05, M08, M25, M37, M68 which have constituency-specific language requirements)
 - Right-to-left: not required for Kenyan languages; verify layout is not broken by longer Kiswahili strings
-- Translation review: by native speaker approved by IEBC, not machine-translation-only, before UAT
+- Translation review: by native speaker approved by the Commission, not machine-translation-only, before UAT
 
 ### 2.9 Documentation
 
@@ -143,7 +143,7 @@ Every module must have, at FAT:
 - Runbook: deployment, startup, shutdown, configuration, known failure modes, recovery steps
 - On-call playbook: alert → diagnosis → mitigation → escalation for every defined alert
 - Architecture Decision Records (ADRs): one per significant architectural decision; stored in `docs/adr/` in the module repository
-- User manual: for each persona, a step-by-step guide covering their primary workflows; reviewed and signed by a representative from IEBC for that persona
+- User manual: for each persona, a step-by-step guide covering their primary workflows; reviewed and signed by a representative from the Commission for that persona
 
 ---
 
@@ -153,11 +153,11 @@ Every module must have, at FAT:
 
 **Functional:** FR-M01-001 through FR-M01-020 pass in staging (full enrolment flow, offline queue, sync, transfer, distress finger, firmware OTA, language toggle, accessibility modes). Verified with 20 physical kits in staging environment.
 
-**Non-functional:** Fingerprint capture throughput ≥ 12 enrolments/hour per kit (target 15). Kit offline autonomy: 7-day queue ring buffer without data loss. Battery: full day operation (8 hours continuous, 12 hours light) without external power. Boot to ready: ≤ 90 seconds. P95 biometric capture quality acceptance rate ≥ 95% on IEBC synthetic test set.
+**Non-functional:** Fingerprint capture throughput ≥ 12 enrolments/hour per kit (target 15). Kit offline autonomy: 7-day queue ring buffer without data loss. Battery: full day operation (8 hours continuous, 12 hours light) without external power. Boot to ready: ≤ 90 seconds. P95 biometric capture quality acceptance rate ≥ 95% on the Commission synthetic test set.
 
 **Integration:** M02 BVR Backend signs off that: (a) all enrolment records received match kit-side log hashes, (b) deduplication trigger to M03 fires for every new enrolment, (c) revocation propagates to kit ≤ 60 seconds.
 
-**User acceptance:** Enrolment Clerk persona: IEBC-designated enrolment supervisor conducts UAT with 50 synthetic voters. Supervisor persona: transfer workflow UAT. Accessibility persona: visually impaired voter validates audio-guided flow.
+**User acceptance:** Enrolment Clerk persona: Commission-designated enrolment supervisor conducts UAT with 50 synthetic voters. Supervisor persona: transfer workflow UAT. Accessibility persona: visually impaired voter validates audio-guided flow.
 
 **Security acceptance:** Physical pen-test on kit (tamper seal, JTAG probe, USB attack). Firmware-signing verification. Geo-fence bypass attempt fails. Certificate pinning bypass attempt fails. Distress signal fires on correct finger without alerting suspect.
 
@@ -177,7 +177,7 @@ Every module must have, at FAT:
 
 **Integration:** M03 ABIS confirms deduplication triggers received; M35 CVR confirms register updates propagated; M05/M06 BVI Backend confirms voter roll delta sync.
 
-**User acceptance:** IEBC register manager persona: bulk export dual-control workflow. IEBC DPO: DSAR workflow produces correct output within 30-day SLA.
+**User acceptance:** the Commission register manager persona: bulk export dual-control workflow. the Commission DPO: DSAR workflow produces correct output within 30-day SLA.
 
 **Security acceptance:** SQL injection suite clean; OPA separation-of-duties policy tested (single account cannot simultaneously read templates + modify register + access audit logs); bulk export enforces dual approval; HSM countersigning verified on all write events.
 
@@ -191,17 +191,17 @@ Every module must have, at FAT:
 
 ### M03 — ABIS (Automated Biometric Identification System)
 
-**Functional:** 1:N biometric deduplication on 30M synthetic records. Adjudication workbench handles low-confidence matches. FMR (False Match Rate) ≤ 0.001% on IEBC test set. FNMR (False Non-Match Rate) ≤ 0.1%.
+**Functional:** 1:N biometric deduplication on 30M synthetic records. Adjudication workbench handles low-confidence matches. FMR (False Match Rate) ≤ 0.001% on the Commission test set. FNMR (False Non-Match Rate) ≤ 0.1%.
 
 **Non-functional:** P99 1:N match ≤ 8 s. Throughput: 10,000 matches/hour sustained. Confidential compute enclave attested and functional. Biometric templates never exposed outside enclave memory (verified by memory inspection test).
 
 **Integration:** M02 enrolment trigger arrives → M03 processes → match result returned to M02 with confidence score. M06 BVI 1:1 match path verified.
 
-**User acceptance:** IEBC biometric officer: adjudication workbench UAT with simulated low-confidence cases. IEBC DPO: template deletion workflow (DSAR erasure).
+**User acceptance:** the Commission biometric officer: adjudication workbench UAT with simulated low-confidence cases. the Commission DPO: template deletion workflow (DSAR erasure).
 
-**Security acceptance:** Template exfiltration attempt from enclave blocked. ABIS vendor SDK independent code review complete. No unresolved P1 pen-test findings. Confidential compute attestation report signed by IEBC CISO.
+**Security acceptance:** Template exfiltration attempt from enclave blocked. ABIS vendor SDK independent code review complete. No unresolved P1 pen-test findings. Confidential compute attestation report signed by the Commission CISO.
 
-**Regulatory:** Independent biometric accuracy re-certification by accredited lab (FAR/FRR against IEBC-supplied test set). ODPC DPIA covering special-category biometric data. Elections (Technology) Regulations 2017 biometric accuracy test.
+**Regulatory:** Independent biometric accuracy re-certification by accredited lab (FAR/FRR against Commission-supplied test set). ODPC DPIA covering special-category biometric data. Elections (Technology) Regulations 2017 biometric accuracy test.
 
 **Operational Acceptance:** Full 30M synthetic record load test; FMR/FNMR within targets; enclave attested in pre-production.
 
@@ -217,7 +217,7 @@ Every module must have, at FAT:
 
 **Integration:** M01/M05 BVR/BVI devices accept VPRS QR handoff. M35 CVR syncs pre-registration status.
 
-**User acceptance:** Self-registering voter persona: end-to-end VPRS flow with IPRS validation. IEBC pre-registration officer: batch review workflow.
+**User acceptance:** Self-registering voter persona: end-to-end VPRS flow with IPRS validation. the Commission pre-registration officer: batch review workflow.
 
 **Security acceptance:** Consent withdrawal workflow tested. Personal data deletion tested. IPRS API key rotation tested. DPIA on file with ODPC.
 
@@ -257,7 +257,7 @@ Every module must have, at FAT:
 
 **Integration:** M05 (event ingestion), M03 (online fallback 1:1), M10 (turnout metrics), M26 (anomaly alerts), M40 (evidence bundle).
 
-**User acceptance:** IEBC ICT officer: audit log query and export. IAB: Merkle-inclusion proof retrieval.
+**User acceptance:** the Commission ICT officer: audit log query and export. IAB: Merkle-inclusion proof retrieval.
 
 **Security acceptance:** HSM countersigning verified on all events. Replay attack blocked (monotonic counter checked). Certificate revocation propagation ≤ 60 s verified.
 
@@ -277,7 +277,7 @@ Every module must have, at FAT:
 
 **Integration:** M35 CVR (read-only replica). M26 anomaly detector (unusual lookup volume).
 
-**User acceptance:** Registered voter persona: self-lookup before election day. IEBC helpdesk: assisted lookup for voters without smartphone.
+**User acceptance:** Registered voter persona: self-lookup before election day. the Commission helpdesk: assisted lookup for voters without smartphone.
 
 **Security acceptance:** NID enumeration prevented (rate limit + CAPTCHA). No biometric data in API response. Audit log of all lookups (anonymised IP + NID hash).
 
@@ -337,7 +337,7 @@ Every module must have, at FAT:
 
 **Integration:** M08/M09 (ingestion), M11 (publication), M14 (reproducibility bundle), M15 IAB Dashboard, M16 ECC, M21 RLA, M26 anomaly detection, M27 Intent Preservation, M40 court evidence, M51 certification, M69 archive.
 
-**User acceptance:** IEBC national tally officer: aggregation monitoring UAT. IAB: parallel-tally divergence detection UAT.
+**User acceptance:** the Commission national tally officer: aggregation monitoring UAT. IAB: parallel-tally divergence detection UAT.
 
 **Security acceptance:** TLA+ proof reviewed by independent formal-methods expert. Insider-simulation: parallel-tally drift detector catches simulated tamper. HSM countersigning on all aggregation events. Replay attack blocked.
 
@@ -371,13 +371,13 @@ Every module must have, at FAT:
 
 ### M12 — CRMS (Candidate Registration Management System)
 
-**Functional:** Party official submits candidate nomination. IEBC nomination desk reviews. Ballot proof generated (candidate order per Elections Act §34 randomisation). Nomination fee payment integration (M47). Invalidation workflow. Cleared nominations exported to M39 Ballot Printing.
+**Functional:** Party official submits candidate nomination. the Commission nomination desk reviews. Ballot proof generated (candidate order per Elections Act §34 randomisation). Nomination fee payment integration (M47). Invalidation workflow. Cleared nominations exported to M39 Ballot Printing.
 
-**Non-functional:** P99 submission ≤ 2 s. 15,000 nominations processed over 30-day nomination window. Audit log queryable by IEBC legal team within 5 min of request.
+**Non-functional:** P99 submission ≤ 2 s. 15,000 nominations processed over 30-day nomination window. Audit log queryable by the Commission legal team within 5 min of request.
 
 **Integration:** M45 Party Registration (party eligibility check), M47 Nomination Fee, M39 Ballot Printing Chain, M22 Campaign Finance (candidate finance declarations), M46 Party Primaries.
 
-**User acceptance:** Party official persona: nomination submission UAT. IEBC nomination desk: review and clearance UAT. IEBC legal team: audit log query.
+**User acceptance:** Party official persona: nomination submission UAT. the Commission nomination desk: review and clearance UAT. the Commission legal team: audit log query.
 
 **Security acceptance:** IDOR between party accounts blocked. Ballot proof randomisation verified (chi-squared test on 1,000 draws). Fee payment confirmed before nomination clearance.
 
@@ -441,7 +441,7 @@ Every module must have, at FAT:
 
 **Security acceptance:** FIDO2 mandatory. Session recording for all IAB actions. Read-only replica (no write to production).
 
-**Regulatory:** IEBC Act 2011 (IAB mandate). ISO 27001 access control.
+**Regulatory:** the Commission Act 2011 (IAB mandate). ISO 27001 access control.
 
 **Operational Acceptance:** IAB full membership onboarded and trained before T-30. 30-day pre-election live access with real telemetry.
 
@@ -451,17 +451,17 @@ Every module must have, at FAT:
 
 ### M16 — Election Command Centre (ECC)
 
-**Functional:** Real-time operational dashboard for IEBC national + county managers. Kit health monitoring (battery, connectivity, queue depth). Escalation workflows. Incident tracking. Resource dispatch (integration with M33). Station problem log. Automated alerts from M26 with manual disposition.
+**Functional:** Real-time operational dashboard for the Commission national + county managers. Kit health monitoring (battery, connectivity, queue depth). Escalation workflows. Incident tracking. Resource dispatch (integration with M33). Station problem log. Automated alerts from M26 with manual disposition.
 
 **Non-functional:** Dashboard refresh ≤ 5 s for 55,393 station feeds simultaneously. Alert-to-analyst notification ≤ 30 s. Incident ticket SLA tracking.
 
 **Integration:** M01, M05, M08 (kit telemetry), M20 (inventory), M26 (anomaly alerts), M28 (AI alerts), M33 (dispatch), M56 (county coordination), M60 (medical first response).
 
-**User acceptance:** IEBC national operations manager: dashboard monitoring UAT. County operations officer: county-level view UAT. Field support engineer: incident ticket workflow UAT.
+**User acceptance:** the Commission national operations manager: dashboard monitoring UAT. County operations officer: county-level view UAT. Field support engineer: incident ticket workflow UAT.
 
 **Security acceptance:** FIDO2 + RBAC verified (county officer sees only their county). Session recording for privileged actions. Insider-simulation: no single ECC account can modify results.
 
-**Regulatory:** Elections Act §44A (failure declaration trigger visible in ECC). IEBC operational governance.
+**Regulatory:** Elections Act §44A (failure declaration trigger visible in ECC). the Commission operational governance.
 
 **Operational Acceptance:** Full dress rehearsal T-60: 55,393 simulated stations, 500 concurrent ECC analysts, all escalation workflows exercised.
 
@@ -471,13 +471,13 @@ Every module must have, at FAT:
 
 ### M17 — Speech Integrity
 
-**Functional:** Real-time monitoring of public utterances (broadcast + social) for deepfake audio/video, hate speech (National Cohesion and Integration Act 2008 categories), election disinformation. Alert to IEBC communications team. No automated removal — analyst-reviewed.
+**Functional:** Real-time monitoring of public utterances (broadcast + social) for deepfake audio/video, hate speech (National Cohesion and Integration Act 2008 categories), election disinformation. Alert to the Commission communications team. No automated removal — analyst-reviewed.
 
-**Non-functional:** Detection latency ≤ 5 min from public utterance to alert. False positive rate ≤ 5% (analyst review target). Model accuracy ≥ 90% on IEBC test set for deepfake detection.
+**Non-functional:** Detection latency ≤ 5 min from public utterance to alert. False positive rate ≤ 5% (analyst review target). Model accuracy ≥ 90% on the Commission test set for deepfake detection.
 
 **Integration:** M28 AI Monitoring Stack (shared signal). M16 ECC (escalation for P1 integrity events).
 
-**User acceptance:** IEBC communications officer: alert review and disposition UAT. Legal team: evidence export for NCIC referral.
+**User acceptance:** the Commission communications officer: alert review and disposition UAT. Legal team: evidence export for NCIC referral.
 
 **Security acceptance:** No PII of private individuals in detection database. Public figures only in targeted monitoring. ODPC DPIA. No automated action — all escalations human-reviewed.
 
@@ -535,11 +535,11 @@ Every module must have, at FAT:
 
 **Integration:** M01, M05, M08 (kit identity verification), M16 ECC (seal-break alerts), M32 Field Support (dispatch coordination), M39 Ballot Printing (ballot-box RFID chip handoff), M63 Ballot Serial Chain.
 
-**User acceptance:** IEBC logistics manager: dispatch and return workflow UAT. Field engineer: kit handoff with RFID scan UAT. County store manager: inventory report.
+**User acceptance:** the Commission logistics manager: dispatch and return workflow UAT. Field engineer: kit handoff with RFID scan UAT. County store manager: inventory report.
 
 **Security acceptance:** Chain-of-custody signature verification. RFID tamper-evident logging verified. Stolen kit honey mode: revoked kit receives sandbox, captures attacker biometrics.
 
-**Regulatory:** PPADA 2015 (asset management). IEBC asset registry obligations.
+**Regulatory:** PPADA 2015 (asset management). the Commission asset registry obligations.
 
 **Operational Acceptance:** Full 65,287-kit inventory simulation. Real-time tracking verified in field trial.
 
@@ -559,7 +559,7 @@ Every module must have, at FAT:
 
 **Security acceptance:** No write access to production results. Audit sample drawn from cryptographically verified manifest. Auditor identity and sample draw logged on transparency log.
 
-**Regulatory:** Elections Act §83 (IEBC certification of results). International best practice (VVSG 2.0 reference).
+**Regulatory:** Elections Act §83 (the Commission certification of results). International best practice (VVSG 2.0 reference).
 
 **Operational Acceptance:** RLA run on synthetic election with known result; outcome confirmed at α ≤ 0.05.
 
@@ -575,7 +575,7 @@ Every module must have, at FAT:
 
 **Integration:** M12 CRMS (candidate eligibility). M66 Election Financial Forensics (anomaly escalation).
 
-**User acceptance:** Party finance officer: income/expenditure submission UAT. IEBC finance compliance officer: limit breach alert UAT. Civil society researcher: public portal download.
+**User acceptance:** Party finance officer: income/expenditure submission UAT. the Commission finance compliance officer: limit breach alert UAT. Civil society researcher: public portal download.
 
 **Security acceptance:** Party finance data isolated by party (IDOR prevention). Limit breach alert fires correctly.
 
@@ -595,7 +595,7 @@ Every module must have, at FAT:
 
 **Integration:** M16 ECC (urgent escalation). M26 Anomaly Detection (pattern detection on grievance volume). M40 Court Interface (grievance as petition evidence).
 
-**User acceptance:** Voter complainant persona: anonymous web submission UAT. Field officer: in-person intake form UAT. IEBC grievance officer: triage and routing UAT.
+**User acceptance:** Voter complainant persona: anonymous web submission UAT. Field officer: in-person intake form UAT. the Commission grievance officer: triage and routing UAT.
 
 **Security acceptance:** Anonymous submission stores no identifying data if anonymous path chosen. Complainant identity separated from complaint content (encrypted separately). DPIA on file.
 
@@ -635,7 +635,7 @@ Every module must have, at FAT:
 
 **Integration:** M01, M05 (kit accessibility modes), M16 ECC (special voting coordination), M38 Training LMS (poll worker training on special workflows).
 
-**User acceptance:** PWD voter persona: accessibility workflow UAT with representative from disability rights organisation. IEBC presiding officer: special voting form completion UAT.
+**User acceptance:** PWD voter persona: accessibility workflow UAT with representative from disability rights organisation. the Commission presiding officer: special voting form completion UAT.
 
 **Security acceptance:** Disability data (special-category under DPA s.29) field-encrypted with separate DEK. DPIA on file. No disclosure beyond operational necessity.
 
@@ -655,7 +655,7 @@ Every module must have, at FAT:
 
 **Integration:** M05, M08 (authentication and transmission events), M10 (tally stream), M16 ECC (alert routing), M15 IAB, M28 AI Monitoring, M26 shares signals with M61 (secrecy testing).
 
-**User acceptance:** SOC analyst persona: alert triage workflow UAT. IEBC statistical officer: Benford analysis report UAT.
+**User acceptance:** SOC analyst persona: alert triage workflow UAT. the Commission statistical officer: Benford analysis report UAT.
 
 **Security acceptance:** Model inputs are pseudonymised. No live voter PII in model training. Model-poisoning attack simulation (adversarial inputs) tested.
 
@@ -695,7 +695,7 @@ Every module must have, at FAT:
 
 **Integration:** M17 Speech Integrity (deepfake signals), M16 ECC (alert routing), M61 Secrecy Assurance (clone-app signals).
 
-**User acceptance:** IEBC communications officer: alert triage UAT. NCIC compliance: hate speech escalation workflow UAT.
+**User acceptance:** the Commission communications officer: alert triage UAT. NCIC compliance: hate speech escalation workflow UAT.
 
 **Security acceptance:** All AI inference on Kenya-jurisdiction servers (DPA 2019 s.18). No biometric data in AI models. Model cards published per CCB requirement.
 
@@ -787,7 +787,7 @@ Every module must have, at FAT:
 
 ### M33 — Mobile Personnel Dispatch
 
-**Functional:** Real-time dispatch of IEBC staff and field engineers. Task assignment, GPS tracking (with consent), ETA calculation, completion confirmation.
+**Functional:** Real-time dispatch of the Commission staff and field engineers. Task assignment, GPS tracking (with consent), ETA calculation, completion confirmation.
 
 **Non-functional:** Dispatch-to-confirmation ≤ 2 min. GPS refresh ≤ 2 min. 500 concurrent staff supported.
 
@@ -833,7 +833,7 @@ Every module must have, at FAT:
 
 **Integration:** M01/M02 BVR (intake), M04 VPRS (pre-registration merge), M05/M06 BVI (voter roll delta sync), M07 BVV (public lookup), M36 Appeals, M64 Public Inspection.
 
-**User acceptance:** IEBC registration officer: individual and bulk registration UAT. IEBC DPO: DSAR workflow. County election official: constituency roll export.
+**User acceptance:** the Commission registration officer: individual and bulk registration UAT. the Commission DPO: DSAR workflow. County election official: constituency roll export.
 
 **Security acceptance:** Register lock mechanism tested (no writes accepted post-cut-off). OPA separation-of-duties verified. HSM-signed audit log of every change.
 
@@ -847,13 +847,13 @@ Every module must have, at FAT:
 
 ### M36 — Voter Deregistration Appeal
 
-**Functional:** Voter challenges exclusion from register. IEBC review workflow. Dual approval for deregistration action. Appeal outcome notification. Audit trail for Elections Court.
+**Functional:** Voter challenges exclusion from register. the Commission review workflow. Dual approval for deregistration action. Appeal outcome notification. Audit trail for Elections Court.
 
 **Non-functional:** P99 submission ≤ 2 s. Dual-approval workflow enforced before any deregistration.
 
 **Integration:** M35 CVR (register update), M40 Court Interface (appeal evidence), M23 Grievance (escalation pathway).
 
-**User acceptance:** Voter appellant persona: appeal submission UAT. IEBC registrar: review and disposition UAT.
+**User acceptance:** Voter appellant persona: appeal submission UAT. the Commission registrar: review and disposition UAT.
 
 **Security acceptance:** Dual approval enforced. Appeal record immutable after submission. DPIA on file.
 
@@ -871,11 +871,11 @@ Every module must have, at FAT:
 
 **Integration:** M68 Referendum Explainer (content sharing), M38 Training LMS (linked materials).
 
-**User acceptance:** IEBC communications officer: content publishing UAT. Low-literacy voter persona: usability test in target language.
+**User acceptance:** the Commission communications officer: content publishing UAT. Low-literacy voter persona: usability test in target language.
 
 **Security acceptance:** No PII. CSP strict. HTTPS only. Content signing (ECDSA) to prevent defacement.
 
-**Regulatory:** Elections Act (IEBC public education mandate). ODPC (no PII).
+**Regulatory:** Elections Act (the Commission public education mandate). ODPC (no PII).
 
 **Operational Acceptance:** Full language set published. Mobile usability test passed.
 
@@ -889,11 +889,11 @@ Every module must have, at FAT:
 
 **Integration:** M31 Mobile Poll Clerk (training completion verification), M55 HR Payroll (training completion gates payment).
 
-**User acceptance:** Poll worker persona: full training module UAT (EN + SW). IEBC training manager: completion report UAT.
+**User acceptance:** Poll worker persona: full training module UAT (EN + SW). the Commission training manager: completion report UAT.
 
 **Security acceptance:** OIDC for all trainees. Completion records signed. No biometric data in training environment.
 
-**Regulatory:** IEBC training mandate. DPA 2019 (poll worker personal data).
+**Regulatory:** the Commission training mandate. DPA 2019 (poll worker personal data).
 
 **Operational Acceptance:** 130,000-user load test. Offline mode verified.
 
@@ -909,7 +909,7 @@ Every module must have, at FAT:
 
 **Integration:** M12 CRMS (candidate list), M63 Ballot Serial Chain (serial issuance), M20 Inventory (RFID chip assignment), M67 Party Symbol Registry (symbols on ballot).
 
-**User acceptance:** IEBC print officer: ballot proof review and sign-off UAT. Printer liaison: print specification receipt confirmation.
+**User acceptance:** the Commission print officer: ballot proof review and sign-off UAT. Printer liaison: print specification receipt confirmation.
 
 **Security acceptance:** Ballot proof randomisation verified (chi-squared). Print spec signed with ECDSA; printer must verify before printing. Serial range recorded in M63 before printing begins.
 
@@ -923,19 +923,19 @@ Every module must have, at FAT:
 
 ### M40 — Election Court IT Interface
 
-**Functional:** Evidence bundle generation on demand (triggered by court order or IEBC legal team). Bundle includes: signed Form 34A images (from M27), Merkle-inclusion proofs (from M10/M14), kit chain-of-custody records (from M20), ballot serial chain (from M63), authentication audit logs (from M06). Chain-of-custody record for every evidence package. Expert witness affidavit template. Response: ≤ 24 hours from request (Elections Act §75(1)).
+**Functional:** Evidence bundle generation on demand (triggered by court order or the Commission legal team). Bundle includes: signed Form 34A images (from M27), Merkle-inclusion proofs (from M10/M14), kit chain-of-custody records (from M20), ballot serial chain (from M63), authentication audit logs (from M06). Chain-of-custody record for every evidence package. Expert witness affidavit template. Response: ≤ 24 hours from request (Elections Act §75(1)).
 
 **Non-functional:** Bundle generation ≤ 4 hours. Bundle integrity verified before delivery. Access logged with dual-custody.
 
 **Integration:** M14 (bundle source), M20 (kit chain-of-custody), M27 (sealed forms), M06 (auth logs), M63 (ballot serial), M10 (Merkle proofs), M69 (long-term archive access).
 
-**User acceptance:** IEBC legal team: evidence bundle generation UAT. Auditor-General's office: bundle verification UAT.
+**User acceptance:** the Commission legal team: evidence bundle generation UAT. Auditor-General's office: bundle verification UAT.
 
 **Security acceptance:** Dual-custody access for evidence bundle generation. Chain-of-custody record immutable. Court-order verification before bundle generation.
 
 **Regulatory:** Elections Act §75(1) (petition evidence, 24-hour SLA). Constitution Art. 87 (petition right). Kenya Evidence Act (digital evidence admissibility).
 
-**Operational Acceptance:** Dry run: IEBC legal team + independent lawyer verify bundle at T-14. SC IT Registrar dry-run passed (per programme-level acceptance criteria §4).
+**Operational Acceptance:** Dry run: the Commission legal team + independent lawyer verify bundle at T-14. SC IT Registrar dry-run passed (per programme-level acceptance criteria §4).
 
 **Rollout:** Available from election day; priority escalation path active T-0 through T+7 (petition window).
 
@@ -949,11 +949,11 @@ Every module must have, at FAT:
 
 **Integration:** M59 Auditor General Interface (report delivery). M16 ECC (incident log review). M26 Anomaly Detection (alert review).
 
-**User acceptance:** IEBC operations manager: review entry UAT. IAB: review approval UAT.
+**User acceptance:** the Commission operations manager: review entry UAT. IAB: review approval UAT.
 
 **Security acceptance:** Read-only access to production event logs. No write to production data.
 
-**Operational Acceptance:** Post-election report produced within T+30 and signed by IEBC.
+**Operational Acceptance:** Post-election report produced within T+30 and signed by the Commission.
 
 ---
 
@@ -965,7 +965,7 @@ Every module must have, at FAT:
 
 **Integration:** M16 ECC (revocation of disruptive media), M57 International Observer Coordination (shared accreditation infrastructure).
 
-**User acceptance:** Journalist persona: application and badge receipt UAT. IEBC press officer: review and approval UAT.
+**User acceptance:** Journalist persona: application and badge receipt UAT. the Commission press officer: review and approval UAT.
 
 **Security acceptance:** Identity verification step (government-issued press card). Badge QR signed and verifiable offline. DPIA on file for journalist PII.
 
@@ -985,7 +985,7 @@ Every module must have, at FAT:
 
 **Integration:** M34 Mobile Observer (credential token), M57 International Observer Coordination, M42 Media Accreditation (shared infrastructure).
 
-**User acceptance:** Observer organisation persona: application UAT. IEBC accreditation officer: review and approval UAT.
+**User acceptance:** Observer organisation persona: application UAT. the Commission accreditation officer: review and approval UAT.
 
 **Security acceptance:** Identity verification at application. Badge signed and verifiable offline. Revocation propagates to M34 ≤ 60 s.
 
@@ -1005,7 +1005,7 @@ Every module must have, at FAT:
 
 **Integration:** M05 BVI (authentication counts, pseudonymised), M16 ECC (alert for anomalously low turnout stations), M15 IAB.
 
-**User acceptance:** IEBC operations manager: turnout forecast view UAT.
+**User acceptance:** the Commission operations manager: turnout forecast view UAT.
 
 **Security acceptance:** No PII in any model input or output. Pseudonymised station counts only.
 
@@ -1021,7 +1021,7 @@ Every module must have, at FAT:
 
 **Integration:** M12 CRMS (party eligibility for nominations), M22 Campaign Finance (party financial compliance), M67 Party Symbol Registry.
 
-**User acceptance:** Party registrar persona: application submission UAT. IEBC registrar: review and certificate issuance UAT.
+**User acceptance:** Party registrar persona: application submission UAT. the Commission registrar: review and certificate issuance UAT.
 
 **Security acceptance:** OIDC + MFA for party officials. Party data isolated by party (IDOR prevention). Public registry read-only anonymous.
 
@@ -1033,15 +1033,15 @@ Every module must have, at FAT:
 
 ### M46 — Party Primaries Oversight
 
-**Functional:** Party primary result submission by party. IEBC oversight dashboard. Dispute workflow. Integration with CRMS to confirm primary-cleared candidates.
+**Functional:** Party primary result submission by party. the Commission oversight dashboard. Dispute workflow. Integration with CRMS to confirm primary-cleared candidates.
 
 **Non-functional:** P99 submission ≤ 2 s. 15,000 candidate primary results supported.
 
 **Integration:** M12 CRMS (candidate clearance), M22 Campaign Finance (primary campaign finance).
 
-**User acceptance:** Party officials: primary result submission UAT. IEBC oversight officer: dispute handling UAT.
+**User acceptance:** Party officials: primary result submission UAT. the Commission oversight officer: dispute handling UAT.
 
-**Security acceptance:** Results signed by party authorized signatory. OIDC + MFA. Immutable after IEBC acceptance.
+**Security acceptance:** Results signed by party authorized signatory. OIDC + MFA. Immutable after the Commission acceptance.
 
 **Regulatory:** Political Parties Act 2011 (primary oversight). ODPC DPIA.
 
@@ -1057,7 +1057,7 @@ Every module must have, at FAT:
 
 **Integration:** M12 CRMS (fee confirmation), M54 Budget Expenditure (fee income recording).
 
-**User acceptance:** Candidate persona: M-Pesa payment UAT. IEBC finance officer: fee reconciliation UAT.
+**User acceptance:** Candidate persona: M-Pesa payment UAT. the Commission finance officer: fee reconciliation UAT.
 
 **Security acceptance:** PCI DSS compliance for any card processing path. No card numbers stored. Payment token integration only. M-Pesa API certificate pinning.
 
@@ -1069,13 +1069,13 @@ Every module must have, at FAT:
 
 ### M48 — Recall Election Workflow
 
-**Functional:** Manages recall petition (County Assembly petition for MP recall per Constitution Art. 104). Signature collection, threshold verification, IEBC determination, recall election trigger.
+**Functional:** Manages recall petition (County Assembly petition for MP recall per Constitution Art. 104). Signature collection, threshold verification, the Commission determination, recall election trigger.
 
 **Non-functional:** P99 petition submission ≤ 2 s. Signature threshold verification ≤ 10 min.
 
 **Integration:** M35 CVR (voter roll for signature verification), M49 Referendum Mechanics (recall election uses referendum infrastructure where applicable), M23 Grievance.
 
-**User acceptance:** Petition coordinator: signature submission UAT. IEBC determination officer: threshold verification UAT.
+**User acceptance:** Petition coordinator: signature submission UAT. the Commission determination officer: threshold verification UAT.
 
 **Security acceptance:** Petition signatories' NID stored encrypted. Signature verification auditable. DPIA on file.
 
@@ -1093,7 +1093,7 @@ Every module must have, at FAT:
 
 **Integration:** M05, M08, M10, M11 (re-use), M51 (referendum result certification), M49 has its own referendum-specific configuration layer.
 
-**User acceptance:** IEBC referendum coordinator: end-to-end referendum simulation UAT. M68 Referendum Explainer linked and live.
+**User acceptance:** the Commission referendum coordinator: end-to-end referendum simulation UAT. M68 Referendum Explainer linked and live.
 
 **Security acceptance:** Same as M05, M08, M10. Ballot secrecy verified for Yes/No choice (M61 referee test).
 
@@ -1111,7 +1111,7 @@ Every module must have, at FAT:
 
 **Integration:** All election modules (activated subset). M20 Inventory (partial kit deployment).
 
-**User acceptance:** IEBC by-election coordinator: deployment checklist UAT.
+**User acceptance:** the Commission by-election coordinator: deployment checklist UAT.
 
 **Security acceptance:** Same as general election for activated modules. Software freeze for non-affected modules maintained.
 
@@ -1123,17 +1123,17 @@ Every module must have, at FAT:
 
 ### M51 — Result Declaration Certification
 
-**Functional:** Presiding officer (Form 34A) and Returning Officer (Form 34B) digital certification chain. National tally certification by IEBC Chair (Form 34C equivalent). Each certification level requires biometric sign-off + FIDO2. Certification events HSM-countersigned and Merkle-chained. Trigger for M11 public publication.
+**Functional:** Presiding officer (Form 34A) and Returning Officer (Form 34B) digital certification chain. National tally certification by the Commission Chair (Form 34C equivalent). Each certification level requires biometric sign-off + FIDO2. Certification events HSM-countersigned and Merkle-chained. Trigger for M11 public publication.
 
 **Non-functional:** Certification P99 ≤ 10 s. HSM-countersigned within 60 s. Merkle root published within 60 s.
 
 **Integration:** M08 (Form 34A), M09 (Form 34B), M10 (national aggregation), M11 (publication trigger), M14 (bundle inclusion), M21 RLA (RLA must pass before national certification), M40 (court evidence).
 
-**User acceptance:** IEBC Chair persona: national certification UAT. RO persona: constituency certification UAT.
+**User acceptance:** the Commission Chair persona: national certification UAT. RO persona: constituency certification UAT.
 
 **Security acceptance:** Dual-custody for national certification. HSM-countersigning verified. Merkle root published publicly immediately. Insider tamper simulation: parallel-tally drift detected before certification.
 
-**Regulatory:** Elections Act §83 (IEBC certification). Constitution Art. 138 (presidential result proclamation). ODPC DPIA (officer identity in certification).
+**Regulatory:** Elections Act §83 (the Commission certification). Constitution Art. 138 (presidential result proclamation). ODPC DPIA (officer identity in certification).
 
 **Operational Acceptance:** Full certification chain exercised in dress rehearsal T-60.
 
@@ -1143,11 +1143,11 @@ Every module must have, at FAT:
 
 **Functional:** Manages statutory election calendar milestones. Generates gazette-ready exports (for Kenya Gazette publication). Public calendar with notification subscription. Gazette publication confirmation tracking.
 
-**Non-functional:** Calendar events published ≤ 1 hour of IEBC decision. Gazette export generated ≤ 10 min.
+**Non-functional:** Calendar events published ≤ 1 hour of the Commission decision. Gazette export generated ≤ 10 min.
 
 **Integration:** M12 CRMS (nomination deadlines), M35 CVR (registration cut-off), M39 Ballot Printing (print deadline).
 
-**User acceptance:** IEBC secretary: calendar management UAT. Kenya Gazette Office: export format verification.
+**User acceptance:** the Commission secretary: calendar management UAT. Kenya Gazette Office: export format verification.
 
 **Security acceptance:** Calendar events signed (ECDSA). No PII. Tampering raises SIEM alert.
 
@@ -1165,7 +1165,7 @@ Every module must have, at FAT:
 
 **Integration:** M01/M02 BVR (source biometric data), M35 CVR (issuance record), M20 Inventory (card stock management).
 
-**User acceptance:** IEBC card issuance officer: card generation UAT. Voter persona: QR scan verification of card.
+**User acceptance:** the Commission card issuance officer: card generation UAT. Voter persona: QR scan verification of card.
 
 **Security acceptance:** Card QR signed with ECDSA; tampering detectable. Photo biometric not transmitted to card printer (print-ready image only, no raw biometric template).
 
@@ -1183,7 +1183,7 @@ Every module must have, at FAT:
 
 **Integration:** M47 Nomination Fee (income). M55 HR Payroll (staff costs). M59 Auditor General Interface (expenditure reports).
 
-**User acceptance:** IEBC finance manager: expenditure entry and approval UAT. Auditor-General's office: expenditure report UAT.
+**User acceptance:** the Commission finance manager: expenditure entry and approval UAT. Auditor-General's office: expenditure report UAT.
 
 **Security acceptance:** Dual approval for expenditures > KES 1M. No single approver can approve and receive. Audit trail signed.
 
@@ -1201,7 +1201,7 @@ Every module must have, at FAT:
 
 **Integration:** M38 Training LMS (completion gates), M33 Personnel Dispatch (assignment records), M54 Budget Expenditure (payroll costs).
 
-**User acceptance:** IEBC HR manager: recruitment and payroll UAT. Poll worker: payroll receipt verification.
+**User acceptance:** the Commission HR manager: recruitment and payroll UAT. Poll worker: payroll receipt verification.
 
 **Security acceptance:** Bank/M-Pesa details field-encrypted with separate DEK. Staff NID encrypted. Payroll access dual-role approval. DPIA on file.
 
@@ -1255,7 +1255,7 @@ Every module must have, at FAT:
 
 **Integration:** M51 Result Certification (source data), M10 RTS Backend (detailed results), M59 Auditor General Interface (shared report format).
 
-**User acceptance:** IEBC secretary: report generation and transmission UAT. Clerk of the National Assembly: receipt confirmation.
+**User acceptance:** the Commission secretary: report generation and transmission UAT. Clerk of the National Assembly: receipt confirmation.
 
 **Security acceptance:** Reports signed with ECDSA. Chain of custody for delivery. Transmission acknowledgement signed.
 
@@ -1273,7 +1273,7 @@ Every module must have, at FAT:
 
 **Integration:** M54 Budget Expenditure, M14 Reproducibility Bundle, M10 RTS Backend (results audit), M69 Long-Term Archive.
 
-**User acceptance:** Auditor-General's office: evidence package request and receipt UAT. IEBC finance officer: audit query response UAT.
+**User acceptance:** Auditor-General's office: evidence package request and receipt UAT. the Commission finance officer: audit query response UAT.
 
 **Security acceptance:** AG office certificate-authenticated access. Dual-custody for sensitive evidence packages. Audit log of all AG accesses.
 
@@ -1309,7 +1309,7 @@ Every module must have, at FAT:
 
 **Integration:** M08 (RTS secrecy), M26 Anomaly Detection (feeds findings as detection rules), M30 Mobile Party Agent (secrecy review), M28 AI Monitoring (clone-app detection results).
 
-**User acceptance:** IAB Chair: attestation review and sign-off UAT. IEBC CISO: finding disposition review.
+**User acceptance:** IAB Chair: attestation review and sign-off UAT. the Commission CISO: finding disposition review.
 
 **Security acceptance:** M61 itself is subject to annual pen-test (separate from KIEMS programme). PoC blobs verifiably encrypted. No live voter data found in any pen-test artefact.
 
@@ -1321,13 +1321,13 @@ Every module must have, at FAT:
 
 ### M62 — Transmission Legal Basis Audit
 
-**Functional:** Per-transmission audit of legal basis for each data element in the RTS transmission stream. Flags any transmission element without documented lawful basis. Produces periodic audit report for IEBC DPO.
+**Functional:** Per-transmission audit of legal basis for each data element in the RTS transmission stream. Flags any transmission element without documented lawful basis. Produces periodic audit report for the Commission DPO.
 
 **Non-functional:** Audit run ≤ 24 hours for full election-day transmission log. No PII in audit tool logs.
 
 **Integration:** M08, M09, M10 (transmission events), M10 (Merkle chain for completeness).
 
-**User acceptance:** IEBC DPO: audit report review UAT. ODPC representative: methodology review.
+**User acceptance:** the Commission DPO: audit report review UAT. ODPC representative: methodology review.
 
 **Security acceptance:** Audit tool has read-only access. No personal data in audit logs (hash-only references). Audit report signed.
 
@@ -1345,7 +1345,7 @@ Every module must have, at FAT:
 
 **Integration:** M39 Ballot Printing (serial range allocation), M20 Inventory (physical ballot tracking), M21 RLA Audit Tool (ballot manifest source), M40 Court Interface (serial chain as evidence).
 
-**User acceptance:** IEBC print officer: serial batch issuance UAT. International observer: public serial verification UAT.
+**User acceptance:** the Commission print officer: serial batch issuance UAT. International observer: public serial verification UAT.
 
 **Security acceptance:** No voter linkage possible from serial number alone. Serial chain Merkle-rooted and published to transparency log. Tampering with serial chain raises SIEM alert.
 
@@ -1363,7 +1363,7 @@ Every module must have, at FAT:
 
 **Integration:** M35 CVR (source), M36 Voter Deregistration Appeal (objection processing).
 
-**User acceptance:** Civil society organisation: list inspection and objection submission UAT. IEBC registrar: objection review UAT.
+**User acceptance:** Civil society organisation: list inspection and objection submission UAT. the Commission registrar: objection review UAT.
 
 **Security acceptance:** NID not exposed in public list. Rate limit prevents NID enumeration even from name search. CAPTCHA on suspicious patterns. Inspection period enforced (list unpublished outside statutory window).
 
@@ -1381,7 +1381,7 @@ Every module must have, at FAT:
 
 **Integration:** M63 Ballot Serial Chain (serial tracking), M24 Diaspora Voting (voter eligibility), M20 Inventory (physical stock).
 
-**User acceptance:** IEBC diaspora coordinator: dispatch and return tracking UAT.
+**User acceptance:** the Commission diaspora coordinator: dispatch and return tracking UAT.
 
 **Security acceptance:** No voter-ballot linkage in tracking system (serial used, not voter ID). Tracking data retained until T+6 months then deleted.
 
@@ -1393,13 +1393,13 @@ Every module must have, at FAT:
 
 ### M66 — Election Financial Forensics
 
-**Functional:** Forensic investigation tool for campaign finance anomalies. Case management for IEBC enforcement. POCAMLA compliance (money laundering red flags). Evidence package for prosecution referral. Integration with M22 Campaign Finance and M54 Budget Expenditure.
+**Functional:** Forensic investigation tool for campaign finance anomalies. Case management for the Commission enforcement. POCAMLA compliance (money laundering red flags). Evidence package for prosecution referral. Integration with M22 Campaign Finance and M54 Budget Expenditure.
 
 **Non-functional:** Case management P99 ≤ 2 s. Evidence package generation ≤ 4 hours.
 
 **Integration:** M22 Campaign Finance (anomaly escalation), M54 Budget (expenditure anomaly), M40 Court Interface (forensic evidence).
 
-**User acceptance:** IEBC enforcement officer: case management UAT. ODPP (Director of Public Prosecutions) liaison: evidence package format verification.
+**User acceptance:** the Commission enforcement officer: case management UAT. ODPP (Director of Public Prosecutions) liaison: evidence package format verification.
 
 **Security acceptance:** Dual-custody access to forensic case files. Chain-of-custody record per file access. No unauthorised access to case files. DPIA on file.
 
@@ -1417,7 +1417,7 @@ Every module must have, at FAT:
 
 **Integration:** M45 Party Registration (symbol approval), M39 Ballot Printing (symbol export), M12 CRMS (party symbol on nomination).
 
-**User acceptance:** IEBC registrar: symbol submission and similarity check UAT. Party official: symbol registration UAT.
+**User acceptance:** the Commission registrar: symbol submission and similarity check UAT. Party official: symbol registration UAT.
 
 **Security acceptance:** No PII. Registry entries signed. Tampering raises SIEM alert.
 
@@ -1453,7 +1453,7 @@ Every module must have, at FAT:
 
 **Integration:** M10 (signed events), M06 (auth logs), M40 (court evidence retrieval), M14 (bundle archive), M59 (AG access), M21 (RLA audit records).
 
-**User acceptance:** IEBC archivist: retrieval workflow UAT. Auditor-General's office: long-term access verification UAT.
+**User acceptance:** the Commission archivist: retrieval workflow UAT. Auditor-General's office: long-term access verification UAT.
 
 **Security acceptance:** WORM enforcement verified (no deletion possible without dual-custody + court order). SLH-DSA re-signing workflow tested. HSM-sealed archive keys. Access logged per item. Annual re-signing event published to transparency log.
 
@@ -1501,7 +1501,7 @@ Final acceptance period: T+0 to T+90:
 |---|---|---|
 | Reverse logistics | 100% of 65,287 kits accounted for in M20 (returned or declared lost with police report) | T+7 |
 | Biometric template erasure | All biometric templates from election cycle cryptographically erased; erasure certificates filed in M69 | T+90 |
-| Post-election review report | M41 report signed by IEBC and delivered to IAB | T+30 |
+| Post-election review report | M41 report signed by the Commission and delivered to IAB | T+30 |
 | Auditor-General report | M59 evidence package delivered; AG access to all financial records confirmed | T+30 |
 | Bug-bounty reinstatement | Bug-bounty programme reinstated (suspended at T-30) | T+14 |
 | Source-code escrow final deposit | All source code and SBOM for T+0 deployed versions escrowed | T+7 |
@@ -1513,13 +1513,13 @@ These determine whether the programme has delivered long-term value by the 2030 
 
 | Criterion | Target | Measurement |
 |---|---|---|
-| No repeat-cycle procurement risk | IEBC can operate and maintain the system without Datacraft by 2030 | Demonstrated by IEBC-run drill of full election workflow at T+18 months |
-| IEBC capacity building | 23 HQ ICT + 47 County ICT staff can perform Tier 1 and 2 operations independently | Training completion records + T+18 month operational assessment |
-| Self-sufficiency by 2032 | IEBC manages own election cycle (M35, M01, M05 provisioning, M20 inventory) without Datacraft support contract | 2032 readiness assessment by IAB |
+| No repeat-cycle procurement risk | the Commission can operate and maintain the system without Datacraft by 2030 | Demonstrated by Commission-run drill of full election workflow at T+18 months |
+| the Commission capacity building | 23 HQ ICT + 47 County ICT staff can perform Tier 1 and 2 operations independently | Training completion records + T+18 month operational assessment |
+| Self-sufficiency by 2032 | the Commission manages own election cycle (M35, M01, M05 provisioning, M20 inventory) without Datacraft support contract | 2032 readiness assessment by IAB |
 | ISO 27001 ongoing | ISO 27001 surveillance audit maintained annually through 2032 | Annual audit certificates |
-| No critical unpatched CVEs | Dependency scanning (Trivy + Snyk) shows zero critical unpatched CVEs in any production system continuously | Continuous Renovate + weekly scan cadence; IEBC ICT responsible post-T+18 |
+| No critical unpatched CVEs | Dependency scanning (Trivy + Snyk) shows zero critical unpatched CVEs in any production system continuously | Continuous Renovate + weekly scan cadence; the Commission ICT responsible post-T+18 |
 | Archive integrity | M69 annual re-signing completed each year through 2032; all election artefacts retrievable | Annual re-signing event log on transparency log |
 
 ---
 
-*Document version 2.0. Approved: Datacraft QA Director + IEBC Project Manager (at OAT). Effective: pre-award. Update trigger: module specification change, contractual amendment, or regulatory revision.*
+*Document version 2.0. Approved: Datacraft QA Director + the Commission Project Manager (at OAT). Effective: pre-award. Update trigger: module specification change, contractual amendment, or regulatory revision.*

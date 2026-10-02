@@ -4,7 +4,7 @@
 **Name:** Election Data Long-Term Archive
 **Owner:** Datacraft Limited — Platform Engineering Team
 **Status:** Draft v1
-**IP Classification:** Custom Software — IPR vests in IEBC per GCC 15.4
+**IP Classification:** Custom Software — IPR vests in the Commission per GCC 15.4
 
 **Strategy traceback:** Elections Act §44 (7-year minimum); M14 Reproducibility Bundle (pattern); Kenya National Archives Act Cap. 19
 
@@ -20,7 +20,7 @@
 
 | Persona | Access | Primary task |
 |---|---|---|
-| IEBC Archivist | Write | Trigger ingestion, manage format migrations, issue attestations |
+| the Commission Archivist | Write | Trigger ingestion, manage format migrations, issue attestations |
 | KNADS Archivist | Write (KNADS-designated collection) | Receive national-archive deposit, confirm accession |
 | Academic Researcher | Read (public API, after embargo) | Query archived datasets, download research extracts |
 | Data Journalist | Read (public API) | Access historical election data for investigative work |
@@ -50,13 +50,13 @@ Scheduled and triggered ingestion jobs pull data from operational systems at def
 Each ingestion run: record count, hash manifest, source system version, ingest timestamp.
 
 ### FR-69.03 — Format migration
-Format-migration at 5-year intervals. Pipeline: render current format to open canonical (CSV + JSON-LD for structured data; PDF/A-3 for documents; FLAC for audio; BagIt container); verify byte-count + hash against pre-migration manifest; generate signed migration attestation (IEBC Archivist + KNADS counter-signature). Migration log retained alongside data.
+Format-migration at 5-year intervals. Pipeline: render current format to open canonical (CSV + JSON-LD for structured data; PDF/A-3 for documents; FLAC for audio; BagIt container); verify byte-count + hash against pre-migration manifest; generate signed migration attestation (the Commission Archivist + KNADS counter-signature). Migration log retained alongside data.
 
 ### FR-69.04 — KNADS deposit
 Designated collections deposited to KNADS via SFTP + PGP. KNADS accession number recorded. Deposit receipt (signed PDF) stored in M69 attestation store.
 
 ### FR-69.05 — Signed preservation attestation
-At each checkpoint (T+1y, T+5y, T+10y, T+15y): IEBC Archivist generates attestation signed by HSM key + KNADS counter-signature. Attestation: manifest hash, current format, storage locations, KNADS accession, next migration date. Published to M11 (public collections) and IAB Dashboard (all).
+At each checkpoint (T+1y, T+5y, T+10y, T+15y): the Commission Archivist generates attestation signed by HSM key + KNADS counter-signature. Attestation: manifest hash, current format, storage locations, KNADS accession, next migration date. Published to M11 (public collections) and IAB Dashboard (all).
 
 ### FR-69.06 — Public-access API
 After embargo (public: T+1y; restricted: T+5y after judicial close; PII: never public): read-only API. Endpoints: collection browser, dataset query (year / constituency / category), file download, citation generator (BibTeX / DataCite DOI). Rate-limited: 10 req/min per authenticated researcher.
@@ -65,10 +65,10 @@ After embargo (public: T+1y; restricted: T+5y after judicial close; PII: never p
 DataCite DOI for each public collection version. DOI resolves to M69 landing page. Citation format in API response.
 
 ### FR-69.08 — Expiry and destruction
-At retention end: Archivist reviews. PII collections: DPA 2019 §41 cryptographic erasure + destruction certificate + ODPC notification. Non-PII: may be extended by IEBC resolution or transferred to KNADS permanently. Signed destruction certificate for every event.
+At retention end: Archivist reviews. PII collections: DPA 2019 §41 cryptographic erasure + destruction certificate + ODPC notification. Non-PII: may be extended by the Commission resolution or transferred to KNADS permanently. Signed destruction certificate for every event.
 
 ### FR-69.09 — Research access application
-Restricted-tier: researcher submits institution, research purpose, data categories, IRB clearance reference. IEBC Research Committee decides within 30 days. Approved: time-limited DUA + watermarked downloads. Denied: written reason + appeal to Commissioner.
+Restricted-tier: researcher submits institution, research purpose, data categories, IRB clearance reference. the Commission Research Committee decides within 30 days. Approved: time-limited DUA + watermarked downloads. Denied: written reason + appeal to Commissioner.
 
 ### FR-69.10 — Cross-cycle dataset linking
 Cross-cycle link table: constituency code + station code across 2017 / 2022 / 2027 cycles. Enables longitudinal queries without exposing internal IDs. DOI-linked per cycle.
@@ -84,7 +84,7 @@ Cross-cycle link table: constituency code + station code across 2017 / 2022 / 20
 Open formats only for long-term storage: CSV, JSON-LD, PDF/A-3, FLAC, BagIt, PREMIS metadata. Proprietary database dumps kept as secondary copy only. Format review every 5 years per ISO 14721 (OAIS model).
 
 ### NFR-69.03 — Integrity
-Every archived file: SHA-256 stored at ingest and re-verified annually. Any checksum failure: P1 alert to IEBC Archivist and IAB. WORM storage for primary archive (object-lock with 15-year retention policy).
+Every archived file: SHA-256 stored at ingest and re-verified annually. Any checksum failure: P1 alert to the Commission Archivist and IAB. WORM storage for primary archive (object-lock with 15-year retention policy).
 
 ### NFR-69.04 — DPA 2019
 PII-containing collections (voter rolls, biometric logs): DPA 2019 §26 purpose limitation; access restricted to ODPP/judicial-only tier; cryptographic erasure at retention end. Non-PII collections: public after embargo. DPIA completed for each PII collection.
@@ -97,18 +97,18 @@ Researcher portal and public landing pages meet WCAG 2.2 AA. EN and SW; academic
 
 ---
 
-- **NFR-M69-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `iebc-iems-M69`; alert ruleset ID `iems-M69-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
+- **NFR-M69-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `commission-iems-M69`; alert ruleset ID `iems-M69-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
 
 ## User Stories
 
-1. As an IEBC Archivist, I want to trigger the M14 bundle ingest at T+4h and receive a signed attestation, so that reproducibility data is in long-term storage before petition windows open.
+1. As a Commission Archivist, I want to trigger the M14 bundle ingest at T+4h and receive a signed attestation, so that reproducibility data is in long-term storage before petition windows open.
 2. As a KNADS Archivist, I want to receive the designated collection via SFTP+PGP and issue an accession number, so that Kenya National Archives holds an independent copy.
 3. As an Academic Researcher, I want to query archived results datasets via DOI-referenced API, so that I can conduct longitudinal constituency-level studies.
 4. As an IAB Member, I want to verify the preservation attestation hash at the T+1y checkpoint, so that I can confirm no data has been modified since ingest.
 5. As the Auditor-General, I want a signed batch extract confirming 7-year retention compliance for financial disclosure records, so that the PFMA audit is satisfied.
 6. As a Data Journalist, I want to download constituency-level results for every election since 2017 as a single CSV, so that I can run a cross-cycle analysis.
-7. As a Researcher applying for restricted-tier access, I want to submit my IRB clearance and research purpose, so that IEBC Research Committee can review within 30 days.
-8. As an IEBC Archivist, I want an alert when any archived file fails its annual SHA-256 checksum, so that I can restore a corrupted archive before the next check cycle.
+7. As a Researcher applying for restricted-tier access, I want to submit my IRB clearance and research purpose, so that the Commission Research Committee can review within 30 days.
+8. As a Commission Archivist, I want an alert when any archived file fails its annual SHA-256 checksum, so that I can restore a corrupted archive before the next check cycle.
 9. As a Judicial Officer, I want to retrieve a signed copy of chain-of-custody records for a specific station, so that I have certified evidentiary material for petition proceedings.
 10. As an ODPC Officer, I want a destruction certificate when a PII collection reaches retention end, so that DPA 2019 §41 compliance is documented.
 11. As a PhD Student, I want to cite the archived dataset using its DataCite DOI, so that my research is reproducible and the citation is stable.
@@ -157,7 +157,7 @@ class PreservationAttestation(BaseModel):
     storage_locations: list[str]
     knads_accession: str
     next_migration_date: date
-    iebc_archivist_signature: str
+    commission_archivist_signature: str
     knads_counter_signature: str | None
     attested_at: datetime
 
@@ -232,7 +232,7 @@ paths:
         "403": {description: Embargo active or access not granted}
   /api/v1/archive/ingest:
     post:
-      summary: Trigger ingest from source system (IEBC Archivist)
+      summary: Trigger ingest from source system (the Commission Archivist)
       security: [{BearerAuth: []}]
       requestBody:
         required: true
@@ -333,13 +333,13 @@ paths:
 
 | Metric | Target | Sign-off |
 |---|---|---|
-| M14 bundle ingest completed by T+4h | 100% | IEBC Archivist |
+| M14 bundle ingest completed by T+4h | 100% | the Commission Archivist |
 | Annual SHA-256 checksum pass rate | 100% | IAB |
 | KNADS deposit completed within 90 days of election | 100% | KNADS |
-| DOI registration for public collections | 100% within T+1y | IEBC Research |
-| Research access applications decided within 30 days | >= 95% | IEBC Research Committee |
-| PII destruction certificates issued at retention end | 100% | IEBC DPO |
-| Preservation attestation issued at each checkpoint | 100% | IEBC Archivist |
+| DOI registration for public collections | 100% within T+1y | the Commission Research |
+| Research access applications decided within 30 days | >= 95% | the Commission Research Committee |
+| PII destruction certificates issued at retention end | 100% | the Commission DPO |
+| Preservation attestation issued at each checkpoint | 100% | the Commission Archivist |
 | Format migration completed before prior format unsupported | 100% | Datacraft SRE |
 
 ---
@@ -390,11 +390,11 @@ paths:
 
 | # | Risk | Mitigation |
 |---|---|---|
-| R1 | KNADS lacks capacity for digital deposit at required volume | Pilot deposit with KNADS at T-180; technical capacity-building included in IEBC-KNADS MOU; M69 holds primary copy independently |
+| R1 | KNADS lacks capacity for digital deposit at required volume | Pilot deposit with KNADS at T-180; technical capacity-building included in COMMISSION-KNADS MOU; M69 holds primary copy independently |
 | R2 | Open format becomes obsolete before 15-year horizon | 5-year format review cycle; OAIS model migration commitment; BagIt container preserves original alongside migrated format |
 | R3 | Storage provider bitrot or media failure | 3-2-1 storage strategy; annual checksum; P1 alert on any failure; tape as third copy with 30-year lifespan |
 | R4 | Researcher circumvents embargo via API enumeration | Authenticated access only post-embargo; embargo enforcement at data layer; API rate-limited; usage logged |
-| R5 | DPA 2019 destruction obligation conflicts with KNADS retention | KNADS deposit agreement specifies PII-redacted version for long-term public collection; PII version held only by IEBC under DPA 2019 lawful basis; destruction covers IEBC copy only |
+| R5 | DPA 2019 destruction obligation conflicts with KNADS retention | KNADS deposit agreement specifies PII-redacted version for long-term public collection; PII version held only by the Commission under DPA 2019 lawful basis; destruction covers the Commission copy only |
 
 ---
 
@@ -418,16 +418,16 @@ M14 (bundle deposit), M10 (results), M20 (IMS chain-of-custody), M63 (ballot rec
 
 ## 18. Decommissioning
 
-**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if IEBC terminates the contract.
+**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if the Commission terminates the contract.
 
 **Steps:**
 
-1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and IEBC DPO.
+1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and the Commission DPO.
 2. **Service shutdown** — Kubernetes deployments scaled to zero; PersistentVolumeClaims retained for 30 days then deleted after confirmation of M69 transfer.
 3. **Credential revocation** — service account certificates, API keys, and HSM key handles revoked via P06 key-destruction ceremony within 48 hours of shutdown.
 4. **Source-code escrow** — final tagged release deposited to C04 escrow within 7 days of shutdown.
-5. **Runbook handover** — operational runbook and post-mortem notes delivered to IEBC ICT within 14 days.
+5. **Runbook handover** — operational runbook and post-mortem notes delivered to the Commission ICT within 14 days.
 
-**Owner:** SRE Lead. **Sign-off:** IEBC ICT Director + Datacraft Programme Director.
+**Owner:** SRE Lead. **Sign-off:** the Commission ICT Director + Datacraft Programme Director.
 
 > **RESOLUTION (F-23, 2026-08-21):** Decommissioning stub added per audit finding. Owner: SRE Lead. Target: FAT-07 gate.

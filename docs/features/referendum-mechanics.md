@@ -120,12 +120,12 @@ Languages: EN + SW on all surfaces. Ballot question text in all languages on kit
 
 - **Constitution of Kenya 2010, Art. 255** - matters requiring a referendum; M49 implements the dual threshold for constitutional amendments.
 - **Constitution of Kenya 2010, Art. 257** - popular initiative referendum threshold (1 million signatures); petition collection is outside M49 scope (handled by external process), but M49 operationalises the subsequent ballot.
-- **Elections Act §49** - IEBC conducts referendums; M49 is the operational implementation.
+- **Elections Act §49** - the Commission conducts referendums; M49 is the operational implementation.
 - **Elections (General) Regulations 2012, Reg 90-95** - referendum ballot format and tallying rules; M49's YES/NO kit mode and county-by-county tally implement these regulations.
 
 ## 9. Honest caveats + external prerequisites
 
-- OTA kit mode switching requires all kits to be connected to IEBC's kit management network (via M08). Kits in areas with no connectivity must receive the OTA update via physical USB transfer. The `ack_count` tracker identifies these kits; an officer escort is required.
+- OTA kit mode switching requires all kits to be connected to the Commission's kit management network (via M08). Kits in areas with no connectivity must receive the OTA update via physical USB transfer. The `ack_count` tracker identifies these kits; an officer escort is required.
 - The TLA+ verification covers the threshold logic in isolation. It does not verify the entire result declaration pipeline end-to-end; that is covered by integration tests.
 - A simple-majority referendum (no county threshold) is configured via `county_threshold_required = false`. This flag is a server-side config; changing it requires Commissioner HSM authorisation.
 - The question text must be in both EN and SW at minimum before activation. Additional language variants are optional but recommended for inclusive communication (ref. M37 CMS voter education).

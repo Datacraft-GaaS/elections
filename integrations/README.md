@@ -50,7 +50,7 @@ Each adapter follows a tripartite structure:
 | kra-eclearance | KRA e-Clearance (diaspora ballot import) | REST | mTLS+PIN | PII-high | open 60s/2req | integrations/kra-eclearance/contract-tests |
 | pantone | Pantone colour-match API | REST | API-key | none | open 30s/5req | integrations/pantone/contract-tests |
 | social-platforms | Twitter/X, Facebook, YouTube, TikTok APIs | REST | OAuth2 | PII-medium | open 30s/5req | integrations/social-platforms/contract-tests |
-| litellm | LiteLLM proxy (62.169.25.77:4000) | REST (OpenAI-compat) | API-key | PII-low | open 30s/3req | integrations/litellm/contract-tests |
+| litellm | LiteLLM proxy (192.0.2.11:4000) | REST (OpenAI-compat) | API-key | PII-low | open 30s/3req | integrations/litellm/contract-tests |
 | nllb | NLLB-200 translation service | REST | Bearer | PII-medium | open 30s/5req | integrations/nllb/contract-tests |
 | power-bi | Microsoft Power BI Embedded | REST | OAuth2 (AAD) | PII-low | open 30s/5req | integrations/power-bi/contract-tests |
 | odpc-breach | ODPC breach notification API | REST | mTLS+signed-payload | PII-high | open 60s/2req | integrations/odpc-breach/contract-tests |

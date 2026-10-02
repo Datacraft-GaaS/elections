@@ -8,11 +8,11 @@
 | Size | XL |
 | Availability class | routine 99.5% |
 | Event-sourced | no (ADR-0013: only M08/M09/M10, M20, M51, M63) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M55-hr-payroll.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M55-hr-payroll.md |
 
 ## Purpose
 
-Full lifecycle HR and payroll for IEBC election personnel: job applications, contracts, payroll runs (250k staff in ≤4 h), M-Pesa B2C disbursements, statutory deductions (KRA iTax, NSSF, NHIF/SHIF), and payslip distribution, with Separation of Duties for payroll authorisation.
+Full lifecycle HR and payroll for the Commission election personnel: job applications, contracts, payroll runs (250k staff in ≤4 h), M-Pesa B2C disbursements, statutory deductions (KRA iTax, NSSF, NHIF/SHIF), and payslip distribution, with Separation of Duties for payroll authorisation.
 
 ## Surfaces and languages
 

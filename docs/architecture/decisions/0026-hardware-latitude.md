@@ -181,7 +181,7 @@ Per component, the contract that any vendor adapter must implement.
 
 ## Naming
 
-All identifiers use the neutral `eel` prefix. The vendor name `IEBC` appears
+All identifiers use the neutral `eel` prefix. The vendor name `the Commission` appears
 only in prose as the Kenyan elections body; no code, package, header, or event
 identifier uses it. New adapters and crates continue the `eel-` prefix
 (e.g. `eel-adapter-hsm-pkcs11-rs`, `sensor-driver`).

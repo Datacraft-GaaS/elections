@@ -8,7 +8,7 @@
 | Size | XL |
 | Availability class | cycle-critical 99.9% |
 | Event-sourced | no |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M26-anomaly-fraud-detection.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M26-anomaly-fraud-detection.md |
 
 ## Purpose
 
@@ -123,7 +123,7 @@ Layer 3: Statistical distributional analysis (post-close per-station):
 
 Layer 4: Cryptographic and reproducibility checks (post-close whole-tally):
 
-15. FR-M26-015: Merkle-inclusion check for every Form 34A: verify hash included in constituency Form 34B Merkle root and that root in Form 34C root; missing inclusion proof = Layer 4 critical alert to SOC + IEBC Chair.
+15. FR-M26-015: Merkle-inclusion check for every Form 34A: verify hash included in constituency Form 34B Merkle root and that root in Form 34C root; missing inclusion proof = Layer 4 critical alert to SOC + the Commission Chair.
 16. FR-M26-016: Hash-chain continuity check: verify unbroken sequence of Merkle nodes from station open to Form 34A publish; any gap = Layer 4 critical alert.
 17. FR-M26-017: Reproducibility check: re-run full national aggregation from raw Form 34A JSON; compare to published Form 34C bit-identically; any variance = Layer 4 critical alert published immediately.
 18. FR-M26-018: Cryptographic canary: Datacraft publishes known-good canary transactions in RTS pipeline daily from T-30; Merkle-anchored with published timestamp; canary-hash mismatch = Layer 4 critical alert + public announcement within 15 minutes.
@@ -149,7 +149,7 @@ Layer 6: Cross-source triangulation (real-time whole-country):
 Layer 7: Human-adjudicated tip line (real-time all-cycle):
 
 31. FR-M26-031: Ingests signals from: M23 grievance channels (all six intake modes); observer field reports from KEOG, ELOG, IFES, Carter Center, EU EOM via signed reporting API; media investigative signals (manual ECC analyst entry); whistleblower reports from M23 protected channel.
-32. FR-M26-032: Signal aggregation: >= 3 independent sources reporting same issue type at same station or constituency generates Layer 7 convergence alert; threshold configurable by IAB pre-election via IEBC Chair HSM-signed config change.
+32. FR-M26-032: Signal aggregation: >= 3 independent sources reporting same issue type at same station or constituency generates Layer 7 convergence alert; threshold configurable by IAB pre-election via Commission Chair HSM-signed config change.
 33. FR-M26-033: Layer 7 adjudication: ECC analyst marks each contributing signal VERIFIED/UNVERIFIED/FALSE_POSITIVE; >= 2 verified signals escalates to ECC Commander.
 34. FR-M26-034: ECC Commander decision options: hold result pending field investigation; dispatch field officer; refer to DCI/ODPP; clear with reason code; all decisions logged and published within 24 hours of alert close.
 35. FR-M26-035: Verified Layer 7 convergence alert with >= 2 independent verified sources auto-generates evidence package (via M23) for DCI referral within 6 hours.
@@ -214,7 +214,7 @@ AC-M26-03: Layer 4 Merkle-inclusion check covers 100% of Form 34As received; rec
 AC-M26-04: Layer 4 reproducibility check result = PASS (zero variance) on synthetic and real election aggregation data; reproducibility script output attached to release note.
 AC-M26-05: Layer 6 PVT cross-check computed within 5 minutes of each signed KEOG/ELOG batch; comparison log shows latency per batch.
 AC-M26-06: Layer 7 convergence alert generated within 5 minutes of the third confirming independent signal; alert timestamp verified in integration test with injected synthetic signals.
-AC-M26-07: Public detection report published <= T+4 hours from Form 34C; publication timestamp logged and signed; IEBC Chair review.
+AC-M26-07: Public detection report published <= T+4 hours from Form 34C; publication timestamp logged and signed; the Commission Chair review.
 AC-M26-08: Autonomous decisions affecting ballots or voters = 0 throughout election; IAB audit review of all alert resolutions confirms; any automated action is advisory only.
 AC-M26-09: Model cards published for all production models at T-30; registry timestamp before deploy timestamp for 100% of models; Datacraft AI Lead sign-off.
 AC-M26-10: WCAG 2.2 AA independent audit pass on ECC console and IAB auditor-facing screens; screen-reader full-task-completion verified for all seven alert workflow paths.
@@ -281,6 +281,6 @@ Tags: `#[trace("FR-M26-033","AC-M26-08","EC-ML-01")]`
 ## Open questions
 
 - KEOG/ELOG PVT API authentication schema and data format require MoU sign-off before integration sprint; build on signed stub until agreed.
-- 2013/2017/2022 election baseline data: IEBC historical archive access must be granted to Datacraft by T-270 for ML training; timeline risk.
+- 2013/2017/2022 election baseline data: the Commission historical archive access must be granted to Datacraft by T-270 for ML training; timeline risk.
 - Layer 3 methodology: Kenyan Electoral Commission statistician peer review of Beber-Scacco and Klimek implementations recommended before T-90 public deployment.
 - Observer mission MoUs (IFES, Carter Center, EU EOM) must specify Layer 7 API authentication before integration sprint.

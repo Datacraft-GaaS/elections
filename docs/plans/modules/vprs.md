@@ -8,7 +8,7 @@
 | Size | M |
 | Availability class | cycle-critical 99.9% |
 | Event-sourced | no (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M04-vprs.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M04-vprs.md |
 
 ## Purpose
 
@@ -92,7 +92,7 @@ OTP and MFA
 11. FR-M04-011: OTP rate-limit: max 3 OTP requests per session; 15-minute lockout after 3 consecutive failures.
 
 Consent and DPA
-12. FR-M04-012: consent capture per Kenya DPA 2019: explicit tick-box for IEBC and IPRS processing; retention terms disclosed; right-to-withdraw explained.
+12. FR-M04-012: consent capture per Kenya DPA 2019: explicit tick-box for the Commission and IPRS processing; retention terms disclosed; right-to-withdraw explained.
 13. FR-M04-013: consent withdrawal flow: citizen cancels application; deletion queued; ODPC audit log updated.
 
 QR handoff token
@@ -132,7 +132,7 @@ Compliance and security
 Performance and availability
 36. FR-M04-036: API p95 <= 200 ms; p99 <= 500 ms at 500 000 applications/day peak load.
 37. FR-M04-037: availability cycle-critical 99.9% on 30-day rolling window; CDN offloads static assets; origin auto-scales.
-38. FR-M04-038: source code + documentation + IPR transferred to IEBC at Operational Acceptance; handover certificate issued.
+38. FR-M04-038: source code + documentation + IPR transferred to the Commission at Operational Acceptance; handover certificate issued.
 
 ## Acceptance criteria
 
@@ -141,7 +141,7 @@ AC-M04-02: 500 000 applications/day sustained; API p95 <= 200 ms; p99 <= 500 ms 
 AC-M04-03: WCAG 2.1 AA independent audit passes on every screen; zero critical axe violations (accessibility audit).
 AC-M04-04: IPRS circuit-breaker: fail-open on read; application proceeds; fail-closed on submit without IPRS confirmation (chaos exercise).
 AC-M04-05: ODPC audit rated compliant; consent log and withdrawal test pass (ODPC review).
-AC-M04-06: source code + docs + IPR transferred to IEBC at OAT; handover certificate signed (governance gate).
+AC-M04-06: source code + docs + IPR transferred to the Commission at OAT; handover certificate signed (governance gate).
 AC-M04-07: anti-enumeration timing oracle: p95 delta < 5 ms between existing and non-existing ID lookups (security harness).
 AC-M04-08: handoff token single-use; consumed token returns 410 Gone; no second redemption possible (integration test).
 AC-M04-09: SMS OTP delivery p95 <= 60 s; email fallback triggers on first SMS gateway timeout (integration test).

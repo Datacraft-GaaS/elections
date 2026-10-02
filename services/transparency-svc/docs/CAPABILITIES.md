@@ -78,7 +78,7 @@ client GET /v1/tlog/proof/{leaf_hash}
 
 ```
 filer POST /v1/campaign-finance/disclosures (multipart)
-  -> finance-transparency crate: validate schema + IEBC forms compliance
+  -> finance-transparency crate: validate schema + the Commission forms compliance
   -> persist to disclosures table -> compute SHA-256 of payload
   -> append disclosure hash to transparency log (as domain=finance-events leaf)
   -> emit campaign.disclosure.ingested CloudEvent via outbox
@@ -130,7 +130,7 @@ All tables are in `services/transparency-svc/migrations/V1__initial_schema.sql`.
 | Timestamp authority | `crates/hsm-signer` | RFC 3161 TSA token embedding | Adams, Cain, Pinkas, Zuccherato, RFC 3161, IETF 2001 | RFC 3161 |
 | HSM PKCS#11 | `crates/hsm-signer` | PKCS#11 v3.0 key operations (C_Sign, C_Verify, C_GenerateKeyPair) | OASIS PKCS#11 TC, v3.0 2020 | ISO/IEC 19790 |
 | Cosign witness format | `crates/tlog-witness` | cosign bundle format + in-toto attestation | Dex et al., "cosign: Container Signing, Verification, and Storage", OpenSSF 2021 | in-toto ITE-6 |
-| Campaign finance schema | `crates/finance-transparency` | JSON Schema + IEBC forms compliance rules | planned; no crate file verified on disk yet | Kenya Elections Act 2011 |
+| Campaign finance schema | `crates/finance-transparency` | JSON Schema + the Commission forms compliance rules | planned; no crate file verified on disk yet | Kenya Elections Act 2011 |
 | Reproducibility bundle | `crates/repro-bundle` | BLAKE3 content tree + Ed25519 manifest signature | O'Connor, Ausmasson, Neves, Wilcox-O'Hamill, "BLAKE3: One Function, Fast Everywhere", 2020 | planned |
 
 ---
@@ -157,7 +157,7 @@ Every `leaves` row carries `producer_signature` (Ed25519 by the producing servic
 ### Transparency log anchoring
 
 STH publication to five channels serves as external anchoring. The canonical order:
-1. IEBC website (HTTPS, < 1s)
+1. the Commission website (HTTPS, < 1s)
 2. GitHub public repository (GitHub Actions push, < 60s)
 3. IPFS-KE node (IPFS CID pinned, < 5 min)
 4. Kenya Gazette (print hash bulletin, next business day)
@@ -356,7 +356,7 @@ Consistency proofs between tree sizes `n1` and `n2` walk the tile boundaries at 
 ### STH cadences and publication channels
 
 The transparency log publishes at three cadences:
-- **1s cadence**: Optimistic STH covering the latest sequenced batch. Signed immediately by HSM. Published to IEBC website within 1s. Used by election-night real-time audit tools.
+- **1s cadence**: Optimistic STH covering the latest sequenced batch. Signed immediately by HSM. Published to the Commission website within 1s. Used by election-night real-time audit tools.
 - **60s cadence**: Consolidated STH covering all 1s-STHs since the last 60s-STH. Preferred for consistency proof verification. Published to GitHub and IPFS-KE within 60s.
 - **5min cadence**: Long-lived STH for archival and Gazette reference. Submitted to Gazette for next print run; announced on KBC Radio hash bulletin.
 
@@ -385,7 +385,7 @@ This procedure satisfies ISO/IEC 19790 Level 3 requirements for key ceremony doc
 
 | Channel | Implementation | SLA | Failure mode |
 |---------|---------------|-----|-------------|
-| IEBC website | HTTPS PUT to CMS API; CDN invalidation | < 1s | CMS unavailable: retry with backoff; alert after 3 failures |
+| the Commission website | HTTPS PUT to CMS API; CDN invalidation | < 1s | CMS unavailable: retry with backoff; alert after 3 failures |
 | GitHub | GitHub REST API v3 `PUT /repos/{owner}/{repo}/contents/{path}`; creates/updates a file with the STH JSON | < 60s | Rate limit or API outage: exponential backoff; secondary GitHub org as fallback |
 | IPFS-KE | IPFS HTTP API v1 `POST /api/v0/add`; pin via pinning service | < 5 min | IPFS node unavailable: retry; secondary pinning service |
 | Kenya Gazette | Email attachment to KAPI (Kenya Printers); hash read in next print issue | next business day | Email delivery failure: SFTP fallback; alert |

@@ -292,7 +292,7 @@ Bias assessment results stored in `eel_model_fairness_reports`: model_id, assess
 
 ### 10.1 LiteLLM proxy double
 
-Production path: LiteLLM proxy at `62.169.25.77:4000` (per infra SERVICE_CATALOGUE.md). In tests: `py/doubles/litellm_double.py` implements OpenAI-compatible `/v1/chat/completions` endpoint with deterministic fixture responses. Used by M17 speech integrity NLP tasks.
+Production path: LiteLLM proxy at `192.0.2.11:4000` (per infra SERVICE_CATALOGUE.md). In tests: `py/doubles/litellm_double.py` implements OpenAI-compatible `/v1/chat/completions` endpoint with deterministic fixture responses. Used by M17 speech integrity NLP tasks.
 
 ### 10.2 NLLB translation double
 

@@ -41,7 +41,7 @@ All three tables live in `bvr_appeals` schema, migrations under `services/bvr-sv
 | Channel | Trigger | Auth | SLA |
 |---|---|---|---|
 | Self-service web portal | Citizen learns of removal via SMS / portal self-check | OIDC (national ID hash + OTP) | Acknowledge in 24 h |
-| In-person regional office | Citizen presents at IEBC office | Officer JWT + SpiceDB `COMMISSION_OFFICER` | Officer opens case same day |
+| In-person regional office | Citizen presents at the Commission office | Officer JWT + SpiceDB `COMMISSION_OFFICER` | Officer opens case same day |
 | Proxy / legal rep | Proxy with notarised letter | Officer JWT + proxy document upload | Same as in-person |
 | System auto-open | `eel.bvr.removal_approved.v1` triggers auto-case for all removals | Internal service SVID | Immediate |
 
@@ -121,7 +121,7 @@ Languages: EN + SW on staff surfaces. Citizen portal: EN + SW + top-5 regional l
 ## 9. Honest caveats + external prerequisites
 
 - The appeal portal assumes citizens have access to OIDC login via national ID hash + OTP. Citizens without a phone number on record must use the in-person channel.
-- Evidence upload is S3-backed via `integrations/s3-compat/`. The S3-compatible bucket (MinIO on auth.lindela.io) must be provisioned and object-lock enabled before go-live.
+- Evidence upload is S3-backed via `integrations/s3-compat/`. The S3-compatible bucket (MinIO on auth.eel.example) must be provisioned and object-lock enabled before go-live.
 - The `appeal_deadline_sweep` job must be enabled in the production scheduler config; it is off-by-default to avoid sweeping during staging.
 - Proxy authentication (notarised letter) relies on officer judgment, not a digital verification scheme. A future integration with the Notaries Society of Kenya is noted as a gap.
 - Gov-printer gazette schema must be agreed with the Government Printer before the first live quarterly publish. The adapter is written to a documented template but the exact schema version is locked at first live batch.

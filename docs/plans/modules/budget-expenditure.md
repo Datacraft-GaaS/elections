@@ -8,11 +8,11 @@
 | Size | L |
 | Availability class | routine 99.5% |
 | Event-sourced | no (ADR-0013: only M08/M09/M10, M20, M51, M63) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M54-budget-expenditure.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M54-budget-expenditure.md |
 
 ## Purpose
 
-Manages IEBC election budgets, procurement records, payment vouchers, and CoB/OAG financial reports with IFMIS and PPRA integration doubles, enforcing Separation of Duties (SoD) for payment authorisation.
+Manages the Commission election budgets, procurement records, payment vouchers, and CoB/OAG financial reports with IFMIS and PPRA integration doubles, enforcing Separation of Duties (SoD) for payment authorisation.
 
 ## Surfaces and languages
 

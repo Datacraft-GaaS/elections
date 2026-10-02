@@ -1,8 +1,8 @@
 # M07 — BVV (Biometric Voter Verification)
 
-**Runs on:** Public web + mobile portal + IEBC kiosk terminals
+**Runs on:** Public web + mobile portal + the Commission kiosk terminals
 **Owner:** Datacraft
-**IPR:** Custom Software vests in IEBC per GCC 15.4
+**IPR:** Custom Software vests in the Commission per GCC 15.4
 
 ## 1. Purpose
 
@@ -11,20 +11,20 @@ Statutory 30-day public inspection of the voter register. Any citizen can confir
 ## 2. Personas
 
 - Public voter (self-lookup)
-- IEBC kiosk operator (in-person assistance)
-- IEBC objections officer (processes filed objections)
+- the Commission kiosk operator (in-person assistance)
+- the Commission objections officer (processes filed objections)
 - ODPC Officer (compliance oversight)
 
 ## 3. Functional Requirements
 
 - **FR-M07-001** Public self-lookup by ID number + OTP to registered mobile.
-- **FR-M07-002** IEBC kiosk self-service with QR-scan or manual ID entry.
+- **FR-M07-002** the Commission kiosk self-service with QR-scan or manual ID entry.
 - **FR-M07-003** Return record: name, DOB (masked to year), polling station name + code, ward, constituency, county, status.
 - **FR-M07-004** Mask sensitive fields per privacy policy (biometrics never displayed, full DOB masked, mobile masked).
 - **FR-M07-005** File objection on own record (rectification, transfer, removal request) with audit trail.
 - **FR-M07-006** File objection on another's record with justification + evidence upload.
 - **FR-M07-007** Objection tracking: citizen can see status of filed objection.
-- **FR-M07-008** IEBC back-office: objection queue, adjudication workflow, response templates.
+- **FR-M07-008** the Commission back-office: objection queue, adjudication workflow, response templates.
 - **FR-M07-009** Anti-abuse controls: strict rate limiting per IP + per session; captcha; alerts on enumeration patterns.
 - **FR-M07-010** Per-lookup audit entry recording actor, target voter, timestamp, IP.
 - **FR-M07-011** Multilingual: English + Kiswahili.
@@ -43,7 +43,7 @@ Statutory 30-day public inspection of the voter register. Any citizen can confir
 - BVR Back-End (M02) for register reads
 - SMS Gateway (I08) for OTP
 - Audit / Merkle log (P05)
-- IEBC objections officer back-office (Datacraft-built)
+- the Commission objections officer back-office (Datacraft-built)
 
 ## 6. Data touched
 

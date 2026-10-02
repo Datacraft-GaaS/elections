@@ -15,7 +15,7 @@ final _offlineQueueProvider = Provider((ref) => OfflineQueue());
 final _moduleRepoProvider = Provider((ref) {
   final queue = ref.watch(_offlineQueueProvider);
   return ModuleRepository(
-    dio: Dio(BaseOptions(baseUrl: 'https://training.eel.iebc.go.ke')),
+    dio: Dio(BaseOptions(baseUrl: 'https://training.eel.example')),
     queue: queue,
   );
 });

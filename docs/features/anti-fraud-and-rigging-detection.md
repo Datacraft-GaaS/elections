@@ -98,7 +98,7 @@ Every layer emits `parallel_tally_drift.v1` or a modality-specific event when tr
 ## 7. Transmission / signal-path rigging
 
 - **M62 transmission-legal-basis-audit** — every `TransmissionEvent` gets a `ComplianceVerdict` from a `LegalRule` engine; rule-drift monitor catches silent rule changes.
-- **5-channel STH publication** (IEBC web + GitHub mirror + IPFS-KE + Kenya Gazette + KBC Radio) — split-view attack requires all 5 to diverge publicly.
+- **5-channel STH publication** (the Commission web + GitHub mirror + IPFS-KE + Kenya Gazette + KBC Radio) — split-view attack requires all 5 to diverge publicly.
 - **Witness cosigning** — IAB day-1; external observers day-2; witness API + cron in `transparency-svc/crates/tlog-witness`.
 - **Domain-tagged leaves** — cannot smuggle in a leaf without its context.
 - **Split-view detection** — `tlog-witness` cross-checks cosigs and pages within 60 s.

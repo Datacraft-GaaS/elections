@@ -1,9 +1,9 @@
-# IEBC IEMS — Software Product Documentation
+# the Commission IEMS — Software Product Documentation
 
-**Tender:** IEBC/OIT/01/2026-2027 — Integrated Elections Management System
+**Tender:** the tender specification — Integrated Elections Management System
 **Bidder:** Mechrevo (principal, hardware SI) + Datacraft (named subcontractor, software prime)
 **Software owner:** Datacraft Limited
-**IPR:** Vests in IEBC per GCC 15.4 on Operational Acceptance for all Custom Software; perpetual irrevocable licence to IEBC for Standard Software per GCC 16.
+**IPR:** Vests in the Commission per GCC 15.4 on Operational Acceptance for all Custom Software; perpetual irrevocable licence to the Commission for Standard Software per GCC 16.
 
 ## Document Map
 

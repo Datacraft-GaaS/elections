@@ -5,7 +5,7 @@
 //     -d @nexus-bootstrap.json   (wraps this file as the "content" field)
 // Then: POST .../run
 //
-// Naming: eel/nexus-* (no iebc_ prefix)
+// Naming: eel/nexus-* (no client-name prefix)
 
 import org.sonatype.nexus.repository.config.Configuration
 import groovy.json.JsonOutput

@@ -33,7 +33,7 @@
   <line x1="40" y1="444" x2="62" y2="460" stroke="#9467bd" stroke-width="2"/>
   <line x1="40" y1="475" x2="24" y2="495" stroke="#9467bd" stroke-width="2"/>
   <line x1="40" y1="475" x2="56" y2="495" stroke="#9467bd" stroke-width="2"/>
-  <text x="40" y="512" font-size="12" text-anchor="middle" fill="#9467bd" font-weight="bold">IEBC</text>
+  <text x="40" y="512" font-size="12" text-anchor="middle" fill="#9467bd" font-weight="bold">the Commission</text>
   <text x="40" y="526" font-size="11" text-anchor="middle" fill="#9467bd">Finance Lead</text>
   <rect x="60" y="270" width="121" height="85" rx="6" fill="#1f77b4" stroke="#1f77b4" stroke-width="2" />
   <text x="120" y="302" font-size="13" text-anchor="middle" fill="white" font-weight="bold">AnalysisCycle</text>

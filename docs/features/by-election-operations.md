@@ -119,10 +119,10 @@ Languages: EN + SW on all surfaces. WCAG 2.2 AA.
 
 ## 8. Kenya statute alignment
 
-- **Elections Act §24** - IEBC must conduct a by-election within 90 days of a vacancy (with exceptions for <3 months to a general election). M50 tracks the statutory_election_date and alerts if the date would exceed the 90-day limit.
+- **Elections Act §24** - the Commission must conduct a by-election within 90 days of a vacancy (with exceptions for <3 months to a general election). M50 tracks the statutory_election_date and alerts if the date would exceed the 90-day limit.
 - **Constitution of Kenya 2010, Art. 104(3)** - recall success triggers a by-election; M50 operationalises the handoff from M48.
-- **Elections (General) Regulations 2012, Reg 4** - IEBC must gazette a by-election at least 21 days in advance; `short_notice = true` triggers compliance review.
-- **Public Finance Management Act §53** - cost reports for IEBC expenditure must be submitted to the National Treasury; `CostReport.submitted_to_treasury_at` tracks compliance.
+- **Elections (General) Regulations 2012, Reg 4** - the Commission must gazette a by-election at least 21 days in advance; `short_notice = true` triggers compliance review.
+- **Public Finance Management Act §53** - cost reports for the Commission expenditure must be submitted to the National Treasury; `CostReport.submitted_to_treasury_at` tracks compliance.
 
 ## 9. Honest caveats + external prerequisites
 

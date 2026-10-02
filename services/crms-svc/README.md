@@ -92,7 +92,7 @@ Clearance decision caching: KRA, EACC, police responses cached for 48 hours.
 
 Build Rust API and services:
 ```bash
-cd /Users/nyimbiodero/src/pjs/eel/services/crms-svc
+cd ./services/crms-svc
 cargo build --release
 ```
 

@@ -15,7 +15,7 @@ For most other modules, the lawful basis is public task (Elections Act) and cons
 
 Before collecting any personal data under consent, display all of the following in plain English and Swahili (and other applicable language per locale):
 
-1. Identity of the data controller: Independent Electoral and Boundaries Commission (IEBC)
+1. Identity of the data controller: the electoral authority (the Commission)
 2. Contact details of the Data Protection Officer: [DPO_EMAIL]
 3. Purpose of processing and legal basis: [PURPOSE], Consent under DPA s.30(1)(a)
 4. Categories of personal data to be collected: [LIST_FIELDS]
@@ -42,7 +42,7 @@ Use an explicit, unbundled consent mechanism:
 
 - One checkbox per distinct processing purpose. Do not bundle multiple purposes into one checkbox.
 - Checkboxes must be unchecked by default. Pre-ticked boxes are not valid consent under DPA s.30.
-- Label each checkbox clearly: "I consent to [specific purpose] by IEBC."
+- Label each checkbox clearly: "I consent to [specific purpose] by the Commission."
 - The submit button must only become active after all mandatory checkboxes are ticked.
 
 ### 1.4 Double opt-in for whistleblower reporting (M23)
@@ -90,7 +90,7 @@ Data subjects have the right to withdraw consent at any time (DPA s.30(3)). With
 ### 3.1 Withdrawal channels
 
 - Online: self-service portal (same channel as consent was given)
-- In person: IEBC county office (with identity verification)
+- In person: the Commission county office (with identity verification)
 - Email: [CONSENT_WITHDRAWAL_EMAIL]
 - Phone: [CONSENT_WITHDRAWAL_PHONE] (business hours)
 
@@ -102,7 +102,7 @@ Data subjects have the right to withdraw consent at any time (DPA s.30(3)). With
 4. Trigger downstream processing:
    a. For M04 (VPRS): if application is in-flight and not yet submitted to the register, halt processing and soft-delete the application.
    b. For M04 (VPRS): if the application has already been processed into the register, inform the data subject that the register record is subject to Elections Act s.32 statutory retention and cannot be erased by consent withdrawal; direct to the deregistration process (M36) if applicable.
-   c. For M23 (whistleblower): anonymise any remaining identifying fields; retain only the anonymised grievance content if it has been escalated to IEBC.
+   c. For M23 (whistleblower): anonymise any remaining identifying fields; retain only the anonymised grievance content if it has been escalated to the Commission.
 5. Record the withdrawal in the audit trail.
 6. Send a withdrawal confirmation to the data subject within 1 working day.
 7. Do not use the withdrawn data for the purpose to which consent was given, from the withdrawal timestamp onwards.

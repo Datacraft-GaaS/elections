@@ -1,6 +1,6 @@
 defmodule Eel.EventStore do
   @moduledoc """
-  Public API for the IEBC IEMS event store.
+  Public API for the Commission IEMS event store.
 
   Provides event appending with optimistic concurrency and event replay
   for rebuilding aggregate state.

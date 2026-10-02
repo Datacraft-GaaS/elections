@@ -4,7 +4,7 @@
 **Name:** Referendum Explainer Platform
 **Owner:** Datacraft Limited — Civic Participation Team
 **Status:** Draft v1
-**IP Classification:** Custom Software — IPR vests in IEBC per GCC 15.4
+**IP Classification:** Custom Software — IPR vests in the Commission per GCC 15.4
 
 **Strategy traceback:** Constitution Art. 255-257; Elections Act §49; distinct from M37 Voter Education CMS (general) and M49 Referendum Mechanics (voting workflow)
 
@@ -20,9 +20,9 @@ Voter-facing platform providing multi-language, multi-format public explainers f
 
 | Persona | Access | Primary task |
 |---|---|---|
-| IEBC Content Editor | Write | Draft and publish question explainers |
+| the Commission Content Editor | Write | Draft and publish question explainers |
 | Fact-Check Partner (e.g. PesaCheck) | Write (review annotations) | Flag inaccurate content; submit verified corrections |
-| Legal Reviewer (IEBC Legal) | Write (legal accuracy check) | Confirm legal accuracy of constitutional citations |
+| Legal Reviewer (the Commission Legal) | Write (legal accuracy check) | Confirm legal accuracy of constitutional citations |
 | Translator | Write (assigned language) | Translate approved EN content to SW / other languages |
 | Voter (mobile/web) | Read | Read explainer for any referendum question |
 | Voter (voice/audio) | Read (audio channel) | Listen to TTS-rendered explainer |
@@ -49,13 +49,13 @@ Each question has a structured explainer with mandatory sections:
 - Source citations (numbered, linked)
 
 ### FR-68.03 — Editorial workflow
-Draft → Legal Review → Fact-Check Review → IEBC Chair Approval → Published. Each state transition logged with reviewer UUID and timestamp. Regression to earlier state permitted with mandatory reason. No explainer published without all three review stages cleared. Target T-60 for all questions published in EN and SW.
+Draft → Legal Review → Fact-Check Review → the Commission Chair Approval → Published. Each state transition logged with reviewer UUID and timestamp. Regression to earlier state permitted with mandatory reason. No explainer published without all three review stages cleared. Target T-60 for all questions published in EN and SW.
 
 ### FR-68.04 — Fact-check partner API
-Fact-check partners (PesaCheck, Code for Africa, others registered by IEBC) access content via API. Partners annotate specific claims: claim text, verdict (accurate / inaccurate / unverifiable), evidence URL. Annotations visible to IEBC editors. Any `inaccurate` verdict blocks publication until editor resolves. Resolution: update content or override with written determination.
+Fact-check partners (PesaCheck, Code for Africa, others registered by the Commission) access content via API. Partners annotate specific claims: claim text, verdict (accurate / inaccurate / unverifiable), evidence URL. Annotations visible to the Commission editors. Any `inaccurate` verdict blocks publication until editor resolves. Resolution: update content or override with written determination.
 
 ### FR-68.05 — Multi-language pipeline
-EN master content approved first. Translation workflow: translator assigned per language; translation submitted; IEBC editor + community reviewer (bilingual) signs off. SW mandatory. Additional languages (Kikuyu, Luo, Kalenjin, Somali, Kamba) on best-effort basis via community volunteer platform. Each language version has its own publication state.
+EN master content approved first. Translation workflow: translator assigned per language; translation submitted; the Commission editor + community reviewer (bilingual) signs off. SW mandatory. Additional languages (Kikuyu, Luo, Kalenjin, Somali, Kamba) on best-effort basis via community volunteer platform. Each language version has its own publication state.
 
 ### FR-68.06 — Multi-format output
 From approved content: system auto-generates:
@@ -67,7 +67,7 @@ From approved content: system auto-generates:
 - Sign-language video (Kenya Sign Language; commissioned video for each question, embedded)
 
 ### FR-68.07 — Distribution channels
-From M68 API: (1) M11 Public Portal embedded, (2) M49 Referendum Mechanics contextual link, (3) M29 Mobile Citizen Verify in-app tab, (4) SMS push via M23 (opt-in), (5) WhatsApp Bot (IEBC official channel), (6) Printed PDF for physical distribution, (7) Radio bulletin export (plain text for KBC broadcasters).
+From M68 API: (1) M11 Public Portal embedded, (2) M49 Referendum Mechanics contextual link, (3) M29 Mobile Citizen Verify in-app tab, (4) SMS push via M23 (opt-in), (5) WhatsApp Bot (the Commission official channel), (6) Printed PDF for physical distribution, (7) Radio bulletin export (plain text for KBC broadcasters).
 
 ### FR-68.08 — WCAG 2.2 AAA compliance
 All web explainer pages: WCAG 2.2 AAA (elevated from standard AA for referendum content). Requirements include: contrast ratio >= 7:1 (AAA), no automatic audio, sign-language video, extended audio description. Automated + manual accessibility audit per question before publication.
@@ -76,7 +76,7 @@ All web explainer pages: WCAG 2.2 AAA (elevated from standard AA for referendum 
 Each published explainer version immutable. Corrections create new versions. Change log publicly visible per question: version number, change description, date, approver. Voters notified of material changes via the same channels that delivered the original explainer.
 
 ### FR-68.10 — Analytics and reach
-Page-level analytics (anonymous): page views per question, audio plays, PDF downloads, language distribution, device type. No voter-identifying tracking. Used by IEBC to prioritise translation and distribution effort. Published as part of post-referendum transparency report.
+Page-level analytics (anonymous): page views per question, audio plays, PDF downloads, language distribution, device type. No voter-identifying tracking. Used by the Commission to prioritise translation and distribution effort. Published as part of post-referendum transparency report.
 
 ---
 
@@ -102,21 +102,21 @@ Editorial workflow: target T-60 for all EN and SW explainers published. Fact-che
 
 ---
 
-- **NFR-M68-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `iebc-iems-M68`; alert ruleset ID `iems-M68-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
+- **NFR-M68-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `commission-iems-M68`; alert ruleset ID `iems-M68-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
 
 ## User Stories
 
 1. As a voter, I want to read a plain-language explanation of each referendum question in Swahili, so that I can make an informed decision before I vote.
 2. As a voter with a visual impairment, I want to listen to an audio version of the referendum explainer, so that the information is accessible to me without a screen.
 3. As a voter who uses Kenya Sign Language, I want to watch a sign-language video for each referendum question, so that the content is fully accessible to me.
-4. As an IEBC Content Editor, I want to draft a structured explainer per question and submit it for legal review, so that the workflow enforces all quality gates before publication.
+4. As a Commission Content Editor, I want to draft a structured explainer per question and submit it for legal review, so that the workflow enforces all quality gates before publication.
 5. As a Fact-Check Partner (PesaCheck), I want to annotate specific claims in an explainer and have my verdict block publication until resolved, so that voters only see verified content.
 6. As a community translator (Luo), I want to translate the approved EN explainer for my language community, so that Luo-speaking voters have access to referendum information in their language.
 7. As an M49 Referendum Mechanics system, I want to fetch the current explainer for a given question via API when a voter arrives at the ballot interface, so that contextual information is shown at the point of decision.
 8. As an IAB Member, I want to audit the editorial history of each explainer, so that I can confirm all review stages were completed before publication.
 9. As a deaf voter, I want to see the WCAG 2.2 AAA sign-language video embedded on the explainer page without needing to navigate away, so that my experience is equivalent to a hearing voter's.
 10. As a rural voter receiving the SMS summary, I want the 160-character question summary to tell me what Yes and No mean in one sentence each, so that I have the minimum information even on a basic phone.
-11. As an IEBC Commissioner, I want to be required to sign off every explainer before publication, so that political accountability rests with the Commission, not editorial staff alone.
+11. As a Commission Commissioner, I want to be required to sign off every explainer before publication, so that political accountability rests with the Commission, not editorial staff alone.
 12. As a data journalist, I want access to anonymous reach analytics per question, so that I can report on which referendum questions were least understood and most queried.
 13. As a radio broadcaster (KBC), I want to receive a plain-text radio bulletin export for each question, so that I can read explainers on-air without reformatting.
 
@@ -217,7 +217,7 @@ paths:
         "200": {description: ExplainerVersion or ExplainerFormat}
   /api/v1/referendum/explainers:
     post:
-      summary: Create explainer draft (IEBC Editor)
+      summary: Create explainer draft (the Commission Editor)
       security: [{BearerAuth: []}]
       requestBody:
         required: true
@@ -299,7 +299,7 @@ paths:
 | Requirement | Source |
 |---|---|
 | Public information on referendum questions | Constitution Art. 255(2) |
-| IEBC mandate to educate voters | Elections Act §49 |
+| the Commission mandate to educate voters | Elections Act §49 |
 | WCAG 2.2 AAA (referendum content) | Strategy accessibility policy |
 | Multi-language accessibility | Constitution Art. 7(3)(b) |
 | DPA 2019 anonymous analytics | DPA 2019 §26 |
@@ -311,13 +311,13 @@ paths:
 
 | Metric | Target | Sign-off |
 |---|---|---|
-| All questions published EN + SW by T-60 | 100% | IEBC Chair |
-| Sign-language videos published by T-30 | 100% | IEBC Chair |
+| All questions published EN + SW by T-60 | 100% | the Commission Chair |
+| Sign-language videos published by T-30 | 100% | the Commission Chair |
 | WCAG 2.2 AAA audit pass | 100% | Accessibility auditor |
 | Fact-check clearance before publication | 100% | IAB |
-| Commissioner sign-off on every published version | 100% | IEBC Chair |
-| Audio format available for all questions | 100% by T-60 | IEBC ICT |
-| Additional language coverage (5 languages) | >= 80% of questions | IEBC Comms |
+| Commissioner sign-off on every published version | 100% | the Commission Chair |
+| Audio format available for all questions | 100% by T-60 | the Commission ICT |
+| Additional language coverage (5 languages) | >= 80% of questions | the Commission Comms |
 
 ---
 
@@ -360,7 +360,7 @@ paths:
 
 | # | Risk | Mitigation |
 |---|---|---|
-| R1 | Fact-check partner disputes IEBC editorial content publicly | Written determination process documented; IAB arbitration available; public change-log shows all revisions transparently |
+| R1 | Fact-check partner disputes the Commission editorial content publicly | Written determination process documented; IAB arbitration available; public change-log shows all revisions transparently |
 | R2 | Sign-language video production delayed | Commission at T-90; video production contracts include T-30 delivery penalty; placeholder accessible text version live from T-60 |
 | R3 | Referendum question text changed after publication | Versioning system auto-archives prior version; change notification pushed to all distribution channels within 1h; audit log records who authorised change |
 | R4 | WCAG 2.2 AAA fails audit for one or more components | External accessibility agency retained from T-150; iterative audit from T-120; hard gate: no publication without AAA pass |
@@ -384,22 +384,22 @@ paths:
 | Section | Requirement |
 |---|---|
 | Constitution Art. 255(2) | Public information right on referendum questions |
-| Elections Act §49 | IEBC voter education mandate |
+| Elections Act §49 | the Commission voter education mandate |
 | Constitution Art. 7(3)(b) | Multilingual access to public information |
 | Strategy accessibility policy | WCAG 2.2 AAA for referendum content |
 
 ## 18. Decommissioning
 
-**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if IEBC terminates the contract.
+**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if the Commission terminates the contract.
 
 **Steps:**
 
-1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and IEBC DPO.
+1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and the Commission DPO.
 2. **Service shutdown** — Kubernetes deployments scaled to zero; PersistentVolumeClaims retained for 30 days then deleted after confirmation of M69 transfer.
 3. **Credential revocation** — service account certificates, API keys, and HSM key handles revoked via P06 key-destruction ceremony within 48 hours of shutdown.
 4. **Source-code escrow** — final tagged release deposited to C04 escrow within 7 days of shutdown.
-5. **Runbook handover** — operational runbook and post-mortem notes delivered to IEBC ICT within 14 days.
+5. **Runbook handover** — operational runbook and post-mortem notes delivered to the Commission ICT within 14 days.
 
-**Owner:** SRE Lead. **Sign-off:** IEBC ICT Director + Datacraft Programme Director.
+**Owner:** SRE Lead. **Sign-off:** the Commission ICT Director + Datacraft Programme Director.
 
 > **RESOLUTION (F-23, 2026-08-21):** Decommissioning stub added per audit finding. Owner: SRE Lead. Target: FAT-07 gate.

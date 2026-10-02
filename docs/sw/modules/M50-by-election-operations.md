@@ -5,7 +5,7 @@
 **Runs on:** Central servers (Kenyan cloud) + reduced kit deployment
 **Owner:** Datacraft
 **Status:** Draft v1
-**IPR:** Custom Software vests in IEBC per GCC 15.4
+**IPR:** Custom Software vests in the Commission per GCC 15.4
 
 ## 1. Purpose
 
@@ -13,23 +13,23 @@ Support the full lifecycle of by-elections — triggered by death, recall, court
 
 ## 2. User Personas
 
-- **IEBC Commissioner** — activates by-election; approves gazette notice (via M52)
+- **the Commission Commissioner** — activates by-election; approves gazette notice (via M52)
 - **Constituency Returning Officer** — runs the by-election for the affected seat
 - **Field Logistics Officer** — deploys reduced kit set; manages abbreviated logistics
 - **Candidate (by-election)** — registers via M12 CRMS; files ECFA disclosures via M22
 - **Party Agent** — observes and tallies at polling stations
 - **Voter (affected constituency)** — participates via biometric verification; same kit workflow as general election
-- **IEBC DPO** — oversees DPA 2019 compliance for the by-election voter register subset
+- **the Commission DPO** — oversees DPA 2019 compliance for the by-election voter register subset
 
 ## 3. Functional Requirements
 
-- **FR-M50-001** By-election record: IEBC admin creates by-election event — seat type (Presidential [vacancy], Gubernatorial, Senator, MP, CWR, MCA), constituency/ward code, trigger reason (DEATH, RECALL, NULLIFICATION, VACANCY), vacancy date, polling date.
+- **FR-M50-001** By-election record: the Commission admin creates by-election event — seat type (Presidential [vacancy], Gubernatorial, Senator, MP, CWR, MCA), constituency/ward code, trigger reason (DEATH, RECALL, NULLIFICATION, VACANCY), vacancy date, polling date.
 - **FR-M50-002** Voter register subset extraction: extract the relevant register subset (constituency or ward) from the main VPRS (M04); freeze subset at nomination close; provide printed copy and digital backup per Elections Act.
 - **FR-M50-003** Reduced kit deployment plan: system computes minimum kit requirement based on polling stations in affected constituency/ward; generates deployment schedule and courier manifest from M20 Inventory Management.
 - **FR-M50-004** Candidate nomination: route nominations through M12 CRMS with by-election flag; enforce same statutory nomination requirements (deposit, signatures) as general election.
 - **FR-M50-005** Abbreviated campaign finance: M22 ECFA obligations apply; ceiling tiers for by-elections are the same per-seat category; shorter disclosure window (weekly from nomination close).
 - **FR-M50-006** Tally and publication: use standard M10 RTS pipeline; by-election results published to M11 Public Portal on a by-election-specific page with seat context.
-- **FR-M50-007** Per-by-election SLA: IEBC can configure per-event RTO/RPO targets (same or tighter than general election defaults); SLA dashboard per active by-election.
+- **FR-M50-007** Per-by-election SLA: the Commission can configure per-event RTO/RPO targets (same or tighter than general election defaults); SLA dashboard per active by-election.
 - **FR-M50-008** Per-by-election unit costing: system records actual deployed kits, staff headcount (M55), transport costs, and prints a post-by-election cost report for Controller of Budget.
 - **FR-M50-009** Rapid activation: by-election can be activated from dormant state to "polls open" in <= 21 days for MCA vacancies; system flags if timeline is legally tight and lists outstanding statutory steps.
 - **FR-M50-010** Multi-concurrent by-elections: support up to 10 simultaneous by-elections in different constituencies without resource contention.
@@ -44,20 +44,20 @@ Support the full lifecycle of by-elections — triggered by death, recall, court
 - **NFR-M50-004** Support 10 concurrent by-elections with no shared-resource bottleneck.
 - **NFR-M50-005** WCAG 2.2 AA for all voter-facing by-election screens.
 - **NFR-M50-006** Languages: EN + SW baseline.
-- **NFR-M50-007** DPA 2019 lawful basis: voter register subset processed under s.30(1)(b); retained per IEBC data-retention schedule; not accessible to other constituency officers.
+- **NFR-M50-007** DPA 2019 lawful basis: voter register subset processed under s.30(1)(b); retained per the Commission data-retention schedule; not accessible to other constituency officers.
 - **NFR-M50-008** Availability: >= 99.9% during active by-election period (nomination close to T+30).
 
-- **NFR-50-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `iebc-iems-50` (replace 50 with the module number); alert ruleset ID `iems-50-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
+- **NFR-50-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `commission-iems-50` (replace 50 with the module number); alert ruleset ID `iems-50-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
 
 ## 5. User Stories
 
-1. As the IEBC Commissioner, I activate a by-election for Starehe Constituency within 2 hours of a court nullification judgment, so the statutory timeline starts immediately.
+1. As the Commission Commissioner, I activate a by-election for Starehe Constituency within 2 hours of a court nullification judgment, so the statutory timeline starts immediately.
 2. As a Field Logistics Officer, I receive a kit deployment manifest showing exactly which 23 kits go to which polling stations, generated automatically from the constituency's station list.
 3. As a candidate in a by-election, I use the same CRMS nomination portal as a general-election candidate, so I don't need separate training.
 4. As a Constituency Returning Officer, I tally Forms 34A through the standard RO module; the system knows this is a by-election and routes the result to the correct M11 page.
 5. As a voter in the affected constituency, my experience is identical to a general election: biometric check, ballot, verification slip.
-6. As the IEBC Finance team, I pull a post-by-election cost report showing actual kit days, staff count, and transport for budget justification to the Controller of Budget.
-7. As the IEBC legal officer, I see a statutory timeline checklist when I create the by-election showing all required gazette notices and their deadlines.
+6. As the Commission Finance team, I pull a post-by-election cost report showing actual kit days, staff count, and transport for budget justification to the Controller of Budget.
+7. As the Commission legal officer, I see a statutory timeline checklist when I create the by-election showing all required gazette notices and their deadlines.
 
 ## 6. Data Model
 
@@ -108,18 +108,18 @@ paths:
   /v1/by-elections:
     post:
       summary: Create by-election event
-      security: [{IEBCAdminJWT: []}]
+      security: [{CommissionAdminJWT: []}]
     get:
       summary: List by-elections (active and historical)
-      security: [{IEBCStaffJWT: []}]
+      security: [{CommissionStaffJWT: []}]
   /v1/by-elections/{id}:
     get:
       summary: Get by-election detail with statutory timeline
-      security: [{IEBCStaffJWT: []}]
+      security: [{CommissionStaffJWT: []}]
   /v1/by-elections/{id}/register-subset:
     post:
       summary: Extract voter register subset from VPRS
-      security: [{IEBCAdminJWT: []}]
+      security: [{CommissionAdminJWT: []}]
   /v1/by-elections/{id}/kit-plan:
     get:
       summary: Get kit deployment plan
@@ -131,7 +131,7 @@ paths:
   /v1/by-elections/{id}/sla-dashboard:
     get:
       summary: Per-by-election SLA metrics
-      security: [{IEBCAdminJWT: []}]
+      security: [{CommissionAdminJWT: []}]
 ```
 
 ## 8. Integrations
@@ -187,7 +187,7 @@ paths:
 
 | Milestone | Date | Description |
 |-----------|------|-------------|
-| By-election module UAT | 2027-01-15 | IEBC Operations acceptance |
+| By-election module UAT | 2027-01-15 | the Commission Operations acceptance |
 | Register subset pipeline tested | 2027-02-01 | Integration with M04 VPRS |
 | First dry-run by-election | 2027-04-01 | Mock event in one constituency |
 | Production ready (standby) | T-90 (2027-05-11) | Activated per vacancy |
@@ -210,7 +210,7 @@ paths:
 | Court orders by-election with < 21-day notice | Medium | High | Rapid-activation checklist pre-built; statutory minimum enforced with legal team alert |
 | Register subset includes out-of-scope voters | Low | High | Constituency/ward boundary validation against M18 Boundary module before freeze |
 | Kit shortage during concurrent by-elections | Medium | Medium | M20 inventory reservation system blocks kits per active by-election |
-| ECFA filing non-compliance (short campaign) | High | Medium | Automated daily reminder from nomination close; non-compliance flag raised to IEBC officer at T+3 |
+| ECFA filing non-compliance (short campaign) | High | Medium | Automated daily reminder from nomination close; non-compliance flag raised to the Commission officer at T+3 |
 | Post-by-election cost report not submitted to CoB | Medium | Medium | Automated reminder to Finance Officer; M54 budget module tracks submission |
 
 ## 16. Cross-References
@@ -234,16 +234,16 @@ paths:
 
 ## 18. Decommissioning
 
-**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if IEBC terminates the contract.
+**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if the Commission terminates the contract.
 
 **Steps:**
 
-1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and IEBC DPO.
+1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and the Commission DPO.
 2. **Service shutdown** — Kubernetes deployments scaled to zero; PersistentVolumeClaims retained for 30 days then deleted after confirmation of M69 transfer.
 3. **Credential revocation** — service account certificates, API keys, and HSM key handles revoked via P06 key-destruction ceremony within 48 hours of shutdown.
 4. **Source-code escrow** — final tagged release deposited to C04 escrow within 7 days of shutdown.
-5. **Runbook handover** — operational runbook and post-mortem notes delivered to IEBC ICT within 14 days.
+5. **Runbook handover** — operational runbook and post-mortem notes delivered to the Commission ICT within 14 days.
 
-**Owner:** SRE Lead. **Sign-off:** IEBC ICT Director + Datacraft Programme Director.
+**Owner:** SRE Lead. **Sign-off:** the Commission ICT Director + Datacraft Programme Director.
 
 > **RESOLUTION (F-23, 2026-08-21):** Decommissioning stub added per audit finding. Owner: SRE Lead. Target: FAT-07 gate.

@@ -95,7 +95,7 @@ Contract: `packages/openapi-contracts/support-admin/special-workflows.yaml`. All
 
 | Method + path | Persona | Purpose |
 |---|---|---|
-| `POST /special/v1/categories` | IEBC officer (JWT + SpiceDB) | Assign special category to voter |
+| `POST /special/v1/categories` | the Commission officer (JWT + SpiceDB) | Assign special category to voter |
 | `POST /special/v1/unlocks` | M31 device cert | Submit dual-biometric unlock event |
 | `POST /special/v1/refugee-check` | M31 device cert | Submit UNHCR cross-reference result |
 | `GET /special/v1/double-cast/{voter_id_hash}` | M31 device cert | Check IDP double-cast guard |
@@ -119,7 +119,7 @@ WCAG 2.2 AA on all surfaces. M31 offline mode: all special-workflow checks must 
 - **Dual-biometric unlock** -- REMAND/BARRACKS unlock requires two distinct officer biometrics verified against station BVR slice; a single-officer attempt is rejected at the API layer before any persistence.
 - **IDP double-cast guard** -- the guard record is written before the vote token is issued; a network failure between guard-check and vote issuance causes a safe failure (no token issued; officer re-presents online).
 - **IAB Merkle-seeded 5% sample** -- the Merkle root over assisted vote records is used as the seed for random sample selection; any manipulation of the assisted vote records would change the Merkle root and therefore the sample, making post-hoc manipulation detectable.
-- **REFUGEE_VOTING_ENABLED flag** -- a bilateral configuration flag that defaults to false; requires both UNHCR roll receipt and IEBC Commissioner approval to set true; audit-logged on every state change.
+- **REFUGEE_VOTING_ENABLED flag** -- a bilateral configuration flag that defaults to false; requires both UNHCR roll receipt and the Commission Commissioner approval to set true; audit-logged on every state change.
 - **Assisted vote four-eyes** -- officer signature required for every AssistedVoteRecord; no assisted vote is accepted without an officer_sig; unsigned records are rejected by the API and logged as anomalies.
 - **Category assignment audit** -- every SpecialVoterCategory assignment and change is append-only and linked to the assigning officer; no officer can retroactively remove a category assignment.
 
@@ -136,7 +136,7 @@ WCAG 2.2 AA on all surfaces. M31 offline mode: all special-workflow checks must 
 - Prison Service roll MoU is a prerequisite for the REMAND/BARRACKS path; without the signed roll, the dual-biometric unlock path defaults to officer manual entry logged as UNCONFIRMED.
 - UNHCR IDP roll data quality varies; NOT_FOUND results do not necessarily mean the voter is ineligible; the officer discretionary path is the fallback but introduces human judgment risk.
 - The IDP double-cast guard depends on the voter's home_station_id being correctly recorded in the BVR; incorrect home station assignments are a known data quality risk.
-- Hospital station polling team logistics are operationally complex; M25 provides the software workflow but the team deployment and patient consent process are IEBC field operations responsibilities.
+- Hospital station polling team logistics are operationally complex; M25 provides the software workflow but the team deployment and patient consent process are the Commission field operations responsibilities.
 - NCPD disability register completeness is unknown; voters with disabilities not on the register must be handled via the officer discretionary path, which reduces auditability.
 
 ## 10. Test coverage + operational runbooks

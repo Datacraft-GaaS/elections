@@ -203,9 +203,9 @@ paths:
       operationId: recordBallotDelivery
       x-handler-bound: inventory-svc.printing.record_ballot_delivery
       tags: [deliveries]
-      summary: Record ballot delivery to IEBC warehouse
+      summary: Record ballot delivery to the Commission warehouse
       description: >
-        Records arrival of a print order batch at the IEBC warehouse.
+        Records arrival of a print order batch at the Commission warehouse.
         Serial range data is stored but access is tier 3. Idempotent via Idempotency-Key.
       security:
         - bearerAuth: []

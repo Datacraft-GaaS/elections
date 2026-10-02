@@ -140,7 +140,7 @@ schedule:
     statutory_ref: "DPA s.40(1); no statutory override for closed unescalated cases"
 
   - module_id: M23
-    table_or_entity: GrievanceCase (escalated to IEBC or court)
+    table_or_entity: GrievanceCase (escalated to the Commission or court)
     tier: A
     retention_rule: "Election + 15 years (evidence for proceedings)"
     purge_trigger: "15 years after election date"
@@ -201,7 +201,7 @@ schedule:
     retention_rule: "7 years from date of record"
     purge_trigger: "7 years after record_date"
     purge_method: "Hard DELETE"
-    statutory_ref: "Employment Act s.74; IEBC operational requirement"
+    statutory_ref: "Employment Act s.74; the Commission operational requirement"
 
   - module_id: M35
     table_or_entity: VoterRegisterEvent
@@ -241,7 +241,7 @@ schedule:
     retention_rule: "7 years from enrolment date"
     purge_trigger: "7 years after enrolment_date"
     purge_method: "Hard DELETE"
-    statutory_ref: "Employment Act s.74; IEBC accreditation requirements"
+    statutory_ref: "Employment Act s.74; the Commission accreditation requirements"
 
   - module_id: M38
     table_or_entity: WorkerCertificate

@@ -127,8 +127,8 @@ Languages: EN + SW. Material You accessibility; minimum touch target 48dp; high-
 
 - Kiosk mode effectiveness depends on the device's Android/iOS kiosk API; some Android device manufacturers override kiosk mode through proprietary system apps; device procurement must verify kiosk API compliance before deployment.
 - The BVR offline fallback requires a pre-loaded encrypted voter roll subset on the device; the roll subset size is bounded by the station's expected voter count; large stations (>2 000 voters) may exceed the KES-10k device storage budget.
-- The dual-sig EOD flow requires both DPO and Deputy to be physically present with the device; if the Deputy is absent, the EOD report cannot be submitted; the IEBC field operations must define the escalation path for this scenario.
-- Paper backup guidance content must be reviewed and approved by IEBC legal and operations before each election cycle; outdated guidance creates a compliance risk.
+- The dual-sig EOD flow requires both DPO and Deputy to be physically present with the device; if the Deputy is absent, the EOD report cannot be submitted; the Commission field operations must define the escalation path for this scenario.
+- Paper backup guidance content must be reviewed and approved by the Commission legal and operations before each election cycle; outdated guidance creates a compliance risk.
 
 ## 10. Test coverage + operational runbooks
 

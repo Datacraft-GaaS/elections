@@ -8,7 +8,7 @@
 | Size | L |
 | Availability class | routine 99.5% |
 | Event-sourced | no (ADR-0013: only M08/M09/M10, M20, M51, M63) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M48-recall.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M48-recall.md |
 
 ## Purpose
 
@@ -86,7 +86,7 @@ Petition phase:
 6. FR-M48-006: verify signatory voter IDs against M02 register extract for that constituency; per-row result (VALID / NOT_ON_ROLL / DUPLICATE) returned
 7. FR-M48-007: reject duplicate voter ID in same petition; idempotent import; verified count unchanged on re-import of same rows
 8. FR-M48-008: compute running total of verified signatories toward Art. 104(2) 30% threshold using integer arithmetic (no floating point)
-9. FR-M48-009: generate threshold report with percentage, registered voter count, and ward breakdown; signed by IEBC Petition Officer via P06 HSM; published within 7 days of petition submission
+9. FR-M48-009: generate threshold report with percentage, registered voter count, and ward breakdown; signed by the Commission Petition Officer via P06 HSM; published within 7 days of petition submission
 10. FR-M48-010: alert Commission when 30% threshold is met; alert includes constituency, petition ID, and percentage achieved
 11. FR-M48-011: close petition window automatically at 30-day expiry; scheduler enforces close at EAT midnight
 12. FR-M48-012: dismiss petition when window closes below threshold; written reason and public notice published
@@ -108,13 +108,13 @@ Public portal and admin:
 
 Recall election:
 26. FR-M48-026: voter roll preparation: M02 CVR snapshot scoped to constituency at date of recall declaration; snapshot hash computed and signed; published to M15 IAB and public portal within 24 hours
-27. FR-M48-027: ballot: single binary question (Recall Yes / Recall No); ballot design follows IEBC standard format; ballot paper generated for print approval
+27. FR-M48-027: ballot: single binary question (Recall Yes / Recall No); ballot design follows the Commission standard format; ballot paper generated for print approval
 28. FR-M48-028: KIEMS kits provisioned in recall mode for single constituency; biometric voter authentication against recall voter roll; kit serial bound to constituency and election date; BVI recall mode signalled via signed config bundle to M08
 29. FR-M48-029: polling-day hourly turnout reported to M16 Election Command Centre and M44 Turnout Forecasting via M08 RTS device
 30. FR-M48-030: Art. 104(3) success threshold: majority of registered voters in constituency (not just votes cast) must vote Yes; computation uses voter roll snapshot count; result displayed with full workings; integer arithmetic enforced
 31. FR-M48-031: Recall Form R-34A submission by RO per polling station: Yes votes, No votes, spoilt ballots, registered voters, voters turned out; signed and Merkle-anchored
 32. FR-M48-032: result publication within 48 hours of poll close; Recall Successful / Recall Unsuccessful determination displayed with supporting counts on public portal
-33. FR-M48-033: M50 by-election trigger: if Recall Successful, by-election record created in M50 with constituency details; trigger idempotent; failure retried up to 3 times; IEBC Operations Officer alerted if trigger fails after 3 retries
+33. FR-M48-033: M50 by-election trigger: if Recall Successful, by-election record created in M50 with constituency details; trigger idempotent; failure retried up to 3 times; the Commission Operations Officer alerted if trigger fails after 3 retries
 34. FR-M48-034: petition certificate signed PDF issued by Registrar via P06 HSM; available for download on portal as formal evidence for legal proceedings
 35. FR-M48-035: Merkle anchoring of all petition and election events in P05 within 60 seconds of event; public verifier available
 
@@ -155,7 +155,7 @@ Additional:
 9. AC-M48-09: 11-locale snapshots pass; no hardcoded strings; 150% pseudo-locale renders without truncation
 10. AC-M48-10: system availability >= 99.9% during petition upload and election-day windows; SLO burn-rate alert configured and tested
 11. AC-M48-11: signatory personal data deleted within 1 hour of threshold assessment completion; integration test measures deletion timestamp against assessment_completed_at
-12. AC-M48-12: M50 by-election trigger idempotent; retry fires within 5 minutes of first failure; IEBC Operations Officer alerted after 3 retries; integration test
+12. AC-M48-12: M50 by-election trigger idempotent; retry fires within 5 minutes of first failure; the Commission Operations Officer alerted after 3 retries; integration test
 13. AC-M48-13: WCAG 2.2 AA axe-core audit passes on public petition portal and results page; EN + SW strings verified; 11-locale snapshot tests pass
 14. AC-M48-14: signatory CSV cross-reference for 50,000 rows completes within 2 hours; load test with M02 stub passes; streaming checkpoint confirmed by kill-resume test
 15. AC-M48-15: Art. 104(3) majority-of-registered-voters success threshold computed correctly; result_yes_votes / voter_roll_count displayed with full workings; verification formula published before election day
@@ -207,7 +207,7 @@ connectivity:
 - EC-CON-04: site partition during recall election day; Patroni fencing prevents split-brain; KIEMS kit results queue until primary recovered; no duplicate R-34A submission
 
 security:
-- EC-SEC-03: P06 HSM unavailable during petition certificate signing; signing deferred to HSM recovery; certificate marked pending; IEBC Petition Officer notified; Merkle anchoring continues
+- EC-SEC-03: P06 HSM unavailable during petition certificate signing; signing deferred to HSM recovery; certificate marked pending; the Commission Petition Officer notified; Merkle anchoring continues
 
 ## Test plan
 

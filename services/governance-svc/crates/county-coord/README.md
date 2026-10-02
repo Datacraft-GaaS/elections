@@ -4,7 +4,7 @@ M56 County-national coordination: federated SAML authentication, MoU tracking, m
 
 ## What it does
 
-Manages election-time coordination between national IEBC and 47 county governments, plus integration with key ministries (Interior, Infrastructure, Police). Tracks Memoranda of Understanding, approval workflows for resource allocation and security, and incident escalation chains. Uses SAML federation to authenticate county staff via each county's IdP, mapping attributes to roles (county_returning_officer, county_admin, county_observer).
+Manages election-time coordination between national the Commission and 47 county governments, plus integration with key ministries (Interior, Infrastructure, Police). Tracks Memoranda of Understanding, approval workflows for resource allocation and security, and incident escalation chains. Uses SAML federation to authenticate county staff via each county's IdP, mapping attributes to roles (county_returning_officer, county_admin, county_observer).
 
 Fits in governance-svc as the county liaison layer. Runs on port 8093 (shared service); integrates with SpiceDB for fine-grained county-level authz (county_id in resource namespace).
 

@@ -13,7 +13,7 @@ Template version: 1.0
 | Date | [YYYY-MM-DD] |
 | Time | [HH:MM] - [HH:MM] EAT |
 | Location | [MEETING_ROOM or VIDEO_LINK] |
-| Chair | Director-General, IEBC |
+| Chair | Director-General, the Commission |
 | Minute-taker | [MINUTE_TAKER_NAME] |
 | Review period | [YYYY-MM-DD] to [YYYY-MM-DD] |
 
@@ -113,7 +113,7 @@ Summary of findings: [BRIEF_SUMMARY]
 |---|---|---|
 | ODPC | [FEEDBACK or "No formal feedback received"] | |
 | Elections certifier | [FEEDBACK or "No formal feedback received"] | |
-| IEBC commissioners | [FEEDBACK or "No formal feedback received"] | |
+| the Commission commissioners | [FEEDBACK or "No formal feedback received"] | |
 
 ---
 

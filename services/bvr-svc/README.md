@@ -89,7 +89,7 @@ PostgreSQL gin indexes on name, id_number, county for fast lookup. Biometric ded
 
 Build the service:
 ```bash
-cd /Users/nyimbiodero/src/pjs/eel/services/bvr-svc
+cd ./services/bvr-svc
 cargo build --release
 ```
 
@@ -199,7 +199,7 @@ Kenya DPA 2019 §26 processing limitation, §40 right to erasure, §41 automated
 1. Real-time CRS/NRB data subscription (vs scheduled batch).
 2. ABIS live biometric matching pipeline (phase 2).
 3. M53 voter ID card production workflow (phase 2).
-4. Register reconciliation tool (IEBC internal audit).
+4. Register reconciliation tool (internal audit).
 5. Voter ID verification API for external systems (post-election).
 
 ---

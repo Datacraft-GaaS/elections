@@ -23,7 +23,7 @@ Voter-facing mobile apps (M13 verifier, M29 citizen verify) and accredited-user 
   - **flutter_secure_storage** (Android Keystore / iOS Keychain) for secrets.
   - No PII in shared preferences, no PII in logs.
 - **Network**:
-  - **dio + mTLS + certificate pinning** (pin to IEBC intermediate CA fingerprint, not leaf).
+  - **dio + mTLS + certificate pinning** (pin to the Commission intermediate CA fingerprint, not leaf).
   - HSTS enforced.
   - Only TLS 1.3 (with PQ hybrid per ADR-0005).
 - **Session**:

@@ -8,7 +8,7 @@
 | Size | M |
 | Availability class | routine 99.5% |
 | Event-sourced | no (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M19-queue-transparency.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M19-queue-transparency.md |
 
 ## Purpose
 
@@ -108,11 +108,11 @@ ECC escalation:
 
 FR-M19-015: ECC alert at >90-min wait: dispatch alert to County Coordinator via M16; p99 delivery <2 min.
 FR-M19-016: ECC alert at >180-min wait: roving engineer deployment recommendation delivered to County Coordinator via M16.
-FR-M19-017: ECC alert at >240-min wait: escalate to IEBC Director; notify all accredited party agents for that station.
-FR-M19-018: s.14A recommendation at >300-min wait: auto-generate pre-formatted recommendation document with supporting data hash; deliver to IEBC Chair within 5 min of trigger condition.
+FR-M19-017: ECC alert at >240-min wait: escalate to the Commission Director; notify all accredited party agents for that station.
+FR-M19-018: s.14A recommendation at >300-min wait: auto-generate pre-formatted recommendation document with supporting data hash; deliver to the Commission Chair within 5 min of trigger condition.
 FR-M19-019: ECC LiveView channel (Phoenix LiveView): real-time queue status feed for ECC console; <10 s refresh; SSE endpoint for ECC console alongside.
 FR-M19-020: All ECC alerts HSM-signed and appended to audit log; duplicate alerts deduplicated by idempotency key; no double-paging on repeated threshold breach.
-FR-M19-021: s.14A recommendation document: IEBC Chair electronic HSM-signature workflow; recommendation logged separately from the Chair decision; advisory-only status clearly marked.
+FR-M19-021: s.14A recommendation document: the Commission Chair electronic HSM-signature workflow; recommendation logged separately from the Chair decision; advisory-only status clearly marked.
 
 Disenfranchisement and attendance:
 
@@ -140,7 +140,7 @@ FR-M19-034: Post-election analytics report: peak hours by county, turnout correl
 
 AC-M19-01: Snapshot computed and published within 5 min of simulated check-in spike across 55,393 concurrent station streams (load test).
 AC-M19-02: DisenfranchisementFlag delivered to M16 ECC p99 <2 min from threshold breach (integration test; NFR-19.02).
-AC-M19-03: s.14A recommendation generated and delivered to IEBC Chair within 5 min of >300-min trigger condition (integration test).
+AC-M19-03: s.14A recommendation generated and delivered to the Commission Chair within 5 min of >300-min trigger condition (integration test).
 AC-M19-04: Citizen USSD queue report incorporated into the next snapshot cycle (integration test).
 AC-M19-05: Public map loads p99 <=3 s at 1M concurrent users; >=95% served from CDN edge (load test; NFR-19.03).
 AC-M19-06: Snapshot labelled "low confidence" when only one signal source is active (unit test; all three source-missing combinations tested).
@@ -202,5 +202,5 @@ EC-OPS-08: CV camera fails mid-election-day; signal quarantined; fusion continue
 
 ## Open questions
 
-- CV camera integration: the computer vision headcount source is marked optional and requires IEBC procurement sign-off on camera hardware at each station; design treats it as an optional signal and the module operates without it.
-- Signal fusion weights: the relative weighting of USSD reports vs check-in rate vs CV is currently equal; IEBC data team needs to calibrate on historical election data before G3.
+- CV camera integration: the computer vision headcount source is marked optional and requires the Commission procurement sign-off on camera hardware at each station; design treats it as an optional signal and the module operates without it.
+- Signal fusion weights: the relative weighting of USSD reports vs check-in rate vs CV is currently equal; the Commission data team needs to calibrate on historical election data before G3.

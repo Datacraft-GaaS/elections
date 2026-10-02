@@ -118,8 +118,8 @@ Languages: EN + SW on portal and console. Badge PDF is bilingual EN/SW. WCAG 2.2
 
 ## 9. Honest caveats + external prerequisites
 
-- MCK API integration (`integrations/mck-api/`) requires an MCK API key provisioned under an IEBC service account. The adapter is ready; the live key is an external procurement dependency.
-- NPS clearance is advisory, not a hard gate. IEBC policy may change this; the current implementation reflects the advisory-only position.
+- MCK API integration (`integrations/mck-api/`) requires an MCK API key provisioned under a Commission service account. The adapter is ready; the live key is an external procurement dependency.
+- NPS clearance is advisory, not a hard gate. the Commission policy may change this; the current implementation reflects the advisory-only position.
 - Badge scanner app requires Android 8.0+ or iOS 14+. QR scanning uses the device camera; low-light performance at polling stations depends on device hardware.
 - Offline CRL operation means a device that is offline for more than 5 minutes may briefly accept a badge that has been revoked in the interim. The 5-minute window is a deliberate trade-off between field usability and revocation latency; it is documented in the threat model at `services/training-svc/docs/THREAT-MODEL.md`.
 - CRL size scales with the number of accredited journalists. For 10,000 journalists, the CRL JSON is approximately 500 KB; this is within mobile data budgets on 3G. Above 50,000 accreditations, CRL delta compression (RFC 5280 delta-CRL) should be evaluated.

@@ -48,7 +48,7 @@ Negative: soft-delete rows remain in indices until purge; slight storage/perf ov
 
 ## Alternatives rejected
 
-- Per-subject cryptographic erasure: complex key-management, minimal legal upside for IEBC-specific data landscape.
+- Per-subject cryptographic erasure: complex key-management, minimal legal upside for Commission-specific data landscape.
 - Hard delete on request without soft-delete window: destroys review-and-appeal loop; a mistaken request can be irreversible.
 - No erasure at all: violates DPA where legal-obligation exemption does not apply.
 

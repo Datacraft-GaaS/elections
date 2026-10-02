@@ -36,7 +36,7 @@
   <rect x="410" y="190" width="340" height="120" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
   <text x="580" y="216" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">Recommendation</text>
   <text x="580" y="236" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">id, finding_id, text</text>
-  <text x="580" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">responsible_body: IEBC/DPP/PARLIAMENT</text>
+  <text x="580" y="256" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">responsible_body: the Commission/DPP/PARLIAMENT</text>
   <text x="580" y="276" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">due_date, status: OPEN/IN_PROGRESS/CLOSED</text>
   <text x="580" y="296" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">recommendation_issued.v1 emitted</text>
   <text x="580" y="306" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">linked to FindingRecord</text>

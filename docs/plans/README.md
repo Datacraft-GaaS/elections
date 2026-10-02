@@ -1,4 +1,4 @@
-# IEBC IEMS: Full Build Plan (index)
+# the Commission IEMS: Full Build Plan (index)
 
 ## Files
 

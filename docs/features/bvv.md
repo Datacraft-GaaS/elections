@@ -40,7 +40,7 @@ Daily lookup cap per national_id_hash: 5 lookups/day (configurable); enforced in
 | Source | Notes |
 |---|---|
 | Citizen (web portal) | HTTPS; hashed national ID submitted client-side; no raw ID reaches server |
-| Citizen (kiosk) | Touch-screen kiosk at IEBC offices and county hubs; same backend API |
+| Citizen (kiosk) | Touch-screen kiosk at the Commission offices and county hubs; same backend API |
 | Accredited party agent | JWT + SpiceDB `PARTY_AGENT` role; uncapped lookup with audit |
 | Register read models (BVR M02) | Voter registration status consumed from bvr-svc read projection |
 
@@ -87,7 +87,7 @@ All responses carry `Cache-Control: no-store`; no voter data cached at edge.
 | Surface | Path | Purpose |
 |---|---|---|
 | VPRS / BVV web portal (Astro) | `services/portal-svc/astro/` (shared portal) | Citizen web lookup + objection filing |
-| Kiosk app | Touch-screen PWA at IEBC offices | In-person self-service lookup |
+| Kiosk app | Touch-screen PWA at the Commission offices | In-person self-service lookup |
 | USSD shortcode | `integrations/ussd-gateway/` (Africa's Touching) | Feature-phone citizen lookup via `*860#` or designated shortcode |
 
 Languages: English + Kiswahili minimum; extensible to 11. WCAG 2.1 AA; mobile-first. Kiosk: large-text mode; audio readout; no biometric capture.
@@ -112,9 +112,9 @@ Languages: English + Kiswahili minimum; extensible to 11. WCAG 2.1 AA; mobile-fi
 ## 9. Honest caveats + external prerequisites
 
 - **USSD shortcode** (`*860#` or designated) requires Safaricom / Africa's Touching commercial arrangement; adapter is written; live shortcode pending.
-- **Kiosk hardware** deployment (IEBC offices, county hubs) is an operations prerequisite; software is ready.
+- **Kiosk hardware** deployment (the Commission offices, county hubs) is an operations prerequisite; software is ready.
 - **Objection resolution SLA** -- no SLA is encoded in the spec; Commission officers resolve via bvr-admin queue; response time is an operational commitment.
-- **Rate cap calibration** -- 5 lookups/day is a configurable default; IEBC may adjust based on legitimate multi-device citizen patterns.
+- **Rate cap calibration** -- 5 lookups/day is a configurable default; the Commission may adjust based on legitimate multi-device citizen patterns.
 - BVV does not verify biometrics; a citizen who finds their registration incorrect must visit a BVR station or use the formal objection path.
 
 ## 10. Test coverage + operational runbooks

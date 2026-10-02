@@ -1,4 +1,4 @@
-# Mobile Architecture — IEBC IEMS (sw/ Integration)
+# Mobile Architecture — the Commission IEMS (sw/ Integration)
 
 **Integration note.** This document is adapted from `mobile/ARCHITECTURE.md` (source of truth pending stitching-pass consolidation). It is a companion to `../ARCHITECTURE.md` (the main sw/ system architecture). The stitching pass should add a "Mobile Subsystem" section to `../ARCHITECTURE.md` that references this file and the M29-M34 module specs.
 
@@ -15,7 +15,7 @@
 7. Testable. Every screen and every API interaction covered by tests and reproducible in CI.
 8. Portable. Flutter single codebase for Android + iOS; PWA fallback for the widest reach.
 9. Safely updatable. Signed OTA + rollback + minimum-supported-version enforcement.
-10. No lock-in. Post-handover, IEBC can build, sign, and distribute updates without vendor cooperation.
+10. No lock-in. Post-handover, the Commission can build, sign, and distribute updates without vendor cooperation.
 
 ---
 
@@ -96,7 +96,7 @@
                     |
                     v
       +--------------------------------------+
-      |  IEBC EDGE (Kenya-resident)          |
+      |  the Commission EDGE (Kenya-resident)          |
       |  - WAF + rate limit                  |
       |  - Public endpoints (CDN-cached)     |
       |  - Kit-gateway equivalent for apps   |
@@ -168,8 +168,8 @@ Detail in `SECURITY.md` (this folder). Key architectural elements:
 - Google Play Managed for private Android app distribution.
 - Apple Business Manager for private iOS app distribution.
 - App-configuration policy for private apps: per-user allowlist, force-update policy, per-org branding.
-- Public apps (M29, M33) distributed via public app stores; also as signed APK / IPA from IEBC portal.
-- MDM console operated by IEBC ICT with Datacraft supporting during contract.
+- Public apps (M29, M33) distributed via public app stores; also as signed APK / IPA from the Commission portal.
+- MDM console operated by the Commission ICT with Datacraft supporting during contract.
 
 ---
 
@@ -195,13 +195,13 @@ Each app consumes a subset of the IEMS APIs (see `../API-CATALOG.md`). Key patte
 ### 9.1 Public apps (M29, M33)
 
 - Google Play + Apple App Store.
-- Signed APK direct-download from `verify.iebc.or.ke` for citizens without Play access.
+- Signed APK direct-download from `verify.eel.example` for citizens without Play access.
 - OTA updates staged: 5% canary → 25% → 100%; automated rollback on crash-rate regression.
 - Minimum-supported-version enforcement (< min = refuses to run, prompts update).
 
 ### 9.2 Private apps (M30, M31, M32, M34)
 
-- Managed distribution via IEBC MDM.
+- Managed distribution via Commission MDM.
 - Force-update within 48 hours of publication.
 - Per-user allowlist tied to accreditation database.
 
@@ -230,7 +230,7 @@ Each app consumes a subset of the IEMS APIs (see `../API-CATALOG.md`). Key patte
 |---|---|---|
 | Production | Live public + private apps | Real production data (register lookup, results) |
 | Staging | Pre-production validation | Sanitised subset (synthetic data) |
-| Sandbox | IEBC training + drills | Fully synthetic |
+| Sandbox | the Commission training + drills | Fully synthetic |
 | Development | Datacraft dev | Fully synthetic |
 | CI | Test execution | Synthetic + mocked |
 
@@ -242,9 +242,9 @@ Apps built with build-flavour system: same codebase, different endpoints and sig
 
 - Full Flutter source code + Rust FFI modules under GCC 15.4 IPR transfer.
 - Build scripts + CI/CD pipeline definitions.
-- Signed OTA update pipeline handed to IEBC (or Datacraft holds signing keys in escrow per SCC).
-- App-store publisher accounts (Google Play Developer + Apple Developer) either transferred to IEBC or IEBC-owned from day one.
+- Signed OTA update pipeline handed to the Commission (or Datacraft holds signing keys in escrow per SCC).
+- App-store publisher accounts (Google Play Developer + Apple Developer) either transferred to the Commission or Commission-owned from day one.
 - Documentation: this file, `PRD.md`, `SECURITY.md`, per-app module specs M29-M34, runbooks, ADRs.
 - MDM console configuration transferred with training.
 
-Post-handover, IEBC ICT can continue to build, sign, and publish updates independently.
+Post-handover, the Commission ICT can continue to build, sign, and publish updates independently.

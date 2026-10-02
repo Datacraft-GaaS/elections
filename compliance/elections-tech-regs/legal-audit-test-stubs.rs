@@ -27,7 +27,7 @@ mod elections_tech_regs_tests {
 
     // Reg 4: Approval of technology
     // Verify that a certifier submission artefact exists and is referenced
-    // in the IEBC approval record.
+    // in the Commission approval record.
     #[test]
     #[trace("LEGAL-REGS-004")]
     fn regulation_4_technology_approved() {

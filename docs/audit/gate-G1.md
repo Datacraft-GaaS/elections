@@ -64,7 +64,7 @@ Status: PASS
 | i18n completeness lint (11 locales) | pass | zero missing keys |
 | eel-appset-gen produces 18 services × 7 sites | pass | 126 ArgoCD Applications + Kustomize overlays |
 | SpiceDB CLI wrapper (tools/spicedb/zed) | pass | detects and rejects the Zed editor; SPICEDB_ZED_BIN override honoured |
-| Naming: no iebc identifiers | pass | full-tree sweep clean |
+| Naming: no commission identifiers | pass | full-tree sweep clean |
 | Prose: no em/en dashes | pass | full-tree sweep clean |
 | Reproducibility: bit-identical Nix builds | deferred | Wave-5 WP-5.12 exercises this end-to-end |
 | Kani harnesses | deferred | Kani install cost; CI-only |

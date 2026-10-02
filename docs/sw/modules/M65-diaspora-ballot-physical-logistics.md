@@ -4,7 +4,7 @@
 **Name:** Diaspora Ballot Physical Logistics
 **Owner:** Datacraft Limited — Operations Engineering Team
 **Status:** Draft v1
-**IP Classification:** Custom Software — IPR vests in IEBC per GCC 15.4
+**IP Classification:** Custom Software — IPR vests in the Commission per GCC 15.4
 
 **Strategy traceback:** Constitution Art. 82(1)(e); Elections Act §44A; M24 (Diaspora Voting) integration boundary
 
@@ -22,9 +22,9 @@ Manages the physical return leg of diaspora ballots from overseas embassies/high
 |---|---|---|
 | Embassy Election Officer | Write (own post) | Pack containers, initiate shipment, record custody |
 | Diplomatic Bag Officer (MFA Kenya) | Write (diplomatic pouch leg) | Confirm pouch manifest, customs clearance |
-| Hub Logistics Coordinator (IEBC) | Write (assigned hub) | Receive from multiple posts, consolidate, dispatch to Nairobi |
+| Hub Logistics Coordinator (the Commission) | Write (assigned hub) | Receive from multiple posts, consolidate, dispatch to Nairobi |
 | Nairobi Tally Centre Officer | Write | Receive and log final delivery |
-| IEBC Operations (ECC) | Read-only + alert acknowledge | Real-time shipment tracking |
+| the Commission Operations (ECC) | Read-only + alert acknowledge | Real-time shipment tracking |
 | IAB Member | Read-only | Audit custody chain |
 | Customs Authority (KRA) | Read-only, pre-clearance endpoint | Verify diplomatic manifest |
 | Party Agent | Read-only (public summary) | Confirm delivery of ballots from each post |
@@ -37,7 +37,7 @@ Manages the physical return leg of diaspora ballots from overseas embassies/high
 After close of poll at each post: Embassy Election Officer scans all completed ballot envelopes, records count, seals tamper-evident container (ISO 17712 H-class security seal), photographs container + seals, records GPS coordinates of packing location. Container UID assigned (format: `KE27-DIA-{POST:5s}-{SEQ:04d}`). Packing event signed by embassy officer + IAB-appointed observer (remote witness via signed confirmation if local IAB observer not present).
 
 ### FR-65.02 — Routing determination
-Each post assigned a routing policy at T-90: (A) diplomatic pouch via MFA, (B) scheduled airline cargo with security escort, (C) charter flight for high-volume posts (London, Nairobi same-day). M65 resolves the route from post configuration; routing policy approved by IEBC Commissioner and stored immutably before T-30.
+Each post assigned a routing policy at T-90: (A) diplomatic pouch via MFA, (B) scheduled airline cargo with security escort, (C) charter flight for high-volume posts (London, Nairobi same-day). M65 resolves the route from post configuration; routing policy approved by the Commission Commissioner and stored immutably before T-30.
 
 ### FR-65.03 — Customs pre-clearance
 For airline-cargo routes: M65 generates a pre-clearance manifest per container (post, content description, ballot count, diplomatic status), submitted to KRA electronic pre-clearance portal at least 6 hours before estimated arrival. KRA acknowledgement (electronic) recorded against container UID.
@@ -52,7 +52,7 @@ Final delivery: Nairobi Tally Centre Officer scans all container UIDs, breaks se
 ECC tracks every container UID: current location tier (embassy / in-transit-to-hub / at-hub / in-transit-to-nairobi / delivered). Tracking source: airline cargo API integration (IATA Cargo2000), diplomatic pouch status from MFA API, manual GPS scan at each handoff. ECC dashboard shows ETA per container.
 
 ### FR-65.07 — Missed or delayed container alert
-Any container not confirmed at hub within 2 hours of expected ETA triggers P1 alert to ECC, IEBC Commissioner, and MFA (if diplomatic route). Any container not confirmed at Nairobi by T+12h triggers P0 escalation including KNPS liaison. Protocol pre-agreed and documented.
+Any container not confirmed at hub within 2 hours of expected ETA triggers P1 alert to ECC, the Commission Commissioner, and MFA (if diplomatic route). Any container not confirmed at Nairobi by T+12h triggers P0 escalation including KNPS liaison. Protocol pre-agreed and documented.
 
 ### FR-65.08 — Public shipment summary
 Publicly accessible summary (no container-content detail): posts dispatched, containers in transit, containers delivered. Updated every 30 minutes from ECC. Surfaced on M11 Public Portal.
@@ -71,7 +71,7 @@ M65 tracking backend: 99.9% during T+0 to T+5. Embassy packing app: offline-capa
 50+ posts across 40+ countries. Airline cargo integrations: IATA, DHL, Kenya Airways. Diplomatic pouch: MFA Kenya REST API. All routes covered; no post relies solely on a single carrier.
 
 ### NFR-65.03 — Security
-Container UIDs, seal numbers, and ballot counts classified IEBC-RESTRICTED. Not disclosed in public API. Embassy packing app: device-level encryption; TPM-signed events.
+Container UIDs, seal numbers, and ballot counts classified COMMISSION-RESTRICTED. Not disclosed in public API. Embassy packing app: device-level encryption; TPM-signed events.
 
 ### NFR-65.04 — DPA 2019
 Ballot envelopes themselves are voter-identifying material at embassy level; M65 tracks only container-level data (counts, seal IDs, custody). No voter-identifying data enters M65 records.
@@ -81,7 +81,7 @@ Hub receipt confirmation: within 2 hours of expected ETA. Nairobi tally centre r
 
 ---
 
-- **NFR-M65-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `iebc-iems-M65`; alert ruleset ID `iems-M65-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
+- **NFR-M65-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `commission-iems-M65`; alert ruleset ID `iems-M65-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
 
 ## User Stories
 
@@ -93,7 +93,7 @@ Hub receipt confirmation: within 2 hours of expected ETA. Nairobi tally centre r
 6. As a Nairobi Tally Centre Officer, I want to scan incoming container UIDs and record seal-break in front of party agents, so that the handoff to the tally process is witnessed and documented.
 7. As a Party Agent, I want to see a real-time summary of how many containers have been delivered from each post, so that I can confirm no post's ballots are missing.
 8. As a KRA Customs Officer, I want to receive the pre-clearance manifest electronically at least 6 hours before landing, so that I can process diplomatic clearance without holding the shipment at the airport.
-9. As an IEBC Commissioner, I want a P0 alert if any container is not confirmed at Nairobi by T+12h, so that I can escalate to KNPS and MFA immediately.
+9. As a Commission Commissioner, I want a P0 alert if any container is not confirmed at Nairobi by T+12h, so that I can escalate to KNPS and MFA immediately.
 10. As a Civil Society Observer, I want the public summary to show how many posts have dispatched and how many have been received, so that I can independently verify ballot completeness before tally.
 
 ---
@@ -253,12 +253,12 @@ paths:
 
 | Metric | Target | Sign-off |
 |---|---|---|
-| All posts dispatched within T+24h | 100% | IEBC Commissioner |
-| All containers at Nairobi by T+5d | 100% | IEBC Tally Director |
+| All posts dispatched within T+24h | 100% | the Commission Commissioner |
+| All containers at Nairobi by T+5d | 100% | the Commission Tally Director |
 | Seal-intact on arrival at Nairobi | 100% | IAB |
 | Custody chain completeness (no gaps) | 100% | IAB |
 | P1 alert delivery | p99 < 5 min | Datacraft SRE |
-| KRA pre-clearance submitted >= 6h before arrival | 100% | IEBC Legal |
+| KRA pre-clearance submitted >= 6h before arrival | 100% | the Commission Legal |
 
 ---
 
@@ -301,7 +301,7 @@ paths:
 | # | Risk | Mitigation |
 |---|---|---|
 | R1 | Airline cargo embargo or airport closure at post | Charter-flight contingency pre-arranged for 10 highest-volume posts; diplomatic pouch fallback |
-| R2 | Customs holds container despite diplomatic status | Pre-clearance submitted >= 6h before arrival; IEBC Legal has MFA-backed rapid-clearance protocol |
+| R2 | Customs holds container despite diplomatic status | Pre-clearance submitted >= 6h before arrival; the Commission Legal has MFA-backed rapid-clearance protocol |
 | R3 | Seal broken in transit (not tampered) | Seal-break at hub triggers container inspection + re-sealing with new seal UID; IAB observer witness required |
 | R4 | Embassy officer unable to access M65 app (internet outage) | Offline packing app with WAL; paper manifest backup; manual data entry at hub on receipt |
 | R5 | Hub consolidation loses a post's container in aggregate | Container UID manifest validated before hub-outbound seal; any missing UID blocks hub dispatch |
@@ -329,16 +329,16 @@ paths:
 
 ## 18. Decommissioning
 
-**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if IEBC terminates the contract.
+**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if the Commission terminates the contract.
 
 **Steps:**
 
-1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and IEBC DPO.
+1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and the Commission DPO.
 2. **Service shutdown** — Kubernetes deployments scaled to zero; PersistentVolumeClaims retained for 30 days then deleted after confirmation of M69 transfer.
 3. **Credential revocation** — service account certificates, API keys, and HSM key handles revoked via P06 key-destruction ceremony within 48 hours of shutdown.
 4. **Source-code escrow** — final tagged release deposited to C04 escrow within 7 days of shutdown.
-5. **Runbook handover** — operational runbook and post-mortem notes delivered to IEBC ICT within 14 days.
+5. **Runbook handover** — operational runbook and post-mortem notes delivered to the Commission ICT within 14 days.
 
-**Owner:** SRE Lead. **Sign-off:** IEBC ICT Director + Datacraft Programme Director.
+**Owner:** SRE Lead. **Sign-off:** the Commission ICT Director + Datacraft Programme Director.
 
 > **RESOLUTION (F-23, 2026-08-21):** Decommissioning stub added per audit finding. Owner: SRE Lead. Target: FAT-07 gate.

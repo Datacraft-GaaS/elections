@@ -4,7 +4,7 @@
 **Name:** Reproducibility Bundle
 **Owner:** Datacraft Limited — Platform Engineering Team
 **Status:** Draft v2
-**IP Classification:** Custom Software — IPR vests in IEBC per GCC 15.4; source released open-source (MIT licence) per Strategy §XI.6 Undertaking Letter
+**IP Classification:** Custom Software — IPR vests in the Commission per GCC 15.4; source released open-source (MIT licence) per Strategy §XI.6 Undertaking Letter
 
 **Strategy traceback:** Part XI (all sections), Part IV §D, Part XII §XII.2 Wall 1, Part XIX §XIX.1 Layer 4, Part XV §XV.1 Tier C
 
@@ -12,7 +12,7 @@
 
 ## Purpose
 
-The Reproducibility Bundle is the technical mechanism by which any independent observer with a standard laptop can re-derive every published election result — bit-identically — from published inputs alone, without trusting IEBC, Datacraft, or any other party. It closes every "hidden server" narrative that has plagued Kenyan elections since 2017 (Raila Odinga v IEBC [2017] eKLR para 272). The bundle packages: all signed Form 34A inputs, the aggregation pipeline in a Docker Compose environment, a `make reproduce` entry point, per-stage expected-output hashes, and vendored dependencies. Any mathematics graduate runs one command and gets a cryptographically verifiable match or mismatch against the IEBC-declared result. The module also manages hash publication to the Kenya Gazette, national radio bulletin, and five independent digital channels, and issues participation tokens to voters.
+The Reproducibility Bundle is the technical mechanism by which any independent observer with a standard laptop can re-derive every published election result — bit-identically — from published inputs alone, without trusting the Commission, Datacraft, or any other party. It closes every "hidden server" narrative that has plagued Kenyan elections since 2017 (Raila Odinga v the Commission [2017] eKLR para 272). The bundle packages: all signed Form 34A inputs, the aggregation pipeline in a Docker Compose environment, a `make reproduce` entry point, per-stage expected-output hashes, and vendored dependencies. Any mathematics graduate runs one command and gets a cryptographically verifiable match or mismatch against the Commission-declared result. The module also manages hash publication to the Kenya Gazette, national radio bulletin, and five independent digital channels, and issues participation tokens to voters.
 
 ---
 
@@ -36,7 +36,7 @@ The Reproducibility Bundle is the technical mechanism by which any independent o
 The pipeline accepts signed Form 34A inputs and produces Form 34B (constituency) and Form 34C (national) outputs. All stages are pure functions: same inputs always produce bit-identical outputs. No wall-clock reads, no random seeds, no external state reads at runtime.
 
 ### FR-14.02 — make reproduce entry point
-A single `make reproduce` command on any Linux/macOS machine with Docker installed: downloads the input manifest from the IEBC public endpoint (or uses a local cached copy), verifies the manifest hash against the published Merkle root, runs the pipeline in Docker Compose, computes SHA-256 of outputs, and prints MATCH or MISMATCH against published expected hashes.
+A single `make reproduce` command on any Linux/macOS machine with Docker installed: downloads the input manifest from the Commission public endpoint (or uses a local cached copy), verifies the manifest hash against the published Merkle root, runs the pipeline in Docker Compose, computes SHA-256 of outputs, and prints MATCH or MISMATCH against published expected hashes.
 
 ### FR-14.03 — Bundle composition
 Bundle contents: `docker-compose.yml`, `Makefile`, `inputs/manifest.json` (hash-verified), `pipeline/` (containerised stages with pinned OCI image digests), `expected/` (per-stage expected output hashes), `verify.sh` (independent hash comparison), `README.md`, `LICENSE` (MIT). Bundle compressed < 20 GB. All dependencies vendored (no network access during `make reproduce`).
@@ -48,10 +48,10 @@ Manifest lists every Form 34A: station code, PDF URL, PDF SHA-256, JSON URL, JSO
 After each pipeline stage (form ingestion, OCR validation, constituency aggregation, national aggregation), the expected output hash is written to `expected/stage-N.sha256`. Any deviation from expected is a discrepancy that triggers the bug-bounty award.
 
 ### FR-14.06 — Containerised pipeline with pinned images
-Every stage is an OCI image with a pinned digest (`sha256:...`). Images are published to the IEBC container registry and mirrored on GitHub Container Registry. The Makefile pulls from both with failover.
+Every stage is an OCI image with a pinned digest (`sha256:...`). Images are published to the Commission container registry and mirrored on GitHub Container Registry. The Makefile pulls from both with failover.
 
 ### FR-14.07 — Merkle root publication schedule
-Daily during E-30 through E+30: Merkle root published to (1) Kenya Gazette (via Government Printer API), (2) IEBC Twitter/X account, (3) GitHub Releases on `iebc/kiems-reproduce`, (4) IPFS (pinned node operated by Datacraft), (5) IAB's independent domain. All five must show the same root; any discrepancy triggers IAB alert.
+Daily during E-30 through E+30: Merkle root published to (1) Kenya Gazette (via Government Printer API), (2) the Commission Twitter/X account, (3) GitHub Releases on `commission/kiems-reproduce`, (4) IPFS (pinned node operated by Datacraft), (5) IAB's independent domain. All five must show the same root; any discrepancy triggers IAB alert.
 
 ### FR-14.08 — National radio bulletin
 A structured plain-text root-hash announcement is delivered to KBC Radio at 19:30 daily during E-30 through E+30 for reading in the 20:00 news bulletin. Delivery via secure SFTP to KBC technical operations, confirmed with read receipt.
@@ -63,7 +63,7 @@ At end of voting, each voter's presence in the station is represented by an anon
 IAB commissions an independent second implementation of both the ABIS dedup engine and the aggregation pipeline. Both implementations must agree within published tolerance (zero at result-affecting level). Both are published open-source. Discrepancy triggers full manual review.
 
 ### FR-14.11 — Bug-bounty integration
-First party to submit a verified bit-discrepancy between the reproduce-me bundle output and any published IEBC result wins a cash award (KES 500,000 for constituency-level; KES 2,000,000 for national-level discrepancy). Rules published on HackerOne. Datacraft funds the award pool.
+First party to submit a verified bit-discrepancy between the reproduce-me bundle output and any published the Commission result wins a cash award (KES 500,000 for constituency-level; KES 2,000,000 for national-level discrepancy). Rules published on HackerOne. Datacraft funds the award pool.
 
 ### FR-14.12 — 15-year reproducibility commitment
 Bundle is packaged against Ubuntu 26.04 LTS (supported through 2036). All dependencies pinned with SHA-256. Code escrow deposit includes the full bundle per §PB-04 commitment. Any observer should be able to reproduce election results until 2042 without internet access.
@@ -85,7 +85,7 @@ Compressed bundle < 20 GB. On 20 Mbps connection (Nairobi fibre baseline) downlo
 Pipeline is fully deterministic: bit-identical output on every run from identical inputs, regardless of execution environment, CPU architecture (x86-64 or ARM64 via emulation), or timestamp. Verified by automated multi-environment CI matrix.
 
 ### NFR-14.04 — Availability
-Bundle download endpoint: 99.9% availability during E-7 through E+90. Hosted on 3 mirrors (IEBC CDN, GitHub Releases, IPFS). Any mirror sufficient.
+Bundle download endpoint: 99.9% availability during E-7 through E+90. Hosted on 3 mirrors (the Commission CDN, GitHub Releases, IPFS). Any mirror sufficient.
 
 ### NFR-14.05 — Audit trail
 Every bundle publication event, every Gazette submission, every radio bulletin delivery, and every bug-bounty claim is logged in the M05 audit log with HSM signature.
@@ -104,7 +104,7 @@ Participation tokens are stored without linkage to voter identity. Input manifes
 5. As a voter, I want to enter my participation token in M13 and confirm I was counted, so that I have personal evidence my presence was recorded.
 6. As a data journalist, I want to download the input manifest and inspect every Form 34A hash, so that I can write a story confirming every form is accounted for.
 7. As a security researcher, I want to find a discrepancy and claim the bug-bounty, so that the system is stress-tested by adversarial independent verification.
-8. As an ELOG statistician, I want to re-aggregate Form 34Bs from the published inputs, so that I can cross-check IEBC's Form 34C without asking for data access.
+8. As an ELOG statistician, I want to re-aggregate Form 34Bs from the published inputs, so that I can cross-check the Commission's Form 34C without asking for data access.
 
 ---
 
@@ -184,14 +184,14 @@ class BugBountySubmission(BaseModel):
 - Kenya Government Printer API — daily Gazette Merkle root
 - KBC Radio — 20:00 bulletin delivery
 - IPFS node — decentralised Merkle root publication
-- GitHub / IEBC container registry — image mirrors
+- GitHub / the Commission container registry — image mirrors
 - HackerOne — bug-bounty intake
 
 ---
 
 ## UI/UX — Key Screens
 
-1. **Bundle landing page** (`iebc.go.ke/reproduce`) — current bundle status, download links, quick-verify instructions, `curl` one-liner
+1. **Bundle landing page** (`eel.example/reproduce`) — current bundle status, download links, quick-verify instructions, `curl` one-liner
 2. **Manifest explorer** — searchable table of all Form 34A entries; click any row to see hash, Merkle path, PDF link
 3. **Stage-hash dashboard** — per-stage expected hash with green/amber status as stages complete
 4. **Participation token lookup** — embedded in M13; also available as standalone page
@@ -205,12 +205,12 @@ class BugBountySubmission(BaseModel):
 | Requirement | Source |
 |---|---|
 | Verifiable election method (bit-reproducible) | Constitution Art. 86(a) |
-| Transparent method | Constitution Art. 86(a); Raila v IEBC [2017] para 272 |
+| Transparent method | Constitution Art. 86(a); Raila v the Commission [2017] para 272 |
 | Records retention >= 7 years | Elections Act s.44; Limitation of Actions Act s.4 |
 | Open-source code publication | Strategy §XI.6 Undertaking Letter |
 | No voter PII in public artefacts | DPA 2019 s.26, s.47 |
 | Government Gazette publication | Kenya Gazette Act |
-| IPR vests in IEBC | GCC 15.4 |
+| IPR vests in the Commission | GCC 15.4 |
 
 ---
 
@@ -219,10 +219,10 @@ class BugBountySubmission(BaseModel):
 | Metric | Target | Sign-off |
 |---|---|---|
 | Full-pipeline bit-identical re-run rate | 100% on same inputs | IAB |
-| Bundle available within X of Form 34C signing | <= 4 hours | IEBC ICT |
+| Bundle available within X of Form 34C signing | <= 4 hours | the Commission ICT |
 | Unique independent reproduction runs confirmed | >= 100 unique parties within 24 hours | Datacraft |
-| Gazette publication SLA | 100% of daily windows during E-30 to E+30 | IEBC Chair |
-| Radio bulletin delivery SLA | 100% of daily windows | IEBC Comms |
+| Gazette publication SLA | 100% of daily windows during E-30 to E+30 | the Commission Chair |
+| Radio bulletin delivery SLA | 100% of daily windows | the Commission Comms |
 | Bug-bounty discrepancy count | 0 | IAB |
 | Participation token issuance coverage | 100% of authenticated voters | IAB |
 | Second-implementation agreement at result level | >= 99.99% | IAB |

@@ -132,7 +132,7 @@ Languages: EN + SW for all public surfaces; extensible to additional Kenyan lang
 
 - NLC does not have a machine-readable publication feed. The daily currency check parses the NLC Gazette PDF; reliability depends on PDF structure stability. Datacraft must validate PDF parsing against at least three prior Gazette editions before go-live.
 - The KNBS data-sharing agreement must be formalised before fairness metrics reflect current census data; the adapter and double are ready but the live SFTP endpoint is not provisioned.
-- Boundary dispute handling: the legal process for freezing a disputed polygon during an electoral petition is not specified in the regulations. IEBC legal must confirm the freeze mechanism before the dispute-flag feature is enabled.
+- Boundary dispute handling: the legal process for freezing a disputed polygon during an electoral petition is not specified in the regulations. the Commission legal must confirm the freeze mechanism before the dispute-flag feature is enabled.
 - The Polsby-Popper score is published as an informational metric. It has no statutory weight in Kenyan delimitation law; its publication is advisory and must not be presented as a binding fairness criterion.
 - CDN pre-warming on delimitation release day requires a separate operational step before the public announcement; the boundary team must coordinate with the CDN operator.
 

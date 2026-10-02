@@ -57,41 +57,41 @@ certora verify --spec formal/certora/ballot_chain/ballot_hmac.cvl \
   --rule hmacIntegrity --rule sequentialOrder
 
 # 3. T Truthful (Rust)
-cd /Users/nyimbiodero/src/pjs/eel
+cd .
 for svc in services/*; do
   if [ -d "$svc/crates" ]; then
     cd $svc
     cargo check --locked 2>&1 | grep "^error" | wc -l
-    cd /Users/nyimbiodero/src/pjs/eel
+    cd .
   fi
 done
 
 # 4. T Truthful (Python)
-cd /Users/nyimbiodero/src/pjs/eel && uv run pytest -vxs tests/ci
+cd . && uv run pytest -vxs tests/ci
 
 # 5. T Truthful (Dart/Flutter)
 for app in services/*/apps/*; do
   cd $app && flutter test 2>&1 | tail -1
-  cd /Users/nyimbiodero/src/pjs/eel
+  cd .
 done
 
 # 6. KL Lattice (M5 audit chain integrity)
 uv run python3 formal/audit_chain_lattice.py --services 20 --verify-all
 
 # 7. A+ Adversarial (chaos)
-cd /Users/nyimbiodero/src/pjs/eel/chaos && ./run-all.sh
+cd ./chaos && ./run-all.sh
 # Expected: 68 + 34 + 16 = 118 scenarios complete
 # Correlation: every scenario links to at least 1 detection rule
 
 # 8. A+ Detection (falco + wazuh + tetragon + sigma + canary)
-cd /Users/nyimbiodero/src/pjs/eel/detection && ./run-playbooks.sh
+cd ./detection && ./run-playbooks.sh
 # Expected: all alerts fired; all correlations resolved
 
 # 9. Supply-chain (deny.toml + rust-toolchain)
 for svc in services/*; do
   cd $svc
   cargo deny check 2>&1 | tail -1
-  cd /Users/nyimbiodero/src/pjs/eel
+  cd .
 done
 ```
 

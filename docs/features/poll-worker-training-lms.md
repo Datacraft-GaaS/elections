@@ -106,7 +106,7 @@ Languages: EN + SW on all staff and worker surfaces. WCAG 2.2 AA. Offline app ha
 
 ## 7. Integrity + anti-tamper
 
-- **HSM-signed certificates** - `WorkerCertificate.hsm_signature` is verifiable offline using the public key published in the IEBC key transparency log. A field supervisor can verify a certificate QR code without network connectivity.
+- **HSM-signed certificates** - `WorkerCertificate.hsm_signature` is verifiable offline using the public key published in the Commission key transparency log. A field supervisor can verify a certificate QR code without network connectivity.
 - **Offline package integrity** - packages are signed (Ed25519, key from `eel_kek_generations`) and the app verifies the signature on first open and on each module load. Tampering causes immediate rejection and telemetry alert.
 - **Assessment immutability** - `AssessmentAttempt` rows are insert-only; no UPDATE on answers or score. Disputes trigger a forensic re-score from the raw answers (SHA-256 locked).
 - **SpiceDB gate** - `dispatch_eligible` is a computed relation backed by `WorkerCertificate.status = VALID` for the current election cycle. M33 queries SpiceDB at dispatch time; a stale cache is detected by a TTL of 60 seconds.

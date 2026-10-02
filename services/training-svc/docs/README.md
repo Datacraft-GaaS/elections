@@ -6,7 +6,7 @@ Service manages voter education content (CMS), poll worker training (LMS),
 media and observer accreditation, and medical first response coordination.
 
 Components:
-- django/cms: M37 voter-education-cms (11-language CMS, fact-check, IEBC approval)
+- django/cms: M37 voter-education-cms (11-language CMS, fact-check, the Commission approval)
 - django/lms: M38 poll-worker-training-lms (250k workers, cascaded, HSM certs)
 - django/accreditation: M42+M43 media and observer accreditation (QR badges, CRL)
 - django/medical: M60 medical first response (no-PHI incident dispatch)

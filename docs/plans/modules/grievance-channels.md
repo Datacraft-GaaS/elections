@@ -8,7 +8,7 @@
 | Size | L |
 | Availability class | routine 99.5% |
 | Event-sourced | no (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M23-grievance-channels.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M23-grievance-channels.md |
 
 ## Purpose
 
@@ -45,7 +45,7 @@ OpenAPI file: packages/openapi-contracts/ecc/grievance.yaml
 | POST /grievance/v1/cases | 2 live-per-user | public | yes | Submit grievance (any channel); anonymous allowed |
 | GET /grievance/v1/cases/{id}/status | 2 live-per-user | public | n/a | Case status by reference; no PII returned |
 | POST /grievance/v1/cases/{id}/evidence | 2 live-per-user | public | yes | Upload additional evidence |
-| GET /grievance/v1/cases | 3 accredited | JWT+SpiceDB | n/a | Case queue for IEBC triage |
+| GET /grievance/v1/cases | 3 accredited | JWT+SpiceDB | n/a | Case queue for the Commission triage |
 | PATCH /grievance/v1/cases/{id} | 3 accredited | JWT+SpiceDB | yes | Triage: assign, escalate, resolve |
 | POST /grievance/v1/evidence/{case_id}/package | 3 accredited | JWT+SpiceDB | yes | Assemble signed evidence package |
 | POST /grievance/v1/webhooks | 3 accredited | JWT+SpiceDB | yes | Register webhook subscription |
@@ -92,10 +92,10 @@ Intake channels:
 
 1. FR-M23-001: Public Verifier app intake: structured form with category selector, optional GPS station-code lookup, photo/video attachment compressed on-device, anonymous toggle; returns case-reference number and tracking URL with QR code.
 2. FR-M23-002: USSD short-code intake: IVR menu in EN + SW; structured question tree; <= 5 menu steps; 182-char session limit; acknowledgement SMS with case reference within 60 s.
-3. FR-M23-003: WhatsApp Business intake: verified IEBC WhatsApp number; natural-language intake with NLP category extraction via M28; category confirmation before case creation; returns case reference in-chat.
-4. FR-M23-004: SMS intake: free-text to IEBC short-code; auto-categorised by rule and ML; acknowledgement SMS with case reference within 60 s.
+3. FR-M23-003: WhatsApp Business intake: verified the Commission WhatsApp number; natural-language intake with NLP category extraction via M28; category confirmation before case creation; returns case reference in-chat.
+4. FR-M23-004: SMS intake: free-text to the Commission short-code; auto-categorised by rule and ML; acknowledgement SMS with case reference within 60 s.
 5. FR-M23-005: Kit-side kiosk intake: locked mode on KIEMS kit at polling station; voter or party agent enters complaint category and optional voice note transcribed on-device via M28 ASR; Presiding Officer counter-signs receipt; case submitted to central on sync.
-6. FR-M23-006: In-person IAB office intake: IEBC case officer records complaint directly in case management console; produces printed receipt for complainant.
+6. FR-M23-006: In-person IAB office intake: the Commission case officer records complaint directly in case management console; produces printed receipt for complainant.
 
 Case intake and record:
 
@@ -118,7 +118,7 @@ Case management:
 
 Whistleblower protection:
 
-20. FR-M23-020: Protected whistleblower channel: submissions marked WHISTLEBLOWER get a privilege flag; case file visible only to IEBC Supervisor, IEBC Commissioner, and IAB legal representative; no other case officer can access the underlying identity even if contact was provided.
+20. FR-M23-020: Protected whistleblower channel: submissions marked WHISTLEBLOWER get a privilege flag; case file visible only to the Commission Supervisor, the Commission Commissioner, and IAB legal representative; no other case officer can access the underlying identity even if contact was provided.
 21. FR-M23-021: Whistleblower contact stored as SHA-256 hash of MSISDN/email only; plain text never written to any store, log, or trace; legal-privilege flag prevents standard discovery.
 22. FR-M23-022: Whistleblower decryption ceremony: dual-officer approval required to access contact data; every decryption access event logged and anchored to Merkle chain.
 23. FR-M23-023: Whistleblower protection scope confirmed under Whistleblower Protection Act 2022; legal sign-off required before feature is enabled in production.
@@ -176,8 +176,8 @@ Accessibility and language:
 UI screens:
 
 53. FR-M23-053: Public intake form (Verifier App + Web): category selector with icons, station-code lookup by GPS, photo/video attach, anonymous toggle; submit returns case reference with QR code.
-54. FR-M23-054: Case status tracker: enter case reference; status timeline (submitted, assigned, investigating, resolved); estimated resolution time per severity; contact IEBC link; no PII shown.
-55. FR-M23-055: IEBC case management console: kanban-style OPEN/ASSIGNED/INVESTIGATING/RESOLVED columns; SLA countdown badges; severity colour coding; one-click assignment and hand-off; evidence-package builder embedded.
+54. FR-M23-054: Case status tracker: enter case reference; status timeline (submitted, assigned, investigating, resolved); estimated resolution time per severity; contact the Commission link; no PII shown.
+55. FR-M23-055: the Commission case management console: kanban-style OPEN/ASSIGNED/INVESTIGATING/RESOLVED columns; SLA countdown badges; severity colour coding; one-click assignment and hand-off; evidence-package builder embedded.
 56. FR-M23-056: P0 alert panel: dedicated supervisor view; live count of P0 cases; time-to-SLA-breach per case; push notification log; one-click reassignment to available officer.
 57. FR-M23-057: Evidence package builder screen: case summary, auto-selected attachments, station telemetry extract, statutory basis picker, PDF preview, HSM-sign button; signing disabled until statutory basis selected.
 58. FR-M23-058: Kit kiosk intake screen: simplified 4-step flow (category icon grid, description voice/text, Presiding Officer counter-sign, printed receipt with case reference); no network required for intake.
@@ -185,7 +185,7 @@ UI screens:
 ## Acceptance criteria
 
 AC-M23-01: P0 intake-to-officer-notification <= 2 minutes; timestamp delta verified in integration test; 99th percentile measured over T-7 to T+7 load scenario.
-AC-M23-02: P0 SLA compliance rate >= 99%; SLA tracking log verified; IEBC Commissioner sign-off required before production go-live.
+AC-M23-02: P0 SLA compliance rate >= 99%; SLA tracking log verified; the Commission Commissioner sign-off required before production go-live.
 AC-M23-03: P1 SLA compliance rate >= 95% over election week; SLA tracking log.
 AC-M23-04: P2 SLA compliance rate >= 90% over election week; SLA tracking log.
 AC-M23-05: USSD intake completes case submission in <= 5 menu steps and <= 182-char per step; UAT walkthrough with three independent testers.
@@ -255,4 +255,4 @@ EC-HUM-10: Low-literacy USSD path; numeric menu <= 5 steps; IVR audio alternativ
 ## Open questions
 
 - WhatsApp approval: WA Cloud API business verification takes 6-8 weeks; application must start at T-12 months; delay pushes WA channel out of scope for the election cycle.
-- Whistleblower Protection Act scope: the Kenya Whistleblower Protection Act 2017 protections apply to public sector; IEBC legal must confirm coverage for election observers and citizens before the whistleblower feature is enabled.
+- Whistleblower Protection Act scope: the Kenya Whistleblower Protection Act 2017 protections apply to public sector; the Commission legal must confirm coverage for election observers and citizens before the whistleblower feature is enabled.

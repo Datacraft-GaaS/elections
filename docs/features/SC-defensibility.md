@@ -20,7 +20,7 @@ Analysis of the platform's anti-fraud + counter-rigging controls against expert 
 
 ## 1. Precedent + SCoK test framework
 
-Directly relevant precedent: *Raila Odinga v IEBC 2013*, *2017 v1* (nullification), *2017 v2* (Nyamira), *2022*. The Court's test framework:
+Directly relevant precedent: *Raila Odinga v the Commission 2013*, *2017 v1* (nullification), *2017 v2* (Nyamira), *2022*. The Court's test framework:
 
 - Conduct consistent with the Constitution and the law.
 - Verifiable, transparent, credible, secure, free, and fair electoral process.
@@ -143,7 +143,7 @@ Enforced at M01 BVR-device + M02 BVR-backend + M04 VPRS:
 | Duplicate registration | M03 ABIS 1:N (see §7) | Adjudication if biometric match found |
 | Ongoing dormancy | KRA quarterly signal via CVR (M35) | Flag for review, not automatic removal |
 
-**Honest gap:** freshness of judiciary + KPS interfaces depends on external systems keeping IEBC updated. Our IPRS fail-closed prevents silent auto-approve, but a recent conviction not yet in the register is missed until the next batch.
+**Honest gap:** freshness of judiciary + KPS interfaces depends on external systems keeping the Commission updated. Our IPRS fail-closed prevents silent auto-approve, but a recent conviction not yet in the register is missed until the next batch.
 
 **Mitigations:**
 - Officer manual review with 30-day SLA for edge cases (`abis-rectification`).

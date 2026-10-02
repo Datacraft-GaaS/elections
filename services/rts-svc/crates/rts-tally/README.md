@@ -2,7 +2,7 @@
 
 TLA+-formally-verified tally aggregation engine.
 
-Implements referendum threshold logic (50%+1 national, majority per county), run-off handling (top 2 candidates if no majority), tie resolution (return to IEBC for discretion). Formally verified via TLA+/Apalache to ensure correctness under all candidate/voter scenarios. Computes valid election result or identifies ambiguous case requiring manual ECC intervention.
+Implements referendum threshold logic (50%+1 national, majority per county), run-off handling (top 2 candidates if no majority), tie resolution (return to the Commission for discretion). Formally verified via TLA+/Apalache to ensure correctness under all candidate/voter scenarios. Computes valid election result or identifies ambiguous case requiring manual ECC intervention.
 
 Fits into rts-svc as the tally computation core: takes vote counts, applies rules, returns result or escalation flag.
 

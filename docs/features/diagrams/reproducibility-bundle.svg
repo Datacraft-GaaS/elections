@@ -68,9 +68,9 @@
 <line x1="850" y1="315" x2="915" y2="417" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
 <line x1="850" y1="320" x2="915" y2="487" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
 
-<!-- IEBC Website -->
+<!-- the Commission Website -->
 <rect x="920" y="180" width="150" height="55" rx="6" fill="#1f77b4" stroke="#155a8a" stroke-width="2"/>
-<text x="995" y="205" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">IEBC Website</text>
+<text x="995" y="205" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">the Commission Website</text>
 
 <!-- GitHub Release -->
 <rect x="920" y="250" width="150" height="55" rx="6" fill="#1f77b4" stroke="#155a8a" stroke-width="2"/>

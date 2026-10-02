@@ -31,7 +31,7 @@ entities:
         description: Electoral scope.
       - name: scope_code
         type: string or null
-        description: IEBC scope code; null for national.
+        description: the Commission scope code; null for national.
       - name: position_code
         type: string
         description: Elective position, e.g. presidential, governor, senator.

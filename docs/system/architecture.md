@@ -10,7 +10,7 @@ eel is an election management platform covering the full electoral cycle: voter 
 
 ## 2. Runtime topology
 
-Eighteen services in `services/`, deployed to two IEBC DR sites and five regional edge clusters (ADR-0019, `docs/adr/0019-edge-topology.md`). Placement per service is recorded in ADR-0024 (`docs/adr/0024-app-placement.md`).
+Eighteen services in `services/`, deployed to two the Commission DR sites and five regional edge clusters (ADR-0019, `docs/adr/0019-edge-topology.md`). Placement per service is recorded in ADR-0024 (`docs/adr/0024-app-placement.md`).
 
 ```
 kits (Flutter)   mobile (Flutter)   portals (Astro / LiveView / Django)   desktop (Tauri)

@@ -91,7 +91,7 @@ Push notification state tracked in Firebase Cloud Messaging tokens table.
 
 Build main Rust BFF and crates:
 ```bash
-cd /Users/nyimbiodero/src/pjs/eel/services/field-mobile-svc
+cd ./services/field-mobile-svc
 cargo build --release
 ```
 

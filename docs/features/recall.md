@@ -77,7 +77,7 @@ petition filed via portal or in-person (OIDC petitioner or officer)
       -> if threshold_met:
             -> petition status -> THRESHOLD_MET
             -> emit eel.governance.recall_petition_threshold_met.v1
-            -> IEBC gazette notice via M52
+            -> the Commission gazette notice via M52
             -> RecallElection created; date set per Elections Act
             -> recall election conducted (M48 sub-contest; M10 tally applies)
             -> on declaration: RecallElection updated with yes_votes / no_votes

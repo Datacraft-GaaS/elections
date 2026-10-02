@@ -36,7 +36,7 @@
   <!-- LiteLLM doubles -->
   <rect x="30" y="280" width="250" height="100" rx="8" fill="#dcfce7" stroke="#2ca02c" stroke-width="2"/>
   <text x="155" y="306" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2ca02c">LiteLLM Double</text>
-  <text x="155" y="326" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">62.169.25.77:4000</text>
+  <text x="155" y="326" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">192.0.2.11:4000</text>
   <text x="155" y="344" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">primary inference router</text>
   <text x="155" y="362" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">dev stub double available</text>
   <text x="155" y="376" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">OpenAI-compat API</text>

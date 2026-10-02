@@ -2,26 +2,26 @@
 
 **Module ID:** M54
 **Name:** Election Budget and Expenditure Portal
-**Runs on:** Central servers (Kenyan cloud) + IEBC Finance back-office
+**Runs on:** Central servers (Kenyan cloud) + the Commission Finance back-office
 **Owner:** Datacraft
 **Status:** Draft v1
-**IPR:** Custom Software vests in IEBC per GCC 15.4
+**IPR:** Custom Software vests in the Commission per GCC 15.4
 
 ## 1. Purpose
 
-IEBC-side vote-book execution portal for planning, committing, and reporting on election expenditure. Distinct from M22 Campaign Finance Transparency (which tracks candidate-side spending). Covers internal procurement workflow, PPADA 2015 and PPRA compliance beyond §22, quarterly Controller of Budget reporting, and the Auditor-General interface. Acts as IEBC's internal Financial Management System (FMS) overlay for the election budget line. Also cross-linked to M59 (if external audit module) for audit-readiness artefacts.
+Commission-side vote-book execution portal for planning, committing, and reporting on election expenditure. Distinct from M22 Campaign Finance Transparency (which tracks candidate-side spending). Covers internal procurement workflow, PPADA 2015 and PPRA compliance beyond §22, quarterly Controller of Budget reporting, and the Auditor-General interface. Acts as the Commission's internal Financial Management System (FMS) overlay for the election budget line. Also cross-linked to M59 (if external audit module) for audit-readiness artefacts.
 
 ## 2. User Personas
 
-- **IEBC Chief Executive Officer** — approves procurement above delegated authority threshold
-- **IEBC Finance Officer** — manages vote-book; captures actual expenditure; prepares CoB quarterly reports
+- **the Commission Chief Executive Officer** — approves procurement above delegated authority threshold
+- **the Commission Finance Officer** — manages vote-book; captures actual expenditure; prepares CoB quarterly reports
 - **Procurement Officer** — initiates and tracks tenders; PPADA compliance checklists
 - **Budget Controller** — monitors budget vs actual per cost centre; flags overruns
 - **PPRA Portal** (external) — receives statutory procurement notices and contract awards
 - **Controller of Budget (CoB)** (external) — quarterly and annual report recipient
 - **Auditor-General (OAG)** (external) — receives audit-readiness package post-election
-- **IEBC Commissioner (Chair)** — signs off on major procurement decisions and CoB reports
-- **IEBC DPO** — oversight for any personal data in contractor records
+- **the Commission Commissioner (Chair)** — signs off on major procurement decisions and CoB reports
+- **the Commission DPO** — oversight for any personal data in contractor records
 
 ## 3. Functional Requirements
 
@@ -44,23 +44,23 @@ IEBC-side vote-book execution portal for planning, committing, and reporting on 
 - **NFR-M54-002** CoB quarterly report generation <= 5 min; auto-triggered 5 business days before quarterly deadline.
 - **NFR-M54-003** IFMIS integration: payment confirmation received and recorded <= 1 business day of payment execution.
 - **NFR-M54-004** Availability: >= 99.5% (back-office tool; planned maintenance windows permitted outside business hours).
-- **NFR-M54-005** WCAG 2.2 AA for all IEBC Finance Officer screens.
+- **NFR-M54-005** WCAG 2.2 AA for all the Commission Finance Officer screens.
 - **NFR-M54-006** Languages: EN primary (all financial and legal documents); SW for internal dashboards.
 - **NFR-M54-007** DPA 2019 lawful basis: contractor personal data (directors, contacts) processed under s.30(1)(b) (legal obligation); PPADA record-keeping; retained 10 years per Public Finance Management Act.
 - **NFR-M54-008** Audit trail: every financial record (budget line, voucher, payment, contract) has immutable append-only history; no soft-delete.
 - **NFR-M54-009** Role-based access: segregation of duties — Finance Officer cannot approve their own payment vouchers; Procurement Officer cannot approve their own requisitions.
 
-- **NFR-54-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `iebc-iems-54` (replace 54 with the module number); alert ruleset ID `iems-54-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
+- **NFR-54-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `commission-iems-54` (replace 54 with the module number); alert ruleset ID `iems-54-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
 
 ## 5. User Stories
 
-1. As the IEBC Finance Officer, I see a real-time budget vs actual dashboard by cost line, so I can identify potential overruns before they occur.
+1. As the Commission Finance Officer, I see a real-time budget vs actual dashboard by cost line, so I can identify potential overruns before they occur.
 2. As a Procurement Officer, I initiate a kit-purchase tender; the system checks the amount against PPADA thresholds and routes it to Open Tender automatically.
-3. As the IEBC CEO, I receive a procurement approval request above my delegated authority threshold on my dashboard with all supporting documents attached.
-4. As the IEBC Finance Officer, the quarterly CoB report is auto-generated 5 days before the deadline with all required data pre-filled; I review and submit with one click.
+3. As the Commission CEO, I receive a procurement approval request above my delegated authority threshold on my dashboard with all supporting documents attached.
+4. As the Commission Finance Officer, the quarterly CoB report is auto-generated 5 days before the deadline with all required data pre-filled; I review and submit with one click.
 5. As the Auditor-General, I receive a digitally signed audit-readiness package at financial year end with all procurement plans, contract register, and payment vouchers in one structured archive.
 6. As the Budget Controller, I receive an amber alert when the transport cost line reaches 85% of its approved allocation, with a breakdown of committed vs spent.
-7. As an IEBC Finance Officer managing a by-election, I see a subsidiary cost centre for the event with its own budget vs actual view.
+7. As a Commission Finance Officer managing a by-election, I see a subsidiary cost centre for the event with its own budget vs actual view.
 
 ## 6. Data Model
 
@@ -223,7 +223,7 @@ paths:
 | Milestone | Date | Description |
 |-----------|------|-------------|
 | FMS integration design with GoK IFMIS | 2026-10-01 | Technical MoU with National Treasury |
-| Budget module live | 2027-01-01 | IEBC Finance team begins election budget |
+| Budget module live | 2027-01-01 | the Commission Finance team begins election budget |
 | PPRA integration tested | 2027-02-01 | Procurement plan submitted via system |
 | First IFMIS payment via system | 2027-03-01 | Pilot payment |
 | CoB Q1 report auto-generated | 2027-04-01 | First quarterly submission |
@@ -266,16 +266,16 @@ paths:
 
 ## 18. Decommissioning
 
-**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if IEBC terminates the contract.
+**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if the Commission terminates the contract.
 
 **Steps:**
 
-1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and IEBC DPO.
+1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and the Commission DPO.
 2. **Service shutdown** — Kubernetes deployments scaled to zero; PersistentVolumeClaims retained for 30 days then deleted after confirmation of M69 transfer.
 3. **Credential revocation** — service account certificates, API keys, and HSM key handles revoked via P06 key-destruction ceremony within 48 hours of shutdown.
 4. **Source-code escrow** — final tagged release deposited to C04 escrow within 7 days of shutdown.
-5. **Runbook handover** — operational runbook and post-mortem notes delivered to IEBC ICT within 14 days.
+5. **Runbook handover** — operational runbook and post-mortem notes delivered to the Commission ICT within 14 days.
 
-**Owner:** SRE Lead. **Sign-off:** IEBC ICT Director + Datacraft Programme Director.
+**Owner:** SRE Lead. **Sign-off:** the Commission ICT Director + Datacraft Programme Director.
 
 > **RESOLUTION (F-23, 2026-08-21):** Decommissioning stub added per audit finding. Owner: SRE Lead. Target: FAT-07 gate.

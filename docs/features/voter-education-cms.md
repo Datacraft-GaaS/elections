@@ -122,7 +122,7 @@ Languages: EN + SW on staff surfaces. Public portal: all 11 catalogue languages.
 ## 9. Honest caveats + external prerequisites
 
 - Audio rendering (IVR_AUDIO format) requires a TTS engine. The adapter in `integrations/tts-engine/` targets a self-hosted Kokoro TTS (Apache-2.0) instance on the ml/vault server. If TTS is unavailable, audio format is skipped and M13 falls back to SMS-only for IVR channels.
-- 11-language fact-checking requires domain experts in each language. IEBC must contract reviewers for the five minority-language variants (Kalenjin, Meru, Luyia, Giriama, Somali, Maasai). The system supports them; the human pool is an external dependency.
+- 11-language fact-checking requires domain experts in each language. the Commission must contract reviewers for the five minority-language variants (Kalenjin, Meru, Luyia, Giriama, Somali, Maasai). The system supports them; the human pool is an external dependency.
 - Kiosk PDF rendering assumes A5 print stock and requires the kiosk PDF template (under `services/training-svc/templates/kiosk/`) to be localised per language by a graphic designer before launch.
 - M13 integration uses `eel.training.content_published.v1` via Kafka. If M13 is unavailable, published content sits in the outbox until M13 reconnects; no fallback SMS blast is triggered automatically.
 

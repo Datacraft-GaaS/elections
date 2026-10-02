@@ -63,7 +63,7 @@ Every successful verification emits:
   "event": "eel.voter.verification.completed.v1",
   "auditId": "<UUID7>",
   "voter_id_hash": "sha256(<national_id>)",
-  "station_code": "IEBC-KE-001-A",
+  "station_code": "COMMISSION-KE-001-A",
   "match_score": 87,
   "match_decision": "AUTO_APPROVED",
   "proofHash": "sha256(voter_id_hash + station_code + timestamp)",

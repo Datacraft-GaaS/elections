@@ -127,7 +127,7 @@ Languages: EN + SW on all surfaces. Gazette notices: EN + SW bilingual. Subscrip
 - **Elections Act §24** - statutory timelines for elections; M52's `StatutoryRule` engine encodes each timeline with a `legal_source` reference.
 - **Elections Act §44B** - electoral silence period; `StatutoryRule` derives `SILENCE_PERIOD_START` from ELECTION_DAY - 1.
 - **Kenya Gazette Act Cap 8** - Government Printer publication requirements; M52's Gov Printer integration operationalises the mandatory gazette publication.
-- **Elections (Technology) Regulations 2017** - IEBC must publish election results through official channels; M52 is the official channel for gazette publication.
+- **Elections (Technology) Regulations 2017** - the Commission must publish election results through official channels; M52 is the official channel for gazette publication.
 - **Kenya Data Protection Act §26** - subscriber email/phone hashed; plaintext restricted to portal admin with access logged in `eel_portal_audit_shadow`.
 
 ## 9. Honest caveats + external prerequisites

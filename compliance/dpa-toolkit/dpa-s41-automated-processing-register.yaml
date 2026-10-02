@@ -16,7 +16,7 @@ register:
       template is submitted to the ABIS (M03) for a 1:N match against all enrolled templates.
       If a match is found above the acceptance threshold, the application is automatically
       flagged as a potential duplicate. A flagged application is placed on hold pending
-      human adjudication by an IEBC registration officer. The automated flag can affect
+      human adjudication by a Commission registration officer. The automated flag can affect
       whether the applicant is registered as a voter.
     personal_data_used:
       - "Biometric template (fingerprint and/or facial image) - Tier A"
@@ -27,7 +27,7 @@ register:
       - "Duplicate-flag determination using vendor-configured match threshold"
     human_review_available: true
     human_review_description: >
-      Every automated duplicate flag is reviewed by a trained IEBC registration officer
+      Every automated duplicate flag is reviewed by a trained Commission registration officer
       before a final determination is made. The officer has access to the full match
       evidence package (scores, candidate templates, adjudication history). The data
       subject may attend the adjudication hearing and present supporting documents.
@@ -35,7 +35,7 @@ register:
     right_to_object: true
     right_to_object_procedure: >
       Data subjects may object to the automated flag determination by lodging an appeal
-      with the IEBC Regional Registrar within 30 days of notification. The officer
+      with the Commission Regional Registrar within 30 days of notification. The officer
       conducts a fresh manual review.
     safeguards:
       - "Automated flag is advisory only; no registration is refused without human review"
@@ -57,7 +57,7 @@ register:
       content submitted or transmitted on the eel platform for anomalies and potential
       fraud signals. Automated flagging may result in access being temporarily restricted
       while a human security analyst reviews the flag. This can affect a data subject's
-      ability to access IEBC digital services.
+      ability to access the Commission digital services.
     personal_data_used:
       - "Content submitted by data subject (text, images) - Tier B/C depending on content"
       - "Behavioural metadata (request frequency, session patterns) - Tier D"
@@ -70,11 +70,11 @@ register:
     human_review_description: >
       A security analyst reviews all critical-threshold flags within 4 hours.
       Access restrictions are lifted or confirmed by the analyst. Data subjects may
-      contact the IEBC helpdesk to report an erroneous restriction.
-    legal_basis: "Public task - IEBC mandate to ensure election integrity; Elections Act s.88"
+      contact the Commission helpdesk to report an erroneous restriction.
+    legal_basis: "Public task - the Commission mandate to ensure election integrity; Elections Act s.88"
     right_to_object: true
     right_to_object_procedure: >
-      Data subjects may contact the IEBC helpdesk ([HELPDESK_EMAIL]) to dispute an
+      Data subjects may contact the Commission helpdesk ([HELPDESK_EMAIL]) to dispute an
       automated access restriction. A human analyst will review within 4 hours on
       business days, 8 hours on other days.
     safeguards:
@@ -155,7 +155,7 @@ register:
     right_to_object_procedure: >
       A voter who disputes a failed biometric match should immediately speak to the
       presiding officer. The officer applies the manual fallback verification procedure.
-      A formal complaint may be submitted to the IEBC via M23 (grievance channels).
+      A formal complaint may be submitted to the Commission via M23 (grievance channels).
     safeguards:
       - "Manual fallback is always available as an alternative"
       - "Failed match does not automatically deny the right to vote"
@@ -188,12 +188,12 @@ register:
     human_review_description: >
       All grievances are reviewed by a human case officer within the assigned SLA.
       Case officers may re-categorise or re-route a grievance at any time. Data subjects
-      may request a re-categorisation by contacting the IEBC helpdesk.
-    legal_basis: "Public task - Elections Act s.74; IEBC operational necessity"
+      may request a re-categorisation by contacting the Commission helpdesk.
+    legal_basis: "Public task - Elections Act s.74; the Commission operational necessity"
     right_to_object: true
     right_to_object_procedure: >
       A complainant who believes their grievance has been miscategorised or misrouted
-      may contact the IEBC helpdesk quoting the grievance reference number. A case
+      may contact the Commission helpdesk quoting the grievance reference number. A case
       supervisor will review within 2 working days.
     safeguards:
       - "Automated routing is not a final determination on the merits of the grievance"
@@ -210,7 +210,7 @@ register:
     name: "Automated statutory payroll deductions"
     description: >
       The payroll module (M55) automatically calculates and applies mandatory statutory
-      deductions for all IEBC employees: PAYE income tax (KRA iTax), NSSF contributions,
+      deductions for all the Commission employees: PAYE income tax (KRA iTax), NSSF contributions,
       and NHIF/SHIF contributions. The automated calculation determines the net pay
       amount and the statutory returns submitted to KRA, NSSF, and NHIF/SHIF on behalf
       of the employee.
@@ -230,7 +230,7 @@ register:
     human_review_description: >
       Payroll runs are reviewed by the finance team before payment is released.
       Employees receive payslips and may query any deduction with the HR/Payroll team.
-      Disputes are resolved within 5 working days per IEBC HR policy.
+      Disputes are resolved within 5 working days per the Commission HR policy.
     legal_basis: "Legal obligation - Employment Act; KRA iTax; NSSF Act; NHIF/SHIF Act"
     right_to_object: false
     right_to_object_description: >

@@ -8,7 +8,7 @@
 | Size | L |
 | Availability class | cycle-critical 99.9% |
 | Event-sourced | no |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M39-ballot-printing-chain.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M39-ballot-printing-chain.md |
 
 ## Purpose
 
@@ -66,7 +66,7 @@ OpenAPI file: `packages/openapi-contracts/inventory/ballot-chain.yaml`
 
 | system | I-code or name | adapter path | double available in dev? | failure behaviour |
 |---|---|---|---|---|
-| Printer MES (Al Ghurair UAE / approved alternative) | external mTLS | integrations/printer-mes/ | yes (stub) | lot-data submission; if unavailable, IEBC officer uploads scanned attestation |
+| Printer MES (Al Ghurair UAE / approved alternative) | external mTLS | integrations/printer-mes/ | yes (stub) | lot-data submission; if unavailable, the Commission officer uploads scanned attestation |
 | M08 RTS Device | internal | integrations/rts-device/ | yes | RFID scanner at station; offline scan queue; sync on reconnect |
 | M06 BVI Back-End | internal | integrations/bvi/ | yes | BVI turnout figure for station reconciliation |
 | M16 Election Command Centre | internal | integrations/ecc/ | yes | discrepancy alert consumer; circuit breaker; alert persists in queue |
@@ -89,7 +89,7 @@ OpenAPI file: `packages/openapi-contracts/inventory/ballot-chain.yaml`
 ## Feature checklist
 
 Print-run authorisation:
-1. FR-M39-001: IEBC Print Authorisation Officer issues signed digital print order; dual sign-off required (officer + IEBC Commissioner); order anchored in P05 Merkle chain before printer receives it
+1. FR-M39-001: the Commission Print Authorisation Officer issues signed digital print order; dual sign-off required (officer + the Commission Commissioner); order anchored in P05 Merkle chain before printer receives it
 2. FR-M39-015: print order specifies paper specification hash; printer must use approved paper stock matching hash; deviation triggers alert to Commissioner
 3. FR-M39-016: print order requires separate contest-level quantities (presidential, gubernatorial, senatorial, women rep, MP, MCAs); distinct serial ranges per contest
 4. FR-M39-035: print order transmission to printer encrypted: TLS 1.3 transport + PGP-encrypted payload; print order cannot be intercepted and replayed
@@ -99,32 +99,32 @@ Gazettement:
 6. FR-M39-049: serial-range gazette supplement published to Kenya Gazette format; Attorney General sign-off reference included; gazette notice ID stored on PrintOrder
 
 Printer MES integration:
-7. FR-M39-003: printer MES submits lot-data JSON (serial ranges, RFID chip IDs, print date, quantity, reject count) via mTLS; system reconciles against authorised print order; quantity variance > 0.01% triggers immediate IEBC alert
+7. FR-M39-003: printer MES submits lot-data JSON (serial ranges, RFID chip IDs, print date, quantity, reject count) via mTLS; system reconciles against authorised print order; quantity variance > 0.01% triggers immediate the Commission alert
 8. FR-M39-020: lot-data reconciliation report generated within 5 minutes of printer MES submission; report includes: authorised vs printed quantities, variance_pct, RFID chip count vs declared
 9. FR-M39-024: variance alert emits eel.inventory.quantity_variance_alert.v1 when lot quantity differs from authorised by > 0.01%; alert delivered within 1 minute of lot-data submission
 10. FR-M39-034: printer MES must authenticate via mTLS certificate issued to approved printer facility; requests from unknown certificates rejected with 401 and logged
 
 RFID embedding:
-11. FR-M39-004: printer attests RFID embedding per ballot in declared range; IEBC spot-check result uploaded to custody record
+11. FR-M39-004: printer attests RFID embedding per ballot in declared range; the Commission spot-check result uploaded to custody record
 12. FR-M39-021: RFID chip ID list stored as SHA-256 hash reference in LotData; full chip ID list stored encrypted AES-256 in MinIO; access restricted to COMMISSION_AUDIT_LEAD; no chip IDs in API responses to non-audit roles
-13. FR-M39-022: RFID spot-check at printer facility: IEBC officer scans random sample; minimum 50 chips; result uploaded to custody record with officer ID and timestamp
+13. FR-M39-022: RFID spot-check at printer facility: the Commission officer scans random sample; minimum 50 chips; result uploaded to custody record with officer ID and timestamp
 14. FR-M39-023: RFID mismatch alert emits eel.inventory.rfid_mismatch_alert.v1 on any discrepancy; exactly-once; M16 alert consumer; shipment flagged for hold
 
 Port clearance:
-15. FR-M39-005: IEBC Customs Officer records carrier, AWB/BL number, seal numbers, container ID, port of entry, arrival date, C-63 customs form ID on arrival manifest
-16. FR-M39-006: port clearance RFID spot-check minimum 200 chips per lot; discrepancy triggers hold and IEBC Commissioner notification
+15. FR-M39-005: the Commission Customs Officer records carrier, AWB/BL number, seal numbers, container ID, port of entry, arrival date, C-63 customs form ID on arrival manifest
+16. FR-M39-006: port clearance RFID spot-check minimum 200 chips per lot; discrepancy triggers hold and the Commission Commissioner notification
 17. FR-M39-043: seal integrity check at every custody transfer; seal number recorded; if seal number differs from issued, custody event flagged and alert raised
 
 Nairobi warehouse:
 18. FR-M39-007: Warehouse Manager scans all pallet RFID tags on arrival; system confirms serial-range completeness; missing range segment flagged; signed warehouse receipt anchored
-19. FR-M39-041: printer MES unavailable at lot-data submission time; IEBC officer uploads scanned paper attestation as fallback; system flags manual attestation in lot record
-20. FR-M39-042: warehouse pallet scanner failure; IEBC officer records serial ranges manually; manual entry flagged for audit review; anchored as manual custody event
+19. FR-M39-041: printer MES unavailable at lot-data submission time; the Commission officer uploads scanned paper attestation as fallback; system flags manual attestation in lot record
+20. FR-M39-042: warehouse pallet scanner failure; the Commission officer records serial ranges manually; manual entry flagged for audit review; anchored as manual custody event
 
 Constituency allocation:
 21. FR-M39-008: County Logistics Officer creates constituency allocation record; officer and witness scan-out ballot packets; vehicle registration and physical seal number recorded; allocation signed by both
 22. FR-M39-025: constituency allocation signed by both County Logistics Officer and witness; allocation record includes vehicle registration, seal number, departure timestamp
 23. FR-M39-026: constituency allocation record anchored in P05 Merkle chain; anchor must complete before transport vehicle departs; system blocks departure confirmation if anchor not confirmed
-24. FR-M39-027: inter-constituency transfers require IEBC Commissioner sign-off; transfer event anchored and logged separately
+24. FR-M39-027: inter-constituency transfers require the Commission Commissioner sign-off; transfer event anchored and logged separately
 25. FR-M39-028: ballot packet handover at polling station requires both Presiding Officer scan and returning officer acknowledgement; dual-scan recorded in CustodyEvent
 
 Station receipt:
@@ -140,11 +140,11 @@ Election-day tracking and close:
 
 Post-election return and reporting:
 33. FR-M39-011: post-election return; unused ballots scanned in at constituency store; per-station reconciliation report generated (received/issued/unused/spoilt/discrepancy)
-34. FR-M39-033: post-election batch reconciliation: IEBC Audit Lead generates national summary report; stations with unresolved discrepancies highlighted; report signed and anchored
+34. FR-M39-033: post-election batch reconciliation: the Commission Audit Lead generates national summary report; stations with unresolved discrepancies highlighted; report signed and anchored
 
 Audit trail and cryptography:
 35. FR-M39-012: every scan event, allocation, and reconciliation record hashed and anchored in P05 Merkle chain within 60 seconds of creation
-36. FR-M39-017: Merkle inclusion proof available for every custody event; IEBC Audit Lead can verify any individual event without downloading full chain
+36. FR-M39-017: Merkle inclusion proof available for every custody event; the Commission Audit Lead can verify any individual event without downloading full chain
 37. FR-M39-036: all custody event records append-only; modification of committed record detectable via Merkle proof; system raises tamper alert on verification failure
 38. FR-M39-019: discrepancy alert to M16 emits eel.inventory.station_reconciliation_discrepancy.v1; fires within 2 minutes of reconciliation; exactly-once delivery
 
@@ -158,7 +158,7 @@ Public and court access:
 
 Security and access:
 45. FR-M39-039: custody event write requires COMMISSION_OFFICER JWT + SpiceDB; read of full serial ranges requires COMMISSION_AUDIT_LEAD; read of public summary: public
-46. FR-M39-047: IAB observers can download aggregate reconciliation report per constituency; report signed by IEBC Audit Lead; no RFID chip IDs or officer PII included
+46. FR-M39-047: IAB observers can download aggregate reconciliation report per constituency; report signed by the Commission Audit Lead; no RFID chip IDs or officer PII included
 
 Status tracking:
 47. FR-M39-048: chain-of-custody completeness dashboard: for each lot, shows status at each custody stage (IN_PRINT/PRINTED/IN_TRANSIT/AT_WAREHOUSE/ALLOCATED/AT_STATION/RECONCILED)
@@ -197,14 +197,14 @@ data:
 
 security:
 - EC-SEC-01: committed custody event byte-flipped; Merkle proof verification fails; tamper alert raised to M16 within 30 s; event locked in audit log
-- EC-SEC-02: physical seal tampered on ballot box during transit; custody event flagged with seal mismatch; quarantine status applied; IEBC Commissioner and M16 notified
+- EC-SEC-02: physical seal tampered on ballot box during transit; custody event flagged with seal mismatch; quarantine status applied; the Commission Commissioner and M16 notified
 - EC-SEC-05: injection attempt in serial range or officer ID fields; parameterised queries only; Semgrep CI; ZAP scan at OAT gate
 - EC-SEC-08: XXE injection attempt in printer MES lot-data XML/JSON payload; DTD disabled; strict JSON parsing; fuzz corpus in CI
 - EC-SEC-16: RFID chip IDs and officer personal identifiers stripped from unscoped telemetry; log-scanner fixture in CI confirms Tier A/B fields absent
 - EC-SEC-17: printer MES connection must use TLS 1.3; TLS 1.2 rejected; SPIFFE mTLS certificate required; testssl.sh validation in CI
 
 identity:
-- EC-IDN-02: IEBC officer JWT expires mid-custody event entry; in-flight write completes; next request 401 + silent refresh; no event lost
+- EC-IDN-02: the Commission officer JWT expires mid-custody event entry; in-flight write completes; next request 401 + silent refresh; no event lost
 - EC-IDN-10: SpiceDB unavailable; all custody event writes fail closed 503; public summary continues from last confirmed state; alert raised to SRE
 
 scale:
@@ -216,7 +216,7 @@ connectivity:
 - EC-CON-05: flapping MES connection during lot-data submission; eel-outbox-rs queues with backoff+jitter; no duplicate lot record created; exactly-one lot confirmed by server
 
 operations:
-- EC-OPS-03: seal broken in transit; custody event flagged with seal mismatch; quarantine status applied to lot; IEBC Commissioner notified; re-verification required before station distribution
+- EC-OPS-03: seal broken in transit; custody event flagged with seal mismatch; quarantine status applied to lot; the Commission Commissioner notified; re-verification required before station distribution
 - EC-OPS-04: dual-control officer absent during print order sign-off; time-boxed remote co-sign via ECC; no print order transmitted without both signatures
 - EC-OPS-05: power outage at Nairobi warehouse during pallet scan; SQLite WAL on scanner device resumes; no duplicate scan records; reconciliation continues from last committed position
 
@@ -225,7 +225,7 @@ security (crypto):
 
 legal:
 - EC-LEG-01: candidate withdraws after ballots printed for that contest; print order status frozen at PRINTED; affected serial range annotated in lot record; reconciliation proceeds normally
-- EC-LEG-04: printer substitution without IEBC approval; lot-data submitted from unapproved mTLS cert; request rejected 401; immediate Commissioner notification; print order on hold
+- EC-LEG-04: printer substitution without the Commission approval; lot-data submitted from unapproved mTLS cert; request rejected 401; immediate Commissioner notification; print order on hold
 - EC-TIM-08: court bundle request arrives at T+6d 23h before petition deadline; 24-hour production clock applies; not freeze-blocked; bundle delivered within statutory window
 
 ## Test plan
@@ -246,7 +246,7 @@ Tags: `#[trace("FR-M39-012","AC-M39-04","EC-CON-01")]`
 ## Runbooks and dashboards
 
 - `docs/runbooks/inventory-svc-degradation.md` - extend with ballot-chain offline queue paths and printer MES unavailability
-- `docs/runbooks/ballot-discrepancy-response.md` - new runbook; discrepancy alert escalation; IEBC Commissioner notification; station hold procedure
+- `docs/runbooks/ballot-discrepancy-response.md` - new runbook; discrepancy alert escalation; the Commission Commissioner notification; station hold procedure
 - Grafana dashboard: `eel-iems-39` (alert ruleset: `iems-39-alerts`)
 - SLO alerts: Merkle anchor latency <= 60 s; lot reconciliation <= 5 min; discrepancy alert <= 2 min to M16
 

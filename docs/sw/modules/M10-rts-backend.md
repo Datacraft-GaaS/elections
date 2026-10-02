@@ -2,7 +2,7 @@
 
 **Runs on:** Primary + mirror DC with confidential-compute for ICR workers
 **Owner:** Datacraft
-**IPR:** Custom Software vests in IEBC per GCC 15.4
+**IPR:** Custom Software vests in the Commission per GCC 15.4
 
 ![RTS state machine — transitions from device queue through publication and Merkle anchoring, with human-review branch and dispute branch](../../diagrams/architectural/a3-rts-state-machine.svg)
 
@@ -19,7 +19,7 @@ Ingest scanned Forms 34A from KIEMS RTS device clients at national scale, verify
 - RO / CRO (M09) — human confirms + signs
 - Public (M11) — reads published forms
 - Independent Auditor — reads audit trail + escrow mirror
-- IEBC Commissioner — publishes national snapshot
+- the Commission Commissioner — publishes national snapshot
 
 ## 3. Functional Requirements
 
@@ -32,7 +32,7 @@ Ingest scanned Forms 34A from KIEMS RTS device clients at national scale, verify
 - **FR-M10-007** Random sampling of high-confidence extractions for human quality control.
 - **FR-M10-008** Aggregation service produces Form 34B / 34C proposals from confirmed 34As.
 - **FR-M10-009** RO / CRO signs via M09; back-end verifies signature + policy (right scope, right personnel).
-- **FR-M10-010** Publication service: on IEBC Commissioner authorisation (M-of-N quorum), sign snapshot with HSM + push to CDN + append to transparency log + mirror to escrow.
+- **FR-M10-010** Publication service: on the Commission Commissioner authorisation (M-of-N quorum), sign snapshot with HSM + push to CDN + append to transparency log + mirror to escrow.
 - **FR-M10-011** Per-elective-position pipelines: President, Governor, Senator, MP, CWR, MCA, plus referenda; independent processing so a failure in one doesn't block another.
 - **FR-M10-012** Rate limiting, DDoS shielding, WAF at ingress.
 - **FR-M10-013** Immutable event log with cryptographic tamper-evidence.

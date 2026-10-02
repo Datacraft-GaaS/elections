@@ -79,8 +79,10 @@ repos:
   - repo: local
     hooks:
       - id: no-banned-namespaces
-        name: reject banned namespace strings (iebc-/iebc_/X-IEBC-/libiebc/IEBC_/ke.iebc.)
+        name: reject client-name namespace strings (client identity must not appear in code)
         language: pygrep
-        entry: 'iebc-|iebc_|X-IEBC-|libiebc|IEBC_|ke\.iebc\.'
+        # Written as a character class so this file does not itself spell the
+        # client's name; the guard has to exist without defeating its own grep.
+        entry: '[iI][eE][bB][cC]'
         exclude: '^docs/adr/|^docs/plans/|^docs/spec-alignment/|^\.pre-commit-config\.yaml$'
         args: [--multiline]

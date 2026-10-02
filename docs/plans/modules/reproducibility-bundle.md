@@ -8,7 +8,7 @@
 | Size | L |
 | Availability class | cycle-critical 99.9% |
 | Event-sourced | no (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M14-reproducibility-bundle.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M14-reproducibility-bundle.md |
 
 ## Purpose
 
@@ -43,7 +43,7 @@ OpenAPI file: packages/openapi-contracts/transparency/bundle.yaml
 | GET /transparency/v1/bundles/{id}/download | 4 bulk | public | n/a | Signed bundle archive download |
 | GET /transparency/v1/tokens/{sha}/proof | 2 live-per-user | public | n/a | Participation token inclusion proof |
 | POST /transparency/v1/bug-bounty | 2 live-per-user | public | yes | Submit bug bounty / reproducibility finding |
-| GET /transparency/v1/bug-bounty/{id} | 3 accredited | JWT+SpiceDB | n/a | Triage + status (IEBC internal) |
+| GET /transparency/v1/bug-bounty/{id} | 3 accredited | JWT+SpiceDB | n/a | Triage + status (the Commission internal) |
 | POST /transparency/v1/bundles/assemble | 3 accredited | JWT+SpiceDB | yes | Trigger bundle assembly (post-election) |
 
 ## Events
@@ -90,7 +90,7 @@ none
 9. FR-M14-009: REST API: programmatic bundle list, manifest fetch, download URL, token proof, bug-bounty submission.
 10. FR-M14-010: batch pipeline: triggered by `eel.rts.merkle_root_anchored.v1`; assembles national and constituency bundles; emits `eel.transparency.bundle_assembled.v1`.
 11. FR-M14-011: statutory mirroring: bundle pushed to KBC SFTP and Government Gazette API within 1 h of publication; retry queue with alert at 30 min.
-12. FR-M14-012: bug bounty intake: public POST endpoint; IEBC internal triage workflow; status visible to submitter via anonymous token.
+12. FR-M14-012: bug bounty intake: public POST endpoint; the Commission internal triage workflow; status visible to submitter via anonymous token.
 13. FR-M14-013: versioned bundle format (semver): forward-compatible; correction bundles carry a delta manifest; prior versions remain immutable.
 14. FR-M14-014: constituency-level partial bundle: download subset scoped to a single constituency; shares same manifest format.
 15. FR-M14-015: SBOM embedded in bundle root; every build artifact traceable to source commit and dependency hash.
@@ -139,7 +139,7 @@ AC-M14-02: given a valid participation token SHA-256, the token proof endpoint r
 AC-M14-03: statutory mirror: bundle appears on KBC SFTP and Gazette API within 1 h of `eel.transparency.bundle_published.v1` emission (integration test against doubles).
 AC-M14-04: CLI verifier exits 0 on a known-good bundle and exits 1 on a bundle with a single tampered byte, logging the diverging component hash.
 AC-M14-05: CI matrix build on x86_64 and aarch64 produces archives whose SHA-256 hashes are identical (reproducibility build test).
-AC-M14-06: bug bounty submission via REST API returns HTTP 202; a subsequent GET with the anonymous token shows status `received`; IEBC triage interface lists the finding.
+AC-M14-06: bug bounty submission via REST API returns HTTP 202; a subsequent GET with the anonymous token shows status `received`; the Commission triage interface lists the finding.
 AC-M14-07: token proof endpoint sustains 99.9% availability across a 24 h load test simulating petition-window traffic (SLO measurement).
 AC-M14-08: web portal verification completes successfully in-browser for a 500 MB bundle with zero network requests after initial page load (service worker test).
 AC-M14-09: correction bundle is issued; prior version remains downloadable and its manifest unchanged; correction bundle manifest references prior version bundle_id.

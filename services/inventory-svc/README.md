@@ -151,7 +151,7 @@ Event sourcing enables full audit trail reconstruction. HSM signatures on custod
 
 Build the service:
 ```bash
-cd /Users/nyimbiodero/src/pjs/eel/services/inventory-svc
+cd ./services/inventory-svc
 cargo build --release
 ```
 

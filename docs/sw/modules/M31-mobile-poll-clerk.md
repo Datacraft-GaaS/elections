@@ -3,11 +3,11 @@
 **Module ID:** M31
 **Module Name:** Mobile Poll Clerk Companion — Deputy PO / Kiosk App
 **Type:** Mobile Application (Flutter, Android 10.0+ / iOS 15+)
-**Distribution:** Private via IEBC MDM
+**Distribution:** Private via Commission MDM
 **Users:** Deputy Presiding Officers + Polling Clerks (~92K on polling day)
 **Owner:** Datacraft
 **Status:** Specified — pending implementation
-**IPR:** Custom Software vests in IEBC per GCC 15.4 (Teaming §4)
+**IPR:** Custom Software vests in the Commission per GCC 15.4 (Teaming §4)
 
 Adapted from `mobile/apps/MA03-poll-clerk.md`, sw/-module renumbered as M31.
 
@@ -17,7 +17,7 @@ Adapted from `mobile/apps/MA03-poll-clerk.md`, sw/-module renumbered as M31.
 
 Give the Deputy Presiding Officer and polling clerks a companion tool that offloads work from the KIEMS device: reference materials, incident logging, voter-lookup backup when kit is single-user busy, structured hand-off queue, mirrored kit dashboards, and paper-backup workflow guidance. The kit remains authoritative for voter identification; this app makes the team around the kit faster and less error-prone.
 
-Also serves as kiosk-operator app at IEBC information kiosks during the register-inspection period.
+Also serves as kiosk-operator app at the Commission information kiosks during the register-inspection period.
 
 **Relationship to M05 (BVI Device):** M31 is a companion app for the poll clerk, running alongside the KIEMS device. M05 is the primary device-side BVI software that runs on the ruggedised KIEMS kit. M31 reads the BVI back-end (M06) in read-only mode; it cannot authenticate voters (that stays on the kit). The two are distinct and complementary.
 
@@ -27,7 +27,7 @@ Also serves as kiosk-operator app at IEBC information kiosks during the register
 
 - Deputy PO
 - Polling Clerk
-- IEBC Kiosk Operator (during register inspection)
+- the Commission Kiosk Operator (during register inspection)
 
 ---
 
@@ -35,7 +35,7 @@ Also serves as kiosk-operator app at IEBC information kiosks during the register
 
 ### 3.1 Onboarding
 
-- **FR-M31-001** Enrolment via IEBC staff ID + biometric + device attestation.
+- **FR-M31-001** Enrolment via Commission staff ID + biometric + device attestation.
 - **FR-M31-002** Assignment: bound to specific polling station per election.
 - **FR-M31-003** MFA sign-in: biometric + PIN + device attestation.
 
@@ -107,7 +107,7 @@ Also serves as kiosk-operator app at IEBC information kiosks during the register
 - BVR back-end (M02) for register lookup fallback
 - BVV back-end (M07) for kiosk mode
 - Inventory Management (M20) — kit self-check on app launch confirms assigned kit is on inventory
-- IEBC staff directory + accreditation
+- the Commission staff directory + accreditation
 - HSM via signed-event submission
 
 ---

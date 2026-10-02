@@ -19,7 +19,7 @@ Module M56 (`county-national-coordination`) owned by `governance-svc`. Manages M
 
 ## 1. What County and National Coordination does (vs M16 ECC)
 
-- **M16** (Election Command Centre) = situational awareness and incident operations dashboard for IEBC leadership; it consumes escalated alerts.
+- **M16** (Election Command Centre) = situational awareness and incident operations dashboard for the Commission leadership; it consumes escalated alerts.
 - **M56** = the coordination layer that creates and tracks the MoUs, dataset handshakes, ministerial approvals, and incidents that feed into M16.
 
 M56 produces the governance events (`eel.governance.critical_incident.v1`) that M16 renders on its map. M16 does not store MoUs or county dataset records; M56 does.

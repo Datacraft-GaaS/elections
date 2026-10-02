@@ -18,7 +18,7 @@ Alert: `eel.custody.seal_broken.v1` fired on M65; P1 delivered to ECC p99 within
 6. If contents intact: re-seal with new seal UID from M20 inventory.
    - Re-seal event recorded in `container_custody_events` with new seal UID.
    - IAB witness record required.
-7. If contents compromised: escalate to IEBC Commissioner and Commissioner page within 30 min.
+7. If contents compromised: escalate to the Commission Commissioner and Commissioner page within 30 min.
 8. Container status updated to `in_transit` or `received` after successful re-seal.
 
 ## EC-OPS-03: seal broken in transit at hub

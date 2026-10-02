@@ -4,7 +4,7 @@
 **Name:** Election Command Centre (E-SOC / COC / CAOC Unified Platform)
 **Owner:** Datacraft Limited — Operations Engineering Team
 **Status:** Draft v2
-**IP Classification:** Custom Software — IPR vests in IEBC per GCC 15.4
+**IP Classification:** Custom Software — IPR vests in the Commission per GCC 15.4
 
 **Strategy traceback:** Part II §PM-04, §PM-05, §PM-11, Part XVI §XVI.5, Part XVIII §XVIII.6, Part XIX §XIX.4
 
@@ -20,7 +20,7 @@ The Election Command Centre is the unified operational nerve centre for the 2027
 
 | Persona | Workstation | Primary function |
 |---|---|---|
-| ECC Director (IEBC Deputy CEO) | Executive console | Overall operational authority; Section 44A authorisation |
+| ECC Director (the Commission Deputy CEO) | Executive console | Overall operational authority; Section 44A authorisation |
 | ECC Operations Manager (Datacraft) | Operations console | Resource dispatch; kit-failure response; field coordination |
 | E-SOC Analysts (x4) | Security workstations | Kit telemetry, network anomaly, SIEM alert triage |
 | COC Analysts (x3) | Compliance workstations | Statutory compliance tracking; s.44A log; party-agent compliance |
@@ -48,7 +48,7 @@ Pre-configured thresholds with automatic escalation:
 |---|---|---|
 | > 2% kits offline before 07:00 E-Day | ECC Level 2 activation; all county coordinators notified | ECC Operations Manager |
 | > 5% kits offline | Automatic SMS notification to all accredited party agents + scheduled media briefing | ECC Director |
-| > 10% kits offline | Complementary Mechanism declaration process initiated; Commissioner involvement | ECC Director + IEBC Chair |
+| > 10% kits offline | Complementary Mechanism declaration process initiated; Commissioner involvement | ECC Director + the Commission Chair |
 
 Every threshold trigger is timestamped, logged, hash-chained, and HSM-signed.
 
@@ -68,16 +68,16 @@ Accredited party agents access a sanitised view: per-constituency kit-online %, 
 Media-adjacent briefing room receives: national kit-online %, RTS transmission %, Form 34A published count, active alerts (count only), comparison to prior election benchmarks. Auto-updated slide deck for briefing room screens. Journalist-specific API endpoint for direct ingestion by NMG / Standard / Citizen data teams.
 
 ### FR-16.09 — Public status dashboard
-Public-facing status page at `status.iebc.go.ke`: national kit-online %, RTS transmission progress bar, Form 34A publication count, last updated timestamp, system status (operational / degraded / incident). Served as signed static snapshot from CDN; updates every 5 minutes. Degraded-mode fallback: last known good snapshot with timestamp.
+Public-facing status page at `status.eel.example`: national kit-online %, RTS transmission progress bar, Form 34A publication count, last updated timestamp, system status (operational / degraded / incident). Served as signed static snapshot from CDN; updates every 5 minutes. Degraded-mode fallback: last known good snapshot with timestamp.
 
 ### FR-16.10 — Communication cadence management (PM-05)
 Built-in meeting scheduler: daily standups from T-90 to T-30, twice-daily from T-30, hourly during 72-hour polling window. Auto-generates meeting agenda from current alert queue. Records are hash-chained and visible to IAB.
 
 ### FR-16.11 — Rapid-response comms cell (Part IV-A)
-Pre-drafted holding statements for 12 scenario types. ECC Operations Manager can release a statement (requiring ECC Director counter-signature) via: IEBC Twitter/X (verified), WhatsApp official channel, email to registered media contacts, M13 app notification. All releases logged with author, timestamp, approval chain.
+Pre-drafted holding statements for 12 scenario types. ECC Operations Manager can release a statement (requiring ECC Director counter-signature) via: the Commission Twitter/X (verified), WhatsApp official channel, email to registered media contacts, M13 app notification. All releases logged with author, timestamp, approval chain.
 
 ### FR-16.12 — Safety panic button routing (M13 integration)
-Anonymous geo-tagged panic button submissions from M13 voter app route to CAOC workstation. Analyst triages: ignore (false positive), flag (notify County coordinator), escalate (notify KNPS + IEBC Chair). Response logged and visible to IAB.
+Anonymous geo-tagged panic button submissions from M13 voter app route to CAOC workstation. Analyst triages: ignore (false positive), flag (notify County coordinator), escalate (notify KNPS + the Commission Chair). Response logged and visible to IAB.
 
 ### FR-16.13 — Observer access (sanitised SOC feed)
 Accredited international observer missions (KEOG, ELOG, EU EOM, Carter Center, IFES) have read-only access to the sanitised observer dashboard: same content as party-agent portal plus a field-incident map (no PII). Observer access confirmed and logged; visible to IAB.
@@ -112,7 +112,7 @@ Every ECC action (dispatch, escalation, statement release, s.44A workflow step) 
 2. As the ECC Director, I want to initiate the s.44A declaration workflow with a single authenticated action, so that the statutory process is followed consistently and documented automatically.
 3. As a County Coordinator, I want to dispatch the nearest available field engineer with one click, so that kit failures are resolved within the SLA.
 4. As a party agent, I want to see transmission progress for all stations in my constituency, so that I can identify stations that have not transmitted and raise concerns promptly.
-5. As a journalist, I want to see the national kit-online percentage in real time, so that I can report accurately on election-day technology performance without relying on IEBC press releases.
+5. As a journalist, I want to see the national kit-online percentage in real time, so that I can report accurately on election-day technology performance without relying on the Commission press releases.
 6. As an ELOG observer, I want to access the sanitised observer dashboard, so that my organisation can publish an independent real-time assessment of system performance.
 7. As the ECC Director, I want to release a pre-drafted holding statement with counter-signature, so that the response to an incident is fast, accurate, and auditable.
 8. As an E-SOC Analyst, I want to receive anomaly alerts from M26 in my alert inbox, so that I can triage them and escalate to the ECC Director within the 15-minute SLA.
@@ -217,9 +217,9 @@ class S44AEvent(BaseModel):
 - M23 (Grievance Channels, parallel agent) — voter complaint routing
 - Field engineer mobile app — dispatch notifications
 - SMS gateway — s.44A party-agent notifications
-- IEBC Twitter/X, WhatsApp — comms releases
+- the Commission Twitter/X, WhatsApp — comms releases
 - Media briefing room screens — journalist feed
-- NIS (National Intelligence Service) — intelligence briefing channel; ECC receives threat assessments via IEBC Secretariat liaison; NIS does not have direct system access; integration is human-in-the-loop (secure email + verbal briefing at T-7, T-3, T-1, and on election day); formal coordination MoU required pre-election
+- NIS (National Intelligence Service) — intelligence briefing channel; ECC receives threat assessments via Commission Secretariat liaison; NIS does not have direct system access; integration is human-in-the-loop (secure email + verbal briefing at T-7, T-3, T-1, and on election day); formal coordination MoU required pre-election
 
 ---
 
@@ -245,7 +245,7 @@ class S44AEvent(BaseModel):
 | s.44A protocol with party-agent notification | Elections Act 2011 s.44A; ELOG 2017 report |
 | Two-person integrity for critical decisions | IEMS security architecture |
 | All actions logged and signed | Elections (Technology) Regulations 2017 reg. 12 |
-| Observer access confirmation | Elections Act s.21A; IEBC accreditation regs |
+| Observer access confirmation | Elections Act s.21A; the Commission accreditation regs |
 | DPA 2019 — no PII in public/journalist feeds | DPA 2019 s.26 |
 | Pre-agreed escalation ladder | PM-04 Strategy commitment |
 
@@ -255,14 +255,14 @@ class S44AEvent(BaseModel):
 
 | Metric | Target | Sign-off |
 |---|---|---|
-| ECC activation by T-90 | 100% staffed and operational | IEBC Deputy CEO |
+| ECC activation by T-90 | 100% staffed and operational | the Commission Deputy CEO |
 | Kit telemetry latency to dashboard | p99 < 30 s | Datacraft SRE |
 | s.44A party-agent SMS notification | 100% within 5 min of declaration | ECC Director |
 | Field engineer dispatch-to-site | 100% within 2 hours for county spares | Datacraft Ops |
 | ECC platform availability during E-Day | >= 99.99% | Datacraft SRE |
 | Public status page availability | >= 99.9% | Datacraft SRE |
 | Active alert SLA: P0 acknowledged | 100% within 5 min | ECC Ops Manager |
-| s.44A log completeness | 100% of declarations documented | IEBC Legal |
+| s.44A log completeness | 100% of declarations documented | the Commission Legal |
 
 ---
 

@@ -1,6 +1,6 @@
 # Election court IT interface (M40)
 
-Module M40 (`election-court-it-interface`) owned by `governance-svc` (crate `court-interface`). Assembles and delivers a 15-item evidentiary bundle to the Supreme Court or High Court within 24 hours of election close; grants petitioner portal access to disclosed materials; handles supplementary evidence requests; manages technical witness scheduling. Addresses the Raila Odinga v IEBC [2017] eKLR para 272 finding that IEBC lacked a structured IT evidence disclosure system.
+Module M40 (`election-court-it-interface`) owned by `governance-svc` (crate `court-interface`). Assembles and delivers a 15-item evidentiary bundle to the Supreme Court or High Court within 24 hours of election close; grants petitioner portal access to disclosed materials; handles supplementary evidence requests; manages technical witness scheduling. Addresses the Raila Odinga v the Commission [2017] eKLR para 272 finding that the Commission lacked a structured IT evidence disclosure system.
 
 ## Contents
 
@@ -20,7 +20,7 @@ Module M40 (`election-court-it-interface`) owned by `governance-svc` (crate `cou
 ## 1. What M40 does (vs M41 post-election review)
 
 - **M41** = post-election lessons-learned and long-term improvement tracking; no legal force.
-- **M40** = formal court-facing disclosure: signed evidence bundles, petitioner portal, supplementary requests under court order, and technical witness roster. It operates under judicial timelines, not IEBC internal timelines.
+- **M40** = formal court-facing disclosure: signed evidence bundles, petitioner portal, supplementary requests under court order, and technical witness roster. It operates under judicial timelines, not the Commission internal timelines.
 
 M40 is activated automatically when `eel.declaration.result_declared.v1` is received for a contest with petition potential (all national + county positions). A `EvidenceBundle` is assembled within 24 hours. Petitioners who file in court can apply for portal access; the eCourt integration notifies M40 of accepted petitions automatically.
 
@@ -34,11 +34,11 @@ Five aggregates (per `services/governance-svc/crates/court-interface/src/models.
 | **BundleItem** | One item in the bundle: `item_id` (UUID7), `bundle_id`, `item_type` (see below), `source_system`, `source_ref`, `content_sha256`, `s3_key`, `included_at`. | A |
 | **PetitionerAccess** | Portal access grant: `access_id` (UUID7), `bundle_id`, `petitioner_id_hash`, `law_firm_ref`, `granted_by` (court order ref), `granted_at`, `expires_at`, `access_scope[]` (subset of item types). | A |
 | **SupplementaryRequest** | Court-ordered additional disclosure: `request_id` (UUID7), `bundle_id`, `court_order_ref`, `requested_items[]`, `deadline`, `fulfilled_at`, `fulfilled_sha256`. | A |
-| **TechnicalWitness** | IEBC technical expert scheduled to testify: `witness_id` (UUID7), `bundle_id`, `officer_id`, `expertise_tag`, `hearing_date`, `testimony_topic`, `confirmed`. | B |
+| **TechnicalWitness** | the Commission technical expert scheduled to testify: `witness_id` (UUID7), `bundle_id`, `officer_id`, `expertise_tag`, `hearing_date`, `testimony_topic`, `confirmed`. | B |
 
 ## 3. Evidence bundle composition
 
-The 15 standard bundle items (per IEBC Strategy §XII.4):
+The 15 standard bundle items (per the Commission Strategy §XII.4):
 
 | # | Item type | Source |
 |---|---|---|
@@ -99,7 +99,7 @@ Contract: `packages/openapi-contracts/governance/governance-court.yaml`. All wri
 | `POST /v1/court/witnesses` | Commission legal | Add TechnicalWitness |
 | `PATCH /v1/court/witnesses/{witness_id}` | Commission legal | Update hearing date + confirmation |
 
-All responses are TLS 1.3 + IEBC public-key signed. Petitioner downloads are single-use pre-signed S3 URLs (15-minute TTL).
+All responses are TLS 1.3 + the Commission public-key signed. Petitioner downloads are single-use pre-signed S3 URLs (15-minute TTL).
 
 ## 6. Human surfaces
 
@@ -126,7 +126,7 @@ Languages: EN on petitioner and legal surfaces. WCAG 2.2 AA.
 - **Supreme Court Act §20** - Supreme Court petition procedure; M40 supports the 14-day petition window with 24-hour bundle assembly.
 - **Evidence Act Cap 80 §78A** - electronic evidence admissibility; M40 produces Merkle-anchored, HSM-signed artefacts that satisfy the authenticity requirement.
 - **Elections (Technology) Regulations 2017 Reg 17** - Commission shall preserve electronic records for court inspection; M40 is the implementation.
-- **Raila Odinga v IEBC [2017] eKLR para 272** - Supreme Court finding that IEBC lacked structured IT disclosure; M40 directly addresses this precedent.
+- **Raila Odinga v the Commission [2017] eKLR para 272** - Supreme Court finding that the Commission lacked structured IT disclosure; M40 directly addresses this precedent.
 
 ## 9. Honest caveats + external prerequisites
 

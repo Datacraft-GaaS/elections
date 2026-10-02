@@ -126,7 +126,7 @@ Languages: English + Kiswahili on all surfaces; architecture extensible to 11 la
 ## 9. Honest caveats + external prerequisites
 
 - FBI PIV IQS / STQC sensor certification timeline for the shortlisted vendor is unconfirmed; affects FR-M01-002. Deferred to hardware procurement gate (G3).
-- Legacy Android feature matrix (degraded modalities on lowest-tier IEBC devices) requires sign-off from IEBC ICT before G3.
+- Legacy Android feature matrix (degraded modalities on lowest-tier the Commission devices) requires sign-off from the Commission ICT before G3.
 - ISO / FBI certification for on-device ABIS-lite matcher is shared risk with M03; both resolved together.
 - SPIRE/SPIFFE deployment to all 65,000 kits is an infrastructure prerequisite (P04); kits fail closed without valid SVID.
 - MDM (O01) channel for OTA distribution must be provisioned before field deployment; unsigned images refused at install.

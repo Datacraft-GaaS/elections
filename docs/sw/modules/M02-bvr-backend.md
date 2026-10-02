@@ -2,7 +2,7 @@
 
 **Runs on:** Primary + mirror data centres
 **Owner:** Datacraft
-**IPR:** Custom Software vests in IEBC per GCC 15.4
+**IPR:** Custom Software vests in the Commission per GCC 15.4
 
 ## 1. Purpose
 
@@ -12,7 +12,7 @@ Central authoritative store of the Kenya voter register. Ingests enrolment recor
 
 - Enrolment Clerk (via BVR device — write path)
 - Returning Officer (back-office reads + status changes)
-- IEBC Administrator (bulk operations, exports)
+- the Commission Administrator (bulk operations, exports)
 - Auditor (read + audit-trail exports)
 - ODPC Officer (compliance queries)
 
@@ -36,7 +36,7 @@ Central authoritative store of the Kenya voter register. Ingests enrolment recor
 - **FR-M02-016** Voter streaming / sorting per station for register generation.
 - **FR-M02-017** QR / barcode generation per voter record for BVI-day lookup.
 - **FR-M02-018** Per-kit monitoring: SNMP + email + dashboard alerts on processes / logs / disk / memory anomalies.
-- **FR-M02-019** BI mart publication (async) to IEBC Power BI.
+- **FR-M02-019** BI mart publication (async) to the Commission Power BI.
 - **FR-M02-020** ODPC subject-access-request workflow: retrieve, rectify, erase, port per Kenya DPA.
 - **FR-M02-021** Retention scheduler: enforces contract + 5-year retention on voter data.
 - **FR-M02-022** Every state change signed by originator + countersigned by back-end HSM + timestamped + Merkle-logged + escrow-mirrored.

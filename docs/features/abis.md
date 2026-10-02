@@ -139,7 +139,7 @@ Adjudication SLA: first response <= 4 h, resolution <= 24 h; timer visible in wo
 - **NIST FRVT participation** for the face embedding model is an external prerequisite; FRVT test submission must be completed and results published before G3.
 - **ISO/FBI MINEX III certification** for the fingerprint matcher stack is a shared risk with M01; both resolved together.
 - **Confidential-compute hardware allocation** (TDX / SEV-SNP nodes at scale) requires infrastructure provisioning before G3.
-- **Per-group fairness thresholds** across Kenyan demographic strata need IEBC data-governance sign-off; fairness tolerance parameters are configurable but baseline calibration requires representative enrolment data.
+- **Per-group fairness thresholds** across Kenyan demographic strata need the Commission data-governance sign-off; fairness tolerance parameters are configurable but baseline calibration requires representative enrolment data.
 - **ABIS-lite on M01** uses a compact ISO 19794-2 matcher; ABIS-lite and M03 gallery share no state; sync mechanism is server-driven.
 - Third-party certifier MoU (read-only access to test results and enclave evidence) is a legal prerequisite outside this repo.
 

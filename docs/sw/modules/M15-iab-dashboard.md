@@ -4,7 +4,7 @@
 **Name:** Independent Assurance Board Dashboard
 **Owner:** Datacraft Limited — Platform Engineering Team (infrastructure); IAB (operations)
 **Status:** Draft v2
-**IP Classification:** Custom Software — IPR vests in IEBC per GCC 15.4; IAB operates under separate MoU
+**IP Classification:** Custom Software — IPR vests in the Commission per GCC 15.4; IAB operates under separate MoU
 
 **Strategy traceback:** Part II §PM-08, Part III §PB-01, Part IX §IX.2.F3, Part XII §XII.3, Part XIX §XIX.4, Part XXI.A.14
 
@@ -12,7 +12,7 @@
 
 ## Purpose
 
-The IAB Dashboard provides the Independent Assurance Board with continuous, signed read-only access to every consequential system event in the KIEMS ecosystem — from provisioning through post-election disposition. The IAB is the standing technical witness that neutralises the "declined server access" ground from Raila Odinga v IEBC [2017] eKLR para 272. The board publishes quarterly public reports that are admissible as expert evidence in a Supreme Court petition. This module is the technical infrastructure for those assurance functions: a single authenticated read-only console integrating audit logs, reproducibility outputs, anomaly alerts, compliance status, inventory events, and a structured escalation ladder from IAB to IEBC Chair and, in extremis, to the Supreme Court IT Registrar.
+The IAB Dashboard provides the Independent Assurance Board with continuous, signed read-only access to every consequential system event in the KIEMS ecosystem — from provisioning through post-election disposition. The IAB is the standing technical witness that neutralises the "declined server access" ground from Raila Odinga v the Commission [2017] eKLR para 272. The board publishes quarterly public reports that are admissible as expert evidence in a Supreme Court petition. This module is the technical infrastructure for those assurance functions: a single authenticated read-only console integrating audit logs, reproducibility outputs, anomaly alerts, compliance status, inventory events, and a structured escalation ladder from IAB to the Commission Chair and, in extremis, to the Supreme Court IT Registrar.
 
 ---
 
@@ -27,7 +27,7 @@ The IAB Dashboard provides the Independent Assurance Board with continuous, sign
 | IAB Civil Society Nominee (x2) | ELOG / Kenyan civil society | Summary views; public-report drafting tool |
 | IAB IFES/IDEA Nominee | International observer | Same as civil society |
 | IAB Secretariat (Datacraft-funded) | Administrative support | Board scheduling; report publication; alert routing |
-| IEBC Chair (read-only observer) | Commission Chair | Summary dashboard; escalation notifications |
+| the Commission Chair (read-only observer) | Commission Chair | Summary dashboard; escalation notifications |
 
 ---
 
@@ -54,17 +54,17 @@ Read-only access to M20 IMS events: custody chain per asset, geofence alerts, ki
 ### FR-15.07 — Escalation ladder (structured)
 Four-level escalation mechanism:
 
-| Level | Trigger | IAB action | IEBC response required |
+| Level | Trigger | IAB action | the Commission response required |
 |---|---|---|---|
-| L1 — Advisory | Minor anomaly, process deviation | Logged advisory note, shared with IEBC Chair | Acknowledge within 24 h |
+| L1 — Advisory | Minor anomaly, process deviation | Logged advisory note, shared with the Commission Chair | Acknowledge within 24 h |
 | L2 — Concern | Repeated advisory pattern, statistically significant anomaly | Formal IAB Concern Notice (signed, hash-logged) | Written response within 48 h + remediation plan |
-| L3 — Public Alert | L2 unresolved after 72 h or critical integrity threat | IAB Public Alert published on IAB domain + social media | IEBC public statement within 24 h; IAB public hearing |
-| L4 — Emergency | Active fraud or systemic failure threatening result integrity | IAB Emergency Declaration: notifies Supreme Court IT Registrar + AG + AU observer missions directly | IEBC Chair + Cabinet Secretary immediate response |
+| L3 — Public Alert | L2 unresolved after 72 h or critical integrity threat | IAB Public Alert published on IAB domain + social media | the Commission public statement within 24 h; IAB public hearing |
+| L4 — Emergency | Active fraud or systemic failure threatening result integrity | IAB Emergency Declaration: notifies Supreme Court IT Registrar + AG + AU observer missions directly | the Commission Chair + Cabinet Secretary immediate response |
 
 Every escalation event is HSM-signed and appended to the public record.
 
 ### FR-15.08 — Quarterly report builder
-Structured report template mapping: audit findings, compliance status, anomaly summary, reproducibility certification, escalation history, recommendations. Export to PDF (signed) and HTML. Published on IAB domain and submitted to IEBC Chair + Parliament + Auditor-General.
+Structured report template mapping: audit findings, compliance status, anomaly summary, reproducibility certification, escalation history, recommendations. Export to PDF (signed) and HTML. Published on IAB domain and submitted to the Commission Chair + Parliament + Auditor-General.
 
 ### FR-15.09 — Pre-election evidentiary bundle status
 Tracks the 15-item pre-emptive evidentiary bundle (Part XII.4): real-time completion status, missing items highlighted, sign-off workflow for each item, publication confirmation to Supreme Court IT Registrar.
@@ -76,7 +76,7 @@ IAB direct complaint channel (FR-15 of Strategy §IX.2.F3): any accredited party
 IAB can generate a signed, court-ready evidence package for any event or time range: includes log extracts, hash-chain proof, Merkle inclusion proofs, chain-of-custody certificates, and an IAB witness affidavit template. Package is produced within 24 hours of request.
 
 ### FR-15.12 — Sanitised public view
-A read-only public sub-set of the IAB dashboard is accessible without authentication at `iab.iebc.go.ke/public`: aggregate anomaly counts, compliance summary per module, escalation history (excluding investigative details during active investigations), quarterly report archive. No PII. No operational details that would aid an attacker.
+A read-only public sub-set of the IAB dashboard is accessible without authentication at `iab.eel.example/public`: aggregate anomaly counts, compliance summary per module, escalation history (excluding investigative details during active investigations), quarterly report archive. No PII. No operational details that would aid an attacker.
 
 ### FR-15.13 — No write path
 The IAB has zero write access to any KIEMS production system. Every IAB action that produces a record (advisory, concern, alert, escalation) is a new record appended to the IAB's own log, not a modification of any KIEMS data. This is enforced at the API gateway, not just the application layer.
@@ -92,7 +92,7 @@ The IAB has zero write access to any KIEMS production system. Every IAB action t
 Audit log queries p99 < 3 s for up to 7-day range. Anomaly alert delivery to IAB dashboard p99 < 60 s from event origination in source module.
 
 ### NFR-15.03 — Security
-Zero write path to KIEMS production enforced at API gateway. IAB credentials cannot be shared; each member has a unique hardware key. All IAB sessions recorded (screen capture optional, keystroke log mandatory) for post-incident analysis. Dashboard hosted on IAB-controlled subdomain (`iab.iebc.go.ke`) with IEBC DNS delegation.
+Zero write path to KIEMS production enforced at API gateway. IAB credentials cannot be shared; each member has a unique hardware key. All IAB sessions recorded (screen capture optional, keystroke log mandatory) for post-incident analysis. Dashboard hosted on IAB-controlled subdomain (`iab.eel.example`) with the Commission DNS delegation.
 
 ### NFR-15.04 — Integrity
 Every log page displayed to IAB includes a live hash-chain integrity indicator. If any gap or hash mismatch is detected in the audit trail being viewed, the dashboard displays a CHAIN BREAK alert immediately and notifies all IAB members.
@@ -109,11 +109,11 @@ IAB dashboard infrastructure is managed by the IAB Secretariat (Datacraft-funded
 
 1. As an IAB Technical Member, I want to view the hash-chain integrity of all audit logs in real time, so that I can immediately detect any tampering attempt.
 2. As an IAB Legal Member, I want to query all s.44A invocation events, so that I can confirm every declaration was made according to the pre-agreed protocol.
-3. As an IAB Chair, I want to issue a Formal Concern Notice and track IEBC's response, so that the process is documented and accountable.
+3. As an IAB Chair, I want to issue a Formal Concern Notice and track the Commission's response, so that the process is documented and accountable.
 4. As an IAB ODPC Representative, I want to see all DPA 2019 events including any breach log entries, so that I can confirm statutory compliance.
 5. As an IAB Civil Society Nominee, I want to draft and publish the quarterly report from the dashboard, so that the public has timely independent assurance.
-6. As an IAB member, I want to generate a signed court-ready evidence package within 24 hours of a petition filing, so that IEBC's legal team has immediate expert support.
-7. As an accredited party agent, I want to file a complaint through the IAB portal and receive an acknowledgement ticket, so that my concern is independently recorded outside IEBC's direct control.
+6. As an IAB member, I want to generate a signed court-ready evidence package within 24 hours of a petition filing, so that the Commission's legal team has immediate expert support.
+7. As an accredited party agent, I want to file a complaint through the IAB portal and receive an acknowledgement ticket, so that my concern is independently recorded outside the Commission's direct control.
 8. As an international observer, I want to access the sanitised public view and download the quarterly reports, so that my organisation can publish an informed independent assessment.
 9. As an IAB Technical Member, I want to trigger a manual re-run of the reproducibility pipeline from the dashboard, so that I can independently confirm the published result is arithmetically correct.
 10. As an IAB Chair, I want to invoke the L4 Emergency Declaration and notify the Supreme Court IT Registrar directly from the dashboard, so that an integrity threat is escalated through official channels immediately.
@@ -131,9 +131,9 @@ class IABEscalation(BaseModel):
     triggered_at: datetime
     trigger_description: str
     linked_event_ids: list[str]  # audit log event UUIDs
-    iebc_response_due: datetime
-    iebc_response_at: datetime | None
-    iebc_response_hash: str | None
+    commission_response_due: datetime
+    commission_response_at: datetime | None
+    commission_response_hash: str | None
     public: bool
     signed_hash: str  # HSM signature of this record
 
@@ -175,7 +175,7 @@ class IABReport(BaseModel):
 | POST | `/api/v1/reproducibility/trigger-rerun` | IAB Chair JWT | 1/10min | Trigger manual pipeline re-run |
 | GET | `/api/v1/anomalies` | IAB JWT | 50/s | Anomaly alert feed |
 | POST | `/api/v1/escalations` | IAB JWT | 5/s | Create escalation |
-| GET | `/api/v1/escalations/{id}` | IAB JWT | 20/s | Escalation detail + IEBC response |
+| GET | `/api/v1/escalations/{id}` | IAB JWT | 20/s | Escalation detail + the Commission response |
 | GET | `/api/v1/compliance/status` | IAB JWT | 20/s | Per-module compliance summary |
 | GET | `/api/v1/inventory/snapshot` | IAB JWT | 5/s | Signed inventory snapshot |
 | POST | `/api/v1/evidence/package` | IAB JWT | 1/min | Generate court-ready package |
@@ -197,7 +197,7 @@ class IABReport(BaseModel):
 
 **Downstream (IAB pushes to):**
 - Supreme Court IT Registrar — L4 emergency notification, evidence packages
-- IEBC Chair — escalation notifications
+- the Commission Chair — escalation notifications
 - Public (IAB domain) — quarterly reports, L3 public alerts
 - M23 (Grievance channels) — complaint routing
 
@@ -210,7 +210,7 @@ class IABReport(BaseModel):
 3. **Reproducibility panel** — bundle status, per-stage hash status, second-impl agreement, trigger re-run button (Chair only)
 4. **Compliance matrix** — per-module statutory obligations, red/amber/green status
 5. **Inventory map** — county-level kit status from M20, geofence alert overlay
-6. **Escalation workflow** — create escalation, track IEBC response, time-to-response counter
+6. **Escalation workflow** — create escalation, track the Commission response, time-to-response counter
 7. **Evidence package builder** — date-range picker, module filter, one-click signed PDF generation
 8. **Complaint portal** (public-facing) — simple form with acknowledgement receipt
 9. **Report builder** — guided report template with auto-populated statistics, review, sign, publish
@@ -222,10 +222,10 @@ class IABReport(BaseModel):
 
 | Requirement | Source |
 |---|---|
-| Independent oversight of IEBC | Constitution Art. 88(4) |
-| Server access — proactive neutralisation | Raila v IEBC [2017] eKLR para 272 |
+| Independent oversight of the Commission | Constitution Art. 88(4) |
+| Server access — proactive neutralisation | Raila v the Commission [2017] eKLR para 272 |
 | Independent audit and assurance | Elections (Technology) Regulations 2017 reg. 12 |
-| DPA 2019 oversight | DPA 2019 s.15 (Data Commissioner) + IEBC DPO |
+| DPA 2019 oversight | DPA 2019 s.15 (Data Commissioner) + the Commission DPO |
 | Access to information | Access to Information Act 2016 s.4 |
 | Evidence preservation for petition window | Constitution Art. 140; Elections Act s.84 |
 
@@ -237,7 +237,7 @@ class IABReport(BaseModel):
 |---|---|---|
 | Audit log chain integrity | 100% — zero breaks | IAB Technical Member |
 | Anomaly alert delivery to IAB dashboard | p99 < 60 s | IAB + Datacraft SRE |
-| L1/L2 IEBC response SLA | 100% within defined windows | IAB Chair |
+| L1/L2 the Commission response SLA | 100% within defined windows | IAB Chair |
 | Quarterly report publication SLA | Within 30 days of quarter end | IAB Chair |
 | Evidence package generation | Within 24 hours of request | IAB Secretariat |
 | Complaint acknowledgement | 100% within 48 hours | IAB Secretariat |
@@ -264,10 +264,10 @@ class IABReport(BaseModel):
 
 | Phase | Date | Milestone |
 |---|---|---|
-| IAB membership chartered by IEBC | 2026-10-01 | MoU signed |
+| IAB membership chartered by the Commission | 2026-10-01 | MoU signed |
 | Dashboard alpha (IAB Chair + Secretariat) | 2027-01-01 | Internal access |
 | Full IAB access | 2027-02-01 | All members onboarded |
-| Public view live | 2027-03-01 | `iab.iebc.go.ke/public` |
+| Public view live | 2027-03-01 | `iab.eel.example/public` |
 | Dry-run election monitoring | 2027-06-10 (T-60) | Escalation workflow tested |
 | Election Day ops | 2027-08-10 | 24x7 IAB monitoring |
 | Post-election final report | 2027-10-10 (T+60) | Published + submitted to Parliament |
@@ -290,8 +290,8 @@ class IABReport(BaseModel):
 
 | # | Risk | Mitigation |
 |---|---|---|
-| R1 | IAB member conflict of interest undermines independence | Selection protocol with published COI declarations; civil society veto on IEBC nominees; COI disclosed triggers 30-day replacement process |
-| R2 | IEBC non-compliance with L1/L2 escalations erodes IAB credibility | L3 public alert mechanism; IAB Secretariat independently publicises non-compliance; pre-agreed media engagement protocol |
+| R1 | IAB member conflict of interest undermines independence | Selection protocol with published COI declarations; civil society veto on the Commission nominees; COI disclosed triggers 30-day replacement process |
+| R2 | the Commission non-compliance with L1/L2 escalations erodes IAB credibility | L3 public alert mechanism; IAB Secretariat independently publicises non-compliance; pre-agreed media engagement protocol |
 | R3 | IAB dashboard itself is compromised | Separate hosting from KIEMS production; IAB-controlled subdomain; independent security audit; any IAB member can independently verify audit log hash chain without using the dashboard |
 | R4 | IAB captures no useful signal during non-election period, loses institutional knowledge | Monthly standing meeting with KIEMS operations team; quarterly public reports; year-round complaint intake |
 | R5 | Evidence package generation fails during petition window | 24-hour human-backed fallback: IAB Secretariat can produce manual evidence extract directly from HSM-signed logs; pre-rehearsed at T-14 dry run |

@@ -1,6 +1,6 @@
 # hsm-ceremony
 
-CLI for IEBC custodians to manage eel HSM key ceremonies.
+CLI for the Commission custodians to manage eel HSM key ceremonies.
 
 ## Prerequisites
 

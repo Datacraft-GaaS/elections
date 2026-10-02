@@ -71,7 +71,7 @@ flutter test integration_test/
 
 ## Deployment Notes
 
-- Google Play internal track (ke.go.iebc.eel.custody_mobile)
+- Google Play internal track (ke.go.commission.eel.custody_mobile)
 - MDM policy: platform/mdm/eel-custody-mdm.json
 - Provisioned alongside kit devices at county ICT hubs
 

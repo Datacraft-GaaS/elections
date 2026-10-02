@@ -8,7 +8,7 @@
 | Size | L |
 | Availability class | election-critical 99.99% |
 | Event-sourced | no (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M06-bvi-backend.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M06-bvi-backend.md |
 
 ## Purpose
 
@@ -140,7 +140,7 @@ Access control and identity
 35. FR-M06-035: SpiceDB policy: all admin actions on kits (revoke, wipe, config) require SpiceDB permission check; fail closed on SpiceDB unavailability.
 36. FR-M06-036: SVID rotation: old SVID valid until expiry during batch; producer_key_id per event; SPIRE 30 s rotation tolerated.
 37. FR-M06-037: realm JWKS refresh: refetch on kid miss for LiveView dashboard JWTs; cached with 5-min TTL.
-38. FR-M06-038: dual-control: bulk kit wipe requires two distinct IEBC officer approvals verified at commit time.
+38. FR-M06-038: dual-control: bulk kit wipe requires two distinct the Commission officer approvals verified at commit time.
 
 Kafka and outbox
 39. FR-M06-039: transactional outbox pattern for all domain events; at-least-once delivery; Kafka ISR write with acks=all.
@@ -272,4 +272,4 @@ EC-SEC-17: PQ hybrid TLS negotiation failure: classical TLS 1.3 only on fallback
 ## Open questions
 
 - 42M events/day sustained throughput: Kafka partition count and retention size need capacity planning before G3.
-- Turnout feed delay policy: IEBC policy on delay/aggregation for the public portal needs formal sign-off (anti-gaming vs transparency).
+- Turnout feed delay policy: the Commission policy on delay/aggregation for the public portal needs formal sign-off (anti-gaming vs transparency).

@@ -44,7 +44,7 @@ spec:
         selector:
           dnsZones:
             - "eel.go.ke"
-            - "iebc.or.ke"
+            - "eel.example"
 ---
 # Kenyan DNS provider webhook stub (implementation in platform/cert-manager/dns-webhook/)
 apiVersion: cert-manager.io/v1

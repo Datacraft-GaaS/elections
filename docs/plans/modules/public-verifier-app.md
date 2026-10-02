@@ -8,7 +8,7 @@
 | Size | XL |
 | Availability class | cycle-critical 99.9% |
 | Event-sourced | no (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M13-public-verifier-app.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M13-public-verifier-app.md |
 
 ## Purpose
 

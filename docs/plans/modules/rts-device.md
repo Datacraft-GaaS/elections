@@ -8,7 +8,7 @@
 | Size | L |
 | Availability class | election-critical 99.99% |
 | Event-sourced | yes (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M08-rts-device.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M08-rts-device.md |
 
 ## Purpose
 
@@ -250,4 +250,4 @@ EC-SCL-04: consumer lag > 60 s on form topic at back-end; backpressure applied; 
 ## Open questions
 
 - SMS compression of signed forms: the compressed signed summary format needs a published spec agreed with telco partners before G3; current design uses a custom binary encoding.
-- LoRa mesh option: FR-M08-014 is marked optional; decision on which stations are "high-risk" and require LoRa needs IEBC Security sign-off before kit firmware freeze.
+- LoRa mesh option: FR-M08-014 is marked optional; decision on which stations are "high-risk" and require LoRa needs the Commission Security sign-off before kit firmware freeze.

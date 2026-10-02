@@ -16,7 +16,7 @@
   <text x="100" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">/ Lawyer</text>
 
   <circle cx="280" cy="115" r="18" fill="#9467bd"/>
-  <text x="280" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">IEBC</text>
+  <text x="280" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">the Commission</text>
   <text x="280" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Tech Witness</text>
 
   <circle cx="450" cy="115" r="18" fill="#7f7f7f"/>
@@ -69,10 +69,10 @@
   <!-- Technical witness -->
   <rect x="690" y="420" width="280" height="110" rx="8" fill="#ede9fe" stroke="#9467bd" stroke-width="2"/>
   <text x="830" y="446" font-family="Arial,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9467bd">Technical Witness Portal</text>
-  <text x="830" y="466" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">IEBC IT staff: prepare statement</text>
+  <text x="830" y="466" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">the Commission IT staff: prepare statement</text>
   <text x="830" y="486" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">statement_hash signed by HSM</text>
   <text x="830" y="506" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="#333">tech_witness_statement.v1</text>
-  <text x="830" y="520" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">IEBC_LEGAL_OFFICER role</text>
+  <text x="830" y="520" font-family="Arial,sans-serif" font-size="11" text-anchor="middle" fill="#7f7f7f">COMMISSION_LEGAL_OFFICER role</text>
   <rect x="945" y="420" width="22" height="22" rx="3" fill="#9467bd"/>
   <text x="956" y="436" font-family="Arial,sans-serif" font-size="12" text-anchor="middle" fill="white">🔒</text>
   <line x1="280" y1="133" x2="790" y2="420" stroke="#9467bd" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>

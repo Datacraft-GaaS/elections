@@ -82,7 +82,7 @@ PostGIS spatial indexes on geometries enable < 1s geofence queries.
 
 Build the service:
 ```bash
-cd /Users/nyimbiodero/src/pjs/eel/services/boundary-svc
+cd ./services/boundary-svc
 cargo build --release
 ```
 
@@ -179,7 +179,7 @@ Read-only: Serves cached boundary data; no writes; NLC sync paused.
 ## Statutes
 
 Elections Act §6(1) authority to conduct elections in defined boundaries.
-Elections Act §16 delimitation of constituencies and wards per §3 IEBC Act.
+Elections Act §16 delimitation of constituencies and wards per §3 of the electoral authority's establishing Act.
 Elections Act §29 polling station establishment and location.
 
 ## Follow-ups

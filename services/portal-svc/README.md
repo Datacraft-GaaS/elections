@@ -81,7 +81,7 @@ Read-model projections materialized via Kafka event sourcing. Results cached via
 
 Build the service:
 ```bash
-cd /Users/nyimbiodero/src/pjs/eel/services/portal-svc
+cd ./services/portal-svc
 cargo build --release
 ```
 

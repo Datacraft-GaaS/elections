@@ -2,7 +2,7 @@
 
 **Runs on:** KIEMS kit + legacy Android with feature-matrix
 **Owner:** Datacraft
-**IPR:** Custom Software vests in IEBC per GCC 15.4
+**IPR:** Custom Software vests in the Commission per GCC 15.4
 
 ## 1. Purpose
 

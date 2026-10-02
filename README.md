@@ -1,18 +1,17 @@
 # eel
 
-Integrated elections management platform for the Independent Electoral and Boundaries Commission of Kenya (IEBC), built under tender IEBC/OIT/01/2026-2027. Software prime: Datacraft. Hardware prime: Mechrevo. Three-year build and steady-state operations, fifteen-year audit retention, Kenya-sovereign hosting on two IEBC-provided DR sites plus five regional edge clusters.
+Integrated elections management platform for Kenya's electoral authority. Three-year build and steady-state operations, fifteen-year audit retention, Kenya-sovereign hosting on two authority-provided DR sites plus five regional edge clusters.
 
-[![build](https://img.shields.io/github/actions/workflow/status/Datacraft-GaaS/eel/ci.yml?branch=main)](https://github.com/Datacraft-GaaS/eel/actions)
-[![coverage](https://img.shields.io/codecov/c/github/Datacraft-GaaS/eel)](https://codecov.io/gh/Datacraft-GaaS/eel)
-[![licence](https://img.shields.io/badge/licence-Apache--2.0-blue)](https://opensource.org/licenses/Apache-2.0)
+[![licence](https://img.shields.io/badge/licence-Apache--2.0-blue)](LICENSE)
+[![rust](https://img.shields.io/badge/rust-2021%20edition-orange)](rust-toolchain.toml)
 
-The identifier prefix `eel` is neutral by design: no class, package, event type, topic, header, or trust domain carries the client's name. The word IEBC appears only in prose meaning the Commission.
+The identifier prefix `eel` is neutral by design: no class, package, event type, topic, header, or trust domain names any client or partner.
 
 ## What this is
 
 - **The full electoral lifecycle.** Voter registration and biometric dedup, polling-day identification, results transmission and tally, declaration and certification, public verification, transparency logging, long-term archive. 69 functional modules across 18 Kubernetes services; every module in the RFP acceptance criteria is implemented, and every edge case in the 118-row edge-case matrix has test coverage linked in [docs/plans/TRACEABILITY.yaml](docs/plans/TRACEABILITY.yaml).
-- **Public verifiability.** A single monolithic Merkle transparency log per election with HSM-signed tree heads at 1-second, 60-second, and 5-minute cadences, published on five independent channels (IEBC website, GitHub mirror, IPFS pinned in Kenya, Kenya Gazette daily print anchor, KBC Radio daily hash bulletin). The IAB cosigns from day 1; external observers from day 2. The M14 reproducibility bundle lets any auditor rebuild the entire tally from primary evidence and reach the same Merkle root.
-- **Sovereign and highly available.** All data resident in Kenya on IEBC-provided infrastructure. T1 election-critical modules run at 99.99% with synchronous DR replication; T2 cycle-critical at 99.9% asynchronous; T3 routine at 99.5%. Five edge clusters (Nairobi, Mombasa, Kisumu, Eldoret, Garissa) serve reads with anycast failover.
+- **Public verifiability.** A single monolithic Merkle transparency log per election with HSM-signed tree heads at 1-second, 60-second, and 5-minute cadences, published on five independent channels (the Commission website, GitHub mirror, IPFS pinned in Kenya, Kenya Gazette daily print anchor, KBC Radio daily hash bulletin). The IAB cosigns from day 1; external observers from day 2. The M14 reproducibility bundle lets any auditor rebuild the entire tally from primary evidence and reach the same Merkle root.
+- **Sovereign and highly available.** All data resident in Kenya on Commission-provided infrastructure. T1 election-critical modules run at 99.99% with synchronous DR replication; T2 cycle-critical at 99.9% asynchronous; T3 routine at 99.5%. Five edge clusters (Nairobi, Mombasa, Kisumu, Eldoret, Garissa) serve reads with anycast failover.
 - **Hard security floor.** OWASP ASVS L3 on election-critical surfaces, L2 elsewhere. FIPS 140-3 Level 3+ HSMs, post-quantum hybrid signatures (ML-DSA + ECDSA P-384), ML-KEM-768 + X25519 key encapsulation, TLS 1.3 only.
 - **Built for every voter.** 11 languages (English, Kiswahili + 9 regional), WCAG 2.2 AA accessibility (AAA for the M68 referendum explainer), offline-first kits with paper backup always available.
 
@@ -445,7 +444,7 @@ Beyond G6, an ABIS excellence sweep took M03 to full parity with leading commerc
 
 Election-critical systems (T1, 99.99%) are built to OWASP ASVS Level 3; others to Level 2. Cryptography uses FIPS 140-3 Level 3+ HSMs, post-quantum hybrid signatures (ML-DSA + ECDSA P-384), and ML-KEM-768 + X25519 key encapsulation. TLS 1.3 only, with HSTS, DANE, and ECH where supported.
 
-The transparency model is a single monolithic Merkle log per election. Leaves are domain-tagged; Signed Tree Heads are HSM-signed at 1-second, 60-second, and 5-minute cadences and published on five channels: IEBC website, GitHub mirror, IPFS pinned in Kenya, Kenya Gazette daily print, and KBC Radio hash bulletin. The IAB cosigns from day 1; external observers from day 2. The M14 reproducibility bundle allows a bit-identical rebuild.
+The transparency model is a single monolithic Merkle log per election. Leaves are domain-tagged; Signed Tree Heads are HSM-signed at 1-second, 60-second, and 5-minute cadences and published on five channels: the Commission website, GitHub mirror, IPFS pinned in Kenya, Kenya Gazette daily print, and KBC Radio hash bulletin. The IAB cosigns from day 1; external observers from day 2. The M14 reproducibility bundle allows a bit-identical rebuild.
 
 Details: [docs/architecture/cross-cutting/trust-model.md](docs/architecture/cross-cutting/trust-model.md).
 
@@ -464,7 +463,7 @@ make replay-tally BUNDLE=/path/to/eel-release.tar.gz
 
 ## Contributing
 
-- **No client names in code**: use the `eel` prefix for packages, events, topics, headers, and trust domains. IEBC appears only in prose.
+- **No client names in code**: use the `eel` prefix for packages, events, topics, headers, and trust domains. the Commission appears only in prose.
 - **No em/en dashes**: use commas, colons, or periods. This file and all documentation enforce this.
 - **Commit conventions**: conventional commits (feat, fix, docs, refactor, test, chore). Include module IDs and ticket refs where applicable.
 - **DCO sign-off**: all commits must include `Signed-off-by: Your Name <your.email@example.com>` (`git commit -s`).
@@ -473,7 +472,7 @@ make replay-tally BUNDLE=/path/to/eel-release.tar.gz
 
 ## Licence
 
-Licensed under the Apache License 2.0. Copyright: Datacraft (builder) and Independent Electoral and Boundaries Commission of Kenya (commissioning agency).
+Licensed under the Apache License 2.0. Copyright: Datacraft (builder) and the electoral authority of Kenya (commissioning agency).
 
 ```
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -495,4 +494,4 @@ Operational on-call rotations, break-glass custodians, and escalation contacts: 
 
 Module ownership and wave assignment: [docs/plans/12-appendix-module-inventory.md](docs/plans/12-appendix-module-inventory.md).
 
-For general inquiries about the IEBC Electoral Technology Programme, contact the IEBC ICT directorate.
+For general inquiries about the Commission Electoral Technology Programme, contact the Commission ICT directorate.

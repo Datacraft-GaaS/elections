@@ -4,7 +4,7 @@
 **Name:** Inventory Management System (IMS)
 **Owner:** Datacraft Limited — Operations Engineering Team
 **Status:** Draft v2
-**IP Classification:** Custom Software — IPR vests in IEBC per GCC 15.4
+**IP Classification:** Custom Software — IPR vests in the Commission per GCC 15.4
 
 **Strategy traceback:** Part II §PM-12, Part XV §XV.4, Part XXI.A.4, INVENTORY-MANAGEMENT.md §§1-11
 
@@ -12,7 +12,7 @@
 
 ## Purpose
 
-The Inventory Management System tracks every physical KIEMS asset — 65,287 kits, 718,000+ sub-components, 60,932 ballot-box smart-lids, 1.9 million tamper-evident seals, and 3,500 consumable lots — from OEM factory to post-election disposition, with a Merkle-anchored chain of custody at every handoff. The OAG 2024 report found 200 KIEMS kits missing and 3,433 faulty after 2022, with IEBC unable to trace movements (Biometric Update March 2025). IMS makes that failure impossible: every item has a globally unique ID, every transfer is signed by both parties, every geofence deviation triggers an alert, and every Merkle root is published every 10 minutes to five independent channels. The Auditor-General, IAB, and Supreme Court IT Registrar have read-only access at all times.
+The Inventory Management System tracks every physical KIEMS asset — 65,287 kits, 718,000+ sub-components, 60,932 ballot-box smart-lids, 1.9 million tamper-evident seals, and 3,500 consumable lots — from OEM factory to post-election disposition, with a Merkle-anchored chain of custody at every handoff. The OAG 2024 report found 200 KIEMS kits missing and 3,433 faulty after 2022, with the Commission unable to trace movements (Biometric Update March 2025). IMS makes that failure impossible: every item has a globally unique ID, every transfer is signed by both parties, every geofence deviation triggers an alert, and every Merkle root is published every 10 minutes to five independent channels. The Auditor-General, IAB, and Supreme Court IT Registrar have read-only access at all times.
 
 ---
 
@@ -23,11 +23,11 @@ The Inventory Management System tracks every physical KIEMS asset — 65,287 kit
 | Mechrevo factory (OEM) | Own output only (write) | Birth records, FAT results, component serials |
 | Datacraft provisioning team | All kits at Nairobi centre (write) | Provisioning events, acceptance testing |
 | Datacraft field engineer | Assigned county (write) | Condition events, custody transfers |
-| IEBC procurement officer | All kits, no PII (write: receipt confirm) | Receipt confirmations, payment milestone triggers |
+| the Commission procurement officer | All kits, no PII (write: receipt confirm) | Receipt confirmations, payment milestone triggers |
 | County Returning Officer | Own county (write: county receipts) | County custody receipt |
 | Constituency Returning Officer | Own constituency (write) | Constituency custody receipt |
 | Presiding Officer | Own station's kit only (write: activation) | Station activation event |
-| IEBC Operations (ECC) | All kits, real-time (write: alert acknowledge) | Monitoring, alert triage |
+| the Commission Operations (ECC) | All kits, real-time (write: alert acknowledge) | Monitoring, alert triage |
 | Independent Assurance Board | All events, read-only | Audit; quarterly report |
 | Auditor-General | All events, batch extract | Annual audit |
 | Security services (KNPS/DCI) | Flagged assets only, on-request, read-only | Theft investigation |
@@ -82,10 +82,10 @@ Consumable lots tracked by lot UID, expiry date, issue location, and quantity. A
 Each ballot has a passive RFID chip (embedded at printer, Al Ghurair or equivalent). Ballot-box smart-lid reads each chip on deposit. IMS receives: ballot UID deposited, station code, timestamp. Cross-check: ballots deposited vs authentications. Discrepancy > 0.1% triggers automatic result hold. Coordination with Tender 02 (ballot printing) on RFID chip compatibility.
 
 ### FR-20.10 — Merkle-chain publication
-Every CustodyEvent, ConditionEvent, and LocationEvent appended to the Merkle tree. Root hash published every 10 minutes to five channels: IEBC.or.ke, GitHub, IAB domain, Twitter/X, IPFS. Any channel showing a different root triggers IAB immediate alert. Root hash also delivered to M15 for IAB Dashboard display.
+Every CustodyEvent, ConditionEvent, and LocationEvent appended to the Merkle tree. Root hash published every 10 minutes to five channels: the Commission.or.ke, GitHub, IAB domain, Twitter/X, IPFS. Any channel showing a different root triggers IAB immediate alert. Root hash also delivered to M15 for IAB Dashboard display.
 
 ### FR-20.11 — Alert engine
-Rule-based + ML anomaly baseline alerting for: missing kit (not returned on schedule), late delivery (off SLA), tampered item (seal broken outside custody event), out-of-geofence, expired consumable, weight variance at pallet load (INVENTORY-MANAGEMENT.md §3.8), door-open event on sea container outside expected location. Alert severity P0/P1/P2/P3; P0 routes immediately to ECC and IEBC Ops Director.
+Rule-based + ML anomaly baseline alerting for: missing kit (not returned on schedule), late delivery (off SLA), tampered item (seal broken outside custody event), out-of-geofence, expired consumable, weight variance at pallet load (INVENTORY-MANAGEMENT.md §3.8), door-open event on sea container outside expected location. Alert severity P0/P1/P2/P3; P0 routes immediately to ECC and the Commission Ops Director.
 
 ### FR-20.12 — Issue management (6 sections)
 Full ticket lifecycle per INVENTORY-MANAGEMENT.md §6: issue taxonomy (hardware fault, missing, tampered, consumable issue, environmental damage, DOA), severity SLA (P0: 2h, P1: 8h, P2: 24h, P3: 72h), ticket lifecycle (open → assigned → in-progress → resolved → closed), escalation ladder, and public-facing issue channels.
@@ -122,16 +122,16 @@ Primary (Nairobi Tier III DC) + mirror (second-site Nairobi DC, active-active) +
 
 ## User Stories
 
-1. As the IEBC Procurement Officer, I want to see a live count of kits at each custody level at all times, so that I can confirm delivery milestones and trigger payment authorisations.
+1. As the Commission Procurement Officer, I want to see a live count of kits at each custody level at all times, so that I can confirm delivery milestones and trigger payment authorisations.
 2. As an Auditor-General auditor, I want to download a daily signed event log and verify its Merkle hash independently, so that I can confirm the audit trail has not been tampered with.
 3. As an IAB Member, I want to see any seal-break alert in real time on the M15 Dashboard, so that I can investigate potential tampering before it becomes a petition ground.
 4. As a Datacraft Field Engineer, I want to scan a kit's RFID and update its condition in the mobile app, so that the master record reflects the physical reality without paperwork.
 5. As a County Returning Officer, I want to sign digital receipt for all kits delivered to my county, so that my responsibility for those assets is documented and my signature is cryptographically verified.
 6. As the ECC Operations Manager, I want to see the reserve pool status for each county in real time, so that I can dispatch spare kits before a threshold is reached.
 7. As a Presiding Officer, I want to activate my kit on arrival at the polling station and have the location confirmed against the geofence, so that the system records my station as properly established.
-8. As the Datacraft DPO, I want to generate a cryptographic erasure certificate for each decommissioned kit, so that IEBC can demonstrate DPA 2019 s.41 compliance for data disposal.
+8. As the Datacraft DPO, I want to generate a cryptographic erasure certificate for each decommissioned kit, so that the Commission can demonstrate DPA 2019 s.41 compliance for data disposal.
 9. As a Civil Society Observer, I want to see the aggregated public inventory summary, so that I can verify that all kits are accounted for before and after the election.
-10. As an IEBC Commissioner, I want a post-election reconciliation report showing all 65,287 kits with final disposition, so that the OAG audit will find zero missing assets.
+10. As a Commission Commissioner, I want a post-election reconciliation report showing all 65,287 kits with final disposition, so that the OAG audit will find zero missing assets.
 
 ---
 
@@ -222,7 +222,7 @@ class IMSTicket(BaseModel):
 | GET | `/api/v1/assets/{uid}` | Role JWT (scoped) | 200/s | Asset detail with full event chain |
 | POST | `/api/v1/assets/{uid}/custody` | Role JWT + biometric | 20/s | Record custody transfer |
 | POST | `/api/v1/assets/{uid}/condition` | Role JWT | 20/s | Record condition change |
-| POST | `/api/v1/assets/bulk-custody` | Role JWT (Datacraft/IEBC Ops) | 5/s | Batch custody transfer (county cascade) |
+| POST | `/api/v1/assets/bulk-custody` | Role JWT (Datacraft/the Commission Ops) | 5/s | Batch custody transfer (county cascade) |
 | GET | `/api/v1/merkle/root/latest` | None (public) | 1000/s | Current Merkle root + publication confirmations |
 | GET | `/api/v1/merkle/events/{after_seq}` | IAB JWT / AG JWT | 50/s | Event batch for escrow replication |
 | GET | `/api/v1/tickets` | Role JWT (scoped) | 50/s | Issue ticket list |
@@ -244,7 +244,7 @@ All endpoints: OpenAPI 3.1, mTLS for service-to-service. RBAC enforced at API ga
 - KEBS PVoC registry — certificate verification per batch
 - Al Ghurair ballot printer — ballot lot data, serial ranges, RFID chip manifest (SFTP + PGP)
 - DHL / FedEx / G4S / Kenya Airways Cargo — shipment milestone events
-- IEBC procurement system — receipt confirmation, payment milestone triggers
+- the Commission procurement system — receipt confirmation, payment milestone triggers
 
 **Downstream (consumers):**
 - M16 (ECC / E-SOC dashboard) — real-time kit status, geofence alerts (WebSocket push)
@@ -273,7 +273,7 @@ All endpoints: OpenAPI 3.1, mTLS for service-to-service. RBAC enforced at API ga
 
 | Requirement | Source |
 |---|---|
-| Asset tracking as contractual obligation | IEBC/OIT/01/2026-2027 SoW; OAG recommendation 2024 |
+| Asset tracking as contractual obligation | the tender SoW; OAG recommendation 2024 |
 | RFID tracking specified in tender | 2027-preparatory-specs.md §2.4 |
 | Chain of custody for evidentiary purposes | Elections Act s.84; Constitution Art. 140 |
 | Biometric data erasure on decommission | DPA 2019 s.41 |
@@ -287,11 +287,11 @@ All endpoints: OpenAPI 3.1, mTLS for service-to-service. RBAC enforced at API ga
 
 | Metric | Target | Sign-off |
 |---|---|---|
-| Kit tracking coverage (all kits with UID from birth) | 100% | Datacraft / IEBC Procurement |
+| Kit tracking coverage (all kits with UID from birth) | 100% | Datacraft / the Commission Procurement |
 | Missing kits at T+30 post-election | 0 | Auditor-General |
 | Seal-break alerts delivered to ECC | p99 < 5 min | Datacraft SRE |
 | Merkle root published every 10 min | 100% of windows during election period | IAB |
-| Custody transfer signed-both-parties rate | 100% | IEBC Procurement |
+| Custody transfer signed-both-parties rate | 100% | the Commission Procurement |
 | DOA kit replacement SLA (L1 county spare) | 100% within 2 hours | Datacraft Ops |
 | Biometric erasure certificates generated | 100% of decommissioned kits | Datacraft DPO |
 | IMS availability during election window | >= 99.99% | Datacraft SRE |
@@ -306,7 +306,7 @@ All endpoints: OpenAPI 3.1, mTLS for service-to-service. RBAC enforced at API ga
 - **Chain integrity:** Automated hourly check that all events hash-chain correctly to current root; simulated chain-break confirms alert fires within 5 minutes
 - **Offline resilience:** County edge cache disconnected for 8 hours; events queued; sync on reconnect; zero events lost
 - **DPA compliance:** Independent audit of data access logs confirming geographic scoping enforced; no cross-county data leak
-- **Penetration test:** IEBC Procurement JWT used to attempt write to a kit outside its jurisdiction; must be blocked at data layer
+- **Penetration test:** the Commission Procurement JWT used to attempt write to a kit outside its jurisdiction; must be blocked at data layer
 - **Full-fleet dry run:** T-60 dry-run election: all 65,287 UIDs provisioned and cascade tracked end-to-end
 
 ---

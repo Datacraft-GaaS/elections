@@ -1,8 +1,8 @@
-# Mobile Security Requirements — IEBC IEMS (sw/ Integration)
+# Mobile Security Requirements — the Commission IEMS (sw/ Integration)
 
 **Integration note.** This document is adapted from `mobile/SECURITY.md` (source of truth pending stitching-pass consolidation). It is a companion to `../SECURITY.md` (the main sw/ security specification). The stitching pass should add a "Mobile Security" section to `../SECURITY.md` that references this file, the SR-M-* requirement namespace, and the per-app profiles in §3 below.
 
-Mobile devices are hostile territory: they leave IEBC's physical control, they may be rooted, they may be running under an attacker's supervision. This document consolidates the mobile-specific security requirements that harden the six apps against that reality.
+Mobile devices are hostile territory: they leave the Commission's physical control, they may be rooted, they may be running under an attacker's supervision. This document consolidates the mobile-specific security requirements that harden the six apps against that reality.
 
 ---
 
@@ -18,7 +18,7 @@ Mobile devices are hostile territory: they leave IEBC's physical control, they m
 - OTA update spoofing: fake update installing malicious binary.
 - Store-listing impersonation: look-alike app on Play / App Store.
 - Social engineering: phishing directing users to install malicious apps.
-- Insider threat: Datacraft or IEBC staff with signing-key access.
+- Insider threat: Datacraft or the Commission staff with signing-key access.
 
 ---
 
@@ -39,7 +39,7 @@ Mobile devices are hostile territory: they leave IEBC's physical control, they m
 - **SR-M-APP-002** Hooking-framework detection: check for Frida (loaded modules, port scan), Xposed (framework classes), Substrate; refuse on detection for staff apps.
 - **SR-M-APP-003** Code-integrity attestation: hashes of loaded Dart / native modules checked against signed manifest.
 - **SR-M-APP-004** Runtime application self-protection (RASP): detect method-swizzling, class-swizzling, native library injection.
-- **SR-M-APP-005** Reproducible builds so IEBC can independently verify any APK / IPA against source.
+- **SR-M-APP-005** Reproducible builds so the Commission can independently verify any APK / IPA against source.
 
 ### 2.3 Cryptography
 
@@ -81,7 +81,7 @@ Mobile devices are hostile territory: they leave IEBC's physical control, they m
 - **SR-M-NET-001** TLS 1.3 + certificate pinning (see SR-M-CRYP-002).
 - **SR-M-NET-002** mTLS for staff apps (M30, M31, M32, M34).
 - **SR-M-NET-003** No HTTP, HTTPS-only enforced via App Transport Security (iOS) / cleartextTrafficPermitted=false (Android).
-- **SR-M-NET-004** No traffic to third-party analytics endpoints. All telemetry to IEBC-controlled Kenya-resident endpoint.
+- **SR-M-NET-004** No traffic to third-party analytics endpoints. All telemetry to Commission-controlled Kenya-resident endpoint.
 - **SR-M-NET-005** VPN awareness: staff apps warn on active VPN because it can defeat pinning intent; user must confirm.
 - **SR-M-NET-006** Proxy detection: refuse to run on staff apps if system proxy is active.
 
@@ -101,7 +101,7 @@ Mobile devices are hostile territory: they leave IEBC's physical control, they m
 
 ### 2.9 OTA Updates
 
-- **SR-M-OTA-001** Signed OTA packages verified against IEBC-controlled public key baked into the app.
+- **SR-M-OTA-001** Signed OTA packages verified against Commission-controlled public key baked into the app.
 - **SR-M-OTA-002** Rollback capability on crash-rate regression or manual trigger.
 - **SR-M-OTA-003** Minimum-supported-version enforcement: apps below minimum refuse to run.
 - **SR-M-OTA-004** Software freeze 30 days before every gazetted election; only dual-approved security patches permitted.
@@ -130,13 +130,13 @@ Mobile devices are hostile territory: they leave IEBC's physical control, they m
 - **SR-M-PRIV-004** No third-party trackers or advertising SDKs.
 - **SR-M-PRIV-005** Right to erasure implemented as in-app action; server-side workflow completes within 30 days.
 - **SR-M-PRIV-006** Data-safety declaration on Google Play + Privacy Nutrition Label on App Store accurately reflects behaviour.
-- **SR-M-PRIV-007** Privacy policy hosted on iebc.or.ke; linked in-app; content matches actual behaviour.
+- **SR-M-PRIV-007** Privacy policy hosted on eel.example; linked in-app; content matches actual behaviour.
 
 ### 2.13 Store Listing
 
-- **SR-M-STORE-001** Only IEBC-owned Google Play + Apple Developer accounts publish official apps.
+- **SR-M-STORE-001** Only Commission-owned Google Play + Apple Developer accounts publish official apps.
 - **SR-M-STORE-002** Look-alike-app monitoring service subscribed; take-down process pre-agreed.
-- **SR-M-STORE-003** Public-key fingerprint of legitimate app published on iebc.or.ke + multiple canonical domains so citizens can verify.
+- **SR-M-STORE-003** Public-key fingerprint of legitimate app published on eel.example + multiple canonical domains so citizens can verify.
 - **SR-M-STORE-004** In-app "verify authenticity" screen shows signing-key fingerprint + version + build info.
 
 ### 2.14 Screen Content Protection
@@ -151,9 +151,9 @@ Mobile devices are hostile territory: they leave IEBC's physical control, they m
 - **SR-M-SUP-001** Signed commits (Sigstore or GPG) on every merge.
 - **SR-M-SUP-002** Two-person review on protected branches.
 - **SR-M-SUP-003** SBOM (SPDX) published per release; signed.
-- **SR-M-SUP-004** Reproducible builds; IEBC + independent auditor can verify any published APK / IPA against source.
+- **SR-M-SUP-004** Reproducible builds; the Commission + independent auditor can verify any published APK / IPA against source.
 - **SR-M-SUP-005** Play Console + App Store Connect access limited by role + MFA + audit.
-- **SR-M-SUP-006** App-signing key managed by IEBC or held in escrow with IEBC-controlled unlock ceremony.
+- **SR-M-SUP-006** App-signing key managed by the Commission or held in escrow with Commission-controlled unlock ceremony.
 
 ### 2.16 Incident Response
 
@@ -168,11 +168,11 @@ Mobile devices are hostile territory: they leave IEBC's physical control, they m
 
 | App | Module | Device attestation | mTLS | Biometric unlock | Duress code | Screen-capture protection |
 |---|---|:-:|:-:|:-:|:-:|:-:|
-| IEBC Verify | M29 | Required (soft-fail warn) | Public + pinning | Optional | — | On PII screens |
+| the Commission Verify | M29 | Required (soft-fail warn) | Public + pinning | Optional | — | On PII screens |
 | Agent | M30 | Required (hard-fail) | Yes | Required | Yes | On all screens |
 | Poll Clerk Companion | M31 | Required (hard-fail) | Yes | Required | Yes | On voter-lookup screens |
 | Field Support | M32 | Required (hard-fail) | Yes | Required | — | On kit-diagnostic screens |
-| IEBC Dispatch | M33 | Required (soft-fail warn) | Yes | Required | — | On assignment + PII screens |
+| the Commission Dispatch | M33 | Required (soft-fail warn) | Yes | Required | — | On assignment + PII screens |
 | Observer | M34 | Required (hard-fail) | Yes | Required | — | On incident-report screens |
 
 ---

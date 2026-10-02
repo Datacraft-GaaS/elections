@@ -444,7 +444,7 @@ pub async fn ussd_session(Extension(records): Extension<crate::records::Records>
     let step = req.input.trim();
     let (response, end_session) = match step {
         "" => (
-            "IEBC Grievance.\n1 Lodge a complaint\n2 Check complaint status\n0 End".to_string(),
+            "Electoral Grievance Line.\n1 Lodge a complaint\n2 Check complaint status\n0 End".to_string(),
             false,
         ),
         "1" => (

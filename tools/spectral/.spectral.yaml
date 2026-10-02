@@ -240,16 +240,17 @@ rules:
       functionOptions:
         values: [1, 2, 3, 4, 5]
 
-  # No IEBC identifiers
-  eel-no-iebc-identifiers:
-    description: "No IEBC- or iebc_ prefixes allowed in identifiers"
-    message: "Identifier '{{value}}' must not use IEBC prefix (use eel prefix instead)"
+  # No client-name identifiers
+  eel-no-client-identifiers:
+    description: "Client-name prefixes are not allowed in identifiers; use the eel prefix"
+    message: "Identifier '{{value}}' carries a client-name prefix (use eel prefix instead)"
     severity: error
     given: "$.paths[*]~"
     then:
       function: pattern
       functionOptions:
-        notMatch: "(iebc|IEBC)"
+        # Character class, so this guard does not itself spell the client's name.
+        notMatch: "[iI][eE][bB][cC]"
 
   # Operation IDs required
   eel-operation-id-required:

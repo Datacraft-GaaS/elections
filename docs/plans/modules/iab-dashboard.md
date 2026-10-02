@@ -8,11 +8,11 @@
 | Size | M |
 | Availability class | cycle-critical 99.9% |
 | Event-sourced | no (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M15-iab-dashboard.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M15-iab-dashboard.md |
 
 ## Purpose
 
-Independent Audit Board dashboard: give IAB members a real-time, hardware-key-authenticated window into election operations data (reproducibility bundles, inventory status, anomaly flags, complaints), support escalation workflows to IEBC leadership, and produce statutory compliance reports.
+Independent Audit Board dashboard: give IAB members a real-time, hardware-key-authenticated window into election operations data (reproducibility bundles, inventory status, anomaly flags, complaints), support escalation workflows to the Commission leadership, and produce statutory compliance reports.
 
 ## Surfaces and languages
 
@@ -91,7 +91,7 @@ none
 10. FR-M15-010: compliance reporting: ASVS L3 status, ZAP scan results, and Semgrep clean status presented on a dedicated compliance tab.
 11. FR-M15-011: export signed audit-log excerpts as PDF and JSON; HSM signature included; export event anchored to transparency log.
 12. FR-M15-012: dual-officer sign-off workflow for clearing a high-severity (P1) alert; both officers must authenticate with hardware key before resolution is committed.
-13. FR-M15-013: escalation workflow: IAB officer raises an escalation with category, description, and evidence attachments; escalation routed to IEBC leadership via eel.iab.escalation_raised.v1 event.
+13. FR-M15-013: escalation workflow: IAB officer raises an escalation with category, description, and evidence attachments; escalation routed to the Commission leadership via eel.iab.escalation_raised.v1 event.
 14. FR-M15-014: escalation status transitions (open, acknowledged, resolved, closed) with mandatory comment at each transition.
 15. FR-M15-015: escalation resolution requires dual-officer sign-off when severity is high or critical.
 16. FR-M15-016: alert escalation bridge: PagerDuty and OpsGenie integration for P1 alerts; delivery receipt stored in audit log.
@@ -186,4 +186,4 @@ EC-NET-01: network partition isolates the IAB dashboard from SpiceDB; all writes
 ## Open questions
 
 - Hardware key logistics: FIDO2 key provisioning for remote IAB members needs a field distribution plan; current lead-time assumption is 8 weeks before election day.
-- Report format: the statutory compliance report format is not yet specified by the Elections Act regulations; IEBC legal team needs to confirm structure before M is implemented.
+- Report format: the statutory compliance report format is not yet specified by the Elections Act regulations; the Commission legal team needs to confirm structure before M is implemented.

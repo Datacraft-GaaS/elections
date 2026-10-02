@@ -8,7 +8,7 @@
 | Size | L |
 | Availability class | cycle-critical 99.9% |
 | Event-sourced | no |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M25-special-voter-workflows.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M25-special-voter-workflows.md |
 
 ## Purpose
 
@@ -95,7 +95,7 @@ OpenAPI file: `packages/openapi-contracts/support/special-voter.yaml`
 Category A: Remand Prisoners:
 
 1. FR-M25-001: REMAND_PRISON kit mode: voter roll scoped to registered prison's remand population (pre-trial detainees only; convicted prisoners excluded unless court order extends right); roll sourced from Kenya Prisons Service CRS cross-reference under MoU.
-2. FR-M25-002: Dual biometric sign-in of Prison Governor and IEBC-assigned deputy Presiding Officer required to open kit; kit cannot activate without both biometrics matched.
+2. FR-M25-002: Dual biometric sign-in of Prison Governor and Commission-assigned deputy Presiding Officer required to open kit; kit cannot activate without both biometrics matched.
 3. FR-M25-003: Party-agent complement enforced: minimum one agent per two leading presidential candidates; additional agents accommodated where facility permits.
 4. FR-M25-004: Prisoner identity verification via ABIS fingerprint match at standard threshold; fallback to iris + face combination with Presiding Officer signed authorisation on documented fingerprint degradation.
 5. FR-M25-005: Kit arrives sealed with RFID tag; custody log records prison gate entry; party agents sign custody certificate at gate; RFID tracked through same chain as standard kits (M10).
@@ -116,23 +116,23 @@ Category B: Hospital/Infirmary Voters:
 Category C: KDF/GSU/Prison Service Voters:
 
 16. FR-M25-016: BARRACKS mode: voter roll scoped to service-personnel registered at barracks station under Elections Act s.5 special enrolment.
-17. FR-M25-017: Civilian control enforced: IEBC-seconded Returning Officer acts as Presiding Officer; kit's Presiding Officer biometric must match IEBC-seconded officer, not any military credential.
+17. FR-M25-017: Civilian control enforced: Commission-seconded Returning Officer acts as Presiding Officer; kit's Presiding Officer biometric must match Commission-seconded officer, not any military credential.
 18. FR-M25-018: Ballot secrecy enforcement: physical booth positioned away from line-of-sight of superior officers; any officer approaching defined booth perimeter logged automatically as a SECRECY_VIOLATION event.
-19. FR-M25-019: Special enrolment window for service personnel; roll compiled by IEBC from commanding officer's approved list; IEBC retains roll compilation authority and does not delegate to military chain.
+19. FR-M25-019: Special enrolment window for service personnel; roll compiled by the Commission from commanding officer's approved list; the Commission retains roll compilation authority and does not delegate to military chain.
 20. FR-M25-020: Form 34A-B (barracks variant) published within 30 minutes of close.
 21. FR-M25-021: IAB auditor reviews 5% random sample of barracks authentication logs at T+7; all ballot-secrecy violation events reviewed at 100% by IAB within 24 hours.
 
 Category D: Refugees (Conditional Activation):
 
-22. FR-M25-022: REFUGEE_VOTING_ENABLED feature flag (default false); activation via IEBC Chair HSM-signed config change only; no firmware update required; Datacraft monitors litigation and court orders.
-23. FR-M25-023: When activated: refugee voter roll derived from UNHCR Kenya registration data cross-referenced with IEBC criteria (minimum residence period, no criminal conviction); roll compiled with UNHCR + Department of Refugee Services.
+22. FR-M25-022: REFUGEE_VOTING_ENABLED feature flag (default false); activation via Commission Chair HSM-signed config change only; no firmware update required; Datacraft monitors litigation and court orders.
+23. FR-M25-023: When activated: refugee voter roll derived from UNHCR Kenya registration data cross-referenced with the Commission criteria (minimum residence period, no criminal conviction); roll compiled with UNHCR + Department of Refugee Services.
 24. FR-M25-024: Refugee identity verification via UNHCR ProGres v4 biometric match API response; ABIS does not store refugee biometrics independently without explicit UNHCR data-sharing agreement.
 25. FR-M25-025: Refugee voting at designated refugee station within or adjacent to refugee camp when flag is activated; standard BVI workflow applies.
 
 Category E: IDPs:
 
 26. FR-M25-026: IDP register compiled from UNHCR Kenya, NDOC, Kenya Red Cross displacement data cross-referenced with standard voter register; any registered voter in IDP camp who cannot travel to registered station offered re-assignment.
-27. FR-M25-027: Pre-election IDP verification window: IEBC centres open for 15 days before election day for roll re-assignment; re-assignment recorded on voter register and reflected in BVI kit roll.
+27. FR-M25-027: Pre-election IDP verification window: the Commission centres open for 15 days before election day for roll re-assignment; re-assignment recorded on voter register and reflected in BVI kit roll.
 28. FR-M25-028: IDP station provisioned in IDP_CAMP mode: voter roll contains re-assigned IDPs; standard BVI workflow applies.
 29. FR-M25-029: Form 34A-I variants published and included in correct constituency aggregation based on voter's original registered constituency.
 
@@ -149,7 +149,7 @@ NFRs as requirements:
 35. FR-M25-035: WCAG 2.2 AA for all voter-facing screens; audio guidance mandatory for hospital voter screens; large-text mode available on all special-mode kits.
 36. FR-M25-036: DPA 2019 compliance: health status of hospital patients never stored in KIEMS; prison charge data never stored; refugee biometrics not held in KIEMS ABIS without explicit UNHCR agreement; DPIA registered per category.
 37. FR-M25-037: Multi-language: EN + SW on all special-mode kit screens; Somali and Oromo added for refugee and IDP facilities in North Eastern and Rift Valley regions.
-38. FR-M25-038: SECRECY_VIOLATION event auto-triggered by proximity detection; officer must acknowledge with a note within 5 minutes; unacknowledged event auto-escalates to IEBC Chair; escalation logged.
+38. FR-M25-038: SECRECY_VIOLATION event auto-triggered by proximity detection; officer must acknowledge with a note within 5 minutes; unacknowledged event auto-escalates to the Commission Chair; escalation logged.
 39. FR-M25-039: Overcounting guard: voter who authenticates at IDP station cannot re-authenticate at original registered station on the same election day; cross-station double-vote check active.
 
 APIs:
@@ -157,7 +157,7 @@ APIs:
 40. FR-M25-040: GET /v1/special/facilities and /v1/special/facilities/{id}: JWT+SpiceDB; list and detail of all special voter facilities.
 41. FR-M25-041: POST /v1/special/facilities/{id}/events: kit-cert mTLS; idempotent write; submit special voter event from kit.
 42. FR-M25-042: POST /v1/special/forms/34 and GET /v1/special/forms/34 and {id}: kit-cert mTLS submission; public read; single form includes Merkle proof.
-43. FR-M25-043: POST /v1/special/idp/reassignments: IEBC officer JWT; idempotent write; record IDP voter re-assignment with displacement source.
+43. FR-M25-043: POST /v1/special/idp/reassignments: the Commission officer JWT; idempotent write; record IDP voter re-assignment with displacement source.
 44. FR-M25-044: GET /v1/special/dashboard: COMMISSION_OPS JWT; ops coordinator live status; map of all facilities; live event feed; violation-event highlight panel.
 45. FR-M25-045: GET /v1/special/audit/sample/{category}: IAB_AUDITOR JWT; rate-limited 10/hr; pull random-sample authentication logs for post-election review.
 46. FR-M25-046: GET /v1/special/public/counts: public; voter counts per facility; no PII; facility type filter.
@@ -169,24 +169,24 @@ UI screens:
 49. FR-M25-049: Hospital mobile kit UI: large-text default; audio guidance enabled by default; one-handed tablet horizontal operation; "call for assistance" soft button triggers presiding officer alert.
 50. FR-M25-050: Witness signature screen: sequential signature collection from presiding officer then each party agent; biometric tap per signer; waiting-status count displayed; cannot proceed until all required signatures collected.
 51. FR-M25-051: Violation event logger screen: auto-triggered on SECRECY_VIOLATION event; mandatory officer acknowledgement with typed note; countdown to auto-escalation shown; cannot dismiss without note.
-52. FR-M25-052: IDP re-assignment centre console: IEBC officer search by voter ID or name; current station assignment shown; displacement source dropdown; new IDP facility confirmed; re-assignment logged and signed.
+52. FR-M25-052: IDP re-assignment centre console: the Commission officer search by voter ID or name; current station assignment shown; displacement source dropdown; new IDP facility confirmed; re-assignment logged and signed.
 
 ## Acceptance criteria
 
-AC-M25-01: 100% of eligible remand facilities offered the vote per gazette schedule; facility log compared against gazette; IEBC Special Voter Coordinator sign-off.
-AC-M25-02: >= 95% of hospital voter sessions completed per published schedule; session completion log; IEBC Ops sign-off.
+AC-M25-01: 100% of eligible remand facilities offered the vote per gazette schedule; facility log compared against gazette; the Commission Special Voter Coordinator sign-off.
+AC-M25-02: >= 95% of hospital voter sessions completed per published schedule; session completion log; the Commission Ops sign-off.
 AC-M25-03: 100% of KDF ballot-secrecy violation events reviewed by IAB within 24 hours; violation event log; IAB sign-off.
 AC-M25-04: >= 98% of special Form 34 variants published within 30 minutes of close; timestamp delta measurement; Datacraft Technical sign-off.
 AC-M25-05: 100% of IAB 5% audit sample reviewed by T+7; audit completion log; IAB Special Voter Auditor sign-off.
 AC-M25-06: 100% of IDP re-assignments reflected in correct constituency tally; aggregation cross-check confirmed by Returning Officer.
 AC-M25-07: 100% of special-category events in Merkle chain within 60 minutes; Merkle reconciliation at T+1 confirms no gaps.
-AC-M25-08: Dual biometric sign-in enforced for REMAND and BARRACKS kit modes; unit test confirms no single-biometric activation path; UAT by IEBC officer.
-AC-M25-09: REFUGEE_VOTING_ENABLED flag defaults to false; activation requires IEBC Chair HSM tap and signed config bundle; security test confirms no API path to activate without HSM.
+AC-M25-08: Dual biometric sign-in enforced for REMAND and BARRACKS kit modes; unit test confirms no single-biometric activation path; UAT by the Commission officer.
+AC-M25-09: REFUGEE_VOTING_ENABLED flag defaults to false; activation requires the Commission Chair HSM tap and signed config bundle; security test confirms no API path to activate without HSM.
 AC-M25-10: WCAG 2.2 AA independent audit pass on voter-facing kit screens and public special-voter-counts page; screen-reader full-task-completion verified.
 AC-M25-11: Hospital kit offline operation >= 6 hours on all provisioned tablet models; battery depletion test at full BVI session load confirms no data loss.
 AC-M25-12: Overcounting guard prevents same voter authenticating at both original and IDP station on election day; integration test with synthetic roll confirms rejection at second station.
 AC-M25-13: Special-category voter count published at T-14 with no PII; automated field scanner and manual review confirm zero patient or prisoner names in response.
-AC-M25-14: SECRECY_VIOLATION event auto-escalates to IEBC Chair within 5 minutes of no officer acknowledgement; chaos test removes officer session to verify escalation path.
+AC-M25-14: SECRECY_VIOLATION event auto-escalates to the Commission Chair within 5 minutes of no officer acknowledgement; chaos test removes officer session to verify escalation path.
 AC-M25-15: Special-category backend available >= 99.9% during T-7 to T+7 election week; SLO burn-rate alert fires before budget exhausted.
 
 ## Applicable edge cases

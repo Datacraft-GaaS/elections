@@ -219,7 +219,7 @@ paths:
       x-handler-bound: support-admin-svc.support-special-voter.record_idp_reassignment
       tags: [idp]
       summary: "Record IDP voter reassignment"
-      description: "IEBC officer JWT required. Idempotent. Triggers overcounting guard."
+      description: "the Commission officer JWT required. Idempotent. Triggers overcounting guard."
       security:
         - BearerJWT: []
       parameters:

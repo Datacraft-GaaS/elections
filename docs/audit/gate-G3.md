@@ -44,7 +44,7 @@ Live SLA measurement requires the staging cluster stack (docker or kind). Local 
 | TLA+ Tally.tla + Declaration.tla model-checkable | pass (specs complete; TLC run in CI) |
 | Event-sourced modules use eel-eventstore-rs | pass (M08/M09/M10 rts, M20 pending in Wave 4, M51 declaration, M63 ballot-serial) |
 | Every OpenAPI path bound to handler | pass on the 8 built services; eel-completeness scan clean under allowlist |
-| Naming: no iebc identifiers | pass |
+| Naming: no commission identifiers | pass |
 | Prose: no em/en dashes | pass |
 | Kit crash-consistency property | pass (WP-3.4 crash_consistency_test + WP-3.2 ro-desktop power-cut test) |
 | appset-gen recognises all Wave-3 deploy/service.yaml | pass |
@@ -57,7 +57,7 @@ Live SLA measurement requires the staging cluster stack (docker or kind). Local 
 - Full `cargo tauri build` on ro-desktop (tauri-cli install; CI job).
 - TLC model-check runs on Tally.tla + Declaration.tla + Referendum.tla (Wave 5) in CI (tla2tools install).
 - Nested Cargo workspace convention split: bvr-svc, rts-svc, abis-svc, biometric-edge-svc use nested workspaces; boundary-svc + transparency-svc + portal-svc use root glob. Normalise in Wave 5 WP-5.14 documentation pass.
-- 5-channel STH publication wire-up (IEBC web + GitHub + IPFS-KE + Gazette + KBC Radio) is WP-4.12 tier-B integrations territory.
+- 5-channel STH publication wire-up (the Commission web + GitHub + IPFS-KE + Gazette + KBC Radio) is WP-4.12 tier-B integrations territory.
 
 ## Signed off
 

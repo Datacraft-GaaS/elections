@@ -70,7 +70,7 @@ flutter test integration_test/
 
 ## Deployment Notes
 
-- Google Play internal track (ke.go.iebc.eel.accred_scanner)
+- Google Play internal track (ke.go.commission.eel.accred_scanner)
 - MDM policy: platform/mdm/eel-accred-scanner-mdm.json
 - CRL bundle updated via MDM before each major event (nomination day, election day)
 

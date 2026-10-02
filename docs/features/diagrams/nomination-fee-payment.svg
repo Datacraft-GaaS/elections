@@ -17,7 +17,7 @@
   <rect width="1200" height="800" fill="white"/>
   <rect x="0" y="0" width="1200" height="52" fill="#1a3a5c"/>
   <text x="20" y="34" font-size="19" font-weight="bold" fill="white">M47 Nomination Fee Payment</text>
-  <text x="20" y="50" font-size="12" fill="#aec7e8">M47 · nomination-svc · IEBC candidate nomination fee lifecycle</text>
+  <text x="20" y="50" font-size="12" fill="#aec7e8">M47 · nomination-svc · the Commission candidate nomination fee lifecycle</text>
   <text x="460" y="90" font-size="15" font-weight="bold" text-anchor="middle" fill="#1a3a5c">Nomination Fee Payment Pipeline</text>
   <circle cx="40" cy="110" r="14" fill="none" stroke="#9467bd" stroke-width="2"/>
   <line x1="40" y1="124" x2="40" y2="165" stroke="#9467bd" stroke-width="2"/>

@@ -1,6 +1,6 @@
 # Poll Worker Lifecycle — Capability Design
 
-Full support for recruiting, evaluating, training, deploying, tasking, equipping, managing, and off-boarding election workers (Presiding Officers, Deputy POs, Clerks, support staff — ~250K personnel). Statutory basis: Elections Act ss.33–44 (appointment/qualification of polling officials), Employment Act s.27, DPA 2019 (document handling), IEBC HR manuals.
+Full support for recruiting, evaluating, training, deploying, tasking, equipping, managing, and off-boarding election workers (Presiding Officers, Deputy POs, Clerks, support staff — ~250K personnel). Statutory basis: Elections Act ss.33–44 (appointment/qualification of polling officials), Employment Act s.27, DPA 2019 (document handling), the Commission HR manuals.
 
 **Service map** (existing unless noted):
 

@@ -8,7 +8,7 @@
 | Size | L |
 | Availability class | routine 99.5%; 99.9% during T-30 to T-1 refresher and briefing window |
 | Event-sourced | no |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M38-poll-worker-training-lms.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M38-poll-worker-training-lms.md |
 
 ## Purpose
 
@@ -25,7 +25,7 @@ Strategy reference: §XVII.3 Element 6 (training programme for poll workers).
 | HR Administration Panel | Django | services/training-svc/django/hr_admin/ |
 | API | Rust (axum) | services/training-svc/crates/training-api/ |
 
-Distribution: trainee app via IEBC MDM + public app stores. Languages: EN + SW baseline; audio narration in Kikuyu, Luo, Kamba, Kalenjin, Luhya via M37 asset store.
+Distribution: trainee app via Commission MDM + public app stores. Languages: EN + SW baseline; audio narration in Kikuyu, Luo, Kamba, Kalenjin, Luhya via M37 asset store.
 
 ## Domain model
 
@@ -73,11 +73,11 @@ OpenAPI file: `packages/openapi-contracts/training/lms.yaml`
 | M37 Voter Education CMS | internal | integrations/education-cms/ | yes | shared asset store for video and audio content |
 | M15 IAB Dashboard | internal | integrations/iab/ | yes | aggregate certification metrics; non-critical |
 | P06 HSM | P06 | integrations/hsm/ | yes (stub) | certificate signing; queue signing requests; alert on HSM timeout |
-| IEBC HR System | external | integrations/hr-system/ | yes (stub) | poll worker roster import; sync on failure retried with exponential back-off |
+| the Commission HR System | external | integrations/hr-system/ | yes (stub) | poll worker roster import; sync on failure retried with exponential back-off |
 
 ## ML and AI
 
-- None (assessment scoring is rule-based; pass-mark threshold set by IEBC Training Director).
+- None (assessment scoring is rule-based; pass-mark threshold set by the Commission Training Director).
 
 ## Dependencies
 
@@ -111,12 +111,12 @@ Assessment engine:
 15. FR-M38-018: third-fail event emits eel.training.third_fail_triggered.v1; Constituency Trainer notified via push; face-to-face session must be recorded before further retakes unlocked
 
 Certification:
-16. FR-M38-005: digital certificate issued on passing all required modules; PDF + QR-coded; IEBC-HSM-signed; includes name, ID (masked last 4 digits), station code, modules, pass marks, issue date, expiry (election day + 30 days)
+16. FR-M38-005: digital certificate issued on passing all required modules; PDF + QR-coded; COMMISSION-HSM-signed; includes name, ID (masked last 4 digits), station code, modules, pass marks, issue date, expiry (election day + 30 days)
 17. FR-M38-019: certificate PDF generated with SHA-256 hash embedded; hash stored on WorkerCertificate.certificate_hash; hash independently verifiable
 18. FR-M38-020: certificate revocation: HR roster removal triggers eel.training.worker_certification_revoked.v1; QR endpoint returns REVOKED status within 60 s
 19. FR-M38-021: certificate expiry date is election day + 30 days; expired certificates cannot be reactivated; worker must re-complete training in next cycle
 20. FR-M38-022: certificate QR verification endpoint rate-limited at 10,000 requests/min; public endpoint; no authentication required; returns status only (not PII)
-21. FR-M38-013: certificate QR resolves to live status in <= 2 s; revocation possible; IEBC-key-signed; third-party verifiable
+21. FR-M38-013: certificate QR resolves to live status in <= 2 s; revocation possible; Commission-key-signed; third-party verifiable
 22. FR-M38-035: P06 HSM signing of certificates: certificate PDF generated, signed via P06; signing request queued if HSM temporarily unavailable; alert raised on HSM timeout; no certificate issued without valid signature
 
 Refresher and briefing:
@@ -137,7 +137,7 @@ M33 integration:
 33. FR-M38-033: election-morning briefing confirmation pushed to M33 via gRPC within 60 s of worker submission; M33 gates station opening on briefing status
 
 HR roster:
-34. FR-M38-034: HR roster import: worker records imported from IEBC HR system on schedule; fallback to manual CSV upload if API unavailable; roster delta triggers M33 notification; deleted workers trigger certificate revocation
+34. FR-M38-034: HR roster import: worker records imported from the Commission HR system on schedule; fallback to manual CSV upload if API unavailable; roster delta triggers M33 notification; deleted workers trigger certificate revocation
 
 Progress dashboards:
 35. FR-M38-010: Training Director progress dashboards: national, county, constituency roll-up of certification rates; drill-through to individual worker status; exportable CSV
@@ -249,7 +249,7 @@ Tags: `#[trace("FR-M38-006","AC-M38-02","EC-SCL-01")]`
 
 ## Open questions
 
-- IEBC HR system API schema: authentication and data model must be confirmed before integration sprint; fallback is manual CSV roster upload if API delayed.
-- P06 HSM key custody for certificate signing: who holds the IEBC training certificate signing key? Distinct from the Legal Director key used in M40? Clarify before implementation.
-- Cascade level locking: if a Constituency Trainer's own certification lapses (e.g., fails refresher), do their trainees lose certification? IEBC HR policy decision required.
+- the Commission HR system API schema: authentication and data model must be confirmed before integration sprint; fallback is manual CSV roster upload if API delayed.
+- P06 HSM key custody for certificate signing: who holds the Commission training certificate signing key? Distinct from the Legal Director key used in M40? Clarify before implementation.
+- Cascade level locking: if a Constituency Trainer's own certification lapses (e.g., fails refresher), do their trainees lose certification? the Commission HR policy decision required.
 - Audio narration translator contracts: Kikuyu, Luo, Kamba, Kalenjin, Luhya narration requires translator procurement at T-180 if confirmed.

@@ -1,6 +1,6 @@
 # support-admin-svc
 
-Administrative backbone service for the IEBC IEMS platform. Covers special voter workflows, intent preservation, budget and expenditure, HR and payroll for ~250,000 temporary election staff, and the 15-year long-term archive.
+Administrative backbone service for the Commission IEMS platform. Covers special voter workflows, intent preservation, budget and expenditure, HR and payroll for ~250,000 temporary election staff, and the 15-year long-term archive.
 
 | Field | Value |
 |---|---|

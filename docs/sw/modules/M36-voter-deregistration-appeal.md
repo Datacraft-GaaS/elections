@@ -2,10 +2,10 @@
 
 **Module ID:** M36
 **Name:** Voter Deregistration and Statutory Appeal Workflow
-**Runs on:** Central servers (Kenyan cloud) + IEBC back-office
+**Runs on:** Central servers (Kenyan cloud) + the Commission back-office
 **Owner:** Datacraft
 **Status:** Draft v2
-**IPR:** Custom Software vests in IEBC per GCC 15.4
+**IPR:** Custom Software vests in the Commission per GCC 15.4
 
 ## 1. Purpose
 
@@ -15,25 +15,25 @@ Strategy reference: §XXI.B.15. Constitution Art 38 (right to vote), DPA 2019 §
 
 ## 2. User Personas
 
-- **IEBC Case Officer (Deregistration)** — triages proposed removals from M35; issues notice of intent to deregister
-- **IEBC Adjudicator** — hears appeals; issues written decisions; independent of case officer
+- **the Commission Case Officer (Deregistration)** — triages proposed removals from M35; issues notice of intent to deregister
+- **the Commission Adjudicator** — hears appeals; issues written decisions; independent of case officer
 - **Voter (appellant)** — receives deregistration notice; files appeal via app, web, short-code, or in-person
 - **Legal Representative** — files appeal on behalf of appellant; uploads authorisation
-- **IEBC Commissioner** — countersigns gazette of final deregistrations
+- **the Commission Commissioner** — countersigns gazette of final deregistrations
 - **ODPC Compliance Lead** — audits lawful basis and data-minimisation post-deregistration
 - **IAB Observer** — views aggregate quarterly deregistration metrics
 
 ## 3. Functional Requirements
 
 - **FR-M36-001** Deregistration notice: for every M35-approved proposed removal, generate a notice of intent to deregister (PDF) addressed to the voter's registered contact; dispatch via SMS link + postal address + M13 in-app notification. Notice period: 30 days per Elections Act §8A.
-- **FR-M36-002** Appeal intake: voter or representative files appeal within 30-day notice period via: (a) M13 Public Verifier App, (b) web form, (c) *IEBC# USSD, (d) in-person IAB office. Appeal creates a case record with appeal_id (uuid7), intake channel, appellant identity, grounds, and supporting documents.
+- **FR-M36-002** Appeal intake: voter or representative files appeal within 30-day notice period via: (a) M13 Public Verifier App, (b) web form, (c) *the Commission# USSD, (d) in-person IAB office. Appeal creates a case record with appeal_id (uuid7), intake channel, appellant identity, grounds, and supporting documents.
 - **FR-M36-003** Case-officer triage: case officer reviews appeal grounds; categorises as (IDENTITY_ERROR / ALIVE_AND_PRESENT / DATA_MATCH_ERROR / FAMILY_DISPUTE); requests additional evidence if needed; recommends UPHOLD_REMOVAL or OVERTURN to adjudicator.
 - **FR-M36-004** Adjudicator hearing: adjudicator views full case file (case officer recommendation, evidence, M35 source data summary — not raw CRS/NRB data); issues written decision within 14 days of hearing; decision is final for administrative purposes; voter retains right to court petition.
 - **FR-M36-005** OVERTURN path: if adjudicator overturns, M35 event is reversed; ABIS soft-hold lifted; voter record restored with REINSTATED status; voter notified within 24 hours.
 - **FR-M36-006** UPHOLD path: record moved to DEREGISTERED status; ABIS template soft-deleted (recoverable for 7 years audit period); contact data purged per DPA 2019 §26; voter notified with right-to-petition advisory.
-- **FR-M36-007** No-appeal expiry: if no appeal filed within 30-day notice period, case officer confirms; record moves to DEREGISTERED after IEBC Commissioner countersign.
+- **FR-M36-007** No-appeal expiry: if no appeal filed within 30-day notice period, case officer confirms; record moves to DEREGISTERED after the Commission Commissioner countersign.
 - **FR-M36-008** ODPC compliance: before final deregistration, system checks DPIA register for the processing basis; logs the data-minimisation action (purge of contact, address, photo) with officer_id, timestamp, and DPA basis code; generates compliance receipt stored for 7 years.
-- **FR-M36-009** Quarterly deregistration report: aggregated report (total proposed, total noticed, total appealed, total overturned, total confirmed deregistered) per county; signed by IEBC Commissioner; published on M11 public portal.
+- **FR-M36-009** Quarterly deregistration report: aggregated report (total proposed, total noticed, total appealed, total overturned, total confirmed deregistered) per county; signed by the Commission Commissioner; published on M11 public portal.
 - **FR-M36-010** Report anchoring: quarterly report PDF hash anchored in P05 Merkle chain at publication.
 - **FR-M36-011** Multi-language: notices in EN + SW + county-detected Kenyan language; appeal intake supports EN + SW + Kikuyu + Luo + Kamba + Kalenjin + Luhya.
 - **FR-M36-012** Deadline tracking: system enforces 30-day notice period, 14-day adjudication SLA; alerts supervisor when either deadline is at risk.
@@ -45,24 +45,24 @@ Strategy reference: §XXI.B.15. Constitution Art 38 (right to vote), DPA 2019 §
 - **NFR-M36-003** Adjudicator hearing SLA: <= 14 days from appeal receipt to decision.
 - **NFR-M36-004** WCAG 2.2 AA: appeal intake web form; M13 app integration; status tracker.
 - **NFR-M36-005** DPA 2019 §26: right-of-erasure action (contact/address/photo purge) completed within 30 days of confirmed deregistration; logged to ODPC-accessible audit trail.
-- **NFR-M36-006** Data segregation: raw CRS/NRB/KRA source documents never stored in the appeal case file; case officer sees only the IEBC-generated summary.
+- **NFR-M36-006** Data segregation: raw CRS/NRB/KRA source documents never stored in the appeal case file; case officer sees only the Commission-generated summary.
 - **NFR-M36-007** Audit trail: every status transition, officer action, adjudicator decision, and data-minimisation event stored immutably for 7 years.
 - **NFR-M36-008** Scalability: handle up to 10,000 concurrent deregistration cases during a post-census catch-up period.
 
-- **NFR-36-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `iebc-iems-36` (replace 36 with the module number); alert ruleset ID `iems-36-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
+- **NFR-36-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `commission-iems-36` (replace 36 with the module number); alert ruleset ID `iems-36-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
 
 ## 5. User Stories
 
 1. As a voter, I receive an SMS with a link to a notice of intent to deregister me (due to a CRS death record); I open the link and see the grounds and appeal deadline in Swahili.
-2. As a voter, I file an appeal via *IEBC# USSD stating I am alive and present; I receive a case reference by SMS within 5 minutes.
-3. As an IEBC Case Officer, I review an appeal categorised as IDENTITY_ERROR (wrong ID number in CRS batch); I recommend OVERTURN and upload the corrected ID scan.
-4. As an IEBC Adjudicator, I see the case officer's recommendation and all uploaded evidence; I issue an OVERTURN decision in writing; the system automatically reinstates the voter record.
+2. As a voter, I file an appeal via *the Commission# USSD stating I am alive and present; I receive a case reference by SMS within 5 minutes.
+3. As a Commission Case Officer, I review an appeal categorised as IDENTITY_ERROR (wrong ID number in CRS batch); I recommend OVERTURN and upload the corrected ID scan.
+4. As a Commission Adjudicator, I see the case officer's recommendation and all uploaded evidence; I issue an OVERTURN decision in writing; the system automatically reinstates the voter record.
 5. As a legal representative, I upload a power of attorney and file an appeal on behalf of an elderly appellant who cannot use digital channels; the system accepts the authorisation and creates the case.
-6. As the IEBC Commissioner, I countersign the quarterly deregistration report; the signed PDF is published on the public portal and anchored in the Merkle chain.
+6. As the Commission Commissioner, I countersign the quarterly deregistration report; the signed PDF is published on the public portal and anchored in the Merkle chain.
 7. As an IAB Observer, I view this quarter's deregistration metrics broken down by county and grounds category on the IAB dashboard.
 8. As an ODPC Compliance Lead, I pull the data-minimisation log to confirm that all deregistered voters' contact data was purged within 30 days of confirmation.
 9. As a voter whose appeal was upheld (removal confirmed), I receive a notification with the adjudicator's written decision and a reference to my right to petition the High Court under Constitution Art 38.
-10. As an IEBC Supervisor, I see a dashboard of cases with upcoming 30-day notice expiry and 14-day adjudication SLA breaches highlighted in red.
+10. As a Commission Supervisor, I see a dashboard of cases with upcoming 30-day notice expiry and 14-day adjudication SLA breaches highlighted in red.
 
 ## 6. Data Model Additions
 
@@ -131,16 +131,16 @@ class QuarterlyDeregistrationReport(BaseModel):
 | Method | Path | Auth | Rate limit | Description |
 |--------|------|------|------------|-------------|
 | POST | /v1/deregistration/cases | M35_INTERNAL service | 500/hr | Create deregistration case from M35 approval |
-| GET | /v1/deregistration/cases | IEBC_OFFICER JWT | 200/hr | List cases in triage queue |
-| GET | /v1/deregistration/cases/{id} | IEBC_OFFICER JWT | 200/hr | Get case detail |
-| PATCH | /v1/deregistration/cases/{id} | IEBC_OFFICER JWT | 100/hr | Update triage recommendation |
+| GET | /v1/deregistration/cases | COMMISSION_OFFICER JWT | 200/hr | List cases in triage queue |
+| GET | /v1/deregistration/cases/{id} | COMMISSION_OFFICER JWT | 200/hr | Get case detail |
+| PATCH | /v1/deregistration/cases/{id} | COMMISSION_OFFICER JWT | 100/hr | Update triage recommendation |
 | POST | /v1/deregistration/cases/{id}/appeals | Public + case reference | 50/hr per IP | File an appeal |
-| GET | /v1/deregistration/cases/{id}/appeals/{aid} | IEBC_ADJUDICATOR JWT | 100/hr | Get appeal record |
-| POST | /v1/deregistration/cases/{id}/decision | IEBC_ADJUDICATOR JWT | 20/hr | Record adjudicator decision |
-| POST | /v1/deregistration/cases/{id}/minimise | IEBC_OFFICER JWT | 50/hr | Execute data-minimisation action |
+| GET | /v1/deregistration/cases/{id}/appeals/{aid} | COMMISSION_ADJUDICATOR JWT | 100/hr | Get appeal record |
+| POST | /v1/deregistration/cases/{id}/decision | COMMISSION_ADJUDICATOR JWT | 20/hr | Record adjudicator decision |
+| POST | /v1/deregistration/cases/{id}/minimise | COMMISSION_OFFICER JWT | 50/hr | Execute data-minimisation action |
 | GET | /v1/deregistration/reports | Public | 200/min | List quarterly deregistration reports |
 | GET | /v1/deregistration/reports/{id} | Public | 200/min | Download report PDF + Merkle proof |
-| POST | /v1/deregistration/reports/{id}/sign | IEBC_COMMISSIONER HSM | 2/quarter | Commissioner sign and publish report |
+| POST | /v1/deregistration/reports/{id}/sign | COMMISSION_COMMISSIONER HSM | 2/quarter | Commissioner sign and publish report |
 
 ## 8. Integration Points
 
@@ -153,7 +153,7 @@ class QuarterlyDeregistrationReport(BaseModel):
 - **M40 Election Court IT Interface** — adjudicator decisions available to petitioners
 - **P05 Merkle Chain** — quarterly report anchoring
 - **P06 HSM** — Commissioner countersigning
-- **Africa's Talking / Safaricom** — *IEBC# USSD appeal intake
+- **Africa's Talking / Safaricom** — *the Commission# USSD appeal intake
 - **ODPC** — DPIA register lookup and compliance receipt submission
 
 ## 9. UI/UX Key Screens
@@ -173,8 +173,8 @@ class QuarterlyDeregistrationReport(BaseModel):
 | Register correction and deregistration | Elections Act 2011 §8A |
 | 30-day notice period | Elections Act 2011 §8A(2) |
 | Right to object to data processing | DPA 2019 §26 |
-| Data minimisation and erasure | DPA 2019 §26; IEBC DPIA |
-| Adjudicator independence | IEBC Act 2011 §9 (commissioners as adjudicators) |
+| Data minimisation and erasure | DPA 2019 §26; the Commission DPIA |
+| Adjudicator independence | the Commission Act 2011 §9 (commissioners as adjudicators) |
 | Court petition right post-appeal | Constitution Art 38; Elections Act §75 |
 | Gazette of deregistrations | Elections Act 2011 §15 |
 
@@ -183,10 +183,10 @@ class QuarterlyDeregistrationReport(BaseModel):
 | Metric | Target | Measurement | Sign-off |
 |--------|--------|-------------|----------|
 | Notice dispatch within SLA | 100% within 1 hour of M35 approval | Dispatch timestamp | Datacraft SRE |
-| Appeal acknowledgement | <= 5 minutes from submission | Case-creation timestamp | IEBC Ops |
-| Adjudication SLA compliance | >= 95% within 14 days | SLA tracking log | IEBC Commissioner |
+| Appeal acknowledgement | <= 5 minutes from submission | Case-creation timestamp | the Commission Ops |
+| Adjudication SLA compliance | >= 95% within 14 days | SLA tracking log | the Commission Commissioner |
 | Data-minimisation completion | 100% within 30 days of confirmed deregistration | ODPC audit log | ODPC DPO |
-| Quarterly report published on schedule | 100% within T+7 of quarter-end | Publication timestamp | IEBC Commissioner |
+| Quarterly report published on schedule | 100% within T+7 of quarter-end | Publication timestamp | the Commission Commissioner |
 | Report Merkle anchor | 100% | Merkle reconciliation | Datacraft Technical |
 | Zero PII exposed in public report | 100% | Automated PII scan on report | Datacraft CISO |
 
@@ -206,7 +206,7 @@ class QuarterlyDeregistrationReport(BaseModel):
 |-----------|------|-------------|
 | Module integration with M35 | 2027-01-15 | End-to-end case creation from M35 events |
 | Officer and adjudicator UAT | 2027-02-15 | 10 officers + 3 adjudicators with synthetic cases |
-| *IEBC# USSD appeal channel live | 2027-03-01 | Integrated with grievance short-code |
+| *the Commission# USSD appeal channel live | 2027-03-01 | Integrated with grievance short-code |
 | ODPC DPIA registered | 2027-03-15 | Compliance pre-condition |
 | First live quarterly report | 2027-04-07 | Q1 2027 deregistration report |
 | Register freeze | 2027-07-01 | T-40: no new deregistrations processed until T+7 |
@@ -227,11 +227,11 @@ class QuarterlyDeregistrationReport(BaseModel):
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|------------|
-| High appeal volume overwhelming adjudicators | Medium | High | Scalable adjudicator pool (IEBC can assign additional commissioners); case officer pre-filters weak appeals |
+| High appeal volume overwhelming adjudicators | Medium | High | Scalable adjudicator pool (the Commission can assign additional commissioners); case officer pre-filters weak appeals |
 | Voter unreachable at registered contact | High | Medium | Multi-channel notice (SMS + postal + M13 push); public gazette as constructive notice |
 | Adjudicator decision challenged in court | Low | Medium | Written decision required; evidence trail auditable; Merkle-anchored record admissible |
 | DPA minimisation action executed prematurely | Low | High | 7-year audit-hold flag prevents irreversible purge during appeal window; officer confirmation required |
-| ODPC DPIA registration delayed | Medium | Medium | Datacraft prepares draft DPIA at contract start; IEBC submits within 30 days of award |
+| ODPC DPIA registration delayed | Medium | Medium | Datacraft prepares draft DPIA at contract start; the Commission submits within 30 days of award |
 
 ## 16. Cross-References
 
@@ -253,16 +253,16 @@ class QuarterlyDeregistrationReport(BaseModel):
 
 ## 18. Decommissioning
 
-**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if IEBC terminates the contract.
+**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if the Commission terminates the contract.
 
 **Steps:**
 
-1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and IEBC DPO.
+1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and the Commission DPO.
 2. **Service shutdown** — Kubernetes deployments scaled to zero; PersistentVolumeClaims retained for 30 days then deleted after confirmation of M69 transfer.
 3. **Credential revocation** — service account certificates, API keys, and HSM key handles revoked via P06 key-destruction ceremony within 48 hours of shutdown.
 4. **Source-code escrow** — final tagged release deposited to C04 escrow within 7 days of shutdown.
-5. **Runbook handover** — operational runbook and post-mortem notes delivered to IEBC ICT within 14 days.
+5. **Runbook handover** — operational runbook and post-mortem notes delivered to the Commission ICT within 14 days.
 
-**Owner:** SRE Lead. **Sign-off:** IEBC ICT Director + Datacraft Programme Director.
+**Owner:** SRE Lead. **Sign-off:** the Commission ICT Director + Datacraft Programme Director.
 
 > **RESOLUTION (F-23, 2026-08-21):** Decommissioning stub added per audit finding. Owner: SRE Lead. Target: FAT-07 gate.

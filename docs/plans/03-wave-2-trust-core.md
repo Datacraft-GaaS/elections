@@ -1,6 +1,6 @@
 # Wave 2: Trust core
 
-Part of the IEBC IEMS full build plan. See `README.md` for conventions, `08-edge-case-matrix.md` for EC-IDs, `10-definition-of-done.md` for the WP exit bar.
+Part of the Commission IEMS full build plan. See `README.md` for conventions, `08-edge-case-matrix.md` for EC-IDs, `10-definition-of-done.md` for the WP exit bar.
 
 
 Gate G2 (architect + security + IAB liaison): log passes witness cross-check drill locally; `verifier-rs` CLI confirms inclusion + consistency for 10M synthetic leaves; STH cadence 1s/60s/5m met; HSM key-ceremony runbook executed against SoftHSM; all personas pass golden authz tests; break-glass runbook validated.

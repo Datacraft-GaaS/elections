@@ -5,7 +5,7 @@
 
 soa_version: "1.0"
 date: "[YYYY-MM-DD]"
-approved_by: "[DG_NAME], Director-General, IEBC"
+approved_by: "[DG_NAME], Director-General, the Commission"
 
 controls:
   - control_id: "A.5.1"
@@ -55,7 +55,7 @@ controls:
 
   - control_id: "A.5.10"
     applicable: true
-    justification: "Acceptable use rules govern how IEBC staff and contractors interact with eel systems."
+    justification: "Acceptable use rules govern how the Commission staff and contractors interact with eel systems."
     implementation_status: partial
 
   - control_id: "A.5.11"
@@ -205,7 +205,7 @@ controls:
 
   - control_id: "A.6.3"
     applicable: true
-    justification: "Security awareness training is required for all IEBC staff and contractors."
+    justification: "Security awareness training is required for all the Commission staff and contractors."
     implementation_status: implemented
 
   - control_id: "A.6.4"
@@ -245,7 +245,7 @@ controls:
 
   - control_id: "A.7.3"
     applicable: true
-    justification: "Server rooms and secure areas within IEBC premises must be protected."
+    justification: "Server rooms and secure areas within the Commission premises must be protected."
     implementation_status: partial
 
   - control_id: "A.7.4"

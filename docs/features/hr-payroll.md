@@ -1,6 +1,6 @@
 # HR and payroll (M55)
 
-Module M55 (`hr-payroll`) owned by `support-admin-svc`. Covers the full lifecycle of IEBC election personnel: job applications, shortlisting, contracts, and payroll runs (250k staff target, completed in 4 hours); M-Pesa B2C batch disbursement; KRA P9/PAYE, NSSF, and NHIF statutory returns; and a training-completion gate that links to M38 (Poll Worker Training LMS).
+Module M55 (`hr-payroll`) owned by `support-admin-svc`. Covers the full lifecycle of the Commission election personnel: job applications, shortlisting, contracts, and payroll runs (250k staff target, completed in 4 hours); M-Pesa B2C batch disbursement; KRA P9/PAYE, NSSF, and NHIF statutory returns; and a training-completion gate that links to M38 (Poll Worker Training LMS).
 
 ## Contents
 
@@ -121,11 +121,11 @@ Languages: EN + SW (applicant portal). WCAG 2.2 AA.
 
 ## 9. Honest caveats + external prerequisites
 
-- M-Pesa B2C batch at 250k transactions depends on Safaricom granting IEBC a B2C shortcode with adequate throughput. The 4-hour target assumes Daraja API throughput >= 20 TPS per worker; actual throughput must be tested in a pre-election load test.
-- KRA iTax integration requires IEBC to complete the KRA Tier-B MoU (WP-4.12). The adapter is ready; the iTax endpoint credentials are provisioned per MoU.
+- M-Pesa B2C batch at 250k transactions depends on Safaricom granting the Commission a B2C shortcode with adequate throughput. The 4-hour target assumes Daraja API throughput >= 20 TPS per worker; actual throughput must be tested in a pre-election load test.
+- KRA iTax integration requires the Commission to complete the KRA Tier-B MoU (WP-4.12). The adapter is ready; the iTax endpoint credentials are provisioned per MoU.
 - NSSF and NHIF portal integrations use screen-scraping adapters where no official API exists; these are fragile and may break if the portals are updated.
 - The M38 training gate applies only to contracted polling staff. Seconded civil servants from other ministries use a separate fast-track path (SpiceDB role `SECONDMENT_OFFICER`) that skips the M38 gate but requires a ministry letter uploaded to `staff_contracts.secondment_letter_url`.
-- Payroll for permanent IEBC staff is out of scope; M55 covers only election-cycle temporary staff.
+- Payroll for permanent the Commission staff is out of scope; M55 covers only election-cycle temporary staff.
 
 ## 10. Test coverage + operational runbooks
 

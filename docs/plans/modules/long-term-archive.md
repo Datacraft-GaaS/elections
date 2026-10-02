@@ -8,7 +8,7 @@
 | Size | L |
 | Availability class | routine 99.5% |
 | Event-sourced | no (ADR-0013: only M08/M09/M10, M20, M51, M63) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M69-long-term-archive.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M69-long-term-archive.md |
 
 ## Purpose
 
@@ -120,7 +120,7 @@ KNADS deposit:
 
 Preservation attestation:
 
-21. FR-M69-021: At each checkpoint (T+1y, T+5y, T+10y, T+15y): IEBC Archivist generates a preservation attestation signed by HSM key; KNADS counter-signature required before attestation is published. (FR-69.05)
+21. FR-M69-021: At each checkpoint (T+1y, T+5y, T+10y, T+15y): the Commission Archivist generates a preservation attestation signed by HSM key; KNADS counter-signature required before attestation is published. (FR-69.05)
 22. FR-M69-022: Attestation content: manifest SHA-256, current format, storage locations, KNADS accession, and next migration date; published to M11 (public collections) and M15 IAB Dashboard. (FR-69.05)
 23. FR-M69-023: Annual SHA-256 fixity re-verification of every archived file; P1 alert on any mismatch; alert fires within 24 hours of next scheduled verification cycle. (NFR-69.03)
 24. FR-M69-024: All primary archive files stored in WORM object storage (MinIO object-lock, 15-year retention policy); any overwrite attempt rejected at the storage layer. (NFR-69.03)
@@ -136,7 +136,7 @@ DOI and public access:
 
 Research access:
 
-31. FR-M69-031: Researcher submits access application: institution, research purpose, data categories, and IRB clearance reference; IEBC Research Committee decides within 30 days. (FR-69.09)
+31. FR-M69-031: Researcher submits access application: institution, research purpose, data categories, and IRB clearance reference; the Commission Research Committee decides within 30 days. (FR-69.09)
 32. FR-M69-032: Approved researcher receives time-limited DUA URL; downloads are watermarked with researcher ID and access-grant UUID; access expires precisely at ResearchAccessGrant.expires_at. (FR-69.09)
 33. FR-M69-033: Research access revoked automatically on expiry; download URL invalidated; revocation logged to P05; eel.archive.research_access_granted.v1 includes expires_at for downstream consumers. (FR-M69-010)
 34. FR-M69-034: Denied application includes written reason; researcher may appeal to Commissioner; appeal decision recorded in audit trail. (FR-69.09)
@@ -144,9 +144,9 @@ Research access:
 Expiry and destruction:
 
 35. FR-M69-035: At retention end, Archivist initiates review; PII collections: cryptographic erasure per DPA 2019 §41, destruction certificate, and ODPC notification within 30 days. (FR-69.08)
-36. FR-M69-036: Destruction certificate requires dual-witness sign-off (IEBC Archivist plus KNADS counter); single-approver attempt returns 422 eel_error_code: dual_witness_required. (FR-M69-011)
+36. FR-M69-036: Destruction certificate requires dual-witness sign-off (the Commission Archivist plus KNADS counter); single-approver attempt returns 422 eel_error_code: dual_witness_required. (FR-M69-011)
 37. FR-M69-037: Destroyed collection status permanently visible in the public catalogue; metadata retained; content URL returns 410 Gone; eel.archive.collection_destroyed.v1 emitted. (FR-M69-014)
-38. FR-M69-038: Non-PII collections at retention end may be extended by IEBC resolution or transferred permanently to KNADS; transfer recorded in audit trail with authorising officer UUID. (FR-69.08)
+38. FR-M69-038: Non-PII collections at retention end may be extended by the Commission resolution or transferred permanently to KNADS; transfer recorded in audit trail with authorising officer UUID. (FR-69.08)
 
 Admin and public UI:
 
@@ -267,5 +267,5 @@ Tags: `#[trace("FR-M69-003","AC-M69-01","EC-DAT-08")]`
 ## Open questions
 
 - KNADS API and MoU status; doubles gate development until formal agreement signed.
-- DataCite DataCite membership: IEBC DataCite membership application status unknown; DOI minting blocked until confirmed.
+- DataCite DataCite membership: the Commission DataCite membership application status unknown; DOI minting blocked until confirmed.
 - Retention schedule for each data class under KNADS policy not yet finalised; destruction certificate schedule and dual-witness requirement to be confirmed with legal team.

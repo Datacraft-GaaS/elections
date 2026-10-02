@@ -1,9 +1,9 @@
 # Wave 6: Full-system verification
 
-Part of the IEBC IEMS full build plan. See `README.md` for conventions, `08-edge-case-matrix.md` for EC-IDs, `10-definition-of-done.md` for the WP exit bar.
+Part of the Commission IEMS full build plan. See `README.md` for conventions, `08-edge-case-matrix.md` for EC-IDs, `10-definition-of-done.md` for the WP exit bar.
 
 
-Gate G6 (IEBC OIT + architect + security + IAB + legal): all items green; sign-off recorded as tlog meta-event.
+Gate G6 (the Commission OIT + architect + security + IAB + legal): all items green; sign-off recorded as tlog meta-event.
 
 | WP | Name | Done-criteria | Size |
 |---|---|---|---|

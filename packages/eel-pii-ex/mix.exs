@@ -8,7 +8,7 @@ defmodule EelPii.MixProject do
       elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      description: "PII data class tiers and Ecto types for IEBC IEMS (ADR-0016)"
+      description: "PII data class tiers and Ecto types for the Commission IEMS (ADR-0016)"
     ]
   end
 

@@ -8,11 +8,11 @@
 | Size | M |
 | Availability class | cycle-critical 99.9% |
 | Event-sourced | no (ADR-0013) |
-| Upstream spec | work_docs/01-Projects/IEBC/sw/modules/M22-campaign-finance-transparency.md |
+| Upstream spec | work_docs/01-Projects/the Commission/sw/modules/M22-campaign-finance-transparency.md |
 
 ## Purpose
 
-Statutory campaign finance disclosure: accept contribution and expenditure disclosures from candidates and parties, cross-reference with CBK/FRC transaction data, flag anomalies, publish aggregated public reports, and generate evidence packages for IEBC and financial regulators.
+Statutory campaign finance disclosure: accept contribution and expenditure disclosures from candidates and parties, cross-reference with CBK/FRC transaction data, flag anomalies, publish aggregated public reports, and generate evidence packages for the Commission and financial regulators.
 
 ## Surfaces and languages
 
@@ -43,7 +43,7 @@ OpenAPI file: packages/openapi-contracts/transparency/finance.yaml
 | GET /finance/v1/disclosures/{id} | 2 live-per-user | JWT | n/a | Disclosure status |
 | GET /finance/v1/candidates/{id}/summary | 1 signed-static | public | n/a | Public aggregate for a candidate (ceiling status) |
 | GET /finance/v1/reports | 1 signed-static | public | n/a | Published election-cycle finance report |
-| GET /finance/v1/flags | 3 accredited | JWT+SpiceDB | n/a | Anomaly flag feed (IEBC internal) |
+| GET /finance/v1/flags | 3 accredited | JWT+SpiceDB | n/a | Anomaly flag feed (the Commission internal) |
 | PATCH /finance/v1/flags/{id} | 3 accredited | JWT+SpiceDB | yes | Adjudicate anomaly flag |
 | POST /finance/v1/evidence/{candidate_id} | 3 accredited | JWT+SpiceDB | yes | Assemble evidence package |
 | GET /finance/v1/evidence/{id} | 3 accredited | JWT+SpiceDB | n/a | Evidence package for regulator |
@@ -84,7 +84,7 @@ Candidate registration and disclosure:
 
 FR-M22-001: Candidate registration: every gazetted candidate must register within 7 days of gazettement; name, constituency, party, and ECFA 2013 s.22 spending-ceiling tier auto-populated from M12 CRMS.
 FR-M22-002: Weekly disclosure upload wizard: (a) bank statement PDF/OFX, (b) M-Pesa Paybill activity CSV, (c) itemised expense receipts PDF per ECFA 2013 s.22 format.
-FR-M22-003: OCR plus structured parser extracts totals from uploaded documents; candidate confirms extracted totals before submission; IEBC officer can override with audit trail.
+FR-M22-003: OCR plus structured parser extracts totals from uploaded documents; candidate confirms extracted totals before submission; the Commission officer can override with audit trail.
 FR-M22-004: Party finance officer can file on behalf of multiple candidates under same login; separate submission record with candidate-level idempotency key per candidate.
 FR-M22-005: Disclosure status lifecycle: DRAFT, SUBMITTED, UNDER_REVIEW, ACCEPTED, QUERIED; every transition audit-logged.
 FR-M22-006: Compliance rate tracking: percentage of candidates with complete weekly disclosure; automated non-compliance reminder at T+3 past deadline; formal notice at T+7.
@@ -92,8 +92,8 @@ FR-M22-006: Compliance rate tracking: percentage of candidates with complete wee
 Ceiling enforcement:
 
 FR-M22-007: Spending ceiling enforcement: compute cumulative declared spending per candidate per contest; compare to ECFA 2013 s.22 ceiling for that contest tier.
-FR-M22-008: Amber flag at 80% ceiling; red breach flag at 100%; red breach triggers IEBC notification and ODPP referral queue entry within 60 s.
-FR-M22-009: Ceiling computation method: in-kind contribution valuation rule confirmed by IEBC legal and stored as versioned configuration; computation logged for auditability.
+FR-M22-008: Amber flag at 80% ceiling; red breach flag at 100%; red breach triggers the Commission notification and ODPP referral queue entry within 60 s.
+FR-M22-009: Ceiling computation method: in-kind contribution valuation rule confirmed by the Commission legal and stored as versioned configuration; computation logged for auditability.
 FR-M22-010: Compliance rate report: per-candidate, per-party, and aggregate filing rates; weekly summary delivered to Registrar of Political Parties.
 
 CBK/FRC integration and anomaly detection:
@@ -103,8 +103,8 @@ FR-M22-012: Aggregated cash-movement choropleth map on public dashboard; updated
 FR-M22-013: Spike flag: >2 standard-deviation spike from baseline during campaign period; FRC SAR alert draft generated within 30 min.
 FR-M22-014: POCAMLA 2009 pattern detection: bulk cash-out near polling stations, rapid round-trip transactions, structuring patterns; SAR draft auto-generated for FRC analyst review before submission.
 FR-M22-015: Foreign-money detection: inbound cross-border transfers flagged on candidate bank statement; ECFA 2013 ss.32-34 prohibition cross-referenced; auto-referral to CBK/FRC.
-FR-M22-016: Anomaly adjudication workflow: IEBC officer reviews anomaly flags; accepts, dismisses, or escalates; all decisions audit-logged with actor, timestamp, and reason.
-FR-M22-017: CBK/FRC feed unavailability: heat map shows last-known data with staleness warning; SAR pipeline queued; alert to IEBC finance desk if lag >48 h.
+FR-M22-016: Anomaly adjudication workflow: the Commission officer reviews anomaly flags; accepts, dismisses, or escalates; all decisions audit-logged with actor, timestamp, and reason.
+FR-M22-017: CBK/FRC feed unavailability: heat map shows last-known data with staleness warning; SAR pipeline queued; alert to the Commission finance desk if lag >48 h.
 FR-M22-018: Bank and Sacco disclosure integration: aggregate financial-institution disclosures at constituency level for election-cycle window; cross-reference against candidate declared filings.
 
 Whistleblower and evidence:
@@ -114,7 +114,7 @@ FR-M22-020: Whistleblower identity protection: phone stored hashed (SHA-256) onl
 FR-M22-021: Verified tips routed to DCI and ODPP within 6 h via secure evidence package endpoint.
 FR-M22-022: Evidence package assembly: HSM-signed PDF + JSON; candidate identity, disclosure extracts, bank statement references (not raw statements), computed totals, statutory ceiling value, excess amount, referral basis, timestamp chain.
 FR-M22-023: Evidence package hash anchored in P05 Merkle chain; inclusion proof verifiable by courts.
-FR-M22-024: IEBC Chair HSM signature required before evidence package routed to ODPP or DCI; single officer cannot complete routing.
+FR-M22-024: the Commission Chair HSM signature required before evidence package routed to ODPP or DCI; single officer cannot complete routing.
 
 Public reporting:
 
@@ -126,10 +126,10 @@ FR-M22-028: Statutory post-election campaign finance report: published and ancho
 DPA and access control:
 
 FR-M22-029: DPA 2019: raw banking data not retained beyond cross-reference window; bank statements encrypted at rest (AES-256); retention 7 years post-election per ECFA; DPIA registered with ODPC.
-FR-M22-030: No individual bank transaction data visible to any party other than the filing candidate and IEBC Compliance Officer under a logged, purpose-coded access event.
-FR-M22-031: RBAC: candidate portal, party treasurer, IEBC finance desk, FRC analyst, ODPP prosecutor access tiers; SpiceDB enforced; geographic scoping per constituency.
-FR-M22-032: Audit trail: every IEBC officer action on a candidate record logged with actor, action, timestamp, IP, and purpose code.
-FR-M22-033: WCAG 2.2 AA for candidate portal, IEBC back-office, and public dashboard; EN + SW primary; CN, Arabic, French for internal cross-reference views.
+FR-M22-030: No individual bank transaction data visible to any party other than the filing candidate and the Commission Compliance Officer under a logged, purpose-coded access event.
+FR-M22-031: RBAC: candidate portal, party treasurer, the Commission finance desk, FRC analyst, ODPP prosecutor access tiers; SpiceDB enforced; geographic scoping per constituency.
+FR-M22-032: Audit trail: every the Commission officer action on a candidate record logged with actor, action, timestamp, IP, and purpose code.
+FR-M22-033: WCAG 2.2 AA for candidate portal, the Commission back-office, and public dashboard; EN + SW primary; CN, Arabic, French for internal cross-reference views.
 
 ## Acceptance criteria
 
@@ -137,11 +137,11 @@ AC-M22-01: Ceiling breach flag generated and ODPP referral queue entry created w
 AC-M22-02: CBK/FRC constituency spike >2 standard deviations from baseline triggers FRC SAR alert draft within 30 min of data receipt (integration test).
 AC-M22-03: Verified whistleblower tip routed to DCI and ODPP within 6 h; HSM-signed evidence package with Merkle proof (process audit + integration test).
 AC-M22-04: Evidence package chain of custody verifiable via P05 Merkle inclusion proof; verification succeeds on CLI tool without network (integration test).
-AC-M22-05: IEBC Chair HSM signature required; evidence package route to ODPP/DCI blocked without it; single-officer attempt returns 403 (security test).
+AC-M22-05: the Commission Chair HSM signature required; evidence package route to ODPP/DCI blocked without it; single-officer attempt returns 403 (security test).
 AC-M22-06: No individual bank transaction data accessible via any public or party-portal API; bank statement files encrypted at rest (security review + penetration test).
 AC-M22-07: Raw banking data purged after cross-reference window; retention audit confirms no records beyond window (data-retention audit; automated daily check).
 AC-M22-08: Public aggregate shows ceiling status and spending percentage without raw transaction detail; OCR-extracted totals not exposed individually (security review + UAT).
-AC-M22-09: OCR extraction completes within 5 min of upload for standard bank statement and Paybill CSV formats; IEBC officer override available if extraction fails (performance test).
+AC-M22-09: OCR extraction completes within 5 min of upload for standard bank statement and Paybill CSV formats; the Commission officer override available if extraction fails (performance test).
 AC-M22-10: Duplicate disclosure submission same idempotency key returns cached response; ceiling total not double-counted (integration test).
 AC-M22-11: ECFA prosecution registry updated within 14 days of each judgment; automated alert fires if update is late (process audit).
 AC-M22-12: 99.9% availability during campaign finance reporting cycle T-90 to T+30 (cycle-critical SLO per appendix; burn-rate alert fires before budget exhausted).
@@ -150,7 +150,7 @@ AC-M22-13: WCAG 2.2 AA: axe-core passes on candidate portal and public dashboard
 ## Applicable edge cases
 
 EC-CON-02: Candidate portal on 3G (500 kbps, 300 ms RTT); disclosure upload with CBOR+zstd; p99 <=1 s under 5,000 concurrent users tested on throttled emulator.
-EC-CON-06: CBK/FRC API unavailable; heat map shows last-known data with staleness warning; SAR alert pipeline queued; IEBC finance desk alerted after 48 h.
+EC-CON-06: CBK/FRC API unavailable; heat map shows last-known data with staleness warning; SAR alert pipeline queued; the Commission finance desk alerted after 48 h.
 EC-TIM-04: Reporting deadline OPA hard-close at transaction time; in-flight disclosures that started before deadline complete; late submissions rejected with statutory reason.
 EC-TIM-09: Disclosure window freeze race at T-90/T-30 milestone; OPA hard-close on retroactive period writes; concurrent writers handled all-or-nothing.
 EC-DAT-01: Duplicate disclosure submission same idempotency key and body; cached response returned; ceiling total not double-counted; no re-execution.
@@ -162,7 +162,7 @@ EC-DAT-07: Partial batch party-officer filing failure (multi-candidate upload, 3
 EC-DAT-08: 10,000 concurrent candidate uploads on weekly deadline; streaming OCR ingest; checkpoint-resumable after kill; bounded memory.
 EC-DAT-09: Unicode candidate names and party names; NFC normalisation applied; ICU collation; no truncation on public dashboard or compliance console.
 EC-DAT-10: Zero declared spending is valid; renders "KES 0 (0% of ceiling)"; no divide-by-zero in ceiling-pct-used computation.
-EC-DAT-11: OCR-extracted total differs significantly from declared total (discrepancy_flag=true); IEBC officer notified; candidate prompted to confirm or correct; both values logged.
+EC-DAT-11: OCR-extracted total differs significantly from declared total (discrepancy_flag=true); the Commission officer notified; candidate prompted to confirm or correct; both values logged.
 EC-DAT-13: Soft-deleted (withdrawn) candidate in search; tombstone honoured; aggregate excluded from public dashboard; raw file purge scheduled.
 EC-IDN-02: JWT expires mid-disclosure upload; in-flight request completes (document already received); next request returns 401 with silent-refresh hint.
 EC-IDN-10: SpiceDB down; fail closed on anomaly adjudication writes and evidence package routing; public dashboard read-only CDN tier continues.
@@ -197,4 +197,4 @@ EC-HUM-08: 11 languages: constituency names, ceiling labels, compliance alert ba
 ## Open questions
 
 - CBK/FRC MoU: the data-sharing agreement has not been signed; legal must confirm scope, data minimisation requirements, and liability before CBK cross-reference is enabled.
-- Ceiling computation method: the Elections Act s.98 does not specify exactly how in-kind contributions are valued; IEBC legal must confirm the valuation method before the ceiling check is implemented.
+- Ceiling computation method: the Elections Act s.98 does not specify exactly how in-kind contributions are valued; the Commission legal must confirm the valuation method before the ceiling check is implemented.

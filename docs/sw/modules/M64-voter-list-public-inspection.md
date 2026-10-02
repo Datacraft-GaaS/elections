@@ -4,7 +4,7 @@
 **Name:** Voter List Public Inspection Portal
 **Owner:** Datacraft Limited — Civic Participation Team
 **Status:** Draft v1
-**IP Classification:** Custom Software — IPR vests in IEBC per GCC 15.4
+**IP Classification:** Custom Software — IPR vests in the Commission per GCC 15.4
 
 **Strategy traceback:** Elections Act §6A; DPA 2019 §26; T-90 to T-60 statutory window
 
@@ -23,7 +23,7 @@ Implements the statutory public-inspection regime under Elections Act §6A. Prov
 | Member of public | Unauthenticated search | Look up own registration, verify station |
 | Objector (authenticated) | Create objection | File objection against another voter's registration |
 | Registration Claimant | Authenticated | File correction claim on own record |
-| IEBC Registration Officer | Write (assigned stations) | Review objections, record determinations |
+| the Commission Registration Officer | Write (assigned stations) | Review objections, record determinations |
 | County Returning Officer | Write (own county) | Counter-sign batch determinations |
 | Elections Court | Read-only, on order | Receive auto-referrals from lapsed objections |
 | IAB Member | Read-only, all | Monitor objection pipeline compliance |
@@ -34,7 +34,7 @@ Implements the statutory public-inspection regime under Elections Act §6A. Prov
 ## Functional Requirements
 
 ### FR-64.01 — Per-station voter roll generation
-At T-90: IEBC Registration Officer triggers roll generation for each station. Roll contains: voter sequence number, full name, station code, ward, constituency, county. ID number, date of birth, and biometric reference suppressed per DPA 2019 §26. Roll signed with HSM key; SHA-256 published. Available for download within 24 hours of generation.
+At T-90: the Commission Registration Officer triggers roll generation for each station. Roll contains: voter sequence number, full name, station code, ward, constituency, county. ID number, date of birth, and biometric reference suppressed per DPA 2019 §26. Roll signed with HSM key; SHA-256 published. Available for download within 24 hours of generation.
 
 ### FR-64.02 — Public search interface
 Unauthenticated voters can search by name and station (or by NIIMS reference at authenticated tier). Search returns: confirmation of registration, station name, ward; no ID number in unauthenticated response. Rate-limited to prevent bulk enumeration. WCAG 2.2 AA; EN and SW.
@@ -49,16 +49,16 @@ Registered voter may file a correction claim on own record (name spelling, addre
 Objections routed to the Registration Officer for the subject voter's station. Officer reviews supporting documents, may request additional evidence (72-hour window), records determination (upheld / dismissed / referred-to-court). CRO counter-signs batch determination. Every determination logged with reason text and officer UUID.
 
 ### FR-64.06 — Statutory deadline enforcement
-System enforces T-60 hard close. Any objection not determined by T-60 23:59 EAT is auto-referred to Elections Court via structured referral packet (objection record, submitted evidence, case number). Auto-referral triggers notification to objector, subject voter's CRO, and IEBC Legal. IAB receives daily lapsed-objection count.
+System enforces T-60 hard close. Any objection not determined by T-60 23:59 EAT is auto-referred to Elections Court via structured referral packet (objection record, submitted evidence, case number). Auto-referral triggers notification to objector, subject voter's CRO, and the Commission Legal. IAB receives daily lapsed-objection count.
 
 ### FR-64.07 — Roll update after determination
 Upheld objections trigger a proposed deletion or correction in M04 VPRS staging table. Deletions and corrections require dual-officer approval (Registration Officer + CRO) before commit. Committed changes: new signed roll version generated and published within 2 hours.
 
 ### FR-64.08 — Statutory-period compliance dashboard
-Internal dashboard showing: days remaining in inspection window, objection counts by county (filed / pending / determined / lapsed), correction claim counts, on-time determination rate. IAB read access. Auto-alert to IEBC Chair if any county's lapsed rate exceeds 5%.
+Internal dashboard showing: days remaining in inspection window, objection counts by county (filed / pending / determined / lapsed), correction claim counts, on-time determination rate. IAB read access. Auto-alert to the Commission Chair if any county's lapsed rate exceeds 5%.
 
 ### FR-64.09 — Roll integrity publication
-Each station roll version: SHA-256, generation timestamp, signer key fingerprint, record count. Published to the IEBC public portal and mirrored on IAB domain. Any independently computed hash mismatch triggers P0 alert.
+Each station roll version: SHA-256, generation timestamp, signer key fingerprint, record count. Published to the Commission public portal and mirrored on IAB domain. Any independently computed hash mismatch triggers P0 alert.
 
 ---
 
@@ -84,20 +84,20 @@ Objection acknowledgement: < 5 minutes. Officer determination response window: 7
 
 ---
 
-- **NFR-M64-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `iebc-iems-M64`; alert ruleset ID `iems-M64-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
+- **NFR-M64-MONITORING** Observability: OpenTelemetry traces exported to the central collector; module Grafana dashboard named `commission-iems-M64`; alert ruleset ID `iems-M64-alerts` in the Alertmanager configuration. Dashboard and ruleset must exist at OAT gate per FAT-07. See sw/runbooks/ for dashboard template.
 
 ## User Stories
 
 1. As a voter, I want to search my name and confirm which station I am registered at, so that I know where to vote on election day.
 2. As a Kenyan citizen, I want to download the voter roll for my polling station, so that I can verify all listed persons are eligible.
-3. As an objector, I want to file an objection online against a registration I believe is fraudulent, so that IEBC can investigate before the roll is finalised.
+3. As an objector, I want to file an objection online against a registration I believe is fraudulent, so that the Commission can investigate before the roll is finalised.
 4. As a voter whose name is misspelled, I want to file a correction claim and have it resolved before T-60, so that my registration is accurate on election day.
 5. As a Registration Officer, I want to see all open objections for my stations in a prioritised queue, so that I can meet the T-60 determination deadline.
 6. As a County Returning Officer, I want to counter-sign batch determinations for my county, so that the dual-approval requirement is met before any roll changes are committed.
 7. As an IAB Member, I want to see the daily lapsed-objection count per county, so that I can flag systemic non-compliance before the statutory window closes.
-8. As an Elections Court Registrar, I want to receive a structured auto-referral packet for each lapsed objection, so that the court can proceed without waiting for IEBC to submit manually.
-9. As a civil society observer, I want to download the signed station roll and verify its SHA-256, so that I can confirm IEBC has not modified the roll after publication.
-10. As the IEBC Chair, I want an alert if any county's lapsed-objection rate exceeds 5%, so that I can intervene with additional officers before the statutory deadline.
+8. As an Elections Court Registrar, I want to receive a structured auto-referral packet for each lapsed objection, so that the court can proceed without waiting for the Commission to submit manually.
+9. As a civil society observer, I want to download the signed station roll and verify its SHA-256, so that I can confirm the Commission has not modified the roll after publication.
+10. As the Commission Chair, I want an alert if any county's lapsed-objection rate exceeds 5%, so that I can intervene with additional officers before the statutory deadline.
 11. As a voter with a disability, I want the search and objection forms to work with my screen reader, so that the inspection process is equally accessible to me.
 12. As a data journalist, I want the national roll record counts per station to be downloadable as CSV, so that I can independently verify total registration numbers.
 
@@ -267,7 +267,7 @@ paths:
 4. **Correction claim form** — biometric-verified; current value pre-filled; requested value + evidence upload
 5. **Registration Officer queue** — sorted by deadline proximity; objection detail; determination form; document viewer; request-evidence button
 6. **CRO county view** — officer queues across stations; batch counter-sign workflow; compliance bar chart
-7. **Compliance dashboard** (IEBC internal + IAB) — countdown to T-60; lapsed-objection heat map; county-level drill-down
+7. **Compliance dashboard** (the Commission internal + IAB) — countdown to T-60; lapsed-objection heat map; county-level drill-down
 
 ---
 
@@ -288,9 +288,9 @@ paths:
 
 | Metric | Target | Sign-off |
 |---|---|---|
-| Objection acknowledgement | p99 < 5 min | IEBC ICT |
-| On-time determination rate (before T-60) | >= 95% | IEBC Chair |
-| Auto-referral delivery to Elections Court | p99 < 1h of T-60 breach | IEBC Legal |
+| Objection acknowledgement | p99 < 5 min | the Commission ICT |
+| On-time determination rate (before T-60) | >= 95% | the Commission Chair |
+| Auto-referral delivery to Elections Court | p99 < 1h of T-60 breach | the Commission Legal |
 | Roll SHA-256 independent verification success | 100% | IAB |
 | WCAG 2.2 AA audit pass | 100% | Accessibility auditor |
 | Portal uptime during statutory window | >= 99.9% | Datacraft SRE |
@@ -336,7 +336,7 @@ paths:
 | # | Risk | Mitigation |
 |---|---|---|
 | R1 | Bulk enumeration via public search | Rate limiting, CAPTCHA, bot-pattern detection; search returns per-voter confirmation only, not list responses |
-| R2 | Officers unable to clear objection backlog before T-60 | Daily lapsed-rate alert from T-75; IEBC Chair intervention protocol; additional officers deployable per county |
+| R2 | Officers unable to clear objection backlog before T-60 | Daily lapsed-rate alert from T-75; the Commission Chair intervention protocol; additional officers deployable per county |
 | R3 | Correction claim commits bad data to M04 VPRS | Dual-officer approval gate; staged-table pattern; no direct write to live roll |
 | R4 | Elections Court auto-referral packet rejected on format | Pre-agreed XML schema with Judiciary IT; tested at T-150 mock election |
 | R5 | High-volume roll downloads overload origin servers | CDN-cached signed rolls; origin only serves signed manifest; CDN invalidated on roll version update |
@@ -366,16 +366,16 @@ paths:
 
 ## 18. Decommissioning
 
-**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if IEBC terminates the contract.
+**Trigger:** End of the 3-year IEMS framework (approximately 2030-08), or earlier if the Commission terminates the contract.
 
 **Steps:**
 
-1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and IEBC DPO.
+1. **Data disposition** — all personal data purged or transferred to M69 (Long-Term Archive) per the retention schedule in DATA-MODEL.md §11 and DPA 2019 s.41. Disposal certificate signed by Datacraft DPO and the Commission DPO.
 2. **Service shutdown** — Kubernetes deployments scaled to zero; PersistentVolumeClaims retained for 30 days then deleted after confirmation of M69 transfer.
 3. **Credential revocation** — service account certificates, API keys, and HSM key handles revoked via P06 key-destruction ceremony within 48 hours of shutdown.
 4. **Source-code escrow** — final tagged release deposited to C04 escrow within 7 days of shutdown.
-5. **Runbook handover** — operational runbook and post-mortem notes delivered to IEBC ICT within 14 days.
+5. **Runbook handover** — operational runbook and post-mortem notes delivered to the Commission ICT within 14 days.
 
-**Owner:** SRE Lead. **Sign-off:** IEBC ICT Director + Datacraft Programme Director.
+**Owner:** SRE Lead. **Sign-off:** the Commission ICT Director + Datacraft Programme Director.
 
 > **RESOLUTION (F-23, 2026-08-21):** Decommissioning stub added per audit finding. Owner: SRE Lead. Target: FAT-07 gate.

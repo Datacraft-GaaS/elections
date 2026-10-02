@@ -117,7 +117,7 @@ Screenshots require the full local stack to be running (`just up` bringing up ki
 - Timing-constant response shape to prevent enumeration; daily lookup cap per caller.
 - Objection filing form when the returned entry is contested.
 
-2 pages. Deployed to touchscreen kiosks at IEBC constituency offices.
+2 pages. Deployed to touchscreen kiosks at the Commission constituency offices.
 
 ---
 
@@ -201,7 +201,7 @@ Every admin has: list view with filter + search + sort, HTMX partials for inline
 ```
 Django admin skeleton (per app)
 +-------------------------------------------------------+
-| eel {app}                       user@iebc  logout     |
+| eel {app}                       user@commission  logout     |
 +-------------------------------------------------------+
 | [nav: List]  [nav: New]  [nav: Reports]  [nav: Audit] |
 +-------------------------------------------------------+

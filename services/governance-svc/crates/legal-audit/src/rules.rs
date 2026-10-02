@@ -28,7 +28,7 @@ use crate::models::{ComplianceVerdict, LegalBasisRule, PartySummary, Transmissio
 ///
 /// `applies_to` lists the statutory instruments a transmission may declare as its
 /// legal basis. Section references are to the Constitution of Kenya 2010 and the
-/// IEBC and OAG enabling statutes this service audits against.
+/// the Commission and OAG enabling statutes this service audits against.
 pub fn rules() -> Vec<LegalBasisRule> {
     vec![
         LegalBasisRule {
@@ -37,7 +37,7 @@ pub fn rules() -> Vec<LegalBasisRule> {
             description: "Results transmitted under the Elections Act".to_string(),
             applies_to: vec![
                 "s39-elections-act".to_string(),
-                "IEBC-2024-07".to_string(),
+                "COMMISSION-2024-07".to_string(),
             ],
         },
         LegalBasisRule {
@@ -291,7 +291,7 @@ mod tests {
             record_id: id.to_string(),
             event_type: "results-transmission".to_string(),
             sender: "party-a".to_string(),
-            recipient: "IEBC".to_string(),
+            recipient: "Electoral Authority".to_string(),
             transmitted_at: "2026-08-01T10:00:00Z".to_string(),
             payload_hash: "sha256:deadbeef".to_string(),
             legal_basis: basis.to_string(),

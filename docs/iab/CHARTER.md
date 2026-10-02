@@ -8,7 +8,7 @@ The IAB provides independent verification of election integrity, audit chain
 validity, and procedural compliance across all 20 EEL services.
 
 ## 2. Composition (5 members)
-- 2 appointed by IEBC Chair (independent from management)
+- 2 appointed by the Commission Chair (independent from management)
 - 2 nominated by registered political parties (opposition representation)
 - 1 nominated by civil society (Kenya Human Rights Commission / NCHR)
 
@@ -16,7 +16,7 @@ validity, and procedural compliance across all 20 EEL services.
 - Read-only access to `platform/observability/`, `detection/`, `chaos/scenarios/`
 - Right to call emergency audit halt (Section 44A complementary mechanism)
 - Signing authority on M5 audit chain amendments (requires 3-of-5 signatures)
-- Direct reporting line to IEBC Chair + Attorney General (legal privilege)
+- Direct reporting line to the Commission Chair + Attorney General (legal privilege)
 
 ## 4. Operations
 - Pre-election: verify training-svc LMS audit logs + inventory RFIDs + BVI gallery

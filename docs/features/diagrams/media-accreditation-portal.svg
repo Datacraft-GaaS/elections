@@ -15,7 +15,7 @@
   <text x="100" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Journalist</text>
 
   <circle cx="280" cy="115" r="18" fill="#1f77b4"/>
-  <text x="280" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">IEBC Media</text>
+  <text x="280" y="145" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">the Commission Media</text>
   <text x="280" y="160" font-family="Arial,sans-serif" font-size="13" text-anchor="middle" fill="#333">Officer</text>
 
   <!-- MediaOrganisation -->

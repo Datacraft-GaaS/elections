@@ -45,7 +45,7 @@ Six aggregates under `services/biometric-edge-svc/crates/diaspora-api/src/models
 | BVR diaspora-eligible subset (M02) | Pre-election freeze | Signed binary export | Chair HSM signature | Roll not dispatched if signature fails; block on Chair |
 | Embassy station kit (EmbassyStation Flutter app) | Polling day | Offline Isar+SQLCipher sync | Kit Ed25519 cert | No connectivity required; events queued locally |
 | RFID seal scanner (pouch custody) | At each custody transfer | BLE/USB serial | Device cert | Buffer locally; flush on reconnect |
-| Delayed result batch (satellite / embassy LAN) | Post-poll transmission | AES-256+mTLS | Kit cert + IEBC relay cert | Retry up to 7 days; batch marked PENDING until received |
+| Delayed result batch (satellite / embassy LAN) | Post-poll transmission | AES-256+mTLS | Kit cert + the Commission relay cert | Retry up to 7 days; batch marked PENDING until received |
 | M09 tabulation service | Per batch received | Internal event | SVID mTLS | M09 waits for diaspora batches; configurable timeout per country |
 
 ## 4. Pipeline
@@ -74,7 +74,7 @@ polling day (embassy, offline):
   -> pouch sealed; PouchCustody updated
 
 transmission phase:
-  ResultBatch assembled (AES-256, key derived from station KEK + IEBC relay cert)
+  ResultBatch assembled (AES-256, key derived from station KEK + the Commission relay cert)
   -> transmitted over mTLS (satellite or embassy LAN)
   -> M09 receives batch; decrypts; includes in tabulation
   -> eel.diaspora.batch_received.v1 emitted; P05 Merkle anchor within 60 s
@@ -86,11 +86,11 @@ Contract: `packages/openapi-contracts/biometric-edge/diaspora.yaml`. All write e
 
 | Method + path | Persona | Purpose |
 |---|---|---|
-| `POST /diaspora/v1/roll/freeze` | IEBC Chair (JWT + HSM) | Freeze and sign diaspora roll |
+| `POST /diaspora/v1/roll/freeze` | the Commission Chair (JWT + HSM) | Freeze and sign diaspora roll |
 | `GET /diaspora/v1/roll/{id}` | Embassy kit / IAB | Roll metadata and hash |
-| `POST /diaspora/v1/stations` | IEBC officer (JWT + SpiceDB) | Register embassy station |
+| `POST /diaspora/v1/stations` | the Commission officer (JWT + SpiceDB) | Register embassy station |
 | `GET /diaspora/v1/stations/{id}/sync` | Embassy kit (device cert) | Download roll slice for offline use |
-| `POST /diaspora/v1/batches` | IEBC relay (mTLS) | Submit encrypted result batch |
+| `POST /diaspora/v1/batches` | the Commission relay (mTLS) | Submit encrypted result batch |
 | `GET /diaspora/v1/batches/{id}` | M09 / IAB | Batch status; decrypted totals after verification |
 | `GET /diaspora/v1/pouch/{id}/history` | IAB / AG | Full PouchCustody chain |
 
@@ -107,11 +107,11 @@ Languages: EN + SW on the Flutter app and Django back-office. WCAG 2.2 AA on all
 
 ## 7. Integrity + anti-tamper
 
-- **Chair HSM roll freeze** -- the roll hash is signed by the IEBC Chair HSM key before any kit is provisioned; a kit that receives an unsigned or mismatched roll slice refuses to start the polling session.
+- **Chair HSM roll freeze** -- the roll hash is signed by the Commission Chair HSM key before any kit is provisioned; a kit that receives an unsigned or mismatched roll slice refuses to start the polling session.
 - **Dual-clock Form34A** -- ts_local and ts_eat are both recorded from the device clock and a reference NTP timestamp fetched at station open; any Form34A with ts_eat outside the statutory polling window is flagged but not rejected (presiding officer must annotate).
 - **Offline biometric -- no exfiltration pathway** -- the roll slice and biometric templates are stored in SQLCipher encrypted storage on the kit; no API endpoint exists to extract templates; the kit is wiped and the KEK revoked after the result batch is transmitted and acknowledged.
 - **PouchCustody RFID chain** -- every pouch transfer is signed by the transferring and receiving officers; the chain is synced to the central custody store via the transmission batch.
-- **AES-256 + mTLS batch** -- result batch ciphertext uses AES-256-GCM with a key derived from the station KEK and the IEBC relay certificate; a compromised relay cert does not expose station KEKs.
+- **AES-256 + mTLS batch** -- result batch ciphertext uses AES-256-GCM with a key derived from the station KEK and the Commission relay certificate; a compromised relay cert does not expose station KEKs.
 - **Exactly-once batch ingestion** -- `eel.diaspora.batch_received.v1` uses idempotency key `batch_id`; a second receipt of the same batch returns the cached ack without double-counting.
 
 ## 8. Kenya statute alignment
@@ -124,9 +124,9 @@ Languages: EN + SW on the Flutter app and Django back-office. WCAG 2.2 AA on all
 
 ## 9. Honest caveats + external prerequisites
 
-- Satellite bandwidth for result batch transmission varies by location; the 7-day retry window is a design concession to poor connectivity; M09 tabulation does not certify the result until all expected batches are received or the IEBC Board formally waives a specific station.
+- Satellite bandwidth for result batch transmission varies by location; the 7-day retry window is a design concession to poor connectivity; M09 tabulation does not certify the result until all expected batches are received or the Commission Board formally waives a specific station.
 - Embassy kit physical security is the responsibility of the hosting mission; the software cannot compensate for physical compromise of the kit or its KEK.
-- The AES-256 KEK derivation scheme requires that the IEBC relay certificate is not compromised; a compromised relay cert must be reported within 1 h and the affected station's batch retransmitted over an alternative channel.
+- The AES-256 KEK derivation scheme requires that the Commission relay certificate is not compromised; a compromised relay cert must be reported within 1 h and the affected station's batch retransmitted over an alternative channel.
 - Local time zone handling for countries that observe daylight saving time requires manual confirmation of the UTC offset before polling day; the Flutter app reads the device clock and cannot correct for an incorrect device timezone setting.
 - The diaspora roll freeze date must be confirmed with the BVR M02 team at least 30 days before polling day; late enrolments cannot be added after freeze.
 

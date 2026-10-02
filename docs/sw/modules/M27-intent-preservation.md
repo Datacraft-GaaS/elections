@@ -5,7 +5,7 @@
 **Runs on:** Kit-side (on-device inference) + Central adjudication console
 **Owner:** Datacraft
 **Status:** Draft v2
-**IPR:** Custom Software vests in IEBC per GCC 15.4; on-device vision model OSS base (Apache 2.0)
+**IPR:** Custom Software vests in the Commission per GCC 15.4; on-device vision model OSS base (Apache 2.0)
 
 ## 1. Purpose
 
@@ -20,9 +20,9 @@ Strategy reference: §XVII.
 - **Voter** — primary beneficiary; receives clearer ballot, optional pre-mark check, education
 - **Presiding Officer** — adjudicates ambiguous ballots; administers spoilt-ballot replacement; trained on reason-code catalogue
 - **Party Agent** — witnesses ambiguous-ballot adjudication; countersigns reason codes
-- **IEBC Returning Officer** — reviews per-station rejection rates; flags outlier stations
+- **the Commission Returning Officer** — reviews per-station rejection rates; flags outlier stations
 - **IAB Adjudication Auditor** — reviews a sample of adjudicated-ballot images post-election
-- **IEBC Ballot Design Team** — receives ballot-design test results and iterated specs
+- **the Commission Ballot Design Team** — receives ballot-design test results and iterated specs
 - **Voter Education Coordinator** — uses portal tutorials and IVR scripts generated from this module
 
 ## 3. Functional Requirements
@@ -32,7 +32,7 @@ Strategy reference: §XVII.
 - **FR-M27-001** Produce a scientifically-tested ballot design for each of the six simultaneous contests (presidential, gubernatorial, senate, MP, women-rep, MCA). Each design tested with >= 200 real Kenyan voters across literacy strata and regions before finalisation.
 - **FR-M27-002** Design requirements: candidate photograph + party symbol; clear marking box with generous whitespace (>= 15mm per side); simplified instructions in contest-specific language + pictogram guidance; colour-differentiation per contest (presidential yellow, gubernatorial blue, senate green, MP red, women-rep purple, MCA orange).
 - **FR-M27-003** Per-ballot instructions at the top of each ballot: language at Kenyan Standard Grade 5 reading level (EN + SW); pictogram "make one mark inside the box". Large-print version available at station on request.
-- **FR-M27-004** Ballot design published at T-30 for party-agent and public review before printing. Any design change after T-30 requires IEBC Chair approval + IAB notification.
+- **FR-M27-004** Ballot design published at T-30 for party-agent and public review before printing. Any design change after T-30 requires the Commission Chair approval + IAB notification.
 - **FR-M27-005** Ballot design artefacts (PDF + test-results summary) included in the T-14 evidentiary bundle.
 
 ### Element 2 — Kit-Side Pre-Mark Validation (Opt-In, On-Device Only)
@@ -56,7 +56,7 @@ Strategy reference: §XVII.
 
 - **FR-M27-017** Any ballot that the Presiding Officer cannot clearly accept or reject on first inspection enters the adjudication flow.
 - **FR-M27-018** Adjudication procedure: Presiding Officer + minimum two party agents view the ballot together; each party agent states their position (VALID / REJECT); Presiding Officer makes the determination with a reason code from the standardised catalogue (see below).
-- **FR-M27-019** Reason-code catalogue (exhaustive; any new category requires IEBC Chair sign-off):
+- **FR-M27-019** Reason-code catalogue (exhaustive; any new category requires the Commission Chair sign-off):
   - A1 UNMARKED_BALLOT — no mark visible
   - A2 OVER_MARK — marks in more than one box in the same contest
   - A3 AMBIGUOUS_MARK — mark partially outside the designated box
@@ -85,7 +85,7 @@ Strategy reference: §XVII.
 ### Element 7 — Ex-Post Reconciliation and Statistical Outlier Flagging
 
 - **FR-M27-027** Per-station reconciliation after close: rejected + spoilt + valid + assisted = ballots issued. Any arithmetic mismatch triggers a Form 34A hold pending Presiding Officer explanation.
-- **FR-M27-028** Statistical outlier flagging: any station with rejection rate > 3 standard deviations above the constituency mean is auto-flagged for IEBC Returning Officer review. Flag published in the post-election report.
+- **FR-M27-028** Statistical outlier flagging: any station with rejection rate > 3 standard deviations above the constituency mean is auto-flagged for the Commission Returning Officer review. Flag published in the post-election report.
 - **FR-M27-029** IAB adjudication-accuracy audit: IAB samples >= 5% of adjudicated-ballot photographs post-election; compares IAB auditor's determination against Presiding Officer's; disagreement rate published. Target: > 99% agreement.
 - **FR-M27-030** Post-election rejection analysis report: per-contest, per-county, per-reason-code breakdown; comparison to 2013/2017/2022 baselines; published within T+30.
 
@@ -97,9 +97,9 @@ Strategy reference: §XVII.
 - **NFR-M27-004** WCAG 2.2 AA: all voter-facing screens (opt-in prompt, result display); audio guidance in all supported languages.
 - **NFR-M27-005** Languages: EN + SW baseline; local-language support for opt-in prompt and result display in 12 Kenyan languages.
 - **NFR-M27-006** DPA 2019 lawful basis for pre-mark check: explicit voter consent (s.30(1)(a)); data minimisation (s.26 — image not stored); purpose limitation (s.26 — check only, not registration or identification).
-- **NFR-M27-007** Adjudicated-ballot photographs: encrypted at rest (AES-256); accessible only to IEBC Returning Officer + IAB auditor under logged access events; deleted 7 years post-election.
+- **NFR-M27-007** Adjudicated-ballot photographs: encrypted at rest (AES-256); accessible only to the Commission Returning Officer + IAB auditor under logged access events; deleted 7 years post-election.
 - **NFR-M27-008** Spoilt-ballot count: reconciled against Form 34A within 60 minutes of station close.
-- **NFR-M27-009** Rejection-rate outlier report: available to IEBC Returning Officers within 4 hours of Form 34C publication.
+- **NFR-M27-009** Rejection-rate outlier report: available to the Commission Returning Officers within 4 hours of Form 34C publication.
 
 ## 5. User Stories
 
@@ -107,7 +107,7 @@ Strategy reference: §XVII.
 2. As an elderly voter in Turkana, I hear the pre-mark check prompt in Turkana language via the kit's audio guide and choose to use it.
 3. As a party agent, I witness the adjudication of an ambiguous ballot, state my position, and my dissent is recorded when I disagree with the Presiding Officer's determination.
 4. As a Presiding Officer, I refer to my laminated reason-code card and correctly adjudicate a torn ballot as A4 TORN_DEFACED; the kit records my decision with my biometric sign-off.
-5. As an IEBC Returning Officer, I see that Station 17 in my constituency has a 6.8% rejection rate vs a 0.9% constituency mean; I request the adjudicated-ballot images for review.
+5. As a Commission Returning Officer, I see that Station 17 in my constituency has a 6.8% rejection rate vs a 0.9% constituency mean; I request the adjudicated-ballot images for review.
 6. As an IAB Adjudication Auditor, I pull the 5% sample of adjudicated-ballot photographs and find 99.2% agreement with the Presiding Officer's reason codes.
 7. As a voter, I complete the practice ballot in the Public Verifier app three days before the election; I know exactly what to do on election day.
 8. As a data-protection officer, I verify that no ballot image or facial feature vector ever leaves the kit; the deletion log confirms secure erase within 1 second of inference.
@@ -178,11 +178,11 @@ class RejectionRateAlert(BaseModel):
 | POST | /v1/intent/pre-mark-events | KIT_CERT mTLS | 500/min | Submit pre-mark validation aggregate |
 | POST | /v1/intent/spoilt-events | KIT_CERT mTLS | 200/min | Submit spoilt ballot event |
 | POST | /v1/intent/adjudication | KIT_CERT mTLS | 100/min | Submit adjudication event |
-| GET | /v1/intent/adjudication/{id} | IEBC_OFFICER JWT | 100/hr | Fetch adjudication detail |
+| GET | /v1/intent/adjudication/{id} | COMMISSION_OFFICER JWT | 100/hr | Fetch adjudication detail |
 | GET | /v1/intent/adjudication/{id}/photo | IAB_AUDITOR JWT | 50/hr | Access adjudicated-ballot photo (logged) |
-| GET | /v1/intent/rejection-rates | IEBC_OFFICER JWT | 100/hr | Rejection rates per station/constituency |
-| GET | /v1/intent/rejection-alerts | IEBC_RO JWT | 50/hr | Statistical outlier alerts |
-| PATCH | /v1/intent/rejection-alerts/{id} | IEBC_RO JWT | 50/hr | Record review outcome |
+| GET | /v1/intent/rejection-rates | COMMISSION_OFFICER JWT | 100/hr | Rejection rates per station/constituency |
+| GET | /v1/intent/rejection-alerts | COMMISSION_RO JWT | 50/hr | Statistical outlier alerts |
+| PATCH | /v1/intent/rejection-alerts/{id} | COMMISSION_RO JWT | 50/hr | Record review outcome |
 | GET | /v1/intent/report | Public | 500/min | Post-election rejection analysis report |
 | GET | /v1/intent/model-card | Public | 200/min | Pre-mark vision model card |
 
@@ -194,7 +194,7 @@ class RejectionRateAlert(BaseModel):
 - **M11 Public Portal** — public rejection analysis report; Learn tab voter education
 - **M28 AI Monitoring Stack** — on-device vision model card registered in model registry; eval harness
 - **P05 Merkle Chain** — adjudication events anchored
-- **IEBC Ballot Design Team** (internal) — ballot design test results feed M27 Element 1
+- **the Commission Ballot Design Team** (internal) — ballot design test results feed M27 Element 1
 
 ## 9. UI/UX Key Screens
 
@@ -202,7 +202,7 @@ class RejectionRateAlert(BaseModel):
 2. **Pre-Mark Result Display (Voter-Facing, on Kit)** — large icon + plain-language text for each result code; if warning, "Get a replacement ballot?" button; if VALID, green tick + "Please deposit your ballot."
 3. **Adjudication Workflow (Presiding Officer)** — shows ballot photo captured by kit camera; reason-code selector (tiles with code and description); party-agent biometric sign-off buttons (sequential); dissent checkbox per agent; final decision button with HSM sign.
 4. **Spoilt-Ballot Counter (Presiding Officer)** — small persistent widget showing current voter's spoilt count (1/3, 2/3, 3/3); replacement issue button; seal-and-retain confirmation.
-5. **Rejection Rate Dashboard (IEBC Returning Officer)** — table of stations in constituency sorted by rejection rate; z-score column; outlier badge; click-through to adjudication event list for that station.
+5. **Rejection Rate Dashboard (the Commission Returning Officer)** — table of stations in constituency sorted by rejection rate; z-score column; outlier badge; click-through to adjudication event list for that station.
 6. **Public Rejection Analysis Report** — tabbed by contest; bar chart: reason-code distribution; choropleth: rejection rate by county; trend line: 2013-2017-2022-2027.
 
 ## 10. Compliance Mapping
@@ -222,14 +222,14 @@ class RejectionRateAlert(BaseModel):
 
 | Metric | Target | Measurement | Sign-off |
 |--------|--------|-------------|----------|
-| Rejected ballot rate per contest | < 1.0% nationally | Form 34A aggregate | IEBC Chair |
+| Rejected ballot rate per contest | < 1.0% nationally | Form 34A aggregate | the Commission Chair |
 | Pre-mark validation inference time | <= 3 seconds | Kit performance test | Mechrevo QA |
 | Ballot image deletion within 1 second of inference | 100% | OS erase log | Datacraft Security |
 | Adjudication reason-code coverage | 100% of adjudicated ballots have a code | Form 34A audit | IAB |
 | IAB adjudication-accuracy audit agreement rate | > 99% | IAB audit report | IAB |
 | Rejection-rate outlier alert availability | <= 4 hours post Form 34C | Report timestamp | Datacraft Technical |
-| Post-election rejection report published | <= T+30 | Publication timestamp | IEBC Chair |
-| Public Learn tab visits pre-election | > 2M | Portal analytics | IEBC Comms |
+| Post-election rejection report published | <= T+30 | Publication timestamp | the Commission Chair |
+| Public Learn tab visits pre-election | > 2M | Portal analytics | the Commission Comms |
 
 ## 12. Test Strategy
 
@@ -238,7 +238,7 @@ class RejectionRateAlert(BaseModel):
 - **E2E:** simulated polling station with 200 synthetic voters including opted-in pre-mark checks, 5 spoilts, 3 adjudications.
 - **Privacy:** confirm ballot image is deleted within 1 second (hook into OS secure-erase API); confirm no image or feature vector in any log or network packet.
 - **Accessibility:** audio-guided opt-in flow for visually impaired voters; large-text mode for low-vision voters; WCAG 2.2 AA.
-- **Model validation:** accuracy of on-device vision model on a held-out test set of 1,000 synthetic ballot images annotated by IEBC ballot-design team; target >= 97% recall on VALID class.
+- **Model validation:** accuracy of on-device vision model on a held-out test set of 1,000 synthetic ballot images annotated by the Commission ballot-design team; target >= 97% recall on VALID class.
 - **Load:** 55,393 stations submitting rejection-rate data simultaneously; outlier computation within 4 hours.
 - **Offline:** 8-hour offline session; verify all adjudication events sync on reconnect with integrity preserved.
 
@@ -263,7 +263,7 @@ class RejectionRateAlert(BaseModel):
 - M28 AI Monitoring Stack — pre-mark vision model registration, model card, eval harness
 - M11 Public Portal — Learn tab voter education; public rejection analysis report
 - P05 Merkle Chain — adjudication event anchoring
-- IEBC Ballot Design Team — ballot design sign-off (external to Datacraft; IEBC-owned process)
+- the Commission Ballot Design Team — ballot design sign-off (external to Datacraft; Commission-owned process)
 - National Languages Board / translators — 12-language pre-mark prompt translation
 
 ## 15. Risks + Mitigations

@@ -38,7 +38,7 @@ Five aggregates (per `services/crms-svc/crates/crms-domain/src/models/nomination
 
 | Payment channel | Description | Dedup key |
 |---|---|---|
-| M-Pesa Daraja C2B (Paybill) | Candidate pays to IEBC paybill; webhook received by Daraja adapter (`services/crms-svc/py/daraja/`) | `daraja_trans_id` (globally unique per Safaricom) |
+| M-Pesa Daraja C2B (Paybill) | Candidate pays to the Commission paybill; webhook received by Daraja adapter (`services/crms-svc/py/daraja/`) | `daraja_trans_id` (globally unique per Safaricom) |
 | Officer manual entry | Officer records offline payment (bank slip) via console | Manual; officer generates internal `payment_id`; no Daraja trans_id |
 
 Daraja webhook handling is idempotent: the `daraja_trans_id` is stored in a unique index. A duplicate webhook is detected and returns `200 OK` with the existing `payment_id` without creating a new `Payment` row. This is the per-TransID dedup prescribed in the Safaricom Daraja API documentation (v3.0).
@@ -105,7 +105,7 @@ Languages: EN + SW on candidate portal. Officer surfaces: EN + SW. WCAG 2.2 AA.
 ## 7. Integrity + anti-tamper
 
 - **Per-TransID dedup** - `daraja_trans_id` unique index prevents double-crediting from Daraja webhook retries. The Daraja adapter returns `200 OK` on duplicates (as required by Safaricom's webhook retry contract) but does not create a new `Payment` row.
-- **Webhook HMAC verification** - every inbound Daraja callback is verified against the HMAC-SHA256 signature using the Safaricom API secret stored in Vault (OpenBao on 62.169.25.77). An invalid signature returns `401` and is logged in `eel_crms_audit_shadow`.
+- **Webhook HMAC verification** - every inbound Daraja callback is verified against the HMAC-SHA256 signature using the Safaricom API secret stored in Vault (OpenBao on 192.0.2.11). An invalid signature returns `401` and is logged in `eel_crms_audit_shadow`.
 - **Fee schedule gazette linkage** - each `FeeSchedule` row carries a `gazette_notice_ref`; the API rejects a fee schedule with no gazette reference. This ensures fee changes are publicly notified before taking effect.
 - **Waiver document WORM** - supporting documents for waivers are stored in S3 with object-lock. Officer rejection can be appealed; the original document is preserved.
 - **Reconciliation immutability** - `ReconciliationReport` rows are insert-only; no UPDATE. A corrected reconciliation creates a new report with a `supersedes_report_id` reference.
@@ -122,9 +122,9 @@ Languages: EN + SW on candidate portal. Officer surfaces: EN + SW. WCAG 2.2 AA.
 
 ## 9. Honest caveats + external prerequisites
 
-- Daraja C2B paybill number and API credentials must be provisioned by IEBC via Safaricom's business API onboarding. The adapter at `services/crms-svc/py/daraja/` is ready; the live credentials are an external dependency stored in Vault.
-- Daraja B2C refund requires IEBC to maintain a Safaricom B2C operator account with sufficient float. The reconciliation report tracks refund liability; Treasury must ensure float is maintained.
-- Bank-slip manual payments are not validated against any bank API. Officer entry is the only control. A future integration with IEBC's banker for real-time confirmation is noted as a gap.
+- Daraja C2B paybill number and API credentials must be provisioned by the Commission via Safaricom's business API onboarding. The adapter at `services/crms-svc/py/daraja/` is ready; the live credentials are an external dependency stored in Vault.
+- Daraja B2C refund requires the Commission to maintain a Safaricom B2C operator account with sufficient float. The reconciliation report tracks refund liability; Treasury must ensure float is maintained.
+- Bank-slip manual payments are not validated against any bank API. Officer entry is the only control. A future integration with the Commission's banker for real-time confirmation is noted as a gap.
 - The waiver supporting document review relies on officer judgment for disability and gender grounds. There is no integration with NCPWD (National Council for Persons with Disabilities) or KDPA for automated verification.
 
 ## 10. Test coverage + operational runbooks

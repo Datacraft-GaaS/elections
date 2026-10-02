@@ -1,6 +1,6 @@
 /// AntIris iris scanner driver (M05 M3) — real SDK call.
 /// Uses AntUSBCamera.jar (USBControl) for USB connection + capture.
-/// SDK source: /Users/nyimbiodero/src/pjs/eel/sdks/AntIris_Android_SDK/
+/// SDK source: ./sdks/AntIris_Android_SDK/
 /// Hardware: AntIris iris scanner (K7 capture mode, JP2/ISO output).
 library;
 

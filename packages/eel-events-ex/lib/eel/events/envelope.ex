@@ -1,6 +1,6 @@
 defmodule Eel.Events.Envelope do
   @moduledoc """
-  CloudEvents 1.0 envelope with IEBC IEMS-specific extension attributes.
+  CloudEvents 1.0 envelope with the Commission IEMS-specific extension attributes.
 
   Covers the required CloudEvents core attributes (`specversion`, `id`,
   `type`, `source`) and the optional ones (`subject`, `time`,

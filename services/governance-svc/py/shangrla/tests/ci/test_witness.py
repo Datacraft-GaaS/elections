@@ -3,7 +3,7 @@ from shangrla.witness import WitnessWorkflow
 
 def test_register_and_list():
     wf = WitnessWorkflow()
-    w = wf.register("run-1", "Alice", "IEBC")
+    w = wf.register("run-1", "Alice", "Electoral Authority")
     assert w.witness_id
     assert wf.list_witnesses("run-1") == [w]
 

@@ -2,7 +2,7 @@
 
 ## Shape
 
-Eighteen Kubernetes services implement sixty-nine modules (ADR-0020). Every service is built from the same shared packages and deployed identically to two IEBC-provided DR sites and five regional edge clusters (ADR-0019).
+Eighteen Kubernetes services implement sixty-nine modules (ADR-0020). Every service is built from the same shared packages and deployed identically to two Commission-provided DR sites and five regional edge clusters (ADR-0019).
 
 ```
 kits (Flutter)   mobile (Flutter)   portals (Astro / LiveView / Django)   desktop (Tauri)

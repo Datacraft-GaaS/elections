@@ -1,6 +1,6 @@
 # G14 — Election Command Centre (ECC) Playbook (CLOSED)
 ## Physical Setup
-- Location: IEBC HQ, Nairobi + 2 hot-sites (Kisumu, Mombasa)
+- Location: the Commission HQ, Nairobi + 2 hot-sites (Kisumu, Mombasa)
 - Floor: 3 zones — Operations, Comms, Legal/IAB
 - Displays: 12 screens (4 per zone) showing real-time dashboards
 
@@ -11,7 +11,7 @@
 - Data-diode: Cilium egress-only enforced on kit namespaces
 
 ## Comms Redundancy
-- Primary: IEBC SMS gateway (integrations/telco-sms)
+- Primary: the Commission SMS gateway (integrations/telco-sms)
 - Backup: WhatsApp Business API (integrations/whatsapp)
 - Tertiary: VHF radio net (manual tally protocol)
 

@@ -128,10 +128,10 @@ Languages: EN + SW for staff and commissioner surfaces; citizen short-code and s
 
 ## 9. Honest caveats + external prerequisites
 
-- MoUs with CRS + NRB + KRA are external prerequisites. The adapters + doubles are ready under `integrations/{crs,nrb,kra}/`. Actual bulk SFTP endpoints must be provisioned by IEBC.
+- MoUs with CRS + NRB + KRA are external prerequisites. The adapters + doubles are ready under `integrations/{crs,nrb,kra}/`. Actual bulk SFTP endpoints must be provisioned by the Commission.
 - Family short-code `*400#` requires a Safaricom / Africa's Talking commercial arrangement (I08 Tier-A integration, adapter shipped, live short-code allocation pending).
 - Quarterly gazette submission depends on Gov Printer accepting the XML envelope schema. The adapter is written to a documented template; the exact schema is locked at first live batch.
-- Kit-based CVR corrections (physical NCPD centres) are not built. Only server-side ingest + officer triage. The spec left kit-based correction for a future wave if IEBC decides to authorise it.
+- Kit-based CVR corrections (physical NCPD centres) are not built. Only server-side ingest + officer triage. The spec left kit-based correction for a future wave if the Commission decides to authorise it.
 - ODPC breach notification flow for a botched CVR mutation is wired via `integrations/odpc-breach` but the reporting portal endpoint is set at first live incident.
 
 ## 10. Test coverage + operational runbooks
