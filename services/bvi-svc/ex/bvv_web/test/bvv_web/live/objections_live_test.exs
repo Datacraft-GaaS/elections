@@ -27,6 +27,9 @@ defmodule BvvWeb.Live.ObjectionsLiveTest do
   end
 
   test "module exposes live view surface" do
+    # function_exported?/3 does not load the module; without this it depends on
+    # another test having loaded it first, and ExUnit randomises order.
+    {:module, ObjectionsLive} = Code.ensure_loaded(ObjectionsLive)
     assert function_exported?(ObjectionsLive, :mount, 3)
     assert function_exported?(ObjectionsLive, :render, 1)
     assert function_exported?(ObjectionsLive, :handle_event, 3)

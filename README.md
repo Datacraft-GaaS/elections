@@ -433,8 +433,10 @@ and propagates the first failure.
 
 | layer | frameworks | coverage target | status |
 |---|---|---|---|
-| Unit (Rust) | cargo-nextest / cargo test | >= 80% per service | **989 passing** across 10 workspace roots |
-| Unit (Python, Elixir, Dart, TS) | pytest, ExUnit, flutter_test, vitest | >= 80% per service | require per-language toolchains — see below |
+| Unit (Rust) | cargo-nextest / cargo test | >= 80% per service | **1,185 passing** across 10 workspace roots |
+| Unit (Python) | pytest | >= 80% per service | **1,362 passing** across 14 projects |
+| Unit (Elixir) | ExUnit | >= 80% per service | **99 passing** across 7 projects |
+| Unit (Dart, TypeScript) | flutter_test, vitest | >= 80% per service | need Flutter and Node toolchains |
 | Property | proptest, hypothesis, StreamData, fast-check | >= 20 edge cases per invariant | in-tree |
 | Contract | Pact Broker, Karapace, openapi-diff, buf breaking | 100% service pair coverage | needs broker / cluster |
 | Integration | testcontainers | all read/write paths | needs Docker |
@@ -448,9 +450,21 @@ and propagates the first failure.
 | Reproducibility | Nix flakes, bit-identical rebuild, hash manifest | M14 make-reproduce v2 | needs Nix |
 | Mutation | cargo-mutants, mutmut, Stryker | 75%+ kill rate on election-critical | hours of CPU |
 
-Only the unit row is verified by a single command on a bare checkout. The rest
-are real suites with real assertions, but they require infrastructure the
-repository does not ship — treat them as available, not as evidence.
+Only the unit rows are verified by a single command. The rest are real suites
+with real assertions, but they require infrastructure this repository does not
+ship — treat them as available, not as evidence.
+
+### Prerequisites for the unit suites
+
+```bash
+# Rust and Python need nothing beyond the pinned toolchain and uv.
+# Elixir additionally needs erl on PATH (Homebrew installs it unlinked):
+export PATH="/opt/homebrew/opt/erlang/bin:$PATH"
+
+# If cargo reports "Failed to determine realpath of .../MacOSX26.5.sdk",
+# the ambient SDKROOT points at an SDK that is not installed:
+export SDKROOT="$(ls -d /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX*.sdk | tail -1)"
+```
 
 ## Security and trust model
 
