@@ -1,3 +1,17 @@
+// Copyright (c) 2026 Nyimbi Odero
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 //! G24 — Configuration Control Board (CCB) Multi-Sig Log (CLOSED)
 //! Separate append-only log for CCB actions. Requires 2-of-3 HSM signatures.
 //! M5 audit: every CCB entry emits auditId=g24-ccb-{action}, proofHash, 2-of-3 sigs.

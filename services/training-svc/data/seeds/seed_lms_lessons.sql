@@ -1,3 +1,17 @@
+-- Copyright (c) 2026 Nyimbi Odero
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
 INSERT INTO training_lms_courses (id, title, version, published_at) VALUES ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Poll Worker Certification (M38)', 1, '2025-01-15 08:00:00');
 INSERT INTO training_lms_modules (id, title, target_audience, language, module_type, pass_mark_pct, version) VALUES
 ('poll-day-setup', 'Poll-Day Setup & Equipment', 'PO,DPO', 'en', 'CORE', 82, 1),

@@ -1,4 +1,20 @@
 /**
+ * Copyright (c) 2026 Nyimbi Odero
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
  * k6 scenario: RTS 34A form submission at 5x load (WP-6.4).
  * Target: 300k concurrent at peak; p95 <= 500ms, p99 <= 1000ms.
  * ADR-0018: write-path P99 must remain <= 25ms end-to-end.

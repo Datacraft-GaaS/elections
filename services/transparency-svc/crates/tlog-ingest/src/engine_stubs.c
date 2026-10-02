@@ -1,4 +1,20 @@
 /*
+ * Copyright (c) 2026 Nyimbi Odero
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Stub implementations of OpenSSL ENGINE API symbols removed in OpenSSL 3.x.
  * librdkafka references these when compiled with ssl support.
  * On macOS with OpenSSL 3.x these symbols are absent; this file provides no-op stubs
