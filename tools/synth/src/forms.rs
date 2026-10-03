@@ -254,7 +254,7 @@ pub fn generate(
     for i in 0..count {
         let station = &stations[rng.gen_range(0..stations.len())];
         let candidate_count: u8 = rng.gen_range(2u8..9);
-        let mut votes_per_candidate: Vec<u64> = (0..candidate_count)
+        let votes_per_candidate: Vec<u64> = (0..candidate_count)
             .map(|_| rng.gen_range(0u64..500))
             .collect();
         let total_votes: u64 = votes_per_candidate.iter().sum();
@@ -279,9 +279,6 @@ pub fn generate(
             candidate_count,
             total_votes,
         });
-
-        // Consume consistent RNG state even for unused var.
-        let _ = votes_per_candidate.iter_mut().count();
     }
 
     Ok(records)
@@ -347,13 +344,11 @@ fn render_form(
     if deg.torn {
         apply_torn(&mut img, rng);
     }
-    let img = if deg.angled {
+    if deg.angled {
         apply_angled(img, rng)
     } else {
         img
-    };
-
-    img
+    }
 }
 
 #[cfg(test)]

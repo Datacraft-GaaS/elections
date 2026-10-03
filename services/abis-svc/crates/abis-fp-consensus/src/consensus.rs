@@ -155,11 +155,14 @@ impl ConsensusMatcher {
         if let (Some(pb), Some(gb)) = (input.image_probe, input.image_gallery) {
             let w = input.image_width;
             let h = input.image_height;
-            match (
+            if let (
+                Ok(pi),
+                Ok(gi),
+            ) = (
                 eel_abis_fp_texture::GrayImage::new(w, h, pb.to_vec()),
                 eel_abis_fp_texture::GrayImage::new(w, h, gb.to_vec()),
             ) {
-                (Ok(pi), Ok(gi)) => match self.texture.compare(&pi, &gi) {
+                match self.texture.compare(&pi, &gi) {
                     Ok(s) => {
                         let cal = self.calibrators[2].calibrate(s.fused);
                         results.push(SubMatcherResult {
@@ -172,8 +175,7 @@ impl ConsensusMatcher {
                     Err(_) => {
                         results.push(zero_result("fingercode_texture", self.thresholds[2]));
                     }
-                },
-                _ => {}
+                }
             }
         }
 
@@ -181,11 +183,14 @@ impl ConsensusMatcher {
         if let (Some(pb), Some(gb)) = (input.image_probe, input.image_gallery) {
             let w = input.image_width;
             let h = input.image_height;
-            match (
+            if let (
+                Ok(pi),
+                Ok(gi),
+            ) = (
                 eel_abis_fp_orientation::GrayImage::new(w, h, pb.to_vec()),
                 eel_abis_fp_orientation::GrayImage::new(w, h, gb.to_vec()),
             ) {
-                (Ok(pi), Ok(gi)) => match self.orientation.compare(&pi, &gi) {
+                match self.orientation.compare(&pi, &gi) {
                     Ok(s) => {
                         let cal = self.calibrators[3].calibrate(s.fused);
                         results.push(SubMatcherResult {
@@ -198,8 +203,7 @@ impl ConsensusMatcher {
                     Err(_) => {
                         results.push(zero_result("orientation_field", self.thresholds[3]));
                     }
-                },
-                _ => {}
+                }
             }
         }
 
@@ -207,11 +211,11 @@ impl ConsensusMatcher {
         if let (Some(pb), Some(gb)) = (input.binary_probe, input.binary_gallery) {
             let w = input.image_width;
             let h = input.image_height;
-            match (
+            if let (Ok(pi), Ok(gi)) = (
                 BinaryImage::new(w, h, pb.to_vec()),
                 BinaryImage::new(w, h, gb.to_vec()),
             ) {
-                (Ok(pi), Ok(gi)) => match self.skeleton.compare(&pi, &gi) {
+                match self.skeleton.compare(&pi, &gi) {
                     Ok(s) => {
                         let cal = self.calibrators[4].calibrate(s.fused);
                         results.push(SubMatcherResult {
@@ -224,8 +228,7 @@ impl ConsensusMatcher {
                     Err(_) => {
                         results.push(zero_result("skeleton_graph", self.thresholds[4]));
                     }
-                },
-                _ => {}
+                }
             }
         }
 

@@ -43,6 +43,7 @@ fn problem(status: StatusCode, detail: String) -> Response {
 /// Every handler in this group keys off a petition id. Returning a
 /// default-constructed record for an id that was never filed is what made
 /// `get_evidence_bundle` answer 200 with an empty bundle for any petition.
+#[allow(clippy::result_large_err)]
 fn require_petition(state: &SharedState, petition_id: &str) -> Result<(), Response> {
     if state.has_petition(petition_id) {
         Ok(())

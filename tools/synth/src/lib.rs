@@ -107,23 +107,12 @@ impl std::str::FromStr for OutputFormat {
 // Degradation flags for Form 34A images
 // ---------------------------------------------------------------------------
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct DegradationFlags {
     pub torn: bool,
     pub wet: bool,
     pub angled: bool,
     pub low_light: bool,
-}
-
-impl Default for DegradationFlags {
-    fn default() -> Self {
-        Self {
-            torn: false,
-            wet: false,
-            angled: false,
-            low_light: false,
-        }
-    }
 }
 
 impl std::str::FromStr for DegradationFlags {

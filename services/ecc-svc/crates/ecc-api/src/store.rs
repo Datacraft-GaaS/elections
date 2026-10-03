@@ -93,6 +93,46 @@ pub struct S44aCountyStatus {
     pub complete: i64,
 }
 
+// Column tuples returned by sqlx runtime queries, aliased to keep the
+// signatures readable and stable against the row structs above.
+type MediaItemRecord = (
+    Uuid,
+    String,
+    String,
+    String,
+    String,
+    Option<String>,
+    DateTime<Utc>,
+    String,
+    DateTime<Utc>,
+);
+
+/// List projection: a [`MediaItemRecord`] plus the window `COUNT(*) OVER ()`.
+type MediaItemListRecord = (
+    Uuid,
+    String,
+    String,
+    String,
+    String,
+    Option<String>,
+    DateTime<Utc>,
+    DateTime<Utc>,
+    i64,
+);
+
+type AdjudicationRecord = (Uuid, Uuid, String, String, Option<String>, DateTime<Utc>);
+
+type S44aRecord = (
+    Uuid,
+    String,
+    String,
+    String,
+    DateTime<Utc>,
+    Option<String>,
+    Option<DateTime<Utc>>,
+    String,
+);
+
 // ---------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------
@@ -235,8 +275,7 @@ impl Store {
     ) -> Result<Option<MediaItemRow>, StoreError> {
         match self {
             Store::Pg(pool) => {
-                let row: Option<(Uuid, String, String, String, String, Option<String>, DateTime<Utc>, String, DateTime<Utc>)> =
-                    sqlx::query_as(
+                let row: Option<MediaItemRecord> = sqlx::query_as(
                         "SELECT item_id, url, url_sha256, media_type, language_code, top_category, captured_at, status, submitted_at \
                          FROM speech_media_items WHERE item_id = $1",
                     )
@@ -309,20 +348,7 @@ impl Store {
                     " ORDER BY submitted_at DESC LIMIT ${idx} OFFSET ${}",
                     idx + 1
                 ));
-                let mut q = sqlx::query_as::<
-                    _,
-                    (
-                        Uuid,
-                        String,
-                        String,
-                        String,
-                        String,
-                        Option<String>,
-                        DateTime<Utc>,
-                        DateTime<Utc>,
-                        i64,
-                    ),
-                >(&sql);
+                let mut q = sqlx::query_as::<_, MediaItemListRecord>(&sql);
                 if let Some(v) = status {
                     q = q.bind(v);
                 }
@@ -369,9 +395,9 @@ impl Store {
                 let mut items: Vec<MediaItemRow> = db
                     .media_items
                     .iter()
-                    .filter(|m| status.map_or(true, |s| m.status == s))
-                    .filter(|m| media_type.map_or(true, |t| m.media_type == t))
-                    .filter(|m| from_date.map_or(true, |d| m.submitted_at.date_naive() >= d))
+                    .filter(|m| status.is_none_or(|s| m.status == s))
+                    .filter(|m| media_type.is_none_or(|t| m.media_type == t))
+                    .filter(|m| from_date.is_none_or(|d| m.submitted_at.date_naive() >= d))
                     .cloned()
                     .collect();
                 items.sort_by(|a, b| b.submitted_at.cmp(&a.submitted_at));
@@ -477,7 +503,7 @@ impl Store {
     ) -> Result<Option<AdjudicationRow>, StoreError> {
         match self {
             Store::Pg(pool) => {
-                let row: Option<(Uuid, Uuid, String, String, Option<String>, DateTime<Utc>)> = sqlx::query_as(
+                let row: Option<AdjudicationRecord> = sqlx::query_as(
                     "SELECT adjudication_id, item_id, verdict, referral_agency, analyst_notes, decided_at \
                      FROM speech_adjudications WHERE item_id = $1",
                 )
@@ -574,8 +600,8 @@ impl Store {
             Store::Mem(mem) => {
                 let db = mem.lock();
                 let in_window = |m: &MediaItemRow| {
-                    from.map_or(true, |f| m.submitted_at.date_naive() >= f)
-                        && to.map_or(true, |t| m.submitted_at.date_naive() <= t)
+                    from.is_none_or(|f| m.submitted_at.date_naive() >= f)
+                        && to.is_none_or(|t| m.submitted_at.date_naive() <= t)
                 };
                 let mut counts = SummaryCounts::default();
                 for m in db.media_items.iter().filter(|m| in_window(m)) {
@@ -665,8 +691,7 @@ impl Store {
     ) -> Result<Option<S44aRow>, StoreError> {
         match self {
             Store::Pg(pool) => {
-                let row: Option<(Uuid, String, String, String, DateTime<Utc>, Option<String>, Option<DateTime<Utc>>, String)> =
-                    sqlx::query_as(
+                let row: Option<S44aRecord> = sqlx::query_as(
                         "UPDATE s44a_confirmations \
                          SET officer2_id = $2, officer2_confirmed_at = $3, status = 'complete', updated_at = NOW() \
                          WHERE station_code = $1 AND status = 'officer1_confirmed' \
@@ -698,8 +723,7 @@ impl Store {
     pub async fn list_s44a_by_county(&self, county_code: &str) -> Result<Vec<S44aRow>, StoreError> {
         match self {
             Store::Pg(pool) => {
-                let rows: Vec<(Uuid, String, String, String, DateTime<Utc>, Option<String>, Option<DateTime<Utc>>, String)> =
-                    sqlx::query_as(
+                let rows: Vec<S44aRecord> = sqlx::query_as(
                         "SELECT confirmation_id, county_code, station_code, officer1_id, \
                                 officer1_confirmed_at, officer2_id, officer2_confirmed_at, status \
                          FROM s44a_confirmations WHERE county_code = $1 ORDER BY officer1_confirmed_at DESC",
@@ -764,18 +788,7 @@ impl Store {
     }
 }
 
-fn s44a_from_tuple(
-    t: (
-        Uuid,
-        String,
-        String,
-        String,
-        DateTime<Utc>,
-        Option<String>,
-        Option<DateTime<Utc>>,
-        String,
-    ),
-) -> S44aRow {
+fn s44a_from_tuple(t: S44aRecord) -> S44aRow {
     S44aRow {
         confirmation_id: t.0,
         county_code: t.1,

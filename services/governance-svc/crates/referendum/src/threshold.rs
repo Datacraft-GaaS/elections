@@ -16,7 +16,6 @@
 ///
 /// EC-LEG-07: exactly 24 of 47 counties must have a YES majority.
 /// All arithmetic is integer-only (no floating point). Semgrep enforces this.
-
 pub const TOTAL_COUNTIES: u8 = 47;
 pub const REQUIRED_COUNTY_THRESHOLD: u8 = 24;
 

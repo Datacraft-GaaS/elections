@@ -237,8 +237,7 @@ pub fn verify_chain_with_records(
     records: &[TransmissionRecord],
 ) -> Option<usize> {
     let mut prior = "genesis".to_string();
-    let mut index = 0usize;
-    for v in verdicts {
+    for (index, v) in verdicts.iter().enumerate() {
         let Some(record) = records.iter().find(|r| r.record_id == v.record_id) else {
             return Some(index);
         };
@@ -254,7 +253,6 @@ pub fn verify_chain_with_records(
             return Some(index);
         }
         prior = v.verdict_hash.clone();
-        index += 1;
     }
     None
 }

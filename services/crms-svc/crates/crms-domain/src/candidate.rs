@@ -97,6 +97,9 @@ pub enum CandidateError {
 }
 
 impl Candidate {
+    // Flat argument list mirrors the spec's candidate-record fields; grouping
+    // them would only hide which inputs the constructor actually requires.
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         id: Uuid,
         id_number_hash: String,

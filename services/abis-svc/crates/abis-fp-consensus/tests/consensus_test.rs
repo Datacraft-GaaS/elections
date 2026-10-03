@@ -98,7 +98,7 @@ fn test_calibrator_output_in_range() {
     let cal = ScoreCalibrator::identity();
     for i in 0..=10 {
         let v = cal.calibrate(i as f32 / 10.0);
-        assert!(v >= 0.0 && v <= 1.0, "calibrated {v} out of [0,1]");
+        assert!((0.0..=1.0).contains(&v), "calibrated {v} out of [0,1]");
     }
 }
 
@@ -242,9 +242,11 @@ fn test_consensus_rejects_when_only_1_of_5_agrees() {
 
 #[test]
 fn test_consensus_accepts_when_all_thresholds_zero() {
-    let mut m = ConsensusMatcher::default();
-    m.thresholds = [0.0, 0.0, 0.0, 0.0, 0.0];
-    m.policy = MinAgreementPolicy::new(3);
+    let m = ConsensusMatcher {
+        thresholds: [0.0; 5],
+        policy: MinAgreementPolicy::new(3),
+        ..ConsensusMatcher::default()
+    };
 
     let probe = make_template(10, 0);
     let gallery = make_template(10, 0);
@@ -285,7 +287,7 @@ fn test_consensus_fused_score_in_range() {
     };
     let result = m.compare(&input).unwrap();
     assert!(
-        result.fused >= 0.0 && result.fused <= 1.0,
+        (0.0..=1.0).contains(&result.fused),
         "fused score out of [0,1]: {}",
         result.fused
     );
@@ -293,8 +295,10 @@ fn test_consensus_fused_score_in_range() {
 
 #[test]
 fn test_consensus_5_sub_matchers_with_all_inputs() {
-    let mut m = ConsensusMatcher::default();
-    m.thresholds = [0.0; 5];
+    let m = ConsensusMatcher {
+        thresholds: [0.0; 5],
+        ..ConsensusMatcher::default()
+    };
     let probe = make_template(5, 0);
     let gallery = make_template(5, 0);
     let pix = striped_pixels(64, 64, 5);
@@ -337,7 +341,7 @@ fn test_consensus_per_matcher_calibrated_in_range() {
     let result = m.compare(&input).unwrap();
     for r in &result.per_matcher {
         assert!(
-            r.calibrated_score >= 0.0 && r.calibrated_score <= 1.0,
+            (0.0..=1.0).contains(&r.calibrated_score),
             "{} calibrated_score {} out of range",
             r.name,
             r.calibrated_score
@@ -365,10 +369,12 @@ fn test_consensus_different_templates_do_not_crash() {
 
 #[test]
 fn test_consensus_policy_reported_in_decision() {
-    let mut m = ConsensusMatcher::default();
     // All matchers vote yes but policy requires 6 (impossible).
-    m.thresholds = [0.0; 5];
-    m.policy = MinAgreementPolicy::new(6); // requires 6 of N
+    let m = ConsensusMatcher {
+        thresholds: [0.0; 5],
+        policy: MinAgreementPolicy::new(6), // requires 6 of N
+        ..ConsensusMatcher::default()
+    };
 
     let probe = make_template(10, 0);
     let gallery = make_template(10, 0);
