@@ -45,7 +45,7 @@ pub fn parse_nir_bitmap(data: &[u8]) -> Result<VeinTemplate, VeinError> {
         });
     }
 
-    if &data[0..4] != MAGIC {
+    if data[0..4] != MAGIC {
         return Err(VeinError::InvalidMagic);
     }
 

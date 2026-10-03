@@ -109,7 +109,7 @@ fn plan_excludes_unavailable_steps() {
 fn executor_returns_result_per_shard() {
     let s1 = shard(100_000);
     let s2 = shard(200_000);
-    let ids = vec![s1.shard_id, s2.shard_id];
+    let ids = [s1.shard_id, s2.shard_id];
     let plan = QueryPlanner::default().plan(vec![s1, s2], 0.9).unwrap();
     let scores: Vec<(Uuid, f64)> = ids.iter().map(|&id| (id, 0.5)).collect();
     assert_eq!(execute_plan(&plan, &scores).unwrap().len(), 2);

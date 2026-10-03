@@ -26,7 +26,7 @@ pub fn score_quality(template: &GaitTemplate) -> GaitQuality {
 
     let cycle_count_score = if n == 0 {
         0.0
-    } else if n >= 3 && n <= 8 {
+    } else if (3..=8).contains(&n) {
         100.0
     } else if n < 3 {
         (n as f32 / 3.0) * 100.0
@@ -37,7 +37,7 @@ pub fn score_quality(template: &GaitTemplate) -> GaitQuality {
     };
 
     let speed = template.walking_speed_ms;
-    let speed_score = if speed >= 1.0 && speed <= 2.0 {
+    let speed_score = if (1.0..=2.0).contains(&speed) {
         100.0
     } else if speed < 1.0 {
         (speed / 1.0) * 100.0

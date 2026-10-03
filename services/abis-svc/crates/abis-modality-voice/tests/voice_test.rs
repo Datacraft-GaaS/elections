@@ -53,7 +53,7 @@ fn make_wav_buf(num_samples: usize, sample_rate: u32) -> Vec<u8> {
     buf.extend_from_slice(&(data_size as u32).to_le_bytes());
 
     // PCM samples (silent)
-    buf.extend(std::iter::repeat(0u8).take(data_size));
+    buf.extend(std::iter::repeat_n(0u8, data_size));
     buf
 }
 

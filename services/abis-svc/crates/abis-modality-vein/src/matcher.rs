@@ -81,6 +81,9 @@ pub fn match_vein(probe: &VeinTemplate, gallery: &VeinTemplate) -> Score {
 }
 
 /// Rotate and translate gallery bitmap, sampling into a probe-sized output.
+// Geometry parameters are inherently positional; grouping them would obscure
+// the sampling loop rather than clarify it.
+#[allow(clippy::too_many_arguments)]
 fn rotate_translate(
     src: &[u8],
     src_w: usize,

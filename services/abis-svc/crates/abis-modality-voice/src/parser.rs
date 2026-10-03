@@ -50,7 +50,7 @@ pub enum VoiceError {
 /// Perform an in-place radix-2 DIT FFT on complex data.
 ///
 /// Input length must be a power of 2.
-pub fn fft_inplace(data: &mut Vec<(f64, f64)>) {
+pub fn fft_inplace(data: &mut [(f64, f64)]) {
     let n = data.len();
     if n <= 1 {
         return;
@@ -234,13 +234,13 @@ pub fn extract_mfcc(pcm: &[i16], sample_rate: u32, n_mfcc: usize) -> Vec<Vec<f32
         // DCT to get MFCC.
         let n_out = n_mfcc.min(n_filters);
         let mut coeffs = vec![0.0f32; n_out];
-        for n in 0..n_out {
+        for (n, coeff) in coeffs.iter_mut().enumerate() {
             let mut sum = 0.0_f64;
-            for m in 0..n_filters {
-                sum += log_mel[m]
+            for (m, &mel) in log_mel.iter().enumerate() {
+                sum += mel
                     * (PI * n as f64 * (2.0 * m as f64 + 1.0) / (2.0 * n_filters as f64)).cos();
             }
-            coeffs[n] = sum as f32;
+            *coeff = sum as f32;
         }
 
         mfcc_frames.push(coeffs);

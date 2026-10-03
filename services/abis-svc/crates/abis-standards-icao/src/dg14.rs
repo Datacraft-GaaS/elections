@@ -33,7 +33,7 @@ impl SecurityOptions {
         let text = std::str::from_utf8(data)
             .map_err(|_| IcaoError::UnsupportedFormat("DG14 non-UTF8 data".into()))?;
         let supported_protocols = text
-            .split(|c: char| matches!(c, '\0' | '\n'))
+            .split(|c: char| ['\0', '\n'].contains(&c))
             .filter(|s| !s.is_empty())
             .map(|s| s.to_string())
             .collect();

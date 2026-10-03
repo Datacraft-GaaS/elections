@@ -43,7 +43,7 @@ pub fn parse_periocular(data: &[u8]) -> Result<PeriocularTemplate, PeriocularErr
         });
     }
 
-    if &data[0..4] != MAGIC {
+    if data[0..4] != MAGIC {
         return Err(PeriocularError::InvalidMagic);
     }
 
