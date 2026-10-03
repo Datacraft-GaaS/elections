@@ -196,8 +196,8 @@ impl OcclusionRobustMatcher {
                 OcclusionType::Other => (0, EMBED_DIM, 0.8),
                 OcclusionType::None => continue,
             };
-            for i in start..end {
-                gate[i] = gate[i].min(weight);
+            for g in &mut gate[start..end] {
+                *g = g.min(weight);
             }
         }
         gate

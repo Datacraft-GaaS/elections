@@ -61,7 +61,7 @@ impl FpMatcher for SyntheticMatcher {
 
     fn compare(&self, probe: &Template, gallery: &Template) -> Result<f32, FpVteError> {
         // Simple synthetic score: fraction of matching bytes in the first 64 bytes.
-        let len = probe.len().min(gallery.len()).min(64).max(1);
+        let len = probe.len().min(gallery.len()).clamp(1, 64);
         let matching = probe[..len]
             .iter()
             .zip(gallery[..len].iter())

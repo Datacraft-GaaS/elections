@@ -100,8 +100,8 @@ pub fn otsu_threshold(pixels: &[u8]) -> u8 {
     let mut w_bg = 0u64;
     let mut best_var = 0.0f64;
     let mut best_t = 128u8;
-    for t in 0..256usize {
-        w_bg += hist[t];
+    for (t, &h) in hist.iter().enumerate() {
+        w_bg += h;
         if w_bg == 0 {
             continue;
         }
@@ -109,7 +109,7 @@ pub fn otsu_threshold(pixels: &[u8]) -> u8 {
         if w_fg == 0 {
             break;
         }
-        sum_bg += t as f64 * hist[t] as f64;
+        sum_bg += t as f64 * h as f64;
         let mean_bg = sum_bg / w_bg as f64;
         let mean_fg = (sum_total - sum_bg) / w_fg as f64;
         let var = w_bg as f64 * w_fg as f64 * (mean_bg - mean_fg).powi(2);
@@ -202,7 +202,7 @@ pub fn segment_slap(
     boundaries.push(image.width);
 
     // We need exactly n_fingers segments.
-    let segments = if boundaries.len() >= n_fingers + 1 {
+    let segments = if boundaries.len() > n_fingers {
         // Use the first n_fingers+1 boundaries.
         boundaries.truncate(n_fingers + 1);
         boundaries

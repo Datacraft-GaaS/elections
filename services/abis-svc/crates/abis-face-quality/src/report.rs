@@ -48,6 +48,7 @@ impl QualityReport {
     /// Compute the overall score as a weighted harmonic mean of all metrics.
     ///
     /// Weights reflect relative importance per ISO 29794-5 Annex B guidance.
+    #[allow(clippy::too_many_arguments)]
     pub fn compute_overall(
         sharpness: f32,
         resolution: f32,

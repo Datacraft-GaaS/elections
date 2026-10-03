@@ -148,6 +148,8 @@ impl QualityPolicy {
 }
 
 /// Build a default report for policy testing with a specific angle set.
+// One parameter per ISO 29794-5 metric; bundling them would obscure the metric set.
+#[allow(clippy::too_many_arguments)]
 pub fn make_report(
     sharpness: f32,
     resolution: f32,

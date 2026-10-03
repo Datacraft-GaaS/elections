@@ -205,8 +205,8 @@ impl FpVteHarness {
             for rank in 0..self.config.max_rank {
                 if rank < scores.len() && scores[rank].1 == probe.subject_id {
                     // Hit at this rank and all lower ranks.
-                    for r in rank..self.config.max_rank {
-                        rank_hits[r] += 1;
+                    for hit in &mut rank_hits[rank..] {
+                        *hit += 1;
                     }
                     break;
                 }

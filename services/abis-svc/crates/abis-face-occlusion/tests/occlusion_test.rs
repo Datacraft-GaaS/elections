@@ -183,8 +183,8 @@ fn hijab_reduces_false_rejects() {
     let matcher = OcclusionRobustMatcher::default();
     // Two embeddings that are identical except upper-third noise due to hijab.
     let mut a = vec![0.0f32; EMBED_DIM];
-    for i in 0..EMBED_DIM {
-        a[i] = if i < EMBED_DIM / 3 { 0.01 } else { 1.0 };
+    for (i, v) in a.iter_mut().enumerate() {
+        *v = if i < EMBED_DIM / 3 { 0.01 } else { 1.0 };
     }
     let norm: f32 = a.iter().map(|x| x * x).sum::<f32>().sqrt().max(1e-9);
     a.iter_mut().for_each(|x| *x /= norm);

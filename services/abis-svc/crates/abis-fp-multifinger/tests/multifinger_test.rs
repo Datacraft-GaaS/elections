@@ -80,7 +80,7 @@ fn test_otsu_bimodal_image() {
     let t = otsu_threshold(&pixels);
     // Threshold should fall between the two peaks.
     assert!(
-        t >= 50 && t < 200,
+        (50..200).contains(&t),
         "Otsu threshold={t} should be between 50 and 200 for bimodal input"
     );
 }

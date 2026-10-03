@@ -101,7 +101,7 @@ impl CrossDomainAligner {
         // Per-dimension linear scale: scale[d] = mean(dst[:,d]) / mean(src[:,d]).
         let n = src_samples.len() as f32;
         let mut scales = vec![1.0f32; EMBED_DIM];
-        for d in 0..EMBED_DIM {
+        for (d, scale) in scales.iter_mut().enumerate() {
             let src_mean: f32 = src_samples
                 .iter()
                 .map(|v| v.get(d).copied().unwrap_or(0.0))
@@ -112,7 +112,7 @@ impl CrossDomainAligner {
                 .map(|v| v.get(d).copied().unwrap_or(0.0))
                 .sum::<f32>()
                 / n;
-            scales[d] = if src_mean.abs() > 1e-9 {
+            *scale = if src_mean.abs() > 1e-9 {
                 dst_mean / src_mean
             } else {
                 1.0
