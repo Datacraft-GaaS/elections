@@ -17,6 +17,19 @@ use axum::{extract::State, routing::get, Json, Router};
 use chrono::{DateTime, Utc};
 use serde_json::{json, Value};
 
+/// Row shape of `register_snapshots`, matching the SELECT in
+/// [`list_snapshots`].
+type SnapshotRow = (
+    String,
+    String,
+    i32,
+    i64,
+    String,
+    String,
+    Option<String>,
+    DateTime<Utc>,
+);
+
 pub fn router() -> Router<AppState> {
     Router::new().route("/v1/cvr/snapshots", get(list_snapshots))
 }
@@ -26,16 +39,7 @@ pub fn router() -> Router<AppState> {
 /// Most recent register snapshots from the `register_snapshots` table
 /// (created by migration V3), newest first.
 async fn list_snapshots(State(state): State<AppState>) -> Result<Json<Value>, ApiError> {
-    let rows: Vec<(
-        String,
-        String,
-        i32,
-        i64,
-        String,
-        String,
-        Option<String>,
-        DateTime<Utc>,
-    )> = sqlx::query_as(
+    let rows: Vec<SnapshotRow> = sqlx::query_as(
         "SELECT snapshot_id, election_scope, station_count, voter_count, merkle_root, \
          signed_by, checkpoint, created_at \
          FROM register_snapshots \

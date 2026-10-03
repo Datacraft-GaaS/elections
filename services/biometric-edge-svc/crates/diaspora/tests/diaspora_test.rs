@@ -66,8 +66,8 @@ fn roll_freeze_is_idempotent() {
 
 #[test]
 fn roll_hash_is_deterministic_and_order_independent() {
-    let h1 = snapshot_hash(&mut vec!["C".into(), "A".into(), "B".into()]);
-    let h2 = snapshot_hash(&mut vec!["A".into(), "B".into(), "C".into()]);
+    let h1 = snapshot_hash(&mut ["C".into(), "A".into(), "B".into()]);
+    let h2 = snapshot_hash(&mut ["A".into(), "B".into(), "C".into()]);
     assert_eq!(h1, h2);
     assert_eq!(h1.len(), 64); // hex blake3 output
 }

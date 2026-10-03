@@ -83,6 +83,10 @@ impl HsmSignerService {
 // Proto KeyRole <-> eel_crypto_rs::KeyRole conversion
 // ---------------------------------------------------------------------------
 
+// tonic::Status is a large Err variant by design; these conversions return it
+// because they cross the gRPC boundary. Boxing it would change the ceremony
+// error path for no benefit.
+#[allow(clippy::result_large_err)]
 fn proto_role_to_crypto(r: i32) -> Result<KeyRole, Status> {
     use proto::KeyRole as PR;
     match PR::try_from(r).unwrap_or(PR::Unspecified) {
@@ -104,6 +108,7 @@ fn role_label(role: KeyRole) -> &'static str {
 // Rate limiting helper
 // ---------------------------------------------------------------------------
 
+#[allow(clippy::result_large_err)]
 fn check_rate(limiters: &RoleLimiters, role: KeyRole) -> Result<(), Status> {
     limiters.check(role).map_err(|retry_after| {
         metrics()
@@ -213,7 +218,7 @@ impl HsmSigner for HsmSignerService {
         if role == KeyRole::CycleKek && !req.ceremony_id.is_empty() {
             self.ceremonies
                 .assert_approved(&req.ceremony_id)
-                .map_err(|e| Status::failed_precondition(e))?;
+                .map_err(Status::failed_precondition)?;
         }
 
         check_rate(&self.limiters, role)?;

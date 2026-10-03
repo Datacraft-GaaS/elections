@@ -22,10 +22,10 @@
 //!
 //! - inside window            -> `Decision::Open` (proceed unchanged)
 //! - outside, within skew     -> `Decision::Review { drift_secs }`
-//!                               (proceed but flagged for human review)
+//!   (proceed but flagged for human review)
 //! - outside, beyond hard limit -> reject (`BeforePoll` / `AfterPoll`)
 //! - window unset             -> `Decision::Open` (behaviour identical to
-//!                               today; existing deployments unaffected)
+//!   today; existing deployments unaffected)
 
 use std::sync::OnceLock;
 

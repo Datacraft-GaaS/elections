@@ -68,7 +68,7 @@ pub async fn get_voter_station<S: BviStore>(
 
     // Canary tripwire on BOTH outcomes; the caller-visible response below is
     // byte-for-byte identical whether or not this fires.
-    let response = match lookup {
+    match lookup {
         Some(station) => {
             canaries::observe_lookup(&voter_id, "found");
             Ok(Json(station))
@@ -77,8 +77,7 @@ pub async fn get_voter_station<S: BviStore>(
             canaries::observe_lookup(&voter_id, "not_found");
             Err(ApiError::not_found(INSTANCE))
         }
-    };
-    response
+    }
 }
 
 /// SHA-256 of a request header (hex), or of the literal "absent" when unset.

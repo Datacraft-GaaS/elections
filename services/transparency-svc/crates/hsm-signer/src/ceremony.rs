@@ -314,7 +314,7 @@ impl CeremonyStore {
             .ok_or_else(|| format!("ceremony {ceremony_id} not found"))?;
 
         if ceremony.state != CeremonyState::Approved {
-            return Err(format!("ceremony not in Approved state"));
+            return Err("ceremony not in Approved state".to_string());
         }
         ceremony.state = CeremonyState::Executing;
         Ok(())

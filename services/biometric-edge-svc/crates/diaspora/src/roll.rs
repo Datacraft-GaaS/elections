@@ -49,7 +49,7 @@ impl DiasporaRoll {
 
 /// Compute a BLAKE3 hash over a sorted list of voter IDs (strings).
 /// Produces a deterministic 64-character hex digest.
-pub fn snapshot_hash(voter_ids: &mut Vec<String>) -> String {
+pub fn snapshot_hash(voter_ids: &mut [String]) -> String {
     voter_ids.sort_unstable();
     let mut hasher = Hasher::new();
     for id in voter_ids.iter() {
@@ -91,15 +91,15 @@ mod tests {
 
     #[test]
     fn hash_is_order_independent() {
-        let h1 = snapshot_hash(&mut vec!["B".into(), "A".into(), "C".into()]);
-        let h2 = snapshot_hash(&mut vec!["A".into(), "C".into(), "B".into()]);
+        let h1 = snapshot_hash(&mut ["B".into(), "A".into(), "C".into()]);
+        let h2 = snapshot_hash(&mut ["A".into(), "C".into(), "B".into()]);
         assert_eq!(h1, h2);
     }
 
     #[test]
     fn hash_changes_with_different_voters() {
-        let h1 = snapshot_hash(&mut vec!["V001".into()]);
-        let h2 = snapshot_hash(&mut vec!["V002".into()]);
+        let h1 = snapshot_hash(&mut ["V001".into()]);
+        let h2 = snapshot_hash(&mut ["V002".into()]);
         assert_ne!(h1, h2);
     }
 }

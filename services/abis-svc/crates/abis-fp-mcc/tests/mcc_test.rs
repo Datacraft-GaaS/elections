@@ -104,7 +104,7 @@ fn test_cylinder_bit_vector_length() {
     let cyls = build_mcc(&t, &params);
     let ns = params.ns as usize;
     let nd = params.nd as usize;
-    let expected_bytes = (ns * ns * nd + 7) / 8;
+    let expected_bytes = (ns * ns * nd).div_ceil(8);
     for c in &cyls {
         assert_eq!(c.cells.len(), expected_bytes);
     }
@@ -145,8 +145,10 @@ fn test_popcount_consistency() {
 
 #[test]
 fn test_radius_stored_correctly() {
-    let mut params = MccParams::default();
-    params.radius = 55.0;
+    let params = MccParams {
+        radius: 55.0,
+        ..MccParams::default()
+    };
     let t = synth_template_20();
     let cyls = build_mcc(&t, &params);
     for c in &cyls {
@@ -266,8 +268,11 @@ fn test_disjoint_templates_low_score() {
         })
         .collect();
 
-    let mut params = MccParams::default();
-    params.sigma_d = std::f32::consts::PI / 12.0; // tighter directional bins for more discrimination
+    // Tighter directional bins for more discrimination.
+    let params = MccParams {
+        sigma_d: std::f32::consts::PI / 12.0,
+        ..MccParams::default()
+    };
     let matcher = MccMatcher::new(params);
 
     let t1 = FingerprintTemplate::from_minutiae(FingerPosition::RightIndex, t1_minutiae);
@@ -334,8 +339,10 @@ fn test_local_similarity_range() {
 #[test]
 fn test_custom_params_smaller_radius() {
     let t = synth_template_20();
-    let mut params = MccParams::default();
-    params.radius = 40.0;
+    let params = MccParams {
+        radius: 40.0,
+        ..MccParams::default()
+    };
     let cyls = build_mcc(&t, &params);
     assert_eq!(cyls.len(), 20);
 }

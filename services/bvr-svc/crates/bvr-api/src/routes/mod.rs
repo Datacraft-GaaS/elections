@@ -30,7 +30,7 @@ pub fn router() -> Router<crate::state::AppState> {
     // Seeded as `Router<AppState>` so the stateful sub-routers can be merged: a
     // bare `Router::new()` is `Router<()>` and will not accept them, and a
     // `let` annotation does not propagate into the method chain.
-    let router = Router::<crate::state::AppState>::new()
+    Router::<crate::state::AppState>::new()
         .merge(health::router())
         .merge(enrolments::router())
         .merge(voters::router())
@@ -39,6 +39,5 @@ pub fn router() -> Router<crate::state::AppState> {
         .merge(sar::router())
         .merge(merkle::router())
         .merge(adjudication::router())
-        .merge(handoff::router());
-    router
+        .merge(handoff::router())
 }

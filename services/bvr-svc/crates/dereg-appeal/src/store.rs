@@ -345,7 +345,7 @@ impl DeregStore {
                                 ),
                                 None => format!("Appeal yako iko ({status})."),
                             };
-                            format!("{outcome}")
+                            outcome
                         }
                         0 => format!("Hakuna appeal yenye kumbukumbu {reference}."),
                         n => format!(

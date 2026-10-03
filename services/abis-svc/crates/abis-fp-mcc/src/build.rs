@@ -32,7 +32,7 @@ pub fn build_mcc(template: &FingerprintTemplate, params: &MccParams) -> Vec<Minu
     let ns = params.ns as usize;
     let nd = params.nd as usize;
     let cell_count = ns * ns * nd;
-    let byte_count = (cell_count + 7) / 8;
+    let byte_count = cell_count.div_ceil(8);
     let cell_size = (2.0 * params.radius) / ns as f32;
 
     template
@@ -55,6 +55,8 @@ pub fn build_mcc(template: &FingerprintTemplate, params: &MccParams) -> Vec<Minu
         .collect()
 }
 
+// Argument order mirrors the eq. (1)-(5) inputs of Cappelli 2010; kept explicit over a params struct.
+#[allow(clippy::too_many_arguments)]
 fn build_cylinder(
     minutia_ref: usize,
     mi: &Minutia,
@@ -92,8 +94,7 @@ fn build_cylinder(
             let px = mi.x as f32 + ck * cos_i - cl * sin_i;
             let py = mi.y as f32 + ck * sin_i + cl * cos_i;
 
-            for j in 0..nd {
-                let phi_j = dir_centers[j];
+            for (j, &phi_j) in dir_centers.iter().enumerate() {
                 let contrib = sum_contributions(minutiae, mi, px, py, phi_j, params);
 
                 if contrib >= params.mu_psi {

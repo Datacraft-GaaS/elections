@@ -47,6 +47,18 @@ use std::sync::{Arc, Mutex};
 use serde::Serialize;
 use sqlx::PgPool;
 
+/// Row shape of the latest published Merkle root, matching the SELECT in
+/// [`Store::latest_merkle_root`].
+type LatestMerkleRootRow = (
+    String,
+    Option<i64>,
+    String,
+    String,
+    Option<String>,
+    Option<String>,
+    String,
+);
+
 /// The register status values, per the contract's enum.
 pub const STATUSES: [&str; 5] = ["active", "suspended", "deregistered", "pending", "deceased"];
 
@@ -392,15 +404,7 @@ impl BvrStore {
             // this root; `merkle_roots` alone has neither. `signed_by_hsm` records
             // the signing key, so it is read as a signature only when it is present
             // -- an absent signature is reported as absent, never invented.
-            let row: Option<(
-                String,
-                Option<i64>,
-                String,
-                String,
-                Option<String>,
-                Option<String>,
-                String,
-            )> = sqlx::query_as(
+            let row: Option<LatestMerkleRootRow> = sqlx::query_as(
                 "SELECT m.root_hash, s.voter_count, m.created_at, m.election_scope, \
                             m.signed_by_hsm, s.snapshot_id, m.seq::TEXT \
                      FROM merkle_roots m \

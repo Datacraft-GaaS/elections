@@ -18,6 +18,19 @@ use chrono::{DateTime, Utc};
 use serde_json::{json, Value};
 use uuid::Uuid;
 
+/// Row shape of `eel_voter_register_events`, matching the SELECT in
+/// [`list_events`].
+type RegisterEventRow = (
+    Uuid,
+    Uuid,
+    String,
+    String,
+    Option<f32>,
+    String,
+    Option<DateTime<Utc>>,
+    DateTime<Utc>,
+);
+
 pub fn router() -> Router<AppState> {
     Router::new().route("/v1/cvr/events", get(list_events))
 }
@@ -27,16 +40,7 @@ pub fn router() -> Router<AppState> {
 /// Most recent voter-register events from `eel_voter_register_events`
 /// (created by migration V050), newest first.
 async fn list_events(State(state): State<AppState>) -> Result<Json<Value>, ApiError> {
-    let rows: Vec<(
-        Uuid,
-        Uuid,
-        String,
-        String,
-        Option<f32>,
-        String,
-        Option<DateTime<Utc>>,
-        DateTime<Utc>,
-    )> = sqlx::query_as(
+    let rows: Vec<RegisterEventRow> = sqlx::query_as(
         "SELECT event_id, voter_id, event_type, source, confidence_score, decision, \
          resolved_at, created_at \
          FROM eel_voter_register_events \

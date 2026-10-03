@@ -23,16 +23,9 @@ use crate::consolidate::global_similarity;
 use crate::params::MccParams;
 
 /// MCC matcher: builds cylinders for both templates and runs LSSR consolidation.
+#[derive(Default)]
 pub struct MccMatcher {
     pub params: MccParams,
-}
-
-impl Default for MccMatcher {
-    fn default() -> Self {
-        Self {
-            params: MccParams::default(),
-        }
-    }
 }
 
 impl MccMatcher {

@@ -634,7 +634,7 @@ impl BviStore for PgStore {
             "#,
         )
         .bind(&audit.actor_session_hash)
-        .bind(&sha256_hex(voter_id.as_bytes()))
+        .bind(sha256_hex(voter_id.as_bytes()))
         .bind(&audit.ip_hash)
         .bind(if row.is_some() { "found" } else { "not_found" })
         .execute(tx.as_mut())
