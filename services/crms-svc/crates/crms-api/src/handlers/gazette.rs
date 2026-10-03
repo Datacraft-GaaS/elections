@@ -57,9 +57,7 @@ pub async fn publish_gazette(
     Path(id): Path<Uuid>,
 ) -> Result<Json<Gazette>> {
     let mut guard = state.gazettes.lock().map_err(|_| lock_err())?;
-    let gazette = guard
-        .get_mut(&id)
-        .ok_or_else(|| not_found("gazette", id))?;
+    let gazette = guard.get_mut(&id).ok_or_else(|| not_found("gazette", id))?;
     gazette.publish();
     let g = gazette.clone();
     drop(guard);
@@ -84,7 +82,11 @@ pub async fn gazette_csv(
         .get(&id)
         .cloned()
         .ok_or_else(|| not_found("gazette", id))?;
-    Ok(([(header::CONTENT_TYPE, "text/csv; charset=utf-8")], gazette.to_csv()).into_response())
+    Ok((
+        [(header::CONTENT_TYPE, "text/csv; charset=utf-8")],
+        gazette.to_csv(),
+    )
+        .into_response())
 }
 
 /// Export a signed JSON gazette.

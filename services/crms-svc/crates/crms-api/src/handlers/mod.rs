@@ -46,8 +46,8 @@ use crms_domain::primaries::PrimaryDispute;
 use crms_domain::primaries::PrimaryResult;
 use crms_domain::quota::evaluate_quota;
 use crms_domain::quota::QuotaStatus;
-use crms_domain::symbol::PartySymbol;
 use crms_domain::symbol::check_symbol_availability;
+use crms_domain::symbol::PartySymbol;
 
 use crate::models::*;
 use crate::state::AppState;
@@ -78,12 +78,10 @@ impl IntoResponse for ApiError {
                 404,
             )
             .with_detail(d),
-            ApiError::Conflict(d) => Problem::new(
-                eel_api_server_rs::ProblemType::conflict(),
-                "Conflict",
-                409,
-            )
-            .with_detail(d),
+            ApiError::Conflict(d) => {
+                Problem::new(eel_api_server_rs::ProblemType::conflict(), "Conflict", 409)
+                    .with_detail(d)
+            }
             ApiError::Unprocessable(d) => Problem::new(
                 eel_api_server_rs::ProblemType::unprocessable(),
                 "Unprocessable",
@@ -125,31 +123,30 @@ fn not_found(kind: &str, id: Uuid) -> ApiError {
     ApiError::NotFound(format!("{kind} {id}"))
 }
 
-
-pub mod candidate;
-pub mod nomination;
-pub mod clearance;
-pub mod quota;
-pub mod public;
-pub mod spec;
-pub mod gazette;
 pub mod ballot;
-pub mod party;
+pub mod candidate;
+pub mod clearance;
 pub mod coalition;
-pub mod primaries;
-pub mod payment;
-pub mod symbol;
 pub mod events;
+pub mod gazette;
+pub mod nomination;
+pub mod party;
+pub mod payment;
+pub mod primaries;
+pub mod public;
+pub mod quota;
+pub mod spec;
+pub mod symbol;
 
-pub use candidate::*;
-pub use nomination::*;
-pub use clearance::*;
-pub use quota::*;
-pub use gazette::*;
 pub use ballot::*;
-pub use party::*;
+pub use candidate::*;
+pub use clearance::*;
 pub use coalition::*;
-pub use primaries::*;
-pub use payment::*;
-pub use symbol::*;
 pub use events::*;
+pub use gazette::*;
+pub use nomination::*;
+pub use party::*;
+pub use payment::*;
+pub use primaries::*;
+pub use quota::*;
+pub use symbol::*;

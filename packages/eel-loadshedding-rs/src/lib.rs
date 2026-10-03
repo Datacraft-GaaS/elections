@@ -22,13 +22,13 @@
 #![warn(missing_docs)]
 
 pub mod error;
-pub mod priority;
-pub mod metrics;
-pub mod shedder;
 pub mod layer;
+pub mod metrics;
+pub mod priority;
+pub mod shedder;
 
 pub use error::ShedError;
-pub use priority::Priority;
-pub use metrics::{ShedMetrics, MetricsSnapshot};
-pub use shedder::{CoDelConfig, CoDelShedder};
 pub use layer::{LoadSheddingLayer, LoadSheddingService};
+pub use metrics::{MetricsSnapshot, ShedMetrics};
+pub use priority::Priority;
+pub use shedder::{CoDelConfig, CoDelShedder};

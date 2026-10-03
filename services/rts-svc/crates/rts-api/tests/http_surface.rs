@@ -66,10 +66,7 @@ async fn send(
         }
         None => Body::empty(),
     };
-    app.clone()
-        .oneshot(b.body(payload).unwrap())
-        .await
-        .unwrap()
+    app.clone().oneshot(b.body(payload).unwrap()).await.unwrap()
 }
 
 /// A consistent Form 34A: 400 valid, 20 rejected, 5 spoilt, 425 cast, 500
@@ -100,7 +97,11 @@ async fn submit(app: &axum::Router, station: &str, constituency: &str) -> Uuidis
         Some(form34a(station, constituency)),
     )
     .await;
-    assert_eq!(resp.status(), StatusCode::ACCEPTED, "a consistent form is accepted");
+    assert_eq!(
+        resp.status(),
+        StatusCode::ACCEPTED,
+        "a consistent form is accepted"
+    );
     let body = body_json(resp).await;
     assert_eq!(body["status"], "accepted");
     body["form_id"].as_str().unwrap().to_string()
@@ -120,7 +121,10 @@ async fn a_form_34a_whose_numbers_disagree_is_rejected() {
     bad["registered_voters"] = json!(600);
     let resp = send(&app, "POST", "/api/v1/rts/forms", Some(bad)).await;
     assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY);
-    let detail = body_json(resp).await["detail"].as_str().unwrap_or_default().to_string();
+    let detail = body_json(resp).await["detail"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
     assert!(
         detail.contains("candidate votes total"),
         "the reason should name the mismatch: {detail}"
@@ -134,7 +138,10 @@ async fn votes_cast_must_reconcile_against_valid_rejected_and_spoilt() {
     bad["votes_cast"] = json!(10);
     let resp = send(&app, "POST", "/api/v1/rts/forms", Some(bad)).await;
     assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY);
-    let detail = body_json(resp).await["detail"].as_str().unwrap_or_default().to_string();
+    let detail = body_json(resp).await["detail"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
     assert!(detail.contains("votes_cast"), "{detail}");
 }
 
@@ -167,7 +174,8 @@ async fn a_form_proof_carries_a_real_root_that_verifies() {
     // The leaf set, read back from the audit trail in arrival order.
     let mut leaves: Vec<Vec<u8>> = Vec::new();
     for id in [&a, &b, &c] {
-        let audit = body_json(send(&app, "GET", &format!("/api/v1/rts/audit/{id}"), None).await).await;
+        let audit =
+            body_json(send(&app, "GET", &format!("/api/v1/rts/audit/{id}"), None).await).await;
         leaves.push(audit["leaf_hash"].as_str().unwrap().as_bytes().to_vec());
     }
     let refs: Vec<&[u8]> = leaves.iter().map(|l| l.as_slice()).collect();
@@ -175,12 +183,15 @@ async fn a_form_proof_carries_a_real_root_that_verifies() {
     let expected_root = hex::encode(tree.root());
 
     for (id, leaf) in [(&a, &leaves[0]), (&b, &leaves[1]), (&c, &leaves[2])] {
-        let proof = body_json(
-            send(&app, "GET", &format!("/api/v1/rts/forms/{id}/proof"), None).await,
-        )
-        .await;
+        let proof =
+            body_json(send(&app, "GET", &format!("/api/v1/rts/forms/{id}/proof"), None).await)
+                .await;
         let root = proof["merkle_root"].as_str().unwrap();
-        assert_ne!(root, "0".repeat(64), "the zero root is not a Merkle root of anything");
+        assert_ne!(
+            root,
+            "0".repeat(64),
+            "the zero root is not a Merkle root of anything"
+        );
         assert_eq!(root, expected_root, "every proof reports the same root");
         assert_eq!(root.len(), 64);
         assert_eq!(proof["tree_size"], 3);
@@ -200,8 +211,12 @@ async fn a_form_proof_carries_a_real_root_that_verifies() {
             })
             .collect();
         assert!(
-            tree.verify_inclusion(proof["leaf_index"].as_u64().unwrap() as usize, leaf.as_slice(), &path)
-                .is_ok(),
+            tree.verify_inclusion(
+                proof["leaf_index"].as_u64().unwrap() as usize,
+                leaf.as_slice(),
+                &path
+            )
+            .is_ok(),
             "the served proof for {id} must verify against the served root"
         );
     }
@@ -225,10 +240,8 @@ async fn a_proof_does_not_claim_transparency_log_inclusion() {
     // A real root over this process's forms is not an append-only-log proof.
     let app = app();
     let id = submit(&app, "STN001", "047").await;
-    let proof = body_json(
-        send(&app, "GET", &format!("/api/v1/rts/forms/{id}/proof"), None).await,
-    )
-    .await;
+    let proof =
+        body_json(send(&app, "GET", &format!("/api/v1/rts/forms/{id}/proof"), None).await).await;
     assert_eq!(proof["tlog_inclusion_proven"], false);
 }
 
@@ -270,7 +283,8 @@ async fn a_submitted_form_is_acknowledged() {
     let audit = body_json(send(&app, "GET", &format!("/api/v1/rts/audit/{id}"), None).await).await;
     let scan_id = audit["scan_id"].as_str().unwrap().to_string();
 
-    let ack = body_json(send(&app, "GET", &format!("/api/v1/rts/acks/{scan_id}"), None).await).await;
+    let ack =
+        body_json(send(&app, "GET", &format!("/api/v1/rts/acks/{scan_id}"), None).await).await;
     assert_eq!(ack["status"], "received");
     assert_eq!(ack["form_id"], id.as_str());
 }
@@ -336,7 +350,8 @@ async fn a_constituency_snapshot_consolidates_the_forms_it_received() {
     submit(&app, "STN001", "047").await;
     submit(&app, "STN002", "047").await;
 
-    let snap = body_json(send(&app, "GET", "/api/v1/rts/snapshots/constituency/047", None).await).await;
+    let snap =
+        body_json(send(&app, "GET", "/api/v1/rts/snapshots/constituency/047", None).await).await;
     let form34c = &snap["form34c"];
     assert_eq!(form34c["constituency_code"], "047");
     assert_eq!(form34c["stations_reporting"].as_array().unwrap().len(), 2);
@@ -402,7 +417,8 @@ async fn a_token_is_bound_to_its_request_and_expires() {
     assert!(token.starts_with("rts-token-sha256:"), "got {token}");
     assert_ne!(token, "rts-token-stub");
 
-    let expires = chrono::DateTime::parse_from_rfc3339(issued["expires_at"].as_str().unwrap()).unwrap();
+    let expires =
+        chrono::DateTime::parse_from_rfc3339(issued["expires_at"].as_str().unwrap()).unwrap();
     let hours = (expires.with_timezone(&chrono::Utc) - chrono::Utc::now()).num_hours();
     assert!(
         (23..=24).contains(&hours),
@@ -439,7 +455,13 @@ async fn a_token_is_bound_to_its_request_and_expires() {
 #[tokio::test]
 async fn a_token_requires_a_device_and_svid() {
     let app = app();
-    let resp = send(&app, "POST", "/api/v1/rts/tokens", Some(json!({"device_id": "  ", "svid": "s"}))).await;
+    let resp = send(
+        &app,
+        "POST",
+        "/api/v1/rts/tokens",
+        Some(json!({"device_id": "  ", "svid": "s"})),
+    )
+    .await;
     assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY);
 }
 
@@ -484,7 +506,13 @@ async fn an_event_envelope_needs_an_id_and_a_type() {
         json!({"id": "evt-1"}),
         json!({"id": "  ", "type": "  "}),
     ] {
-        let resp = send(&app, "POST", "/api/v1/rts/events", Some(json!({"envelope": envelope}))).await;
+        let resp = send(
+            &app,
+            "POST",
+            "/api/v1/rts/events",
+            Some(json!({"envelope": envelope})),
+        )
+        .await;
         assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY);
     }
 }
@@ -533,17 +561,32 @@ async fn a_compilation_job_is_recorded_and_says_why_it_cannot_finish() {
     // nothing at all.
     let app = app();
     let job = body_json(
-        send(&app, "POST", "/api/v1/rts/forms/34c", Some(json!({"scope": "047"}))).await,
+        send(
+            &app,
+            "POST",
+            "/api/v1/rts/forms/34c",
+            Some(json!({"scope": "047"})),
+        )
+        .await,
     )
     .await;
     assert_eq!(job["form_kind"], "34C");
     assert_eq!(job["status"], "queued");
     assert!(!job["job_id"].is_null());
     let reason = job["blocking_reason"].as_str().unwrap_or_default();
-    assert!(reason.contains("HSM"), "the reason should name what is absent: {reason:?}");
+    assert!(
+        reason.contains("HSM"),
+        "the reason should name what is absent: {reason:?}"
+    );
 
     let other = body_json(
-        send(&app, "POST", "/api/v1/rts/forms/34b", Some(json!({"scope": "047"}))).await,
+        send(
+            &app,
+            "POST",
+            "/api/v1/rts/forms/34b",
+            Some(json!({"scope": "047"})),
+        )
+        .await,
     )
     .await;
     assert_ne!(other["job_id"], job["job_id"]);
@@ -651,7 +694,11 @@ async fn the_countersigning_officers_own_token_resolves_the_dispute() {
         Some(json!({"resolution": "overturned", "countersign_token": token})),
     )
     .await;
-    assert_eq!(again.status(), StatusCode::CONFLICT, "a dispute resolves once");
+    assert_eq!(
+        again.status(),
+        StatusCode::CONFLICT,
+        "a dispute resolves once"
+    );
 }
 
 #[tokio::test]

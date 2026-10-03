@@ -1086,13 +1086,15 @@ impl Store {
                             created_at,
                             request_json,
                         )| {
-                            let request: crate::spec::ShortfallRequest =
-                                serde_json::from_value(request_json).unwrap_or(crate::spec::ShortfallRequest {
-                                    constituency_code: constituency_code.clone(),
-                                    item: item.clone(),
-                                    quantity: quantity as u32,
-                                    reported_by_hash: reported_by_hash.clone(),
-                                });
+                            let request: crate::spec::ShortfallRequest = serde_json::from_value(
+                                request_json,
+                            )
+                            .unwrap_or(crate::spec::ShortfallRequest {
+                                constituency_code: constituency_code.clone(),
+                                item: item.clone(),
+                                quantity: quantity as u32,
+                                reported_by_hash: reported_by_hash.clone(),
+                            });
                             crate::spec::Shortfall {
                                 shortfall_id,
                                 status,

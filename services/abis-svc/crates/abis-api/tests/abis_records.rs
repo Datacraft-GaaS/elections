@@ -74,10 +74,7 @@ async fn send(
         }
         None => Body::empty(),
     };
-    app.clone()
-        .oneshot(b.body(payload).unwrap())
-        .await
-        .unwrap()
+    app.clone().oneshot(b.body(payload).unwrap()).await.unwrap()
 }
 
 /// Create a job and return its id.
@@ -93,8 +90,15 @@ async fn create_job(app: &axum::Router, subject: &str, modalities: &[&str]) -> S
         })),
     )
     .await;
-    assert_eq!(resp.status(), StatusCode::ACCEPTED, "a job must be accepted");
-    body_json(resp).await["job_id"].as_str().unwrap().to_string()
+    assert_eq!(
+        resp.status(),
+        StatusCode::ACCEPTED,
+        "a job must be accepted"
+    );
+    body_json(resp).await["job_id"]
+        .as_str()
+        .unwrap()
+        .to_string()
 }
 
 // ---------------------------------------------------------------------------
@@ -159,7 +163,13 @@ async fn two_jobs_have_different_subjects() {
 async fn a_quality_report_for_an_unknown_job_is_404() {
     // The old handler returned `overall_pass: true` for any id.
     let app = app();
-    let resp = send(&app, "GET", "/v1/enrolment/jobs/job-nope/quality-report", None).await;
+    let resp = send(
+        &app,
+        "GET",
+        "/v1/enrolment/jobs/job-nope/quality-report",
+        None,
+    )
+    .await;
     assert_eq!(resp.status(), StatusCode::NOT_FOUND);
 }
 
@@ -199,12 +209,28 @@ async fn an_unknown_job_cannot_be_withdrawn() {
 async fn a_queued_job_can_be_withdrawn_once() {
     let app = app();
     let id = create_job(&app, "subject-abc", &["fingerprint"]).await;
-    let first = send(&app, "PATCH", &format!("/v1/enrolment/jobs/{id}/withdraw"), None).await;
+    let first = send(
+        &app,
+        "PATCH",
+        &format!("/v1/enrolment/jobs/{id}/withdraw"),
+        None,
+    )
+    .await;
     assert_eq!(first.status(), StatusCode::OK);
     assert_eq!(body_json(first).await["status"], "withdrawn");
 
-    let second = send(&app, "PATCH", &format!("/v1/enrolment/jobs/{id}/withdraw"), None).await;
-    assert_ne!(second.status(), StatusCode::OK, "a withdrawn job does not reopen");
+    let second = send(
+        &app,
+        "PATCH",
+        &format!("/v1/enrolment/jobs/{id}/withdraw"),
+        None,
+    )
+    .await;
+    assert_ne!(
+        second.status(),
+        StatusCode::OK,
+        "a withdrawn job does not reopen"
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -220,9 +246,15 @@ async fn fmr_and_fnmr_refuse_rather_than_report_a_plausible_pair() {
     let app = app();
     let resp = send(&app, "GET", "/v1/reports/fmr-fnmr", None).await;
     assert_eq!(resp.status(), StatusCode::NOT_IMPLEMENTED);
-    let detail = body_json(resp).await["detail"].as_str().unwrap_or_default().to_string();
+    let detail = body_json(resp).await["detail"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
     assert!(detail.contains("test corpus"), "{detail}");
-    assert!(detail.contains("0.001"), "the reason should name what it replaced: {detail}");
+    assert!(
+        detail.contains("0.001"),
+        "the reason should name what it replaced: {detail}"
+    );
 }
 
 #[tokio::test]
@@ -255,7 +287,10 @@ async fn a_fairness_report_refuses_rather_than_reporting_no_disparity() {
     let app = app();
     let resp = send(&app, "GET", "/v1/reports/fairness", None).await;
     assert_eq!(resp.status(), StatusCode::NOT_IMPLEMENTED);
-    let detail = body_json(resp).await["detail"].as_str().unwrap_or_default().to_string();
+    let detail = body_json(resp).await["detail"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
     assert!(detail.contains("demographic"), "{detail}");
 }
 
@@ -425,7 +460,13 @@ async fn a_captured_job_cannot_be_withdrawn() {
         Some(json!({"modality": "fingerprint", "subject_id_hash": "sha256:abc"})),
     )
     .await;
-    let resp = send(&app, "PATCH", &format!("/v1/enrolment/jobs/{id}/withdraw"), None).await;
+    let resp = send(
+        &app,
+        "PATCH",
+        &format!("/v1/enrolment/jobs/{id}/withdraw"),
+        None,
+    )
+    .await;
     assert_eq!(resp.status(), StatusCode::CONFLICT);
     let job = body_json(send(&app, "GET", &format!("/v1/enrolment/jobs/{id}"), None).await).await;
     assert_eq!(job["status"], "captured");

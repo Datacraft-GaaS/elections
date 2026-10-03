@@ -179,8 +179,7 @@ mod tests {
     fn batch_deduplicates_by_form_id() {
         let station = Uuid::now_v7();
         let form = make_form(station);
-        let (batch, deduped) =
-            batch_transmit(vec![form.clone(), form.clone()], Utc::now());
+        let (batch, deduped) = batch_transmit(vec![form.clone(), form.clone()], Utc::now());
         assert_eq!(deduped.len(), 1);
         assert_eq!(batch.form_ids.len(), 1);
     }
@@ -206,7 +205,10 @@ mod tests {
         };
         let now = Utc::now();
         let r0 = next_retry_at(&batch, now).unwrap();
-        let batch1 = TransmissionBatch { attempts: 1, ..batch.clone() };
+        let batch1 = TransmissionBatch {
+            attempts: 1,
+            ..batch.clone()
+        };
         let r1 = next_retry_at(&batch1, now).unwrap();
         assert!(r1 > r0);
     }
@@ -229,13 +231,8 @@ mod tests {
         let station = Uuid::now_v7();
         let form = make_form(station);
         let (batch, forms) = batch_transmit(vec![form], Utc::now());
-        let (updated, envelopes, result) = attempt_delivery(
-            batch,
-            &forms,
-            |_forms| async { Ok(()) },
-            Utc::now(),
-        )
-        .await;
+        let (updated, envelopes, result) =
+            attempt_delivery(batch, &forms, |_forms| async { Ok(()) }, Utc::now()).await;
         assert!(result.is_ok());
         assert_eq!(updated.status, BatchStatus::Sent);
         assert_eq!(envelopes.len(), 1);

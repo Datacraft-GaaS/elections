@@ -22,20 +22,13 @@ use chrono::Utc;
 use serde::Deserialize;
 use uuid::Uuid;
 
-use crate::{
-    models::DecisionLogEntry,
-    pii_strip,
-    AppState,
-};
+use crate::{models::DecisionLogEntry, pii_strip, AppState};
 
 pub fn router() -> Router<AppState> {
-    Router::new()
-        .route("/entries", get(list_entries).post(create_entry))
+    Router::new().route("/entries", get(list_entries).post(create_entry))
 }
 
-async fn list_entries(
-    State(state): State<AppState>,
-) -> Json<Vec<DecisionLogEntry>> {
+async fn list_entries(State(state): State<AppState>) -> Json<Vec<DecisionLogEntry>> {
     let log = state.decision_log.read().await;
     Json(log.clone())
 }

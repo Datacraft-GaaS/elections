@@ -24,6 +24,6 @@ pub mod types;
 pub use aggregate::Boundary;
 pub use events::BoundaryEvent;
 pub use types::{
-    BoundaryChange, BoundaryKind, BoundaryStatus, FairnessMetric, GeofencePolygon,
-    MetricName, SubmissionStatus, SubmitterClass,
+    BoundaryChange, BoundaryKind, BoundaryStatus, FairnessMetric, GeofencePolygon, MetricName,
+    SubmissionStatus, SubmitterClass,
 };

@@ -47,7 +47,12 @@ async fn body_json(resp: axum::response::Response) -> Value {
     serde_json::from_slice(&bytes).unwrap_or(Value::Null)
 }
 
-async fn send(app: &axum::Router, method: &str, uri: &str, body: Option<Value>) -> axum::response::Response {
+async fn send(
+    app: &axum::Router,
+    method: &str,
+    uri: &str,
+    body: Option<Value>,
+) -> axum::response::Response {
     let mut b = Request::builder().method(method).uri(uri);
     let payload = match body {
         Some(v) => {
@@ -109,7 +114,10 @@ async fn submitting_a_gazette_notice_refuses_rather_than_manufacturing_a_printer
     );
     let problem = body_json(resp).await;
     assert!(
-        problem["detail"].as_str().unwrap_or("").contains("no gazette printer"),
+        problem["detail"]
+            .as_str()
+            .unwrap_or("")
+            .contains("no gazette printer"),
         "the refusal should name the missing integration"
     );
 }
@@ -134,9 +142,11 @@ async fn a_created_notice_is_listed_and_unpublished_by_default() {
     assert_eq!(all["notices"].as_array().unwrap().len(), 1);
 
     // A notice that was never published must not appear as published.
-    let unpublished = body_json(send(&app, "GET", "/gazette/notices?published=false", None).await).await;
+    let unpublished =
+        body_json(send(&app, "GET", "/gazette/notices?published=false", None).await).await;
     assert_eq!(unpublished["notices"].as_array().unwrap().len(), 1);
-    let published = body_json(send(&app, "GET", "/gazette/notices?published=true", None).await).await;
+    let published =
+        body_json(send(&app, "GET", "/gazette/notices?published=true", None).await).await;
     assert!(
         published["notices"].as_array().unwrap().is_empty(),
         "?published=true must filter, not return everything"
@@ -183,7 +193,13 @@ async fn derive_notices_uses_the_rules_engine() {
     let id = create_event(&app).await;
 
     let derived = body_json(
-        send(&app, "POST", &format!("/calendar/events/{id}/derive-notices"), None).await,
+        send(
+            &app,
+            "POST",
+            &format!("/calendar/events/{id}/derive-notices"),
+            None,
+        )
+        .await,
     )
     .await;
     let notices = derived["derived"].as_array().unwrap();
@@ -235,11 +251,15 @@ async fn subscriptions_round_trip_and_delete() {
     let id = created["id"].as_str().unwrap().to_string();
 
     assert_eq!(
-        send(&app, "DELETE", &format!("/subscriptions/{id}"), None).await.status(),
+        send(&app, "DELETE", &format!("/subscriptions/{id}"), None)
+            .await
+            .status(),
         StatusCode::NO_CONTENT
     );
     assert_eq!(
-        send(&app, "DELETE", &format!("/subscriptions/{id}"), None).await.status(),
+        send(&app, "DELETE", &format!("/subscriptions/{id}"), None)
+            .await
+            .status(),
         StatusCode::NOT_FOUND,
         "delete_subscription previously answered 204 for any id, deleting nothing"
     );

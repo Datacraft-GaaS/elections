@@ -21,7 +21,12 @@ pub async fn create_fee_schedule(
     State(state): State<Arc<AppState>>,
     Json(req): Json<CreateFeeSchedule>,
 ) -> Result<Json<FeeSchedule>> {
-    let schedule = FeeSchedule::new(req.election_cycle, req.position, req.amount_cents, req.due_at);
+    let schedule = FeeSchedule::new(
+        req.election_cycle,
+        req.position,
+        req.amount_cents,
+        req.due_at,
+    );
     state
         .fee_schedules
         .lock()
@@ -59,9 +64,7 @@ pub async fn confirm_payment(
     Json(req): Json<ConfirmPayment>,
 ) -> Result<Json<FeePayment>> {
     let mut guard = state.payments.lock().map_err(|_| lock_err())?;
-    let payment = guard
-        .get_mut(&id)
-        .ok_or_else(|| not_found("payment", id))?;
+    let payment = guard.get_mut(&id).ok_or_else(|| not_found("payment", id))?;
     let candidate_id = payment.candidate_id;
     payment.confirm(req.mpesa_ref);
     let p = payment.clone();

@@ -29,7 +29,6 @@ pub async fn health() -> impl IntoResponse {
     StatusCode::OK
 }
 
-
 pub async fn list_mous(State(state): State<SharedState>) -> impl IntoResponse {
     info!("list_mous");
     Json(serde_json::json!({ "mous": state.mous.list() }))
@@ -150,7 +149,9 @@ pub async fn create_incident(
         resolved_at: None,
         ecc_alert_ref: None,
     };
-    state.incidents.insert(incident.id.clone(), incident.clone());
+    state
+        .incidents
+        .insert(incident.id.clone(), incident.clone());
     (StatusCode::CREATED, Json(incident))
 }
 
@@ -196,7 +197,10 @@ pub async fn saml_acs(Json(body): Json<serde_json::Value>) -> impl IntoResponse 
     info!(county_code, "saml_acs");
     let broker = SamlBroker;
     match broker.process_acs(county_code, assertion_xml) {
-        Ok(token) => (StatusCode::OK, Json(serde_json::json!({ "session_token": token }))),
+        Ok(token) => (
+            StatusCode::OK,
+            Json(serde_json::json!({ "session_token": token })),
+        ),
         Err(e) => (
             StatusCode::UNAUTHORIZED,
             Json(serde_json::json!({ "error": e })),
@@ -239,7 +243,9 @@ pub async fn list_county_status_reports(State(state): State<SharedState>) -> imp
     let mut items: Vec<spec::CountyStatusReport> = guard.values().cloned().collect();
     drop(guard);
     items.sort_by(|a, b| a.submitted_at.cmp(&b.submitted_at));
-    Json(serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }))
+    Json(
+        serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }),
+    )
 }
 
 /// POST /api/v1/governance/county-coord/escalations — escalate an incident.
@@ -272,5 +278,7 @@ pub async fn list_escalations(State(state): State<SharedState>) -> impl IntoResp
     let mut items: Vec<spec::CoordinationEscalation> = guard.values().cloned().collect();
     drop(guard);
     items.sort_by(|a, b| a.created_at.cmp(&b.created_at));
-    Json(serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }))
+    Json(
+        serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }),
+    )
 }

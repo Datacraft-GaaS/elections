@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::error::ResilienceError;
 use std::sync::Arc;
 use tokio::sync::{OwnedSemaphorePermit, Semaphore};
-use crate::error::ResilienceError;
 
 /// Bounded concurrency wrapper for an upstream dependency.
 #[derive(Clone)]
@@ -33,10 +33,13 @@ impl Bulkhead {
 
     /// Acquire a permit, failing immediately if at capacity.
     pub async fn acquire(&self) -> Result<BulkheadPermit, ResilienceError> {
-        self.semaphore.clone()
+        self.semaphore
+            .clone()
             .try_acquire_owned()
             .map(|permit| BulkheadPermit { _permit: permit })
-            .map_err(|_| ResilienceError::BulkheadFull { dependency: self.dependency.clone() })
+            .map_err(|_| ResilienceError::BulkheadFull {
+                dependency: self.dependency.clone(),
+            })
     }
 
     /// Available slots.

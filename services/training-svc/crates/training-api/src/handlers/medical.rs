@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::models::*;
 use axum::{
     extract::Path,
     http::StatusCode,
@@ -19,19 +20,21 @@ use axum::{
 };
 use tracing::info;
 use uuid::Uuid;
-use crate::models::*;
 
 pub async fn report_incident(Json(req): Json<MedicalIncidentReq>) -> impl IntoResponse {
     info!(station_id=%req.station_id, incident_type=%req.incident_type, severity=%req.severity, "report_incident");
-    (StatusCode::CREATED, Json(MedicalIncident {
-        id: Uuid::new_v4(),
-        station_id: req.station_id,
-        incident_type: req.incident_type,
-        severity: req.severity,
-        status: "open".to_string(),
-        reported_at: "2027-08-09T06:00:00Z".to_string(),
-        persons_affected: req.persons_affected,
-    }))
+    (
+        StatusCode::CREATED,
+        Json(MedicalIncident {
+            id: Uuid::new_v4(),
+            station_id: req.station_id,
+            incident_type: req.incident_type,
+            severity: req.severity,
+            status: "open".to_string(),
+            reported_at: "2027-08-09T06:00:00Z".to_string(),
+            persons_affected: req.persons_affected,
+        }),
+    )
 }
 
 pub async fn list_incidents() -> impl IntoResponse {
@@ -43,7 +46,9 @@ pub async fn dispatch_incident(
     Json(req): Json<DispatchReq>,
 ) -> impl IntoResponse {
     info!(incident_id=%id, dispatched_to=%req.dispatched_to, "dispatch_incident");
-    Json(serde_json::json!({ "incident_id": id, "dispatched_to": req.dispatched_to, "status": "dispatched" }))
+    Json(
+        serde_json::json!({ "incident_id": id, "dispatched_to": req.dispatched_to, "status": "dispatched" }),
+    )
 }
 
 pub async fn resolve_incident(Path(id): Path<Uuid>) -> impl IntoResponse {

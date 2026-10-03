@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use hmac::Mac;
+use crate::models::*;
 use axum::{
     extract::{Extension, Path},
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
+use hmac::Mac;
 use tracing::info;
 use uuid::Uuid;
-use crate::models::*;
 
 // Health
 
@@ -39,12 +39,15 @@ fn problem(status: StatusCode, detail: impl Into<String>) -> Response {
         .into_response()
 }
 
-
-pub async fn health() -> impl IntoResponse { StatusCode::OK }
+pub async fn health() -> impl IntoResponse {
+    StatusCode::OK
+}
 
 // ECC handlers
 
-pub async fn get_situational_awareness(Extension(records): Extension<crate::records::Records>) -> impl IntoResponse {
+pub async fn get_situational_awareness(
+    Extension(records): Extension<crate::records::Records>,
+) -> impl IntoResponse {
     info!("get_situational_awareness");
     // Real for the fields that can be derived from real records. total_stations
     // and turnout_pct have no source in this crate -- there is no station
@@ -69,7 +72,9 @@ pub async fn get_situational_awareness(Extension(records): Extension<crate::reco
     })
 }
 
-pub async fn list_stations(Extension(records): Extension<crate::records::Records>) -> impl IntoResponse {
+pub async fn list_stations(
+    Extension(records): Extension<crate::records::Records>,
+) -> impl IntoResponse {
     info!("list_stations");
     // Real. Previously always an empty array.
     Json(serde_json::json!({
@@ -77,17 +82,25 @@ pub async fn list_stations(Extension(records): Extension<crate::records::Records
     }))
 }
 
-pub async fn get_station(Extension(records): Extension<crate::records::Records>, Path(station_code): Path<String>) -> Result<Response, Response> {
+pub async fn get_station(
+    Extension(records): Extension<crate::records::Records>,
+    Path(station_code): Path<String>,
+) -> Result<Response, Response> {
     info!(station_code, "get_station");
     // Real. Previously answered 200 with name: "stub" and status: "unknown" for
     // any station code at all.
     match records.stations.get(&station_code) {
         Some(s) => Ok(Json(s).into_response()),
-        None => Err(problem(StatusCode::NOT_FOUND, format!("no station with code {station_code}"))),
+        None => Err(problem(
+            StatusCode::NOT_FOUND,
+            format!("no station with code {station_code}"),
+        )),
     }
 }
 
-pub async fn list_escalations(Extension(records): Extension<crate::records::Records>) -> impl IntoResponse {
+pub async fn list_escalations(
+    Extension(records): Extension<crate::records::Records>,
+) -> impl IntoResponse {
     info!("list_escalations");
     // Real. Previously always an empty array.
     Json(serde_json::json!({
@@ -95,7 +108,10 @@ pub async fn list_escalations(Extension(records): Extension<crate::records::Reco
     }))
 }
 
-pub async fn create_escalation(Extension(records): Extension<crate::records::Records>, Json(req): Json<EscalationRequest>) -> impl IntoResponse {
+pub async fn create_escalation(
+    Extension(records): Extension<crate::records::Records>,
+    Json(req): Json<EscalationRequest>,
+) -> impl IntoResponse {
     info!(station_code=%req.station_code, "create_escalation");
     let now = chrono::Utc::now().to_rfc3339();
     let escalation = Escalation {
@@ -116,16 +132,25 @@ pub async fn create_escalation(Extension(records): Extension<crate::records::Rec
     records.audit(
         "ecc.escalation.created",
         &escalation.escalation_id.to_string(),
-        &format!("severity={} at {}", escalation.severity, escalation.station_code),
+        &format!(
+            "severity={} at {}",
+            escalation.severity, escalation.station_code
+        ),
         now,
     );
-    (StatusCode::CREATED, Json(EscalationCreated {
-        escalation_id: escalation.escalation_id,
-        status: "open".to_string(),
-    }))
+    (
+        StatusCode::CREATED,
+        Json(EscalationCreated {
+            escalation_id: escalation.escalation_id,
+            status: "open".to_string(),
+        }),
+    )
 }
 
-pub async fn get_escalation(Extension(records): Extension<crate::records::Records>, Path(id): Path<Uuid>) -> Result<Response, Response> {
+pub async fn get_escalation(
+    Extension(records): Extension<crate::records::Records>,
+    Path(id): Path<Uuid>,
+) -> Result<Response, Response> {
     info!(escalation_id=%id, "get_escalation");
     // Real. Previously answered 200 for any id with station_code, category,
     // severity and description all set to "stub"/"low".
@@ -213,7 +238,9 @@ pub async fn get_turnout_heatmap() -> Response {
         .into_response()
 }
 
-pub async fn get_audit_log(Extension(records): Extension<crate::records::Records>) -> impl IntoResponse {
+pub async fn get_audit_log(
+    Extension(records): Extension<crate::records::Records>,
+) -> impl IntoResponse {
     info!("get_audit_log");
     // Real. Previously returned {"entries": []} unconditionally, which is an
     // audit log that records nothing.
@@ -224,7 +251,9 @@ pub async fn get_audit_log(Extension(records): Extension<crate::records::Records
 
 // IAB handlers
 
-pub async fn list_audit_reports(Extension(records): Extension<crate::records::Records>) -> impl IntoResponse {
+pub async fn list_audit_reports(
+    Extension(records): Extension<crate::records::Records>,
+) -> impl IntoResponse {
     info!("list_audit_reports");
     // Real. Previously always an empty array.
     Json(serde_json::json!({
@@ -232,7 +261,10 @@ pub async fn list_audit_reports(Extension(records): Extension<crate::records::Re
     }))
 }
 
-pub async fn create_audit_report(Extension(records): Extension<crate::records::Records>, Json(req): Json<AuditReportRequest>) -> impl IntoResponse {
+pub async fn create_audit_report(
+    Extension(records): Extension<crate::records::Records>,
+    Json(req): Json<AuditReportRequest>,
+) -> impl IntoResponse {
     info!(module_code=%req.module_code, "create_audit_report");
     let now = chrono::Utc::now().to_rfc3339();
     let report_id = Uuid::new_v4();
@@ -251,14 +283,25 @@ pub async fn create_audit_report(Extension(records): Extension<crate::records::R
     records
         .audit_reports
         .insert(report_id.to_string(), report.clone());
-    records.audit("iab.audit_report.created", &report_id.to_string(), &req.module_code, now);
-    (StatusCode::CREATED, Json(AuditReportCreated {
-        report_id,
-        status: "submitted".to_string(),
-    }))
+    records.audit(
+        "iab.audit_report.created",
+        &report_id.to_string(),
+        &req.module_code,
+        now,
+    );
+    (
+        StatusCode::CREATED,
+        Json(AuditReportCreated {
+            report_id,
+            status: "submitted".to_string(),
+        }),
+    )
 }
 
-pub async fn get_audit_report(Extension(records): Extension<crate::records::Records>, Path(report_id): Path<Uuid>) -> Result<Response, Response> {
+pub async fn get_audit_report(
+    Extension(records): Extension<crate::records::Records>,
+    Path(report_id): Path<Uuid>,
+) -> Result<Response, Response> {
     info!(report_id=%report_id, "get_audit_report");
     // Real. Previously answered 200 for any id with module_code and title both
     // set to "stub".
@@ -278,7 +321,9 @@ pub async fn get_audit_report(Extension(records): Extension<crate::records::Reco
     }
 }
 
-pub async fn get_iab_summary(Extension(records): Extension<crate::records::Records>) -> impl IntoResponse {
+pub async fn get_iab_summary(
+    Extension(records): Extension<crate::records::Records>,
+) -> impl IntoResponse {
     info!("get_iab_summary");
     // Real. Previously returned open_reports: 0, flagged_items: 0 and
     // pending_trails: 0 with a fixed 2027 as_of, which reads as a measured
@@ -287,10 +332,7 @@ pub async fn get_iab_summary(Extension(records): Extension<crate::records::Recor
         .audit_reports
         .list_where(|r| r.status != "closed")
         .len() as u32;
-    let flagged_items = records
-        .iab_flags
-        .list_where(|f| f.status == "open")
-        .len() as u32;
+    let flagged_items = records.iab_flags.list_where(|f| f.status == "open").len() as u32;
     Json(IabSummary {
         open_reports,
         flagged_items,
@@ -299,7 +341,10 @@ pub async fn get_iab_summary(Extension(records): Extension<crate::records::Recor
     })
 }
 
-pub async fn get_audit_trails(Extension(records): Extension<crate::records::Records>, Path(module_code): Path<String>) -> impl IntoResponse {
+pub async fn get_audit_trails(
+    Extension(records): Extension<crate::records::Records>,
+    Path(module_code): Path<String>,
+) -> impl IntoResponse {
     info!(module_code, "get_audit_trails");
     // Real. Previously always an empty entries array. The trail is the audit-log
     // entries recorded against this module.
@@ -312,7 +357,9 @@ pub async fn get_audit_trails(Extension(records): Extension<crate::records::Reco
     }))
 }
 
-pub async fn list_iab_flags(Extension(records): Extension<crate::records::Records>) -> impl IntoResponse {
+pub async fn list_iab_flags(
+    Extension(records): Extension<crate::records::Records>,
+) -> impl IntoResponse {
     info!("list_iab_flags");
     // Real. Previously always an empty array.
     Json(serde_json::json!({
@@ -320,7 +367,10 @@ pub async fn list_iab_flags(Extension(records): Extension<crate::records::Record
     }))
 }
 
-pub async fn create_iab_flag(Extension(records): Extension<crate::records::Records>, Json(req): Json<IabFlagRequest>) -> impl IntoResponse {
+pub async fn create_iab_flag(
+    Extension(records): Extension<crate::records::Records>,
+    Json(req): Json<IabFlagRequest>,
+) -> impl IntoResponse {
     info!(module_code=%req.module_code, "create_iab_flag");
     let now = chrono::Utc::now().to_rfc3339();
     let flag_id = Uuid::new_v4();
@@ -340,15 +390,20 @@ pub async fn create_iab_flag(Extension(records): Extension<crate::records::Recor
         &req.module_code,
         now,
     );
-    (StatusCode::CREATED, Json(IabFlagCreated {
-        flag_id,
-        status: "open".to_string(),
-    }))
+    (
+        StatusCode::CREATED,
+        Json(IabFlagCreated {
+            flag_id,
+            status: "open".to_string(),
+        }),
+    )
 }
 
 // Grievance handlers
 
-pub async fn list_complaints(Extension(records): Extension<crate::records::Records>) -> impl IntoResponse {
+pub async fn list_complaints(
+    Extension(records): Extension<crate::records::Records>,
+) -> impl IntoResponse {
     info!("list_complaints");
     // Real. Previously always an empty array.
     Json(serde_json::json!({
@@ -356,7 +411,10 @@ pub async fn list_complaints(Extension(records): Extension<crate::records::Recor
     }))
 }
 
-pub async fn create_complaint(Extension(records): Extension<crate::records::Records>, Json(req): Json<GrievanceComplaintRequest>) -> impl IntoResponse {
+pub async fn create_complaint(
+    Extension(records): Extension<crate::records::Records>,
+    Json(req): Json<GrievanceComplaintRequest>,
+) -> impl IntoResponse {
     info!(complainant=%req.complainant_name, "create_complaint");
     let complaint_id = Uuid::new_v4();
     let ref_code = format!("GRV-{}", &complaint_id.to_string()[..8].to_uppercase());
@@ -379,14 +437,20 @@ pub async fn create_complaint(Extension(records): Extension<crate::records::Reco
         &format!("category={}", complaint.category),
         complaint.submitted_at.clone(),
     );
-    (StatusCode::CREATED, Json(GrievanceComplaintCreated {
-        complaint_id,
-        reference_code: ref_code,
-        status: "received".to_string(),
-    }))
+    (
+        StatusCode::CREATED,
+        Json(GrievanceComplaintCreated {
+            complaint_id,
+            reference_code: ref_code,
+            status: "received".to_string(),
+        }),
+    )
 }
 
-pub async fn get_complaint(Extension(records): Extension<crate::records::Records>, Path(reference_code): Path<String>) -> Result<Response, Response> {
+pub async fn get_complaint(
+    Extension(records): Extension<crate::records::Records>,
+    Path(reference_code): Path<String>,
+) -> Result<Response, Response> {
     info!(reference_code, "get_complaint");
     // Real. Previously answered 200 for any reference code, echoing it into a
     // record whose complainant_name and category were the literal "stub" and
@@ -405,7 +469,10 @@ pub async fn get_complaint(Extension(records): Extension<crate::records::Records
     }
 }
 
-pub async fn list_complaint_updates(Extension(records): Extension<crate::records::Records>, Path(complaint_id): Path<Uuid>) -> impl IntoResponse {
+pub async fn list_complaint_updates(
+    Extension(records): Extension<crate::records::Records>,
+    Path(complaint_id): Path<Uuid>,
+) -> impl IntoResponse {
     info!(complaint_id=%complaint_id, "list_complaint_updates");
     // Real. Previously always an empty updates array.
     let updates = records
@@ -450,7 +517,10 @@ pub async fn add_complaint_update(
     Ok((StatusCode::CREATED, Json(update)).into_response())
 }
 
-pub async fn ussd_session(Extension(records): Extension<crate::records::Records>, Json(req): Json<UssdSessionRequest>) -> impl IntoResponse {
+pub async fn ussd_session(
+    Extension(records): Extension<crate::records::Records>,
+    Json(req): Json<UssdSessionRequest>,
+) -> impl IntoResponse {
     info!(session_id=%req.session_id, msisdn=%req.msisdn, "ussd_session");
     // A real session state machine rather than one canned greeting. Previously
     // every request, at any step of any session, returned the same welcome
@@ -458,7 +528,8 @@ pub async fn ussd_session(Extension(records): Extension<crate::records::Records>
     let step = req.input.trim();
     let (response, end_session) = match step {
         "" => (
-            "Electoral Grievance Line.\n1 Lodge a complaint\n2 Check complaint status\n0 End".to_string(),
+            "Electoral Grievance Line.\n1 Lodge a complaint\n2 Check complaint status\n0 End"
+                .to_string(),
             false,
         ),
         "1" => (
@@ -602,9 +673,9 @@ enum SignatureVerdict {
 
 // Section 44A handlers
 
+use crate::store::{S44aRow, Store, StoreError};
 use axum::extract::State;
 use chrono::Utc;
-use crate::store::{S44aRow, Store, StoreError};
 
 fn store_error_response(err: StoreError) -> Response {
     match err {

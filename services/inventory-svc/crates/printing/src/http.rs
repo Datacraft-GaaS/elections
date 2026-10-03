@@ -44,7 +44,9 @@ pub struct AppState {
 
 impl Default for AppState {
     fn default() -> Self {
-        Self { store: Store::mem() }
+        Self {
+            store: Store::mem(),
+        }
     }
 }
 
@@ -59,28 +61,40 @@ impl AppState {
 
     /// new from postgres pool (production).
     pub fn from_pool(pool: PgPool) -> SharedState {
-        Arc::new(Self { store: Store::pg(pool) })
+        Arc::new(Self {
+            store: Store::pg(pool),
+        })
     }
 }
 
 /// router.
 pub fn router(state: SharedState) -> Router {
     Router::new()
-        .route("/api/v1/printing/print-orders", get(list_print_orders).post(create_print_order))
-        .route("/api/v1/printing/print-orders/{order_id}", get(get_print_order))
-        .route("/api/v1/printing/print-orders/{order_id}/qc", post(submit_qc_decision))
+        .route(
+            "/api/v1/printing/print-orders",
+            get(list_print_orders).post(create_print_order),
+        )
+        .route(
+            "/api/v1/printing/print-orders/{order_id}",
+            get(get_print_order),
+        )
+        .route(
+            "/api/v1/printing/print-orders/{order_id}/qc",
+            post(submit_qc_decision),
+        )
         .route("/api/v1/printing/deliveries", post(record_ballot_delivery))
-        .route("/api/v1/printing/audit-trail", get(get_printing_audit_trail))
+        .route(
+            "/api/v1/printing/audit-trail",
+            get(get_printing_audit_trail),
+        )
         .with_state(state)
 }
 
 fn store_err(e: crate::store::StoreError) -> axum::response::Response {
     match e {
-        crate::store::StoreError::NotFound => (
-            StatusCode::NOT_FOUND,
-            Json(json!({ "detail": "not found"})),
-        )
-            .into_response(),
+        crate::store::StoreError::NotFound => {
+            (StatusCode::NOT_FOUND, Json(json!({ "detail": "not found"}))).into_response()
+        }
         crate::store::StoreError::Db(err) => {
             tracing::error!(error = %err, "store db error");
             (
@@ -115,7 +129,11 @@ async fn get_print_order(
 ) -> impl IntoResponse {
     match state.store.get_order(order_id).await {
         Ok(Some(o)) => Json(o).into_response(),
-        Ok(None) => (StatusCode::NOT_FOUND, Json(json!({ "detail": "order not found" }))).into_response(),
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "detail": "order not found" })),
+        )
+            .into_response(),
         Err(e) => store_err(e),
     }
 }
@@ -127,7 +145,11 @@ async fn submit_qc_decision(
 ) -> impl IntoResponse {
     match state.store.submit_qc(order_id, req).await {
         Ok(Some(o)) => Json(o).into_response(),
-        Ok(None) => (StatusCode::NOT_FOUND, Json(json!({ "detail": "order not found" }))).into_response(),
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "detail": "order not found" })),
+        )
+            .into_response(),
         Err(e) => store_err(e),
     }
 }

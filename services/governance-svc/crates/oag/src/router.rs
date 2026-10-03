@@ -35,7 +35,10 @@ pub fn build_router(state: SharedState) -> Router {
             "/oag/engagements/{engagement_id}/response",
             post(record_response),
         )
-        .route("/oag/engagements/{engagement_id}/response", get(get_response))
+        .route(
+            "/oag/engagements/{engagement_id}/response",
+            get(get_response),
+        )
         .route(
             "/oag/published-reports",
             get(list_published_reports).post(register_published_report),

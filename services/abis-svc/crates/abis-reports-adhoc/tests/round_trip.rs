@@ -25,13 +25,13 @@
 //!
 //! Every test here fails against that code.
 
-use eel_abis_reports_adhoc::{
-    api::{router, AppState},
-    domain::*,
-};
 use axum::{
     body::Body,
     http::{Request, StatusCode},
+};
+use eel_abis_reports_adhoc::{
+    api::{router, AppState},
+    domain::*,
 };
 use serde_json::{json, Value};
 use sqlx::postgres::PgPoolOptions;
@@ -54,7 +54,12 @@ async fn body_json(resp: axum::response::Response) -> Value {
     serde_json::from_slice(&bytes).unwrap_or(Value::Null)
 }
 
-async fn send(app: &axum::Router, method: &str, uri: &str, body: Option<Value>) -> axum::response::Response {
+async fn send(
+    app: &axum::Router,
+    method: &str,
+    uri: &str,
+    body: Option<Value>,
+) -> axum::response::Response {
     let mut b = Request::builder().method(method).uri(uri);
     let payload = match body {
         Some(v) => {
@@ -142,11 +147,22 @@ async fn updating_or_archiving_an_unknown_report_is_404() {
     let app = app();
     let ghost = "00000000-0000-0000-0000-0000000000aa";
     assert_eq!(
-        send(&app, "PATCH", &format!("/reports/{ghost}"), Some(json!({"title": "x", "description": null, "visibility": null, "data_class": null}))).await.status(),
+        send(
+            &app,
+            "PATCH",
+            &format!("/reports/{ghost}"),
+            Some(
+                json!({"title": "x", "description": null, "visibility": null, "data_class": null})
+            )
+        )
+        .await
+        .status(),
         StatusCode::NOT_FOUND
     );
     assert_eq!(
-        send(&app, "DELETE", &format!("/reports/{ghost}"), None).await.status(),
+        send(&app, "DELETE", &format!("/reports/{ghost}"), None)
+            .await
+            .status(),
         StatusCode::NOT_FOUND
     );
 }
@@ -171,18 +187,35 @@ async fn versions_are_numbered_per_report_and_listed() {
             })),
         )
         .await;
-        assert_eq!(resp.status(), StatusCode::CREATED, "create_version must work");
+        assert_eq!(
+            resp.status(),
+            StatusCode::CREATED,
+            "create_version must work"
+        );
     }
 
     let listed = body_json(send(&app, "GET", &format!("/reports/{id}/versions"), None).await).await;
     let versions = listed["versions"].as_array().unwrap();
-    assert_eq!(versions.len(), 2, "create_version previously stored nothing");
+    assert_eq!(
+        versions.len(),
+        2,
+        "create_version previously stored nothing"
+    );
     assert_eq!(versions[0]["version_number"], 1);
-    assert_eq!(versions[1]["version_number"], 2, "version numbers must increment");
+    assert_eq!(
+        versions[1]["version_number"], 2,
+        "version numbers must increment"
+    );
     assert_eq!(versions[1]["commit_message"], "second cut");
 
     let fetched = body_json(
-        send(&app, "GET", &format!("/versions/{}", versions[1]["version_id"].as_str().unwrap()), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/versions/{}", versions[1]["version_id"].as_str().unwrap()),
+            None,
+        )
+        .await,
     )
     .await;
     assert_eq!(fetched["version_number"], 2);
@@ -313,7 +346,8 @@ async fn a_preview_reports_that_it_executed_nothing() {
     );
     let preview_id = preview["preview_id"].as_str().unwrap().to_string();
 
-    let fetched = body_json(send(&app, "GET", &format!("/previews/{preview_id}"), None).await).await;
+    let fetched =
+        body_json(send(&app, "GET", &format!("/previews/{preview_id}"), None).await).await;
     assert_eq!(fetched["preview"]["preview_id"], preview_id.as_str());
 }
 
@@ -350,25 +384,38 @@ async fn snippet_round_trips_and_deletes() {
     assert_eq!(resp.status(), StatusCode::CREATED);
     let created = body_json(resp).await;
     let id = created["snippet_id"].as_str().unwrap().to_string();
-    assert_eq!(created["visibility"], "private", "defaults to private, not open");
+    assert_eq!(
+        created["visibility"], "private",
+        "defaults to private, not open"
+    );
 
     let listed = body_json(send(&app, "GET", "/snippets", None).await).await;
     assert_eq!(listed["snippets"].as_array().unwrap().len(), 1);
 
     assert_eq!(
-        send(&app, "DELETE", &format!("/snippets/{id}"), None).await.status(),
+        send(&app, "DELETE", &format!("/snippets/{id}"), None)
+            .await
+            .status(),
         StatusCode::NO_CONTENT
     );
-    assert!(body_json(send(&app, "GET", "/snippets", None).await).await["snippets"]
-        .as_array()
-        .unwrap()
-        .is_empty());
+    assert!(
+        body_json(send(&app, "GET", "/snippets", None).await).await["snippets"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
 }
 
 #[tokio::test]
 async fn deleting_an_unknown_snippet_is_404() {
     let app = app();
-    let resp = send(&app, "DELETE", "/snippets/00000000-0000-0000-0000-0000000000ee", None).await;
+    let resp = send(
+        &app,
+        "DELETE",
+        "/snippets/00000000-0000-0000-0000-0000000000ee",
+        None,
+    )
+    .await;
     assert_eq!(
         resp.status(),
         StatusCode::NOT_FOUND,
@@ -395,14 +442,21 @@ async fn a_share_can_be_granted_and_revoked() {
     assert!(share["revoked_at"].is_null());
 
     assert_eq!(
-        send(&app, "DELETE", &format!("/shares/{share_id}"), None).await.status(),
+        send(&app, "DELETE", &format!("/shares/{share_id}"), None)
+            .await
+            .status(),
         StatusCode::NO_CONTENT
     );
     // Revoking an unknown share must not report success.
     assert_eq!(
-        send(&app, "DELETE", "/shares/00000000-0000-0000-0000-0000000000ab", None)
-            .await
-            .status(),
+        send(
+            &app,
+            "DELETE",
+            "/shares/00000000-0000-0000-0000-0000000000ab",
+            None
+        )
+        .await
+        .status(),
         StatusCode::NOT_FOUND
     );
 }
@@ -438,7 +492,8 @@ async fn routers_do_not_share_records() {
 async fn visibility_filter_is_applied() {
     let app = app();
     create_report(&app).await;
-    let priv_reports = body_json(send(&app, "GET", "/reports?visibility=private", None).await).await;
+    let priv_reports =
+        body_json(send(&app, "GET", "/reports?visibility=private", None).await).await;
     assert_eq!(priv_reports["reports"].as_array().unwrap().len(), 1);
     let other = body_json(send(&app, "GET", "/reports?visibility=org", None).await).await;
     assert!(

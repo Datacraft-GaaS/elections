@@ -119,7 +119,9 @@ pub type SharedState = Arc<AppState>;
 fn menu_for(service_code: &str) -> Option<&'static str> {
     match service_code {
         // Voter's line: results lookup, register to vote, check status.
-        "*567#" => Some("1. Check my registration\n2. Find my polling station\n3. Check results\n0. Cancel"),
+        "*567#" => Some(
+            "1. Check my registration\n2. Find my polling station\n3. Check results\n0. Cancel",
+        ),
         // Counting line.
         "*123#" => Some("1. Results by constituency\n2. Turnout so far\n0. Cancel"),
         // Results line.
@@ -184,7 +186,8 @@ impl AppState {
         let root = match menu_for(service_code) {
             Some(m) => m,
             None => {
-                let message = format!("service code {service_code} is not operated by this gateway");
+                let message =
+                    format!("service code {service_code} is not operated by this gateway");
                 session.log.push(UssdStep {
                     input: text.to_string(),
                     response_text: message.clone(),
@@ -229,13 +232,22 @@ impl AppState {
                     "ended".to_string(),
                 )
             } else {
-                (format!("{choice} is not a constituency code."), "awaiting_constituency".to_string())
+                (
+                    format!("{choice} is not a constituency code."),
+                    "awaiting_constituency".to_string(),
+                )
             }
         } else if session.state == "awaiting_station" {
             if choice.len() == 5 && choice.chars().all(|c| c.is_ascii_digit()) {
-                (format!("Polling station {choice} selected."), "ended".to_string())
+                (
+                    format!("Polling station {choice} selected."),
+                    "ended".to_string(),
+                )
             } else {
-                (format!("{choice} is not a station code."), "awaiting_station".to_string())
+                (
+                    format!("{choice} is not a station code."),
+                    "awaiting_station".to_string(),
+                )
             }
         } else {
             (root.to_string(), "menu".to_string())
@@ -255,7 +267,11 @@ impl AppState {
 
     /// A USSD session's log, if it exists.
     pub fn ussd_session(&self, session_id: &str) -> Option<UssdSession> {
-        self.ussd.lock().expect("lock poisoned").get(session_id).cloned()
+        self.ussd
+            .lock()
+            .expect("lock poisoned")
+            .get(session_id)
+            .cloned()
     }
 
     /// Handle one IVR step.
@@ -270,24 +286,28 @@ impl AppState {
     ) -> (String, String) {
         let now = chrono::Utc::now().to_rfc3339();
         let mut guard = self.ivr.lock().expect("lock poisoned");
-        let call = guard
-            .entry(call_id.to_string())
-            .or_insert_with(|| IvrCall {
-                call_id: call_id.to_string(),
-                caller_id_hash: caller_id_hash.to_string(),
-                digits: String::new(),
-                state: "greeting".to_string(),
-                log: Vec::new(),
-                started_at: now.clone(),
-            });
+        let call = guard.entry(call_id.to_string()).or_insert_with(|| IvrCall {
+            call_id: call_id.to_string(),
+            caller_id_hash: caller_id_hash.to_string(),
+            digits: String::new(),
+            state: "greeting".to_string(),
+            log: Vec::new(),
+            started_at: now.clone(),
+        });
         let pressed = dtmf.unwrap_or("").trim().to_string();
         call.digits.push_str(&pressed);
         let (prompt, state) = if pressed == "0" {
             ("Goodbye".to_string(), "ended".to_string())
         } else if call.state == "greeting" {
             match pressed.as_str() {
-                "1" => ("Enter your polling station code.".to_string(), "awaiting_station".to_string()),
-                "2" => ("Enter your constituency code.".to_string(), "awaiting_constituency".to_string()),
+                "1" => (
+                    "Enter your polling station code.".to_string(),
+                    "awaiting_station".to_string(),
+                ),
+                "2" => (
+                    "Enter your constituency code.".to_string(),
+                    "awaiting_constituency".to_string(),
+                ),
                 _ => (
                     "Press 1 for station lookup, 2 for constituency lookup, 0 to end.".to_string(),
                     "greeting".to_string(),
@@ -297,13 +317,22 @@ impl AppState {
             if pressed.len() == 5 && pressed.chars().all(|c| c.is_ascii_digit()) {
                 (format!("Station {pressed} found."), "ended".to_string())
             } else {
-                (format!("{pressed} is not a station code."), "awaiting_station".to_string())
+                (
+                    format!("{pressed} is not a station code."),
+                    "awaiting_station".to_string(),
+                )
             }
         } else if call.state == "awaiting_constituency" {
             if pressed.len() == 3 && pressed.chars().all(|c| c.is_ascii_digit()) {
-                (format!("Constituency {pressed} found."), "ended".to_string())
+                (
+                    format!("Constituency {pressed} found."),
+                    "ended".to_string(),
+                )
             } else {
-                (format!("{pressed} is not a constituency code."), "awaiting_constituency".to_string())
+                (
+                    format!("{pressed} is not a constituency code."),
+                    "awaiting_constituency".to_string(),
+                )
             }
         } else {
             ("Goodbye".to_string(), "ended".to_string())
@@ -320,7 +349,11 @@ impl AppState {
 
     /// An IVR call's state, if it exists.
     pub fn ivr_call(&self, call_id: &str) -> Option<IvrCall> {
-        self.ivr.lock().expect("lock poisoned").get(call_id).cloned()
+        self.ivr
+            .lock()
+            .expect("lock poisoned")
+            .get(call_id)
+            .cloned()
     }
 
     /// Record a verified inbound WhatsApp message.
@@ -411,7 +444,9 @@ pub fn sign_whatsapp_body(secret: &str, raw_body: &[u8]) -> String {
 pub fn parse_whatsapp_message(payload: &Value) -> Result<(String, String, String), String> {
     let entry = payload
         .pointer("/entry/0/changes/0/value/messages/0")
-        .ok_or_else(|| "the payload carries no entry[0].changes[0].value.messages[0]".to_string())?;
+        .ok_or_else(|| {
+            "the payload carries no entry[0].changes[0].value.messages[0]".to_string()
+        })?;
     let from = entry
         .get("from")
         .and_then(|v| v.as_str())
@@ -476,6 +511,9 @@ mod tests {
 
     #[test]
     fn no_signature_is_missing() {
-        assert_eq!(verify_whatsapp_signature(Some("s"), b"{}", None), SignatureVerdict::Missing);
+        assert_eq!(
+            verify_whatsapp_signature(Some("s"), b"{}", None),
+            SignatureVerdict::Missing
+        );
     }
 }

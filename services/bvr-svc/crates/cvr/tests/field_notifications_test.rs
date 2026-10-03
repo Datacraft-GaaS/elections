@@ -249,8 +249,7 @@ async fn submit_returns_capture_id_and_pending() {
 async fn reviewer_decision_requires_adjudicator_role() {
     let app = app();
     let capture_id = uuid::Uuid::now_v7();
-    let body =
-        serde_json::to_vec(&json!({"verdict": "accepted", "reviewerNotes": null})).unwrap();
+    let body = serde_json::to_vec(&json!({"verdict": "accepted", "reviewerNotes": null})).unwrap();
     // Use field-officer role (wrong for this endpoint)
     let req = with_field_officer_headers(
         Request::builder()
@@ -280,9 +279,10 @@ async fn reviewer_decision_requires_adjudicator_role() {
 async fn reviewer_accepted_emits_register_event() {
     let app = app();
     let capture_id = uuid::Uuid::now_v7();
-    let body =
-        serde_json::to_vec(&json!({"verdict": "accepted", "reviewerNotes": "confirmed by register"}))
-            .unwrap();
+    let body = serde_json::to_vec(
+        &json!({"verdict": "accepted", "reviewerNotes": "confirmed by register"}),
+    )
+    .unwrap();
     let req = with_adjudicator_headers(
         Request::builder()
             .method("PATCH")

@@ -18,12 +18,11 @@
 //! Authorization header; public read endpoints are open.
 
 use axum::{
-    Router,
     extract::{Multipart, Path, State},
     http::StatusCode,
     response::IntoResponse,
     routing::{get, patch, post},
-    Json,
+    Json, Router,
 };
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
@@ -32,9 +31,9 @@ use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 
 use crate::domain::{CustodyEvent, DiasporaRoll, EmbassyStation, Form34ADiaspora, PouchCustody};
-use crate::import::{ImportProfile, import_roll_csv};
+use crate::import::{import_roll_csv, ImportProfile};
 use crate::roll::roll_from_voter_ids;
-use crate::transmission::{BatchStatus, TransmissionBatch, batch_transmit};
+use crate::transmission::{batch_transmit, BatchStatus, TransmissionBatch};
 
 /// In-memory state for development / testing. Replace with sqlx pool in prod.
 /// Postgres-backed for embassies/ballot_dispatches/return_dispatches via `Store` (no in-memory).
@@ -97,12 +96,30 @@ pub fn router() -> Router<SharedState> {
         .route("/pouches/{id}/transfer", post(transfer_pouch))
         .route("/pouches/{id}/receive", post(receive_pouch))
         // Public contract endpoints (diaspora-logistics/logistics.yaml)
-        .route("/api/v1/diaspora/embassies", get(crate::spec::list_embassies))
-        .route("/api/v1/diaspora/embassies/{embassy_code}", get(crate::spec::get_embassy))
-        .route("/api/v1/diaspora/ballot-dispatches", get(crate::spec::list_ballot_dispatches).post(crate::spec::create_ballot_dispatch))
-        .route("/api/v1/diaspora/ballot-dispatches/{dispatch_id}", get(crate::spec::get_ballot_dispatch))
-        .route("/api/v1/diaspora/ballot-dispatches/{dispatch_id}/delivery-confirmation", post(crate::spec::confirm_ballot_delivery))
-        .route("/api/v1/diaspora/return-dispatches", get(crate::spec::list_return_dispatches))
+        .route(
+            "/api/v1/diaspora/embassies",
+            get(crate::spec::list_embassies),
+        )
+        .route(
+            "/api/v1/diaspora/embassies/{embassy_code}",
+            get(crate::spec::get_embassy),
+        )
+        .route(
+            "/api/v1/diaspora/ballot-dispatches",
+            get(crate::spec::list_ballot_dispatches).post(crate::spec::create_ballot_dispatch),
+        )
+        .route(
+            "/api/v1/diaspora/ballot-dispatches/{dispatch_id}",
+            get(crate::spec::get_ballot_dispatch),
+        )
+        .route(
+            "/api/v1/diaspora/ballot-dispatches/{dispatch_id}/delivery-confirmation",
+            post(crate::spec::confirm_ballot_delivery),
+        )
+        .route(
+            "/api/v1/diaspora/return-dispatches",
+            get(crate::spec::list_return_dispatches),
+        )
 }
 
 // ---- Station handlers -------------------------------------------------------
@@ -139,17 +156,22 @@ async fn list_stations(State(state): State<SharedState>) -> impl IntoResponse {
     Json(lock.clone())
 }
 
-async fn open_station(
-    State(state): State<SharedState>,
-    Path(id): Path<Uuid>,
-) -> impl IntoResponse {
+async fn open_station(State(state): State<SharedState>, Path(id): Path<Uuid>) -> impl IntoResponse {
     let mut lock = state.stations.lock().expect("lock poisoned");
     if let Some(s) = lock.iter_mut().find(|s| s.id == id) {
         s.opened_at = Some(Utc::now());
         s.closed_at = None;
-        return (StatusCode::OK, Json(serde_json::json!({"status": "opened"}))).into_response();
+        return (
+            StatusCode::OK,
+            Json(serde_json::json!({"status": "opened"})),
+        )
+            .into_response();
     }
-    (StatusCode::NOT_FOUND, Json(serde_json::json!({"error": "station not found"}))).into_response()
+    (
+        StatusCode::NOT_FOUND,
+        Json(serde_json::json!({"error": "station not found"})),
+    )
+        .into_response()
 }
 
 async fn close_station(
@@ -159,9 +181,17 @@ async fn close_station(
     let mut lock = state.stations.lock().expect("lock poisoned");
     if let Some(s) = lock.iter_mut().find(|s| s.id == id) {
         s.closed_at = Some(Utc::now());
-        return (StatusCode::OK, Json(serde_json::json!({"status": "closed"}))).into_response();
+        return (
+            StatusCode::OK,
+            Json(serde_json::json!({"status": "closed"})),
+        )
+            .into_response();
     }
-    (StatusCode::NOT_FOUND, Json(serde_json::json!({"error": "station not found"}))).into_response()
+    (
+        StatusCode::NOT_FOUND,
+        Json(serde_json::json!({"error": "station not found"})),
+    )
+        .into_response()
 }
 
 // ---- Roll handlers ----------------------------------------------------------
@@ -222,28 +252,30 @@ async fn import_roll(
     (StatusCode::OK, Json(report))
 }
 
-async fn freeze_roll(
-    State(state): State<SharedState>,
-    Path(id): Path<Uuid>,
-) -> impl IntoResponse {
+async fn freeze_roll(State(state): State<SharedState>, Path(id): Path<Uuid>) -> impl IntoResponse {
     let mut lock = state.rolls.lock().expect("lock poisoned");
     if let Some(pos) = lock.iter().position(|r| r.id == id) {
         let roll = lock.remove(pos).freeze(Utc::now());
         lock.push(roll.clone());
         return (StatusCode::OK, Json(roll)).into_response();
     }
-    (StatusCode::NOT_FOUND, Json(serde_json::json!({"error": "roll not found"}))).into_response()
+    (
+        StatusCode::NOT_FOUND,
+        Json(serde_json::json!({"error": "roll not found"})),
+    )
+        .into_response()
 }
 
-async fn get_roll(
-    State(state): State<SharedState>,
-    Path(id): Path<Uuid>,
-) -> impl IntoResponse {
+async fn get_roll(State(state): State<SharedState>, Path(id): Path<Uuid>) -> impl IntoResponse {
     let lock = state.rolls.lock().expect("lock poisoned");
     if let Some(roll) = lock.iter().find(|r| r.id == id) {
         return (StatusCode::OK, Json(roll.clone())).into_response();
     }
-    (StatusCode::NOT_FOUND, Json(serde_json::json!({"error": "roll not found"}))).into_response()
+    (
+        StatusCode::NOT_FOUND,
+        Json(serde_json::json!({"error": "roll not found"})),
+    )
+        .into_response()
 }
 
 // ---- Form 34A handlers ------------------------------------------------------
@@ -278,7 +310,11 @@ async fn create_form34a(
     );
     form.hsm_signature = body.hsm_signature;
 
-    state.forms.lock().expect("lock poisoned").push(form.clone());
+    state
+        .forms
+        .lock()
+        .expect("lock poisoned")
+        .push(form.clone());
 
     let response = Form34AResponse {
         form,
@@ -287,15 +323,16 @@ async fn create_form34a(
     (StatusCode::CREATED, Json(response))
 }
 
-async fn get_form34a(
-    State(state): State<SharedState>,
-    Path(id): Path<Uuid>,
-) -> impl IntoResponse {
+async fn get_form34a(State(state): State<SharedState>, Path(id): Path<Uuid>) -> impl IntoResponse {
     let lock = state.forms.lock().expect("lock poisoned");
     if let Some(form) = lock.iter().find(|f| f.id == id) {
         return (StatusCode::OK, Json(form.clone())).into_response();
     }
-    (StatusCode::NOT_FOUND, Json(serde_json::json!({"error": "form not found"}))).into_response()
+    (
+        StatusCode::NOT_FOUND,
+        Json(serde_json::json!({"error": "form not found"})),
+    )
+        .into_response()
 }
 
 // ---- Transmission batch handlers --------------------------------------------
@@ -318,29 +355,41 @@ async fn create_batch(
     drop(forms_lock);
 
     let (batch, _deduped) = batch_transmit(forms, Utc::now());
-    state.batches.lock().expect("lock poisoned").push(batch.clone());
+    state
+        .batches
+        .lock()
+        .expect("lock poisoned")
+        .push(batch.clone());
 
-    (StatusCode::CREATED, Json(serde_json::json!({
-        "id": batch.id,
-        "form_ids": batch.form_ids,
-        "status": format!("{:?}", batch.status),
-    })))
+    (
+        StatusCode::CREATED,
+        Json(serde_json::json!({
+            "id": batch.id,
+            "form_ids": batch.form_ids,
+            "status": format!("{:?}", batch.status),
+        })),
+    )
 }
 
-async fn get_batch(
-    State(state): State<SharedState>,
-    Path(id): Path<Uuid>,
-) -> impl IntoResponse {
+async fn get_batch(State(state): State<SharedState>, Path(id): Path<Uuid>) -> impl IntoResponse {
     let lock = state.batches.lock().expect("lock poisoned");
     if let Some(b) = lock.iter().find(|b| b.id == id) {
-        return (StatusCode::OK, Json(serde_json::json!({
-            "id": b.id,
-            "form_ids": b.form_ids,
-            "status": format!("{:?}", b.status),
-            "attempts": b.attempts,
-        }))).into_response();
+        return (
+            StatusCode::OK,
+            Json(serde_json::json!({
+                "id": b.id,
+                "form_ids": b.form_ids,
+                "status": format!("{:?}", b.status),
+                "attempts": b.attempts,
+            })),
+        )
+            .into_response();
     }
-    (StatusCode::NOT_FOUND, Json(serde_json::json!({"error": "batch not found"}))).into_response()
+    (
+        StatusCode::NOT_FOUND,
+        Json(serde_json::json!({"error": "batch not found"})),
+    )
+        .into_response()
 }
 
 // ---- Pouch handlers ---------------------------------------------------------
@@ -359,7 +408,11 @@ async fn create_pouch(
     if let Some(seal_id) = body.seal_id {
         pouch.seal(seal_id, Utc::now());
     }
-    state.pouches.lock().expect("lock poisoned").push(pouch.clone());
+    state
+        .pouches
+        .lock()
+        .expect("lock poisoned")
+        .push(pouch.clone());
     (StatusCode::CREATED, Json(pouch))
 }
 
@@ -392,7 +445,11 @@ async fn transfer_pouch(
         pouch.transfer(event);
         return (StatusCode::OK, Json(pouch.clone())).into_response();
     }
-    (StatusCode::NOT_FOUND, Json(serde_json::json!({"error": "pouch not found"}))).into_response()
+    (
+        StatusCode::NOT_FOUND,
+        Json(serde_json::json!({"error": "pouch not found"})),
+    )
+        .into_response()
 }
 
 async fn receive_pouch(
@@ -404,5 +461,9 @@ async fn receive_pouch(
         pouch.receive_at_nairobi(Utc::now());
         return (StatusCode::OK, Json(pouch.clone())).into_response();
     }
-    (StatusCode::NOT_FOUND, Json(serde_json::json!({"error": "pouch not found"}))).into_response()
+    (
+        StatusCode::NOT_FOUND,
+        Json(serde_json::json!({"error": "pouch not found"})),
+    )
+        .into_response()
 }

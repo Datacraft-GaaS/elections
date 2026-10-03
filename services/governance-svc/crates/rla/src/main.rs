@@ -44,7 +44,11 @@ async fn main() {
 
     let spec_state = eel_governance_rla::SpecState::new();
     let app = eel_governance_rla::router::build_router(store, spec_state);
-    let listener = tokio::net::TcpListener::bind(&http_addr).await.expect("bind failed");
+    let listener = tokio::net::TcpListener::bind(&http_addr)
+        .await
+        .expect("bind failed");
     info!(http_addr, "eel-governance-rla HTTP listening");
-    axum::serve(listener, app).await.expect("HTTP server failed");
+    axum::serve(listener, app)
+        .await
+        .expect("HTTP server failed");
 }

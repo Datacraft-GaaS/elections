@@ -179,8 +179,13 @@ pub struct StationConfigResponse {
 // Kits
 // ---------------------------------------------------------------------------
 
-pub const REVOKE_REASONS: [&str; 5] =
-    ["stolen", "tampered", "compromised", "defective", "reassigned"];
+pub const REVOKE_REASONS: [&str; 5] = [
+    "stolen",
+    "tampered",
+    "compromised",
+    "defective",
+    "reassigned",
+];
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct RevokeKitRequest {
@@ -265,7 +270,10 @@ mod tests {
 
     #[test]
     fn page_size_clamped() {
-        let mut q = KitsHealthQuery { page_size: 999, ..Default::default() };
+        let mut q = KitsHealthQuery {
+            page_size: 999,
+            ..Default::default()
+        };
         assert_eq!(q.effective_page_size(), 200);
         q.page_size = 0;
         assert_eq!(q.effective_page_size(), 1);

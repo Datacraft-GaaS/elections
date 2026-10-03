@@ -80,8 +80,8 @@ mod tests {
         body::Body,
         http::{Request, StatusCode as Sc},
     };
-    use tower::util::ServiceExt;
     use eel_trace_rs::trace;
+    use tower::util::ServiceExt;
 
     #[trace("FR-M02-001")]
     #[tokio::test]

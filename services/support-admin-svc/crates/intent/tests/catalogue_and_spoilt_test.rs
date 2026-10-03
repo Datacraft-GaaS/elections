@@ -35,12 +35,23 @@ fn app() -> (axum::Router, intent::http::SharedState) {
 
 async fn get(router: axum::Router, uri: &str) -> (StatusCode, Value) {
     let resp = router
-        .oneshot(Request::builder().uri(uri).method("GET").body(Body::empty()).unwrap())
+        .oneshot(
+            Request::builder()
+                .uri(uri)
+                .method("GET")
+                .body(Body::empty())
+                .unwrap(),
+        )
         .await
         .unwrap();
     let status = resp.status();
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
-    (status, serde_json::from_slice(&bytes).unwrap_or(Value::Null))
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    (
+        status,
+        serde_json::from_slice(&bytes).unwrap_or(Value::Null),
+    )
 }
 
 async fn post(router: axum::Router, uri: &str, body: Value) -> (StatusCode, Value) {
@@ -56,8 +67,13 @@ async fn post(router: axum::Router, uri: &str, body: Value) -> (StatusCode, Valu
         .await
         .unwrap();
     let status = resp.status();
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
-    (status, serde_json::from_slice(&bytes).unwrap_or(Value::Null))
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    (
+        status,
+        serde_json::from_slice(&bytes).unwrap_or(Value::Null),
+    )
 }
 
 #[tokio::test]
@@ -95,7 +111,11 @@ async fn a_spoilt_ballot_is_recorded_and_readable_back() {
     let spoilt_id = body["spoilt_id"].as_str().expect("spoilt_id").to_string();
 
     let stored = state.spoilt_ballots.lock().unwrap();
-    assert_eq!(stored.len(), 1, "the submission must be recorded, not just ticketed");
+    assert_eq!(
+        stored.len(),
+        1,
+        "the submission must be recorded, not just ticketed"
+    );
     assert_eq!(stored[0]["spoilt_id"], spoilt_id);
     assert_eq!(stored[0]["station_code"], "NRB-001-PS-042");
     // The reason code is the point of the record, and it is validated against the

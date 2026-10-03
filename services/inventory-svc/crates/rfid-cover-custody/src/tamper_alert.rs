@@ -33,7 +33,11 @@ use crate::error::RfidError;
 /// - EPC mismatch observed at a transit checkpoint -> Critical
 /// - Cover lifted at an allowed transition reader -> Warn
 /// - Any other anomaly -> Info
-pub fn classify_severity(tamper_indicator: bool, challenge_valid: bool, epc_mismatch: bool) -> Severity {
+pub fn classify_severity(
+    tamper_indicator: bool,
+    challenge_valid: bool,
+    epc_mismatch: bool,
+) -> Severity {
     if epc_mismatch || !challenge_valid || tamper_indicator {
         Severity::Critical
     } else {

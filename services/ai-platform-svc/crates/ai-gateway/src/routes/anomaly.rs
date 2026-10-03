@@ -25,11 +25,7 @@ use futures::stream;
 use serde::Deserialize;
 use tokio_stream::StreamExt as _;
 
-use crate::{
-    error::ApiError,
-    models::AnomalyAlert,
-    AppState,
-};
+use crate::{error::ApiError, models::AnomalyAlert, AppState};
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -39,9 +35,7 @@ pub fn router() -> Router<AppState> {
         .route("/stream", get(stream_alerts))
 }
 
-async fn list_alerts(
-    State(state): State<AppState>,
-) -> Json<Vec<AnomalyAlert>> {
+async fn list_alerts(State(state): State<AppState>) -> Json<Vec<AnomalyAlert>> {
     let alerts = state.alerts.read().await;
     Json(alerts.clone())
 }

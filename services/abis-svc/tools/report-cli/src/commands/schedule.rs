@@ -25,7 +25,9 @@ struct ScheduleEntry {
 
 pub async fn run(client: &ReportsClient, slug: &str, next: u32) -> Result<()> {
     let entries: Vec<ScheduleEntry> = client
-        .get_json(&format!("/api/v1/reports/definitions/{slug}/schedule?next={next}"))
+        .get_json(&format!(
+            "/api/v1/reports/definitions/{slug}/schedule?next={next}"
+        ))
         .await?;
 
     if entries.is_empty() {

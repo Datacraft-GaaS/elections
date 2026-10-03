@@ -50,7 +50,16 @@ async fn list_events(State(state): State<AppState>) -> Result<Json<Value>, ApiEr
     let events: Vec<Value> = rows
         .into_iter()
         .map(
-            |(event_id, voter_id, event_type, source, confidence_score, decision, resolved_at, created_at)| {
+            |(
+                event_id,
+                voter_id,
+                event_type,
+                source,
+                confidence_score,
+                decision,
+                resolved_at,
+                created_at,
+            )| {
                 json!({
                     "eventId": event_id,
                     "voterId": voter_id,

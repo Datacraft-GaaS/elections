@@ -62,8 +62,8 @@ fn load_signing_key(seed_hex: &str) -> anyhow::Result<ed25519_dalek::SigningKey>
 }
 
 fn read_id_list(path: &str) -> anyhow::Result<Vec<String>> {
-    let raw = std::fs::read_to_string(path)
-        .map_err(|e| anyhow::anyhow!("cannot read {path}: {e}"))?;
+    let raw =
+        std::fs::read_to_string(path).map_err(|e| anyhow::anyhow!("cannot read {path}: {e}"))?;
     Ok(raw
         .lines()
         .map(str::trim)
@@ -96,8 +96,7 @@ pub async fn run(
         use base64::{engine::general_purpose::STANDARD, Engine as _};
         STANDARD.encode(sig.to_bytes())
     }));
-    signed["signer_pubkey"] =
-        serde_json::json!(hex::encode(key.verifying_key().as_bytes()));
+    signed["signer_pubkey"] = serde_json::json!(hex::encode(key.verifying_key().as_bytes()));
     println!("{}", serde_json::to_string_pretty(&signed)?);
 
     Ok(missing)
@@ -113,10 +112,7 @@ mod tests {
 
     #[test]
     fn diff_reports_missing_and_unexpected_sorted() {
-        let c = coverage_diff(
-            &ids(&["S03", "S01", "S02"]),
-            &ids(&["S02", "S09", "S01"]),
-        );
+        let c = coverage_diff(&ids(&["S03", "S01", "S02"]), &ids(&["S02", "S09", "S01"]));
         assert_eq!(c.missing, vec!["S03"]);
         assert_eq!(c.unexpected, vec!["S09"]);
         assert_eq!(c.expected_count, 3);

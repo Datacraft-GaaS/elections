@@ -78,8 +78,7 @@ impl AppState {
     /// Observation reports for a mission, oldest first.
     pub fn observation_reports_for(&self, mission_id: &str) -> Vec<ObservationReport> {
         let guard = self.observation_reports.lock().expect("lock poisoned");
-        let mut items: Vec<ObservationReport> =
-            guard.get(mission_id).cloned().unwrap_or_default();
+        let mut items: Vec<ObservationReport> = guard.get(mission_id).cloned().unwrap_or_default();
         drop(guard);
         items.sort_by(|a, b| a.submitted_at.cmp(&b.submitted_at).then(a.id.cmp(&b.id)));
         items

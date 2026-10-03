@@ -163,8 +163,7 @@ mod tests {
         assert!(verify_kit_view(&good, &trusted).is_ok());
 
         // A substituted register file fails offline.
-        let swapped_root =
-            root_over_entries(&[b"voter-1" as &[u8], b"voter-3", b"voter-2"]);
+        let swapped_root = root_over_entries(&[b"voter-1" as &[u8], b"voter-3", b"voter-2"]);
         let swapped = BundleView {
             merkle_root_hex: swapped_root.clone(),
             ..good.clone()

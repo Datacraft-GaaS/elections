@@ -110,7 +110,11 @@ impl AppState {
 
     /// A station's current record.
     pub fn get(&self, station_code: &str) -> Option<StationRecord> {
-        self.stations.lock().expect("lock poisoned").get(station_code).cloned()
+        self.stations
+            .lock()
+            .expect("lock poisoned")
+            .get(station_code)
+            .cloned()
     }
 
     /// Every station, ordered by code.
@@ -124,19 +128,35 @@ impl AppState {
 
     /// Mark a station's receipt confirmed.
     pub fn confirm_receipt(&self, station_code: &str) {
-        if let Some(r) = self.stations.lock().expect("lock poisoned").get_mut(station_code) {
+        if let Some(r) = self
+            .stations
+            .lock()
+            .expect("lock poisoned")
+            .get_mut(station_code)
+        {
             r.receipt_confirmed = true;
         }
     }
 
     /// Whether a clerk receipt has been confirmed.
     pub fn receipt_confirmed(&self, station_code: &str) -> bool {
-        self.get(station_code).map(|r| r.receipt_confirmed).unwrap_or(false)
+        self.get(station_code)
+            .map(|r| r.receipt_confirmed)
+            .unwrap_or(false)
     }
 
     /// Record a reconciliation result against a station.
-    pub fn set_reconciliation(&self, station_code: &str, result: crate::reconciliation::ReconciliationResult) {
-        if let Some(r) = self.stations.lock().expect("lock poisoned").get_mut(station_code) {
+    pub fn set_reconciliation(
+        &self,
+        station_code: &str,
+        result: crate::reconciliation::ReconciliationResult,
+    ) {
+        if let Some(r) = self
+            .stations
+            .lock()
+            .expect("lock poisoned")
+            .get_mut(station_code)
+        {
             r.last_reconciliation = Some(result);
         }
     }

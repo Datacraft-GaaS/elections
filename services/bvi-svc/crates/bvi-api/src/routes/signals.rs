@@ -25,7 +25,7 @@ use axum::{
 use crate::{
     error::ApiError,
     idem,
-    models::{DistressCreate, DISTRESS_TYPES, TelemetryCreate},
+    models::{DistressCreate, TelemetryCreate, DISTRESS_TYPES},
     routes::store_error,
     state::AppState,
     store::BviStore,
@@ -47,7 +47,10 @@ pub async fn submit_telemetry<S: BviStore>(
 
     let Json(t) = body.map_err(|rej| ApiError::bad_request(TELEMETRY_INSTANCE, rej.body_text()))?;
     if !(0..=100).contains(&t.battery_pct) {
-        return Err(ApiError::bad_request(TELEMETRY_INSTANCE, "battery_pct must be within [0, 100]"));
+        return Err(ApiError::bad_request(
+            TELEMETRY_INSTANCE,
+            "battery_pct must be within [0, 100]",
+        ));
     }
 
     state

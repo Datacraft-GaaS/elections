@@ -53,7 +53,10 @@ pub async fn insert_device(pool: &PgPool, device: &TelemetryDevice) -> Result<()
     Ok(())
 }
 
-pub async fn fetch_device(pool: &PgPool, device_id: Uuid) -> Result<Option<TelemetryDevice>, TelemetryError> {
+pub async fn fetch_device(
+    pool: &PgPool,
+    device_id: Uuid,
+) -> Result<Option<TelemetryDevice>, TelemetryError> {
     use sqlx::Row;
     let row = sqlx::query(
         r#"
@@ -101,7 +104,10 @@ pub async fn revoke_device(
 // TelemetrySession
 // ---------------------------------------------------------------------------
 
-pub async fn insert_session(pool: &PgPool, session: &TelemetrySession) -> Result<(), TelemetryError> {
+pub async fn insert_session(
+    pool: &PgPool,
+    session: &TelemetrySession,
+) -> Result<(), TelemetryError> {
     sqlx::query(
         r#"
         INSERT INTO eel_telemetry_sessions
@@ -220,7 +226,10 @@ pub async fn fetch_last_signal_state(
     .await?;
 
     Ok(row.map(|r: sqlx::postgres::PgRow| {
-        (r.get::<i64, _>("monotonic_counter"), r.get::<Vec<u8>, _>("this_hash"))
+        (
+            r.get::<i64, _>("monotonic_counter"),
+            r.get::<Vec<u8>, _>("this_hash"),
+        )
     }))
 }
 
@@ -246,7 +255,10 @@ pub async fn fetch_signal_hashes_for_date(
     .fetch_all(pool)
     .await?;
 
-    Ok(rows.into_iter().map(|r: sqlx::postgres::PgRow| r.get::<Vec<u8>, _>("this_hash")).collect())
+    Ok(rows
+        .into_iter()
+        .map(|r: sqlx::postgres::PgRow| r.get::<Vec<u8>, _>("this_hash"))
+        .collect())
 }
 
 // ---------------------------------------------------------------------------
@@ -291,7 +303,10 @@ pub async fn insert_activity_frame(
 // TelemetryGeoDwell
 // ---------------------------------------------------------------------------
 
-pub async fn insert_geo_dwell(pool: &PgPool, dwell: &TelemetryGeoDwell) -> Result<(), TelemetryError> {
+pub async fn insert_geo_dwell(
+    pool: &PgPool,
+    dwell: &TelemetryGeoDwell,
+) -> Result<(), TelemetryError> {
     sqlx::query(
         r#"
         INSERT INTO eel_telemetry_geo_dwells
@@ -357,7 +372,10 @@ pub async fn resolve_alert(
 // TelemetrySnapshot
 // ---------------------------------------------------------------------------
 
-pub async fn insert_snapshot(pool: &PgPool, snap: &TelemetrySnapshot) -> Result<(), TelemetryError> {
+pub async fn insert_snapshot(
+    pool: &PgPool,
+    snap: &TelemetrySnapshot,
+) -> Result<(), TelemetryError> {
     sqlx::query(
         r#"
         INSERT INTO eel_telemetry_snapshots

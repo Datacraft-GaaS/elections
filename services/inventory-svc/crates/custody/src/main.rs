@@ -42,12 +42,18 @@ async fn main() {
             custody::state::AppState::from_pool(pool)
         }
         Err(_) => {
-            info!("DATABASE_URL unset; using in-memory store (tests only) — prod must set postgres");
+            info!(
+                "DATABASE_URL unset; using in-memory store (tests only) — prod must set postgres"
+            );
             custody::state::AppState::new()
         }
     };
     let app = custody::router::router(state);
-    let listener = tokio::net::TcpListener::bind(&http_addr).await.expect("bind failed");
+    let listener = tokio::net::TcpListener::bind(&http_addr)
+        .await
+        .expect("bind failed");
     info!(http_addr, "custody-api HTTP listening");
-    axum::serve(listener, app).await.expect("HTTP server failed");
+    axum::serve(listener, app)
+        .await
+        .expect("HTTP server failed");
 }

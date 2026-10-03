@@ -359,8 +359,14 @@ pub trait AiStore: Send + Sync {
     ) -> Result<(), StoreError>;
 
     // M26 anomaly detection
-    async fn list_anomaly_alerts(&self, q: &AlertQuery) -> Result<Page<AnomalyAlertOut>, StoreError>;
-    async fn get_anomaly_alert(&self, alert_id: Uuid) -> Result<Option<AnomalyAlertOut>, StoreError>;
+    async fn list_anomaly_alerts(
+        &self,
+        q: &AlertQuery,
+    ) -> Result<Page<AnomalyAlertOut>, StoreError>;
+    async fn get_anomaly_alert(
+        &self,
+        alert_id: Uuid,
+    ) -> Result<Option<AnomalyAlertOut>, StoreError>;
     async fn adjudicate_alert(
         &self,
         cmd: &AdjudicationCommand,

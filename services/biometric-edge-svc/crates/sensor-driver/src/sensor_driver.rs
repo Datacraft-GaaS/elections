@@ -45,7 +45,9 @@ pub const QUALITY_GATE_MIN: u8 = 70;
 /// Capture and matching are separate concerns: a modality can be matchable with
 /// no capture path (for example latent prints, which come from crime scenes and
 /// are therefore deliberately absent here).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 #[serde(rename_all = "snake_case")]
 pub enum Modality {
     /// Contact fingerprint image set. ISO/IEC 19794-2.
@@ -447,10 +449,7 @@ pub trait BiometricSensorDriver: Send + Sync {
     /// recording of the subject is a successful attack, so an adapter that
     /// cannot challenge the subject must fail rather than fall back to
     /// [`capture_face`](Self::capture_face).
-    fn capture_live_photograph(
-        &self,
-        timeout: Duration,
-    ) -> Result<BiometricCapture, SensorError> {
+    fn capture_live_photograph(&self, timeout: Duration) -> Result<BiometricCapture, SensorError> {
         self.capture(Modality::LivePhotograph, timeout)
     }
 
@@ -558,10 +557,7 @@ pub trait BiometricSensorDriver: Send + Sync {
     /// [`capture_fingerprint`](Self::capture_fingerprint): silently returning
     /// an unverified sample from a function whose name promises a liveness
     /// guarantee would be the worst possible failure mode here.
-    fn capture_fingerprint_live(
-        &self,
-        timeout: Duration,
-    ) -> Result<BiometricCapture, SensorError> {
+    fn capture_fingerprint_live(&self, timeout: Duration) -> Result<BiometricCapture, SensorError> {
         let mut capture = self.capture_fingerprint(timeout)?;
         let verdict = self.verify_fingerprint_liveness(&capture.sample, timeout)?;
         if !verdict.passed {
@@ -785,7 +781,11 @@ impl BiometricSensorDriver for MockSensorDriver {
         }
         // A liveness score is supplied independently of capture quality, so a
         // test can present a high-quality replica and have liveness still fail.
-        let score = if self.liveness_score > 0 { self.liveness_score } else { sample.meta.quality };
+        let score = if self.liveness_score > 0 {
+            self.liveness_score
+        } else {
+            sample.meta.quality
+        };
         Ok(LivenessVerdict {
             method,
             passed: score >= QUALITY_GATE_MIN,
@@ -902,11 +902,16 @@ mod tests {
     #[test]
     fn the_new_capture_methods_work() {
         let driver = MockSensorDriver::present("BVRD-KE-00412", 88);
-        let cases: [(Modality, fn(&dyn BiometricSensorDriver, Duration) -> Result<BiometricCapture, SensorError>); 8] = [
+        let cases: [(
+            Modality,
+            fn(&dyn BiometricSensorDriver, Duration) -> Result<BiometricCapture, SensorError>,
+        ); 8] = [
             (Modality::PalmVein, |d, t| d.capture_palm_vein(t)),
             (Modality::FingerVein, |d, t| d.capture_finger_vein(t)),
             (Modality::WristVein, |d, t| d.capture_wrist_vein(t)),
-            (Modality::LivePhotograph, |d, t| d.capture_live_photograph(t)),
+            (Modality::LivePhotograph, |d, t| {
+                d.capture_live_photograph(t)
+            }),
             (Modality::DocumentMrz, |d, t| d.capture_document_mrz(t)),
             (Modality::Gait, |d, t| d.capture_gait(t)),
             (Modality::Voiceprint, |d, t| d.capture_voiceprint(t)),
@@ -924,9 +929,9 @@ mod tests {
         for modality in Modality::ALL {
             let driver = MockSensorDriver::present("kit", 90)
                 .with_modality(*modality, MockAcquisition::Absent);
-            let err = driver
-                .capture(*modality, TIMEOUT)
-                .expect_err(&format!("{modality:?} should fail when nothing is presented"));
+            let err = driver.capture(*modality, TIMEOUT).expect_err(&format!(
+                "{modality:?} should fail when nothing is presented"
+            ));
             // The error must name the modality rather than being a generic miss.
             assert_eq!(err.to_string(), modality.not_present_error().to_string());
         }
@@ -937,7 +942,10 @@ mod tests {
         // An MRZ scan yields document text; routing it into biometric template
         // storage would misclassify it under the retention rules.
         assert!(!Modality::DocumentMrz.is_biometric());
-        for modality in Modality::ALL.iter().filter(|m| **m != Modality::DocumentMrz) {
+        for modality in Modality::ALL
+            .iter()
+            .filter(|m| **m != Modality::DocumentMrz)
+        {
             assert!(modality.is_biometric(), "{modality:?} should be biometric");
         }
     }
@@ -974,7 +982,10 @@ mod tests {
         // Guard against a modality being added to the exception list twice.
         assert_eq!(
             NO_BINDING_STANDARD.len(),
-            NO_BINDING_STANDARD.iter().collect::<std::collections::HashSet<_>>().len()
+            NO_BINDING_STANDARD
+                .iter()
+                .collect::<std::collections::HashSet<_>>()
+                .len()
         );
     }
 
@@ -1022,7 +1033,9 @@ mod tests {
         let driver = MockSensorDriver::present("BVRD-KE-00412", 90)
             .with_liveness_method(LivenessMethod::BloodPerfusion);
         let capture = driver.capture_fingerprint_live(TIMEOUT).unwrap();
-        let verdict = capture.liveness.expect("a live capture must carry a verdict");
+        let verdict = capture
+            .liveness
+            .expect("a live capture must carry a verdict");
         assert!(verdict.passed);
         assert_eq!(verdict.method, LivenessMethod::BloodPerfusion);
         assert!(verdict.score >= QUALITY_GATE_MIN);
@@ -1054,8 +1067,8 @@ mod tests {
     #[test]
     fn an_adapter_with_no_liveness_capability_fails_closed() {
         // Critically: it must NOT fall back to returning an unverified sample.
-        let driver = MockSensorDriver::present("kit", 92)
-            .with_liveness_method(LivenessMethod::Unavailable);
+        let driver =
+            MockSensorDriver::present("kit", 92).with_liveness_method(LivenessMethod::Unavailable);
         let err = driver
             .capture_fingerprint_live(TIMEOUT)
             .expect_err("no capability must mean no live capture");
@@ -1067,8 +1080,8 @@ mod tests {
     fn plain_fingerprint_capture_is_not_claimed_as_liveness_checked() {
         // capture_fingerprint must not attach a verdict it never earned, or a
         // caller could mistake it for a checked capture.
-        let driver = MockSensorDriver::present("kit", 92)
-            .with_liveness_method(LivenessMethod::Thermal);
+        let driver =
+            MockSensorDriver::present("kit", 92).with_liveness_method(LivenessMethod::Thermal);
         let capture = driver.capture_fingerprint(TIMEOUT).unwrap();
         assert!(capture.liveness.is_none());
     }
@@ -1146,11 +1159,19 @@ mod tests {
         // A timeout-bounded capture is the wrong shape for these, and the
         // client uses collection_mode to pick the right UI.
         for modality in [Modality::KeystrokeDynamics, Modality::MouseDynamics] {
-            assert_eq!(modality.collection_mode(), CollectionMode::Passive, "{modality:?}");
+            assert_eq!(
+                modality.collection_mode(),
+                CollectionMode::Passive,
+                "{modality:?}"
+            );
         }
         assert_eq!(Modality::Dna.collection_mode(), CollectionMode::ExVivo);
         for modality in [Modality::Fingerprint, Modality::Iris, Modality::DocumentMrz] {
-            assert_eq!(modality.collection_mode(), CollectionMode::Active, "{modality:?}");
+            assert_eq!(
+                modality.collection_mode(),
+                CollectionMode::Active,
+                "{modality:?}"
+            );
         }
     }
 
@@ -1200,7 +1221,11 @@ mod tests {
 
     #[test]
     fn collection_mode_and_liveness_method_round_trip_through_json() {
-        for mode in [CollectionMode::Active, CollectionMode::Passive, CollectionMode::ExVivo] {
+        for mode in [
+            CollectionMode::Active,
+            CollectionMode::Passive,
+            CollectionMode::ExVivo,
+        ] {
             let text = serde_json::to_string(&mode).unwrap();
             assert_eq!(serde_json::from_str::<CollectionMode>(&text).unwrap(), mode);
         }
@@ -1212,7 +1237,10 @@ mod tests {
             LivenessMethod::Unavailable,
         ] {
             let text = serde_json::to_string(&method).unwrap();
-            assert_eq!(serde_json::from_str::<LivenessMethod>(&text).unwrap(), method);
+            assert_eq!(
+                serde_json::from_str::<LivenessMethod>(&text).unwrap(),
+                method
+            );
         }
     }
 

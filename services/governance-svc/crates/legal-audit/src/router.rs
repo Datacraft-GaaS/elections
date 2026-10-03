@@ -36,7 +36,7 @@ pub fn build_router(state: SharedState) -> Router {
             get(party_summary),
         )
         .route("/legal-audit/reports", post(generate_report))
-    // Public contract endpoints (governance-legal-audit/audit.yaml)
+        // Public contract endpoints (governance-legal-audit/audit.yaml)
         .route(
             "/api/v1/governance/legal-audit/transmissions",
             get(list_transmission_legal_records),

@@ -92,7 +92,10 @@ pub async fn get_dereg_appeal(
     // Previously 404 for every id, so a filed case could not be read back.
     match state.store.appeal(&appeal_id) {
         Some(appeal) => Json(appeal).into_response(),
-        None => problem(StatusCode::NOT_FOUND, format!("appeal {appeal_id} not found")),
+        None => problem(
+            StatusCode::NOT_FOUND,
+            format!("appeal {appeal_id} not found"),
+        ),
     }
 }
 
@@ -187,17 +190,26 @@ pub async fn handle_dereg_ussd_session(
         );
     }
     let (response_text, action) = state.store.ussd_step(session_id, &req.text);
-    Json(DeregUssdResponse { response_text, action }).into_response()
+    Json(DeregUssdResponse {
+        response_text,
+        action,
+    })
+    .into_response()
 }
 
 fn is_hex64(s: &str) -> bool {
-    s.len() == 64 && s.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+    s.len() == 64
+        && s.bytes()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
 }
 
 /// Composes the public dereg contract router.
 pub fn router() -> axum::Router<crate::state::AppState> {
     axum::Router::new()
-        .route("/api/v1/dereg/appeals", axum::routing::get(list_dereg_appeals))
+        .route(
+            "/api/v1/dereg/appeals",
+            axum::routing::get(list_dereg_appeals),
+        )
         .route(
             "/api/v1/dereg/appeals/{appeal_id}",
             axum::routing::get(get_dereg_appeal),

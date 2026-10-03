@@ -66,14 +66,8 @@ pub fn build_router(state: Arc<AppState>) -> Router {
             post(withdraw_candidate),
         )
         // Nominations
-        .route(
-            "/api/v1/crms/nominations",
-            post(create_nomination),
-        )
-        .route(
-            "/api/v1/crms/nominations/{id}",
-            get(get_nomination),
-        )
+        .route("/api/v1/crms/nominations", post(create_nomination))
+        .route("/api/v1/crms/nominations/{id}", get(get_nomination))
         .route(
             "/api/v1/crms/nominations/{id}/documents",
             post(add_document),
@@ -83,30 +77,15 @@ pub fn build_router(state: Arc<AppState>) -> Router {
             "/api/v1/crms/clearances",
             get(list_clearances).post(create_clearance),
         )
-        .route(
-            "/api/v1/crms/clearances/advisory",
-            post(advisory_clearance),
-        )
+        .route("/api/v1/crms/clearances/advisory", post(advisory_clearance))
         // Quota
-        .route(
-            "/api/v1/crms/quota/evaluate",
-            post(evaluate_quota_rule),
-        )
+        .route("/api/v1/crms/quota/evaluate", post(evaluate_quota_rule))
         // Gazette
-        .route(
-            "/api/v1/crms/gazettes",
-            post(build_gazette),
-        )
+        .route("/api/v1/crms/gazettes", post(build_gazette))
         .route("/api/v1/crms/gazettes/{id}", get(get_gazette))
-        .route(
-            "/api/v1/crms/gazettes/{id}/publish",
-            post(publish_gazette),
-        )
+        .route("/api/v1/crms/gazettes/{id}/publish", post(publish_gazette))
         .route("/api/v1/crms/gazettes/{id}/csv", get(gazette_csv))
-        .route(
-            "/api/v1/crms/gazettes/{id}/json",
-            get(gazette_signed_json),
-        )
+        .route("/api/v1/crms/gazettes/{id}/json", get(gazette_signed_json))
         // Ballot proofs
         .route("/api/v1/crms/ballots", post(build_ballot))
         .route("/api/v1/crms/ballots/{id}", get(get_ballot))
@@ -114,22 +93,13 @@ pub fn build_router(state: Arc<AppState>) -> Router {
             "/api/v1/crms/ballots/{id}/party-sign-off",
             post(ballot_party_sign_off),
         )
-        .route(
-            "/api/v1/crms/ballots/{id}/approve",
-            post(approve_ballot),
-        )
+        .route("/api/v1/crms/ballots/{id}/approve", post(approve_ballot))
         // Parties
-        .route(
-            "/api/v1/crms/parties",
-            get(list_parties).post(create_party),
-        )
+        .route("/api/v1/crms/parties", get(list_parties).post(create_party))
         .route("/api/v1/crms/parties/{id}", get(get_party))
         .route("/api/v1/crms/parties/{id}/submit", post(submit_party))
         .route("/api/v1/crms/parties/{id}/approve", post(approve_party))
-        .route(
-            "/api/v1/crms/parties/{id}/suspend",
-            post(suspend_party),
-        )
+        .route("/api/v1/crms/parties/{id}/suspend", post(suspend_party))
         .route(
             "/api/v1/crms/parties/{id}/deregister",
             post(deregister_party),
@@ -167,10 +137,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
             get(list_fee_schedules).post(create_fee_schedule),
         )
         .route("/api/v1/crms/payments", post(record_payment))
-        .route(
-            "/api/v1/crms/payments/{id}/confirm",
-            post(confirm_payment),
-        )
+        .route("/api/v1/crms/payments/{id}/confirm", post(confirm_payment))
         // Party symbols
         .route(
             "/api/v1/crms/symbols",

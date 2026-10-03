@@ -22,9 +22,9 @@
 #![warn(missing_docs)]
 
 pub mod bundle;
-pub mod sortition; // G02: VRF cryptographic sortition
 pub mod error;
 pub mod manifest;
+pub mod sortition; // G02: VRF cryptographic sortition
 pub mod token;
 
 pub use bundle::{Bundle, BundleComponent, ComponentType};

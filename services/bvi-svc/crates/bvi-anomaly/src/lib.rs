@@ -258,8 +258,7 @@ fn erfc(x: f64) -> f64 {
                     + t * (-0.186_288_06
                         + t * (0.278_868_07
                             + t * (-1.135_203_98
-                                + t * (1.488_515_87
-                                    + t * (-0.822_152_23 + t * 0.170_872_77))))))));
+                                + t * (1.488_515_87 + t * (-0.822_152_23 + t * 0.170_872_77))))))));
     let val = t * (-z * z - 1.265_512_23 + poly).exp();
 
     if x >= 0.0 {
@@ -301,7 +300,7 @@ pub struct LedgerCounts {
     /// Match requests observed at the ABIS (biometric matching engine).
     pub abis_match_requests: i64,
     /// Authenticated-voter rollups emitted to the results pipeline.
-    pub rollup_authenticated: i64
+    pub rollup_authenticated: i64,
 }
 
 /// Feed freshness for each ledger. Under low/intermittent connectivity these
@@ -446,10 +445,7 @@ mod tests {
 
     #[test]
     fn flags_same_device_two_stations_too_fast() {
-        let reads = vec![
-            read("D1", "ST-A", 0),
-            read("D1", "ST-B", 120),
-        ];
+        let reads = vec![read("D1", "ST-A", 0), read("D1", "ST-B", 120)];
         let out = velocity_impossible(&reads, 600);
         assert_eq!(out.len(), 1);
         assert_eq!(out[0].severity, Severity::High);
@@ -460,28 +456,19 @@ mod tests {
 
     #[test]
     fn allows_travel_time_above_threshold() {
-        let reads = vec![
-            read("D1", "ST-A", 0),
-            read("D1", "ST-B", 700),
-        ];
+        let reads = vec![read("D1", "ST-A", 0), read("D1", "ST-B", 700)];
         assert!(velocity_impossible(&reads, 600).is_empty());
     }
 
     #[test]
     fn same_station_back_to_back_is_fine() {
-        let reads = vec![
-            read("D1", "ST-A", 0),
-            read("D1", "ST-A", 30),
-        ];
+        let reads = vec![read("D1", "ST-A", 0), read("D1", "ST-A", 30)];
         assert!(velocity_impossible(&reads, 600).is_empty());
     }
 
     #[test]
     fn unsorted_input_is_sorted_by_time() {
-        let reads = vec![
-            read("D1", "ST-B", 60),
-            read("D1", "ST-A", 0),
-        ];
+        let reads = vec![read("D1", "ST-B", 60), read("D1", "ST-A", 0)];
         let out = velocity_impossible(&reads, 600);
         assert_eq!(out.len(), 1);
         assert!(out[0].detail.contains("ST-A") && out[0].detail.contains("ST-B"));
@@ -551,14 +538,22 @@ mod tests {
         let counts: Vec<u64> = vec![98, 101, 103, 99, 100, 97, 102, 100, 104, 96]; // total 1000
         let stats = digit_distribution_chi_square(&counts, &UNIFORM).unwrap();
         assert_eq!(stats.dof, 9.0);
-        assert!(stats.p_value > 0.01, "p={} too low for uniform data", stats.p_value);
+        assert!(
+            stats.p_value > 0.01,
+            "p={} too low for uniform data",
+            stats.p_value
+        );
     }
 
     #[test]
     fn heavily_skewed_data_gives_tiny_p_value() {
         let counts: Vec<u64> = vec![900, 10, 10, 10, 10, 10, 10, 10, 20, 10];
         let stats = digit_distribution_chi_square(&counts, &UNIFORM).unwrap();
-        assert!(stats.p_value < 0.001, "p={} too high for skewed data", stats.p_value);
+        assert!(
+            stats.p_value < 0.001,
+            "p={} too high for skewed data",
+            stats.p_value
+        );
         assert!(stats.chi_square > 50.0);
     }
 
@@ -626,7 +621,11 @@ mod tests {
     }
 
     fn fresh() -> LedgerMeta {
-        LedgerMeta { bvi_age_secs: 5, abis_age_secs: 7, rollup_age_secs: 3 }
+        LedgerMeta {
+            bvi_age_secs: 5,
+            abis_age_secs: 7,
+            rollup_age_secs: 3,
+        }
     }
 
     #[test]
@@ -654,17 +653,25 @@ mod tests {
 
     #[test]
     fn stale_dominates_even_when_inconsistent() {
-        let meta = LedgerMeta { bvi_age_secs: 30, abis_age_secs: 10, rollup_age_secs: 9_000 };
+        let meta = LedgerMeta {
+            bvi_age_secs: 30,
+            abis_age_secs: 10,
+            rollup_age_secs: 9_000,
+        };
         let c = counts(1_000, 2_500, 100);
         assert_eq!(
             cross_ledger_delta(&c, &meta, 10, 600),
-            CrossLedgerVerdict::Stale { oldest_age_secs: 9_000 }
+            CrossLedgerVerdict::Stale {
+                oldest_age_secs: 9_000
+            }
         );
         // Stale even when counts would otherwise agree.
         let ok = counts(500, 500, 500);
         assert_eq!(
             cross_ledger_delta(&ok, &meta, 10, 600),
-            CrossLedgerVerdict::Stale { oldest_age_secs: 9_000 }
+            CrossLedgerVerdict::Stale {
+                oldest_age_secs: 9_000
+            }
         );
     }
 
@@ -677,7 +684,11 @@ mod tests {
             CrossLedgerVerdict::Consistent
         );
         // Staleness boundary exactly == max is still fresh enough.
-        let meta = LedgerMeta { bvi_age_secs: 600, abis_age_secs: 600, rollup_age_secs: 600 };
+        let meta = LedgerMeta {
+            bvi_age_secs: 600,
+            abis_age_secs: 600,
+            rollup_age_secs: 600,
+        };
         assert_eq!(
             cross_ledger_delta(&counts(5, 5, 5), &meta, 0, 600),
             CrossLedgerVerdict::Consistent
@@ -686,8 +697,11 @@ mod tests {
 
     #[test]
     fn verdict_serializes_snake_case() {
-        let json = serde_json::to_string(&CrossLedgerVerdict::Stale { oldest_age_secs: 7 }).unwrap();
+        let json =
+            serde_json::to_string(&CrossLedgerVerdict::Stale { oldest_age_secs: 7 }).unwrap();
         assert!(json.contains("stale"), "{json}");
-        assert!(serde_json::to_string(&CrossLedgerVerdict::Consistent).unwrap().contains("consistent"));
+        assert!(serde_json::to_string(&CrossLedgerVerdict::Consistent)
+            .unwrap()
+            .contains("consistent"));
     }
 }

@@ -28,6 +28,6 @@ pub mod match_ckks;
 pub mod policy;
 
 pub use context::{FheContext, FheScheme, SerializedContext};
-pub use match_bfv::{BfvCiphertext, BfvMatcher, BfvMatchError};
-pub use match_ckks::{CkksCiphertext, CkksMatcher, CkksMatchError};
+pub use match_bfv::{BfvCiphertext, BfvMatchError, BfvMatcher};
+pub use match_ckks::{CkksCiphertext, CkksMatchError, CkksMatcher};
 pub use policy::{FhePolicy, FhePolicyError, FhePolicyOutcome};

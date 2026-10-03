@@ -18,10 +18,13 @@
 //! over the submitted payload. No store access, so the handler stays
 //! compatible with the generic `BviStore` handler bounds.
 
-use axum::{http::HeaderMap, response::{IntoResponse, Response}, Json};
+use axum::{
+    http::HeaderMap,
+    response::{IntoResponse, Response},
+    Json,
+};
 use bvi_anomaly::{
-    burst_zscore, digit_distribution_chi_square, velocity_impossible,
-    DeviceRead, TurnoutAnomaly,
+    burst_zscore, digit_distribution_chi_square, velocity_impossible, DeviceRead, TurnoutAnomaly,
 };
 use serde::Deserialize;
 
@@ -90,9 +93,11 @@ pub async fn evaluate(
 
     anomalies.extend(velocity_impossible(&req.reads, min_travel_seconds));
 
-    if let (Some(window_index), Some(window_len), Some(series)) =
-        (req.window_index, req.window_len, (!req.series.is_empty()).then_some(&req.series))
-    {
+    if let (Some(window_index), Some(window_len), Some(series)) = (
+        req.window_index,
+        req.window_len,
+        (!req.series.is_empty()).then_some(&req.series),
+    ) {
         if let Some(a) = burst_zscore(series, window_index, window_len, 3.0) {
             anomalies.push(a);
         }

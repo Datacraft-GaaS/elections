@@ -20,9 +20,9 @@
 #![warn(missing_docs)]
 
 pub mod aggregates;
+pub mod events;
+pub mod guards;
 pub mod http;
 /// Typed models for support-special-voter contract.
 pub mod spec;
-pub mod events;
-pub mod guards;
 pub mod workflows;

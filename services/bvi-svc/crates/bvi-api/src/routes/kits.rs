@@ -56,7 +56,10 @@ pub async fn revoke_kit<S: BviStore>(
         ));
     }
     if req.officer_id.is_empty() {
-        return Err(ApiError::bad_request(REVOKE_INSTANCE, "officer_id is required"));
+        return Err(ApiError::bad_request(
+            REVOKE_INSTANCE,
+            "officer_id is required",
+        ));
     }
 
     let revoked = state
@@ -106,7 +109,9 @@ pub async fn list_kits_health<S: BviStore>(
     if let Some(cursor) = &next_cursor {
         res.headers_mut().insert(
             header::LINK,
-            format!("/api/v1/bvi/kits/health?cursor={cursor}").parse().unwrap(),
+            format!("/api/v1/bvi/kits/health?cursor={cursor}")
+                .parse()
+                .unwrap(),
         );
     }
     Ok(res)

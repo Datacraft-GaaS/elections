@@ -32,10 +32,7 @@ use tower::ServiceExt;
 type HmacSha256 = Hmac<Sha256>;
 
 fn app(secret: Option<&str>) -> axum::Router {
-    build_router_with(
-        Store::Mem(Default::default()),
-        secret.map(str::to_string),
-    )
+    build_router_with(Store::Mem(Default::default()), secret.map(str::to_string))
 }
 
 /// The signature Meta would send for this body.
@@ -65,42 +62,65 @@ const BODY: &str = r#"{"object":"whatsapp_business_account","entry":[]}"#;
 #[tokio::test]
 async fn a_correctly_signed_payload_is_accepted() {
     let sig = sign("app-secret", BODY.as_bytes());
-    assert_eq!(post(app(Some("app-secret")), Some(&sig), BODY).await, StatusCode::OK);
+    assert_eq!(
+        post(app(Some("app-secret")), Some(&sig), BODY).await,
+        StatusCode::OK
+    );
 }
 
 #[tokio::test]
 async fn a_signature_over_a_different_body_is_refused() {
     let sig = sign("app-secret", br#"{"object":"something_else"}"#);
-    assert_eq!(post(app(Some("app-secret")), Some(&sig), BODY).await, StatusCode::UNAUTHORIZED);
+    assert_eq!(
+        post(app(Some("app-secret")), Some(&sig), BODY).await,
+        StatusCode::UNAUTHORIZED
+    );
 }
 
 #[tokio::test]
 async fn a_signature_from_a_different_secret_is_refused() {
     let sig = sign("other-secret", BODY.as_bytes());
-    assert_eq!(post(app(Some("app-secret")), Some(&sig), BODY).await, StatusCode::UNAUTHORIZED);
+    assert_eq!(
+        post(app(Some("app-secret")), Some(&sig), BODY).await,
+        StatusCode::UNAUTHORIZED
+    );
 }
 
 #[tokio::test]
 async fn an_unsigned_payload_is_refused() {
     // This is what the old handler answered 200 to.
-    assert_eq!(post(app(Some("app-secret")), None, BODY).await, StatusCode::UNAUTHORIZED);
+    assert_eq!(
+        post(app(Some("app-secret")), None, BODY).await,
+        StatusCode::UNAUTHORIZED
+    );
 }
 
 #[tokio::test]
 async fn a_header_without_the_sha256_prefix_is_refused() {
-    let bare = sign("app-secret", BODY.as_bytes()).trim_start_matches("sha256=").to_string();
-    assert_eq!(post(app(Some("app-secret")), Some(&bare), BODY).await, StatusCode::UNAUTHORIZED);
+    let bare = sign("app-secret", BODY.as_bytes())
+        .trim_start_matches("sha256=")
+        .to_string();
+    assert_eq!(
+        post(app(Some("app-secret")), Some(&bare), BODY).await,
+        StatusCode::UNAUTHORIZED
+    );
 }
 
 #[tokio::test]
 async fn with_no_app_secret_it_says_it_cannot_verify() {
     // The state the service ships in: the key is issued by Meta and is not here.
     // "Unverifiable" is the honest answer and is distinct from "valid".
-    assert_eq!(post(app(None), None, BODY).await, StatusCode::SERVICE_UNAVAILABLE);
+    assert_eq!(
+        post(app(None), None, BODY).await,
+        StatusCode::SERVICE_UNAVAILABLE
+    );
 }
 
 #[tokio::test]
 async fn a_signed_but_malformed_payload_is_a_client_error() {
     let sig = sign("app-secret", b"not json");
-    assert_eq!(post(app(Some("app-secret")), Some(&sig), "not json").await, StatusCode::BAD_REQUEST);
+    assert_eq!(
+        post(app(Some("app-secret")), Some(&sig), "not json").await,
+        StatusCode::BAD_REQUEST
+    );
 }

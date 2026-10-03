@@ -206,8 +206,7 @@ impl MobileStore {
         let now = chrono::Utc::now();
         let issued_at = now.to_rfc3339();
         let expires_at = (now + chrono::Duration::seconds(SESSION_TTL_SECS)).to_rfc3339();
-        let refresh_expires_at =
-            (now + chrono::Duration::seconds(REFRESH_TTL_SECS)).to_rfc3339();
+        let refresh_expires_at = (now + chrono::Duration::seconds(REFRESH_TTL_SECS)).to_rfc3339();
         let token_hash = Self::hash_token(&[session_id, nonce, &issued_at]);
         let refresh_hash = Self::hash_token(&[session_id, "refresh", &issued_at]);
         let session = Session {
@@ -252,11 +251,10 @@ impl MobileStore {
             return None;
         }
         let issued = chrono::Utc::now().to_rfc3339();
-        session.token_hash =
-            Self::hash_token(&[session_id, &session.nonce, &issued]);
+        session.token_hash = Self::hash_token(&[session_id, &session.nonce, &issued]);
         session.issued_at = issued;
-        session.expires_at = (chrono::Utc::now() + chrono::Duration::seconds(SESSION_TTL_SECS))
-            .to_rfc3339();
+        session.expires_at =
+            (chrono::Utc::now() + chrono::Duration::seconds(SESSION_TTL_SECS)).to_rfc3339();
         Some(session.clone())
     }
 
@@ -326,15 +324,14 @@ impl MobileStore {
 
     /// Whether a station has been provisioned.
     pub fn station_exists(&self, station_code: &str) -> bool {
-        self.stations.lock().expect("lock poisoned").contains_key(station_code)
+        self.stations
+            .lock()
+            .expect("lock poisoned")
+            .contains_key(station_code)
     }
 
     /// Record a kit check-in against a station.
-    pub fn station_check_in(
-        &self,
-        station_code: &str,
-        battery_level: Option<f64>,
-    ) -> StationState {
+    pub fn station_check_in(&self, station_code: &str, battery_level: Option<f64>) -> StationState {
         let mut guard = self.stations.lock().expect("lock poisoned");
         let station = guard
             .entry(station_code.to_string())
@@ -354,7 +351,11 @@ impl MobileStore {
 
     /// A station's state, if provisioned.
     pub fn station(&self, station_code: &str) -> Option<StationState> {
-        self.stations.lock().expect("lock poisoned").get(station_code).cloned()
+        self.stations
+            .lock()
+            .expect("lock poisoned")
+            .get(station_code)
+            .cloned()
     }
 
     /// Every station, by code.
@@ -418,7 +419,13 @@ impl MobileStore {
         assignment_id: &str,
         status: &str,
     ) -> Result<DispatchAssignment, String> {
-        const STATUSES: [&str; 5] = ["assigned", "accepted", "in-progress", "completed", "cancelled"];
+        const STATUSES: [&str; 5] = [
+            "assigned",
+            "accepted",
+            "in-progress",
+            "completed",
+            "cancelled",
+        ];
         if !STATUSES.contains(&status) {
             return Err(format!(
                 "unknown assignment status {status}; expected one of {}",
@@ -449,7 +456,11 @@ impl MobileStore {
             .expect("lock poisoned")
             .get(key)
             .cloned()?;
-        self.incidents.lock().expect("lock poisoned").get(&id).cloned()
+        self.incidents
+            .lock()
+            .expect("lock poisoned")
+            .get(&id)
+            .cloned()
     }
 
     /// File an incident, recording it against its idempotency key.
@@ -486,7 +497,11 @@ impl MobileStore {
 
     /// An incident by id.
     pub fn incident(&self, incident_id: &str) -> Option<Incident> {
-        self.incidents.lock().expect("lock poisoned").get(incident_id).cloned()
+        self.incidents
+            .lock()
+            .expect("lock poisoned")
+            .get(incident_id)
+            .cloned()
     }
 
     /// Every incident, oldest first.
@@ -523,7 +538,11 @@ impl MobileStore {
 
     /// A push token record by id.
     pub fn push_token(&self, token_id: &str) -> Option<PushTokenRecord> {
-        self.push_tokens.lock().expect("lock poisoned").get(token_id).cloned()
+        self.push_tokens
+            .lock()
+            .expect("lock poisoned")
+            .get(token_id)
+            .cloned()
     }
 
     /// Revoke a push token.
@@ -577,7 +596,11 @@ impl MobileStore {
 
     /// An observer pass by id.
     pub fn observer_pass(&self, pass_id: &str) -> Option<ObserverPass> {
-        self.passes.lock().expect("lock poisoned").get(pass_id).cloned()
+        self.passes
+            .lock()
+            .expect("lock poisoned")
+            .get(pass_id)
+            .cloned()
     }
 }
 
@@ -685,7 +708,11 @@ impl MobileStore {
 
     /// A Form 34A by id.
     pub fn form(&self, form_id: &str) -> Option<Form34ARecord> {
-        self.forms.lock().expect("lock poisoned").get(form_id).cloned()
+        self.forms
+            .lock()
+            .expect("lock poisoned")
+            .get(form_id)
+            .cloned()
     }
 
     /// Every Form 34A, in arrival order.
@@ -711,7 +738,11 @@ impl MobileStore {
         let form = guard
             .get_mut(form_id)
             .ok_or_else(|| format!("no Form 34A with id {form_id}"))?;
-        if form.countersignatures.iter().any(|c| c.countersigner_hash == countersigner_hash) {
+        if form
+            .countersignatures
+            .iter()
+            .any(|c| c.countersigner_hash == countersigner_hash)
+        {
             return Err(format!(
                 "this officer has already countersigned form {form_id}"
             ));
@@ -857,7 +888,10 @@ impl MobileStore {
         self.observation_index
             .lock()
             .expect("lock poisoned")
-            .insert(idempotency_key.to_string(), observation.observation_id.clone());
+            .insert(
+                idempotency_key.to_string(),
+                observation.observation_id.clone(),
+            );
         observation
     }
 
@@ -910,19 +944,16 @@ impl MobileStore {
         self.grievance_index
             .lock()
             .expect("lock poisoned")
-            .insert(
-                idempotency_key.to_string(),
-                grievance.grievance_id.clone(),
-            );
+            .insert(idempotency_key.to_string(), grievance.grievance_id.clone());
         grievance
     }
 
     /// Record a registration hash this service has seen.
     pub fn record_registration(&self, registration_hash: &str) {
-        self.registrations
-            .lock()
-            .expect("lock poisoned")
-            .insert(registration_hash.to_string(), chrono::Utc::now().to_rfc3339());
+        self.registrations.lock().expect("lock poisoned").insert(
+            registration_hash.to_string(),
+            chrono::Utc::now().to_rfc3339(),
+        );
     }
 
     /// Every registration hash this service has seen, in arrival order.

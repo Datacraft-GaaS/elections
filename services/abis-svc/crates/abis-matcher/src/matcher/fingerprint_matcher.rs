@@ -103,6 +103,7 @@ impl FingerprintMatcher {
 ///
 /// Alignment: rotate each probe minutia around (probe_ref_x, probe_ref_y) by `delta_theta`,
 /// then translate to (gallery_ref_x, gallery_ref_y).
+#[allow(clippy::too_many_arguments)]
 fn count_matches_under_alignment(
     probe: &[crate::modality::fingerprint::Minutia],
     gallery: &[crate::modality::fingerprint::Minutia],

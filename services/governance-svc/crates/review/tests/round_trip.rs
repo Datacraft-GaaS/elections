@@ -48,7 +48,12 @@ async fn body_json(resp: axum::response::Response) -> Value {
     serde_json::from_slice(&bytes).unwrap_or(Value::Null)
 }
 
-async fn send(app: &axum::Router, method: &str, uri: &str, body: Option<Value>) -> axum::response::Response {
+async fn send(
+    app: &axum::Router,
+    method: &str,
+    uri: &str,
+    body: Option<Value>,
+) -> axum::response::Response {
     let mut b = Request::builder().method(method).uri(uri);
     let payload = match body {
         Some(v) => {
@@ -133,7 +138,9 @@ async fn triaging_an_unknown_finding_is_404() {
         &app,
         "PATCH",
         "/v1/review/findings/never-submitted",
-        Some(json!({"status": "APPROVED", "duplicate_of": Value::Null, "is_long_drip": Value::Null})),
+        Some(
+            json!({"status": "APPROVED", "duplicate_of": Value::Null, "is_long_drip": Value::Null}),
+        ),
     )
     .await;
     assert_eq!(resp.status(), StatusCode::NOT_FOUND);

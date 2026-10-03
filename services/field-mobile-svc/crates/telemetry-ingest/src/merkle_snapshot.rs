@@ -28,7 +28,9 @@ use crate::error::TelemetryError;
 /// Pads with repeated last leaf if count is odd.
 pub fn compute_merkle_root(leaves: &[Vec<u8>]) -> Result<[u8; 32], TelemetryError> {
     if leaves.is_empty() {
-        return Err(TelemetryError::Internal("no leaves for Merkle tree".to_owned()));
+        return Err(TelemetryError::Internal(
+            "no leaves for Merkle tree".to_owned(),
+        ));
     }
 
     // Hash leaves.
@@ -74,7 +76,10 @@ impl TlogClient {
     }
 
     /// Submit a leaf to the tlog and return (leaf_index, root_hash, inclusion_proof).
-    pub async fn submit(&self, _root: &[u8; 32]) -> Result<(i64, Vec<u8>, Vec<u8>), TelemetryError> {
+    pub async fn submit(
+        &self,
+        _root: &[u8; 32],
+    ) -> Result<(i64, Vec<u8>, Vec<u8>), TelemetryError> {
         if self.stub {
             // Return deterministic stub values for tests.
             let leaf_index = 42i64;
@@ -82,7 +87,9 @@ impl TlogClient {
             let inclusion_proof = vec![0xCD; 64];
             return Ok((leaf_index, root_hash, inclusion_proof));
         }
-        Err(TelemetryError::TlogSubmit("real tlog not configured".to_owned()))
+        Err(TelemetryError::TlogSubmit(
+            "real tlog not configured".to_owned(),
+        ))
     }
 }
 

@@ -35,7 +35,7 @@ pub fn build_router(state: SharedState) -> Router {
             "/v1/joint-statements",
             get(list_joint_statements).post(publish_joint_statement),
         )
-    // Public contract endpoints (governance-intl-observer/coordination.yaml)
+        // Public contract endpoints (governance-intl-observer/coordination.yaml)
         .route(
             "/api/v1/governance/intl-observer/missions",
             get(list_observer_missions).post(register_observer_mission),

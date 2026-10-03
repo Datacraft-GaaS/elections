@@ -43,21 +43,21 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-pub mod image;
-pub mod extraction;
-pub mod template;
 pub mod bozorth;
-pub mod gallery;
-pub mod nfiq;
+pub mod extraction;
 pub mod ffi;
+pub mod gallery;
+pub mod image;
 pub mod mindtct_ffi;
+pub mod nfiq;
 pub mod operator_selection;
+pub mod template;
 
-pub use extraction::{FingerprintExtractor, ExtractionResult as PureExtractionResult};
-pub use template::{Minutia, MinutiaType, Template};
 pub use bozorth::Bozorth3;
-pub use gallery::{Gallery, CandidateMatch};
-pub use nfiq::{NfiqResult, assess_quality};
+pub use extraction::{ExtractionResult as PureExtractionResult, FingerprintExtractor};
+pub use gallery::{CandidateMatch, Gallery};
+pub use nfiq::{assess_quality, NfiqResult};
+pub use template::{Minutia, MinutiaType, Template};
 
 /// High-level pipeline: image → template → match.
 pub struct FingerprintEngine;
@@ -89,7 +89,11 @@ impl FingerprintEngine {
     /// Extracts minutiae with the pure-Rust extractor, then maps the
     /// minutiae set onto the 1–5 scale (see [`nfiq`] for the mapping and
     /// why the C classifier is not wired).
-    pub fn quality(image_bytes: &[u8], width: u32, height: u32) -> Result<NfiqResult, NearformError> {
+    pub fn quality(
+        image_bytes: &[u8],
+        width: u32,
+        height: u32,
+    ) -> Result<NfiqResult, NearformError> {
         let img = image::FingerprintImage::from_pgm_or_pbm_bytes(image_bytes, width, height)?;
         let template = FingerprintExtractor::default().extract(&img)?;
         Ok(assess_quality(&template))
@@ -97,7 +101,9 @@ impl FingerprintEngine {
 
     /// Compatibility with the old `BiometricCapture.extract(&Path)` API.
     /// Loads a PGM/PPM/PBM/BMP from disk.
-    pub fn extract_from_file(path: &std::path::Path) -> Result<PureExtractionResult, NearformError> {
+    pub fn extract_from_file(
+        path: &std::path::Path,
+    ) -> Result<PureExtractionResult, NearformError> {
         let img = image::FingerprintImage::load_from_file(path)?;
         let extractor = FingerprintExtractor::default();
         let template = extractor.extract(&img)?;

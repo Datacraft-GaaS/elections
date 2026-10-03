@@ -60,7 +60,11 @@ impl AppState {
         let guard = self.engagements.lock().expect("lock poisoned");
         let mut items: Vec<OagEngagement> = guard.values().cloned().collect();
         drop(guard);
-        items.sort_by(|a, b| b.initiated_at.cmp(&a.initiated_at).then(b.engagement_id.cmp(&a.engagement_id)));
+        items.sort_by(|a, b| {
+            b.initiated_at
+                .cmp(&a.initiated_at)
+                .then(b.engagement_id.cmp(&a.engagement_id))
+        });
         items
     }
 
@@ -73,7 +77,11 @@ impl AppState {
             .cloned()
             .collect();
         drop(guard);
-        items.sort_by(|a, b| a.extracted_at.cmp(&b.extracted_at).then(a.extract_id.cmp(&b.extract_id)));
+        items.sort_by(|a, b| {
+            a.extracted_at
+                .cmp(&b.extracted_at)
+                .then(a.extract_id.cmp(&b.extract_id))
+        });
         items
     }
 
@@ -82,7 +90,11 @@ impl AppState {
         let guard = self.published_reports.lock().expect("lock poisoned");
         let mut items: Vec<PublishedReport> = guard.values().cloned().collect();
         drop(guard);
-        items.sort_by(|a, b| b.published_at.cmp(&a.published_at).then(a.pub_report_id.cmp(&b.pub_report_id)));
+        items.sort_by(|a, b| {
+            b.published_at
+                .cmp(&a.published_at)
+                .then(a.pub_report_id.cmp(&b.pub_report_id))
+        });
         items
     }
 }

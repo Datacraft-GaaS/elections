@@ -12,12 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use axum::{
-    extract::Path,
-    http::StatusCode,
-    response::IntoResponse,
-    Json,
-};
+use axum::{extract::Path, http::StatusCode, response::IntoResponse, Json};
 use serde_json::json;
 use uuid::Uuid;
 
@@ -39,9 +34,7 @@ pub async fn list_archival_collections() -> impl IntoResponse {
 
 /// GET /api/v1/support/archive/collections/{collection_id}
 /// operationId: getArchivalCollection
-pub async fn get_archival_collection(
-    Path(_collection_id): Path<Uuid>,
-) -> impl IntoResponse {
+pub async fn get_archival_collection(Path(_collection_id): Path<Uuid>) -> impl IntoResponse {
     (StatusCode::OK, Json(json!({ "status": "ok" })))
 }
 
@@ -53,9 +46,7 @@ pub async fn create_retrieval_request() -> impl IntoResponse {
 
 /// GET /api/v1/support/archive/retrieval-requests/{request_id}
 /// operationId: getRetrievalRequest
-pub async fn get_retrieval_request(
-    Path(_request_id): Path<Uuid>,
-) -> impl IntoResponse {
+pub async fn get_retrieval_request(Path(_request_id): Path<Uuid>) -> impl IntoResponse {
     (StatusCode::OK, Json(json!({ "status": "ok" })))
 }
 
@@ -69,9 +60,7 @@ pub async fn start_ingest(Path(_id): Path<Uuid>) -> impl IntoResponse {
 }
 
 /// GET /v1/archive/collections/{id}/ingest/{job_id}
-pub async fn get_ingest_job(
-    Path((_id, _job_id)): Path<(Uuid, Uuid)>,
-) -> impl IntoResponse {
+pub async fn get_ingest_job(Path((_id, _job_id)): Path<(Uuid, Uuid)>) -> impl IntoResponse {
     (StatusCode::OK, Json(json!({ "status": "ok" })))
 }
 

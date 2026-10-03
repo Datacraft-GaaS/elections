@@ -177,7 +177,9 @@ impl Default for AuditChain {
 impl AuditChain {
     /// New empty chain; the first appended entry links from genesis (`""`).
     pub fn new() -> Self {
-        Self { entries: Vec::new() }
+        Self {
+            entries: Vec::new(),
+        }
     }
 
     pub fn append(
@@ -294,7 +296,10 @@ impl FileStore {
         let mut line = serde_json::to_string(entry)
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
         line.push('\n');
-        let mut f = OpenOptions::new().create(true).append(true).open(&self.path)?;
+        let mut f = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&self.path)?;
         f.write_all(line.as_bytes())?;
         f.flush()?;
         f.sync_all()
@@ -333,12 +338,7 @@ pub struct ChainState {
     pub file: Option<Arc<FileStore>>,
 }
 
-const MUTATING_METHODS: [Method; 4] = [
-    Method::POST,
-    Method::PUT,
-    Method::PATCH,
-    Method::DELETE,
-];
+const MUTATING_METHODS: [Method; 4] = [Method::POST, Method::PUT, Method::PATCH, Method::DELETE];
 
 /// Axum middleware recording every mutating request into the audit chain.
 ///
@@ -347,7 +347,11 @@ const MUTATING_METHODS: [Method; 4] = [
 /// query string only — the request body is never read. File-flush errors are
 /// best-effort: they are logged at warn and never fail the request. See the
 /// crate doc-comment for registration via `from_fn_with_state`.
-pub async fn record_middleware(State(state): State<ChainState>, req: Request, next: Next) -> Response {
+pub async fn record_middleware(
+    State(state): State<ChainState>,
+    req: Request,
+    next: Next,
+) -> Response {
     let mutating = MUTATING_METHODS.contains(req.method());
     let method = req.method().clone();
     let path = req.uri().path().to_string();
@@ -366,7 +370,9 @@ pub async fn record_middleware(State(state): State<ChainState>, req: Request, ne
         let operation = format!("{} {}", method, path);
         let entry = {
             let mut chain = state.chain.lock().expect("audit chain mutex poisoned");
-            chain.append_with_params_hash(&actor, &operation, params_hash).clone()
+            chain
+                .append_with_params_hash(&actor, &operation, params_hash)
+                .clone()
         };
         if let Some(store) = &state.file {
             if let Err(e) = store.append_and_flush(&entry) {
@@ -415,7 +421,11 @@ mod tests {
         let middle = entries[2].clone();
         entries[2].operation = "tampered-op".to_string();
         match verify(&entries) {
-            Err(ChainError::Broken { seq, expected, actual }) => {
+            Err(ChainError::Broken {
+                seq,
+                expected,
+                actual,
+            }) => {
                 assert_eq!(seq, 2);
                 assert_eq!(actual, middle.this_hash_hex);
                 assert_ne!(expected, actual);

@@ -27,8 +27,8 @@ pub mod repo;
 pub mod tuner;
 
 pub use domain::{
-	AgeBand, BiometricModality, BootstrapCi, CohortKey, LabelledPair, SimulateResult,
-	ThresholdProfile,
+    AgeBand, BiometricModality, BootstrapCi, CohortKey, LabelledPair, SimulateResult,
+    ThresholdProfile,
 };
 pub use error::ThresholdError;
 pub use tuner::{compute_roc, select_threshold, ThresholdTuner};

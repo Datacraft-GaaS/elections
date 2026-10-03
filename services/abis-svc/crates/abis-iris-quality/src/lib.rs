@@ -22,5 +22,5 @@ pub mod metrics;
 pub mod policy;
 pub mod quality;
 
-pub use policy::{QualityPolicy, PolicyError};
-pub use quality::{QualityReport, QualityError};
+pub use policy::{PolicyError, QualityPolicy};
+pub use quality::{QualityError, QualityReport};

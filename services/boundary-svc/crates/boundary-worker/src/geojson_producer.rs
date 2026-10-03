@@ -95,7 +95,9 @@ mod tests {
 
     #[tokio::test]
     async fn valid_tarball_produces_bundle() {
-        let bundle = produce_signed_bundle(b"fake-tarball-content").await.unwrap();
+        let bundle = produce_signed_bundle(b"fake-tarball-content")
+            .await
+            .unwrap();
         assert!(!bundle.sha256_hex.is_empty());
         assert!(!bundle.cosign_bundle.is_empty());
     }

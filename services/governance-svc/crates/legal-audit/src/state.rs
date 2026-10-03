@@ -78,7 +78,11 @@ impl AppState {
     /// Every verdict for a record, in chain order.
     pub fn verdicts_for(&self, record_id: &str) -> Vec<ComplianceVerdict> {
         let guard = self.verdicts.lock().expect("lock poisoned");
-        guard.iter().filter(|v| v.record_id == record_id).cloned().collect()
+        guard
+            .iter()
+            .filter(|v| v.record_id == record_id)
+            .cloned()
+            .collect()
     }
 
     /// Records sent by a party, in insertion order.

@@ -97,7 +97,8 @@ impl ReportsClient {
     }
 
     pub async fn get_artifact_meta(&self, artifact_id: &str) -> Result<ArtifactMeta> {
-        self.get_json(&format!("/api/v1/artifacts/{artifact_id}")).await
+        self.get_json(&format!("/api/v1/artifacts/{artifact_id}"))
+            .await
     }
 }
 

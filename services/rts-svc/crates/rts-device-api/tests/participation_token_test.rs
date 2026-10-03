@@ -32,12 +32,17 @@ async fn a_participation_token_is_not_issued_without_a_kit() {
         .unwrap();
     let resp = app.oneshot(req).await.unwrap();
     assert_eq!(resp.status(), StatusCode::NOT_IMPLEMENTED);
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
 
     // The old response's two lies are both gone.
     assert!(body.get("kit_serial").is_none(), "no stub kit serial");
-    assert!(body.get("token_sha256").is_none(), "no digest that is not a digest");
+    assert!(
+        body.get("token_sha256").is_none(),
+        "no digest that is not a digest"
+    );
     assert!(body["detail"].as_str().unwrap().contains("kit registry"));
 }
 
@@ -62,7 +67,9 @@ async fn no_station_is_ever_issued_a_token() {
             StatusCode::NOT_IMPLEMENTED,
             "station {station:?} must not be issued a token"
         );
-        let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+        let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+            .await
+            .unwrap();
         let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert!(body.get("token_sha256").is_none(), "station {station:?}");
         assert!(body.get("kit_serial").is_none(), "station {station:?}");

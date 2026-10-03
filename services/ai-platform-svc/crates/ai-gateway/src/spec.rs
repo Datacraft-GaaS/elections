@@ -15,6 +15,7 @@
 //! Public contract handlers for the AI surface (ai-registry, ai-anomaly,
 //! ai-forecast, ai-redteam specs).
 
+use crate::AppState;
 use axum::{
     extract::{Path, State},
     http::{header, StatusCode},
@@ -23,7 +24,6 @@ use axum::{
     Json, Router,
 };
 use serde_json::{json, Value};
-use crate::AppState;
 
 /// Legacy `/v1/ai/*` → canonical `/api/v1/ai/*` permanent redirect.
 async fn redirect_legacy(Path(tail): Path<String>) -> impl IntoResponse {
@@ -37,29 +37,78 @@ async fn redirect_legacy(Path(tail): Path<String>) -> impl IntoResponse {
 pub fn router() -> Router<AppState> {
     Router::new()
         // Legacy redirect — deprecated `/v1/ai/*` → canonical `/api/v1/ai/*` (TD-06)
-        .route("/v1/ai/{*tail}", get(redirect_legacy).post(redirect_legacy).put(redirect_legacy).patch(redirect_legacy).delete(redirect_legacy))
+        .route(
+            "/v1/ai/{*tail}",
+            get(redirect_legacy)
+                .post(redirect_legacy)
+                .put(redirect_legacy)
+                .patch(redirect_legacy)
+                .delete(redirect_legacy),
+        )
         // ai-registry/registry.yaml
-        .route("/api/v1/ai/registry/models", get(list_models).post(register_model))
+        .route(
+            "/api/v1/ai/registry/models",
+            get(list_models).post(register_model),
+        )
         .route("/api/v1/ai/registry/models/{model_id}", get(get_model))
-        .route("/api/v1/ai/registry/models/{model_id}/deployments", post(deploy_model))
+        .route(
+            "/api/v1/ai/registry/models/{model_id}/deployments",
+            post(deploy_model),
+        )
         .route("/api/v1/ai/registry/audit-log", get(list_audit_log))
         // ai-anomaly/detection.yaml
         .route("/api/v1/ai/anomaly/alerts", get(list_anomaly_alerts))
-        .route("/api/v1/ai/anomaly/alerts/{alert_id}", get(get_anomaly_alert))
-        .route("/api/v1/ai/anomaly/alerts/{alert_id}/adjudications", post(adjudicate_alert))
-        .route("/api/v1/ai/anomaly/reports/summary", get(get_anomaly_summary_report))
+        .route(
+            "/api/v1/ai/anomaly/alerts/{alert_id}",
+            get(get_anomaly_alert),
+        )
+        .route(
+            "/api/v1/ai/anomaly/alerts/{alert_id}/adjudications",
+            post(adjudicate_alert),
+        )
+        .route(
+            "/api/v1/ai/anomaly/reports/summary",
+            get(get_anomaly_summary_report),
+        )
         .route("/api/v1/ai/anomaly/ingest/events", post(ingest_event_batch))
         // ai-forecast/analytics.yaml
-        .route("/api/v1/ai/forecast/turnout/national", get(get_national_turnout_forecast))
-        .route("/api/v1/ai/forecast/turnout/county/{county_code}", get(get_county_turnout_forecast))
-        .route("/api/v1/ai/forecast/turnout/constituency/{constituency_code}", get(get_constituency_turnout_forecast))
-        .route("/api/v1/ai/forecast/reports", get(list_forecast_accuracy_reports))
-        .route("/api/v1/ai/forecast/models/retrain", post(trigger_model_retrain))
+        .route(
+            "/api/v1/ai/forecast/turnout/national",
+            get(get_national_turnout_forecast),
+        )
+        .route(
+            "/api/v1/ai/forecast/turnout/county/{county_code}",
+            get(get_county_turnout_forecast),
+        )
+        .route(
+            "/api/v1/ai/forecast/turnout/constituency/{constituency_code}",
+            get(get_constituency_turnout_forecast),
+        )
+        .route(
+            "/api/v1/ai/forecast/reports",
+            get(list_forecast_accuracy_reports),
+        )
+        .route(
+            "/api/v1/ai/forecast/models/retrain",
+            post(trigger_model_retrain),
+        )
         // ai-redteam/testing.yaml
-        .route("/api/v1/ai/redteam/campaigns", get(list_redteam_campaigns).post(create_redteam_campaign))
-        .route("/api/v1/ai/redteam/campaigns/{campaign_id}", get(get_redteam_campaign))
-        .route("/api/v1/ai/redteam/campaigns/{campaign_id}/findings", post(add_redteam_finding))
-        .route("/api/v1/ai/redteam/campaigns/{campaign_id}/complete", post(complete_redteam_campaign))
+        .route(
+            "/api/v1/ai/redteam/campaigns",
+            get(list_redteam_campaigns).post(create_redteam_campaign),
+        )
+        .route(
+            "/api/v1/ai/redteam/campaigns/{campaign_id}",
+            get(get_redteam_campaign),
+        )
+        .route(
+            "/api/v1/ai/redteam/campaigns/{campaign_id}/findings",
+            post(add_redteam_finding),
+        )
+        .route(
+            "/api/v1/ai/redteam/campaigns/{campaign_id}/complete",
+            post(complete_redteam_campaign),
+        )
 }
 
 /// A problem+json response for a missing resource.
@@ -110,7 +159,10 @@ fn page(items: &Value) -> Value {
 
 async fn list_models(State(state): State<AppState>) -> impl IntoResponse {
     let records = state.models.read().await;
-    let items: Vec<Value> = records.iter().map(|r| serde_json::to_value(r).unwrap_or(Value::Null)).collect();
+    let items: Vec<Value> = records
+        .iter()
+        .map(|r| serde_json::to_value(r).unwrap_or(Value::Null))
+        .collect();
     Json(page(&serde_json::to_value(items).unwrap()))
 }
 
@@ -118,11 +170,18 @@ async fn get_model(State(state): State<AppState>, Path(id): Path<String>) -> imp
     let records = state.models.read().await;
     match records.iter().find(|r| r.id == id) {
         Some(r) => Json(serde_json::to_value(r).unwrap()).into_response(),
-        None => (StatusCode::NOT_FOUND, Json(json!({ "detail": "model not found" }))).into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "detail": "model not found" })),
+        )
+            .into_response(),
     }
 }
 
-async fn register_model(State(state): State<AppState>, Json(req): Json<Value>) -> impl IntoResponse {
+async fn register_model(
+    State(state): State<AppState>,
+    Json(req): Json<Value>,
+) -> impl IntoResponse {
     let id = uuid::Uuid::now_v7().to_string();
     let v = json!({ "model_id": id, "status": "registered", "created_at": chrono::Utc::now().to_rfc3339(), "request": req });
     let mut m = state.models.write().await;
@@ -161,7 +220,10 @@ async fn deploy_model(
         "deployed_at": deployed_at,
     });
     state.deployments.insert(
-        deployment["deployment_id"].as_str().unwrap_or_default().to_string(),
+        deployment["deployment_id"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string(),
         deployment.clone(),
     );
     Ok((StatusCode::CREATED, Json(deployment)).into_response())
@@ -169,7 +231,10 @@ async fn deploy_model(
 
 async fn list_audit_log(State(state): State<AppState>) -> impl IntoResponse {
     let log = state.decision_log.read().await;
-    let items: Vec<Value> = log.iter().map(|e| serde_json::to_value(e).unwrap_or(Value::Null)).collect();
+    let items: Vec<Value> = log
+        .iter()
+        .map(|e| serde_json::to_value(e).unwrap_or(Value::Null))
+        .collect();
     Json(page(&serde_json::to_value(items).unwrap()))
 }
 
@@ -177,15 +242,25 @@ async fn list_audit_log(State(state): State<AppState>) -> impl IntoResponse {
 
 async fn list_anomaly_alerts(State(state): State<AppState>) -> impl IntoResponse {
     let alerts = state.alerts.read().await;
-    let items: Vec<Value> = alerts.iter().map(|a| serde_json::to_value(a).unwrap_or(Value::Null)).collect();
+    let items: Vec<Value> = alerts
+        .iter()
+        .map(|a| serde_json::to_value(a).unwrap_or(Value::Null))
+        .collect();
     Json(page(&serde_json::to_value(items).unwrap()))
 }
 
-async fn get_anomaly_alert(State(state): State<AppState>, Path(id): Path<String>) -> impl IntoResponse {
+async fn get_anomaly_alert(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
     let alerts = state.alerts.read().await;
     match alerts.iter().find(|a| a.id == id) {
         Some(a) => Json(serde_json::to_value(a).unwrap()).into_response(),
-        None => (StatusCode::NOT_FOUND, Json(json!({ "detail": "alert not found" }))).into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "detail": "alert not found" })),
+        )
+            .into_response(),
     }
 }
 
@@ -226,10 +301,7 @@ async fn get_anomaly_summary_report(State(state): State<AppState>) -> impl IntoR
     Json(json!({ "total_alerts": alerts.len(), "generated_at": chrono::Utc::now().to_rfc3339() }))
 }
 
-async fn ingest_event_batch(
-    State(state): State<AppState>,
-    Json(req): Json<Value>,
-) -> Response {
+async fn ingest_event_batch(State(state): State<AppState>, Json(req): Json<Value>) -> Response {
     // Real. Previously answered {"accepted": true} for a batch it discarded, so
     // the anomaly pipeline reported ingesting events that never arrived.
     let events = req
@@ -291,10 +363,7 @@ async fn list_forecast_accuracy_reports(State(state): State<AppState>) -> impl I
     Json(page(&json!(state.accuracy_reports.list())))
 }
 
-async fn trigger_model_retrain(
-    State(_state): State<AppState>,
-    Json(req): Json<Value>,
-) -> Response {
+async fn trigger_model_retrain(State(_state): State<AppState>, Json(req): Json<Value>) -> Response {
     let _ = &req;
     // Refused rather than implemented. This previously answered
     // {"status": "queued"} with a minted retrain_job_id for a job that was never
@@ -310,7 +379,10 @@ async fn trigger_model_retrain(
 
 // --- redteam ---
 
-async fn create_redteam_campaign(State(state): State<AppState>, Json(req): Json<Value>) -> impl IntoResponse {
+async fn create_redteam_campaign(
+    State(state): State<AppState>,
+    Json(req): Json<Value>,
+) -> impl IntoResponse {
     let id = uuid::Uuid::now_v7().to_string();
     let v = json!({ "campaign_id": id, "status": "created", "created_at": chrono::Utc::now().to_rfc3339(), "request": req });
     state.redteam_campaigns.write().await.insert(id, v.clone());
@@ -323,11 +395,18 @@ async fn list_redteam_campaigns(State(state): State<AppState>) -> impl IntoRespo
     Json(page(&serde_json::to_value(items).unwrap()))
 }
 
-async fn get_redteam_campaign(State(state): State<AppState>, Path(id): Path<String>) -> impl IntoResponse {
+async fn get_redteam_campaign(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
     let c = state.redteam_campaigns.read().await;
     match c.get(&id) {
         Some(v) => Json(v.clone()).into_response(),
-        None => (StatusCode::NOT_FOUND, Json(json!({ "detail": "campaign not found" }))).into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "detail": "campaign not found" })),
+        )
+            .into_response(),
     }
 }
 
@@ -356,13 +435,20 @@ async fn add_redteam_finding(
     Ok((StatusCode::CREATED, Json(finding)).into_response())
 }
 
-async fn complete_redteam_campaign(State(state): State<AppState>, Path(id): Path<String>) -> impl IntoResponse {
+async fn complete_redteam_campaign(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
     let mut c = state.redteam_campaigns.write().await;
     match c.get_mut(&id) {
         Some(v) => {
             v["status"] = json!("completed");
             Json(v.clone()).into_response()
         }
-        None => (StatusCode::NOT_FOUND, Json(json!({ "detail": "campaign not found" }))).into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "detail": "campaign not found" })),
+        )
+            .into_response(),
     }
 }

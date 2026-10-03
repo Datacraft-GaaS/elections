@@ -49,7 +49,16 @@ async fn list_snapshots(State(state): State<AppState>) -> Result<Json<Value>, Ap
     let snapshots: Vec<Value> = rows
         .into_iter()
         .map(
-            |(snapshot_id, election_scope, station_count, voter_count, merkle_root, signed_by, checkpoint, created_at)| {
+            |(
+                snapshot_id,
+                election_scope,
+                station_count,
+                voter_count,
+                merkle_root,
+                signed_by,
+                checkpoint,
+                created_at,
+            )| {
                 json!({
                     "snapshotId": snapshot_id,
                     "electionScope": election_scope,

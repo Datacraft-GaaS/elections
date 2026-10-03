@@ -15,7 +15,7 @@
 use crate::{
     error::ApiError,
     ingest::IngestService,
-    models::{BatchIngestionReport, BatchIngestRequest},
+    models::{BatchIngestRequest, BatchIngestionReport},
     state::AppState,
 };
 use axum::{http::StatusCode, routing::post, Json, Router};

@@ -42,11 +42,7 @@ pub async fn create_clearance(
 pub async fn list_clearances(
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<ClearanceDecision>>> {
-    let all = state
-        .clearances
-        .lock()
-        .map_err(|_| lock_err())?
-        .clone();
+    let all = state.clearances.lock().map_err(|_| lock_err())?.clone();
     Ok(Json(all))
 }
 
@@ -56,11 +52,17 @@ pub async fn advisory_clearance(
     Json(req): Json<AdvisoryClearance>,
 ) -> Result<Json<ClearanceVerdict>> {
     let verdict = match req.source {
-        ClearanceSource::Kra => crms_domain::clearance::kra_advisory_check(&req.id_number_hash).await,
+        ClearanceSource::Kra => {
+            crms_domain::clearance::kra_advisory_check(&req.id_number_hash).await
+        }
         ClearanceSource::Eacc => {
             crms_domain::clearance::eacc_advisory_check(&req.id_number_hash).await
         }
-        _ => return Err(ApiError::Unprocessable("advisory supported for KRA/EACC only".into())),
+        _ => {
+            return Err(ApiError::Unprocessable(
+                "advisory supported for KRA/EACC only".into(),
+            ))
+        }
     };
     verdict.map(Json).map_err(ApiError::Unprocessable)
 }

@@ -42,28 +42,32 @@ pub use params::SourceAfisParams;
 /// Gray-scale fingerprint image (8-bit pixels, row-major).
 #[derive(Debug, Clone)]
 pub struct GrayImage {
-	pub pixels: Vec<u8>,
-	pub width: u32,
-	pub height: u32,
+    pub pixels: Vec<u8>,
+    pub width: u32,
+    pub height: u32,
 }
 
 impl GrayImage {
-	/// Construct from raw bytes.  Panics in debug builds if `pixels.len() != width * height`.
-	pub fn new(pixels: Vec<u8>, width: u32, height: u32) -> Self {
-		debug_assert_eq!(pixels.len(), (width * height) as usize);
-		Self { pixels, width, height }
-	}
+    /// Construct from raw bytes.  Panics in debug builds if `pixels.len() != width * height`.
+    pub fn new(pixels: Vec<u8>, width: u32, height: u32) -> Self {
+        debug_assert_eq!(pixels.len(), (width * height) as usize);
+        Self {
+            pixels,
+            width,
+            height,
+        }
+    }
 
-	pub fn pixel(&self, x: u32, y: u32) -> u8 {
-		self.pixels[(y * self.width + x) as usize]
-	}
+    pub fn pixel(&self, x: u32, y: u32) -> u8 {
+        self.pixels[(y * self.width + x) as usize]
+    }
 }
 
 /// Top-level error type.
 #[derive(Debug, thiserror::Error)]
 pub enum SourceAfisError {
-	#[error("image too small: {0}x{1}")]
-	ImageTooSmall(u32, u32),
-	#[error("minutia extraction failed: {0}")]
-	ExtractionFailed(String),
+    #[error("image too small: {0}x{1}")]
+    ImageTooSmall(u32, u32),
+    #[error("minutia extraction failed: {0}")]
+    ExtractionFailed(String),
 }

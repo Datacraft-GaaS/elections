@@ -37,42 +37,42 @@ use hsm_signer::HsmSignerService;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-	tracing_subscriber::fmt()
-		.with_env_filter(EnvFilter::from_default_env().add_directive("hsm_signer=info".parse()?))
-		.json()
-		.init();
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env().add_directive("hsm_signer=info".parse()?))
+        .json()
+        .init();
 
-	let pin = std::env::var("EEL_HSM_PIN").unwrap_or_else(|_| "1234".to_string());
-	let slot: u64 = std::env::var("EEL_HSM_SLOT")
-		.ok()
-		.and_then(|s| s.parse().ok())
-		.unwrap_or(0);
+    let pin = std::env::var("EEL_HSM_PIN").unwrap_or_else(|_| "1234".to_string());
+    let slot: u64 = std::env::var("EEL_HSM_SLOT")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0);
 
-	let pool = RolePool::open(slot, pin)
-		.map_err(|e| anyhow::anyhow!("failed to open PKCS#11 pool: {e}"))?;
-	let svc = HsmSignerService::new(pool);
+    let pool = RolePool::open(slot, pin)
+        .map_err(|e| anyhow::anyhow!("failed to open PKCS#11 pool: {e}"))?;
+    let svc = HsmSignerService::new(pool);
 
-	// Health check server on 8081.
-	let health_addr: SocketAddr = "0.0.0.0:8081".parse()?;
-	let health_app = Router::new()
-		.route("/healthz", get(|| async { "ok" }))
-		.route("/readyz", get(|| async { "ok" }));
-	let health_listener = tokio::net::TcpListener::bind(health_addr).await?;
-	info!("health check listening on {health_addr}");
+    // Health check server on 8081.
+    let health_addr: SocketAddr = "0.0.0.0:8081".parse()?;
+    let health_app = Router::new()
+        .route("/healthz", get(|| async { "ok" }))
+        .route("/readyz", get(|| async { "ok" }));
+    let health_listener = tokio::net::TcpListener::bind(health_addr).await?;
+    info!("health check listening on {health_addr}");
 
-	// gRPC server on 8443.
-	// TLS: in production, cert/key come from SPIRE SVID at /run/spire/svid.
-	// For dev (EEL_HSM_VENDOR=softhsm), plain TCP is accepted.
-	let grpc_addr: SocketAddr = "0.0.0.0:8443".parse()?;
-	let grpc_server = Server::builder()
-		.add_service(HsmSignerServer::new(svc))
-		.serve(grpc_addr);
-	info!("gRPC server listening on {grpc_addr}");
+    // gRPC server on 8443.
+    // TLS: in production, cert/key come from SPIRE SVID at /run/spire/svid.
+    // For dev (EEL_HSM_VENDOR=softhsm), plain TCP is accepted.
+    let grpc_addr: SocketAddr = "0.0.0.0:8443".parse()?;
+    let grpc_server = Server::builder()
+        .add_service(HsmSignerServer::new(svc))
+        .serve(grpc_addr);
+    info!("gRPC server listening on {grpc_addr}");
 
-	tokio::select! {
-		r = axum::serve(health_listener, health_app) => r?,
-		r = grpc_server => r?,
-	}
+    tokio::select! {
+        r = axum::serve(health_listener, health_app) => r?,
+        r = grpc_server => r?,
+    }
 
-	Ok(())
+    Ok(())
 }

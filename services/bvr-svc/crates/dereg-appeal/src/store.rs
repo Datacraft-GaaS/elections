@@ -219,7 +219,10 @@ impl DeregStore {
     pub fn appeals(&self) -> Vec<DeregAppeal> {
         let order = self.order.lock().expect("lock poisoned");
         let guard = self.appeals.lock().expect("lock poisoned");
-        order.iter().filter_map(|id| guard.get(id).cloned()).collect()
+        order
+            .iter()
+            .filter_map(|id| guard.get(id).cloned())
+            .collect()
     }
 
     /// Appeals with a given status, oldest first.
@@ -234,7 +237,10 @@ impl DeregStore {
     pub fn appeals_for_ref(&self, deregistration_ref: &str) -> Vec<DeregAppeal> {
         self.appeals()
             .into_iter()
-            .filter(|a| a.deregistration_ref.eq_ignore_ascii_case(deregistration_ref))
+            .filter(|a| {
+                a.deregistration_ref
+                    .eq_ignore_ascii_case(deregistration_ref)
+            })
             .collect()
     }
 
@@ -342,7 +348,9 @@ impl DeregStore {
                             format!("{outcome}")
                         }
                         0 => format!("Hakuna appeal yenye kumbukumbu {reference}."),
-                        n => format!("Kuna appeals {n} zilizo shikiliwa kumbukumbu hiyo. Fungua iko."),
+                        n => format!(
+                            "Kuna appeals {n} zilizo shikiliwa kumbukumbu hiyo. Fungua iko."
+                        ),
                     };
                     (reply, "END")
                 }
@@ -386,6 +394,10 @@ impl DeregStore {
 
     /// A USSD session's exchanges, oldest first.
     pub fn ussd_session(&self, session_id: &str) -> Option<Vec<UssdStep>> {
-        self.ussd.lock().expect("lock poisoned").get(session_id).cloned()
+        self.ussd
+            .lock()
+            .expect("lock poisoned")
+            .get(session_id)
+            .cloned()
     }
 }

@@ -26,10 +26,10 @@ pub mod policy;
 pub mod report;
 
 pub use metrics::{
-    sharpness, resolution_interocular, pose_angles, illumination,
-    uniformity, occlusion_coverage, expression_neutrality, gaze_offset,
+    expression_neutrality, gaze_offset, illumination, occlusion_coverage, pose_angles,
+    resolution_interocular, sharpness, uniformity,
 };
-pub use policy::{QualityPolicy, PolicyViolation};
+pub use policy::{PolicyViolation, QualityPolicy};
 pub use report::QualityReport;
 
 use thiserror::Error;
@@ -48,13 +48,13 @@ pub enum QualityError {
 /// Pixel-space face landmark positions used by quality metrics.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct QualityLandmarks {
-    pub left_eye:    (f32, f32),
-    pub right_eye:   (f32, f32),
-    pub nose:        (f32, f32),
-    pub left_mouth:  (f32, f32),
+    pub left_eye: (f32, f32),
+    pub right_eye: (f32, f32),
+    pub nose: (f32, f32),
+    pub left_mouth: (f32, f32),
     pub right_mouth: (f32, f32),
     /// Optional: pupil centres for gaze estimation.
-    pub left_pupil:  Option<(f32, f32)>,
+    pub left_pupil: Option<(f32, f32)>,
     pub right_pupil: Option<(f32, f32)>,
 }
 

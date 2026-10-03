@@ -64,10 +64,7 @@ async fn send(
         }
         None => Body::empty(),
     };
-    app.clone()
-        .oneshot(b.body(payload).unwrap())
-        .await
-        .unwrap()
+    app.clone().oneshot(b.body(payload).unwrap()).await.unwrap()
 }
 
 /// Assign a station a lot covering serials 1..=100.
@@ -88,7 +85,10 @@ async fn assign(app: &axum::Router, station: &str) -> String {
     )
     .await;
     assert_eq!(resp.status(), StatusCode::CREATED);
-    body_json(resp).await["assignment_id"].as_str().unwrap().to_string()
+    body_json(resp).await["assignment_id"]
+        .as_str()
+        .unwrap()
+        .to_string()
 }
 
 #[tokio::test]
@@ -96,10 +96,12 @@ async fn an_assignment_is_stored_and_listed() {
     let app = app();
     let id = assign(&app, "STN001").await;
 
-    let listed = body_json(send(&app, "GET", "/api/v1/ballot-serial/assignments", None).await).await;
+    let listed =
+        body_json(send(&app, "GET", "/api/v1/ballot-serial/assignments", None).await).await;
     let assignments = listed["assignments"].as_array().unwrap();
     assert_eq!(
-        assignments.len(), 1,
+        assignments.len(),
+        1,
         "an assignment must be listed; previously always empty"
     );
     assert_eq!(assignments[0]["assignment_id"], id.as_str());
@@ -113,7 +115,8 @@ async fn an_assignment_is_stored_and_listed() {
 async fn an_assignment_records_that_the_manifest_is_unverified() {
     let app = app();
     assign(&app, "STN001").await;
-    let listed = body_json(send(&app, "GET", "/api/v1/ballot-serial/assignments", None).await).await;
+    let listed =
+        body_json(send(&app, "GET", "/api/v1/ballot-serial/assignments", None).await).await;
     let reason = listed["assignments"][0]["blocking_reason"]
         .as_str()
         .unwrap_or_default()
@@ -199,7 +202,8 @@ async fn a_receipt_moves_the_station_to_issued() {
     )
     .await;
     assert_eq!(resp.status(), StatusCode::ACCEPTED);
-    let state = body_json(send(&app, "GET", "/api/v1/ballot-serial/reconcile/STN001", None).await).await;
+    let state =
+        body_json(send(&app, "GET", "/api/v1/ballot-serial/reconcile/STN001", None).await).await;
     assert_eq!(state["status"], "issued");
 }
 
@@ -236,8 +240,14 @@ async fn a_spoilt_serial_must_be_inside_the_assigned_range() {
     )
     .await;
     assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY);
-    let detail = body_json(resp).await["detail"].as_str().unwrap_or_default().to_string();
-    assert!(detail.contains("5000"), "the reason should name the serial: {detail}");
+    let detail = body_json(resp).await["detail"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
+    assert!(
+        detail.contains("5000"),
+        "the reason should name the serial: {detail}"
+    );
 }
 
 #[tokio::test]
@@ -250,12 +260,22 @@ async fn a_spoilt_serial_is_recorded_once() {
         "reason": "torn in the booth",
         "clerk_id": "c1"
     });
-    let first = send(&app, "POST", "/api/v1/ballot-serial/spoilt", Some(body.clone())).await;
+    let first = send(
+        &app,
+        "POST",
+        "/api/v1/ballot-serial/spoilt",
+        Some(body.clone()),
+    )
+    .await;
     assert_eq!(first.status(), StatusCode::ACCEPTED);
     assert_eq!(body_json(first).await["spoilt_count"], 1);
 
     let again = send(&app, "POST", "/api/v1/ballot-serial/spoilt", Some(body)).await;
-    assert_eq!(again.status(), StatusCode::CONFLICT, "a serial is spoilt once");
+    assert_eq!(
+        again.status(),
+        StatusCode::CONFLICT,
+        "a serial is spoilt once"
+    );
 }
 
 #[tokio::test]
@@ -265,7 +285,9 @@ async fn a_spoilt_serial_needs_a_station_and_a_reason() {
         &app,
         "POST",
         "/api/v1/ballot-serial/spoilt",
-        Some(json!({"station_code": "no-such", "spoilt_serial": 1, "reason": "r", "clerk_id": "c"})),
+        Some(
+            json!({"station_code": "no-such", "spoilt_serial": 1, "reason": "r", "clerk_id": "c"}),
+        ),
     )
     .await;
     assert_eq!(resp.status(), StatusCode::NOT_FOUND);
@@ -275,7 +297,9 @@ async fn a_spoilt_serial_needs_a_station_and_a_reason() {
         &app,
         "POST",
         "/api/v1/ballot-serial/spoilt",
-        Some(json!({"station_code": "STN001", "spoilt_serial": 1, "reason": "  ", "clerk_id": "c"})),
+        Some(
+            json!({"station_code": "STN001", "spoilt_serial": 1, "reason": "  ", "clerk_id": "c"}),
+        ),
     )
     .await;
     assert_eq!(no_reason.status(), StatusCode::UNPROCESSABLE_ENTITY);
@@ -304,12 +328,19 @@ async fn depositing_more_ballots_than_were_issued_raises_a_hold() {
     .await;
     assert_eq!(result["status"], "held");
     assert_eq!(result["result_hold"], true);
-    assert_eq!(result["assigned_count"], 100, "the real assigned range is used");
+    assert_eq!(
+        result["assigned_count"], 100,
+        "the real assigned range is used"
+    );
     assert_eq!(result["discrepancy"], 20);
-    assert!(result["flag_reason"].is_string(), "a hold must name its reason");
+    assert!(
+        result["flag_reason"].is_string(),
+        "a hold must name its reason"
+    );
 
     // The hold is on the station, not just in the response.
-    let state = body_json(send(&app, "GET", "/api/v1/ballot-serial/reconcile/STN001", None).await).await;
+    let state =
+        body_json(send(&app, "GET", "/api/v1/ballot-serial/reconcile/STN001", None).await).await;
     assert_eq!(state["result_hold"], true);
     assert_eq!(state["status"], "held");
     assert!(state["hold_reason"].is_string());
@@ -381,7 +412,10 @@ async fn a_reconciliation_counts_spoilt_serials_recorded_through_the_api() {
         under_reported["status"], "held",
         "claiming 100 deposited when a serial was recorded spoilt is a discrepancy"
     );
-    assert_eq!(under_reported["spoilt_count"], 1, "the recorded spoilt is used");
+    assert_eq!(
+        under_reported["spoilt_count"], 1,
+        "the recorded spoilt is used"
+    );
     assert_eq!(under_reported["discrepancy"], 1);
 }
 
@@ -428,8 +462,12 @@ async fn a_reconciliation_never_claims_tlog_inclusion() {
         })),
     )
     .await;
-    let state = body_json(send(&app, "GET", "/api/v1/ballot-serial/reconcile/STN001", None).await).await;
-    assert_eq!(state["result_hold"], false, "a balanced station has no hold");
+    let state =
+        body_json(send(&app, "GET", "/api/v1/ballot-serial/reconcile/STN001", None).await).await;
+    assert_eq!(
+        state["result_hold"], false,
+        "a balanced station has no hold"
+    );
     assert_eq!(state["status"], "reconciled");
 }
 
@@ -481,8 +519,12 @@ async fn a_hold_needs_both_officers_to_clear_it() {
     assert_eq!(body["status"], "cleared");
     assert_eq!(body["resolved_by_cro"], "cro-1");
 
-    let state = body_json(send(&app, "GET", "/api/v1/ballot-serial/reconcile/STN001", None).await).await;
-    assert_eq!(state["result_hold"], false, "the hold is cleared on the station");
+    let state =
+        body_json(send(&app, "GET", "/api/v1/ballot-serial/reconcile/STN001", None).await).await;
+    assert_eq!(
+        state["result_hold"], false,
+        "the hold is cleared on the station"
+    );
 }
 
 #[tokio::test]
@@ -562,6 +604,7 @@ async fn spoilt_ballots_do_not_leak_between_stations() {
         Some(json!({"station_code": "STN001", "spoilt_serial": 7, "reason": "r", "clerk_id": "c"})),
     )
     .await;
-    let other = body_json(send(&app, "GET", "/api/v1/ballot-serial/reconcile/STN002", None).await).await;
+    let other =
+        body_json(send(&app, "GET", "/api/v1/ballot-serial/reconcile/STN002", None).await).await;
     assert_eq!(other["spoilt_count"], 0);
 }

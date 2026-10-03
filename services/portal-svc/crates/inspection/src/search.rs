@@ -95,7 +95,11 @@ pub async fn constant_time_lookup(
     let result = LookupResult {
         found,
         station_id: if found { Some("ST-001".into()) } else { None },
-        display_ref: if found { Some(format!("REF-{}", &voter_id_hash[..8])) } else { None },
+        display_ref: if found {
+            Some(format!("REF-{}", &voter_id_hash[..8]))
+        } else {
+            None
+        },
     };
 
     pad_to_fixed_window(start).await;

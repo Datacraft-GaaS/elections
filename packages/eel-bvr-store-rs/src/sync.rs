@@ -59,7 +59,11 @@ impl Batch {
             })
             .collect();
         let tree = eel_crypto_rs::merkle::MerkleTree::from_leaf_hashes(leaves);
-        Self { instance_id: instance, records, merkle_root: hex_encode(&tree.root()) }
+        Self {
+            instance_id: instance,
+            records,
+            merkle_root: hex_encode(&tree.root()),
+        }
     }
 
     /// Number of records in the batch.

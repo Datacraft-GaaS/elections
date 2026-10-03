@@ -27,5 +27,5 @@ pub mod share;
 pub use match_dot::{DotProductError, SecureDotProduct};
 pub use policy::{SmpcPolicy, SmpcPolicyError, SmpcPolicyOutcome};
 pub use protocol::{Protocol, ProtocolError};
-pub use session::{SessionError, SmpcSession, SessionStatus};
-pub use share::{ShareError, ShamirShare, ShamirSharing};
+pub use session::{SessionError, SessionStatus, SmpcSession};
+pub use share::{ShamirShare, ShamirSharing, ShareError};

@@ -64,8 +64,13 @@ async fn call(
     };
     let resp = router.oneshot(req).await.unwrap();
     let status = resp.status();
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
-    (status, serde_json::from_slice(&bytes).unwrap_or(Value::Null))
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    (
+        status,
+        serde_json::from_slice(&bytes).unwrap_or(Value::Null),
+    )
 }
 
 #[tokio::test]
@@ -80,7 +85,10 @@ async fn a_voter_is_read_from_the_register() {
     assert_eq!(body["polling_station_code"], "NRB-001-PS-042");
     assert_eq!(body["status"], "active");
     assert_eq!(body["version"], 3);
-    assert!(body.get("full_name").is_none(), "this endpoint must not return a name");
+    assert!(
+        body.get("full_name").is_none(),
+        "this endpoint must not return a name"
+    );
 }
 
 #[tokio::test]
@@ -144,7 +152,11 @@ async fn a_status_change_off_the_contract_enum_is_refused() {
             Some(json!({ "status": status, "reason_code": code, "officer_id": OFFICER })),
         )
         .await;
-        assert_eq!(code_status, StatusCode::BAD_REQUEST, "{status}/{code} must be refused");
+        assert_eq!(
+            code_status,
+            StatusCode::BAD_REQUEST,
+            "{status}/{code} must be refused"
+        );
     }
 }
 
@@ -186,7 +198,11 @@ async fn a_sar_is_recorded_rather_than_only_ticketed() {
     assert_eq!(due.len(), 10, "{due}");
 
     let sars = store.sars();
-    assert_eq!(sars.len(), 1, "the request must be recorded, not just acknowledged");
+    assert_eq!(
+        sars.len(),
+        1,
+        "the request must be recorded, not just acknowledged"
+    );
     assert_eq!(sars[0].requestor_national_id_hash, hash);
 }
 
@@ -268,7 +284,13 @@ async fn a_signed_merkle_root_is_returned_in_full() {
     });
     let (status, body) = call(router, "GET", "/api/v1/bvr/merkle-root/latest", None).await;
     assert_eq!(status, StatusCode::OK);
-    for required in ["root_hash", "tree_size", "timestamp", "signature", "snapshot_id"] {
+    for required in [
+        "root_hash",
+        "tree_size",
+        "timestamp",
+        "signature",
+        "snapshot_id",
+    ] {
         assert!(body.get(required).is_some(), "missing {required}");
     }
 }
@@ -280,5 +302,8 @@ async fn a_handoff_token_is_not_redeemed_without_being_checked() {
     let (router, _store) = app();
     let (status, body) = call(router, "POST", "/api/v1/bvr/handoff/whatever", None).await;
     assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
-    assert!(body["error"].as_str().unwrap().contains("signed by the citizen portal"));
+    assert!(body["error"]
+        .as_str()
+        .unwrap()
+        .contains("signed by the citizen portal"));
 }

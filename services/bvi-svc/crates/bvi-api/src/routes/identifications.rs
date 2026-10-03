@@ -63,20 +63,30 @@ pub async fn record_identification<S: BviStore>(
             review_drift = Some(drift_secs);
         }
         intake_guard::Decision::BeforePoll { opens_in_secs } => {
-            return Ok(poll_closed_response(format!("poll opens in {opens_in_secs}s")));
+            return Ok(poll_closed_response(format!(
+                "poll opens in {opens_in_secs}s"
+            )));
         }
         intake_guard::Decision::AfterPoll { closed_ago_secs } => {
-            return Ok(poll_closed_response(format!("poll closed {closed_ago_secs}s ago")));
+            return Ok(poll_closed_response(format!(
+                "poll closed {closed_ago_secs}s ago"
+            )));
         }
     }
 
     let Json(req) = body.map_err(|rej| ApiError::bad_request(INSTANCE, rej.body_text()))?;
 
     let outcome = decision_to_outcome(&req.decision).ok_or_else(|| {
-        ApiError::bad_request(INSTANCE, "decision must be one of match|no_match|fallback_used|ambiguous")
+        ApiError::bad_request(
+            INSTANCE,
+            "decision must be one of match|no_match|fallback_used|ambiguous",
+        )
     })?;
     if !(0.0..=1.0).contains(&req.match_score) {
-        return Err(ApiError::bad_request(INSTANCE, "match_score must be within [0.0, 1.0]"));
+        return Err(ApiError::bad_request(
+            INSTANCE,
+            "match_score must be within [0.0, 1.0]",
+        ));
     }
     let modality = req.modality.as_deref().unwrap_or("fingerprint");
     let modality = MODALITIES
@@ -111,16 +121,17 @@ pub async fn record_identification<S: BviStore>(
         modality,
     };
 
-    let identification: Identification = state
-        .store
-        .record_identification(&event)
-        .await
-        .map_err(|e| match e {
-            crate::store::StoreError::AlreadyIdentified => {
-                ApiError::already_identified(INSTANCE, &req.voter_id, &req.session_id)
-            }
-            other => store_error(other, INSTANCE),
-        })?;
+    let identification: Identification =
+        state
+            .store
+            .record_identification(&event)
+            .await
+            .map_err(|e| match e {
+                crate::store::StoreError::AlreadyIdentified => {
+                    ApiError::already_identified(INSTANCE, &req.voter_id, &req.session_id)
+                }
+                other => store_error(other, INSTANCE),
+            })?;
 
     idem::snapshot(&state, "record_identification", key, &identification).await?;
     let mut response = (StatusCode::CREATED, Json(identification)).into_response();

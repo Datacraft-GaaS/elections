@@ -76,10 +76,7 @@ async fn send(
         }
         None => Body::empty(),
     };
-    app.clone()
-        .oneshot(b.body(payload).unwrap())
-        .await
-        .unwrap()
+    app.clone().oneshot(b.body(payload).unwrap()).await.unwrap()
 }
 
 /// An enrolment to submit an assessment against.
@@ -138,7 +135,10 @@ async fn register_question(app: &axum::Router, id: &str, section: &str, correct:
         .await,
     )
     .await;
-    assert_eq!(body["status"], "created", "question must be registered: {body:?}");
+    assert_eq!(
+        body["status"], "created",
+        "question must be registered: {body:?}"
+    );
     body
 }
 
@@ -190,8 +190,14 @@ async fn an_assessment_with_no_questions_cannot_be_scored() {
     )
     .await;
     assert_eq!(resp.status(), StatusCode::SERVICE_UNAVAILABLE);
-    let detail = body_json(resp).await["detail"].as_str().unwrap_or_default().to_string();
-    assert!(detail.contains("/v1/exams/questions"), "the reason should say how to fix it: {detail}");
+    let detail = body_json(resp).await["detail"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
+    assert!(
+        detail.contains("/v1/exams/questions"),
+        "the reason should say how to fix it: {detail}"
+    );
 }
 
 #[tokio::test]
@@ -249,7 +255,13 @@ async fn a_fully_correct_submission_scores_and_earns_a_certificate() {
 
     // The certificate is a record, so it can be read back.
     let read = body_json(
-        send(&app, "GET", &format!("/api/v1/training/lms/certificates/{certificate}"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/api/v1/training/lms/certificates/{certificate}"),
+            None,
+        )
+        .await,
     )
     .await;
     assert_eq!(read["certificate_id"], certificate.as_str());
@@ -281,9 +293,15 @@ async fn a_fully_wrong_submission_fails_and_earns_no_certificate() {
         result["passed"], false,
         "a candidate who got everything wrong must not pass: {result:?}"
     );
-    assert!(result["certificate_id"].is_null(), "a fail earns no certificate");
+    assert!(
+        result["certificate_id"].is_null(),
+        "a fail earns no certificate"
+    );
     let reason = result["blocking_reason"].as_str().unwrap_or_default();
-    assert!(reason.contains("pass mark"), "the reason should name the bar: {reason}");
+    assert!(
+        reason.contains("pass mark"),
+        "the reason should name the bar: {reason}"
+    );
 }
 
 #[tokio::test]
@@ -402,7 +420,13 @@ async fn issue_badge(app: &axum::Router) -> String {
 async fn an_unknown_badge_number_is_not_valid() {
     // The headline. `verify_badge` returned `valid: true` for any string.
     let app = app();
-    let resp = send(&app, "GET", "/api/v1/training/accreditation/badges/EEL-NOPE", None).await;
+    let resp = send(
+        &app,
+        "GET",
+        "/api/v1/training/accreditation/badges/EEL-NOPE",
+        None,
+    )
+    .await;
     assert_eq!(resp.status(), StatusCode::NOT_FOUND);
     let body = body_json(resp).await;
     assert!(body["valid"].is_null(), "an unknown badge is not valid");
@@ -428,8 +452,14 @@ async fn an_issued_badge_verifies() {
     assert!(!verification["valid_until"].is_null());
     // The holder's name is masked, not shown in full.
     let masked = verification["name_masked"].as_str().unwrap();
-    assert!(masked.starts_with('D') && masked.ends_with('t'), "got {masked:?}");
-    assert!(masked.contains('*'), "the middle should be masked: {masked:?}");
+    assert!(
+        masked.starts_with('D') && masked.ends_with('t'),
+        "got {masked:?}"
+    );
+    assert!(
+        masked.contains('*'),
+        "the middle should be masked: {masked:?}"
+    );
 }
 
 #[tokio::test]
@@ -559,12 +589,21 @@ async fn a_certificate_says_why_it_is_unsigned() {
     .await;
     let id = result["certificate_id"].as_str().unwrap();
     let read = body_json(
-        send(&app, "GET", &format!("/api/v1/training/lms/certificates/{id}"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/api/v1/training/lms/certificates/{id}"),
+            None,
+        )
+        .await,
     )
     .await;
     assert!(read["url"].is_null(), "no document is rendered from here");
     let reason = read["blocking_reason"].as_str().unwrap_or_default();
-    assert!(reason.contains("HSM"), "the reason should name what is absent: {reason}");
+    assert!(
+        reason.contains("HSM"),
+        "the reason should name what is absent: {reason}"
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -596,7 +635,13 @@ async fn published_content_is_stored_and_listed() {
     assert_eq!(items[0]["content_id"], id.as_str());
 
     let one = body_json(
-        send(&app, "GET", &format!("/api/v1/training/cms/content/{id}"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/api/v1/training/cms/content/{id}"),
+            None,
+        )
+        .await,
     )
     .await;
     assert_eq!(one["title"], "Voting day guide");
@@ -612,7 +657,11 @@ async fn unknown_content_is_404() {
         ("PUT", "/api/v1/training/cms/content/nope"),
         ("DELETE", "/api/v1/training/cms/content/nope"),
     ] {
-        let body = if method == "PUT" { Some(json!({"title": "t", "body": {}})) } else { None };
+        let body = if method == "PUT" {
+            Some(json!({"title": "t", "body": {}}))
+        } else {
+            None
+        };
         let resp = send(&app, method, uri, body).await;
         assert_eq!(resp.status(), StatusCode::NOT_FOUND, "{method} {uri}");
     }
@@ -676,18 +725,28 @@ async fn deleting_content_removes_it() {
     .await;
     let id = published["content_id"].as_str().unwrap().to_string();
     assert_eq!(
-        send(&app, "DELETE", &format!("/api/v1/training/cms/content/{id}"), None)
-            .await
-            .status(),
+        send(
+            &app,
+            "DELETE",
+            &format!("/api/v1/training/cms/content/{id}"),
+            None
+        )
+        .await
+        .status(),
         StatusCode::NO_CONTENT
     );
     let listed = body_json(send(&app, "GET", "/api/v1/training/cms/content", None).await).await;
     assert!(listed["items"].as_array().unwrap().is_empty());
     // A second delete has nothing to delete.
     assert_eq!(
-        send(&app, "DELETE", &format!("/api/v1/training/cms/content/{id}"), None)
-            .await
-            .status(),
+        send(
+            &app,
+            "DELETE",
+            &format!("/api/v1/training/cms/content/{id}"),
+            None
+        )
+        .await
+        .status(),
         StatusCode::NOT_FOUND
     );
 }
@@ -728,7 +787,11 @@ async fn a_translation_is_stored_and_may_not_be_replaced_silently() {
         Some(json!({"language": "sw", "body": {"sw": "nini"}})),
     )
     .await;
-    assert_eq!(again.status(), StatusCode::CONFLICT, "a translation is not overwritten silently");
+    assert_eq!(
+        again.status(),
+        StatusCode::CONFLICT,
+        "a translation is not overwritten silently"
+    );
 }
 
 #[tokio::test]

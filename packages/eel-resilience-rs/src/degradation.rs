@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use serde::{Deserialize, Serialize};
 
 /// Operating mode for a service. Every service implements all three.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

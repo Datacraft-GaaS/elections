@@ -45,7 +45,9 @@ pub struct SoftwareKeyStore {
 impl SoftwareKeyStore {
     /// Generates a fresh key.
     pub fn generate() -> Self {
-        Self { key: ed25519::generate_keypair() }
+        Self {
+            key: ed25519::generate_keypair(),
+        }
     }
 }
 

@@ -35,8 +35,10 @@ pub struct AppState {
     pub models: Arc<tokio::sync::RwLock<Vec<models::ModelRecord>>>,
     pub alerts: Arc<tokio::sync::RwLock<Vec<models::AnomalyAlert>>>,
     pub decision_log: Arc<tokio::sync::RwLock<Vec<models::DecisionLogEntry>>>,
-    pub forecast_models: Arc<tokio::sync::RwLock<std::collections::HashMap<String, serde_json::Value>>>,
-    pub redteam_campaigns: Arc<tokio::sync::RwLock<std::collections::HashMap<String, serde_json::Value>>>,
+    pub forecast_models:
+        Arc<tokio::sync::RwLock<std::collections::HashMap<String, serde_json::Value>>>,
+    pub redteam_campaigns:
+        Arc<tokio::sync::RwLock<std::collections::HashMap<String, serde_json::Value>>>,
     /// Event batches accepted by the anomaly ingest endpoint, by batch id.
     ///
     /// `ingest_event_batch` answered `{"accepted": true}` for a batch it

@@ -115,6 +115,9 @@ pub trait ChainedAudit {
     fn persist(&mut self, entry: &AuditEntry) -> Result<(), Self::Error>;
 
     /// Build and persist a new AuditEntry, computing `this_hash` automatically.
+    // The fields are the entry itself; a struct parameter would only add a
+    // wrapper around the same audit-chain ordering.
+    #[allow(clippy::too_many_arguments)]
     fn append(
         &mut self,
         entry_id: String,
@@ -166,8 +169,7 @@ impl ChainedAudit for InMemoryChain {
         Ok(self
             .entries
             .iter()
-            .filter(|e| e.resource == resource)
-            .last()
+            .rfind(|e| e.resource == resource)
             .map(|e| e.this_hash)
             .unwrap_or([0u8; 32]))
     }

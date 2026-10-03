@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use sqlx::PgPool;
-use tracing::{error, info};
 use crate::bundle::create_bundle;
 use crate::signer::{sign_bundle, upload_to_minio};
 use rts_tally::tlog_client::TlogClient;
+use sqlx::PgPool;
+use tracing::{error, info};
 
 /// Publication cadence: bundle, sign, upload, then anchor the snapshot into
 /// the transparency log via the transactional outbox.
@@ -31,31 +31,31 @@ pub async fn run_publication_loop(pool: &PgPool, interval_secs: u64, tlog: Optio
             info!("scheduler: transparency-log anchoring disabled (no EEL_TLOG_SIGNING_KEY)");
         }
         match create_bundle(pool).await {
-            Ok(bundle) => {
-                match sign_bundle(&bundle).await {
-                    Ok(hash) => match upload_to_minio(&bundle, &hash).await {
-                        Ok(url) => {
-                            info!(snapshot_id=%bundle.snapshot_id, url=%url, "scheduler: publication complete");
-                            if let Some(client) = &tlog {
-                                match client
-                                    .append_leaf(pool, &bundle.merkle_root, &bundle.snapshot_id)
-                                    .await
-                                {
-                                    Ok(event_id) => info!(
-                                        event_id = %event_id,
-                                        snapshot_id = %bundle.snapshot_id,
-                                        "scheduler: snapshot anchored"
-                                    ),
-                                    Err(e) => error!("scheduler: transparency-log anchor failed: {e}"),
-                                }
+            Ok(bundle) => match sign_bundle(&bundle).await {
+                Ok(hash) => match upload_to_minio(&bundle, &hash).await {
+                    Ok(url) => {
+                        info!(snapshot_id=%bundle.snapshot_id, url=%url, "scheduler: publication complete");
+                        if let Some(client) = &tlog {
+                            match client
+                                .append_leaf(pool, &bundle.merkle_root, &bundle.snapshot_id)
+                                .await
+                            {
+                                Ok(event_id) => info!(
+                                    event_id = %event_id,
+                                    snapshot_id = %bundle.snapshot_id,
+                                    "scheduler: snapshot anchored"
+                                ),
+                                Err(e) => error!("scheduler: transparency-log anchor failed: {e}"),
                             }
                         }
-                        Err(e) => error!("scheduler: upload failed: {e}"),
-                    },
-                    Err(e) => error!("scheduler: signing failed: {e}"),
-                }
+                    }
+                    Err(e) => error!("scheduler: upload failed: {e}"),
+                },
+                Err(e) => error!("scheduler: signing failed: {e}"),
+            },
+            Err(crate::bundle::BundleError::NoData) => {
+                info!("scheduler: no compiled form34c yet, skipping")
             }
-            Err(crate::bundle::BundleError::NoData) => info!("scheduler: no compiled form34c yet, skipping"),
             Err(e) => error!("scheduler: bundle creation failed: {e}"),
         }
         tokio::time::sleep(interval).await;

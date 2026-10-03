@@ -21,7 +21,7 @@ use mobile_bff::handlers::form_quality_gate::QualityGate;
 fn form_quality_gate_resolution_test() {
     // Resolution ≥ 1200×1600
     assert!(QualityGate::check(1200, 1600, 0.9, 0.1, 300.0).0); // pass
-    assert!(!QualityGate::check(800, 600, 0.9, 0.1, 300.0).0);  // fail
+    assert!(!QualityGate::check(800, 600, 0.9, 0.1, 300.0).0); // fail
     assert!(!QualityGate::check(1920, 1080, 0.9, 0.1, 300.0).0); // fail (height < 1600)
 }
 

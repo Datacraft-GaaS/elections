@@ -46,7 +46,12 @@ async fn body_json(resp: axum::response::Response) -> Value {
     serde_json::from_slice(&bytes).unwrap_or(Value::Null)
 }
 
-async fn send(app: &axum::Router, method: &str, uri: &str, body: Option<Value>) -> axum::response::Response {
+async fn send(
+    app: &axum::Router,
+    method: &str,
+    uri: &str,
+    body: Option<Value>,
+) -> axum::response::Response {
     let mut b = Request::builder().method(method).uri(uri);
     let payload = match body {
         Some(v) => {
@@ -67,8 +72,15 @@ async fn register_symbol(app: &axum::Router, symbol: &str) -> String {
         Some(json!({"symbol": symbol, "party_name": "Some Party"})),
     )
     .await;
-    assert_eq!(resp.status(), StatusCode::CREATED, "symbol registration must work");
-    body_json(resp).await["registration_id"].as_str().unwrap().to_string()
+    assert_eq!(
+        resp.status(),
+        StatusCode::CREATED,
+        "symbol registration must work"
+    );
+    body_json(resp).await["registration_id"]
+        .as_str()
+        .unwrap()
+        .to_string()
 }
 
 async fn declare_primary(app: &axum::Router) -> String {
@@ -80,7 +92,10 @@ async fn declare_primary(app: &axum::Router) -> String {
     )
     .await;
     assert_eq!(resp.status(), StatusCode::CREATED);
-    body_json(resp).await["primary_id"].as_str().unwrap().to_string()
+    body_json(resp).await["primary_id"]
+        .as_str()
+        .unwrap()
+        .to_string()
 }
 
 #[tokio::test]
@@ -90,14 +105,29 @@ async fn symbol_collision_is_detected_against_registered_symbols() {
     register_symbol(&app, "AK").await;
 
     let clear = body_json(
-        send(&app, "POST", "/api/v1/symbol/collision-checks", Some(json!({"symbol": "PNC"}))).await,
+        send(
+            &app,
+            "POST",
+            "/api/v1/symbol/collision-checks",
+            Some(json!({"symbol": "PNC"})),
+        )
+        .await,
     )
     .await;
-    assert_eq!(clear["collision"], false, "a fresh symbol is not a collision");
+    assert_eq!(
+        clear["collision"], false,
+        "a fresh symbol is not a collision"
+    );
     assert!(clear["conflicting_registration_id"].is_null());
 
     let clash = body_json(
-        send(&app, "POST", "/api/v1/symbol/collision-checks", Some(json!({"symbol": "ak"}))).await,
+        send(
+            &app,
+            "POST",
+            "/api/v1/symbol/collision-checks",
+            Some(json!({"symbol": "ak"})),
+        )
+        .await,
     )
     .await;
     assert_eq!(
@@ -181,7 +211,13 @@ async fn filed_disputes_are_listed_against_their_primary() {
     assert_eq!(created["status"], "submitted");
 
     let listed = body_json(
-        send(&app, "GET", &format!("/api/v1/party/primaries/{primary}/disputes"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/api/v1/party/primaries/{primary}/disputes"),
+            None,
+        )
+        .await,
     )
     .await;
     assert_eq!(
@@ -192,7 +228,13 @@ async fn filed_disputes_are_listed_against_their_primary() {
 
     // Scoping: a dispute on one primary must not appear under another.
     let other_listed = body_json(
-        send(&app, "GET", &format!("/api/v1/party/primaries/{other}/disputes"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/api/v1/party/primaries/{other}/disputes"),
+            None,
+        )
+        .await,
     )
     .await;
     assert!(
@@ -250,5 +292,9 @@ async fn routers_do_not_share_records() {
         Some(json!({"results": []})),
     )
     .await;
-    assert_eq!(resp.status(), StatusCode::NOT_FOUND, "state leaked between routers");
+    assert_eq!(
+        resp.status(),
+        StatusCode::NOT_FOUND,
+        "state leaked between routers"
+    );
 }

@@ -127,8 +127,10 @@ impl IntoResponse for ApiError {
             instance: self.instance.to_owned(),
         };
         let mut resp = (self.status, Json(body)).into_response();
-        resp.headers_mut()
-            .insert(header::CONTENT_TYPE, header::HeaderValue::from_static("application/problem+json"));
+        resp.headers_mut().insert(
+            header::CONTENT_TYPE,
+            header::HeaderValue::from_static("application/problem+json"),
+        );
         resp
     }
 }

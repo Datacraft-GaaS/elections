@@ -24,7 +24,7 @@ use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
 use crate::models::{
-    Distress, DistressCreate, Identification, KitsHealthQuery, KitHealthPage, LookupAuditCtx,
+    Distress, DistressCreate, Identification, KitHealthPage, KitsHealthQuery, LookupAuditCtx,
     Session, SessionCreate, StationConfig, TelemetryCreate, VoterStation,
 };
 use bvi_turnout::{TurnoutScope, TurnoutSummary};
@@ -63,8 +63,14 @@ pub struct IdentificationNew {
 }
 
 pub trait BviStore: Send + Sync + Clone + 'static {
-    fn open_session(&self, req: &SessionCreate) -> impl std::future::Future<Output = Result<Session, StoreError>> + Send;
-    fn get_session(&self, session_id: &str) -> impl std::future::Future<Output = Result<Option<Session>, StoreError>> + Send;
+    fn open_session(
+        &self,
+        req: &SessionCreate,
+    ) -> impl std::future::Future<Output = Result<Session, StoreError>> + Send;
+    fn get_session(
+        &self,
+        session_id: &str,
+    ) -> impl std::future::Future<Output = Result<Option<Session>, StoreError>> + Send;
     fn close_session(
         &self,
         session_id: &str,
@@ -74,9 +80,18 @@ pub trait BviStore: Send + Sync + Clone + 'static {
         &self,
         ev: &IdentificationNew,
     ) -> impl std::future::Future<Output = Result<Identification, StoreError>> + Send;
-    fn insert_telemetry(&self, t: &TelemetryCreate) -> impl std::future::Future<Output = Result<(), StoreError>> + Send;
-    fn insert_distress(&self, d: &DistressCreate) -> impl std::future::Future<Output = Result<Distress, StoreError>> + Send;
-    fn station_config(&self, station_code: &str) -> impl std::future::Future<Output = Result<Option<StationConfig>, StoreError>> + Send;
+    fn insert_telemetry(
+        &self,
+        t: &TelemetryCreate,
+    ) -> impl std::future::Future<Output = Result<(), StoreError>> + Send;
+    fn insert_distress(
+        &self,
+        d: &DistressCreate,
+    ) -> impl std::future::Future<Output = Result<Distress, StoreError>> + Send;
+    fn station_config(
+        &self,
+        station_code: &str,
+    ) -> impl std::future::Future<Output = Result<Option<StationConfig>, StoreError>> + Send;
     fn revoke_kit(
         &self,
         serial: &str,
@@ -88,7 +103,10 @@ pub trait BviStore: Send + Sync + Clone + 'static {
         election_id: &str,
         scope: &TurnoutScope,
     ) -> impl std::future::Future<Output = Result<TurnoutSummary, StoreError>> + Send;
-    fn kits_health(&self, q: &KitsHealthQuery) -> impl std::future::Future<Output = Result<KitHealthPage, StoreError>> + Send;
+    fn kits_health(
+        &self,
+        q: &KitsHealthQuery,
+    ) -> impl std::future::Future<Output = Result<KitHealthPage, StoreError>> + Send;
     fn voter_station(
         &self,
         voter_id: &str,
@@ -375,7 +393,10 @@ impl BviStore for PgStore {
         })
     }
 
-    async fn station_config(&self, station_code: &str) -> Result<Option<StationConfig>, StoreError> {
+    async fn station_config(
+        &self,
+        station_code: &str,
+    ) -> Result<Option<StationConfig>, StoreError> {
         let row = sqlx::query(
             r#"
             SELECT version, bundle_id, match_threshold, allowed_modalities,
@@ -467,8 +488,14 @@ impl BviStore for PgStore {
             "reason": reason,
             "officer_id": officer_id,
         });
-        Self::emit_outbox(&mut tx, Uuid::now_v7(), "eel.bvi.kit_revoked.v1", serial, &payload)
-            .await?;
+        Self::emit_outbox(
+            &mut tx,
+            Uuid::now_v7(),
+            "eel.bvi.kit_revoked.v1",
+            serial,
+            &payload,
+        )
+        .await?;
         tx.commit().await?;
 
         Ok(RevokedKit {
@@ -553,7 +580,9 @@ impl BviStore for PgStore {
         let total = items.len() as i64;
         let page_size = q.effective_page_size() as usize;
         let next_cursor = if items.len() > page_size {
-            items.get(page_size.saturating_sub(1)).map(|h| h.serial.clone())
+            items
+                .get(page_size.saturating_sub(1))
+                .map(|h| h.serial.clone())
         } else {
             None
         };
@@ -641,7 +670,12 @@ impl BviStore for PgStore {
         .bind(key)
         .fetch_optional(&self.pool)
         .await?;
-        Ok(row.map(|r| (r.get::<i32, _>("response_status") as u16, r.get("response_body"))))
+        Ok(row.map(|r| {
+            (
+                r.get::<i32, _>("response_status") as u16,
+                r.get("response_body"),
+            )
+        }))
     }
 
     async fn idem_put(

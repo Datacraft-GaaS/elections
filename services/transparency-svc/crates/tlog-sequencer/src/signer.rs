@@ -32,6 +32,10 @@ use tracing::info;
 
 /// Which backend produced signatures, also used as the key fingerprint
 /// namespace.
+// Pkcs11Signer carries a pool handle and dev carries a fixed-size key; boxing
+// the larger variant would change this type's layout for a per-match cost
+// with no measurable gain at two variants.
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone)]
 pub enum SthSigner {
     /// PKCS#11 token (softHSM / Luna / Utimaco), `eel-sth` key role.
@@ -171,14 +175,15 @@ impl Pkcs11Signer {
         let label = KeyRole::Sth.label();
         let handles = session
             .session()
-            .find_objects(&vec![
+            .find_objects(&[
                 Attribute::Label(label.as_bytes().to_vec()),
                 Attribute::Class(ObjectClass::PUBLIC_KEY),
             ])
             .map_err(|e| CryptoError::Internal(format!("find sth pubkey: {e}")))?;
-        let handle = handles.into_iter().next().ok_or_else(|| {
-            CryptoError::InvalidKey("no eel-sth public key on token".into())
-        })?;
+        let handle = handles
+            .into_iter()
+            .next()
+            .ok_or_else(|| CryptoError::InvalidKey("no eel-sth public key on token".into()))?;
         match session.session().verify(
             &cryptoki::mechanism::Mechanism::Ecdsa,
             handle,
@@ -203,7 +208,7 @@ impl Pkcs11Signer {
         let label = KeyRole::Sth.label();
         let handles = session
             .session()
-            .find_objects(&vec![
+            .find_objects(&[
                 Attribute::Label(label.as_bytes().to_vec()),
                 Attribute::Class(ObjectClass::PUBLIC_KEY),
             ])
@@ -231,7 +236,11 @@ impl DevEd25519 {
         let arr: [u8; 64] = signature
             .try_into()
             .map_err(|_| CryptoError::InvalidSignature)?;
-        match self.signing.verifying_key().verify(payload, &Signature::from_bytes(&arr)) {
+        match self
+            .signing
+            .verifying_key()
+            .verify(payload, &Signature::from_bytes(&arr))
+        {
             Ok(()) => Ok(true),
             Err(_) => Ok(false),
         }

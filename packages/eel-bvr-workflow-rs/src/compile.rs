@@ -270,105 +270,123 @@ pub fn compile(spec: &WorkflowSpec) -> Result<CompiledWorkflow, Vec<CompileError
         data_item_order.push(item.name.clone());
         data_items.insert(
             item.name.clone(),
-            CompiledDataItem { item: item.clone(), reachable: false },
+            CompiledDataItem {
+                item: item.clone(),
+                reachable: false,
+            },
         );
     }
 
     // Index named capture requirements, rejecting duplicates.
-        let mut captures: HashMap<String, CompiledCapture> = HashMap::new();
-        let mut capture_order: Vec<String> = Vec::new();
-        for capture in &spec.capture_requirements {
-            check_capture(capture, &mut errors);
-            if captures.contains_key(&capture.id) {
-                errors.push(CompileError::DuplicateCaptureId { id: capture.id.clone() });
-                continue;
-            }
-            capture_order.push(capture.id.clone());
-            captures.insert(
-                capture.id.clone(),
-                CompiledCapture { requirement: capture.clone(), referenced: false },
-            );
+    let mut captures: HashMap<String, CompiledCapture> = HashMap::new();
+    let mut capture_order: Vec<String> = Vec::new();
+    for capture in &spec.capture_requirements {
+        check_capture(capture, &mut errors);
+        if captures.contains_key(&capture.id) {
+            errors.push(CompileError::DuplicateCaptureId {
+                id: capture.id.clone(),
+            });
+            continue;
         }
-
-        let mut steps: Vec<CompiledStep> = Vec::new();
-        let mut seen_step_ids: BTreeSet<&str> = BTreeSet::new();
-        for step in &spec.steps {
-            if !seen_step_ids.insert(step.id.as_str()) {
-                errors.push(CompileError::DuplicateStepId { id: step.id.clone() });
-                continue;
-            }
-            let mut items: Vec<String> = Vec::new();
-            let display_label = match &step.kind {
-                StepKind::DataEntry { items: names } => {
-                    for name in names {
-                        match data_items.get_mut(name) {
-                            Some(entry) => {
-                                entry.reachable = true;
-                                items.push(name.clone());
-                            }
-                            None => errors.push(CompileError::UnknownDataItem {
-                                step: step.id.clone(),
-                                item: name.clone(),
-                            }),
-                        }
-                    }
-                    step.label.clone().unwrap_or_else(|| "Details".to_owned())
-                }
-                StepKind::Capture { capture: capture_id } => {
-                    match captures.get_mut(capture_id) {
-                        Some(entry) => {
-                            entry.referenced = true;
-                            let requirement = &entry.requirement;
-                            step.label.clone().unwrap_or_else(|| {
-                                if requirement.kinds.len() == 1 {
-                                    format!("Capture {:?}", requirement.kinds[0])
-                                } else {
-                                    format!("{} ({} options)", requirement.label, requirement.kinds.len())
-                                }
-                            })
-                        }
-                        None => {
-                            errors.push(CompileError::UnknownCapture {
-                                step: step.id.clone(),
-                                capture: capture_id.clone(),
-                            });
-                            String::new()
-                        }
-                    }
-                }
-                StepKind::Review => step.label.clone().unwrap_or_else(|| "Review".to_owned()),
-                StepKind::Submit => step.label.clone().unwrap_or_else(|| "Submit".to_owned()),
-            };
-            steps.push(CompiledStep { step: step.clone(), items, display_label });
-        }
-
-        // Any data item no step collects, and any capture requirement no step
-        // uses, are dead configuration.
-        for name in &data_item_order {
-            if !data_items[name].reachable {
-                errors.push(CompileError::UnreachableDataItem { name: name.clone() });
-            }
-        }
-        for id in &capture_order {
-            if !captures[id].referenced {
-                errors.push(CompileError::UnreferencedCapture { id: id.clone() });
-            }
-        }
-
-        if !errors.is_empty() {
-            return Err(errors);
-        }
-
-        Ok(CompiledWorkflow {
-            id: spec.id.clone(),
-            label: spec.label.clone(),
-            data_items,
-            data_item_order,
-            steps,
-            captures,
-            capture_order,
-        })
+        capture_order.push(capture.id.clone());
+        captures.insert(
+            capture.id.clone(),
+            CompiledCapture {
+                requirement: capture.clone(),
+                referenced: false,
+            },
+        );
     }
+
+    let mut steps: Vec<CompiledStep> = Vec::new();
+    let mut seen_step_ids: BTreeSet<&str> = BTreeSet::new();
+    for step in &spec.steps {
+        if !seen_step_ids.insert(step.id.as_str()) {
+            errors.push(CompileError::DuplicateStepId {
+                id: step.id.clone(),
+            });
+            continue;
+        }
+        let mut items: Vec<String> = Vec::new();
+        let display_label = match &step.kind {
+            StepKind::DataEntry { items: names } => {
+                for name in names {
+                    match data_items.get_mut(name) {
+                        Some(entry) => {
+                            entry.reachable = true;
+                            items.push(name.clone());
+                        }
+                        None => errors.push(CompileError::UnknownDataItem {
+                            step: step.id.clone(),
+                            item: name.clone(),
+                        }),
+                    }
+                }
+                step.label.clone().unwrap_or_else(|| "Details".to_owned())
+            }
+            StepKind::Capture {
+                capture: capture_id,
+            } => match captures.get_mut(capture_id) {
+                Some(entry) => {
+                    entry.referenced = true;
+                    let requirement = &entry.requirement;
+                    step.label.clone().unwrap_or_else(|| {
+                        if requirement.kinds.len() == 1 {
+                            format!("Capture {:?}", requirement.kinds[0])
+                        } else {
+                            format!(
+                                "{} ({} options)",
+                                requirement.label,
+                                requirement.kinds.len()
+                            )
+                        }
+                    })
+                }
+                None => {
+                    errors.push(CompileError::UnknownCapture {
+                        step: step.id.clone(),
+                        capture: capture_id.clone(),
+                    });
+                    String::new()
+                }
+            },
+            StepKind::Review => step.label.clone().unwrap_or_else(|| "Review".to_owned()),
+            StepKind::Submit => step.label.clone().unwrap_or_else(|| "Submit".to_owned()),
+        };
+        steps.push(CompiledStep {
+            step: step.clone(),
+            items,
+            display_label,
+        });
+    }
+
+    // Any data item no step collects, and any capture requirement no step
+    // uses, are dead configuration.
+    for name in &data_item_order {
+        if !data_items[name].reachable {
+            errors.push(CompileError::UnreachableDataItem { name: name.clone() });
+        }
+    }
+    for id in &capture_order {
+        if !captures[id].referenced {
+            errors.push(CompileError::UnreferencedCapture { id: id.clone() });
+        }
+    }
+
+    if !errors.is_empty() {
+        return Err(errors);
+    }
+
+    Ok(CompiledWorkflow {
+        id: spec.id.clone(),
+        label: spec.label.clone(),
+        data_items,
+        data_item_order,
+        steps,
+        captures,
+        capture_order,
+    })
+}
 
 /// Validates one data item's constraints, appending any violations.
 fn check_constraints(item: &DataItem, errors: &mut Vec<CompileError>) {
@@ -406,7 +424,9 @@ fn check_constraints(item: &DataItem, errors: &mut Vec<CompileError>) {
             max: *max,
         }),
         (Some(_), _) | (_, Some(_)) if item.kind != DataKind::Date => {
-            errors.push(CompileError::AgeBoundOnNonDate { name: item.name.clone() });
+            errors.push(CompileError::AgeBoundOnNonDate {
+                name: item.name.clone(),
+            });
         }
         _ => {}
     }
@@ -436,7 +456,9 @@ fn check_capture(capture: &crate::model::CaptureRequirement, errors: &mut Vec<Co
     use crate::model::CapturePolicy;
 
     if capture.kinds.is_empty() {
-        errors.push(CompileError::CaptureWithoutKinds { id: capture.id.clone() });
+        errors.push(CompileError::CaptureWithoutKinds {
+            id: capture.id.clone(),
+        });
         return;
     }
 
@@ -452,7 +474,9 @@ fn check_capture(capture: &crate::model::CaptureRequirement, errors: &mut Vec<Co
 
     if let CapturePolicy::AtLeast(n) = capture.policy {
         if n == 0 {
-            errors.push(CompileError::CapturePolicyVacuous { id: capture.id.clone() });
+            errors.push(CompileError::CapturePolicyVacuous {
+                id: capture.id.clone(),
+            });
         }
         if usize::from(n) > capture.kinds.len() {
             errors.push(CompileError::CapturePolicyUnsatisfiable {

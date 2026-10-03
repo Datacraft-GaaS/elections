@@ -60,11 +60,7 @@ pub async fn update_report(
     Err(AdhocError::NotFound(adhoc_id.to_string()))
 }
 
-pub async fn archive_report(
-    _pool: &sqlx::PgPool,
-    _adhoc_id: Uuid,
-    _author_id: Uuid,
-) -> Result<()> {
+pub async fn archive_report(_pool: &sqlx::PgPool, _adhoc_id: Uuid, _author_id: Uuid) -> Result<()> {
     Ok(())
 }
 
@@ -87,7 +83,13 @@ pub async fn create_version(
         allowed_tables: req.allowed_tables,
         column_projection: None,
         render_pipeline: req.render_pipeline.unwrap_or_else(|| {
-            vec!["pdf".to_string(), "docx".to_string(), "markdown".to_string(), "csv".to_string(), "json".to_string()]
+            vec![
+                "pdf".to_string(),
+                "docx".to_string(),
+                "markdown".to_string(),
+                "csv".to_string(),
+                "json".to_string(),
+            ]
         }),
         created_at: now,
         created_by,
@@ -106,10 +108,7 @@ pub async fn fetch_latest_version(
     Err(AdhocError::NotFound(adhoc_id.to_string()))
 }
 
-pub async fn fetch_version(
-    _pool: &sqlx::PgPool,
-    version_id: Uuid,
-) -> Result<AdhocReportVersion> {
+pub async fn fetch_version(_pool: &sqlx::PgPool, version_id: Uuid) -> Result<AdhocReportVersion> {
     Err(AdhocError::NotFound(version_id.to_string()))
 }
 
@@ -123,7 +122,9 @@ pub async fn create_preview(
     let preview = AdhocPreview {
         preview_id: Uuid::now_v7(),
         version_id,
-        parameter_values: req.parameter_values.unwrap_or_else(|| serde_json::json!({})),
+        parameter_values: req
+            .parameter_values
+            .unwrap_or_else(|| serde_json::json!({})),
         sample_limit: req.sample_limit.unwrap_or(100).min(1000),
         rows_returned: None,
         elapsed_ms: None,
@@ -137,10 +138,7 @@ pub async fn create_preview(
     Ok(preview)
 }
 
-pub async fn fetch_preview(
-    _pool: &sqlx::PgPool,
-    preview_id: Uuid,
-) -> Result<AdhocPreview> {
+pub async fn fetch_preview(_pool: &sqlx::PgPool, preview_id: Uuid) -> Result<AdhocPreview> {
     Err(AdhocError::NotFound(preview_id.to_string()))
 }
 
@@ -167,18 +165,11 @@ pub async fn create_share(
     })
 }
 
-pub async fn revoke_share(
-    _pool: &sqlx::PgPool,
-    _share_id: Uuid,
-    _revoker_id: Uuid,
-) -> Result<()> {
+pub async fn revoke_share(_pool: &sqlx::PgPool, _share_id: Uuid, _revoker_id: Uuid) -> Result<()> {
     Ok(())
 }
 
-pub async fn list_shares(
-    _pool: &sqlx::PgPool,
-    _adhoc_id: Uuid,
-) -> Result<Vec<AdhocShare>> {
+pub async fn list_shares(_pool: &sqlx::PgPool, _adhoc_id: Uuid) -> Result<Vec<AdhocShare>> {
     Ok(Vec::new())
 }
 
@@ -200,10 +191,7 @@ pub async fn create_snippet(
     })
 }
 
-pub async fn list_snippets(
-    _pool: &sqlx::PgPool,
-    _author_id: Uuid,
-) -> Result<Vec<AdhocSnippet>> {
+pub async fn list_snippets(_pool: &sqlx::PgPool, _author_id: Uuid) -> Result<Vec<AdhocSnippet>> {
     Ok(Vec::new())
 }
 

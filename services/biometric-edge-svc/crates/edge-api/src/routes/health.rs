@@ -32,7 +32,10 @@ mod tests {
     #[tokio::test]
     async fn healthz_returns_200() {
         let app = router();
-        let req = Request::builder().uri("/healthz").body(Body::empty()).unwrap();
+        let req = Request::builder()
+            .uri("/healthz")
+            .body(Body::empty())
+            .unwrap();
         let resp = app.oneshot(req).await.unwrap();
         assert_eq!(resp.status(), 200);
     }

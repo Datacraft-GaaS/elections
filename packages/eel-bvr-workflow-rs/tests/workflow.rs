@@ -19,8 +19,8 @@
 //! actually be handed.
 
 use eel_bvr_workflow_rs::{
-    CaptureKind, CapturePolicy, CaptureRequirement, Constraints, DataItem, DataKind, Step,
-    StepKind, ValidationError, WorkflowSpec, compile, validate_submission,
+    compile, validate_submission, CaptureKind, CapturePolicy, CaptureRequirement, Constraints,
+    DataItem, DataKind, Step, StepKind, ValidationError, WorkflowSpec,
 };
 use serde_json::json;
 
@@ -150,21 +150,35 @@ fn standard_ke_workflow() -> WorkflowSpec {
             },
             Step {
                 id: "left_fingers".to_owned(),
-                kind: StepKind::Capture { capture: "fingerprints".to_owned() },
+                kind: StepKind::Capture {
+                    capture: "fingerprints".to_owned(),
+                },
                 label: None,
             },
             Step {
                 id: "face".to_owned(),
-                kind: StepKind::Capture { capture: "face_live".to_owned() },
+                kind: StepKind::Capture {
+                    capture: "face_live".to_owned(),
+                },
                 label: None,
             },
             Step {
                 id: "consent".to_owned(),
-                kind: StepKind::DataEntry { items: vec!["consent".to_owned()] },
+                kind: StepKind::DataEntry {
+                    items: vec!["consent".to_owned()],
+                },
                 label: None,
             },
-            Step { id: "review".to_owned(), kind: StepKind::Review, label: None },
-            Step { id: "submit".to_owned(), kind: StepKind::Submit, label: None },
+            Step {
+                id: "review".to_owned(),
+                kind: StepKind::Review,
+                label: None,
+            },
+            Step {
+                id: "submit".to_owned(),
+                kind: StepKind::Submit,
+                label: None,
+            },
         ],
     }
 }
@@ -226,8 +240,11 @@ fn data_items_are_reachable_and_ordered_as_declared() {
 #[test]
 fn step_labels_are_generated_when_absent() {
     let compiled = compile(&standard_ke_workflow()).unwrap();
-    let by_id: std::collections::HashMap<_, _> =
-        compiled.steps.iter().map(|s| (s.step.id.as_str(), s)).collect();
+    let by_id: std::collections::HashMap<_, _> = compiled
+        .steps
+        .iter()
+        .map(|s| (s.step.id.as_str(), s))
+        .collect();
     assert_eq!(by_id["review"].display_label, "Review");
     assert_eq!(by_id["submit"].display_label, "Submit");
     assert_eq!(by_id["left_fingers"].display_label, "Capture Fingerprint");
@@ -264,7 +281,9 @@ fn steps_parse_from_their_tagged_json_form() {
     let step: Step = serde_json::from_value(json).unwrap();
     assert_eq!(
         step.kind,
-        StepKind::Capture { capture: "fingerprints".to_owned() }
+        StepKind::Capture {
+            capture: "fingerprints".to_owned()
+        }
     );
 
     // A capture requirement round-trips through its own tagged form, so an
@@ -276,7 +295,10 @@ fn steps_parse_from_their_tagged_json_form() {
         "policy": { "at_least": 1 }
     });
     let capture: CaptureRequirement = serde_json::from_value(capture_json).unwrap();
-    assert_eq!(capture.kinds, vec![CaptureKind::PalmVein, CaptureKind::FingerVein]);
+    assert_eq!(
+        capture.kinds,
+        vec![CaptureKind::PalmVein, CaptureKind::FingerVein]
+    );
     assert_eq!(capture.policy, CapturePolicy::AtLeast(1));
 }
 
@@ -312,8 +334,7 @@ fn duplicate_data_item_name_is_rejected() {
     spec.data_items.push(dup.clone());
     let errors = compile(&spec).unwrap_err();
     assert!(
-        errors
-            .contains(&eel_bvr_workflow_rs::CompileError::DuplicateDataItem { name: dup.name })
+        errors.contains(&eel_bvr_workflow_rs::CompileError::DuplicateDataItem { name: dup.name })
     );
 }
 
@@ -324,17 +345,18 @@ fn duplicate_step_id_is_rejected() {
     spec.steps.push(dup);
     let errors = compile(&spec).unwrap_err();
     assert!(
-        errors
-            .contains(&eel_bvr_workflow_rs::CompileError::DuplicateStepId {
-                id: "identity".to_owned()
-            })
+        errors.contains(&eel_bvr_workflow_rs::CompileError::DuplicateStepId {
+            id: "identity".to_owned()
+        })
     );
 }
 
 #[test]
 fn step_referencing_unknown_data_item_is_rejected() {
     let mut spec = standard_ke_workflow();
-    spec.steps[0].kind = StepKind::DataEntry { items: vec!["not_a_field".to_owned()] };
+    spec.steps[0].kind = StepKind::DataEntry {
+        items: vec!["not_a_field".to_owned()],
+    };
     let errors = compile(&spec).unwrap_err();
     assert!(
         errors.contains(&eel_bvr_workflow_rs::CompileError::UnknownDataItem {
@@ -371,12 +393,11 @@ fn inverted_length_bounds_are_rejected() {
     spec.data_items[0].constraints.max_length = Some(10);
     let errors = compile(&spec).unwrap_err();
     assert!(
-        errors
-            .contains(&eel_bvr_workflow_rs::CompileError::LengthBoundsInverted {
-                name: "full_name".to_owned(),
-                min: 50,
-                max: 10
-            })
+        errors.contains(&eel_bvr_workflow_rs::CompileError::LengthBoundsInverted {
+            name: "full_name".to_owned(),
+            min: 50,
+            max: 10
+        })
     );
 }
 
@@ -386,11 +407,13 @@ fn inverted_age_bounds_are_rejected() {
     spec.data_items[2].constraints.min_age_years = Some(90);
     spec.data_items[2].constraints.max_age_years = Some(18);
     let errors = compile(&spec).unwrap_err();
-    assert!(errors.contains(&eel_bvr_workflow_rs::CompileError::AgeBoundsInverted {
-        name: "dob".to_owned(),
-        min: 90,
-        max: 18
-    }));
+    assert!(
+        errors.contains(&eel_bvr_workflow_rs::CompileError::AgeBoundsInverted {
+            name: "dob".to_owned(),
+            min: 90,
+            max: 18
+        })
+    );
 }
 
 #[test]
@@ -398,9 +421,11 @@ fn choice_without_options_is_rejected() {
     let mut spec = standard_ke_workflow();
     spec.data_items[4].constraints.options = None;
     let errors = compile(&spec).unwrap_err();
-    assert!(errors.contains(&eel_bvr_workflow_rs::CompileError::ChoiceWithoutOptions {
-        name: "gender".to_owned()
-    }));
+    assert!(
+        errors.contains(&eel_bvr_workflow_rs::CompileError::ChoiceWithoutOptions {
+            name: "gender".to_owned()
+        })
+    );
 }
 
 #[test]
@@ -408,10 +433,12 @@ fn duplicate_choice_option_is_rejected() {
     let mut spec = standard_ke_workflow();
     spec.data_items[4].constraints.options = Some(vec!["male".to_owned(), "male".to_owned()]);
     let errors = compile(&spec).unwrap_err();
-    assert!(errors.contains(&eel_bvr_workflow_rs::CompileError::DuplicateOption {
-        name: "gender".to_owned(),
-        option: "male".to_owned()
-    }));
+    assert!(
+        errors.contains(&eel_bvr_workflow_rs::CompileError::DuplicateOption {
+            name: "gender".to_owned(),
+            option: "male".to_owned()
+        })
+    );
 }
 
 #[test]
@@ -419,9 +446,11 @@ fn age_bound_on_a_non_date_item_is_rejected() {
     let mut spec = standard_ke_workflow();
     spec.data_items[0].constraints.min_age_years = Some(18);
     let errors = compile(&spec).unwrap_err();
-    assert!(errors.contains(&eel_bvr_workflow_rs::CompileError::AgeBoundOnNonDate {
-        name: "full_name".to_owned()
-    }));
+    assert!(
+        errors.contains(&eel_bvr_workflow_rs::CompileError::AgeBoundOnNonDate {
+            name: "full_name".to_owned()
+        })
+    );
 }
 
 #[test]
@@ -429,10 +458,12 @@ fn length_bound_on_a_pattern_typed_item_is_rejected() {
     let mut spec = standard_ke_workflow();
     spec.data_items[1].constraints.max_length = Some(8); // national_id is not free text
     let errors = compile(&spec).unwrap_err();
-    assert!(errors.contains(&eel_bvr_workflow_rs::CompileError::LengthBoundOnNonText {
-        name: "national_id".to_owned(),
-        kind: DataKind::NationalId
-    }));
+    assert!(
+        errors.contains(&eel_bvr_workflow_rs::CompileError::LengthBoundOnNonText {
+            name: "national_id".to_owned(),
+            kind: DataKind::NationalId
+        })
+    );
 }
 
 #[test]
@@ -441,10 +472,12 @@ fn unknown_data_class_is_rejected() {
     let mut spec = standard_ke_workflow();
     spec.data_items[0].data_class = "Z".to_owned();
     let errors = compile(&spec).unwrap_err();
-    assert!(errors.contains(&eel_bvr_workflow_rs::CompileError::InvalidDataClass {
-        name: "full_name".to_owned(),
-        class: "Z".to_owned()
-    }));
+    assert!(
+        errors.contains(&eel_bvr_workflow_rs::CompileError::InvalidDataClass {
+            name: "full_name".to_owned(),
+            class: "Z".to_owned()
+        })
+    );
 }
 
 #[test]
@@ -452,10 +485,15 @@ fn compilation_reports_every_fault_not_just_the_first() {
     let mut spec = standard_ke_workflow();
     spec.data_items[0].data_class = "?".to_owned();
     spec.data_items[1].name = "full_name".to_owned(); // duplicate
-    spec.steps[0].kind = StepKind::DataEntry { items: vec!["ghost".to_owned()] };
+    spec.steps[0].kind = StepKind::DataEntry {
+        items: vec!["ghost".to_owned()],
+    };
     let errors = compile(&spec).unwrap_err();
     // Duplicate name, unknown data class, and unknown reference all reported.
-    assert!(errors.len() >= 3, "expected multiple faults, got {errors:?}");
+    assert!(
+        errors.len() >= 3,
+        "expected multiple faults, got {errors:?}"
+    );
 }
 
 // ---- submission validation --------------------------------------------------
@@ -464,7 +502,11 @@ fn compilation_reports_every_fault_not_just_the_first() {
 fn valid_submission_passes() {
     let compiled = compile(&standard_ke_workflow()).unwrap();
     let result = validate_submission(&compiled, &valid_submission(), &both_modalities());
-    assert!(result.is_ok(), "unexpected violations: {:?}", result.violations);
+    assert!(
+        result.is_ok(),
+        "unexpected violations: {:?}",
+        result.violations
+    );
 }
 
 #[test]
@@ -475,7 +517,9 @@ fn missing_required_item_is_reported() {
     let result = validate_submission(&compiled, &submission, &both_modalities());
     assert!(result
         .violations
-        .contains(&ValidationError::MissingRequired { item: "full_name".to_owned() }));
+        .contains(&ValidationError::MissingRequired {
+            item: "full_name".to_owned()
+        }));
 }
 
 #[test]
@@ -486,7 +530,9 @@ fn blank_string_counts_as_absent() {
     let result = validate_submission(&compiled, &submission, &both_modalities());
     assert!(result
         .violations
-        .contains(&ValidationError::MissingRequired { item: "full_name".to_owned() }));
+        .contains(&ValidationError::MissingRequired {
+            item: "full_name".to_owned()
+        }));
 }
 
 #[test]
@@ -495,7 +541,11 @@ fn optional_item_may_be_omitted() {
     let mut submission = valid_submission();
     submission.remove("phone");
     let result = validate_submission(&compiled, &submission, &both_modalities());
-    assert!(result.is_ok(), "phone is optional, got {:?}", result.violations);
+    assert!(
+        result.is_ok(),
+        "phone is optional, got {:?}",
+        result.violations
+    );
 }
 
 #[test]
@@ -504,10 +554,12 @@ fn bad_national_id_is_rejected() {
     let mut submission = valid_submission();
     submission.insert("national_id".to_owned(), json!("12345"));
     let result = validate_submission(&compiled, &submission, &both_modalities());
-    assert!(result.violations.contains(&ValidationError::PatternMismatch {
-        item: "national_id".to_owned(),
-        kind: DataKind::NationalId
-    }));
+    assert!(result
+        .violations
+        .contains(&ValidationError::PatternMismatch {
+            item: "national_id".to_owned(),
+            kind: DataKind::NationalId
+        }));
 }
 
 #[test]
@@ -516,10 +568,12 @@ fn bad_phone_is_rejected() {
     let mut submission = valid_submission();
     submission.insert("phone".to_owned(), json!("0712345678"));
     let result = validate_submission(&compiled, &submission, &both_modalities());
-    assert!(result.violations.contains(&ValidationError::PatternMismatch {
-        item: "phone".to_owned(),
-        kind: DataKind::Phone
-    }));
+    assert!(result
+        .violations
+        .contains(&ValidationError::PatternMismatch {
+            item: "phone".to_owned(),
+            kind: DataKind::Phone
+        }));
 }
 
 #[test]
@@ -528,10 +582,12 @@ fn bad_station_code_is_rejected() {
     let mut submission = valid_submission();
     submission.insert("polling_station_code".to_owned(), json!("nrb001ps042"));
     let result = validate_submission(&compiled, &submission, &both_modalities());
-    assert!(result.violations.contains(&ValidationError::PatternMismatch {
-        item: "polling_station_code".to_owned(),
-        kind: DataKind::StationCode
-    }));
+    assert!(result
+        .violations
+        .contains(&ValidationError::PatternMismatch {
+            item: "polling_station_code".to_owned(),
+            kind: DataKind::StationCode
+        }));
 }
 
 #[test]
@@ -540,9 +596,9 @@ fn value_outside_choice_options_is_rejected() {
     let mut submission = valid_submission();
     submission.insert("gender".to_owned(), json!("unspecified"));
     let result = validate_submission(&compiled, &submission, &both_modalities());
-    assert!(result
-        .violations
-        .contains(&ValidationError::NotAnOption { item: "gender".to_owned() }));
+    assert!(result.violations.contains(&ValidationError::NotAnOption {
+        item: "gender".to_owned()
+    }));
 }
 
 #[test]
@@ -551,9 +607,10 @@ fn name_longer_than_max_length_is_rejected() {
     let mut submission = valid_submission();
     submission.insert("full_name".to_owned(), json!("W".repeat(201)));
     let result = validate_submission(&compiled, &submission, &both_modalities());
-    assert!(result
-        .violations
-        .contains(&ValidationError::TooLong { item: "full_name".to_owned(), max: 200 }));
+    assert!(result.violations.contains(&ValidationError::TooLong {
+        item: "full_name".to_owned(),
+        max: 200
+    }));
 }
 
 #[test]
@@ -582,9 +639,9 @@ fn unparseable_date_is_rejected() {
     let mut submission = valid_submission();
     submission.insert("dob".to_owned(), json!("not-a-date"));
     let result = validate_submission(&compiled, &submission, &both_modalities());
-    assert!(result
-        .violations
-        .contains(&ValidationError::NotADate { item: "dob".to_owned() }));
+    assert!(result.violations.contains(&ValidationError::NotADate {
+        item: "dob".to_owned()
+    }));
 }
 
 #[test]
@@ -593,9 +650,9 @@ fn impossible_date_is_rejected() {
     let mut submission = valid_submission();
     submission.insert("dob".to_owned(), json!("1990-02-31"));
     let result = validate_submission(&compiled, &submission, &both_modalities());
-    assert!(result
-        .violations
-        .contains(&ValidationError::NotADate { item: "dob".to_owned() }));
+    assert!(result.violations.contains(&ValidationError::NotADate {
+        item: "dob".to_owned()
+    }));
 }
 
 #[test]
@@ -606,7 +663,9 @@ fn consent_must_be_affirmatively_true() {
     let result = validate_submission(&compiled, &submission, &both_modalities());
     assert!(result
         .violations
-        .contains(&ValidationError::ConsentNotGiven { item: "consent".to_owned() }));
+        .contains(&ValidationError::ConsentNotGiven {
+            item: "consent".to_owned()
+        }));
 }
 
 #[test]
@@ -617,7 +676,9 @@ fn undeclared_field_in_submission_is_rejected() {
     let result = validate_submission(&compiled, &submission, &both_modalities());
     assert!(result
         .violations
-        .contains(&ValidationError::UndeclaredItem { item: "is_admin".to_owned() }));
+        .contains(&ValidationError::UndeclaredItem {
+            item: "is_admin".to_owned()
+        }));
 }
 
 #[test]
@@ -625,10 +686,9 @@ fn required_capture_not_reported_is_rejected() {
     let compiled = compile(&standard_ke_workflow()).unwrap();
     let result = validate_submission(&compiled, &valid_submission(), &[CaptureKind::Fingerprint]);
     assert!(
-        result
-            .violations
-            .iter()
-            .any(|v| matches!(v, ValidationError::CaptureUnsatisfied { step, .. } if step == "face")),
+        result.violations.iter().any(
+            |v| matches!(v, ValidationError::CaptureUnsatisfied { step, .. } if step == "face")
+        ),
         "got {:?}",
         result.violations
     );
@@ -659,7 +719,11 @@ fn a_reduced_workflow_needs_no_code_change() {
     spec.steps.retain(|s| s.id != "contact" && s.id != "face");
     spec.capture_requirements.retain(|c| c.id != "face_live");
     spec.steps[0].kind = StepKind::DataEntry {
-        items: vec!["full_name".to_owned(), "national_id".to_owned(), "dob".to_owned()],
+        items: vec![
+            "full_name".to_owned(),
+            "national_id".to_owned(),
+            "dob".to_owned(),
+        ],
     };
 
     let compiled = compile(&spec).expect("reduced workflow must still compile");
@@ -678,12 +742,10 @@ fn a_reduced_workflow_needs_no_code_change() {
 
 /// A workflow whose single capture step accepts several kinds and needs only
 /// some of them -- the "individually or in any combination" case.
-fn combination_workflow(
-    kinds: Vec<CaptureKind>,
-    policy: CapturePolicy,
-) -> WorkflowSpec {
+fn combination_workflow(kinds: Vec<CaptureKind>, policy: CapturePolicy) -> WorkflowSpec {
     let mut spec = standard_ke_workflow();
-    spec.steps.retain(|s| s.id != "left_fingers" && s.id != "face");
+    spec.steps
+        .retain(|s| s.id != "left_fingers" && s.id != "face");
     spec.capture_requirements = vec![CaptureRequirement {
         id: "combo".to_owned(),
         label: "Any acceptable capture".to_owned(),
@@ -695,7 +757,9 @@ fn combination_workflow(
         2,
         Step {
             id: "capture".to_owned(),
-            kind: StepKind::Capture { capture: "combo".to_owned() },
+            kind: StepKind::Capture {
+                capture: "combo".to_owned(),
+            },
             label: None,
         },
     );
@@ -728,13 +792,25 @@ fn all_of_requires_every_declared_kind() {
 #[test]
 fn any_of_accepts_a_single_kind() {
     let workflow = compile(&combination_workflow(
-        vec![CaptureKind::Fingerprint, CaptureKind::PalmVein, CaptureKind::Iris],
+        vec![
+            CaptureKind::Fingerprint,
+            CaptureKind::PalmVein,
+            CaptureKind::Iris,
+        ],
         CapturePolicy::AnyOf,
     ))
     .unwrap();
-    for one in [CaptureKind::Fingerprint, CaptureKind::PalmVein, CaptureKind::Iris] {
+    for one in [
+        CaptureKind::Fingerprint,
+        CaptureKind::PalmVein,
+        CaptureKind::Iris,
+    ] {
         let result = validate_submission(&workflow, &valid_submission(), &[one]);
-        assert!(result.is_ok(), "{one:?} alone should satisfy any_of: {:?}", result.violations);
+        assert!(
+            result.is_ok(),
+            "{one:?} alone should satisfy any_of: {:?}",
+            result.violations
+        );
     }
     let none = validate_submission(&workflow, &valid_submission(), &[]);
     assert!(!none.is_ok(), "any_of must still require something");
@@ -818,7 +894,11 @@ fn optional_capture_step_may_be_skipped() {
     spec.capture_requirements[0].optional = true;
     let workflow = compile(&spec).unwrap();
     let result = validate_submission(&workflow, &valid_submission(), &[]);
-    assert!(result.is_ok(), "optional capture must not block: {:?}", result.violations);
+    assert!(
+        result.is_ok(),
+        "optional capture must not block: {:?}",
+        result.violations
+    );
 }
 
 #[test]
@@ -845,12 +925,16 @@ fn capture_unsatisfied_message_names_the_step_and_requirement() {
 #[test]
 fn step_referencing_unknown_capture_is_rejected() {
     let mut spec = standard_ke_workflow();
-    spec.steps[2].kind = StepKind::Capture { capture: "ghost".to_owned() };
+    spec.steps[2].kind = StepKind::Capture {
+        capture: "ghost".to_owned(),
+    };
     let errors = compile(&spec).unwrap_err();
-    assert!(errors.contains(&eel_bvr_workflow_rs::CompileError::UnknownCapture {
-        step: "left_fingers".to_owned(),
-        capture: "ghost".to_owned()
-    }));
+    assert!(
+        errors.contains(&eel_bvr_workflow_rs::CompileError::UnknownCapture {
+            step: "left_fingers".to_owned(),
+            capture: "ghost".to_owned()
+        })
+    );
 }
 
 #[test]
@@ -859,9 +943,11 @@ fn duplicate_capture_id_is_rejected() {
     let dup = spec.capture_requirements[0].clone();
     spec.capture_requirements.push(dup);
     let errors = compile(&spec).unwrap_err();
-    assert!(errors.contains(&eel_bvr_workflow_rs::CompileError::DuplicateCaptureId {
-        id: "fingerprints".to_owned()
-    }));
+    assert!(
+        errors.contains(&eel_bvr_workflow_rs::CompileError::DuplicateCaptureId {
+            id: "fingerprints".to_owned()
+        })
+    );
 }
 
 #[test]
@@ -875,9 +961,11 @@ fn unreferenced_capture_requirement_is_rejected() {
         optional: false,
     });
     let errors = compile(&spec).unwrap_err();
-    assert!(errors.contains(&eel_bvr_workflow_rs::CompileError::UnreferencedCapture {
-        id: "unused".to_owned()
-    }));
+    assert!(
+        errors.contains(&eel_bvr_workflow_rs::CompileError::UnreferencedCapture {
+            id: "unused".to_owned()
+        })
+    );
 }
 
 #[test]
@@ -885,9 +973,11 @@ fn capture_requirement_without_kinds_is_rejected() {
     let mut spec = standard_ke_workflow();
     spec.capture_requirements[0].kinds.clear();
     let errors = compile(&spec).unwrap_err();
-    assert!(errors.contains(&eel_bvr_workflow_rs::CompileError::CaptureWithoutKinds {
-        id: "fingerprints".to_owned()
-    }));
+    assert!(
+        errors.contains(&eel_bvr_workflow_rs::CompileError::CaptureWithoutKinds {
+            id: "fingerprints".to_owned()
+        })
+    );
 }
 
 #[test]
@@ -895,10 +985,12 @@ fn duplicate_capture_kind_is_rejected() {
     let mut spec = standard_ke_workflow();
     spec.capture_requirements[0].kinds = vec![CaptureKind::Fingerprint, CaptureKind::Fingerprint];
     let errors = compile(&spec).unwrap_err();
-    assert!(errors.contains(&eel_bvr_workflow_rs::CompileError::DuplicateCaptureKind {
-        id: "fingerprints".to_owned(),
-        kind: CaptureKind::Fingerprint
-    }));
+    assert!(
+        errors.contains(&eel_bvr_workflow_rs::CompileError::DuplicateCaptureKind {
+            id: "fingerprints".to_owned(),
+            kind: CaptureKind::Fingerprint
+        })
+    );
 }
 
 #[test]
@@ -907,11 +999,13 @@ fn at_least_larger_than_the_kind_list_is_rejected() {
     spec.capture_requirements[0].kinds = vec![CaptureKind::Fingerprint];
     spec.capture_requirements[0].policy = CapturePolicy::AtLeast(3);
     let errors = compile(&spec).unwrap_err();
-    assert!(errors.contains(&eel_bvr_workflow_rs::CompileError::CapturePolicyUnsatisfiable {
-        id: "fingerprints".to_owned(),
-        wanted: 3,
-        have: 1
-    }));
+    assert!(errors.contains(
+        &eel_bvr_workflow_rs::CompileError::CapturePolicyUnsatisfiable {
+            id: "fingerprints".to_owned(),
+            wanted: 3,
+            have: 1
+        }
+    ));
 }
 
 #[test]
@@ -920,9 +1014,11 @@ fn at_least_zero_is_rejected_as_vacuous() {
     spec.capture_requirements[0].kinds = vec![CaptureKind::Fingerprint];
     spec.capture_requirements[0].policy = CapturePolicy::AtLeast(0);
     let errors = compile(&spec).unwrap_err();
-    assert!(errors.contains(&eel_bvr_workflow_rs::CompileError::CapturePolicyVacuous {
-        id: "fingerprints".to_owned()
-    }));
+    assert!(
+        errors.contains(&eel_bvr_workflow_rs::CompileError::CapturePolicyVacuous {
+            id: "fingerprints".to_owned()
+        })
+    );
 }
 
 #[test]
@@ -930,7 +1026,8 @@ fn a_workflow_with_no_captures_compiles() {
     // Document-only pre-registration review: no biometrics at all.
     let mut spec = standard_ke_workflow();
     spec.capture_requirements.clear();
-    spec.steps.retain(|s| s.id != "left_fingers" && s.id != "face");
+    spec.steps
+        .retain(|s| s.id != "left_fingers" && s.id != "face");
     let workflow = compile(&spec).expect("a biometric-free workflow must compile");
     assert!(workflow.capture_order.is_empty());
     let result = validate_submission(&workflow, &valid_submission(), &[]);
@@ -1016,10 +1113,9 @@ fn load_standard_workflow() -> WorkflowSpec {
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
         .join(STANDARD_WORKFLOW);
-    let text = std::fs::read_to_string(&path)
-        .unwrap_or_else(|e| panic!("reading {path:?} failed: {e}"));
-    serde_json::from_str(&text)
-        .unwrap_or_else(|e| panic!("parsing {path:?} failed: {e}"))
+    let text =
+        std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("reading {path:?} failed: {e}"));
+    serde_json::from_str(&text).unwrap_or_else(|e| panic!("parsing {path:?} failed: {e}"))
 }
 
 #[test]
@@ -1060,8 +1156,14 @@ fn shipped_workflow_uses_only_pattern_checked_kinds_that_agree_with_the_contract
     let compiled = compile(&load_standard_workflow()).unwrap();
     let station = compiled.data_item("polling_station_code").unwrap();
     assert!(matches!(station.item.kind, DataKind::StationCode));
-    assert!(eel_spec_helpers_rs::matches_bvr_pattern("polling_station_code", "NRB001PS042"));
-    assert!(!eel_spec_helpers_rs::matches_bvr_pattern("polling_station_code", "NRB-001-PS-042"));
+    assert!(eel_spec_helpers_rs::matches_bvr_pattern(
+        "polling_station_code",
+        "NRB001PS042"
+    ));
+    assert!(!eel_spec_helpers_rs::matches_bvr_pattern(
+        "polling_station_code",
+        "NRB-001-PS-042"
+    ));
 }
 
 #[test]
@@ -1103,7 +1205,11 @@ fn shipped_workflow_accepts_a_complete_registration() {
             CaptureKind::LivePhotograph,
         ],
     );
-    assert!(result.is_ok(), "shipped workflow rejected a valid registration: {:?}", result.violations);
+    assert!(
+        result.is_ok(),
+        "shipped workflow rejected a valid registration: {:?}",
+        result.violations
+    );
 }
 
 #[test]
@@ -1137,11 +1243,23 @@ fn all_five_pii_tiers_are_accepted() {
     // The platform PII model is five tiers (eel-pii-rs::PIIDataClass), wider
     // than the A/B/C subset the BVR contract happens to tag. A workflow
     // storing operational metadata must not be rejected.
-    for (class, ok) in [("A", true), ("B", true), ("C", true), ("D", true), ("E", true), ("F", false), ("", false)] {
+    for (class, ok) in [
+        ("A", true),
+        ("B", true),
+        ("C", true),
+        ("D", true),
+        ("E", true),
+        ("F", false),
+        ("", false),
+    ] {
         let mut spec = standard_ke_workflow();
         spec.data_items[0].data_class = class.to_owned();
         let compiled = compile(&spec);
-        assert_eq!(compiled.is_ok(), ok, "data class {class:?} should be ok={ok}");
+        assert_eq!(
+            compiled.is_ok(),
+            ok,
+            "data class {class:?} should be ok={ok}"
+        );
     }
 }
 
@@ -1161,7 +1279,13 @@ fn the_dsl_capture_kinds_match_the_sensor_driver_taxonomy() {
     );
     let wire: Vec<String> = CaptureKind::ALL
         .iter()
-        .map(|k| serde_json::to_value(k).unwrap().as_str().unwrap().to_owned())
+        .map(|k| {
+            serde_json::to_value(k)
+                .unwrap()
+                .as_str()
+                .unwrap()
+                .to_owned()
+        })
         .collect();
     for expected in [
         "fingerprint",
@@ -1183,7 +1307,10 @@ fn the_dsl_capture_kinds_match_the_sensor_driver_taxonomy() {
         "dna",
         "document_mrz",
     ] {
-        assert!(wire.contains(&expected.to_owned()), "missing capture kind {expected}");
+        assert!(
+            wire.contains(&expected.to_owned()),
+            "missing capture kind {expected}"
+        );
     }
 }
 
@@ -1208,16 +1335,14 @@ fn load_extended_workflow() -> WorkflowSpec {
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
         .join(EXTENDED_WORKFLOW);
-    let text = std::fs::read_to_string(&path)
-        .unwrap_or_else(|e| panic!("reading {path:?} failed: {e}"));
-    serde_json::from_str(&text)
-        .unwrap_or_else(|e| panic!("parsing {path:?} failed: {e}"))
+    let text =
+        std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("reading {path:?} failed: {e}"));
+    serde_json::from_str(&text).unwrap_or_else(|e| panic!("parsing {path:?} failed: {e}"))
 }
 
 #[test]
 fn extended_workflow_compiles() {
-    let compiled = compile(&load_extended_workflow())
-        .expect("the extended workflow must compile");
+    let compiled = compile(&load_extended_workflow()).expect("the extended workflow must compile");
     assert_eq!(compiled.id, "bvr-enrolment-extended");
     assert_eq!(compiled.capture_order.len(), 6);
 }
@@ -1234,7 +1359,10 @@ fn extended_workflow_reaches_every_capture_kind() {
         .flat_map(|c| c.requirement.kinds.iter().copied())
         .collect();
     for kind in CaptureKind::ALL {
-        assert!(reachable.contains(kind), "{kind:?} is not reachable from any workflow");
+        assert!(
+            reachable.contains(kind),
+            "{kind:?} is not reachable from any workflow"
+        );
     }
 }
 
@@ -1248,7 +1376,10 @@ fn extended_workflow_gates_the_risky_modalities_behind_consent() {
         .data_item("consent_extended_modalities")
         .expect("extended workflow must collect explicit consent");
     assert_eq!(consent.item.kind, DataKind::Consent);
-    assert!(consent.item.required, "consent for extended modalities must be required");
+    assert!(
+        consent.item.required,
+        "consent for extended modalities must be required"
+    );
 }
 
 #[test]
@@ -1257,7 +1388,12 @@ fn extended_workflow_leaves_the_optional_modalities_optional() {
     // a station can deploy this document unchanged without every kit having to
     // serve all eighteen modalities.
     let compiled = compile(&load_extended_workflow()).unwrap();
-    for id in ["secondary_biometric", "behavioural", "passive_dynamics", "biological_sample"] {
+    for id in [
+        "secondary_biometric",
+        "behavioural",
+        "passive_dynamics",
+        "biological_sample",
+    ] {
         let cap = compiled.capture(id).expect("capability {id} must exist");
         assert!(cap.requirement.optional, "{id} must stay optional");
     }
@@ -1287,7 +1423,11 @@ fn extended_workflow_validates_against_a_minimal_capture() {
         &submission,
         &[CaptureKind::DocumentMrz, CaptureKind::Fingerprint],
     );
-    assert!(result.is_ok(), "optional captures must not block: {:?}", result.violations);
+    assert!(
+        result.is_ok(),
+        "optional captures must not block: {:?}",
+        result.violations
+    );
 }
 
 #[test]
@@ -1306,16 +1446,23 @@ fn extended_workflow_still_requires_the_primary_biometric() {
     // alternatives, so satisfying it with one is enough, but omitting it
     // entirely is not.
     let no_primary = validate_submission(&compiled, &submission, &[CaptureKind::DocumentMrz]);
-    assert!(!no_primary.is_ok(), "the primary biometric must not be optional");
+    assert!(
+        !no_primary.is_ok(),
+        "the primary biometric must not be optional"
+    );
 
     // One of the three accepted kinds is enough for the primary step.
-    for kind in [CaptureKind::Fingerprint, CaptureKind::PalmVein, CaptureKind::LivePhotograph] {
-        let ok = validate_submission(
-            &compiled,
-            &submission,
-            &[CaptureKind::DocumentMrz, kind],
+    for kind in [
+        CaptureKind::Fingerprint,
+        CaptureKind::PalmVein,
+        CaptureKind::LivePhotograph,
+    ] {
+        let ok = validate_submission(&compiled, &submission, &[CaptureKind::DocumentMrz, kind]);
+        assert!(
+            ok.is_ok(),
+            "{kind:?} should satisfy the primary step: {:?}",
+            ok.violations
         );
-        assert!(ok.is_ok(), "{kind:?} should satisfy the primary step: {:?}", ok.violations);
     }
 }
 
@@ -1356,7 +1503,11 @@ fn behavioural_kinds_are_distinguished_in_the_dsl_too() {
     ] {
         assert!(kind.is_behavioural(), "{kind:?} is behavioural");
     }
-    for kind in [CaptureKind::Fingerprint, CaptureKind::Retina, CaptureKind::Dna] {
+    for kind in [
+        CaptureKind::Fingerprint,
+        CaptureKind::Retina,
+        CaptureKind::Dna,
+    ] {
         assert!(!kind.is_behavioural(), "{kind:?} is physiological");
     }
 }
@@ -1376,31 +1527,61 @@ fn the_reference_documents_every_enum_variant() {
     .expect("docs/dsl-reference.md must exist; the DSL reference is a deliverable");
 
     let compile_errors: Vec<&str> = vec![
-        "UnsupportedVersion", "NoDataItems", "NoSteps", "DuplicateDataItem",
-        "DuplicateStepId", "UnknownDataItem", "UnreachableDataItem",
-        "LengthBoundsInverted", "AgeBoundsInverted", "ChoiceWithoutOptions",
-        "DuplicateOption", "AgeBoundOnNonDate", "LengthBoundOnNonText",
-        "InvalidDataClass", "DuplicateCaptureId", "UnknownCapture",
-        "UnreferencedCapture", "CaptureWithoutKinds", "DuplicateCaptureKind",
-        "CapturePolicyUnsatisfiable", "CapturePolicyVacuous",
+        "UnsupportedVersion",
+        "NoDataItems",
+        "NoSteps",
+        "DuplicateDataItem",
+        "DuplicateStepId",
+        "UnknownDataItem",
+        "UnreachableDataItem",
+        "LengthBoundsInverted",
+        "AgeBoundsInverted",
+        "ChoiceWithoutOptions",
+        "DuplicateOption",
+        "AgeBoundOnNonDate",
+        "LengthBoundOnNonText",
+        "InvalidDataClass",
+        "DuplicateCaptureId",
+        "UnknownCapture",
+        "UnreferencedCapture",
+        "CaptureWithoutKinds",
+        "DuplicateCaptureKind",
+        "CapturePolicyUnsatisfiable",
+        "CapturePolicyVacuous",
     ];
     for name in &compile_errors {
-        assert!(reference.contains(name), "reference does not document {name}");
+        assert!(
+            reference.contains(name),
+            "reference does not document {name}"
+        );
     }
 
     for name in [
-        "MissingRequired", "ConsentNotGiven", "PatternMismatch", "TooShort",
-        "TooLong", "NotAnOption", "NotADate", "AgeOutOfRange", "UndeclaredItem",
+        "MissingRequired",
+        "ConsentNotGiven",
+        "PatternMismatch",
+        "TooShort",
+        "TooLong",
+        "NotAnOption",
+        "NotADate",
+        "AgeOutOfRange",
+        "UndeclaredItem",
         "CaptureUnsatisfied",
     ] {
-        assert!(reference.contains(name), "reference does not document {name}");
+        assert!(
+            reference.contains(name),
+            "reference does not document {name}"
+        );
     }
 
     // Capture kinds are documented by their wire names.
     for kind in CaptureKind::ALL {
         let wire = serde_json::to_value(kind).unwrap();
         let name = wire.as_str().unwrap();
-        assert!(reference.contains(name), "reference does not document capture kind {name}");
+        assert!(
+            reference.contains(name),
+            "reference does not document capture kind {name}"
+        );
     }
 
     // The shipped documents must be listed in the reference too.

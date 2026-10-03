@@ -110,7 +110,9 @@ async fn create_batch(
     Json(body): Json<Value>,
 ) -> Result<(StatusCode, Json<CardBatch>), ApiError> {
     if !body.is_object() {
-        return Err(ApiError::BadRequest("batch body must be a JSON object".into()));
+        return Err(ApiError::BadRequest(
+            "batch body must be a JSON object".into(),
+        ));
     }
 
     let mut val = body;
@@ -153,12 +155,13 @@ async fn get_batch(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<CardBatch>, ApiError> {
-    let row: Option<BatchRow> =
-        sqlx::query_as(&format!("SELECT {BATCH_COLUMNS} FROM card_batches WHERE id = $1"))
-            .bind(id)
-            .fetch_optional(state.pool())
-            .await
-            .map_err(|e| ApiError::Internal(e.to_string()))?;
+    let row: Option<BatchRow> = sqlx::query_as(&format!(
+        "SELECT {BATCH_COLUMNS} FROM card_batches WHERE id = $1"
+    ))
+    .bind(id)
+    .fetch_optional(state.pool())
+    .await
+    .map_err(|e| ApiError::Internal(e.to_string()))?;
 
     match row {
         Some(row) => Ok(Json(batch_from_row(row)?)),
@@ -179,7 +182,10 @@ mod tests {
             BatchStatus::Received,
             BatchStatus::Distributed,
         ] {
-            assert_eq!(batch_status_from_str(batch_status_str(&status)), Some(status));
+            assert_eq!(
+                batch_status_from_str(batch_status_str(&status)),
+                Some(status)
+            );
         }
         assert_eq!(batch_status_from_str("REPRINTED"), None);
     }

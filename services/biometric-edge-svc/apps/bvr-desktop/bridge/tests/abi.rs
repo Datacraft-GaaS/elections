@@ -13,7 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 //! Tests for the C ABI, called exactly as C++ would call it.
 //!
 //! These exercise the real ABI rather than the Rust API behind it, because the
@@ -43,7 +42,11 @@ fn take(ptr: *mut std::ffi::c_char) -> String {
 }
 
 fn take_opt(ptr: *mut std::ffi::c_char) -> Option<String> {
-    if ptr.is_null() { None } else { Some(take(ptr)) }
+    if ptr.is_null() {
+        None
+    } else {
+        Some(take(ptr))
+    }
 }
 
 fn c(s: &str) -> CString {
@@ -56,7 +59,11 @@ fn c(s: &str) -> CString {
 fn loads_and_compiles_the_standard_workflow() {
     let mut err: *mut std::ffi::c_char = ptr::null_mut();
     let wf = unsafe { eel_workflow_load(c(STANDARD).as_ptr(), &mut err) };
-    assert!(!wf.is_null(), "standard workflow must compile: {}", take_opt(err).unwrap_or_default());
+    assert!(
+        !wf.is_null(),
+        "standard workflow must compile: {}",
+        take_opt(err).unwrap_or_default()
+    );
     assert!(err.is_null(), "err must be cleared on success");
 
     let id = take(unsafe { eel_workflow_id(wf) });
@@ -96,7 +103,10 @@ fn a_document_that_does_not_parse_reports_a_plain_message() {
     assert!(wf.is_null());
     let message = take(err);
     assert!(message.contains("not valid"), "{message}");
-    assert!(message.contains("id"), "the message should name the missing field: {message}");
+    assert!(
+        message.contains("id"),
+        "the message should name the missing field: {message}"
+    );
 }
 
 #[test]
@@ -227,13 +237,22 @@ fn store_round_trips_an_encrypted_value() {
             &mut err,
         )
     };
-    assert_eq!(rc, 0, "append failed: {}", take_opt(err).unwrap_or_default());
+    assert_eq!(
+        rc,
+        0,
+        "append failed: {}",
+        take_opt(err).unwrap_or_default()
+    );
     let id = take(out_id);
 
     let value = take(unsafe { eel_store_value(store, c(&id).as_ptr(), &mut err) });
     assert_eq!(value, r#""12345678""#);
 
-    assert_eq!(unsafe { eel_store_verify(store, &mut err) }, 0, "fresh store must verify");
+    assert_eq!(
+        unsafe { eel_store_verify(store, &mut err) },
+        0,
+        "fresh store must verify"
+    );
     unsafe { eel_store_free(store) };
 }
 
@@ -284,7 +303,10 @@ fn appending_invalid_json_is_rejected() {
 fn pending_batch_carries_a_merkle_root_and_sync_state() {
     let mut err: *mut std::ffi::c_char = ptr::null_mut();
     let store = unsafe { eel_store_new(c("Kit A").as_ptr(), &mut err) };
-    for (item, value) in [("full_name", r#""Wanjiku""#), ("national_id", r#""12345678""#)] {
+    for (item, value) in [
+        ("full_name", r#""Wanjiku""#),
+        ("national_id", r#""12345678""#),
+    ] {
         let mut id: *mut std::ffi::c_char = ptr::null_mut();
         let rc = unsafe {
             eel_store_append(
@@ -368,8 +390,21 @@ fn a_valid_submission_passes_through_the_bridge() {
     let captured = r#"["document_mrz","fingerprint","live_photograph"]"#;
 
     let mut violations: *mut std::ffi::c_char = ptr::null_mut();
-    let rc = unsafe { eel_workflow_validate(wf, c(submission).as_ptr(), c(captured).as_ptr(), &mut violations, &mut err) };
-    assert_eq!(rc, 0, "expected valid, got {}", take_opt(violations).unwrap_or_default());
+    let rc = unsafe {
+        eel_workflow_validate(
+            wf,
+            c(submission).as_ptr(),
+            c(captured).as_ptr(),
+            &mut violations,
+            &mut err,
+        )
+    };
+    assert_eq!(
+        rc,
+        0,
+        "expected valid, got {}",
+        take_opt(violations).unwrap_or_default()
+    );
     assert_eq!(take(violations), "[]");
     unsafe { eel_workflow_free(wf) };
 }
@@ -385,7 +420,15 @@ fn an_invalid_submission_returns_coded_violations() {
         "gender":"female","county_code":"47","constituency_code":"042",
         "polling_station_code":"NRB001PS042","consent_biometric":true}"#;
     let mut violations: *mut std::ffi::c_char = ptr::null_mut();
-    let rc = unsafe { eel_workflow_validate(wf, c(submission).as_ptr(), c("[]").as_ptr(), &mut violations, &mut err) };
+    let rc = unsafe {
+        eel_workflow_validate(
+            wf,
+            c(submission).as_ptr(),
+            c("[]").as_ptr(),
+            &mut violations,
+            &mut err,
+        )
+    };
     assert_eq!(rc, 1);
 
     let parsed: serde_json::Value = serde_json::from_str(&take(violations)).unwrap();
@@ -400,7 +443,11 @@ fn an_invalid_submission_returns_coded_violations() {
     assert!(codes.contains(&"pattern_mismatch"), "{codes:?}");
     assert!(codes.contains(&"age_out_of_range"), "{codes:?}");
     assert!(codes.contains(&"capture_unsatisfied"), "{codes:?}");
-    assert!(parsed.as_array().unwrap().iter().all(|v| !v["message"].as_str().unwrap().is_empty()));
+    assert!(parsed
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|v| !v["message"].as_str().unwrap().is_empty()));
     unsafe { eel_workflow_free(wf) };
 }
 
@@ -423,7 +470,12 @@ fn an_unknown_capture_name_is_ignored_rather_than_fatal() {
             &mut err,
         )
     };
-    assert_eq!(rc, 0, "unknown capture names must be dropped, not fatal: {}", take_opt(violations).unwrap_or_default());
+    assert_eq!(
+        rc,
+        0,
+        "unknown capture names must be dropped, not fatal: {}",
+        take_opt(violations).unwrap_or_default()
+    );
     unsafe { eel_string_free(violations) };
     unsafe { eel_workflow_free(wf) };
 }
@@ -432,7 +484,15 @@ fn an_unknown_capture_name_is_ignored_rather_than_fatal() {
 fn a_null_workflow_handle_does_not_crash_validation() {
     let mut err: *mut std::ffi::c_char = ptr::null_mut();
     let mut violations: *mut std::ffi::c_char = ptr::null_mut();
-    let rc = unsafe { eel_workflow_validate(ptr::null(), c("{}").as_ptr(), c("[]").as_ptr(), &mut violations, &mut err) };
+    let rc = unsafe {
+        eel_workflow_validate(
+            ptr::null(),
+            c("{}").as_ptr(),
+            c("[]").as_ptr(),
+            &mut violations,
+            &mut err,
+        )
+    };
     assert_eq!(rc, -1);
     assert!(take_opt(err).unwrap().contains("null"));
 }
@@ -450,8 +510,17 @@ fn the_sensor_layer_reports_every_modality() {
         names.push(take(unsafe { eel_sensor_modality_name(i, &mut err) }));
         unsafe { eel_string_free(err) };
     }
-    for expected in ["fingerprint", "palm_vein", "live_photograph", "document_mrz", "dna"] {
-        assert!(names.contains(&expected.to_owned()), "missing {expected}: {names:?}");
+    for expected in [
+        "fingerprint",
+        "palm_vein",
+        "live_photograph",
+        "document_mrz",
+        "dna",
+    ] {
+        assert!(
+            names.contains(&expected.to_owned()),
+            "missing {expected}: {names:?}"
+        );
     }
 }
 
@@ -540,11 +609,19 @@ fn the_sensor_mode_is_reported() {
 #[cfg(feature = "mock-sensor")]
 #[test]
 fn enabling_the_mock_reports_mock_mode() {
-    assert_eq!(unsafe { eel_sensor_use_mock() }, 1, "mock must be compiled in");
+    assert_eq!(
+        unsafe { eel_sensor_use_mock() },
+        1,
+        "mock must be compiled in"
+    );
     assert_eq!(take(unsafe { eel_sensor_mode() }), "mock");
     // And the sensor then actually works.
     let mut err: *mut std::ffi::c_char = std::ptr::null_mut();
-    assert_eq!(unsafe { eel_sensor_supports(0, &mut err) }, 1, "fingerprint supported");
+    assert_eq!(
+        unsafe { eel_sensor_supports(0, &mut err) },
+        1,
+        "fingerprint supported"
+    );
     unsafe { eel_string_free(err) };
 }
 

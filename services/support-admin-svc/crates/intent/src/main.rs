@@ -28,7 +28,11 @@ async fn main() {
     info!(http_addr, "intent-api starting");
     let state = intent::http::AppState::new_shared();
     let app = intent::http::router(state);
-    let listener = tokio::net::TcpListener::bind(&http_addr).await.expect("bind failed");
+    let listener = tokio::net::TcpListener::bind(&http_addr)
+        .await
+        .expect("bind failed");
     info!(http_addr, "intent-api HTTP listening");
-    axum::serve(listener, app).await.expect("HTTP server failed");
+    axum::serve(listener, app)
+        .await
+        .expect("HTTP server failed");
 }

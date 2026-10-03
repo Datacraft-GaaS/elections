@@ -25,7 +25,9 @@ use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::routes::spec::{CollectionCentre, CollectionConfirmation, VoterCardRequest, VoterCardRequestCreate};
+use crate::routes::spec::{
+    CollectionCentre, CollectionConfirmation, VoterCardRequest, VoterCardRequestCreate,
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum StoreError {
@@ -55,7 +57,10 @@ impl Store {
         Self::Mem(MemStore::default())
     }
 
-    pub async fn create_request(&self, req: VoterCardRequestCreate) -> Result<VoterCardRequest, StoreError> {
+    pub async fn create_request(
+        &self,
+        req: VoterCardRequestCreate,
+    ) -> Result<VoterCardRequest, StoreError> {
         match self {
             Self::Pg(pool) => {
                 let rec = VoterCardRequest {
@@ -84,7 +89,10 @@ impl Store {
                     status: "submitted".to_string(),
                     submitted_at: Utc::now().to_rfc3339(),
                 };
-                m.requests.lock().expect("lock poisoned").insert(rec.request_id.clone(), rec.clone());
+                m.requests
+                    .lock()
+                    .expect("lock poisoned")
+                    .insert(rec.request_id.clone(), rec.clone());
                 Ok(rec)
             }
         }
@@ -99,7 +107,13 @@ impl Store {
                 .bind(id)
                 .fetch_optional(pool)
                 .await?;
-                Ok(row.map(|(request_id, status, submitted_at)| VoterCardRequest { request_id, status, submitted_at }))
+                Ok(
+                    row.map(|(request_id, status, submitted_at)| VoterCardRequest {
+                        request_id,
+                        status,
+                        submitted_at,
+                    }),
+                )
             }
             Self::Mem(m) => Ok(m.requests.lock().expect("lock poisoned").get(id).cloned()),
         }
@@ -148,18 +162,28 @@ impl Store {
                 .await?;
                 Ok(rows
                     .into_iter()
-                    .map(|(centre_code, name, county_code, address, operating_hours, open)| CollectionCentre {
-                        centre_code,
-                        name,
-                        county_code,
-                        address,
-                        operating_hours,
-                        open,
-                    })
+                    .map(
+                        |(centre_code, name, county_code, address, operating_hours, open)| {
+                            CollectionCentre {
+                                centre_code,
+                                name,
+                                county_code,
+                                address,
+                                operating_hours,
+                                open,
+                            }
+                        },
+                    )
                     .collect())
             }
             Self::Mem(m) => {
-                let mut v: Vec<CollectionCentre> = m.centres.lock().expect("lock poisoned").values().cloned().collect();
+                let mut v: Vec<CollectionCentre> = m
+                    .centres
+                    .lock()
+                    .expect("lock poisoned")
+                    .values()
+                    .cloned()
+                    .collect();
                 v.sort_by(|a, b| a.centre_code.cmp(&b.centre_code));
                 Ok(v)
             }

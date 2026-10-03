@@ -64,7 +64,11 @@ impl AppState {
         let guard = self.statutory_reports.lock().expect("lock poisoned");
         let mut items: Vec<StatutoryReport> = guard.values().cloned().collect();
         drop(guard);
-        items.sort_by(|a, b| b.generated_at.cmp(&a.generated_at).then(b.report_id.cmp(&a.report_id)));
+        items.sort_by(|a, b| {
+            b.generated_at
+                .cmp(&a.generated_at)
+                .then(b.report_id.cmp(&a.report_id))
+        });
         items
     }
 
@@ -73,7 +77,11 @@ impl AppState {
         let guard = self.workspaces.lock().expect("lock poisoned");
         let mut items: Vec<TestimonyWorkspace> = guard.values().cloned().collect();
         drop(guard);
-        items.sort_by(|a, b| a.created_at.cmp(&b.created_at).then(a.workspace_id.cmp(&b.workspace_id)));
+        items.sort_by(|a, b| {
+            a.created_at
+                .cmp(&b.created_at)
+                .then(a.workspace_id.cmp(&b.workspace_id))
+        });
         items
     }
 

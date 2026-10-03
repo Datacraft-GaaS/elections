@@ -42,10 +42,10 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use eel_crypto_rs::constant_time::ct_eq;
 use hmac::{Hmac, Mac};
 use serde::Serialize;
 use sha2::Sha256;
-use eel_crypto_rs::constant_time::ct_eq;
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -172,17 +172,26 @@ impl VerifierStore {
 
     /// The configured Meta verification token, if any.
     pub fn whatsapp_verify_token(&self) -> Option<String> {
-        self.whatsapp_verify_token.lock().expect("lock poisoned").clone()
+        self.whatsapp_verify_token
+            .lock()
+            .expect("lock poisoned")
+            .clone()
     }
 
     /// The configured Meta app secret, if any.
     pub fn whatsapp_app_secret(&self) -> Option<String> {
-        self.whatsapp_app_secret.lock().expect("lock poisoned").clone()
+        self.whatsapp_app_secret
+            .lock()
+            .expect("lock poisoned")
+            .clone()
     }
 
     /// The configured telco USSD webhook secret, if any.
     pub fn ussd_webhook_secret(&self) -> Option<String> {
-        self.ussd_webhook_secret.lock().expect("lock poisoned").clone()
+        self.ussd_webhook_secret
+            .lock()
+            .expect("lock poisoned")
+            .clone()
     }
 
     /// Register a polling station.
@@ -196,7 +205,11 @@ impl VerifierStore {
 
     /// A station by code.
     pub fn station(&self, code: &str) -> Option<StationDetail> {
-        self.stations.lock().expect("lock poisoned").get(code).cloned()
+        self.stations
+            .lock()
+            .expect("lock poisoned")
+            .get(code)
+            .cloned()
     }
 
     /// Every station, by code.
@@ -243,14 +256,17 @@ impl VerifierStore {
         response_text: &str,
         action: &str,
     ) {
-        self.ussd_audit.lock().expect("lock poisoned").push(UssdAudit {
-            session_id: session_id.to_string(),
-            service_code: service_code.to_string(),
-            input: input.to_string(),
-            response_text: response_text.to_string(),
-            action: action.to_string(),
-            at: chrono::Utc::now().to_rfc3339(),
-        });
+        self.ussd_audit
+            .lock()
+            .expect("lock poisoned")
+            .push(UssdAudit {
+                session_id: session_id.to_string(),
+                service_code: service_code.to_string(),
+                input: input.to_string(),
+                response_text: response_text.to_string(),
+                action: action.to_string(),
+                at: chrono::Utc::now().to_rfc3339(),
+            });
     }
 
     /// Every USSD exchange, oldest first.
@@ -349,7 +365,10 @@ mod tests {
     fn a_signature_under_the_configured_secret_verifies() {
         let body = br#"{"entry":[]}"#;
         let sig = sign_body("s3cret", body);
-        assert_eq!(verify_hub_signature(Some("s3cret"), body, Some(&sig)), SignatureVerdict::Valid);
+        assert_eq!(
+            verify_hub_signature(Some("s3cret"), body, Some(&sig)),
+            SignatureVerdict::Valid
+        );
     }
 
     #[test]
@@ -364,19 +383,30 @@ mod tests {
     #[test]
     fn no_secret_is_unverifiable_rather_than_valid() {
         let sig = sign_body("s3cret", b"{}");
-        assert_eq!(verify_hub_signature(None, b"{}", Some(&sig)), SignatureVerdict::Unverifiable);
+        assert_eq!(
+            verify_hub_signature(None, b"{}", Some(&sig)),
+            SignatureVerdict::Unverifiable
+        );
     }
 
     #[test]
     fn no_signature_is_missing() {
-        assert_eq!(verify_hub_signature(Some("s"), b"{}", None), SignatureVerdict::Missing);
+        assert_eq!(
+            verify_hub_signature(Some("s"), b"{}", None),
+            SignatureVerdict::Missing
+        );
     }
 
     #[test]
     fn a_header_without_the_sha256_prefix_does_not_verify() {
         let body = b"{}";
-        let bare = sign_body("s", body).trim_start_matches("sha256=").to_string();
-        assert_eq!(verify_hub_signature(Some("s"), body, Some(&bare)), SignatureVerdict::Invalid);
+        let bare = sign_body("s", body)
+            .trim_start_matches("sha256=")
+            .to_string();
+        assert_eq!(
+            verify_hub_signature(Some("s"), body, Some(&bare)),
+            SignatureVerdict::Invalid
+        );
     }
 
     #[test]

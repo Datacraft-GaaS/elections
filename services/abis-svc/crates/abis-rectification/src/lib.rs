@@ -25,5 +25,7 @@ pub mod policy;
 pub mod scheduler;
 pub mod workflow;
 
-pub use domain::{EvidenceType, RectificationRequest, RectificationRequestType, RectificationState, SlaStatus};
+pub use domain::{
+    EvidenceType, RectificationRequest, RectificationRequestType, RectificationState, SlaStatus,
+};
 pub use error::RectificationError;

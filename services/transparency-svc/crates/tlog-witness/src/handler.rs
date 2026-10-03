@@ -87,7 +87,10 @@ pub async fn post_cosign(
     .fetch_optional(&*state.pool)
     .await
     {
-        let mut detector = state.detector.lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        let mut detector = state
+            .detector
+            .lock()
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
         detector.observe_root(&req.witness_id, tree_size as u64, &root_hash);
     }
 

@@ -51,14 +51,23 @@ async fn ota_check(
         "bvr-kit" => "1.0.1",
         "bvi-kit" => "1.0.1",
         "legacy-android" => "1.0.0",
-        _ => return Err(ApiError::BadRequest(format!("unknown kit_tier: {}", req.kit_tier))),
+        _ => {
+            return Err(ApiError::BadRequest(format!(
+                "unknown kit_tier: {}",
+                req.kit_tier
+            )))
+        }
     };
     let update_available = req.current_version != known_latest;
     Ok((
         StatusCode::OK,
         Json(OtaCheckResponse {
             update_available,
-            latest_version: if update_available { Some(known_latest.into()) } else { None },
+            latest_version: if update_available {
+                Some(known_latest.into())
+            } else {
+                None
+            },
             download_url: if update_available {
                 Some(format!(
                     "https://artifacts.eel.local/ota/{}/{known_latest}.zip",

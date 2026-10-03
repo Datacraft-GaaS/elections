@@ -72,8 +72,12 @@ pub fn skew_secs() -> i64 {
 /// Parse `"RFC3339,RFC3339"` into `(open, close)`; rejects inverted windows.
 pub fn parse_window(raw: &str) -> Option<(DateTime<Utc>, DateTime<Utc>)> {
     let (a, b) = raw.split_once(',')?;
-    let open = DateTime::parse_from_rfc3339(a.trim()).ok()?.with_timezone(&Utc);
-    let close = DateTime::parse_from_rfc3339(b.trim()).ok()?.with_timezone(&Utc);
+    let open = DateTime::parse_from_rfc3339(a.trim())
+        .ok()?
+        .with_timezone(&Utc);
+    let close = DateTime::parse_from_rfc3339(b.trim())
+        .ok()?
+        .with_timezone(&Utc);
     (open <= close).then_some((open, close))
 }
 

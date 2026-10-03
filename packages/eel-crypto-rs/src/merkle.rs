@@ -142,7 +142,11 @@ impl MerkleTree {
     pub fn from_leaf_hashes(leaves: Vec<Hash>) -> Self {
         let size = leaves.len();
         let nodes = build_tree(&leaves);
-        MerkleTree { leaves, nodes, size }
+        MerkleTree {
+            leaves,
+            nodes,
+            size,
+        }
     }
 
     /// Return the number of leaves in the tree.
@@ -366,7 +370,7 @@ fn build_tree(leaves: &[Hash]) -> Vec<Hash> {
     let mut all_levels: Vec<Vec<Hash>> = vec![current.clone()];
 
     while current.len() > 1 {
-        let mut next = Vec::with_capacity((current.len() + 1) / 2);
+        let mut next = Vec::with_capacity(current.len().div_ceil(2));
         let mut i = 0;
         while i < current.len() {
             if i + 1 < current.len() {

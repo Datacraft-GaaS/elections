@@ -454,7 +454,9 @@ async fn a_schedule_preview_is_scoped_to_a_definition_that_exists() {
         .await
         .unwrap();
     assert_eq!(resp.status(), StatusCode::NOT_FOUND);
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert!(
         body["detail"].as_str().unwrap().contains("no-such-report"),

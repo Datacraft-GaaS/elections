@@ -115,7 +115,7 @@ impl PkcsPool {
             session
                 .login(
                     cryptoki::session::UserType::User,
-                    Some(&AuthPin::new(config.pin.clone().into())),
+                    Some(&AuthPin::new(config.pin.clone())),
                 )
                 .map_err(|e| CryptoError::Internal(e.to_string()))?;
             sessions.push(session);
@@ -153,7 +153,7 @@ impl PkcsPool {
                 .map_err(|e| CryptoError::Internal(e.to_string()))?;
             s.login(
                 cryptoki::session::UserType::User,
-                Some(&AuthPin::new(self.0.pin.clone().into())),
+                Some(&AuthPin::new(self.0.pin.clone())),
             )
             .map_err(|e| CryptoError::Internal(e.to_string()))?;
             s

@@ -33,7 +33,9 @@ async fn get(uri: &str) -> (StatusCode, Value) {
         .unwrap();
     let resp = app().oneshot(req).await.unwrap();
     let status = resp.status();
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     (
         status,
         serde_json::from_slice(&bytes).unwrap_or(Value::Null),
@@ -83,8 +85,7 @@ async fn snapshot_by_id_is_not_echoed_back_as_if_it_existed() {
     // This asserted 200 with the caller's own id echoed back, alongside a zero
     // root. It is an addressed-looking response for a snapshot that does not exist,
     // and there is no store here to look the id up against.
-    let (status, body) =
-        get("/api/v1/portal/snapshots/123e4567-e89b-12d3-a456-426614174000").await;
+    let (status, body) = get("/api/v1/portal/snapshots/123e4567-e89b-12d3-a456-426614174000").await;
     assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
     assert!(body.get("merkle_root").is_none());
 }

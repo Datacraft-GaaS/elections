@@ -26,12 +26,18 @@ pub fn build_router(state: SharedState) -> Router {
             post(post_snapshot),
         )
         // Public contract endpoints (queue/transparency.yaml)
-        .route("/queue/stations", get(spec_handlers::list_station_queue_statuses))
+        .route(
+            "/queue/stations",
+            get(spec_handlers::list_station_queue_statuses),
+        )
         .route(
             "/queue/stations/{station_code}/status",
             get(spec_handlers::get_station_queue_status),
         )
-        .route("/queue/observations", post(spec_handlers::submit_queue_observation))
+        .route(
+            "/queue/observations",
+            post(spec_handlers::submit_queue_observation),
+        )
         .route(
             "/queue/analytics/county/{county_code}",
             get(spec_handlers::get_county_queue_analytics),

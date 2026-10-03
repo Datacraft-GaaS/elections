@@ -110,29 +110,29 @@ impl Record {
     pub fn seal(mut self, keys: &impl KeyStore) -> Result<Self, eel_crypto_rs::CryptoError> {
         self.this_hash = self.compute_hash();
         let signature = keys.sign(self.this_hash.as_bytes())?;
-        self.signature = base64::Engine::encode(
-            &base64::engine::general_purpose::STANDARD,
-            signature,
-        );
+        self.signature =
+            base64::Engine::encode(&base64::engine::general_purpose::STANDARD, signature);
         Ok(self)
     }
 
     /// Recomputes the hash and compares it to the recorded value.
     pub fn verify_content(&self) -> Result<(), TamperError> {
         if self.compute_hash() != self.this_hash {
-            return Err(TamperError::ContentAltered { id: self.record_id.to_string() });
+            return Err(TamperError::ContentAltered {
+                id: self.record_id.to_string(),
+            });
         }
         Ok(())
     }
 
     /// Verifies the record's signature against `public_key`.
     pub fn verify_signature(&self, public_key: &[u8; 32]) -> Result<(), TamperError> {
-        let bad = || TamperError::SignatureInvalid { id: self.record_id.to_string() };
-        let raw = base64::Engine::decode(
-            &base64::engine::general_purpose::STANDARD,
-            &self.signature,
-        )
-        .map_err(|_| bad())?;
+        let bad = || TamperError::SignatureInvalid {
+            id: self.record_id.to_string(),
+        };
+        let raw =
+            base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &self.signature)
+                .map_err(|_| bad())?;
         let sig = ed25519::signature_from_bytes(&raw.try_into().map_err(|_| bad())?)
             .map_err(|_| bad())?;
         let key = ed25519::verifying_key_from_bytes(public_key).map_err(|_| bad())?;
@@ -156,10 +156,7 @@ impl Record {
 /// Checks all three properties for every record rather than stopping at the
 /// first fault, so an auditor gets the full picture of an altered store in one
 /// pass. An empty slice is valid: a store with no records is not a tampered one.
-pub fn verify_chain(
-    records: &[Record],
-    public_key: &[u8; 32],
-) -> Result<(), Vec<TamperError>> {
+pub fn verify_chain(records: &[Record], public_key: &[u8; 32]) -> Result<(), Vec<TamperError>> {
     let mut errors = Vec::new();
     let mut expected_prev = String::new();
 
@@ -168,7 +165,9 @@ pub fn verify_chain(
             errors.push(e);
         }
         if record.prev_hash != expected_prev {
-            errors.push(TamperError::ChainBroken { id: record.record_id.to_string() });
+            errors.push(TamperError::ChainBroken {
+                id: record.record_id.to_string(),
+            });
         }
         if let Err(e) = record.verify_signature(public_key) {
             errors.push(e);
@@ -176,7 +175,11 @@ pub fn verify_chain(
         expected_prev = record.this_hash.clone();
     }
 
-    if errors.is_empty() { Ok(()) } else { Err(errors) }
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(errors)
+    }
 }
 
 /// Encodes bytes as lowercase hex.

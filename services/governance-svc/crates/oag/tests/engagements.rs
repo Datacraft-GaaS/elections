@@ -59,10 +59,7 @@ async fn send(
         }
         None => Body::empty(),
     };
-    app.clone()
-        .oneshot(b.body(payload).unwrap())
-        .await
-        .unwrap()
+    app.clone().oneshot(b.body(payload).unwrap()).await.unwrap()
 }
 
 async fn engagement(app: &axum::Router) -> String {
@@ -188,7 +185,10 @@ async fn the_same_extract_yields_the_same_digest() {
         first["payload_hash"], second["payload_hash"],
         "the digest is over the content, not the timestamp"
     );
-    assert_ne!(first["extract_id"], second["extract_id"], "each extract is its own record");
+    assert_ne!(
+        first["extract_id"], second["extract_id"],
+        "each extract is its own record"
+    );
 }
 
 #[tokio::test]
@@ -231,14 +231,21 @@ async fn recording_a_response_moves_the_engagement_to_responded() {
     assert_eq!(response["engagement_id"], id.as_str());
     assert_eq!(response["disposition"], "no-action");
 
-    let engagement = body_json(send(&app, "GET", &format!("/oag/engagements/{id}"), None).await).await;
+    let engagement =
+        body_json(send(&app, "GET", &format!("/oag/engagements/{id}"), None).await).await;
     assert_eq!(
         engagement["status"], "RESPONDED",
         "the engagement itself must record that it was answered"
     );
 
     let read = body_json(
-        send(&app, "GET", &format!("/oag/engagements/{id}/response"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/oag/engagements/{id}/response"),
+            None,
+        )
+        .await,
     )
     .await;
     assert_eq!(read["response_id"], response["response_id"]);
@@ -252,19 +259,36 @@ async fn a_second_response_is_refused() {
     let id = engagement(&app).await;
     let body = json!({"summary": "s", "disposition": "no-action", "oag_signatory": "sig"});
     assert_eq!(
-        send(&app, "POST", &format!("/oag/engagements/{id}/response"), Some(body.clone()))
-            .await
-            .status(),
+        send(
+            &app,
+            "POST",
+            &format!("/oag/engagements/{id}/response"),
+            Some(body.clone())
+        )
+        .await
+        .status(),
         StatusCode::CREATED
     );
-    let second = send(&app, "POST", &format!("/oag/engagements/{id}/response"), Some(body)).await;
+    let second = send(
+        &app,
+        "POST",
+        &format!("/oag/engagements/{id}/response"),
+        Some(body),
+    )
+    .await;
     assert_eq!(
         second.status(),
         StatusCode::CONFLICT,
         "the OAG must not answer the same engagement twice"
     );
-    let detail = body_json(second).await["detail"].as_str().unwrap_or_default().to_string();
-    assert!(detail.contains("RESPONDED"), "the reason should name the status: {detail}");
+    let detail = body_json(second).await["detail"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
+    assert!(
+        detail.contains("RESPONDED"),
+        "the reason should name the status: {detail}"
+    );
 }
 
 #[tokio::test]
@@ -313,7 +337,13 @@ async fn a_response_requires_a_summary_and_disposition() {
         json!({"summary": "  ", "disposition": "d", "oag_signatory": "sig"}),
         json!({"summary": "s", "disposition": "", "oag_signatory": "sig"}),
     ] {
-        let resp = send(&app, "POST", &format!("/oag/engagements/{id}/response"), Some(body)).await;
+        let resp = send(
+            &app,
+            "POST",
+            &format!("/oag/engagements/{id}/response"),
+            Some(body),
+        )
+        .await;
         assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY);
     }
 }
@@ -322,7 +352,13 @@ async fn a_response_requires_a_summary_and_disposition() {
 async fn an_unanswered_engagement_has_no_response() {
     let app = app();
     let id = engagement(&app).await;
-    let resp = send(&app, "GET", &format!("/oag/engagements/{id}/response"), None).await;
+    let resp = send(
+        &app,
+        "GET",
+        &format!("/oag/engagements/{id}/response"),
+        None,
+    )
+    .await;
     assert_eq!(
         resp.status(),
         StatusCode::NOT_FOUND,

@@ -37,7 +37,11 @@ pub enum ConsensusError {
     #[error("consensus input is empty (no sub-matchers available)")]
     NoMatchers,
     #[error("policy rejected: only {votes} of {total} matchers voted match (minimum {min})")]
-    PolicyRejected { votes: usize, total: usize, min: usize },
+    PolicyRejected {
+        votes: usize,
+        total: usize,
+        min: usize,
+    },
     #[error("sub-matcher error: {name}: {detail}")]
     SubMatcherError { name: String, detail: String },
 }

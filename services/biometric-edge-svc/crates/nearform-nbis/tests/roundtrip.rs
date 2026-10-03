@@ -30,7 +30,9 @@ fn synthetic_print(seed: u64) -> (Vec<u8>, u32, u32) {
     let mut px = vec![200u8; (w * h) as usize];
     let mut rnd = seed;
     let mut next_rand = || {
-        rnd = rnd.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        rnd = rnd
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
         ((rnd >> 33) % 100) as u8
     };
     // Two intersecting ridge systems (vertical + horizontal-ish) creating
@@ -52,7 +54,9 @@ fn synthetic_print(seed: u64) -> (Vec<u8>, u32, u32) {
             // Add a few deliberate ridge endings/bifurcations
             if (x > 80 && x < 90 && y > 80 && y < 180) ||   // vertical line ending
                (x > 120 && x < 180 && y > 120 && y < 130) || // horizontal line ending
-               (x > 200 && x < 210 && y > 200 && y < 210) {  // bifurcation spot
+               (x > 200 && x < 210 && y > 200 && y < 210)
+            {
+                // bifurcation spot
                 v = 100.0 + next_rand() as f64 * 50.0; // break the ridge
             }
             let noise = next_rand() as f64 * 0.3;
@@ -100,7 +104,10 @@ fn bozorth_self_match_beats_cross_match() {
         self_score > cross_score,
         "self-match ({self_score}) must beat cross-match ({cross_score})"
     );
-    assert!(self_score > 40, "self-match clears the NIST-40 bar, got {self_score}");
+    assert!(
+        self_score > 40,
+        "self-match clears the NIST-40 bar, got {self_score}"
+    );
 }
 
 #[test]

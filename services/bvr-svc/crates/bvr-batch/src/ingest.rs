@@ -84,7 +84,12 @@ pub async fn process_batch(rows: Vec<IngestRow>) -> BatchResult {
         }
     }
 
-    BatchResult { total, accepted, rejected, outcomes }
+    BatchResult {
+        total,
+        accepted,
+        rejected,
+        outcomes,
+    }
 }
 
 fn validate_row(row: &IngestRow) -> Result<Voter, BatchError> {
@@ -115,7 +120,11 @@ mod tests {
     fn make_row(idx: usize, bad_id: bool) -> IngestRow {
         IngestRow {
             idempotency_key: format!("key-{idx}"),
-            national_id: if bad_id { "".into() } else { format!("KE{idx:08}") },
+            national_id: if bad_id {
+                "".into()
+            } else {
+                format!("KE{idx:08}")
+            },
             full_name: "Test Voter".into(),
             dob: "1990-01-01".into(),
             county_code: "047".into(),

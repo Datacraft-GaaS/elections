@@ -41,9 +41,7 @@ pub async fn create_candidate(
 }
 
 /// List registered candidates.
-pub async fn list_candidates(
-    State(state): State<Arc<AppState>>,
-) -> Result<Json<Vec<Candidate>>> {
+pub async fn list_candidates(State(state): State<Arc<AppState>>) -> Result<Json<Vec<Candidate>>> {
     let all = state
         .candidates
         .lock()

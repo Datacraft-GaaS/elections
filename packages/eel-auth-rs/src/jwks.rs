@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::sync::Arc;
-use std::time::Duration;
+use crate::{error::AuthError, subject::Subject};
+use jsonwebtoken::{decode, decode_header, Algorithm, DecodingKey, Validation};
 use moka::future::Cache;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use jsonwebtoken::{decode, decode_header, Algorithm, DecodingKey, Validation};
-use crate::{error::AuthError, subject::Subject};
+use std::sync::Arc;
+use std::time::Duration;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Jwk {
@@ -115,7 +115,8 @@ impl JwksVerifier {
     }
 
     async fn fetch_jwks(&self) -> Result<Vec<Jwk>, AuthError> {
-        let resp = self.http
+        let resp = self
+            .http
             .get(&self.jwks_url)
             .send()
             .await
@@ -135,18 +136,25 @@ impl JwksVerifier {
             let arc = Arc::new(k.clone());
             self.cache.insert(k.kid.clone(), arc).await;
         }
-        self.cache.get(kid).await.ok_or_else(|| AuthError::UnknownKid { kid: kid.to_owned() })
+        self.cache
+            .get(kid)
+            .await
+            .ok_or_else(|| AuthError::UnknownKid {
+                kid: kid.to_owned(),
+            })
     }
 
     pub async fn verify(&self, token: &str) -> Result<Subject, AuthError> {
-        let header = decode_header(token)
-            .map_err(|e| AuthError::JwtVerification(e.to_string()))?;
-        let kid = header.kid.ok_or_else(|| AuthError::JwtVerification("missing kid".into()))?;
+        let header = decode_header(token).map_err(|e| AuthError::JwtVerification(e.to_string()))?;
+        let kid = header
+            .kid
+            .ok_or_else(|| AuthError::JwtVerification("missing kid".into()))?;
         let jwk = self.get_key(&kid).await?;
 
         let decoding_key = build_decoding_key(&jwk)?;
         let mut validation = Validation::new(Algorithm::RS256);
-        let issuer_base = self.jwks_url
+        let issuer_base = self
+            .jwks_url
             .replace("/.well-known/openid-configuration/jwks", "")
             .replace("/protocol/openid-connect/certs", "");
         validation.set_issuer(&[&issuer_base]);
@@ -161,10 +169,12 @@ impl JwksVerifier {
             None => validation.validate_aud = false,
         }
 
-        let token_data = decode::<KeycloakClaims>(token, &decoding_key, &validation)
-            .map_err(|e| match e.kind() {
-                jsonwebtoken::errors::ErrorKind::ExpiredSignature => AuthError::TokenExpired,
-                _ => AuthError::JwtVerification(e.to_string()),
+        let token_data =
+            decode::<KeycloakClaims>(token, &decoding_key, &validation).map_err(|e| {
+                match e.kind() {
+                    jsonwebtoken::errors::ErrorKind::ExpiredSignature => AuthError::TokenExpired,
+                    _ => AuthError::JwtVerification(e.to_string()),
+                }
             })?;
 
         if let Some(aud) = self.expected_audience.as_deref() {
@@ -186,7 +196,8 @@ impl JwksVerifier {
 
         let claims = token_data.claims;
         let roles = claims.realm_access.map(|r| r.roles).unwrap_or_default();
-        let purpose_scopes = claims.scope
+        let purpose_scopes = claims
+            .scope
             .map(|s| s.split_whitespace().map(str::to_owned).collect())
             .unwrap_or_default();
 
@@ -203,17 +214,27 @@ impl JwksVerifier {
 fn build_decoding_key(jwk: &Jwk) -> Result<DecodingKey, AuthError> {
     match jwk.kty.as_str() {
         "RSA" => {
-            let n = jwk.n.as_deref().ok_or_else(|| AuthError::JwksFetch("missing n".into()))?;
-            let e = jwk.e.as_deref().ok_or_else(|| AuthError::JwksFetch("missing e".into()))?;
-            DecodingKey::from_rsa_components(n, e)
-                .map_err(|e| AuthError::JwksFetch(e.to_string()))
+            let n = jwk
+                .n
+                .as_deref()
+                .ok_or_else(|| AuthError::JwksFetch("missing n".into()))?;
+            let e = jwk
+                .e
+                .as_deref()
+                .ok_or_else(|| AuthError::JwksFetch("missing e".into()))?;
+            DecodingKey::from_rsa_components(n, e).map_err(|e| AuthError::JwksFetch(e.to_string()))
         }
         "EC" => {
-            let x = jwk.x.as_deref().ok_or_else(|| AuthError::JwksFetch("missing x".into()))?;
-            let y = jwk.y.as_deref().ok_or_else(|| AuthError::JwksFetch("missing y".into()))?;
-            DecodingKey::from_ec_components(x, y)
-                .map_err(|e| AuthError::JwksFetch(e.to_string()))
+            let x = jwk
+                .x
+                .as_deref()
+                .ok_or_else(|| AuthError::JwksFetch("missing x".into()))?;
+            let y = jwk
+                .y
+                .as_deref()
+                .ok_or_else(|| AuthError::JwksFetch("missing y".into()))?;
+            DecodingKey::from_ec_components(x, y).map_err(|e| AuthError::JwksFetch(e.to_string()))
         }
-        kty => Err(AuthError::JwksFetch(format!("unsupported kty: {kty}")))
+        kty => Err(AuthError::JwksFetch(format!("unsupported kty: {kty}"))),
     }
 }

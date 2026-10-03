@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::models::*;
 use axum::{
     extract::Path,
     http::StatusCode,
@@ -19,7 +20,6 @@ use axum::{
 };
 use tracing::info;
 use uuid::Uuid;
-use crate::models::*;
 
 pub async fn post_module(Json(req): Json<CourseModule>) -> impl IntoResponse {
     info!(title=%req.title, module_type=%req.module_type, "post_module");
@@ -35,7 +35,9 @@ pub async fn submit_assessment(
     Json(req): Json<AssessmentSubmitReq>,
 ) -> impl IntoResponse {
     info!(module_id=%id, idempotency_key=%req.idempotency_key, "submit_assessment");
-    Json(serde_json::json!({ "module_id": id, "idempotency_key": req.idempotency_key, "status": "submitted" }))
+    Json(
+        serde_json::json!({ "module_id": id, "idempotency_key": req.idempotency_key, "status": "submitted" }),
+    )
 }
 
 pub async fn get_certificate(Path(worker_id): Path<Uuid>) -> impl IntoResponse {
@@ -43,7 +45,7 @@ pub async fn get_certificate(Path(worker_id): Path<Uuid>) -> impl IntoResponse {
         id: Uuid::new_v4(),
         worker_id,
         certificate_hash: "sha256-stub".to_string(),
-        qr_verification_url: format!("/v1/training/lms/certificates/verify/stub-token"),
+        qr_verification_url: "/v1/training/lms/certificates/verify/stub-token".to_string(),
         issued_at: "2027-08-09T06:00:00Z".to_string(),
         expires_at: "2028-08-09T06:00:00Z".to_string(),
         revoked: false,
@@ -64,7 +66,9 @@ pub async fn revoke_certificate(Path(id): Path<Uuid>) -> impl IntoResponse {
 }
 
 pub async fn get_progress() -> impl IntoResponse {
-    Json(serde_json::json!({ "total_workers": 0, "certified": 0, "refresher_pending": 0, "not_certified": 0 }))
+    Json(
+        serde_json::json!({ "total_workers": 0, "certified": 0, "refresher_pending": 0, "not_certified": 0 }),
+    )
 }
 
 pub async fn confirm_briefing(Path(worker_id): Path<Uuid>) -> impl IntoResponse {

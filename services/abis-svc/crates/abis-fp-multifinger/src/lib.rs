@@ -47,7 +47,11 @@ impl GrayImage {
         if pixels.len() != (width * height) as usize {
             return Err(MultiFingerError::InvalidDimensions { width, height });
         }
-        Ok(Self { width, height, pixels })
+        Ok(Self {
+            width,
+            height,
+            pixels,
+        })
     }
 
     pub fn pixel(&self, x: i32, y: i32) -> u8 {
@@ -68,10 +72,15 @@ impl GrayImage {
         let mut pixels = vec![0u8; (ow * oh) as usize];
         for dy in 0..oh {
             for dx in 0..ow {
-                pixels[(dy * ow + dx) as usize] = self.pixels[((y0 + dy) * self.width + x0 + dx) as usize];
+                pixels[(dy * ow + dx) as usize] =
+                    self.pixels[((y0 + dy) * self.width + x0 + dx) as usize];
             }
         }
-        GrayImage { width: ow, height: oh, pixels }
+        GrayImage {
+            width: ow,
+            height: oh,
+            pixels,
+        }
     }
 }
 

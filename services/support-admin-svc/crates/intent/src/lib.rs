@@ -20,9 +20,9 @@
 #![warn(missing_docs)]
 
 pub mod aggregates;
-pub mod http;
-/// Typed models for intent contract.
-pub mod spec;
 pub mod catalogue;
 pub mod events;
+pub mod http;
 pub mod model;
+/// Typed models for intent contract.
+pub mod spec;

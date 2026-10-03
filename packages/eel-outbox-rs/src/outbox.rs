@@ -28,10 +28,7 @@
 use tracing::instrument;
 use uuid::Uuid;
 
-use crate::{
-    envelope::OutboxEnvelope,
-    error::OutboxError,
-};
+use crate::{envelope::OutboxEnvelope, error::OutboxError};
 
 /// Maximum serialised envelope size in bytes (1 MiB).
 pub const MAX_PAYLOAD_BYTES: usize = 1 << 20;

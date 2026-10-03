@@ -78,9 +78,7 @@ impl PairwiseAssertion {
         const NULL_SHARE: f64 = 0.5;
         match audited_vote {
             Some(v) if v == self.winner => t * (self.reported_share / NULL_SHARE),
-            Some(v) if v == self.loser => {
-                t * ((1.0 - self.reported_share) / NULL_SHARE)
-            }
+            Some(v) if v == self.loser => t * ((1.0 - self.reported_share) / NULL_SHARE),
             _ => t,
         }
     }
@@ -153,7 +151,8 @@ pub fn draw_sample_block(
     }
 
     // Prefix sums give each global ballot index a (batch, position) home.
-    let mut bounds: Vec<(u64, &crate::models::BatchEntry)> = Vec::with_capacity(manifest.batches.len());
+    let mut bounds: Vec<(u64, &crate::models::BatchEntry)> =
+        Vec::with_capacity(manifest.batches.len());
     let mut running = 0u64;
     for b in &manifest.batches {
         running += b.num_ballots as u64;
@@ -237,7 +236,11 @@ pub fn required_additional_samples(
 }
 
 /// Draw a sample and materialise it as uneaudited [`SampledBallot`] rows.
-pub fn draw_sample(manifest: &AuditManifest, seed: &str, n: usize) -> Result<Vec<SampledBallot>, RlaError> {
+pub fn draw_sample(
+    manifest: &AuditManifest,
+    seed: &str,
+    n: usize,
+) -> Result<Vec<SampledBallot>, RlaError> {
     Ok(draw_sample_positions(manifest, seed, n)?
         .into_iter()
         .map(|(batch_id, position)| SampledBallot {
@@ -285,7 +288,10 @@ mod tests {
         for _ in 0..10_000 {
             t = a.update_t(t, Some("Grace"));
         }
-        assert!(t < a.stop_threshold(0.05), "wrong-winner evidence must not confirm");
+        assert!(
+            t < a.stop_threshold(0.05),
+            "wrong-winner evidence must not confirm"
+        );
     }
 
     #[test]
@@ -314,7 +320,11 @@ mod tests {
     fn end_to_end_audit_passes_on_clean_sample() {
         let a = assertion();
         let ballots = sample_ballots(&[Some("Ada"); 40]);
-        assert!(!should_trigger_recount(std::slice::from_ref(&a), &ballots, 0.05));
+        assert!(!should_trigger_recount(
+            std::slice::from_ref(&a),
+            &ballots,
+            0.05
+        ));
         assert!(audit_complete(std::slice::from_ref(&a), &ballots, 0.05));
     }
 
@@ -322,7 +332,11 @@ mod tests {
     fn end_to_end_audit_continues_when_evidence_short() {
         let a = assertion();
         let ballots = sample_ballots(&[Some("Ada"), Some("Grace"), Some("Ada")]);
-        assert!(should_trigger_recount(std::slice::from_ref(&a), &ballots, 0.05));
+        assert!(should_trigger_recount(
+            std::slice::from_ref(&a),
+            &ballots,
+            0.05
+        ));
     }
 
     fn manifest(total_per_batch: u32, batches: usize) -> AuditManifest {
@@ -383,7 +397,10 @@ mod tests {
         for k in [0usize, 1, 7, 30, 59] {
             let mut split = draw_sample_block(&m, "beacon-pulse-42", 0, k).unwrap();
             split.extend(draw_sample_block(&m, "beacon-pulse-42", k, n - k).unwrap());
-            assert_eq!(split, full, "(block0 ++ block1) must equal full draw, split at {k}");
+            assert_eq!(
+                split, full,
+                "(block0 ++ block1) must equal full draw, split at {k}"
+            );
         }
     }
 
@@ -425,7 +442,10 @@ mod tests {
         let mut prev = u64::MAX;
         for t in [0.5f64, 1.0, 2.0, 4.0, 8.0] {
             let r = required_additional_samples(&a, t, 0.05);
-            assert!(r <= prev, "required samples must not grow with t: {r} > {prev}");
+            assert!(
+                r <= prev,
+                "required samples must not grow with t: {r} > {prev}"
+            );
             prev = r;
         }
     }
@@ -445,7 +465,10 @@ mod tests {
             loser: "Grace".into(),
             reported_share: 0.5,
         };
-        assert_eq!(required_additional_samples(&unwinnable, 1.0, 0.05), u64::MAX);
+        assert_eq!(
+            required_additional_samples(&unwinnable, 1.0, 0.05),
+            u64::MAX
+        );
     }
 
     #[test]
@@ -464,7 +487,10 @@ mod tests {
             if before == 0 {
                 assert_eq!(after, 0);
             } else {
-                assert!(after < before, "clean-winner ballot must shrink distance: {after} !< {before}");
+                assert!(
+                    after < before,
+                    "clean-winner ballot must shrink distance: {after} !< {before}"
+                );
             }
         }
         assert_eq!(

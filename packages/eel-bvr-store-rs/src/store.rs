@@ -22,7 +22,7 @@ use uuid::Uuid;
 use crate::identity::InstanceIdentity;
 use crate::keystore::{KeyStore, SoftwareKeyStore};
 use crate::provenance::Provenance;
-use crate::record::{Record, RecordId, TamperError, verify_chain};
+use crate::record::{verify_chain, Record, RecordId, TamperError};
 use crate::sync::{Batch, SyncState};
 
 /// Why a store operation failed.
@@ -133,7 +133,11 @@ impl Store {
             self.aad(data_item, data_class, Some(record_id)).as_bytes(),
         )?;
 
-        let prev_hash = self.records.last().map(|r| r.this_hash.clone()).unwrap_or_default();
+        let prev_hash = self
+            .records
+            .last()
+            .map(|r| r.this_hash.clone())
+            .unwrap_or_default();
         let record = Record {
             record_id,
             data_item: data_item.to_owned(),
@@ -173,10 +177,9 @@ impl Store {
         )
         .map_err(|_| StoreError::Malformed(id.to_string()))?;
         let aad = self.aad(&record.data_item, &record.data_class, Some(*id));
-        let plain = aead::open(&self.data_key, &sealed, aad.as_bytes())
-            .map_err(|_| StoreError::Tampered(vec![TamperError::Undecryptable {
-                id: id.to_string(),
-            }]))?;
+        let plain = aead::open(&self.data_key, &sealed, aad.as_bytes()).map_err(|_| {
+            StoreError::Tampered(vec![TamperError::Undecryptable { id: id.to_string() }])
+        })?;
         Ok(serde_json::from_slice(&plain).unwrap_or(serde_json::Value::Null))
     }
 
@@ -202,7 +205,10 @@ impl Store {
         if pending.is_empty() {
             return None;
         }
-        Some(Batch::new(self.identity.clone(), pending.into_iter().cloned().collect()))
+        Some(Batch::new(
+            self.identity.clone(),
+            pending.into_iter().cloned().collect(),
+        ))
     }
 
     /// Marks a batch's records as acknowledged by the server.
@@ -227,7 +233,11 @@ impl Store {
     pub fn sync_state(&self) -> SyncState {
         let total = self.records.len();
         let synced = self.records.iter().filter(|r| r.synced).count();
-        SyncState { total, synced, pending: total - synced }
+        SyncState {
+            total,
+            synced,
+            pending: total - synced,
+        }
     }
 
     /// Associated data binding a ciphertext to its record and station.
@@ -240,7 +250,9 @@ impl Store {
             self.identity.instance_id,
             data_item,
             data_class,
-            record_id.map(|id| id.to_string()).unwrap_or_else(|| "new".to_owned()),
+            record_id
+                .map(|id| id.to_string())
+                .unwrap_or_else(|| "new".to_owned()),
         )
     }
 }
@@ -293,8 +305,7 @@ impl Store {
             .map_err(|e| StoreError::Serialisation(e.to_string()))?;
 
         let temporary = path.with_extension("tmp");
-        std::fs::write(&temporary, text.as_bytes())
-            .map_err(|e| StoreError::Io(e.to_string()))?;
+        std::fs::write(&temporary, text.as_bytes()).map_err(|e| StoreError::Io(e.to_string()))?;
         // rename(2) is atomic within a filesystem, so a reader sees either the
         // old file or the new one, never a half-written one.
         std::fs::rename(&temporary, path).map_err(|e| StoreError::Io(e.to_string()))?;
@@ -307,7 +318,10 @@ impl Store {
     /// cannot be recovered from the file: it belongs in a TPM or HSM and is
     /// never written to disk. Pass the result to [`OpenedStore::reopen`] with
     /// a keystore that already holds that key.
-    pub fn open_from_disk(path: &std::path::Path, kek: &[u8; 32]) -> Result<OpenedStore, StoreError> {
+    pub fn open_from_disk(
+        path: &std::path::Path,
+        kek: &[u8; 32],
+    ) -> Result<OpenedStore, StoreError> {
         let text = std::fs::read_to_string(path).map_err(|e| StoreError::Io(e.to_string()))?;
         let stored: StoredStore =
             serde_json::from_str(&text).map_err(|e| StoreError::Serialisation(e.to_string()))?;
@@ -320,10 +334,9 @@ impl Store {
         }
 
         let wrapped = unb64(&stored.wrapped_data_key_b64)?;
-        let unwrapped =
-            aead::open(kek, &wrapped, AAD_STORE.as_bytes()).map_err(|_| {
-                StoreError::KeyUnwrap("data key did not open under the supplied KEK".to_owned())
-            })?;
+        let unwrapped = aead::open(kek, &wrapped, AAD_STORE.as_bytes()).map_err(|_| {
+            StoreError::KeyUnwrap("data key did not open under the supplied KEK".to_owned())
+        })?;
         let mut data_key = [0u8; 32];
         data_key.copy_from_slice(&unwrapped);
 
@@ -334,7 +347,11 @@ impl Store {
         let records: Vec<Record> = serde_json::from_slice(&plaintext)
             .map_err(|e| StoreError::Serialisation(e.to_string()))?;
 
-        Ok(OpenedStore { identity: stored.identity, records, data_key })
+        Ok(OpenedStore {
+            identity: stored.identity,
+            records,
+            data_key,
+        })
     }
 }
 
@@ -371,8 +388,15 @@ impl OpenedStore {
     /// store that fails its chain is never handed out. A tampered file yields
     /// [`StoreError::OnDiskTampered`], not a store.
     pub fn reopen(self, keys: SoftwareKeyStore) -> Result<Store, StoreError> {
-        let store = Store { identity: self.identity, keys, records: self.records, data_key: self.data_key };
-        store.verify().map_err(|e| StoreError::OnDiskTampered(e.to_string()))?;
+        let store = Store {
+            identity: self.identity,
+            keys,
+            records: self.records,
+            data_key: self.data_key,
+        };
+        store
+            .verify()
+            .map_err(|e| StoreError::OnDiskTampered(e.to_string()))?;
         Ok(store)
     }
 }

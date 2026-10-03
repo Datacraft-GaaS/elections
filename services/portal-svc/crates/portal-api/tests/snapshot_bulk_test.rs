@@ -44,7 +44,9 @@ async fn the_bulk_snapshot_does_not_redirect_to_a_host_that_cannot_resolve() {
     assert_eq!(resp.status(), StatusCode::NOT_IMPLEMENTED);
     // The Location header, if any, must not name the dead host.
     assert!(resp.headers().get("location").is_none());
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(body["status"], 501);
     assert!(body["detail"].as_str().unwrap().contains("MinIO"));
@@ -68,7 +70,9 @@ async fn a_snapshot_inclusion_proof_is_not_handed_out_against_a_zero_root() {
         .await
         .unwrap();
     assert_eq!(resp.status(), StatusCode::NOT_IMPLEMENTED);
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     // Nothing that a client could mistake for a proof.
     for field in ["leaf_hash", "root", "siblings", "sth_sig", "verified"] {

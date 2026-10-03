@@ -153,14 +153,14 @@ fn gaussian_smooth_1d(values: &[f32], sigma: f32) -> Vec<f32> {
     // Convolve with clamp-to-edge boundary (avoids zeros reducing edge values).
     let n = values.len();
     let mut out = vec![0.0f32; n];
-    for i in 0..n {
+    for (i, out_slot) in out.iter_mut().enumerate() {
         let mut acc = 0.0f32;
-        for j in 0..kernel_size as usize {
+        for (j, k) in kernel.iter().enumerate() {
             let src_idx = i as i32 + j as i32 - kernel_half;
             let clamped = src_idx.clamp(0, n as i32 - 1) as usize;
-            acc += kernel[j] * values[clamped];
+            acc += *k * values[clamped];
         }
-        out[i] = acc;
+        *out_slot = acc;
     }
     out
 }

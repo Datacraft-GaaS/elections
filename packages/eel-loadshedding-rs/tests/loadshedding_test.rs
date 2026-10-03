@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use bytes::Bytes;
 use eel_loadshedding_rs::{
+    layer::LoadSheddingLayer,
     priority::Priority,
     shedder::{CoDelConfig, CoDelShedder},
-    layer::LoadSheddingLayer,
 };
-use std::time::{Duration, Instant};
 use http::{Request, Response, StatusCode};
 use http_body_util::Full;
-use bytes::Bytes;
+use std::time::{Duration, Instant};
 use tower::{Service, ServiceExt};
 
 // Priority ordering
@@ -48,7 +48,10 @@ async fn priority_from_headers_admin() {
 async fn priority_from_authorization_header() {
     let mut headers = http::HeaderMap::new();
     headers.insert("authorization", "Bearer token123".parse().unwrap());
-    assert_eq!(Priority::from_headers(&headers), Priority::AuthenticatedUser);
+    assert_eq!(
+        Priority::from_headers(&headers),
+        Priority::AuthenticatedUser
+    );
 }
 
 #[tokio::test]
@@ -99,7 +102,10 @@ async fn metrics_shed_count_increments() {
     let _ = shedder.admit(Priority::Anonymous, old_start).await;
 
     let snap = shedder.metrics.snapshot();
-    assert!(snap.shed_anonymous > 0 || snap.shed_admin > 0, "expected at least one shed");
+    assert!(
+        snap.shed_anonymous > 0 || snap.shed_admin > 0,
+        "expected at least one shed"
+    );
 }
 
 // Test tower layer integration
@@ -118,17 +124,13 @@ async fn layer_passes_normal_request() {
             Response::builder()
                 .status(200)
                 .body(Full::new(Bytes::from("ok")))
-                .unwrap()
+                .unwrap(),
         )
     });
 
-    let mut svc = tower::ServiceBuilder::new()
-        .layer(layer)
-        .service(inner);
+    let mut svc = tower::ServiceBuilder::new().layer(layer).service(inner);
 
-    let req = Request::builder()
-        .body(Full::new(Bytes::new()))
-        .unwrap();
+    let req = Request::builder().body(Full::new(Bytes::new())).unwrap();
 
     let resp = svc.ready().await.unwrap().call(req).await.unwrap();
     assert_eq!(resp.status(), StatusCode::OK);

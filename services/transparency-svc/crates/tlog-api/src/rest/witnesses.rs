@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use axum::{extract::{Query, State}, http::StatusCode, Json};
+use axum::{
+    extract::{Query, State},
+    http::StatusCode,
+    Json,
+};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -28,12 +32,11 @@ pub struct WitnessInfo {
 pub async fn list_witnesses(
     State(state): State<ApiState>,
 ) -> Result<Json<Vec<WitnessInfo>>, StatusCode> {
-    let rows: Vec<(String, String)> = sqlx::query_as(
-        "SELECT witness_id, witness_spiffe_id FROM witnesses",
-    )
-    .fetch_all(&*state.pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let rows: Vec<(String, String)> =
+        sqlx::query_as("SELECT witness_id, witness_spiffe_id FROM witnesses")
+            .fetch_all(&*state.pool)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(
         rows.into_iter()
@@ -115,12 +118,11 @@ pub async fn witness_report(
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
     };
 
-    let witnesses: Vec<(String, String)> = sqlx::query_as(
-        "SELECT witness_id, public_key_hex FROM witnesses",
-    )
-    .fetch_all(&*state.pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let witnesses: Vec<(String, String)> =
+        sqlx::query_as("SELECT witness_id, public_key_hex FROM witnesses")
+            .fetch_all(&*state.pool)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(WitnessReport {
         sths: sths

@@ -15,12 +15,12 @@
 //! Route wiring for every operation in the BVI contract.
 
 pub mod anomalies;
-pub mod register_anchors;
 pub mod canaries;
 pub mod config;
 pub mod identifications;
 pub mod intake_guard;
 pub mod kits;
+pub mod register_anchors;
 pub mod sessions;
 pub mod signals;
 pub mod turnout;
@@ -58,10 +58,7 @@ pub fn router<S: BviStore>(state: AppState<S>) -> Router {
             "/api/v1/bvi/voters/{voter_id}/station",
             get(voters::get_voter_station),
         )
-        .route(
-            "/api/v1/bvi/anomalies/evaluate",
-            post(anomalies::evaluate),
-        )
+        .route("/api/v1/bvi/anomalies/evaluate", post(anomalies::evaluate))
         .route(
             "/api/v1/bvi/anomalies/canary-hits",
             get(canaries::get_canary_hits),

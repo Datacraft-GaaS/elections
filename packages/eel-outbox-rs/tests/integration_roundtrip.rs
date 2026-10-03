@@ -86,7 +86,10 @@ mod integration {
                 .fetch_one(&pool)
                 .await
                 .expect("select published_at");
-        assert!(published.0.is_none(), "published_at should be NULL before Debezium picks it up");
+        assert!(
+            published.0.is_none(),
+            "published_at should be NULL before Debezium picks it up"
+        );
     }
 
     #[tokio::test]

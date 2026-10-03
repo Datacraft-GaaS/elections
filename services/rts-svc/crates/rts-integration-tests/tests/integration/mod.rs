@@ -72,7 +72,9 @@ fn captured_event(i: usize) -> StoredEvent {
 fn deterministic_shuffle(events: &mut [StoredEvent], seed: u64) {
     let mut state = seed | 1;
     for i in (1..events.len()).rev() {
-        state = state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        state = state
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
         let j = (state >> 33) as usize % (i + 1);
         events.swap(i, j);
     }
@@ -90,10 +92,16 @@ async fn test_10k_form34a_aggregation() {
     let mut constituencies: std::collections::BTreeMap<String, Vec<StoredEvent>> =
         std::collections::BTreeMap::new();
     for event in &events {
-        let code = event.payload["constituency_code"].as_str().unwrap().to_string();
+        let code = event.payload["constituency_code"]
+            .as_str()
+            .unwrap()
+            .to_string();
         constituencies.entry(code).or_default().push(event.clone());
     }
-    assert_eq!(constituencies.len(), STATION_COUNT / STATIONS_PER_CONSTITUENCY);
+    assert_eq!(
+        constituencies.len(),
+        STATION_COUNT / STATIONS_PER_CONSTITUENCY
+    );
 
     let forms_34b: Vec<_> = constituencies
         .iter()
@@ -101,15 +109,43 @@ async fn test_10k_form34a_aggregation() {
         .collect();
     let form_34c = aggregate_34c(forms_34b);
 
-    assert_eq!(form_34c.total_registered as u64, REGISTERED_VOTERS * STATION_COUNT as u64);
-    assert_eq!(form_34c.total_valid as u64, VALID_VOTES * STATION_COUNT as u64);
-    assert_eq!(form_34c.total_rejected as u64, REJECTED_VOTES * STATION_COUNT as u64);
-    assert_eq!(form_34c.total_spoilt as u64, SPOILT_BALLOTS * STATION_COUNT as u64);
+    assert_eq!(
+        form_34c.total_registered as u64,
+        REGISTERED_VOTERS * STATION_COUNT as u64
+    );
+    assert_eq!(
+        form_34c.total_valid as u64,
+        VALID_VOTES * STATION_COUNT as u64
+    );
+    assert_eq!(
+        form_34c.total_rejected as u64,
+        REJECTED_VOTES * STATION_COUNT as u64
+    );
+    assert_eq!(
+        form_34c.total_spoilt as u64,
+        SPOILT_BALLOTS * STATION_COUNT as u64
+    );
 
-    let total_a = form_34c.candidate_totals.iter().find(|c| c.candidate_id == "cand-a").unwrap().votes as u64;
-    let total_b = form_34c.candidate_totals.iter().find(|c| c.candidate_id == "cand-b").unwrap().votes as u64;
-    assert_eq!(total_a, expected_a, "candidate A totals must match expected sums");
-    assert_eq!(total_b, expected_b, "candidate B totals must match expected sums");
+    let total_a = form_34c
+        .candidate_totals
+        .iter()
+        .find(|c| c.candidate_id == "cand-a")
+        .unwrap()
+        .votes as u64;
+    let total_b = form_34c
+        .candidate_totals
+        .iter()
+        .find(|c| c.candidate_id == "cand-b")
+        .unwrap()
+        .votes as u64;
+    assert_eq!(
+        total_a, expected_a,
+        "candidate A totals must match expected sums"
+    );
+    assert_eq!(
+        total_b, expected_b,
+        "candidate B totals must match expected sums"
+    );
     assert_eq!(total_a + total_b, form_34c.total_valid as u64);
 
     // Merkle root over the serialized event payloads must be a non-zero,
@@ -121,9 +157,16 @@ async fn test_10k_form34a_aggregation() {
     let refs: Vec<&[u8]> = leaves.iter().map(|v| v.as_slice()).collect();
     let root = compute_merkle_root(&refs);
     assert_eq!(root.len(), 64, "merkle root must be a 32-byte hex string");
-    assert!(root.chars().any(|c| c != '0'), "merkle root must not be the zero hash");
+    assert!(
+        root.chars().any(|c| c != '0'),
+        "merkle root must not be the zero hash"
+    );
     let refs_again: Vec<&[u8]> = leaves.iter().map(|v| v.as_slice()).collect();
-    assert_eq!(compute_merkle_root(&refs_again), root, "merkle root must be deterministic");
+    assert_eq!(
+        compute_merkle_root(&refs_again),
+        root,
+        "merkle root must be deterministic"
+    );
 }
 
 #[tokio::test]
@@ -148,7 +191,10 @@ async fn test_replay_shuffled_events_idempotent() {
     let mut shuffled_streams: std::collections::BTreeMap<uuid::Uuid, Vec<StoredEvent>> =
         std::collections::BTreeMap::new();
     for event in events {
-        shuffled_streams.entry(event.stream_id).or_default().push(event);
+        shuffled_streams
+            .entry(event.stream_id)
+            .or_default()
+            .push(event);
     }
     let shuffled = aggregate_34c(
         shuffled_streams

@@ -23,8 +23,7 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
     let db_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgres://eel:eel@localhost/eel_tlog".to_string());
-    let brokers = std::env::var("KAFKA_BROKERS")
-        .unwrap_or_else(|_| "localhost:9092".to_string());
+    let brokers = std::env::var("KAFKA_BROKERS").unwrap_or_else(|_| "localhost:9092".to_string());
 
     let pool = Arc::new(
         PgPoolOptions::new()

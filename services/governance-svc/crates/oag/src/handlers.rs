@@ -239,7 +239,10 @@ pub async fn register_published_report(
 ) -> axum::response::Response {
     info!(report_type = %req.report_type, "register_published_report");
     if req.title.trim().is_empty() || req.uri.trim().is_empty() {
-        return problem(StatusCode::UNPROCESSABLE_ENTITY, "title and uri are required");
+        return problem(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "title and uri are required",
+        );
     }
     // `hash` is the digest of the report contents, which this service does not
     // hold -- it is published elsewhere. A caller may supply it; when they do

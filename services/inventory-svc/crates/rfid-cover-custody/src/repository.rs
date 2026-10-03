@@ -18,12 +18,14 @@
 //! DATABASE_URL is required.
 
 use chrono::Utc;
-use sqlx::PgPool;
 use ed25519_dalek::VerifyingKey;
+use sqlx::PgPool;
 use std::collections::HashMap;
 use uuid::Uuid;
 
-use crate::domain::{CoverRead, CoverState, CoverTag, CoverTamperAlert, ReaderType, Severity, TamperState};
+use crate::domain::{
+    CoverRead, CoverState, CoverTag, CoverTamperAlert, ReaderType, Severity, TamperState,
+};
 use crate::error::RfidError;
 
 // ---------------------------------------------------------------------------
@@ -148,7 +150,8 @@ pub async fn insert_read(pool: &PgPool, read: &CoverRead) -> Result<(), RfidErro
 
 /// Officer key registry, parsed once from `EEL_CUSTODY_OFFICER_KEYS`.
 fn officer_registry() -> &'static HashMap<String, VerifyingKey> {
-    static REGISTRY: std::sync::OnceLock<HashMap<String, VerifyingKey>> = std::sync::OnceLock::new();
+    static REGISTRY: std::sync::OnceLock<HashMap<String, VerifyingKey>> =
+        std::sync::OnceLock::new();
     REGISTRY.get_or_init(|| {
         let spec = std::env::var("EEL_CUSTODY_OFFICER_KEYS").unwrap_or_default();
         match crate::officer_sig::parse_registry(&spec) {
@@ -245,10 +248,12 @@ pub async fn fetch_transitions(
             Ok(crate::domain::CoverStateTransition {
                 transition_id: r.try_get("transition_id")?,
                 tag_id: r.try_get("tag_id")?,
-                from_state: CoverState::from_str(&from_str)
-                    .ok_or_else(|| sqlx::Error::Decode(format!("unknown from_state: {from_str}").into()))?,
-                to_state: CoverState::from_str(&to_str)
-                    .ok_or_else(|| sqlx::Error::Decode(format!("unknown to_state: {to_str}").into()))?,
+                from_state: CoverState::from_str(&from_str).ok_or_else(|| {
+                    sqlx::Error::Decode(format!("unknown from_state: {from_str}").into())
+                })?,
+                to_state: CoverState::from_str(&to_str).ok_or_else(|| {
+                    sqlx::Error::Decode(format!("unknown to_state: {to_str}").into())
+                })?,
                 triggered_by_read: r.try_get("triggered_by_read")?,
                 officer_id: r.try_get("officer_id")?,
                 officer_svid: r.try_get("officer_svid")?,
@@ -355,11 +360,7 @@ pub async fn fetch_pending_alerts(
 }
 
 /// Mark an alert resolved.
-pub async fn resolve_alert(
-    pool: &PgPool,
-    alert_id: Uuid,
-    note: &str,
-) -> Result<(), RfidError> {
+pub async fn resolve_alert(pool: &PgPool, alert_id: Uuid, note: &str) -> Result<(), RfidError> {
     sqlx::query(
         "UPDATE eel_cover_tamper_alerts SET resolved_at = $2, resolution_note = $3 WHERE alert_id = $1",
     )

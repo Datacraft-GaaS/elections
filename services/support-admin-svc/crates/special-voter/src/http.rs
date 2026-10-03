@@ -64,10 +64,7 @@ pub fn router(state: SharedState) -> Router {
             post(record_idp_reassignment),
         )
         .route("/v1/special/dashboard", get(get_special_dashboard))
-        .route(
-            "/v1/special/audit/sample/{category}",
-            get(get_audit_sample),
-        )
+        .route("/v1/special/audit/sample/{category}", get(get_audit_sample))
         .route("/v1/special/public/counts", get(get_public_voter_counts))
         .with_state(state)
 }
@@ -87,7 +84,11 @@ async fn get_special_facility(
     let guard = state.facilities.lock().expect("lock poisoned");
     match guard.get(&id) {
         Some(f) => Json(f.clone()).into_response(),
-        None => (StatusCode::NOT_FOUND, Json(json!({ "detail": "facility not found" }))).into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "detail": "facility not found" })),
+        )
+            .into_response(),
     }
 }
 
@@ -155,7 +156,11 @@ async fn get_special_form34(
     let guard = state.forms.lock().expect("lock poisoned");
     match guard.get(&id) {
         Some(f) => Json(f.clone()).into_response(),
-        None => (StatusCode::NOT_FOUND, Json(json!({ "detail": "form not found" }))).into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "detail": "form not found" })),
+        )
+            .into_response(),
     }
 }
 

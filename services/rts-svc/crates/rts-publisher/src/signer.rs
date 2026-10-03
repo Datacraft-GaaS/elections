@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::bundle::PublicationBundle;
 use thiserror::Error;
 use tracing::info;
-use crate::bundle::PublicationBundle;
 
 #[derive(Debug, Error)]
 pub enum SignerError {
@@ -77,8 +77,14 @@ mod tests {
     #[test]
     fn sign_bundle_hash_is_deterministic_hex() {
         let b = bundle();
-        let h1 = tokio::runtime::Runtime::new().unwrap().block_on(sign_bundle(&b)).unwrap();
-        let h2 = tokio::runtime::Runtime::new().unwrap().block_on(sign_bundle(&b)).unwrap();
+        let h1 = tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(sign_bundle(&b))
+            .unwrap();
+        let h2 = tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(sign_bundle(&b))
+            .unwrap();
         assert_eq!(h1, h2);
         assert_eq!(h1.len(), 64);
         assert!(h1.chars().all(|c| c.is_ascii_hexdigit()));

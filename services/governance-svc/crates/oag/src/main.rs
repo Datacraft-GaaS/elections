@@ -28,7 +28,11 @@ async fn main() {
     info!(http_addr, "eel-governance-oag starting");
     let state = eel_governance_oag::AppState::new();
     let app = eel_governance_oag::router::build_router(state);
-    let listener = tokio::net::TcpListener::bind(&http_addr).await.expect("bind failed");
+    let listener = tokio::net::TcpListener::bind(&http_addr)
+        .await
+        .expect("bind failed");
     info!(http_addr, "eel-governance-oag HTTP listening");
-    axum::serve(listener, app).await.expect("HTTP server failed");
+    axum::serve(listener, app)
+        .await
+        .expect("HTTP server failed");
 }

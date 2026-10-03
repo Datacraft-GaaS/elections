@@ -23,10 +23,10 @@ use crate::error::ThresholdError;
 /// Atomically activate a profile: sets active=TRUE on the target and FALSE on all siblings.
 #[instrument(skip(pool))]
 pub async fn activate_profile(pool: &PgPool, id: Uuid) -> Result<(), ThresholdError> {
-	let mut tx = pool.begin().await?;
+    let mut tx = pool.begin().await?;
 
-	sqlx::query(
-		r#"
+    sqlx::query(
+        r#"
 		UPDATE eel_threshold_profiles
 		   SET active = FALSE
 		 WHERE (modality, age_band, sex, county_code) = (
@@ -35,22 +35,22 @@ pub async fn activate_profile(pool: &PgPool, id: Uuid) -> Result<(), ThresholdEr
 		        WHERE id = $1
 		       )
 		"#,
-	)
-	.bind(id)
-	.execute(&mut *tx)
-	.await?;
+    )
+    .bind(id)
+    .execute(&mut *tx)
+    .await?;
 
-	let affected = sqlx::query("UPDATE eel_threshold_profiles SET active = TRUE WHERE id = $1")
-		.bind(id)
-		.execute(&mut *tx)
-		.await?
-		.rows_affected();
+    let affected = sqlx::query("UPDATE eel_threshold_profiles SET active = TRUE WHERE id = $1")
+        .bind(id)
+        .execute(&mut *tx)
+        .await?
+        .rows_affected();
 
-	if affected == 0 {
-		tx.rollback().await?;
-		return Err(ThresholdError::NotFound(id));
-	}
+    if affected == 0 {
+        tx.rollback().await?;
+        return Err(ThresholdError::NotFound(id));
+    }
 
-	tx.commit().await?;
-	Ok(())
+    tx.commit().await?;
+    Ok(())
 }

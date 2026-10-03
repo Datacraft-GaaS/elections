@@ -57,7 +57,10 @@ fn polling_station_code_accepts_spec_example() {
     // Note the example contains hyphens, so the contract's own example does not
     // satisfy its own pattern. We pin the *pattern*, which is the enforced
     // rule; see polling_station_code_pattern_rejects_hyphens below.
-    assert!(!matches_bvr_pattern("polling_station_code", "NRB-001-PS-042"));
+    assert!(!matches_bvr_pattern(
+        "polling_station_code",
+        "NRB-001-PS-042"
+    ));
     assert!(matches_bvr_pattern("polling_station_code", "NRB001PS042"));
 }
 
@@ -66,7 +69,10 @@ fn polling_station_code_enforces_length_bounds() {
     assert!(matches_bvr_pattern("polling_station_code", "ABC123")); // 6, lower bound
     assert!(!matches_bvr_pattern("polling_station_code", "ABC12")); // 5, too short
     assert!(matches_bvr_pattern("polling_station_code", "ABCDEFGHIJKL")); // 12, valid
-    assert!(!matches_bvr_pattern("polling_station_code", "ABCDEFGHIJKLM")); // 13
+    assert!(!matches_bvr_pattern(
+        "polling_station_code",
+        "ABCDEFGHIJKLM"
+    )); // 13
 }
 
 #[test]

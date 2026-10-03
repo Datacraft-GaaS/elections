@@ -407,14 +407,17 @@ async fn compile_form(
     };
     let _ = scope;
     state.record_job(job.clone());
-    (StatusCode::ACCEPTED, Json(serde_json::json!({
-        "job_id": job.job_id,
-        "form_kind": job.form_kind,
-        "status": job.status,
-        "requested_at": job.requested_at,
-        "blocking_reason": job.blocking_reason,
-    })))
-    .into_response()
+    (
+        StatusCode::ACCEPTED,
+        Json(serde_json::json!({
+            "job_id": job.job_id,
+            "form_kind": job.form_kind,
+            "status": job.status,
+            "requested_at": job.requested_at,
+            "blocking_reason": job.blocking_reason,
+        })),
+    )
+        .into_response()
 }
 
 pub async fn compile_form34b(
@@ -464,13 +467,12 @@ pub async fn get_icr_result(
 ) -> axum::response::Response {
     // Previously any job id answered `pending` with no fields, forever.
     let parsed = Uuid::parse_str(&job_id).ok();
-    let job = parsed
-        .and_then(|_| {
-            state
-                .forms()
-                .into_iter()
-                .find_map(|f| f.icr.filter(|j| j.job_id == job_id))
-        });
+    let job = parsed.and_then(|_| {
+        state
+            .forms()
+            .into_iter()
+            .find_map(|f| f.icr.filter(|j| j.job_id == job_id))
+    });
     match job {
         Some(j) => Json(serde_json::json!({
             "job_id": j.job_id,
@@ -574,8 +576,7 @@ pub async fn resolve_dispute(
             StatusCode::FORBIDDEN,
             format!(
                 "countersign_token was issued to {} but the dispute is under {}",
-                token.device_id,
-                dispute.ro_id
+                token.device_id, dispute.ro_id
             ),
         );
     }

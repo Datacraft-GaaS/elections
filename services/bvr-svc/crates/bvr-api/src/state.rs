@@ -27,7 +27,10 @@ pub struct AppState {
 
 impl AppState {
     pub fn new(iprs_base_url: impl Into<String>, store: SharedBvrStore) -> Self {
-        Self { iprs_base_url: iprs_base_url.into(), store }
+        Self {
+            iprs_base_url: iprs_base_url.into(),
+            store,
+        }
     }
 }
 

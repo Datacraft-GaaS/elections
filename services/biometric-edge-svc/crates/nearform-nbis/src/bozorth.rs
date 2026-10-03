@@ -24,14 +24,14 @@
 //! At threshold 45: FAR ~0.1%, FRR ~5% on FVC2002.
 //! At threshold 50: FAR ~0.01% (production grade).
 
-use std::path::{Path, PathBuf};
-use std::process::Command;
-use serde::{Deserialize, Serialize};
-use super::NbError;
-use crate::MatchResult;
+use super::ffi::{bozorth_match, NbisMinutia};
 use super::gallery::CandidateMatch;
 use super::template::{MinutiaType, Template};
-use super::ffi::{bozorth_match, NbisMinutia};
+use super::NbError;
+use crate::MatchResult;
+use serde::{Deserialize, Serialize};
+use std::path::{Path, PathBuf};
+use std::process::Command;
 
 /// In-process Bozorth3 matcher over the linked NBIS static library
 /// (no external binaries needed — contrast the `match_1_to_1` shell-out
@@ -80,7 +80,8 @@ pub fn match_1_to_1(
         return Err(NbError::BinaryNotFound(bin.display().to_string()));
     }
     let out = Command::new(&bin)
-        .arg("-T").arg(format!("{threshold}"))
+        .arg("-T")
+        .arg(format!("{threshold}"))
         .arg(probe)
         .arg(enrolled)
         .output()?;
@@ -117,11 +118,15 @@ pub fn match_1_to_n(
         return Err(NbError::BinaryNotFound(bin.display().to_string()));
     }
     if !gallery_dir.is_dir() {
-        return Err(NbError::Io(format!("gallery not a dir: {}", gallery_dir.display())));
+        return Err(NbError::Io(format!(
+            "gallery not a dir: {}",
+            gallery_dir.display()
+        )));
     }
 
     let out = Command::new(&bin)
-        .arg("-T").arg(format!("{threshold}"))
+        .arg("-T")
+        .arg(format!("{threshold}"))
         .arg("-p") // parallel gallery mode
         .arg(gallery_dir)
         .arg(probe)
@@ -139,7 +144,9 @@ pub fn match_1_to_n(
     let mut candidates = Vec::new();
     for line in stdout.lines() {
         let parts: Vec<&str> = line.split_whitespace().collect();
-        if parts.len() < 2 { continue; }
+        if parts.len() < 2 {
+            continue;
+        }
         let id = parts[0].to_string();
         let score: i32 = parts[1].parse().unwrap_or(0);
         let score_u = score.max(0) as u32;

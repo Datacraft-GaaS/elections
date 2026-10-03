@@ -70,9 +70,16 @@ pub fn build_grafana_panel(matches: &[CorrelationMatch]) -> GrafanaPanelData {
 
 /// Formats a PostgreSQL NOTIFY payload for the ECC LiveView channel.
 /// Does not execute the query; callers integrate with their own PgPool.
-pub fn format_notify_payload(matches: &[CorrelationMatch], channel: &str) -> Result<String, serde_json::Error> {
+pub fn format_notify_payload(
+    matches: &[CorrelationMatch],
+    channel: &str,
+) -> Result<String, serde_json::Error> {
     let payload = serde_json::to_string(matches)?;
-    Ok(format!("NOTIFY \"{}\", '{}'", channel, payload.replace('\'', "''")))
+    Ok(format!(
+        "NOTIFY \"{}\", '{}'",
+        channel,
+        payload.replace('\'', "''")
+    ))
 }
 
 pub async fn publish_to_ecc_channel(

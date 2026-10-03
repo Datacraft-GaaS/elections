@@ -15,7 +15,10 @@
 // portal-api integration tests: rate-limit, cache-poisoning, Merkle round-trip.
 // (M11-SEC-, M11-INT-, M11-UNIT-)
 
-use axum::{body::Body, http::{Request, StatusCode}};
+use axum::{
+    body::Body,
+    http::{Request, StatusCode},
+};
 use tower::ServiceExt;
 
 /// Cache-poisoning defence (AC-M11-05): snapshot responses must carry signing

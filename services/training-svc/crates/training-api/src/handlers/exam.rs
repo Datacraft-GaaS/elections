@@ -15,8 +15,8 @@
 //! HTTP handlers for the online competency exam engine (§3.2).
 
 use crate::exam::{
-    compute_receipt_hash, sample_questions, score_session, ExamBlueprint, ExamResult,
-    ExamSession, Question, RoleLevel, SessionStatus,
+    compute_receipt_hash, sample_questions, score_session, ExamBlueprint, ExamResult, ExamSession,
+    Question, RoleLevel, SessionStatus,
 };
 use crate::store::ExamStore;
 use axum::{
@@ -133,12 +133,17 @@ pub async fn get_blueprints(
         .filter(|b| b.is_active_at(now))
         .collect();
     if let Some(role) = &f.role_code {
-        if let Ok(level) = serde_json::from_value::<RoleLevel>(serde_json::Value::String(role.clone())) {
+        if let Ok(level) =
+            serde_json::from_value::<RoleLevel>(serde_json::Value::String(role.clone()))
+        {
             blueprints.retain(|b| b.role_code == level);
         }
     }
     blueprints.sort_by(|a, b| a.blueprint_id.cmp(&b.blueprint_id));
-    (StatusCode::OK, Json(serde_json::json!({ "blueprints": blueprints })))
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({ "blueprints": blueprints })),
+    )
 }
 
 pub async fn post_question(
@@ -148,7 +153,10 @@ pub async fn post_question(
     info!(question_id=%req.question_id, section=%req.section, "post_question");
     let mut store = s.store.write().await;
     store.questions.insert(req.question_id.clone(), req);
-    (StatusCode::CREATED, Json(serde_json::json!({ "status": "created" })))
+    (
+        StatusCode::CREATED,
+        Json(serde_json::json!({ "status": "created" })),
+    )
 }
 
 pub async fn get_questions(
@@ -156,9 +164,9 @@ pub async fn get_questions(
     Query(f): Query<QuestionFilter>,
 ) -> impl IntoResponse {
     let store = s.store.read().await;
-    let role = f.role_code.and_then(|r| {
-        serde_json::from_value::<RoleLevel>(serde_json::Value::String(r)).ok()
-    });
+    let role = f
+        .role_code
+        .and_then(|r| serde_json::from_value::<RoleLevel>(serde_json::Value::String(r)).ok());
     let mut questions: Vec<&Question> = store
         .questions
         .values()
@@ -168,7 +176,10 @@ pub async fn get_questions(
         .collect();
     questions.sort_by(|a, b| a.question_id.cmp(&b.question_id));
     // Bank administration view: correct indexes included for authoring tools.
-    (StatusCode::OK, Json(serde_json::json!({ "questions": questions })))
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({ "questions": questions })),
+    )
 }
 
 // ---- sessions ----
@@ -228,7 +239,9 @@ pub async fn post_session(
         receipt_hash_hex: None,
     };
     info!(session_id=%session.session_id, application_id=%session.application_id, attempt=session.attempt, "exam session issued");
-    store.sessions.insert(session.session_id.clone(), session.clone());
+    store
+        .sessions
+        .insert(session.session_id.clone(), session.clone());
 
     let issued: Vec<IssuedQuestion> = question_ids
         .iter()
@@ -285,14 +298,20 @@ pub async fn put_answers(
                     return error(StatusCode::CONFLICT, "already_submitted");
                 }
             }
-            return (StatusCode::OK, Json(serde_json::json!({ "status": "idempotent" })));
+            return (
+                StatusCode::OK,
+                Json(serde_json::json!({ "status": "idempotent" })),
+            );
         }
         _ => {}
     }
     for (qid, ans) in req.answers {
         store.answers.insert((id.clone(), qid), ans);
     }
-    (StatusCode::OK, Json(serde_json::json!({ "status": "accepted" })))
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({ "status": "accepted" })),
+    )
 }
 
 /// Submit and auto-score. Deadline is enforced at submit time; late submits
@@ -310,7 +329,10 @@ pub async fn submit_session(
         SessionStatus::Scored => {
             let result = store.results.get(&id).cloned();
             return match result {
-                Some(r) => (StatusCode::OK, Json(serde_json::to_value(r).unwrap_or_default())),
+                Some(r) => (
+                    StatusCode::OK,
+                    Json(serde_json::to_value(r).unwrap_or_default()),
+                ),
                 None => error(StatusCode::INTERNAL_SERVER_ERROR, "result_missing"),
             };
         }
@@ -344,7 +366,10 @@ pub async fn submit_session(
     info!(session_id=%id, total_pct=result.total_pct, passed=result.passed, "exam submitted");
     store.sessions.insert(id.clone(), session);
     store.results.insert(id.clone(), result.clone());
-    (StatusCode::OK, Json(serde_json::to_value(result).unwrap_or_default()))
+    (
+        StatusCode::OK,
+        Json(serde_json::to_value(result).unwrap_or_default()),
+    )
 }
 
 /// Board-override void. NOTE: voiding CONSUMES the attempt — attempts are
@@ -381,7 +406,10 @@ pub async fn get_result(
 ) -> impl IntoResponse {
     let store = s.store.read().await;
     match store.results.get(&session_id) {
-        Some(r) => (StatusCode::OK, Json(serde_json::to_value(r).unwrap_or_default())),
+        Some(r) => (
+            StatusCode::OK,
+            Json(serde_json::to_value(r).unwrap_or_default()),
+        ),
         None => error(StatusCode::NOT_FOUND, "result_not_found"),
     }
 }
@@ -432,5 +460,8 @@ pub async fn paper_batch(
         created.push(result);
     }
     info!(count = created.len(), blueprint_id=%blueprint.blueprint_id, "paper batch imported");
-    (StatusCode::CREATED, Json(serde_json::json!({ "results": created })))
+    (
+        StatusCode::CREATED,
+        Json(serde_json::json!({ "results": created })),
+    )
 }

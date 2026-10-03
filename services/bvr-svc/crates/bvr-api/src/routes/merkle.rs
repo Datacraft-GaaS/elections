@@ -26,7 +26,10 @@ use crate::error::ApiError;
 pub use crate::store::MerkleRootResponse;
 
 pub fn router() -> Router<crate::state::AppState> {
-    Router::new().route("/api/v1/bvr/merkle-root/latest", get(get_latest_merkle_root))
+    Router::new().route(
+        "/api/v1/bvr/merkle-root/latest",
+        get(get_latest_merkle_root),
+    )
 }
 
 async fn get_latest_merkle_root(

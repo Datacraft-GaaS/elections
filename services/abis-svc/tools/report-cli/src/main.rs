@@ -34,7 +34,11 @@ struct Cli {
     token: Option<String>,
 
     /// SPIRE agent socket path
-    #[arg(long, env = "SPIRE_AGENT_SOCKET", default_value = "/run/spire/sockets/agent.sock")]
+    #[arg(
+        long,
+        env = "SPIRE_AGENT_SOCKET",
+        default_value = "/run/spire/sockets/agent.sock"
+    )]
     spire_socket: String,
 
     #[command(subcommand)]
@@ -144,35 +148,43 @@ enum Commands {
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
-    let client = api_client::ReportsClient::new(&cli.api_url, cli.token.as_deref(), &cli.spire_socket)?;
+    let client =
+        api_client::ReportsClient::new(&cli.api_url, cli.token.as_deref(), &cli.spire_socket)?;
 
     match cli.command {
         Commands::List { class, active_only } => {
             commands::list::run(&client, class.as_deref(), active_only).await
         }
-        Commands::Define { file } => {
-            commands::define::run(&client, &file).await
-        }
-        Commands::Run { slug, from, to, format, wait } => {
-            commands::run::run(&client, &slug, &from, &to, &format, wait).await
-        }
-        Commands::Status { run_id } => {
-            commands::status::run(&client, &run_id).await
-        }
-        Commands::Download { artifact_id, out, verify } => {
-            commands::download::run(&client, &artifact_id, &out, verify).await
-        }
+        Commands::Define { file } => commands::define::run(&client, &file).await,
+        Commands::Run {
+            slug,
+            from,
+            to,
+            format,
+            wait,
+        } => commands::run::run(&client, &slug, &from, &to, &format, wait).await,
+        Commands::Status { run_id } => commands::status::run(&client, &run_id).await,
+        Commands::Download {
+            artifact_id,
+            out,
+            verify,
+        } => commands::download::run(&client, &artifact_id, &out, verify).await,
         Commands::Verify { file, artifact_id } => {
             commands::verify::run(&client, &file, &artifact_id).await
         }
-        Commands::Subscribe { subscriber, slug, format, channel, endpoint } => {
-            commands::subscribe::run(&client, &subscriber, &slug, &format, &channel, &endpoint).await
+        Commands::Subscribe {
+            subscriber,
+            slug,
+            format,
+            channel,
+            endpoint,
+        } => {
+            commands::subscribe::run(&client, &subscriber, &slug, &format, &channel, &endpoint)
+                .await
         }
         Commands::Deliveries { run, retry_failed } => {
             commands::deliveries::run(&client, &run, retry_failed).await
         }
-        Commands::Schedule { slug, next } => {
-            commands::schedule::run(&client, &slug, next).await
-        }
+        Commands::Schedule { slug, next } => commands::schedule::run(&client, &slug, next).await,
     }
 }

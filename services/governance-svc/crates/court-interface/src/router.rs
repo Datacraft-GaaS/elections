@@ -40,7 +40,7 @@ pub fn build_router(state: SharedState) -> Router {
             "/court/petitions/{petition_id}/supplementary",
             post(add_supplementary_request),
         )
-    // Public contract endpoints (governance-court/interface.yaml)
+        // Public contract endpoints (governance-court/interface.yaml)
         .route(
             "/api/v1/governance/court/petitions",
             get(list_petitions).post(file_petition),

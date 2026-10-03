@@ -27,8 +27,8 @@ pub mod error;
 pub mod pki;
 pub mod transit;
 
-pub use admin_creds::{AdminCred, issue_admin_cred};
+pub use admin_creds::{issue_admin_cred, AdminCred};
 pub use dynamic_creds::{PgCred, PgDynamicCred};
 pub use error::SecretsError;
-pub use pki::{LeafCert, issue_leaf_cert};
+pub use pki::{issue_leaf_cert, LeafCert};
 pub use transit::Transit;

@@ -26,8 +26,8 @@
 pub mod hash_embedder;
 pub mod model;
 
-pub use model::{EmbeddingModel, LossFamily};
 pub use hash_embedder::HashEmbedder;
+pub use model::{EmbeddingModel, LossFamily};
 
 use thiserror::Error;
 
@@ -82,7 +82,11 @@ pub fn l2_normalise_slice(v: &[f32]) -> Vec<f32> {
 
 /// Cosine similarity between two L2-normalised embeddings.
 pub fn cosine_similarity(a: &[f32], b: &[f32]) -> f32 {
-    a.iter().zip(b.iter()).map(|(x, y)| x * y).sum::<f32>().clamp(-1.0, 1.0)
+    a.iter()
+        .zip(b.iter())
+        .map(|(x, y)| x * y)
+        .sum::<f32>()
+        .clamp(-1.0, 1.0)
 }
 
 /// Cosine distance (1 - similarity) between two L2-normalised embeddings.

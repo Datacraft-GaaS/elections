@@ -24,11 +24,11 @@ use sqlx::{QueryBuilder, Row};
 use uuid::Uuid;
 
 use super::{
-    AccuracyReportOut, AdjudicationCommand, AdjudicationOut, AiStore, AlertQuery,
-    AnomalyAlertOut, AuditEntryOut, AuditQuery, CampaignOut, CampaignQuery, ClosureCommand,
-    DeploymentOut, EventItemIn, FindingOut, IdemRecord, ModelOut, ModelQuery, NewCampaign,
-    NewDeployment, NewFinding, NewModel, NewRetrainJob, Page, ReportQuery, RetrainJobOut,
-    StoreError, SummaryBucket, TurnoutForecastOut,
+    AccuracyReportOut, AdjudicationCommand, AdjudicationOut, AiStore, AlertQuery, AnomalyAlertOut,
+    AuditEntryOut, AuditQuery, CampaignOut, CampaignQuery, ClosureCommand, DeploymentOut,
+    EventItemIn, FindingOut, IdemRecord, ModelOut, ModelQuery, NewCampaign, NewDeployment,
+    NewFinding, NewModel, NewRetrainJob, Page, ReportQuery, RetrainJobOut, StoreError,
+    SummaryBucket, TurnoutForecastOut,
 };
 
 const CONFICT_ACTIVE_JOB: &str = "an active retrain job already exists for this model type";
@@ -52,9 +52,7 @@ impl PgStore {
     /// Builds a lazily connected store; connections are only attempted when
     /// a handler touches the database.
     pub fn connect_lazy(url: &str) -> Result<Self, sqlx::Error> {
-        let pool = PgPoolOptions::new()
-            .max_connections(32)
-            .connect_lazy(url)?;
+        let pool = PgPoolOptions::new().max_connections(32).connect_lazy(url)?;
         Ok(Self { pool })
     }
 }
@@ -107,7 +105,10 @@ impl AiStore for PgStore {
         Ok(())
     }
 
-    async fn list_anomaly_alerts(&self, q: &AlertQuery) -> Result<Page<AnomalyAlertOut>, StoreError> {
+    async fn list_anomaly_alerts(
+        &self,
+        q: &AlertQuery,
+    ) -> Result<Page<AnomalyAlertOut>, StoreError> {
         let total: i64 = {
             let mut qb = QueryBuilder::new("SELECT COUNT(*) FROM ai_anomaly_alerts WHERE 1=1");
             push_alert_filters(&mut qb, q);
@@ -127,11 +128,7 @@ impl AiStore for PgStore {
         qb.push(" OFFSET ");
         qb.push(q.offset);
 
-        let rows = qb
-            .build()
-            .fetch_all(&self.pool)
-            .await
-            .map_err(internal)?;
+        let rows = qb.build().fetch_all(&self.pool).await.map_err(internal)?;
         let mut items = Vec::with_capacity(rows.len());
         for row in rows {
             let alert_id = Uuid::parse_str(row.get::<String, _>("alert_id").as_str())
@@ -150,7 +147,10 @@ impl AiStore for PgStore {
                 confidence_score: row.get("confidence_score"),
             });
         }
-        Ok(Page { items, total_count: total })
+        Ok(Page {
+            items,
+            total_count: total,
+        })
     }
 
     async fn get_anomaly_alert(
@@ -201,12 +201,13 @@ impl AiStore for PgStore {
 
         let mut tx = self.pool.begin().await.map_err(internal)?;
 
-        let exists: Option<Uuid> =
-            sqlx::query_scalar("SELECT alert_id FROM ai_anomaly_alerts WHERE alert_id = $1 FOR UPDATE")
-                .bind(cmd.alert_id)
-                .fetch_optional(&mut *tx)
-                .await
-                .map_err(internal)?;
+        let exists: Option<Uuid> = sqlx::query_scalar(
+            "SELECT alert_id FROM ai_anomaly_alerts WHERE alert_id = $1 FOR UPDATE",
+        )
+        .bind(cmd.alert_id)
+        .fetch_optional(&mut *tx)
+        .await
+        .map_err(internal)?;
         if exists.is_none() {
             return Err(StoreError::NotFound);
         }
@@ -375,7 +376,10 @@ impl AiStore for PgStore {
                 })
             })
             .collect::<Result<Vec<_>, StoreError>>()?;
-        Ok(Page { items, total_count: total })
+        Ok(Page {
+            items,
+            total_count: total,
+        })
     }
 
     async fn create_retrain_job(&self, job: &NewRetrainJob) -> Result<RetrainJobOut, StoreError> {
@@ -404,7 +408,8 @@ impl AiStore for PgStore {
         .map_err(internal)?;
 
         Ok(RetrainJobOut {
-            job_id: Uuid::parse_str(job_id.as_str()).map_err(|e| StoreError::Internal(e.to_string()))?,
+            job_id: Uuid::parse_str(job_id.as_str())
+                .map_err(|e| StoreError::Internal(e.to_string()))?,
             status,
             model_type: job.model_type.clone(),
             submitted_at,
@@ -485,7 +490,10 @@ impl AiStore for PgStore {
             .into_iter()
             .map(parse_campaign_row)
             .collect::<Result<Vec<_>, StoreError>>()?;
-        Ok(Page { items, total_count: total })
+        Ok(Page {
+            items,
+            total_count: total,
+        })
     }
 
     async fn get_campaign(&self, campaign_id: Uuid) -> Result<Option<CampaignOut>, StoreError> {
@@ -511,12 +519,13 @@ impl AiStore for PgStore {
     ) -> Result<FindingOut, StoreError> {
         let mut tx = self.pool.begin().await.map_err(internal)?;
 
-        let status: Option<String> =
-            sqlx::query_scalar("SELECT status FROM ai_redteam_campaigns WHERE campaign_id = $1 FOR UPDATE")
-                .bind(campaign_id)
-                .fetch_optional(&mut *tx)
-                .await
-                .map_err(internal)?;
+        let status: Option<String> = sqlx::query_scalar(
+            "SELECT status FROM ai_redteam_campaigns WHERE campaign_id = $1 FOR UPDATE",
+        )
+        .bind(campaign_id)
+        .fetch_optional(&mut *tx)
+        .await
+        .map_err(internal)?;
         match status.as_deref() {
             None => return Err(StoreError::NotFound),
             Some("running") => {}
@@ -571,12 +580,13 @@ impl AiStore for PgStore {
     ) -> Result<CampaignOut, StoreError> {
         let mut tx = self.pool.begin().await.map_err(internal)?;
 
-        let status: Option<String> =
-            sqlx::query_scalar("SELECT status FROM ai_redteam_campaigns WHERE campaign_id = $1 FOR UPDATE")
-                .bind(campaign_id)
-                .fetch_optional(&mut *tx)
-                .await
-                .map_err(internal)?;
+        let status: Option<String> = sqlx::query_scalar(
+            "SELECT status FROM ai_redteam_campaigns WHERE campaign_id = $1 FOR UPDATE",
+        )
+        .bind(campaign_id)
+        .fetch_optional(&mut *tx)
+        .await
+        .map_err(internal)?;
         match status.as_deref() {
             None => return Err(StoreError::NotFound),
             Some("running") => {}
@@ -641,7 +651,10 @@ impl AiStore for PgStore {
         )
         .bind(model_uuid)
         .bind(&m.registered_by_hash)
-        .bind(format!("{} v{} ({})", m.model_name, m.model_version, m.model_type))
+        .bind(format!(
+            "{} v{} ({})",
+            m.model_name, m.model_version, m.model_type
+        ))
         .execute(&mut *tx)
         .await
         .map_err(internal)?;
@@ -709,7 +722,10 @@ impl AiStore for PgStore {
                 })
             })
             .collect::<Result<Vec<_>, StoreError>>()?;
-        Ok(Page { items, total_count: total })
+        Ok(Page {
+            items,
+            total_count: total,
+        })
     }
 
     async fn get_model(&self, model_id: Uuid) -> Result<Option<ModelOut>, StoreError> {
@@ -747,12 +763,13 @@ impl AiStore for PgStore {
     ) -> Result<DeploymentOut, StoreError> {
         let mut tx = self.pool.begin().await.map_err(internal)?;
 
-        let version: Option<String> =
-            sqlx::query_scalar("SELECT model_version FROM ai_registry_models WHERE model_id = $1 FOR UPDATE")
-                .bind(model_id)
-                .fetch_optional(&mut *tx)
-                .await
-                .map_err(internal)?;
+        let version: Option<String> = sqlx::query_scalar(
+            "SELECT model_version FROM ai_registry_models WHERE model_id = $1 FOR UPDATE",
+        )
+        .bind(model_id)
+        .fetch_optional(&mut *tx)
+        .await
+        .map_err(internal)?;
         let Some(version) = version else {
             return Err(StoreError::NotFound);
         };
@@ -836,7 +853,10 @@ impl AiStore for PgStore {
                 })
             })
             .collect::<Result<Vec<_>, StoreError>>()?;
-        Ok(Page { items, total_count: total })
+        Ok(Page {
+            items,
+            total_count: total,
+        })
     }
 }
 

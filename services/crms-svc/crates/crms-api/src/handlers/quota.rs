@@ -17,9 +17,7 @@
 use super::*;
 
 /// Evaluate the two-thirds gender quota.
-pub async fn evaluate_quota_rule(
-    Json(req): Json<EvaluateQuota>,
-) -> Result<Json<QuotaStatus>> {
+pub async fn evaluate_quota_rule(Json(req): Json<EvaluateQuota>) -> Result<Json<QuotaStatus>> {
     let roster: Vec<(crms_domain::candidate::Gender, bool, &str)> = req
         .candidates
         .iter()

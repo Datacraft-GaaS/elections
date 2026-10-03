@@ -52,19 +52,35 @@ async fn post(uri: &str, body: Value) -> (StatusCode, Value) {
         .await
         .unwrap();
     let status = resp.status();
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
-    (status, serde_json::from_slice(&bytes).unwrap_or(Value::Null))
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    (
+        status,
+        serde_json::from_slice(&bytes).unwrap_or(Value::Null),
+    )
 }
 
 async fn get(uri: &str) -> (StatusCode, Value) {
     let resp = cvr::routes::spec::router()
         .with_state(state())
-        .oneshot(Request::builder().uri(uri).method("GET").body(Body::empty()).unwrap())
+        .oneshot(
+            Request::builder()
+                .uri(uri)
+                .method("GET")
+                .body(Body::empty())
+                .unwrap(),
+        )
         .await
         .unwrap();
     let status = resp.status();
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
-    (status, serde_json::from_slice(&bytes).unwrap_or(Value::Null))
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    (
+        status,
+        serde_json::from_slice(&bytes).unwrap_or(Value::Null),
+    )
 }
 
 #[tokio::test]
@@ -74,7 +90,10 @@ async fn a_lookup_never_claims_a_voter_is_not_registered() {
     let (status, body) = post("/api/v1/cvr/lookups", json!({ "id_number_hash": "abc123" })).await;
     assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
     // The point of the test: nothing in the body asserts a registration status.
-    assert!(body.get("registered").is_none(), "the body must not assert a registration status");
+    assert!(
+        body.get("registered").is_none(),
+        "the body must not assert a registration status"
+    );
     let detail = body["error"].as_str().unwrap_or_default();
     assert!(detail.contains("registration service"), "{detail}");
     assert!(detail.contains("eel_voter_register"), "{detail}");

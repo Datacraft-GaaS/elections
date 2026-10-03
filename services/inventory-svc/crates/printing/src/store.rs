@@ -26,7 +26,9 @@ use serde_json::json;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::spec::{AuditEvent, DeliveryRecord, DeliveryRecordRequest, PrintOrder, PrintOrderRequest, QCDecision};
+use crate::spec::{
+    AuditEvent, DeliveryRecord, DeliveryRecordRequest, PrintOrder, PrintOrderRequest, QCDecision,
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum StoreError {
@@ -141,19 +143,23 @@ impl Store {
                 .await?;
                 Ok(rows
                     .into_iter()
-                    .map(|(oid, eid, pos, cc, qty, proof, sec, status, pref, created, updated)| PrintOrder {
-                        order_id: oid,
-                        election_id: eid,
-                        position_code: pos,
-                        constituency_code: cc,
-                        ballot_quantity: qty,
-                        proof_id: proof,
-                        security_features: serde_json::from_value(sec).unwrap_or_default(),
-                        status,
-                        printer_reference: pref,
-                        created_at: created,
-                        updated_at: updated,
-                    })
+                    .map(
+                        |(oid, eid, pos, cc, qty, proof, sec, status, pref, created, updated)| {
+                            PrintOrder {
+                                order_id: oid,
+                                election_id: eid,
+                                position_code: pos,
+                                constituency_code: cc,
+                                ballot_quantity: qty,
+                                proof_id: proof,
+                                security_features: serde_json::from_value(sec).unwrap_or_default(),
+                                status,
+                                printer_reference: pref,
+                                created_at: created,
+                                updated_at: updated,
+                            }
+                        },
+                    )
                     .collect())
             }
             Self::Mem(m) => {
@@ -173,25 +179,33 @@ impl Store {
                 .bind(id)
                 .fetch_optional(pool)
                 .await?;
-                Ok(row.map(|(oid, eid, pos, cc, qty, proof, sec, status, pref, created, updated)| PrintOrder {
-                    order_id: oid,
-                    election_id: eid,
-                    position_code: pos,
-                    constituency_code: cc,
-                    ballot_quantity: qty,
-                    proof_id: proof,
-                    security_features: serde_json::from_value(sec).unwrap_or_default(),
-                    status,
-                    printer_reference: pref,
-                    created_at: created,
-                    updated_at: updated,
-                }))
+                Ok(row.map(
+                    |(oid, eid, pos, cc, qty, proof, sec, status, pref, created, updated)| {
+                        PrintOrder {
+                            order_id: oid,
+                            election_id: eid,
+                            position_code: pos,
+                            constituency_code: cc,
+                            ballot_quantity: qty,
+                            proof_id: proof,
+                            security_features: serde_json::from_value(sec).unwrap_or_default(),
+                            status,
+                            printer_reference: pref,
+                            created_at: created,
+                            updated_at: updated,
+                        }
+                    },
+                ))
             }
             Self::Mem(m) => Ok(m.orders.get(&id)),
         }
     }
 
-    pub async fn submit_qc(&self, id: Uuid, decision: QCDecision) -> Result<Option<PrintOrder>, StoreError> {
+    pub async fn submit_qc(
+        &self,
+        id: Uuid,
+        decision: QCDecision,
+    ) -> Result<Option<PrintOrder>, StoreError> {
         match self {
             Self::Pg(pool) => {
                 let status = if decision.passed { "qc" } else { "ordered" };
@@ -212,7 +226,11 @@ impl Store {
             Self::Mem(m) => {
                 let res = m.orders.with_lock(|map| {
                     if let Some(o) = map.get_mut(&id) {
-                        o.status = if decision.passed { "qc".to_string() } else { "ordered".to_string() };
+                        o.status = if decision.passed {
+                            "qc".to_string()
+                        } else {
+                            "ordered".to_string()
+                        };
                         o.updated_at = Utc::now();
                         Some(o.clone())
                     } else {
@@ -224,7 +242,10 @@ impl Store {
         }
     }
 
-    pub async fn record_delivery(&self, req: DeliveryRecordRequest) -> Result<DeliveryRecord, StoreError> {
+    pub async fn record_delivery(
+        &self,
+        req: DeliveryRecordRequest,
+    ) -> Result<DeliveryRecord, StoreError> {
         match self {
             Self::Pg(pool) => {
                 // ensure order exists

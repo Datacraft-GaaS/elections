@@ -90,7 +90,10 @@ mod tests {
         let area = std::f64::consts::PI * r * r;
         let perim = 2.0 * std::f64::consts::PI * r;
         let pp = polsby_popper(area, perim);
-        assert!((pp - 1.0).abs() < 1e-10, "circle should score 1.0, got {pp}");
+        assert!(
+            (pp - 1.0).abs() < 1e-10,
+            "circle should score 1.0, got {pp}"
+        );
     }
 
     #[test]

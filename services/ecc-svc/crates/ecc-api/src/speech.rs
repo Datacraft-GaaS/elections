@@ -109,9 +109,15 @@ fn err(status: StatusCode, detail: &str) -> axum::response::Response {
 fn map_store(e: StoreError) -> axum::response::Response {
     match e {
         StoreError::DuplicateMediaItem => err(StatusCode::CONFLICT, "media item already exists"),
-        StoreError::AdjudicationExists => err(StatusCode::CONFLICT, "media item already adjudicated"),
-        StoreError::S44aConfirmationExists => err(StatusCode::CONFLICT, "s44a confirmation already exists"),
-        StoreError::S44aNotAwaitingOfficer2 => err(StatusCode::CONFLICT, "s44a not awaiting officer2"),
+        StoreError::AdjudicationExists => {
+            err(StatusCode::CONFLICT, "media item already adjudicated")
+        }
+        StoreError::S44aConfirmationExists => {
+            err(StatusCode::CONFLICT, "s44a confirmation already exists")
+        }
+        StoreError::S44aNotAwaitingOfficer2 => {
+            err(StatusCode::CONFLICT, "s44a not awaiting officer2")
+        }
         StoreError::Db(_) => err(StatusCode::INTERNAL_SERVER_ERROR, "store unavailable"),
     }
 }
@@ -267,7 +273,10 @@ pub async fn adjudicate_media_item(
     let verdict = row.verdict.clone();
     let referral_agency = row.referral_agency.clone();
     let decided_at = row.decided_at;
-    match store.record_adjudication(&row, &req.grounds, next_status).await {
+    match store
+        .record_adjudication(&row, &req.grounds, next_status)
+        .await
+    {
         Ok(()) => (
             StatusCode::CREATED,
             Json(AdjudicationResult {
@@ -293,10 +302,9 @@ pub async fn get_speech_summary_report(
         .from
         .as_deref()
         .and_then(|d| chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d").ok());
-    let to = q
-        .to
-        .as_deref()
-        .and_then(|d| chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d").ok());
+    let to =
+        q.to.as_deref()
+            .and_then(|d| chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d").ok());
     match store.summary_counts(from, to).await {
         Ok(c) => Json(serde_json::json!({
             "period_from": from.map(|d| d.to_string()),

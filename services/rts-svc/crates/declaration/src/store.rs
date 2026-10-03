@@ -39,10 +39,12 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use crate::aggregate::{Declaration, DeclarationStatus, PetitionWindowStatus, PetitionWindowTracker};
-use eel_eventstore_rs::aggregate::StoredEvent;
+use crate::aggregate::{
+    Declaration, DeclarationStatus, PetitionWindowStatus, PetitionWindowTracker,
+};
 use crate::rules::DeclarationOutcome;
 use eel_eventstore_rs::aggregate::Aggregate;
+use eel_eventstore_rs::aggregate::StoredEvent;
 use uuid::Uuid;
 
 /// One stored declaration and the events that produced it.
@@ -72,22 +74,20 @@ impl AppState {
     }
 
     /// Create a pending declaration and return its id.
-    pub fn initiate(
-        &self,
-        contest_id: &str,
-        election_id: &str,
-        tally_snapshot_id: &str,
-    ) -> String {
+    pub fn initiate(&self, contest_id: &str, election_id: &str, tally_snapshot_id: &str) -> String {
         let stream_id = Uuid::now_v7();
         let id = stream_id.to_string();
         let mut declaration = Declaration::new(stream_id);
         declaration.contest_id = contest_id.to_string();
         declaration.election_id = election_id.to_string();
         declaration.tally_snapshot_id = Some(tally_snapshot_id.to_string());
-        self.declarations
-            .lock()
-            .expect("lock poisoned")
-            .insert(id.clone(), DeclarationRecord { declaration, events: Vec::new() });
+        self.declarations.lock().expect("lock poisoned").insert(
+            id.clone(),
+            DeclarationRecord {
+                declaration,
+                events: Vec::new(),
+            },
+        );
         self.windows
             .lock()
             .expect("lock poisoned")
@@ -99,7 +99,12 @@ impl AppState {
     ///
     /// The aggregate's own `apply` is the only thing that decides state, so the
     /// API cannot set a status the aggregate would not have reached.
-    pub fn apply(&self, declaration_id: &str, event_type: &str, payload: serde_json::Value) -> Result<i64, String> {
+    pub fn apply(
+        &self,
+        declaration_id: &str,
+        event_type: &str,
+        payload: serde_json::Value,
+    ) -> Result<i64, String> {
         let mut guard = self.declarations.lock().expect("lock poisoned");
         let record = guard
             .get_mut(declaration_id)

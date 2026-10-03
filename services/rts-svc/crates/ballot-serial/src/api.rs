@@ -58,22 +58,22 @@ type SharedState = Arc<AppState>;
 
 #[derive(Debug, Deserialize)]
 pub struct AssignSerialRequest {
-    pub lot_id:        String,
-    pub station_code:  String,
-    pub serial_low:    u64,
-    pub serial_high:   u64,
-    pub assigned_by:   String,
-    pub manifest_ref:  String,
-    pub manifest_sig:  String,
+    pub lot_id: String,
+    pub station_code: String,
+    pub serial_low: u64,
+    pub serial_high: u64,
+    pub assigned_by: String,
+    pub manifest_ref: String,
+    pub manifest_sig: String,
 }
 
 #[derive(Debug, Serialize)]
 pub struct AssignSerialResponse {
     pub assignment_id: String,
-    pub station_code:  String,
-    pub serial_low:    u64,
-    pub serial_high:   u64,
-    pub status:        String,
+    pub station_code: String,
+    pub serial_low: u64,
+    pub serial_high: u64,
+    pub status: String,
     /// How many ballots the range covers, inclusive of both bounds.
     pub assigned_count: u64,
     /// Why the manifest signature is not verified here.
@@ -83,47 +83,47 @@ pub struct AssignSerialResponse {
 #[derive(Debug, Deserialize)]
 pub struct ReceiptRequest {
     pub assignment_id: String,
-    pub clerk_id:      String,
-    pub receipt_hash:  String,
+    pub clerk_id: String,
+    pub receipt_hash: String,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct SpoiltRequest {
-    pub station_code:       String,
-    pub spoilt_serial:      u64,
+    pub station_code: String,
+    pub spoilt_serial: u64,
     pub replacement_serial: Option<u64>,
-    pub reason:             String,
-    pub clerk_id:           String,
+    pub reason: String,
+    pub clerk_id: String,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct ReconcileRequest {
-    pub station_code:    String,
-    pub election_id:     String,
+    pub station_code: String,
+    pub election_id: String,
     pub deposited_count: u64,
-    pub spoilt_count:    u64,
+    pub spoilt_count: u64,
 }
 
 #[derive(Debug, Serialize)]
 pub struct ReconcileResponse {
     pub reconciliation_id: String,
-    pub station_code:      String,
-    pub status:            String,
-    pub result_hold:       bool,
-    pub flag_reason:       Option<String>,
+    pub station_code: String,
+    pub status: String,
+    pub result_hold: bool,
+    pub flag_reason: Option<String>,
     /// The arithmetic the result came from, so a reader can check it.
-    pub assigned_count:    u64,
-    pub deposited_count:   u64,
-    pub spoilt_count:      u64,
-    pub unused_count:      u64,
-    pub discrepancy:       i64,
+    pub assigned_count: u64,
+    pub deposited_count: u64,
+    pub spoilt_count: u64,
+    pub unused_count: u64,
+    pub discrepancy: i64,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct ResolveHoldRequest {
-    pub resolved_by_po:  String,
+    pub resolved_by_po: String,
     pub resolved_by_cro: String,
-    pub reason:          String,
+    pub reason: String,
 }
 
 // ---- helpers ----------------------------------------------------------------
@@ -187,7 +187,10 @@ async fn assign_serial(
     }
     let stream_id = {
         state.register(&req.station_code);
-        state.get(&req.station_code).map(|r| r.serial.stream_id).unwrap_or_else(Uuid::now_v7)
+        state
+            .get(&req.station_code)
+            .map(|r| r.serial.stream_id)
+            .unwrap_or_else(Uuid::now_v7)
     };
     let payload = serde_json::json!({
         "station_code": req.station_code,
@@ -202,7 +205,12 @@ async fn assign_serial(
     }
     let record = match state.get(&req.station_code) {
         Some(r) => r,
-        None => return problem(StatusCode::INTERNAL_SERVER_ERROR, "assignment was not stored"),
+        None => {
+            return problem(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "assignment was not stored",
+            )
+        }
     };
     (
         StatusCode::CREATED,
@@ -264,7 +272,11 @@ async fn confirm_receipt(
     // Find the station this assignment belongs to. Previously any id was
     // accepted, so a receipt could be confirmed against an assignment that did
     // not exist.
-    let Some(record) = state.all_sorted().into_iter().find(|r| r.serial.stream_id.to_string() == req.assignment_id) else {
+    let Some(record) = state
+        .all_sorted()
+        .into_iter()
+        .find(|r| r.serial.stream_id.to_string() == req.assignment_id)
+    else {
         return problem(
             StatusCode::NOT_FOUND,
             format!("no ballot-serial assignment with id {}", req.assignment_id),
@@ -303,7 +315,10 @@ async fn record_spoilt(
     let Some(record) = state.get(&req.station_code) else {
         return problem(
             StatusCode::NOT_FOUND,
-            format!("no ballot-serial assignment for station {}", req.station_code),
+            format!(
+                "no ballot-serial assignment for station {}",
+                req.station_code
+            ),
         );
     };
     // FR-M63-014: a serial must fall inside the range the station was issued.
@@ -324,7 +339,10 @@ async fn record_spoilt(
     if record.serial.spoilt_serials.contains(&req.spoilt_serial) {
         return problem(
             StatusCode::CONFLICT,
-            format!("serial {} has already been recorded as spoilt", req.spoilt_serial),
+            format!(
+                "serial {} has already been recorded as spoilt",
+                req.spoilt_serial
+            ),
         );
     }
     if req.reason.trim().is_empty() {
@@ -360,7 +378,10 @@ async fn trigger_reconciliation(
     let Some(record) = state.get(&req.station_code) else {
         return problem(
             StatusCode::NOT_FOUND,
-            format!("no ballot-serial assignment for station {}", req.station_code),
+            format!(
+                "no ballot-serial assignment for station {}",
+                req.station_code
+            ),
         );
     };
     info!(station_code = %req.station_code, "ballot-serial: reconcile");
@@ -403,7 +424,11 @@ async fn trigger_reconciliation(
     if let Some(reason) = &result.flag_reason {
         payload["flag_reason"] = serde_json::json!(reason);
     }
-    if let Err(e) = state.apply(&req.station_code, EVENT_RECONCILIATION_STARTED, payload.clone()) {
+    if let Err(e) = state.apply(
+        &req.station_code,
+        EVENT_RECONCILIATION_STARTED,
+        payload.clone(),
+    ) {
         return problem(StatusCode::INTERNAL_SERVER_ERROR, e);
     }
     if let Err(e) = state.apply(&req.station_code, event_type, payload) {
@@ -520,11 +545,17 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/v1/ballot-serial/assignments", get(list_assignments))
         .route("/api/v1/ballot-serial/receipts", post(confirm_receipt))
         .route("/api/v1/ballot-serial/spoilt", post(record_spoilt))
-        .route("/api/v1/ballot-serial/reconcile", post(trigger_reconciliation))
+        .route(
+            "/api/v1/ballot-serial/reconcile",
+            post(trigger_reconciliation),
+        )
         .route(
             "/api/v1/ballot-serial/reconcile/{station_id}",
             get(get_reconciliation),
         )
-        .route("/api/v1/ballot-serial/reconcile/{id}/resolve", put(resolve_hold))
+        .route(
+            "/api/v1/ballot-serial/reconcile/{id}/resolve",
+            put(resolve_hold),
+        )
         .with_state(state)
 }

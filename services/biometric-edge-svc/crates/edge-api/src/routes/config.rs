@@ -17,12 +17,7 @@
 //!
 //! Proxies a bvi-config bundle download from bvi-svc and verifies
 //! the Ed25519 signature on the manifest before forwarding to the kit.
-use axum::{
-    extract::Path,
-    http::StatusCode,
-    routing::get,
-    Json, Router,
-};
+use axum::{extract::Path, http::StatusCode, routing::get, Json, Router};
 use serde::Serialize;
 
 use crate::error::ApiError;

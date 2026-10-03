@@ -122,10 +122,7 @@ fn build_sql(q: &TelemetryQuery, scan_order: &ScanOrder) -> String {
             .iter()
             .map(|sc| format!("'{}'", signal_class_str(sc)))
             .collect();
-        wheres.push(format!(
-            "signal_class = ANY(ARRAY[{}])",
-            classes.join(",")
-        ));
+        wheres.push(format!("signal_class = ANY(ARRAY[{}])", classes.join(",")));
     }
 
     if let Some(poly) = &q.geo_polygon {

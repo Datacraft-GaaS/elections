@@ -25,6 +25,6 @@ pub mod domain;
 pub mod error;
 pub mod resolver;
 
+pub use cluster::connected_components;
 pub use domain::{ClusterRecord, ClusterResolution, MatchEdge};
 pub use error::ClusterError;
-pub use cluster::connected_components;

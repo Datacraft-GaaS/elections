@@ -92,10 +92,19 @@ fn build_router_inner(store: Store, whatsapp_app_secret: Option<String>) -> Rout
         .route("/ecc/events/observer", get(crate::sse::observer_stream))
         .route("/ecc/events/journalist", get(crate::sse::journalist_stream))
         // Speech integrity (M17) public contract
-        .route("/speech/media-items", get(speech::list_media_items).post(speech::submit_media_item))
+        .route(
+            "/speech/media-items",
+            get(speech::list_media_items).post(speech::submit_media_item),
+        )
         .route("/speech/media-items/{item_id}", get(speech::get_media_item))
-        .route("/speech/media-items/{item_id}/adjudications", post(speech::adjudicate_media_item))
-        .route("/speech/reports/summary", get(speech::get_speech_summary_report))
+        .route(
+            "/speech/media-items/{item_id}/adjudications",
+            post(speech::adjudicate_media_item),
+        )
+        .route(
+            "/speech/reports/summary",
+            get(speech::get_speech_summary_report),
+        )
         .with_state(store)
         .layer(Extension(records))
         .layer(axum::Extension(whatsapp_app_secret))

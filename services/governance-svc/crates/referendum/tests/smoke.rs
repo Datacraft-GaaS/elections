@@ -31,7 +31,7 @@ fn county_threshold_invariants() {
     assert!(!can_declare(23, 51, 49)); // county short
     assert!(!can_declare(24, 50, 50)); // national short
     assert!(can_declare(24, 51, 49)); // both met
-    // ExactMajority: 50%+1 strictly
+                                      // ExactMajority: 50%+1 strictly
     assert!(!meets_national_majority(50, 50));
     assert!(meets_national_majority(51, 49));
 }
@@ -43,8 +43,12 @@ fn county_threshold_monotone() {
     let mut met = false;
     for c in 0u8..=47 {
         let cur = meets_county_threshold(c);
-        if met { assert!(cur, "non-monotone at {c}"); }
-        if cur && !met { met = true; }
+        if met {
+            assert!(cur, "non-monotone at {c}");
+        }
+        if cur && !met {
+            met = true;
+        }
     }
     assert!(met);
 }
@@ -56,6 +60,10 @@ fn all_47_county_combos_satisfy_invariant() {
     for c in 0u8..=47 {
         assert!(county_count_valid(c));
         let expected = c >= 24;
-        assert_eq!(meets_county_threshold(c), expected, "failed at county count {c}");
+        assert_eq!(
+            meets_county_threshold(c),
+            expected,
+            "failed at county count {c}"
+        );
     }
 }

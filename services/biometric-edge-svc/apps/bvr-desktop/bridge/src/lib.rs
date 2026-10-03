@@ -51,11 +51,11 @@ type size_t = usize;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 
 use eel_bvr_store_rs::{CaptureMethod, Provenance, Purpose, Store};
-use sensor_driver::BiometricSensorDriver;
 use eel_bvr_workflow_rs::validate::Submission;
 use eel_bvr_workflow_rs::{
-    CompiledWorkflow, ValidationError, WorkflowSpec, compile, validate_submission,
+    compile, validate_submission, CompiledWorkflow, ValidationError, WorkflowSpec,
 };
+use sensor_driver::BiometricSensorDriver;
 use serde_json::Value;
 
 /// Opaque compiled workflow handle.
@@ -283,7 +283,9 @@ pub unsafe extern "C" fn eel_workflow_step_label(
         }
         let handle: &EelWorkflow = unsafe { &*wf };
         match handle.compiled.steps.get(index) {
-            Some(step) => CString::new(step.display_label.clone()).unwrap_or_default().into_raw(),
+            Some(step) => CString::new(step.display_label.clone())
+                .unwrap_or_default()
+                .into_raw(),
             None => {
                 unsafe { give_error(err, format!("step index {index} out of range")) };
                 std::ptr::null_mut()
@@ -531,7 +533,10 @@ pub unsafe extern "C" fn eel_store_append(
     err: *mut *mut c_char,
 ) -> i32 {
     let outcome = catch_unwind(AssertUnwindSafe(|| {
-        unsafe { clear(err); clear(out_id) };
+        unsafe {
+            clear(err);
+            clear(out_id)
+        };
         if store.is_null() {
             unsafe { give_error(err, "store handle is null") };
             return -1;
@@ -668,7 +673,7 @@ pub unsafe extern "C" fn eel_store_pending_batch(
                     "records": batch.records,
                     "merkle_root": batch.merkle_root,
                 });
-                        return_string(payload.to_string())
+                return_string(payload.to_string())
             }
             None => {
                 unsafe { give_error(err, "no unsynced records") };
@@ -740,7 +745,10 @@ pub unsafe extern "C" fn eel_store_mark_synced(
 /// # Safety
 /// `store` a live handle, `out` and `err` writable `char *`.
 #[no_mangle]
-pub unsafe extern "C" fn eel_store_sync_state(store: *const EelStore, err: *mut *mut c_char) -> *mut c_char {
+pub unsafe extern "C" fn eel_store_sync_state(
+    store: *const EelStore,
+    err: *mut *mut c_char,
+) -> *mut c_char {
     let outcome = catch_unwind(AssertUnwindSafe(|| {
         unsafe { clear(err) };
         if store.is_null() {
@@ -955,9 +963,10 @@ fn sensor() -> Option<&'static (dyn BiometricSensorDriver + 'static)> {
             if !USE_MOCK.load(std::sync::atomic::Ordering::SeqCst) {
                 return None;
             }
-            Some(Box::new(
-                sensor_driver::MockSensorDriver::present("bvr-desktop-mock", 90),
-            ) as Box<dyn BiometricSensorDriver>)
+            Some(Box::new(sensor_driver::MockSensorDriver::present(
+                "bvr-desktop-mock",
+                90,
+            )) as Box<dyn BiometricSensorDriver>)
         })
         .as_deref()
 }
@@ -1029,10 +1038,7 @@ pub unsafe extern "C" fn eel_sensor_modality_name(
 /// # Safety
 /// `err` must be a writable `char *`.
 #[no_mangle]
-pub unsafe extern "C" fn eel_sensor_supports(
-    index: size_t,
-    err: *mut *mut c_char,
-) -> i32 {
+pub unsafe extern "C" fn eel_sensor_supports(index: size_t, err: *mut *mut c_char) -> i32 {
     let outcome = catch_unwind(AssertUnwindSafe(|| {
         unsafe { clear(err) };
         match (unsafe { modality_at(index, err) }, sensor()) {
@@ -1057,10 +1063,7 @@ pub unsafe extern "C" fn eel_sensor_supports(
 /// # Safety
 /// `err` must be a writable `char *`.
 #[no_mangle]
-pub unsafe extern "C" fn eel_sensor_collection_mode(
-    index: size_t,
-    err: *mut *mut c_char,
-) -> i32 {
+pub unsafe extern "C" fn eel_sensor_collection_mode(index: size_t, err: *mut *mut c_char) -> i32 {
     let outcome = catch_unwind(AssertUnwindSafe(|| {
         unsafe { clear(err) };
         match unsafe { modality_at(index, err) } {
@@ -1086,7 +1089,10 @@ pub unsafe extern "C" fn eel_sensor_capture(
     err: *mut *mut c_char,
 ) -> i32 {
     let outcome = catch_unwind(AssertUnwindSafe(|| {
-        unsafe { clear(err); clear(out) };
+        unsafe {
+            clear(err);
+            clear(out)
+        };
         let Some(modality) = (unsafe { modality_at(index, err) }) else {
             return -1;
         };
@@ -1158,7 +1164,10 @@ pub unsafe extern "C" fn eel_workflow_validate(
 ) -> i32 {
     use eel_bvr_workflow_rs::CaptureKind;
     let outcome = catch_unwind(AssertUnwindSafe(|| {
-        unsafe { clear(err); clear(out_violations) };
+        unsafe {
+            clear(err);
+            clear(out_violations)
+        };
         if wf.is_null() {
             unsafe { give_error(err, "workflow handle is null") };
             return -1;
@@ -1176,11 +1185,12 @@ pub unsafe extern "C" fn eel_workflow_validate(
             serde_json::from_str::<Vec<String>>(unsafe { as_str(captured_json) }.unwrap_or("[]"))
                 .unwrap_or_default()
                 .iter()
-                .filter_map(|s| serde_json::from_value::<CaptureKind>(Value::String(s.clone())).ok())
+                .filter_map(|s| {
+                    serde_json::from_value::<CaptureKind>(Value::String(s.clone())).ok()
+                })
                 .collect();
 
-        let result =
-            validate_submission(&handle.compiled, &submission, &captured);
+        let result = validate_submission(&handle.compiled, &submission, &captured);
         if result.is_ok() {
             unsafe { give_string(out_violations, "[]".to_owned()) };
             return 0;

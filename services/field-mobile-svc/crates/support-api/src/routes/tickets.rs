@@ -86,10 +86,7 @@ pub async fn create_ticket(
     )
 }
 
-pub async fn get_ticket(
-    state: State<AppState>,
-    Path(id): Path<Uuid>,
-) -> (StatusCode, Json<Value>) {
+pub async fn get_ticket(state: State<AppState>, Path(id): Path<Uuid>) -> (StatusCode, Json<Value>) {
     let Ok(store) = state.tickets.lock() else {
         return (
             StatusCode::INTERNAL_SERVER_ERROR,

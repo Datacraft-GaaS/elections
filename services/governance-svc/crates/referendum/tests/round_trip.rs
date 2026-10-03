@@ -45,7 +45,12 @@ async fn body_json(resp: axum::response::Response) -> Value {
     serde_json::from_slice(&bytes).unwrap_or(Value::Null)
 }
 
-async fn send(app: &axum::Router, method: &str, uri: &str, body: Option<Value>) -> axum::response::Response {
+async fn send(
+    app: &axum::Router,
+    method: &str,
+    uri: &str,
+    body: Option<Value>,
+) -> axum::response::Response {
     let mut b = Request::builder().method(method).uri(uri);
     let payload = match body {
         Some(v) => {
@@ -69,7 +74,11 @@ async fn referendum(app: &axum::Router) -> String {
         })),
     )
     .await;
-    assert_eq!(resp.status(), StatusCode::CREATED, "create_referendum must work");
+    assert_eq!(
+        resp.status(),
+        StatusCode::CREATED,
+        "create_referendum must work"
+    );
     let created = body_json(resp).await;
     assert_eq!(created["referendum"]["county_threshold"], 24);
     let id = id_of(created["referendum"]["id"].as_str());
@@ -138,11 +147,20 @@ async fn national_aggregate_is_computed_from_submitted_county_results() {
     submit(&app, &id, "003", 550, 450).await;
 
     let national = body_json(
-        send(&app, "GET", &format!("/v1/referendums/{id}/national-result"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/v1/referendums/{id}/national-result"),
+            None,
+        )
+        .await,
     )
     .await;
     assert_eq!(national["counties_reported"], 3);
-    assert_eq!(national["counties_yes_majority"], 2, "001 and 003 carried YES");
+    assert_eq!(
+        national["counties_yes_majority"], 2,
+        "001 and 003 carried YES"
+    );
     assert_eq!(national["total_yes"], 1450);
     assert_eq!(national["total_no"], 1550);
     assert_eq!(
@@ -232,7 +250,13 @@ async fn declaration_is_permitted_once_both_thresholds_are_met() {
     submit(&app, &id, "025", 100, 900).await;
 
     let national = body_json(
-        send(&app, "GET", &format!("/v1/referendums/{id}/national-result"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/v1/referendums/{id}/national-result"),
+            None,
+        )
+        .await,
     )
     .await;
     assert_eq!(national["meets_county_threshold"], true);
@@ -267,7 +291,13 @@ async fn results_do_not_leak_across_referendums() {
     let b = referendum(&app).await;
     submit(&app, &a, "001", 600, 400).await;
     let b_national = body_json(
-        send(&app, "GET", &format!("/v1/referendums/{b}/national-result"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/v1/referendums/{b}/national-result"),
+            None,
+        )
+        .await,
     )
     .await;
     assert_eq!(

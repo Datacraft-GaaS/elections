@@ -69,11 +69,9 @@ pub struct SupplementaryInput {
     pub requested_by: String,
 }
 
-
 pub async fn health() -> impl IntoResponse {
     StatusCode::OK
 }
-
 
 pub async fn request_evidence(
     State(state): State<SharedState>,
@@ -181,9 +179,7 @@ pub async fn list_witnesses(
     require_petition(&state, &petition_id)?;
     // Real. Previously always an empty array, which asserted that no witness was
     // registered to the petition rather than that nothing was stored.
-    let witnesses = state
-        .witnesses
-        .list_where(|w| w.petition_id == petition_id);
+    let witnesses = state.witnesses.list_where(|w| w.petition_id == petition_id);
     Ok(Json(serde_json::json!({ "witnesses": witnesses })).into_response())
 }
 
@@ -246,7 +242,9 @@ pub async fn list_petitions(State(state): State<SharedState>) -> impl IntoRespon
     let mut items: Vec<spec::PetitionRecord> = guard.values().cloned().collect();
     drop(guard);
     items.sort_by(|a, b| a.filed_at.cmp(&b.filed_at));
-    Json(serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }))
+    Json(
+        serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }),
+    )
 }
 
 /// GET /api/v1/governance/court/petitions/{petition_id} — fetch one petition.
@@ -274,7 +272,12 @@ pub async fn create_evidence_request(
     Json(req): Json<spec::EvidenceRequestInput>,
 ) -> impl IntoResponse {
     info!(petition_id, "create_evidence_request");
-    if !state.petitions.lock().expect("lock poisoned").contains_key(&petition_id) {
+    if !state
+        .petitions
+        .lock()
+        .expect("lock poisoned")
+        .contains_key(&petition_id)
+    {
         return (
             StatusCode::NOT_FOUND,
             Json(serde_json::json!({"detail": "petition not found"})),

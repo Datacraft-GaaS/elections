@@ -32,8 +32,7 @@ async fn main() -> anyhow::Result<()> {
     let state = Arc::new(crms_api::AppState::new());
     let app = crms_api::build_router(state);
 
-    let http_addr =
-        std::env::var("HTTP_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".to_string());
+    let http_addr = std::env::var("HTTP_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".to_string());
 
     let server = ApiServer::builder()
         .otel_service_name("crms-api")

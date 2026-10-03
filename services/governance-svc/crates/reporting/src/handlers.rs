@@ -199,7 +199,10 @@ pub async fn record_judiciary_handover(
 ) -> axum::response::Response {
     info!(report_id = %req.report_id, "record_judiciary_handover");
     if req.recipient_court.trim().is_empty() {
-        return problem(StatusCode::UNPROCESSABLE_ENTITY, "recipient_court is required");
+        return problem(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "recipient_court is required",
+        );
     }
     let Some(status) = state.report_status(&req.report_id) else {
         return problem(
@@ -249,7 +252,10 @@ pub async fn register_sc_it(
 ) -> axum::response::Response {
     info!(report_id = %req.report_id, "register_sc_it");
     if req.sc_it_contact.trim().is_empty() {
-        return problem(StatusCode::UNPROCESSABLE_ENTITY, "sc_it_contact is required");
+        return problem(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "sc_it_contact is required",
+        );
     }
     let Some(status) = state.report_status(&req.report_id) else {
         return problem(
@@ -294,7 +300,9 @@ pub async fn list_parliamentary_reports(State(state): State<SharedState>) -> imp
     let mut items: Vec<spec::ReportJob> = guard.values().cloned().collect();
     drop(guard);
     items.sort_by(|a, b| a.created_at.cmp(&b.created_at));
-    Json(serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }))
+    Json(
+        serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }),
+    )
 }
 
 /// POST /api/v1/governance/reporting/parliamentary-reports — generate a report.
@@ -368,5 +376,7 @@ pub async fn list_oag_submissions(State(state): State<SharedState>) -> impl Into
     let mut items: Vec<spec::OagSubmission> = guard.values().cloned().collect();
     drop(guard);
     items.sort_by(|a, b| a.created_at.cmp(&b.created_at));
-    Json(serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }))
+    Json(
+        serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }),
+    )
 }

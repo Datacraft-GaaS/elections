@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use sqlx::PgPool;
 use crate::error::ObservabilityError;
+use sqlx::PgPool;
 
 /// SQL for creating an audit shadow trigger on the given table.
 ///
 /// The trigger fires AFTER INSERT/UPDATE/DELETE and inserts a row into
 /// `audit.<table>_history` with (op, old_row, new_row, changed_by, changed_at, request_id).
 pub fn audit_shadow_sql(table_name: &str) -> String {
-	let history_table = format!("audit.{table_name}_history");
-	format!(
-		r#"
+    let history_table = format!("audit.{table_name}_history");
+    format!(
+        r#"
 -- Audit shadow for {table_name}
 CREATE SCHEMA IF NOT EXISTS audit;
 
@@ -56,21 +56,21 @@ CREATE TRIGGER audit_shadow
     AFTER INSERT OR UPDATE OR DELETE ON {table_name}
     FOR EACH ROW EXECUTE FUNCTION audit.shadow_{table_name}();
 "#
-	)
+    )
 }
 
 /// Install the audit shadow trigger for a table on the given pool.
 ///
 /// Skips gracefully if the table does not exist.
 pub async fn install_audit_shadow(
-	pool: &PgPool,
-	table_name: &str,
+    pool: &PgPool,
+    table_name: &str,
 ) -> Result<(), ObservabilityError> {
-	let sql = audit_shadow_sql(table_name);
-	sqlx::raw_sql(&sql)
-		.execute(pool)
-		.await
-		.map_err(|e| ObservabilityError::SqlMigration(e.to_string()))?;
-	tracing::info!(table = table_name, "audit_shadow_installed");
-	Ok(())
+    let sql = audit_shadow_sql(table_name);
+    sqlx::raw_sql(&sql)
+        .execute(pool)
+        .await
+        .map_err(|e| ObservabilityError::SqlMigration(e.to_string()))?;
+    tracing::info!(table = table_name, "audit_shadow_installed");
+    Ok(())
 }

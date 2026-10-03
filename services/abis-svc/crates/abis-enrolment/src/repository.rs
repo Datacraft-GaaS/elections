@@ -120,10 +120,13 @@ pub async fn insert_decision(
     pool: &PgPool,
     decision: &EnrolmentDecision,
 ) -> Result<(), EnrolmentError> {
-    let previous = serde_json::to_value(&decision.previous_records
-        .iter()
-        .map(|u| u.to_string())
-        .collect::<Vec<_>>())?;
+    let previous = serde_json::to_value(
+        &decision
+            .previous_records
+            .iter()
+            .map(|u| u.to_string())
+            .collect::<Vec<_>>(),
+    )?;
 
     sqlx::query(
         r#"

@@ -21,7 +21,7 @@ use rdkafka::{
     config::ClientConfig,
     consumer::{Consumer, StreamConsumer},
     producer::{BaseProducer, BaseRecord, Producer},
-    Message, TopicPartitionList, Offset,
+    Message, Offset, TopicPartitionList,
 };
 use std::time::Duration;
 use tracing::{error, info, instrument};
@@ -80,19 +80,12 @@ impl ExactlyOnceConsumer {
     /// to `topic` before the transaction commits. The source offset is always
     /// committed inside the transaction.
     #[instrument(skip(self, handler))]
-    pub async fn process_one<F, Fut>(
-        &self,
-        handler: F,
-    ) -> Result<(), EventStoreError>
+    pub async fn process_one<F, Fut>(&self, handler: F) -> Result<(), EventStoreError>
     where
         F: FnOnce(Vec<u8>) -> Fut,
         Fut: std::future::Future<Output = Result<Option<(String, Vec<u8>)>, EventStoreError>>,
     {
-        let msg = self
-            .consumer
-            .recv()
-            .await
-            .map_err(EventStoreError::Kafka)?;
+        let msg = self.consumer.recv().await.map_err(EventStoreError::Kafka)?;
 
         let payload = msg.payload().unwrap_or_default().to_vec();
         let topic = msg.topic().to_owned();
@@ -106,11 +99,7 @@ impl ExactlyOnceConsumer {
         match handler(payload).await {
             Ok(Some((out_topic, out_payload))) => {
                 self.producer
-                    .send(
-                        BaseRecord::to(&out_topic)
-                            .payload(&out_payload)
-                            .key(""),
-                    )
+                    .send(BaseRecord::to(&out_topic).payload(&out_payload).key(""))
                     .map_err(|(e, _)| EventStoreError::Kafka(e))?;
             }
             Ok(None) => {}
@@ -128,12 +117,11 @@ impl ExactlyOnceConsumer {
             .add_partition_offset(&topic, partition, Offset::Offset(offset + 1))
             .map_err(EventStoreError::Kafka)?;
 
-        let group_meta = self
-            .consumer
-            .group_metadata()
-            .ok_or_else(|| EventStoreError::Kafka(rdkafka::error::KafkaError::ConsumerCommit(
+        let group_meta = self.consumer.group_metadata().ok_or_else(|| {
+            EventStoreError::Kafka(rdkafka::error::KafkaError::ConsumerCommit(
                 rdkafka::types::RDKafkaErrorCode::UnknownMemberId,
-            )))?;
+            ))
+        })?;
 
         self.producer
             .send_offsets_to_transaction(&offsets, &group_meta, Duration::from_secs(5))

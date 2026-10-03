@@ -57,8 +57,7 @@ struct WitnessKeyRow {
 
 /// Parse a registered witness key: 32 raw Ed25519 bytes, hex encoded.
 fn parse_witness_key(public_key_hex: &str) -> Result<VerifyingKey> {
-    let bytes = hex::decode(public_key_hex.trim())
-        .context("witness public key is not hex")?;
+    let bytes = hex::decode(public_key_hex.trim()).context("witness public key is not hex")?;
     let arr: [u8; 32] = bytes
         .try_into()
         .map_err(|_| anyhow::anyhow!("witness public key must be exactly 32 bytes"))?;
@@ -115,7 +114,13 @@ fn split_views(sths: &[SthRow]) -> Vec<(i64, Vec<String>)> {
 pub async fn run(api_url: &str) -> Result<()> {
     let client = reqwest::Client::new();
     let url = format!("{}/api/v1/transparency/witnesses/report?limit=200", api_url);
-    let report: Report = client.get(&url).send().await?.error_for_status()?.json().await?;
+    let report: Report = client
+        .get(&url)
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
 
     println!("Witnesses: {}", report.witnesses.len());
     println!("STHs in window: {}", report.sths.len());
@@ -125,7 +130,12 @@ pub async fn run(api_url: &str) -> Result<()> {
     let splits = split_views(&report.sths);
     if !splits.is_empty() {
         for (size, roots) in &splits {
-            eprintln!("SPLIT VIEW at tree_size {}: {} distinct roots {:?}", size, roots.len(), roots);
+            eprintln!(
+                "SPLIT VIEW at tree_size {}: {} distinct roots {:?}",
+                size,
+                roots.len(),
+                roots
+            );
         }
         bail!("split view detected: refusing to certify witness consistency");
     }
@@ -136,8 +146,7 @@ pub async fn run(api_url: &str) -> Result<()> {
         .map(|w| Ok((w.witness_id.as_str(), parse_witness_key(&w.public_key_hex)?)))
         .collect::<Result<_>>()?;
 
-    let sth_by_id: HashMap<Uuid, &SthRow> =
-        report.sths.iter().map(|s| (s.id, s)).collect();
+    let sth_by_id: HashMap<Uuid, &SthRow> = report.sths.iter().map(|s| (s.id, s)).collect();
 
     let mut verified = 0usize;
     let mut failures: Vec<String> = Vec::new();
@@ -233,10 +242,7 @@ mod tests {
         ];
         assert!(split_views(&clean).is_empty());
 
-        let forked = vec![
-            mk(Uuid::now_v7(), 12, "cc"),
-            mk(Uuid::now_v7(), 12, "dd"),
-        ];
+        let forked = vec![mk(Uuid::now_v7(), 12, "cc"), mk(Uuid::now_v7(), 12, "dd")];
         let flagged = split_views(&forked);
         assert_eq!(flagged.len(), 1);
         assert_eq!(flagged[0].0, 12);

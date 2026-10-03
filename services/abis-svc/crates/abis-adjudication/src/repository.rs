@@ -29,9 +29,13 @@ pub async fn insert_case(pool: &PgPool, case: &AdjudicationCase) -> Result<(), A
     let tier = format!("{:?}", case.tier);
     let state = case_state_str(&case.state);
     let enrolment_job_id = case.enrolment_job_id;
-    let probable_ids: Vec<String> =
-        case.probable_match_subject_ids.iter().map(|u| u.to_string()).collect();
-    let probable_json = serde_json::to_value(&probable_ids).unwrap_or(serde_json::Value::Array(vec![]));
+    let probable_ids: Vec<String> = case
+        .probable_match_subject_ids
+        .iter()
+        .map(|u| u.to_string())
+        .collect();
+    let probable_json =
+        serde_json::to_value(&probable_ids).unwrap_or(serde_json::Value::Array(vec![]));
 
     sqlx::query(
         r#"
@@ -88,7 +92,10 @@ pub async fn update_case_state(
 }
 
 /// Fetch cases ordered by priority (ElectionDayHold first) and SLA deadline.
-pub async fn fetch_open_cases(pool: &PgPool, limit: i64) -> Result<Vec<CaseRow>, AdjudicationError> {
+pub async fn fetch_open_cases(
+    pool: &PgPool,
+    limit: i64,
+) -> Result<Vec<CaseRow>, AdjudicationError> {
     let rows = sqlx::query_as::<_, CaseRow>(
         r#"
         SELECT id, state, priority, tier, assigned_to, sla_deadline_at, opened_at

@@ -37,9 +37,7 @@ pub async fn create_party(
 }
 
 /// List political parties.
-pub async fn list_parties(
-    State(state): State<Arc<AppState>>,
-) -> Result<Json<Vec<PoliticalParty>>> {
+pub async fn list_parties(State(state): State<Arc<AppState>>) -> Result<Json<Vec<PoliticalParty>>> {
     let all = state
         .parties
         .lock()
@@ -71,9 +69,7 @@ pub async fn submit_party(
     Path(id): Path<Uuid>,
 ) -> Result<Json<PoliticalParty>> {
     let mut guard = state.parties.lock().map_err(|_| lock_err())?;
-    let party = guard
-        .get_mut(&id)
-        .ok_or_else(|| not_found("party", id))?;
+    let party = guard.get_mut(&id).ok_or_else(|| not_found("party", id))?;
     party.submit();
     Ok(Json(party.clone()))
 }
@@ -85,9 +81,7 @@ pub async fn approve_party(
     Json(req): Json<ApproveParty>,
 ) -> Result<Json<PoliticalParty>> {
     let mut guard = state.parties.lock().map_err(|_| lock_err())?;
-    let party = guard
-        .get_mut(&id)
-        .ok_or_else(|| not_found("party", id))?;
+    let party = guard.get_mut(&id).ok_or_else(|| not_found("party", id))?;
     party.approve(req.registration_number, req.gazette_url);
     let p = party.clone();
     drop(guard);
@@ -106,9 +100,7 @@ pub async fn suspend_party(
     Path(id): Path<Uuid>,
 ) -> Result<Json<PoliticalParty>> {
     let mut guard = state.parties.lock().map_err(|_| lock_err())?;
-    let party = guard
-        .get_mut(&id)
-        .ok_or_else(|| not_found("party", id))?;
+    let party = guard.get_mut(&id).ok_or_else(|| not_found("party", id))?;
     party.suspend();
     let p = party.clone();
     drop(guard);
@@ -127,9 +119,7 @@ pub async fn deregister_party(
     Path(id): Path<Uuid>,
 ) -> Result<Json<PoliticalParty>> {
     let mut guard = state.parties.lock().map_err(|_| lock_err())?;
-    let party = guard
-        .get_mut(&id)
-        .ok_or_else(|| not_found("party", id))?;
+    let party = guard.get_mut(&id).ok_or_else(|| not_found("party", id))?;
     party.deregister();
     Ok(Json(party.clone()))
 }

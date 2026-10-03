@@ -60,9 +60,9 @@ pub async fn get_inclusion_proof(
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let tree = eel_crypto_rs::merkle::MerkleTree::from_leaf_hashes(hashes);
-    let proof =
-        tree.inclusion_proof(index as usize)
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let proof = tree
+        .inclusion_proof(index as usize)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(InclusionProof {
         leaf_index: index as u64,
@@ -100,8 +100,9 @@ pub async fn get_consistency_proof(
         }));
     }
     let tree = eel_crypto_rs::merkle::MerkleTree::from_leaf_hashes(hashes.clone());
-    let old_tree =
-        eel_crypto_rs::merkle::MerkleTree::from_leaf_hashes(hashes[..q.from_size as usize].to_vec());
+    let old_tree = eel_crypto_rs::merkle::MerkleTree::from_leaf_hashes(
+        hashes[..q.from_size as usize].to_vec(),
+    );
     let proof = tree
         .consistency_proof(q.from_size as usize)
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
@@ -217,13 +218,15 @@ pub async fn resolve_receipt(
         root_hash: hex::encode(tree.root()),
         hashes: proof.iter().map(hex::encode).collect(),
         leaf_hash_hex: hex::encode(hashes[index]),
-        sth: sth_row.map(|(tree_size, root_hash, cadence, signed_at, sig)| ReceiptSth {
-            tree_size: tree_size as u64,
-            root_hash: hex::encode(root_hash),
-            cadence,
-            signed_at: signed_at.to_rfc3339(),
-            signature_hex: hex::encode(sig),
-        }),
+        sth: sth_row.map(
+            |(tree_size, root_hash, cadence, signed_at, sig)| ReceiptSth {
+                tree_size: tree_size as u64,
+                root_hash: hex::encode(root_hash),
+                cadence,
+                signed_at: signed_at.to_rfc3339(),
+                signature_hex: hex::encode(sig),
+            },
+        ),
     }))
 }
 
@@ -247,7 +250,10 @@ mod tests {
         let hashes = vec![h("aa"), h("ab"), h("ac")];
         assert_eq!(resolve_prefix(&hashes, "AA"), PrefixResolution::Unique(0));
         assert_eq!(resolve_prefix(&hashes, "ab"), PrefixResolution::Unique(1));
-        assert_eq!(resolve_prefix(&hashes, "acacacac"), PrefixResolution::Unique(2));
+        assert_eq!(
+            resolve_prefix(&hashes, "acacacac"),
+            PrefixResolution::Unique(2)
+        );
     }
 
     #[test]

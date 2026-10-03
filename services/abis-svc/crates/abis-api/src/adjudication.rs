@@ -147,12 +147,7 @@ impl AdjudicationStore {
     /// There is no HTTP route that calls this, because the contract has no
     /// `POST /cases`: a case is raised by the process that has something to review,
     /// not by a client asking for one.
-    pub fn open_case(
-        &self,
-        job_id: &str,
-        subject_ref: &str,
-        priority: &str,
-    ) -> Case {
+    pub fn open_case(&self, job_id: &str, subject_ref: &str, priority: &str) -> Case {
         let now = chrono::Utc::now().to_rfc3339();
         let case = Case {
             case_id: format!("adj-{}", short_id()),
@@ -169,7 +164,10 @@ impl AdjudicationStore {
             created_at: now.clone(),
             updated_at: now,
         };
-        self.order.lock().expect("lock poisoned").push(case.case_id.clone());
+        self.order
+            .lock()
+            .expect("lock poisoned")
+            .push(case.case_id.clone());
         self.cases
             .lock()
             .expect("lock poisoned")
@@ -179,22 +177,25 @@ impl AdjudicationStore {
 
     /// A case by id.
     pub fn case(&self, case_id: &str) -> Option<Case> {
-        self.cases.lock().expect("lock poisoned").get(case_id).cloned()
+        self.cases
+            .lock()
+            .expect("lock poisoned")
+            .get(case_id)
+            .cloned()
     }
 
     /// Every case, oldest first.
     pub fn cases(&self) -> Vec<Case> {
         let order = self.order.lock().expect("lock poisoned");
         let guard = self.cases.lock().expect("lock poisoned");
-        order.iter().filter_map(|id| guard.get(id).cloned()).collect()
+        order
+            .iter()
+            .filter_map(|id| guard.get(id).cloned())
+            .collect()
     }
 
     /// Cases matching a status and a minimum match score, oldest first.
-    pub fn cases_matching(
-        &self,
-        status: Option<&str>,
-        min_score: Option<f64>,
-    ) -> Vec<Case> {
+    pub fn cases_matching(&self, status: Option<&str>, min_score: Option<f64>) -> Vec<Case> {
         self.cases()
             .into_iter()
             .filter(|c| status.is_none_or(|s| c.state.wire() == s))
@@ -208,11 +209,7 @@ impl AdjudicationStore {
     }
 
     /// Assign a case to an adjudicator.
-    pub fn assign(
-        &self,
-        case_id: &str,
-        adjudicator_id: &str,
-    ) -> Result<Case, String> {
+    pub fn assign(&self, case_id: &str, adjudicator_id: &str) -> Result<Case, String> {
         let mut guard = self.cases.lock().expect("lock poisoned");
         let case = guard
             .get_mut(case_id)
@@ -333,13 +330,26 @@ mod tests {
         assert_eq!(case.state, CaseState::Open);
 
         store.assign(&case.case_id, "adj-1").unwrap();
-        assert_eq!(store.case(&case.case_id).unwrap().state, CaseState::Assigned);
+        assert_eq!(
+            store.case(&case.case_id).unwrap().state,
+            CaseState::Assigned
+        );
 
         store.escalate(&case.case_id, "second look needed").unwrap();
-        assert_eq!(store.case(&case.case_id).unwrap().state, CaseState::Escalated);
+        assert_eq!(
+            store.case(&case.case_id).unwrap().state,
+            CaseState::Escalated
+        );
 
         store
-            .decide(&case.case_id, "no_match", "adj-2", None, "not a match", Some(0.42))
+            .decide(
+                &case.case_id,
+                "no_match",
+                "adj-2",
+                None,
+                "not a match",
+                Some(0.42),
+            )
             .unwrap();
         let decided = store.case(&case.case_id).unwrap();
         assert_eq!(decided.state, CaseState::Decided);
@@ -348,7 +358,9 @@ mod tests {
         // Terminal: nothing may change it.
         assert!(store.assign(&case.case_id, "adj-3").is_err());
         assert!(store.escalate(&case.case_id, "again").is_err());
-        assert!(store.attach_evidence(&case.case_id, "probe", "s3://x").is_err());
+        assert!(store
+            .attach_evidence(&case.case_id, "probe", "s3://x")
+            .is_err());
     }
 
     #[test]
@@ -368,11 +380,22 @@ mod tests {
         store.open_case("job-3", "subject-3", "normal");
         let decided = store.open_case("job-4", "subject-4", "normal");
         store
-            .decide(&decided.case_id, "match", "adj-1", None, "match", Some(0.91))
+            .decide(
+                &decided.case_id,
+                "match",
+                "adj-1",
+                None,
+                "match",
+                Some(0.91),
+            )
             .unwrap();
 
         let hits = store.cases_matching(None, Some(0.5));
-        assert_eq!(hits.len(), 1, "an uncompared case has no score to filter on");
+        assert_eq!(
+            hits.len(),
+            1,
+            "an uncompared case has no score to filter on"
+        );
         assert_eq!(hits[0].case_id, decided.case_id);
 
         // A zero threshold is still a threshold: a case with no score cannot satisfy

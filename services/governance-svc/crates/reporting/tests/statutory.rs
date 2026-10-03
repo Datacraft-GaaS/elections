@@ -62,10 +62,7 @@ async fn send(
         }
         None => Body::empty(),
     };
-    app.clone()
-        .oneshot(b.body(payload).unwrap())
-        .await
-        .unwrap()
+    app.clone().oneshot(b.body(payload).unwrap()).await.unwrap()
 }
 
 /// Generate a report and return its id. The report starts GENERATING.
@@ -140,7 +137,8 @@ async fn becoming_ready_clears_the_blocking_reason() {
     let app = app();
     let id = generate(&app, "2027-Q1").await;
     ready(&app, &id).await;
-    let report = body_json(send(&app, "GET", &format!("/reporting/reports/{id}"), None).await).await;
+    let report =
+        body_json(send(&app, "GET", &format!("/reporting/reports/{id}"), None).await).await;
     assert_eq!(report["status"], "READY");
     assert!(
         report["blocking_reason"].is_null(),
@@ -166,7 +164,13 @@ async fn marking_an_unknown_report_ready_is_404() {
 #[tokio::test]
 async fn generation_requires_a_period() {
     let app = app();
-    let resp = send(&app, "POST", "/reporting/reports", Some(json!({"period": "  "}))).await;
+    let resp = send(
+        &app,
+        "POST",
+        "/reporting/reports",
+        Some(json!({"period": "  "})),
+    )
+    .await;
     assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY);
 }
 
@@ -189,8 +193,14 @@ async fn testimony_requires_a_ready_report() {
         StatusCode::CONFLICT,
         "a generating report has no body to testify about"
     );
-    let detail = body_json(resp).await["detail"].as_str().unwrap_or_default().to_string();
-    assert!(detail.contains("GENERATING"), "the reason should name the status: {detail}");
+    let detail = body_json(resp).await["detail"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
+    assert!(
+        detail.contains("GENERATING"),
+        "the reason should name the status: {detail}"
+    );
 
     let listed = body_json(send(&app, "GET", "/reporting/testimony-workspaces", None).await).await;
     assert!(
@@ -300,7 +310,8 @@ async fn handing_a_report_to_a_court_marks_it_delivered() {
         Some(json!({"report_id": id.clone(), "recipient_court": "High Court"})),
     )
     .await;
-    let report = body_json(send(&app, "GET", &format!("/reporting/reports/{id}"), None).await).await;
+    let report =
+        body_json(send(&app, "GET", &format!("/reporting/reports/{id}"), None).await).await;
     assert_eq!(
         report["status"], "DELIVERED",
         "delivery is a fact about the report, not just a handover record"
@@ -319,7 +330,13 @@ async fn a_delivered_report_cannot_return_to_generating() {
         Some(json!({"report_id": id.clone(), "recipient_court": "High Court"})),
     )
     .await;
-    let resp = send(&app, "POST", &format!("/reporting/reports/{id}/ready"), None).await;
+    let resp = send(
+        &app,
+        "POST",
+        &format!("/reporting/reports/{id}/ready"),
+        None,
+    )
+    .await;
     assert_eq!(
         resp.status(),
         StatusCode::CONFLICT,

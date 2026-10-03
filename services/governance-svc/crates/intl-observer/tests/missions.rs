@@ -60,10 +60,7 @@ async fn send(
         }
         None => Body::empty(),
     };
-    app.clone()
-        .oneshot(b.body(payload).unwrap())
-        .await
-        .unwrap()
+    app.clone().oneshot(b.body(payload).unwrap()).await.unwrap()
 }
 
 /// Register an accredited (therefore active) mission.
@@ -213,7 +210,13 @@ async fn a_scheduled_briefing_is_listed_for_its_mission() {
     );
 
     let listed = body_json(
-        send(&app, "GET", &format!("/v1/observer-missions/{id}/briefings"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/v1/observer-missions/{id}/briefings"),
+            None,
+        )
+        .await,
     )
     .await;
     assert_eq!(
@@ -236,7 +239,13 @@ async fn briefings_do_not_leak_between_missions() {
     )
     .await;
     let other = body_json(
-        send(&app, "GET", &format!("/v1/observer-missions/{b}/briefings"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/v1/observer-missions/{b}/briefings"),
+            None,
+        )
+        .await,
     )
     .await;
     assert!(other["briefings"].as_array().unwrap().is_empty());
@@ -278,7 +287,13 @@ async fn an_active_mission_files_an_observation_report() {
     assert_eq!(report["report_type"], "interim");
 
     let listed = body_json(
-        send(&app, "GET", &format!("/v1/observer-missions/{id}/reports"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/v1/observer-missions/{id}/reports"),
+            None,
+        )
+        .await,
     )
     .await;
     assert_eq!(listed["reports"].as_array().unwrap().len(), 1);
@@ -314,7 +329,10 @@ async fn an_unaccredited_mission_cannot_file_a_report() {
         StatusCode::CONFLICT,
         "an unaccredited mission must not file an observation report"
     );
-    let detail = body_json(report).await["detail"].as_str().unwrap_or_default().to_string();
+    let detail = body_json(report).await["detail"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
     assert!(
         detail.contains("REGISTERED"),
         "the reason should name the status: {detail}"
@@ -334,7 +352,13 @@ async fn reports_do_not_leak_between_missions() {
     )
     .await;
     let other = body_json(
-        send(&app, "GET", &format!("/v1/observer-missions/{b}/reports"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/v1/observer-missions/{b}/reports"),
+            None,
+        )
+        .await,
     )
     .await;
     assert!(other["reports"].as_array().unwrap().is_empty());
@@ -359,7 +383,10 @@ async fn a_joint_statement_resolves_every_participant() {
         .await,
     )
     .await;
-    assert_eq!(stmt["participating_mission_ids"].as_array().unwrap().len(), 2);
+    assert_eq!(
+        stmt["participating_mission_ids"].as_array().unwrap().len(),
+        2
+    );
 
     let listed = body_json(send(&app, "GET", "/v1/joint-statements", None).await).await;
     assert_eq!(
@@ -388,7 +415,10 @@ async fn a_joint_statement_cannot_claim_unknown_missions() {
     )
     .await;
     assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY);
-    let detail = body_json(resp).await["detail"].as_str().unwrap_or_default().to_string();
+    let detail = body_json(resp).await["detail"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
     assert!(
         detail.contains("mission-that-does-not-exist"),
         "the reason should name the unknown mission: {detail}"
@@ -423,7 +453,13 @@ async fn the_two_surfaces_do_not_share_a_store() {
     let legacy = body_json(send(&app, "GET", "/v1/observer-missions", None).await).await;
     assert_eq!(legacy["missions"].as_array().unwrap().len(), 1);
     let contract = body_json(
-        send(&app, "GET", "/api/v1/governance/intl-observer/missions", None).await,
+        send(
+            &app,
+            "GET",
+            "/api/v1/governance/intl-observer/missions",
+            None,
+        )
+        .await,
     )
     .await;
     assert!(

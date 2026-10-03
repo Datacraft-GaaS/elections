@@ -23,11 +23,7 @@ use axum::{
 use serde::Serialize;
 use uuid::Uuid;
 
-use crate::{
-    error::ApiError,
-    state::AppState,
-    store::BviStore,
-};
+use crate::{error::ApiError, state::AppState, store::BviStore};
 
 /// Extract and validate the mandatory Idempotency-Key header (UUID v4/v7).
 pub fn require_key(headers: &HeaderMap, instance: &'static str) -> Result<Uuid, ApiError> {

@@ -26,7 +26,7 @@ pub mod graph;
 pub mod matcher;
 pub mod skeleton;
 
-pub use graph::{skeleton_to_graph, RidgeEdge, RidgeGraph, RidgeNode, NodeKind};
+pub use graph::{skeleton_to_graph, NodeKind, RidgeEdge, RidgeGraph, RidgeNode};
 pub use matcher::SkeletonMatcher;
 pub use skeleton::{extract_skeleton, BinaryImage, RidgeSkeleton};
 

@@ -93,7 +93,10 @@ fn auto_referral_idempotent_under_double_fire() {
     assert!(first.is_some(), "first referral should succeed");
 
     let second = scheduler.refer(&claim);
-    assert!(second.is_none(), "second referral of same claim should be skipped");
+    assert!(
+        second.is_none(),
+        "second referral of same claim should be skipped"
+    );
 }
 
 #[test]
@@ -106,7 +109,11 @@ fn auto_referral_run_batch_is_idempotent() {
     assert_eq!(first_run.len(), 2);
 
     let second_run = scheduler.run_batch(&claims, polling_day);
-    assert_eq!(second_run.len(), 0, "second batch run must produce no new packets");
+    assert_eq!(
+        second_run.len(),
+        0,
+        "second batch run must produce no new packets"
+    );
 }
 
 // --- Hash reproducibility ---

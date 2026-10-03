@@ -22,8 +22,8 @@ use tracing::info;
 
 use crate::models::*;
 use crate::spec::{self, Petition, PetitionRequest};
-use crate::threshold::{meets_art_104_2_threshold, threshold_numerator_denominator};
 use crate::state::SharedState;
+use crate::threshold::{meets_art_104_2_threshold, threshold_numerator_denominator};
 
 /// A problem+json response, so a refusal is readable by a caller rather than
 /// being a bare status code.
@@ -46,7 +46,6 @@ pub struct ImportBatch {
     pub rows: Vec<SignatoryImportRow>,
 }
 
-
 pub async fn health() -> impl IntoResponse {
     StatusCode::OK
 }
@@ -59,9 +58,11 @@ pub async fn list_petitions() -> impl IntoResponse {
 
 pub async fn get_petition(Path(id): Path<String>) -> impl IntoResponse {
     info!(id, "get_petition");
-    Json(RecallPetition { id, ..Default::default() })
+    Json(RecallPetition {
+        id,
+        ..Default::default()
+    })
 }
-
 
 pub async fn create_petition(
     State(state): State<SharedState>,
@@ -193,7 +194,12 @@ pub async fn get_threshold_report(
     let petition = match petition {
         Some(p) => p,
         // Previously answered 200 with a report for any id at all.
-        None => return Err(problem(StatusCode::NOT_FOUND, format!("no petition with id {id}"))),
+        None => {
+            return Err(problem(
+                StatusCode::NOT_FOUND,
+                format!("no petition with id {id}"),
+            ))
+        }
     };
 
     let records = state.signatories.list_where(|r| r.petition_id == id);
@@ -256,7 +262,10 @@ pub async fn close_petition(
     info!(petition_id = %id, "close_petition");
     let now = chrono::Utc::now().to_rfc3339();
     let updated = {
-        let mut guard = state.petitions.lock().expect("recall petitions lock poisoned");
+        let mut guard = state
+            .petitions
+            .lock()
+            .expect("recall petitions lock poisoned");
         match guard.get_mut(&id) {
             Some(p) => {
                 p.status = "CLOSED".to_string();
@@ -270,7 +279,10 @@ pub async fn close_petition(
         Some(_) => Ok(StatusCode::NO_CONTENT.into_response()),
         // Previously 204 for any id, so closing a petition that never existed
         // was indistinguishable from closing a real one.
-        None => Err(problem(StatusCode::NOT_FOUND, format!("no petition with id {id}"))),
+        None => Err(problem(
+            StatusCode::NOT_FOUND,
+            format!("no petition with id {id}"),
+        )),
     }
 }
 
@@ -285,7 +297,10 @@ pub async fn create_recall_election(
         .expect("recall petitions lock poisoned")
         .contains_key(&id);
     if !exists {
-        return Err(problem(StatusCode::NOT_FOUND, format!("no petition with id {id}")));
+        return Err(problem(
+            StatusCode::NOT_FOUND,
+            format!("no petition with id {id}"),
+        ));
     }
     let election = RecallElection {
         id: uuid::Uuid::now_v7().to_string(),
@@ -329,7 +344,9 @@ pub async fn initiate_recall_petition(
     if req.member_id_hash.is_empty() || req.initiator_id_hash.is_empty() {
         return (
             StatusCode::UNPROCESSABLE_ENTITY,
-            Json(serde_json::json!({"detail": "member_id_hash and initiator_id_hash are required"})),
+            Json(
+                serde_json::json!({"detail": "member_id_hash and initiator_id_hash are required"}),
+            ),
         )
             .into_response();
     }
@@ -360,7 +377,9 @@ pub async fn list_recall_petitions(State(state): State<SharedState>) -> impl Int
     let mut items: Vec<spec::Petition> = guard.values().cloned().collect();
     drop(guard);
     items.sort_by(|a, b| a.created_at.cmp(&b.created_at));
-    Json(serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }))
+    Json(
+        serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }),
+    )
 }
 
 /// GET /api/v1/governance/recall/petitions/{petition_id} — fetch one petition.

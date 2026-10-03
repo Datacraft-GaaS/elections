@@ -14,10 +14,10 @@
 
 //! abis-fusion-advanced crate.
 #![warn(missing_docs)]
-pub mod score_level;
-pub mod feature_level;
-pub mod decision_level;
 pub mod cohort;
 pub mod context;
+pub mod decision_level;
 pub mod error;
+pub mod feature_level;
+pub mod score_level;
 pub use error::FusionError;

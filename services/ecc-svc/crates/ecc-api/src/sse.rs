@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use axum::response::{IntoResponse, Response};
 use axum::http::{header, StatusCode};
+use axum::response::{IntoResponse, Response};
 
 fn sse_stub_response(portal: &str) -> Response {
     let body = format!("data: {{\"portal\":\"{portal}\",\"status\":\"connected\"}}\n\n");

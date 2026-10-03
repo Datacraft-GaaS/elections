@@ -37,7 +37,7 @@ pub fn build_router(state: SharedState) -> Router {
             put(resolve_incident),
         )
         .route("/v1/auth/saml/acs", post(saml_acs))
-    // Public contract endpoints (governance-county-coord/coordination.yaml)
+        // Public contract endpoints (governance-county-coord/coordination.yaml)
         .route(
             "/api/v1/governance/county-coord/status-reports",
             get(list_county_status_reports).post(submit_county_status_report),

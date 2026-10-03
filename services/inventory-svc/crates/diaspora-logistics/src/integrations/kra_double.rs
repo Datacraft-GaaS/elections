@@ -19,11 +19,11 @@ use crate::domain::PreClearanceManifest;
 pub struct KraDouble;
 
 impl KraDouble {
-	#[allow(unused)]
-	pub async fn submit_eclearance(
-		&self,
-		_manifest: &PreClearanceManifest,
-	) -> Result<(), DiasporaLogisticsError> {
-		Ok(())
-	}
+    #[allow(unused)]
+    pub async fn submit_eclearance(
+        &self,
+        _manifest: &PreClearanceManifest,
+    ) -> Result<(), DiasporaLogisticsError> {
+        Ok(())
+    }
 }

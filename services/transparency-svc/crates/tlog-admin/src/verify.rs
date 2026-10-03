@@ -23,6 +23,9 @@ pub async fn run(sth_a: u64, sth_b: u64, api_url: &str) -> Result<()> {
         api_url, sth_a, sth_b
     );
     let resp: serde_json::Value = client.get(&url).send().await?.json().await?;
-    println!("Consistency proof: {}", serde_json::to_string_pretty(&resp)?);
+    println!(
+        "Consistency proof: {}",
+        serde_json::to_string_pretty(&resp)?
+    );
     Ok(())
 }

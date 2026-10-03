@@ -52,7 +52,11 @@ pub async fn get_course(
     let guard = state.courses.lock().expect("lock poisoned");
     match guard.get(&course_id) {
         Some(c) => Json(c.clone()).into_response(),
-        None => (StatusCode::NOT_FOUND, Json(serde_json::json!({"detail": "course not found"}))).into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"detail": "course not found"})),
+        )
+            .into_response(),
     }
 }
 
@@ -82,7 +86,11 @@ pub async fn get_enrolment(
     let guard = state.enrolments.lock().expect("lock poisoned");
     match guard.get(&enrolment_id) {
         Some(e) => Json(e.clone()).into_response(),
-        None => (StatusCode::NOT_FOUND, Json(serde_json::json!({"detail": "enrolment not found"}))).into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"detail": "enrolment not found"})),
+        )
+            .into_response(),
     }
 }
 
@@ -155,27 +163,23 @@ pub async fn submit_assessment(
     // recorded so `get_certificate` can find it.
     let certificate_id = if result.passed {
         let id = uuid::Uuid::now_v7().to_string();
-        state
-            .certificates
-            .lock()
-            .expect("lock poisoned")
-            .insert(
-                id.clone(),
-                spec::CertificateRecord {
-                    certificate_id: id.clone(),
-                    enrolment_id: req.enrolment_id.clone(),
-                    issued_at: chrono::Utc::now().to_rfc3339(),
-                    expires_at: (chrono::Utc::now() + chrono::Duration::days(365)).to_rfc3339(),
-                    // The document is rendered by the document service, which is
-                    // not reachable from this process.
-                    document_url: None,
-                    blocking_reason: Some(
-                        "the certificate document is rendered by the document service and \
+        state.certificates.lock().expect("lock poisoned").insert(
+            id.clone(),
+            spec::CertificateRecord {
+                certificate_id: id.clone(),
+                enrolment_id: req.enrolment_id.clone(),
+                issued_at: chrono::Utc::now().to_rfc3339(),
+                expires_at: (chrono::Utc::now() + chrono::Duration::days(365)).to_rfc3339(),
+                // The document is rendered by the document service, which is
+                // not reachable from this process.
+                document_url: None,
+                blocking_reason: Some(
+                    "the certificate document is rendered by the document service and \
                          signed by the board's HSM key; neither is reachable from this process"
-                            .to_string(),
-                    ),
-                },
-            );
+                        .to_string(),
+                ),
+            },
+        );
         Some(id)
     } else {
         None
@@ -333,7 +337,11 @@ pub async fn get_accreditation_application(
     let guard = state.applications.lock().expect("lock poisoned");
     match guard.get(&application_id) {
         Some(a) => Json(a.clone()).into_response(),
-        None => (StatusCode::NOT_FOUND, Json(serde_json::json!({"detail": "application not found"}))).into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"detail": "application not found"})),
+        )
+            .into_response(),
     }
 }
 
@@ -367,10 +375,17 @@ pub async fn decide_accreditation_application(
                     .filter(|n| !n.is_empty())
                     .map(str::to_string)
                     .unwrap_or_else(|| {
-                format!("EEL-{}", &uuid::Uuid::new_v5(
-                    &uuid::Uuid::parse_str(&application_id).unwrap_or_else(|_| uuid::Uuid::now_v7()),
-                    b"eel.training.accreditation.badge.v1",
-                ).simple().to_string()[..12].to_uppercase())
+                        format!(
+                            "EEL-{}",
+                            &uuid::Uuid::new_v5(
+                                &uuid::Uuid::parse_str(&application_id)
+                                    .unwrap_or_else(|_| uuid::Uuid::now_v7()),
+                                b"eel.training.accreditation.badge.v1",
+                            )
+                            .simple()
+                            .to_string()[..12]
+                                .to_uppercase()
+                        )
                     });
                 state.badges.lock().expect("lock poisoned").insert(
                     assigned.clone(),
@@ -381,7 +396,8 @@ pub async fn decide_accreditation_application(
                         organisation: organisation.clone(),
                         r#type: application_type.clone(),
                         issued_at: chrono::Utc::now().to_rfc3339(),
-                        valid_until: (chrono::Utc::now() + chrono::Duration::days(365)).to_rfc3339(),
+                        valid_until: (chrono::Utc::now() + chrono::Duration::days(365))
+                            .to_rfc3339(),
                     },
                 );
                 Some(assigned)
@@ -393,9 +409,14 @@ pub async fn decide_accreditation_application(
                 "decided_at": chrono::Utc::now().to_rfc3339(),
                 "verdict": req.verdict,
                 "badge_number": badge_number,
-            })).into_response()
+            }))
+            .into_response()
         }
-        None => (StatusCode::NOT_FOUND, Json(serde_json::json!({"detail": "application not found"}))).into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"detail": "application not found"})),
+        )
+            .into_response(),
     }
 }
 
@@ -456,9 +477,7 @@ pub async fn report_medical_incident(
     (StatusCode::CREATED, Json(incident)).into_response()
 }
 
-pub async fn list_medical_incidents(
-    State(state): State<SharedSpecState>,
-) -> impl IntoResponse {
+pub async fn list_medical_incidents(State(state): State<SharedSpecState>) -> impl IntoResponse {
     info!("list_medical_incidents");
     let guard = state.incidents.lock().expect("lock poisoned");
     let mut items: Vec<spec::MedicalIncident> = guard.values().cloned().collect();
@@ -473,14 +492,22 @@ pub async fn update_medical_incident(
     Json(req): Json<serde_json::Value>,
 ) -> impl IntoResponse {
     info!(incident_id, "update_medical_incident");
-    let status = req.get("status").and_then(|s| s.as_str()).unwrap_or("reported").to_string();
+    let status = req
+        .get("status")
+        .and_then(|s| s.as_str())
+        .unwrap_or("reported")
+        .to_string();
     let mut guard = state.incidents.lock().expect("lock poisoned");
     match guard.get_mut(&incident_id) {
         Some(i) => {
             i.status = status;
             Json(i.clone()).into_response()
         }
-        None => (StatusCode::NOT_FOUND, Json(serde_json::json!({"detail": "incident not found"}))).into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"detail": "incident not found"})),
+        )
+            .into_response(),
     }
 }
 
@@ -514,7 +541,9 @@ pub async fn get_medical_personnel_by_county(
         .cloned()
         .collect();
     drop(guard);
-    Json(serde_json::json!({ "county_code": county_code, "personnel": personnel, "total": personnel.len() }))
+    Json(
+        serde_json::json!({ "county_code": county_code, "personnel": personnel, "total": personnel.len() }),
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -529,7 +558,12 @@ fn mask_name(name: &str) -> String {
     let chars: Vec<char> = name.chars().collect();
     match chars.len() {
         0 | 1 => "*".to_string(),
-        n => format!("{}{}{}", chars[0], "*".repeat(n.saturating_sub(2).min(8)), chars[n - 1]),
+        n => format!(
+            "{}{}{}",
+            chars[0],
+            "*".repeat(n.saturating_sub(2).min(8)),
+            chars[n - 1]
+        ),
     }
 }
 
@@ -701,23 +735,65 @@ pub fn router(state: SharedSpecState) -> axum::Router {
         .route("/api/v1/training/lms/courses", get(list_courses))
         .route("/api/v1/training/lms/courses/{course_id}", get(get_course))
         .route("/api/v1/training/lms/enrolments", post(create_enrolment))
-        .route("/api/v1/training/lms/enrolments/{enrolment_id}", get(get_enrolment))
-        .route("/api/v1/training/lms/assessments/{assessment_id}/submissions", post(submit_assessment))
+        .route(
+            "/api/v1/training/lms/enrolments/{enrolment_id}",
+            get(get_enrolment),
+        )
+        .route(
+            "/api/v1/training/lms/assessments/{assessment_id}/submissions",
+            post(submit_assessment),
+        )
         .route("/api/v1/training/lms/completions", get(list_completions))
-        .route("/api/v1/training/lms/certificates/{certificate_id}", get(get_certificate))
+        .route(
+            "/api/v1/training/lms/certificates/{certificate_id}",
+            get(get_certificate),
+        )
         // Accreditation
-        .route("/api/v1/training/accreditation/applications", get(list_accreditation_applications).post(submit_accreditation_application))
-        .route("/api/v1/training/accreditation/applications/{application_id}", get(get_accreditation_application))
-        .route("/api/v1/training/accreditation/applications/{application_id}/decisions", post(decide_accreditation_application))
-        .route("/api/v1/training/accreditation/badges/{badge_number}", get(verify_badge))
+        .route(
+            "/api/v1/training/accreditation/applications",
+            get(list_accreditation_applications).post(submit_accreditation_application),
+        )
+        .route(
+            "/api/v1/training/accreditation/applications/{application_id}",
+            get(get_accreditation_application),
+        )
+        .route(
+            "/api/v1/training/accreditation/applications/{application_id}/decisions",
+            post(decide_accreditation_application),
+        )
+        .route(
+            "/api/v1/training/accreditation/badges/{badge_number}",
+            get(verify_badge),
+        )
         // Medical
-        .route("/api/v1/training/medical/incidents", get(list_medical_incidents).post(report_medical_incident))
-        .route("/api/v1/training/medical/incidents/{incident_id}", patch(update_medical_incident))
-        .route("/api/v1/training/medical/personnel/{county_code}", get(get_medical_personnel_by_county))
-        .route("/api/v1/training/medical/personnel", post(register_medical_personnel))
+        .route(
+            "/api/v1/training/medical/incidents",
+            get(list_medical_incidents).post(report_medical_incident),
+        )
+        .route(
+            "/api/v1/training/medical/incidents/{incident_id}",
+            patch(update_medical_incident),
+        )
+        .route(
+            "/api/v1/training/medical/personnel/{county_code}",
+            get(get_medical_personnel_by_county),
+        )
+        .route(
+            "/api/v1/training/medical/personnel",
+            post(register_medical_personnel),
+        )
         // CMS
-        .route("/api/v1/training/cms/content", get(list_content).post(publish_content))
-        .route("/api/v1/training/cms/content/{content_id}", get(get_content).put(update_content).delete(delete_content))
-        .route("/api/v1/training/cms/content/{content_id}/translations", post(add_content_translation))
+        .route(
+            "/api/v1/training/cms/content",
+            get(list_content).post(publish_content),
+        )
+        .route(
+            "/api/v1/training/cms/content/{content_id}",
+            get(get_content).put(update_content).delete(delete_content),
+        )
+        .route(
+            "/api/v1/training/cms/content/{content_id}/translations",
+            post(add_content_translation),
+        )
         .with_state(state)
 }

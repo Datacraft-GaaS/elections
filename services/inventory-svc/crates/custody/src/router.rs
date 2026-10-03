@@ -26,7 +26,10 @@ use crate::state::AppState;
 /// router.
 pub fn router(state: Arc<AppState>) -> Router {
     Router::new()
-        .route("/api/v1/custody/assets", get(crate::handlers::list_assets).post(crate::handlers::register_asset))
+        .route(
+            "/api/v1/custody/assets",
+            get(crate::handlers::list_assets).post(crate::handlers::register_asset),
+        )
         .route(
             "/api/v1/custody/assets/{id}/custody",
             patch(crate::handlers::transfer_custody),
@@ -40,8 +43,14 @@ pub fn router(state: Arc<AppState>) -> Router {
             "/api/v1/custody/seals/{id}/break",
             patch(crate::handlers::break_seal),
         )
-        .route("/api/v1/custody/reserves", get(crate::handlers::list_reserves))
-        .route("/api/v1/custody/summary", get(crate::handlers::get_custody_summary))
+        .route(
+            "/api/v1/custody/reserves",
+            get(crate::handlers::list_reserves),
+        )
+        .route(
+            "/api/v1/custody/summary",
+            get(crate::handlers::get_custody_summary),
+        )
         .route(
             "/api/v1/custody/reconcile",
             post(crate::handlers::start_reconciliation),

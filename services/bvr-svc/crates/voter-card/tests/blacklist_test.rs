@@ -61,8 +61,8 @@ fn envelope_matches_propagation_contract() {
     ignore = "requires PostgreSQL; run via docker-compose stack with --features db-tests"
 )]
 async fn add_entry_persists_and_emits_exactly_once() {
-    let db_url = std::env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "postgres://localhost/voter_card".into());
+    let db_url =
+        std::env::var("DATABASE_URL").unwrap_or_else(|_| "postgres://localhost/voter_card".into());
     let pool = sqlx::postgres::PgPoolOptions::new()
         .max_connections(2)
         .connect(&db_url)
@@ -74,12 +74,11 @@ async fn add_entry_persists_and_emits_exactly_once() {
 
     svc.add_entry(&pool, entry.clone()).await.unwrap();
 
-    let row: (String,) =
-        sqlx::query_as("SELECT reason FROM card_blacklist WHERE card_number = $1")
-            .bind(&entry.card_number)
-            .fetch_one(&pool)
-            .await
-            .unwrap();
+    let row: (String,) = sqlx::query_as("SELECT reason FROM card_blacklist WHERE card_number = $1")
+        .bind(&entry.card_number)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     assert_eq!(row.0, entry.reason);
 
     let events_before: i64 = sqlx::query_scalar("SELECT count(*) FROM outbox WHERE topic = $1")
@@ -95,5 +94,8 @@ async fn add_entry_persists_and_emits_exactly_once() {
         .fetch_one(&pool)
         .await
         .unwrap();
-    assert_eq!(events_before, events_after, "no duplicate event for unchanged entry");
+    assert_eq!(
+        events_before, events_after,
+        "no duplicate event for unchanged entry"
+    );
 }

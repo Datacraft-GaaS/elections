@@ -21,4 +21,4 @@ pub mod verdict;
 pub mod verify;
 
 pub use verdict::{AttestationVerdict, IntegrityLevel, KitTier};
-pub use verify::{verify_attestation, AttestationPayload, AttestationKind, AttestError};
+pub use verify::{verify_attestation, AttestError, AttestationKind, AttestationPayload};

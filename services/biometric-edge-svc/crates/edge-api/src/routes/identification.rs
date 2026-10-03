@@ -38,8 +38,7 @@ pub struct IdentificationResponse {
 }
 
 pub fn router() -> Router {
-    Router::new()
-        .route("/api/v1/biometric-edge/identifications", post(identify))
+    Router::new().route("/api/v1/biometric-edge/identifications", post(identify))
 }
 
 async fn identify(

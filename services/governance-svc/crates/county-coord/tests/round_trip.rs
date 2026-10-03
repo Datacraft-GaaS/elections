@@ -82,7 +82,10 @@ async fn created_incident_appears_in_the_list() {
     .await;
     assert_eq!(resp.status(), StatusCode::CREATED);
     let created = json_body(resp).await;
-    let id = created["id"].as_str().expect("created incident needs an id").to_string();
+    let id = created["id"]
+        .as_str()
+        .expect("created incident needs an id")
+        .to_string();
 
     let listed = json_body(get(&app, "/v1/coordination/incidents").await).await;
     let incidents = listed["incidents"].as_array().expect("incidents array");
@@ -120,7 +123,9 @@ async fn resolving_an_incident_records_it_and_404s_for_unknown_ids() {
                 .method("PUT")
                 .uri(format!("/v1/coordination/incidents/{id}/resolve"))
                 .header("content-type", "application/json")
-                .body(Body::from(json!({"resolution_notes": "queue cleared"}).to_string()))
+                .body(Body::from(
+                    json!({"resolution_notes": "queue cleared"}).to_string(),
+                ))
                 .unwrap(),
         )
         .await

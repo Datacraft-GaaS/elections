@@ -54,8 +54,14 @@ pub fn router(state: SharedState) -> Router {
         .route("/ussd/sessions/{session_id}", get(get_ussd_session_log))
         .route("/ivr/voice", post(handle_voice_call))
         .route("/ivr/sessions", post(handle_ivr_session))
-        .route("/webhook/whatsapp", get(verify_webhook).post(receive_message))
-        .route("/whatsapp/webhook", get(verify_whatsapp_webhook).post(receive_whatsapp_webhook))
+        .route(
+            "/webhook/whatsapp",
+            get(verify_webhook).post(receive_message),
+        )
+        .route(
+            "/whatsapp/webhook",
+            get(verify_whatsapp_webhook).post(receive_whatsapp_webhook),
+        )
         .with_state(state)
 }
 
@@ -107,7 +113,10 @@ async fn handle_ussd_session(
         &req.text,
     ) {
         Ok((response_text, action)) => {
-            let body = UssdSessionResponse { response_text, action: action.clone() };
+            let body = UssdSessionResponse {
+                response_text,
+                action: action.clone(),
+            };
             (StatusCode::OK, Json(body)).into_response()
         }
         Err(detail) => problem(StatusCode::UNPROCESSABLE_ENTITY, detail),
@@ -167,10 +176,7 @@ async fn handle_ivr_session(
         .unwrap_or_default()
         .to_string();
     if call_id.trim().is_empty() {
-        return problem(
-            StatusCode::UNPROCESSABLE_ENTITY,
-            "call_id is required",
-        );
+        return problem(StatusCode::UNPROCESSABLE_ENTITY, "call_id is required");
     }
     let caller = req
         .get("caller_id_hash")
@@ -231,11 +237,7 @@ async fn verify_whatsapp_webhook(
 }
 
 /// Shared receive handler for both webhook paths.
-async fn receive(
-    state: SharedState,
-    headers: HeaderMap,
-    body: Bytes,
-) -> axum::response::Response {
+async fn receive(state: SharedState, headers: HeaderMap, body: Bytes) -> axum::response::Response {
     let secret = state.whatsapp_secret();
     let signature = signature_of(&headers);
     let verdict = verify_whatsapp_signature(secret.as_deref(), &body, signature.as_deref());

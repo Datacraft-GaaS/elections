@@ -22,18 +22,18 @@
 //! - Degradation mode: Normal / Degraded / ReadOnlyLockdown shared flag
 #![warn(missing_docs)]
 
-pub mod error;
-pub mod degradation;
-pub mod circuit_breaker;
 pub mod bulkhead;
+pub mod circuit_breaker;
+pub mod degradation;
+pub mod error;
+pub mod idempotency;
 pub mod retry;
 pub mod timeout;
-pub mod idempotency;
 
-pub use error::ResilienceError;
-pub use degradation::{DegradationFlag, DegradationMode};
-pub use circuit_breaker::{CircuitBreaker, CircuitState};
 pub use bulkhead::Bulkhead;
-pub use retry::{RetryConfig, JitterKind, with_retry};
-pub use timeout::with_timeout;
+pub use circuit_breaker::{CircuitBreaker, CircuitState};
+pub use degradation::{DegradationFlag, DegradationMode};
+pub use error::ResilienceError;
 pub use idempotency::IdempotencyStore;
+pub use retry::{with_retry, JitterKind, RetryConfig};
+pub use timeout::with_timeout;

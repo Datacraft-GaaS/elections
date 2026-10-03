@@ -184,7 +184,11 @@ impl AppState {
     /// A form by id.
     pub fn form(&self, form_id: &Uuid) -> Option<StoredForm> {
         let index = *self.by_form.lock().expect("lock poisoned").get(form_id)?;
-        self.forms.lock().expect("lock poisoned").get(index).cloned()
+        self.forms
+            .lock()
+            .expect("lock poisoned")
+            .get(index)
+            .cloned()
     }
 
     /// Every form, in arrival order.
@@ -215,7 +219,11 @@ impl AppState {
 
     /// The form a scan was acknowledged for.
     pub fn acknowledged(&self, scan_id: &Uuid) -> Option<Uuid> {
-        self.acks.lock().expect("lock poisoned").get(scan_id).copied()
+        self.acks
+            .lock()
+            .expect("lock poisoned")
+            .get(scan_id)
+            .copied()
     }
 
     /// Store a token.
@@ -240,7 +248,10 @@ impl AppState {
             envelope,
             received_at: chrono::Utc::now().to_rfc3339(),
         };
-        self.events.lock().expect("lock poisoned").push(stored.clone());
+        self.events
+            .lock()
+            .expect("lock poisoned")
+            .push(stored.clone());
         stored
     }
 
@@ -272,7 +283,12 @@ impl AppState {
     /// Record a dispute.
     pub fn record_dispute(&self, dispute: StoredDispute) {
         let dispute_id = dispute.dispute.dispute_id;
-        if let Some(index) = self.by_form.lock().expect("lock poisoned").get(&dispute.form_id) {
+        if let Some(index) = self
+            .by_form
+            .lock()
+            .expect("lock poisoned")
+            .get(&dispute.form_id)
+        {
             let mut guard = self.forms.lock().expect("lock poisoned");
             if let Some(form) = guard.get_mut(*index) {
                 form.disputes.push(dispute.dispute.clone());
@@ -286,15 +302,15 @@ impl AppState {
 
     /// A dispute by id.
     pub fn dispute(&self, dispute_id: &Uuid) -> Option<StoredDispute> {
-        self.disputes.lock().expect("lock poisoned").get(dispute_id).cloned()
+        self.disputes
+            .lock()
+            .expect("lock poisoned")
+            .get(dispute_id)
+            .cloned()
     }
 
     /// Record a resolution against a dispute, returning it if one existed.
-    pub fn resolve_dispute(
-        &self,
-        dispute_id: &Uuid,
-        resolution: &str,
-    ) -> Option<StoredDispute> {
+    pub fn resolve_dispute(&self, dispute_id: &Uuid, resolution: &str) -> Option<StoredDispute> {
         let mut guard = self.disputes.lock().expect("lock poisoned");
         let d = guard.get_mut(dispute_id)?;
         d.resolution = Some(resolution.to_string());
@@ -350,7 +366,11 @@ impl AppState {
             })
             .collect();
         // Deterministic order so two reads of the same data agree.
-        candidates.sort_by(|a, b| b.votes.cmp(&a.votes).then(a.candidate_id.cmp(&b.candidate_id)));
+        candidates.sort_by(|a, b| {
+            b.votes
+                .cmp(&a.votes)
+                .then(a.candidate_id.cmp(&b.candidate_id))
+        });
         Some(Form34C {
             constituency_code: constituency_code.to_string(),
             stations_reporting: stations,

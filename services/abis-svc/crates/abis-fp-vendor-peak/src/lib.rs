@@ -47,14 +47,14 @@ use thiserror::Error;
 /// Top-level errors from this crate.
 #[derive(Debug, Error)]
 pub enum PeakError {
-	#[error("consensus rejected: {votes} of {total} vendors agree (minimum 2)")]
-	ConsensusFailed { votes: usize, total: usize },
-	#[error("not enough healthy vendors: {healthy} available (minimum 2)")]
-	InsufficientVendors { healthy: usize },
-	#[error("vendor error: {vendor}: {detail}")]
-	VendorError { vendor: String, detail: String },
-	#[error("calibration error: {0}")]
-	Calibration(String),
-	#[error("policy error: {0}")]
-	Policy(String),
+    #[error("consensus rejected: {votes} of {total} vendors agree (minimum 2)")]
+    ConsensusFailed { votes: usize, total: usize },
+    #[error("not enough healthy vendors: {healthy} available (minimum 2)")]
+    InsufficientVendors { healthy: usize },
+    #[error("vendor error: {vendor}: {detail}")]
+    VendorError { vendor: String, detail: String },
+    #[error("calibration error: {0}")]
+    Calibration(String),
+    #[error("policy error: {0}")]
+    Policy(String),
 }

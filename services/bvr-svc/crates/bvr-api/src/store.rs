@@ -177,12 +177,18 @@ pub type SharedBvrStore = Arc<BvrStore>;
 impl BvrStore {
     /// A store backed by Postgres.
     pub fn from_pool(pool: PgPool) -> SharedBvrStore {
-        Arc::new(Self { pool: Some(pool), mem: Mutex::new(Mem::default()) })
+        Arc::new(Self {
+            pool: Some(pool),
+            mem: Mutex::new(Mem::default()),
+        })
     }
 
     /// A store held in process memory. Test-only; see the module docs.
     pub fn in_memory() -> SharedBvrStore {
-        Arc::new(Self { pool: None, mem: Mutex::new(Mem::default()) })
+        Arc::new(Self {
+            pool: None,
+            mem: Mutex::new(Mem::default()),
+        })
     }
 
     /// Whether this store is the in-memory one.
@@ -192,7 +198,11 @@ impl BvrStore {
 
     /// Put a voter on the in-memory register.
     pub fn put_voter(&self, voter: VoterSummary) {
-        self.mem.lock().expect("lock poisoned").voters.insert(voter.voter_id.clone(), voter);
+        self.mem
+            .lock()
+            .expect("lock poisoned")
+            .voters
+            .insert(voter.voter_id.clone(), voter);
     }
 
     /// Put a Merkle root on the in-memory register.
@@ -233,7 +243,13 @@ impl BvrStore {
                 },
             ));
         }
-        Ok(self.mem.lock().expect("lock poisoned").voters.get(voter_id).cloned())
+        Ok(self
+            .mem
+            .lock()
+            .expect("lock poisoned")
+            .voters
+            .get(voter_id)
+            .cloned())
     }
 
     /// Change a voter's registration status, and record the change.
@@ -273,7 +289,9 @@ impl BvrStore {
             .fetch_optional(&mut *tx)
             .await?;
             let (polling_station_id, _from_status, version_from, election_scope) = current
-                .ok_or_else(|| StoreError::NotFound(format!("no voter {voter_id} on the register")))?;
+                .ok_or_else(|| {
+                    StoreError::NotFound(format!("no voter {voter_id} on the register"))
+                })?;
             let version_to = version_from + 1;
             sqlx::query(
                 "UPDATE voters SET status = $2, version = $3, updated_at = NOW() \
@@ -307,10 +325,9 @@ impl BvrStore {
         }
         let mut guard = self.mem.lock().expect("lock poisoned");
         let (change, updated) = {
-            let voter = guard
-                .voters
-                .get_mut(voter_id)
-                .ok_or_else(|| StoreError::NotFound(format!("no voter {voter_id} on the register")))?;
+            let voter = guard.voters.get_mut(voter_id).ok_or_else(|| {
+                StoreError::NotFound(format!("no voter {voter_id} on the register"))
+            })?;
             let change = StatusChange {
                 voter_id: voter_id.to_string(),
                 from_status: voter.status.clone(),
@@ -351,16 +368,17 @@ impl BvrStore {
             .execute(pool)
             .await?;
         } else {
-            self.mem.lock().expect("lock poisoned").sars.push(row.clone());
+            self.mem
+                .lock()
+                .expect("lock poisoned")
+                .sars
+                .push(row.clone());
         }
         Ok(SarAccepted {
             sar_id: row.sar_id,
             // 21 days from submission, per the Kenya Data Protection Act 2019.
-            due_date: (chrono::NaiveDate::parse_from_str(
-                &row.submitted_at[..10],
-                "%Y-%m-%d",
-            )
-            .map_err(|e| StoreError::Database(format!("unparseable submission date: {e}")))?
+            due_date: (chrono::NaiveDate::parse_from_str(&row.submitted_at[..10], "%Y-%m-%d")
+                .map_err(|e| StoreError::Database(format!("unparseable submission date: {e}")))?
                 + chrono::Duration::days(21))
             .to_string(),
             status: "received".to_string(),
@@ -374,20 +392,35 @@ impl BvrStore {
             // this root; `merkle_roots` alone has neither. `signed_by_hsm` records
             // the signing key, so it is read as a signature only when it is present
             // -- an absent signature is reported as absent, never invented.
-            let row: Option<(String, Option<i64>, String, String, Option<String>, Option<String>, String)> =
-                sqlx::query_as(
-                    "SELECT m.root_hash, s.voter_count, m.created_at, m.election_scope, \
+            let row: Option<(
+                String,
+                Option<i64>,
+                String,
+                String,
+                Option<String>,
+                Option<String>,
+                String,
+            )> = sqlx::query_as(
+                "SELECT m.root_hash, s.voter_count, m.created_at, m.election_scope, \
                             m.signed_by_hsm, s.snapshot_id, m.seq::TEXT \
                      FROM merkle_roots m \
                      LEFT JOIN register_snapshots s ON s.merkle_root = m.root_hash \
                      WHERE m.election_scope = $1 \
                      ORDER BY m.seq DESC LIMIT 1",
-                )
-                .bind(crate::MERKLE_SCOPE)
-                .fetch_optional(pool)
-                .await?;
+            )
+            .bind(crate::MERKLE_SCOPE)
+            .fetch_optional(pool)
+            .await?;
             return Ok(row.map(
-                |(root_hash, tree_size, created_at, election_scope, signed_by_hsm, snapshot_id, _seq)| {
+                |(
+                    root_hash,
+                    tree_size,
+                    created_at,
+                    election_scope,
+                    signed_by_hsm,
+                    snapshot_id,
+                    _seq,
+                )| {
                     MerkleRootResponse {
                         root_hash,
                         tree_size: tree_size.unwrap_or(0),

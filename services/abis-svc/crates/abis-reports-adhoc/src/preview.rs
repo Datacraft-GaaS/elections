@@ -43,8 +43,12 @@ pub async fn run_preview(
     let format = req.format.clone().unwrap_or(PreviewFormat::Json);
 
     // Validate the SQL before running
-    let lint = validate_sql(&version.source, &version.allowed_tables, Some(sample_limit as u64))
-        .map_err(|e| AdhocError::Preview(e.to_string()))?;
+    let lint = validate_sql(
+        &version.source,
+        &version.allowed_tables,
+        Some(sample_limit as u64),
+    )
+    .map_err(|e| AdhocError::Preview(e.to_string()))?;
     if !lint.is_safe() {
         return Err(AdhocError::Preview("SQL failed validation".to_string()));
     }
@@ -58,14 +62,18 @@ pub async fn run_preview(
     let preview_bytes = render_preview_rows(&rows, &format, version)?;
 
     if preview_bytes.len() > MAX_MEMORY_BYTES {
-        return Err(AdhocError::MemoryCap { bytes: preview_bytes.len() });
+        return Err(AdhocError::MemoryCap {
+            bytes: preview_bytes.len(),
+        });
     }
 
     let now = Utc::now();
     Ok(AdhocPreview {
         preview_id: Uuid::now_v7(),
         version_id: version.version_id,
-        parameter_values: req.parameter_values.unwrap_or_else(|| serde_json::json!({})),
+        parameter_values: req
+            .parameter_values
+            .unwrap_or_else(|| serde_json::json!({})),
         sample_limit,
         rows_returned: Some(rows_returned),
         elapsed_ms: Some(elapsed_ms),

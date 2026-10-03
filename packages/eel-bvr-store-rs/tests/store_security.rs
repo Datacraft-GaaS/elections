@@ -39,9 +39,15 @@ fn provenance(store: &Store) -> Provenance {
 fn seeded() -> (Store, Vec<eel_bvr_store_rs::RecordId>) {
     let mut store = Store::new("Nairobi County 04 / Kit 12").unwrap();
     let prov = provenance(&store);
-    let a = store.append("full_name", "A", &json!("Wanjiku Mwangi"), &prov).unwrap();
-    let b = store.append("national_id", "A", &json!("12345678"), &prov).unwrap();
-    let c = store.append("polling_station_code", "B", &json!("NRB001PS042"), &prov).unwrap();
+    let a = store
+        .append("full_name", "A", &json!("Wanjiku Mwangi"), &prov)
+        .unwrap();
+    let b = store
+        .append("national_id", "A", &json!("12345678"), &prov)
+        .unwrap();
+    let c = store
+        .append("polling_station_code", "B", &json!("NRB001PS042"), &prov)
+        .unwrap();
     (store, vec![a, b, c])
 }
 
@@ -71,7 +77,10 @@ fn provenance_is_stamped_with_the_capturing_instance() {
     let (store, ids) = seeded();
     let record = &store.records()[0];
     assert_eq!(record.provenance.instance_id, store.identity().instance_id);
-    assert_eq!(record.provenance.station_label, "Nairobi County 04 / Kit 12");
+    assert_eq!(
+        record.provenance.station_label,
+        "Nairobi County 04 / Kit 12"
+    );
     assert_eq!(record.provenance.operator_id, "officer-77");
     assert_eq!(record.provenance.workflow_id, "bvr-enrolment-standard");
     assert_eq!(record.provenance.step_id, "identity");
@@ -85,8 +94,14 @@ fn stored_values_are_not_readable_in_the_clear() {
     // A stolen laptop yields a store of base64 blobs, not a list of national IDs.
     let (store, ids) = seeded();
     let serialised = serde_json::to_string(store.records()).unwrap();
-    assert!(!serialised.contains("12345678"), "national ID must not appear in the clear");
-    assert!(!serialised.contains("Wanjiku Mwangi"), "name must not appear in the clear");
+    assert!(
+        !serialised.contains("12345678"),
+        "national ID must not appear in the clear"
+    );
+    assert!(
+        !serialised.contains("Wanjiku Mwangi"),
+        "name must not appear in the clear"
+    );
     // ...but it is recoverable through the API.
     let value = store.value_of(&ids[1]).unwrap();
     assert_eq!(value, json!("12345678"));
@@ -97,10 +112,15 @@ fn every_record_has_a_distinct_ciphertext() {
     // Two records holding the same value must not be linkable by their bytes.
     let mut store = Store::new("Kit A").unwrap();
     let prov = provenance(&store);
-    let a = store.append("phone", "A", &json!("+254712345678"), &prov).unwrap();
-    let b = store.append("phone", "A", &json!("+254712345678"), &prov).unwrap();
+    let a = store
+        .append("phone", "A", &json!("+254712345678"), &prov)
+        .unwrap();
+    let b = store
+        .append("phone", "A", &json!("+254712345678"), &prov)
+        .unwrap();
     assert_ne!(
-        store.records()[0].value, store.records()[1].value,
+        store.records()[0].value,
+        store.records()[1].value,
         "identical plaintexts must not produce identical ciphertexts"
     );
     assert_eq!(store.value_of(&a).unwrap(), store.value_of(&b).unwrap());
@@ -118,9 +138,14 @@ fn a_clean_store_verifies() {
 fn editing_a_value_is_detected() {
     let (mut store, _) = seeded();
     store.records_mut()[1].value = json!("9999999x");
-    let err = store.verify().expect_err("editing a value must be detected");
+    let err = store
+        .verify()
+        .expect_err("editing a value must be detected");
     let rendered = err.to_string();
-    assert!(rendered.contains("does not match its recorded hash"), "{rendered}");
+    assert!(
+        rendered.contains("does not match its recorded hash"),
+        "{rendered}"
+    );
 }
 
 #[test]
@@ -144,7 +169,9 @@ fn editing_the_capture_instant_is_detected() {
 fn deleting_a_record_breaks_the_chain() {
     let (mut store, _) = seeded();
     store.records_mut().remove(1);
-    let err = store.verify().expect_err("a deleted record must be detected");
+    let err = store
+        .verify()
+        .expect_err("a deleted record must be detected");
     assert!(err.to_string().contains("does not chain"), "{err}");
 }
 
@@ -217,7 +244,9 @@ fn a_record_resigned_with_its_own_key_but_rewritten_still_breaks_the_chain() {
 #[test]
 fn pending_batch_covers_only_unsynced_records() {
     let (mut store, ids) = seeded();
-    let batch = store.pending_batch().expect("a store with unsynced records has a batch");
+    let batch = store
+        .pending_batch()
+        .expect("a store with unsynced records has a batch");
     assert_eq!(batch.len(), 3);
     assert_eq!(batch.instance_id.instance_id, store.identity().instance_id);
     assert_eq!(batch.merkle_root.len(), 64, "root is 32 bytes hex encoded");
@@ -242,7 +271,11 @@ fn acknowledging_records_clears_them_from_the_queue() {
 fn acknowledging_twice_is_idempotent() {
     let (mut store, ids) = seeded();
     assert_eq!(store.mark_synced(&ids).unwrap(), 3);
-    assert_eq!(store.mark_synced(&ids).unwrap(), 0, "second ack changes nothing");
+    assert_eq!(
+        store.mark_synced(&ids).unwrap(),
+        0,
+        "second ack changes nothing"
+    );
 }
 
 #[test]
@@ -258,7 +291,10 @@ fn mark_synced_does_not_break_the_integrity_chain() {
     // preimage, so acknowledging a record must not invalidate it.
     let (mut store, ids) = seeded();
     store.mark_synced(&ids).unwrap();
-    assert!(store.verify().is_ok(), "sync bookkeeping must not break the chain");
+    assert!(
+        store.verify().is_ok(),
+        "sync bookkeeping must not break the chain"
+    );
 }
 
 #[test]
@@ -333,7 +369,11 @@ use std::path::PathBuf;
 
 fn temp_path(name: &str) -> PathBuf {
     let mut p = std::env::temp_dir();
-    p.push(format!("eel-bvr-store-test-{}-{}.json", std::process::id(), name));
+    p.push(format!(
+        "eel-bvr-store-test-{}-{}.json",
+        std::process::id(),
+        name
+    ));
     p
 }
 
@@ -376,14 +416,21 @@ fn the_data_key_is_never_written_to_disk() {
     store.seal_to_disk(&path, &KEK).unwrap();
 
     let text = std::fs::read_to_string(&path).unwrap();
-    let key_hex: String = store.data_key_for_test().iter().map(|b| format!("{b:02x}")).collect();
+    let key_hex: String = store
+        .data_key_for_test()
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect();
     assert!(
         !text.contains(&key_hex),
         "the data key must not appear in the file in the clear"
     );
     // Nor may any citizen value.
     for secret in ["12345678", "Wanjiku Mwangi", "NRB001PS042"] {
-        assert!(!text.contains(secret), "{secret} leaked to disk in the clear");
+        assert!(
+            !text.contains(secret),
+            "{secret} leaked to disk in the clear"
+        );
     }
     cleanup(&path);
 }
@@ -416,12 +463,16 @@ fn a_tampered_file_is_refused_rather_than_reopened() {
     let mut text = std::fs::read_to_string(&path).unwrap();
     let needle = "\"sealed_records_b64\": \"";
     let start = text.find(needle).expect("field present") + needle.len();
-    let flipped = if text.as_bytes()[start] == b'A' { 'B' } else { 'A' };
+    let flipped = if text.as_bytes()[start] == b'A' {
+        'B'
+    } else {
+        'A'
+    };
     text.replace_range(start..start + 1, &flipped.to_string());
     std::fs::write(&path, &text).unwrap();
 
-    let opened = Store::open_from_disk(&path, &KEK)
-        .expect_err("a modified record blob must not decrypt");
+    let opened =
+        Store::open_from_disk(&path, &KEK).expect_err("a modified record blob must not decrypt");
     assert!(matches!(opened, StoreError::KeyUnwrap(_)), "{opened:?}");
     cleanup(&path);
 }
@@ -439,7 +490,10 @@ fn an_unsupported_store_format_is_refused() {
     std::fs::write(&path, &text).unwrap();
 
     let err = Store::open_from_disk(&path, &KEK).expect_err("a future format must be refused");
-    assert!(matches!(err, StoreError::UnsupportedFormat { got: 99, .. }), "{err:?}");
+    assert!(
+        matches!(err, StoreError::UnsupportedFormat { got: 99, .. }),
+        "{err:?}"
+    );
     cleanup(&path);
 }
 
@@ -476,7 +530,9 @@ fn sealing_twice_replaces_atomically_and_stays_readable() {
     store.seal_to_disk(&path, &KEK).unwrap();
 
     let prov = provenance(&store);
-    store.append("phone", "A", &json!("+254712345678"), &prov).unwrap();
+    store
+        .append("phone", "A", &json!("+254712345678"), &prov)
+        .unwrap();
     store.seal_to_disk(&path, &KEK).unwrap();
 
     let opened = Store::open_from_disk(&path, &KEK).unwrap();

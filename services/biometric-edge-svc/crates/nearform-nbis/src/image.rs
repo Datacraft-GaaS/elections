@@ -38,7 +38,11 @@ impl FingerprintImage {
                 h: height,
             });
         }
-        Ok(Self { width, height, pixels })
+        Ok(Self {
+            width,
+            height,
+            pixels,
+        })
     }
 
     pub fn from_pgm_bytes(bytes: &[u8], width: u32, height: u32) -> Result<Self, NearformError> {
@@ -46,7 +50,9 @@ impl FingerprintImage {
     }
 
     pub fn from_pgm_or_pbm_bytes(
-        bytes: &[u8], width: u32, height: u32,
+        bytes: &[u8],
+        width: u32,
+        height: u32,
     ) -> Result<Self, NearformError> {
         Self::from_grayscale(width, height, bytes.to_vec())
     }
@@ -87,9 +93,15 @@ impl FingerprintImage {
         if tokens.len() < 3 {
             return Err(NearformError::Decode("PGM header incomplete".into()));
         }
-        let width: u32 = tokens[0].parse().map_err(|_| NearformError::Decode("bad width".into()))?;
-        let height: u32 = tokens[1].parse().map_err(|_| NearformError::Decode("bad height".into()))?;
-        let _maxval: u32 = tokens[2].parse().map_err(|_| NearformError::Decode("bad maxval".into()))?;
+        let width: u32 = tokens[0]
+            .parse()
+            .map_err(|_| NearformError::Decode("bad width".into()))?;
+        let height: u32 = tokens[1]
+            .parse()
+            .map_err(|_| NearformError::Decode("bad height".into()))?;
+        let _maxval: u32 = tokens[2]
+            .parse()
+            .map_err(|_| NearformError::Decode("bad maxval".into()))?;
 
         // Skip to after maxval newline
         while pos < data.len() && (data[pos] as char).is_ascii_whitespace() {

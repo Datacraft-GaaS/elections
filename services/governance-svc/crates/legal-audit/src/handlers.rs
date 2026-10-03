@@ -99,11 +99,14 @@ pub async fn record_transmission(
         legal_basis: req.legal_basis,
     };
     let verdicts = state.record_and_evaluate(record.clone());
-    (StatusCode::CREATED, Json(serde_json::json!({
-        "transmission": record,
-        "verdicts": verdicts,
-    })))
-    .into_response()
+    (
+        StatusCode::CREATED,
+        Json(serde_json::json!({
+            "transmission": record,
+            "verdicts": verdicts,
+        })),
+    )
+        .into_response()
 }
 
 pub async fn get_verdict(
@@ -158,7 +161,11 @@ pub async fn party_summary(
 
 pub async fn generate_report(State(state): State<SharedState>) -> axum::response::Response {
     info!("generate_report");
-    let records = state.transmissions_legacy.lock().expect("lock poisoned").clone();
+    let records = state
+        .transmissions_legacy
+        .lock()
+        .expect("lock poisoned")
+        .clone();
     let chain = state.verdicts.lock().expect("lock poisoned").clone();
 
     // The report is derived, not asserted: it counts what is actually stored and
@@ -173,8 +180,10 @@ pub async fn generate_report(State(state): State<SharedState>) -> axum::response
         .count();
     let mut findings: Vec<String> = Vec::new();
     for r in &records {
-        let rec_verdicts: Vec<&ComplianceVerdict> =
-            chain.iter().filter(|v| v.record_id == r.record_id).collect();
+        let rec_verdicts: Vec<&ComplianceVerdict> = chain
+            .iter()
+            .filter(|v| v.record_id == r.record_id)
+            .collect();
         if rec_verdicts.is_empty() {
             findings.push(format!(
                 "record {} has no verdict: it was stored but never evaluated",
@@ -222,7 +231,9 @@ pub async fn list_transmission_legal_records(
     let mut items: Vec<spec::TransmissionLegalBasis> = guard.values().cloned().collect();
     drop(guard);
     items.sort_by(|a, b| a.form_id.cmp(&b.form_id));
-    Json(serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }))
+    Json(
+        serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }),
+    )
 }
 
 /// GET /api/v1/governance/legal-audit/transmissions/{form_id} — fetch one
@@ -259,7 +270,10 @@ pub async fn certify_transmission(
         certified_at: chrono::Utc::now().to_rfc3339(),
     };
     let mut guard = state.certifications.lock().expect("lock poisoned");
-    guard.insert(certification.certification_id.clone(), certification.clone());
+    guard.insert(
+        certification.certification_id.clone(),
+        certification.clone(),
+    );
     drop(guard);
     (StatusCode::CREATED, Json(certification)).into_response()
 }

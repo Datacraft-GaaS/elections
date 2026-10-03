@@ -30,7 +30,12 @@ pub async fn register_symbol(
         .collect();
     check_symbol_availability(&existing, &req.symbol_name, &req.colour_hex)
         .map_err(ApiError::Conflict)?;
-    let symbol = PartySymbol::new(req.party_id, req.symbol_name, req.symbol_url, req.colour_hex);
+    let symbol = PartySymbol::new(
+        req.party_id,
+        req.symbol_name,
+        req.symbol_url,
+        req.colour_hex,
+    );
     state
         .symbols
         .lock()
@@ -57,9 +62,7 @@ pub async fn approve_symbol(
     Path(id): Path<Uuid>,
 ) -> Result<Json<PartySymbol>> {
     let mut guard = state.symbols.lock().map_err(|_| lock_err())?;
-    let symbol = guard
-        .get_mut(&id)
-        .ok_or_else(|| not_found("symbol", id))?;
+    let symbol = guard.get_mut(&id).ok_or_else(|| not_found("symbol", id))?;
     symbol.approve();
     let s = symbol.clone();
     drop(guard);
@@ -78,9 +81,7 @@ pub async fn reject_symbol(
     Path(id): Path<Uuid>,
 ) -> Result<Json<PartySymbol>> {
     let mut guard = state.symbols.lock().map_err(|_| lock_err())?;
-    let symbol = guard
-        .get_mut(&id)
-        .ok_or_else(|| not_found("symbol", id))?;
+    let symbol = guard.get_mut(&id).ok_or_else(|| not_found("symbol", id))?;
     symbol.reject();
     Ok(Json(symbol.clone()))
 }

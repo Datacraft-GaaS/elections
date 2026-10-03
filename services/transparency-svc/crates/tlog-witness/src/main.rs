@@ -14,7 +14,10 @@
 
 use std::sync::Arc;
 
-use axum::{routing::{get, post}, Router};
+use axum::{
+    routing::{get, post},
+    Router,
+};
 use sqlx::postgres::PgPoolOptions;
 
 #[tokio::main]
@@ -22,8 +25,8 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
     let db_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgres://eel:eel@localhost/eel_tlog".to_string());
-    let api_base = std::env::var("TLOG_API_URL")
-        .unwrap_or_else(|_| "http://localhost:8080".to_string());
+    let api_base =
+        std::env::var("TLOG_API_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
 
     let pool = Arc::new(
         PgPoolOptions::new()
@@ -66,15 +69,13 @@ async fn main() -> anyhow::Result<()> {
 
     tlog_witness::gossip::spawn_gossip(peers, detector_for_gossip, gossip_interval);
 
-
     let iab = Arc::new(tlog_witness::iab_client::IabWitnessClient::from_env(
         api_base,
         "iab-internal",
     )?);
     tokio::spawn(iab.run());
 
-    let addr =
-        std::env::var("BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:8082".to_string());
+    let addr = std::env::var("BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:8082".to_string());
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     axum::serve(listener, app).await?;
     Ok(())

@@ -38,12 +38,14 @@ fn problem(status: StatusCode, detail: String) -> Response {
         .into_response()
 }
 
-
 pub async fn health() -> impl IntoResponse {
     StatusCode::OK
 }
 
-pub async fn submit_finding(State(state): State<SharedState>, Json(req): Json<SubmitFindingRequest>) -> impl IntoResponse {
+pub async fn submit_finding(
+    State(state): State<SharedState>,
+    Json(req): Json<SubmitFindingRequest>,
+) -> impl IntoResponse {
     info!(
         election_cycle = %req.election_cycle,
         finding_type = ?req.finding_type,
@@ -79,7 +81,8 @@ pub async fn list_findings(State(state): State<SharedState>) -> impl IntoRespons
     // Real. Previously always an empty array.
     Json(serde_json::json!({
         "findings": state.findings_by_id.list(),
-    })).into_response()
+    }))
+    .into_response()
 }
 
 pub async fn triage_finding(
@@ -116,7 +119,8 @@ pub async fn list_recommendations(State(state): State<SharedState>) -> impl Into
     // Real. Previously always an empty array.
     Json(serde_json::json!({
         "recommendations": state.recommendations.list(),
-    })).into_response()
+    }))
+    .into_response()
 }
 
 pub async fn sign_recommendation(
@@ -246,7 +250,8 @@ pub async fn list_long_drip(State(state): State<SharedState>) -> impl IntoRespon
     // long-drip finding was outstanding.
     Json(serde_json::json!({
         "alerts": state.long_drip.list(),
-    })).into_response()
+    }))
+    .into_response()
 }
 
 pub async fn record_long_drip_review(
@@ -296,14 +301,16 @@ pub async fn next_cycle_handoff(State(state): State<SharedState>) -> impl IntoRe
     open.sort_by(|a, b| a.submitted_at.cmp(&b.submitted_at));
     let items: Vec<serde_json::Value> = open
         .iter()
-        .map(|f| serde_json::json!({
-            "finding_id": f.id,
-            "election_cycle": f.election_cycle,
-            "severity": f.severity,
-            "status": f.status,
-            "is_long_drip": f.is_long_drip,
-            "submitted_at": f.submitted_at,
-        }))
+        .map(|f| {
+            serde_json::json!({
+                "finding_id": f.id,
+                "election_cycle": f.election_cycle,
+                "severity": f.severity,
+                "status": f.status,
+                "is_long_drip": f.is_long_drip,
+                "submitted_at": f.submitted_at,
+            })
+        })
         .collect();
     Json(serde_json::json!({ "handoff_items": items })).into_response()
 }
@@ -350,7 +357,9 @@ pub async fn list_post_election_reviews(State(state): State<SharedState>) -> imp
     let mut items: Vec<spec::ElectionReview> = guard.values().cloned().collect();
     drop(guard);
     items.sort_by(|a, b| a.created_at.cmp(&b.created_at));
-    Json(serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }))
+    Json(
+        serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }),
+    )
 }
 
 /// GET /api/v1/governance/review/reviews/{review_id} — fetch one review.
@@ -377,7 +386,12 @@ pub async fn add_review_finding(
     Json(req): Json<spec::ReviewFindingRequest>,
 ) -> impl IntoResponse {
     info!(review_id, "add_review_finding");
-    if !state.reviews.lock().expect("lock poisoned").contains_key(&review_id) {
+    if !state
+        .reviews
+        .lock()
+        .expect("lock poisoned")
+        .contains_key(&review_id)
+    {
         return (
             StatusCode::NOT_FOUND,
             Json(serde_json::json!({"detail": "review not found"})),

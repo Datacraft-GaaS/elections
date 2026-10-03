@@ -135,7 +135,9 @@ async fn main() -> anyhow::Result<()> {
                 .expect("ingest-failures needs --db-url or $DATABASE_URL");
             let n = tlog_admin::failures::list(&db).await?;
             if n > 0 {
-                anyhow::bail!("public log is missing {n} event(s); the log must not be trusted as complete");
+                anyhow::bail!(
+                    "public log is missing {n} event(s); the log must not be trusted as complete"
+                );
             }
         }
         Commands::IngestFailureAck { id, db_url } => {
@@ -147,7 +149,10 @@ async fn main() -> anyhow::Result<()> {
         Commands::BulkIngest { topic, from_offset } => {
             tlog_admin::bulk_ingest::run(&topic, from_offset, &cli.api_url).await?
         }
-        Commands::IntegrityStatement { db_url, signing_key_hex } => {
+        Commands::IntegrityStatement {
+            db_url,
+            signing_key_hex,
+        } => {
             let db = db_url
                 .or_else(|| std::env::var("DATABASE_URL").ok())
                 .expect("integrity-statement needs --db-url or $DATABASE_URL");
@@ -156,17 +161,40 @@ async fn main() -> anyhow::Result<()> {
                 anyhow::bail!("integrity statement records {open} open ingest failure(s); the log must not be trusted as complete");
             }
         }
-        Commands::Coverage { expected_file, present_file, signing_key_hex } => {
-            let missing = tlog_admin::coverage::run(&expected_file, &present_file, &signing_key_hex).await?;
+        Commands::Coverage {
+            expected_file,
+            present_file,
+            signing_key_hex,
+        } => {
+            let missing =
+                tlog_admin::coverage::run(&expected_file, &present_file, &signing_key_hex).await?;
             if missing > 0 {
                 anyhow::bail!("coverage certificate shows {missing} missing station/form id(s); the log must not be trusted as complete");
             }
         }
-        Commands::AttestArtifact { artifact_sha256, rekor_uuid, signer_name, signing_key_hex } => {
-            tlog_admin::attestation::run(&artifact_sha256, &rekor_uuid, &signer_name, &signing_key_hex).await?
+        Commands::AttestArtifact {
+            artifact_sha256,
+            rekor_uuid,
+            signer_name,
+            signing_key_hex,
+        } => {
+            tlog_admin::attestation::run(
+                &artifact_sha256,
+                &rekor_uuid,
+                &signer_name,
+                &signing_key_hex,
+            )
+            .await?
         }
-        Commands::AttestVerify { attestation_file, pubkey_hex } => {
-            let ok = tlog_admin::attestation::run_verify(&attestation_file, pubkey_hex.as_deref().unwrap_or("")).await?;
+        Commands::AttestVerify {
+            attestation_file,
+            pubkey_hex,
+        } => {
+            let ok = tlog_admin::attestation::run_verify(
+                &attestation_file,
+                pubkey_hex.as_deref().unwrap_or(""),
+            )
+            .await?;
             if !ok {
                 anyhow::bail!("attestation verification FAILED");
             }

@@ -82,7 +82,10 @@ fn problem(status: StatusCode, title: &str, detail: impl Into<String>) -> Respon
 
 /// A header's value as a `String`, if present and valid UTF-8.
 fn header(headers: &HeaderMap, name: &str) -> Option<String> {
-    headers.get(name).and_then(|v| v.to_str().ok()).map(str::to_string)
+    headers
+        .get(name)
+        .and_then(|v| v.to_str().ok())
+        .map(str::to_string)
 }
 
 /// `POST /api/v1/verifier/lookups` — voter registration status by hashed ID.
@@ -94,7 +97,9 @@ struct VerificationRequest {
 }
 
 fn is_hex64(s: &str) -> bool {
-    s.len() == 64 && s.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+    s.len() == 64
+        && s.bytes()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
 }
 
 async fn lookup_voter_registration(
@@ -167,7 +172,10 @@ async fn get_result_summary(State(state): State<SharedVerifierStore>) -> Respons
     // The contract offers 200 or 500 on this path, not 404: the summary is
     // published every two minutes during tallying, so its absence is a fault in the
     // publishing chain rather than a missing resource.
-    match state.latest_results_for("KE-GE-2027").or_else(|| state.latest_results_for("")) {
+    match state
+        .latest_results_for("KE-GE-2027")
+        .or_else(|| state.latest_results_for(""))
+    {
         Some(summary) => Json(summary).into_response(),
         None => problem(
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -263,10 +271,7 @@ fn resolve_ussd(state: &SharedVerifierStore, text: &str) -> UssdReply {
                 ),
             }
         }
-        other => UssdReply::new(
-            format!("{other} si mojawepo. Jibu 1, 2 au 0."),
-            "continue",
-        ),
+        other => UssdReply::new(format!("{other} si mojawepo. Jibu 1, 2 au 0."), "continue"),
     }
 }
 
@@ -299,7 +304,9 @@ async fn handle_ussd_session(
             return problem(
                 StatusCode::UNAUTHORIZED,
                 "Webhook signature invalid",
-                format!("the {USSD_SIG} header does not match the body under the configured secret"),
+                format!(
+                    "the {USSD_SIG} header does not match the body under the configured secret"
+                ),
             )
         }
         SignatureVerdict::Missing => {
@@ -394,7 +401,8 @@ async fn verify_whatsapp_webhook(
             "hub.mode must be 'subscribe'.",
         );
     }
-    let (Some(token), Some(challenge)) = (q.hub_verify_token.as_deref(), q.hub_challenge.as_deref())
+    let (Some(token), Some(challenge)) =
+        (q.hub_verify_token.as_deref(), q.hub_challenge.as_deref())
     else {
         return problem(
             StatusCode::FORBIDDEN,
@@ -421,7 +429,11 @@ async fn handle_whatsapp_webhook(
 ) -> Response {
     // Previously answered `{"acknowledged": true}` for any body, signed or not.
     let secret = state.whatsapp_app_secret();
-    match verify_hub_signature(secret.as_deref(), &body, header(&headers, HUB_SIG).as_deref()) {
+    match verify_hub_signature(
+        secret.as_deref(),
+        &body,
+        header(&headers, HUB_SIG).as_deref(),
+    ) {
         SignatureVerdict::Valid => {}
         SignatureVerdict::Unverifiable => {
             return problem(

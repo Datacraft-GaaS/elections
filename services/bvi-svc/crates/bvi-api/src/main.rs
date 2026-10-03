@@ -44,5 +44,7 @@ async fn main() {
         .await
         .expect("bind failed");
     info!(http_addr, "bvi-api HTTP listening");
-    axum::serve(listener, app(state)).await.expect("server failed");
+    axum::serve(listener, app(state))
+        .await
+        .expect("server failed");
 }

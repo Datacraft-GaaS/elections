@@ -56,7 +56,12 @@ pub async fn upload_blob(
 ) -> Result<BlobRef, OutboxError> {
     use reqwest::Client;
 
-    let url = format!("{}/{}/{}", config.endpoint.trim_end_matches('/'), config.bucket, object_key);
+    let url = format!(
+        "{}/{}/{}",
+        config.endpoint.trim_end_matches('/'),
+        config.bucket,
+        object_key
+    );
     let hash = blake3_hex(bytes);
 
     let client = Client::new();

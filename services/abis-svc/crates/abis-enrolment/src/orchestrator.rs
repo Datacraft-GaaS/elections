@@ -56,10 +56,7 @@ pub fn start_workers(
     pool: Arc<PgPool>,
     config: Arc<OrchestratorConfig>,
 ) -> Vec<tokio::task::JoinHandle<()>> {
-    let statuses = vec![
-        EnrolmentStatus::Received,
-        EnrolmentStatus::DedupPending,
-    ];
+    let statuses = vec![EnrolmentStatus::Received, EnrolmentStatus::DedupPending];
 
     (0..config.worker_count)
         .map(|i| {

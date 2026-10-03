@@ -46,7 +46,10 @@ pub struct StatusUpdateRequest {
 pub fn router() -> Router<crate::state::AppState> {
     Router::new()
         .route("/api/v1/bvr/voters/{voter_id}", get(get_voter))
-        .route("/api/v1/bvr/voters/{voter_id}/status", patch(update_voter_status))
+        .route(
+            "/api/v1/bvr/voters/{voter_id}/status",
+            patch(update_voter_status),
+        )
         .route("/api/v1/bvr/voters/{voter_id}/qr", get(get_voter_qr))
 }
 
@@ -69,7 +72,9 @@ async fn get_voter(
     // return even if it wanted one.
     match state.store.voter(&voter_id).await.map_err(map)? {
         Some(voter) => Ok(Json(voter).into_response()),
-        None => Err(ApiError::NotFound(format!("no voter {voter_id} on the register"))),
+        None => Err(ApiError::NotFound(format!(
+            "no voter {voter_id} on the register"
+        ))),
     }
 }
 
@@ -81,8 +86,14 @@ async fn update_voter_status(
     // Previously logged the change and returned 204, so a status change was
     // acknowledged and never happened. The contract asks for 200 with the updated
     // VoterSummary, which is also the only way a caller can see the new version.
-    if req.reason_detail.as_ref().is_some_and(|d| d.chars().count() > 500) {
-        return Err(ApiError::BadRequest("reason_detail is at most 500 characters".into()));
+    if req
+        .reason_detail
+        .as_ref()
+        .is_some_and(|d| d.chars().count() > 500)
+    {
+        return Err(ApiError::BadRequest(
+            "reason_detail is at most 500 characters".into(),
+        ));
     }
     let updated = state
         .store
@@ -90,7 +101,10 @@ async fn update_voter_status(
             &voter_id,
             req.status.trim(),
             req.reason_code.trim(),
-            req.reason_detail.as_deref().map(str::trim).filter(|d| !d.is_empty()),
+            req.reason_detail
+                .as_deref()
+                .map(str::trim)
+                .filter(|d| !d.is_empty()),
             req.officer_id.trim(),
         )
         .await

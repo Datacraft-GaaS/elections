@@ -50,13 +50,18 @@ impl FingerprintExtractor {
         if self.use_nbis {
             // FFI path: call NBIS mindtct
             #[cfg(nbis_enabled)]
-            { return self.extract_nbis(image); }
+            {
+                return self.extract_nbis(image);
+            }
         }
         // Rust fallback: simplified Bazen-style pipeline
         self.extract_pure_rust(image)
     }
 
-    fn extract_pure_rust(&self, image: &FingerprintImage) -> Result<Template, super::NearformError> {
+    fn extract_pure_rust(
+        &self,
+        image: &FingerprintImage,
+    ) -> Result<Template, super::NearformError> {
         // Step 1: Normalize
         let normalized = normalize(image);
         // Step 2: Orientation field
@@ -74,11 +79,17 @@ impl FingerprintExtractor {
 fn normalize(img: &FingerprintImage) -> Vec<f32> {
     let n = img.pixels.len();
     let mean = img.pixels.iter().map(|&p| p as f32).sum::<f32>() / n as f32;
-    let var = img.pixels.iter().map(|&p| (p as f32 - mean).powi(2)).sum::<f32>() / n as f32;
+    let var = img
+        .pixels
+        .iter()
+        .map(|&p| (p as f32 - mean).powi(2))
+        .sum::<f32>()
+        / n as f32;
     let std = var.sqrt().max(1.0);
     let target_mean = 100.0;
     let target_std = 50.0;
-    img.pixels.iter()
+    img.pixels
+        .iter()
         .map(|&p| target_mean + (p as f32 - mean) * (target_std / std))
         .collect()
 }
@@ -88,11 +99,11 @@ fn orientation_field(normalized: &[f32]) -> Vec<f32> {
     let mut orient = vec![0.0f32; normalized.len()];
     // Assume square image for simplicity in this fallback.
     let w = (normalized.len() as f32).sqrt() as usize;
-    for y in 1..w-1 {
-        for x in 1..w-1 {
-            let gx = normalized[y*w + x + 1] - normalized[y*w + x - 1];
-            let gy = normalized[(y+1)*w + x] - normalized[(y-1)*w + x];
-            orient[y*w + x] = 0.5 * (2.0 * gx * gy).atan2(gx*gx - gy*gy);
+    for y in 1..w - 1 {
+        for x in 1..w - 1 {
+            let gx = normalized[y * w + x + 1] - normalized[y * w + x - 1];
+            let gy = normalized[(y + 1) * w + x] - normalized[(y - 1) * w + x];
+            orient[y * w + x] = 0.5 * (2.0 * gx * gy).atan2(gx * gx - gy * gy);
         }
     }
     orient
@@ -101,7 +112,10 @@ fn orientation_field(normalized: &[f32]) -> Vec<f32> {
 fn binarize(normalized: &[f32], _orient: &[f32]) -> Vec<u8> {
     // Mean threshold; for real NBIS, uses ridge orientation-aware adaptive threshold.
     let mean: f32 = normalized.iter().sum::<f32>() / normalized.len() as f32;
-    normalized.iter().map(|&p| if p > mean { 1 } else { 0 }).collect()
+    normalized
+        .iter()
+        .map(|&p| if p > mean { 1 } else { 0 })
+        .collect()
 }
 
 fn thin(binary: &[u8], width: u32, height: u32) -> Vec<u8> {
@@ -115,27 +129,42 @@ fn thin(binary: &[u8], width: u32, height: u32) -> Vec<u8> {
         changed = false;
         for sub_iter in 0..2 {
             let mut to_remove = Vec::new();
-            for y in 1..h-1 {
-                for x in 1..w-1 {
-                    let p = |dx: i32, dy: i32| sk[(y as i32 + dy) as usize * w + (x as i32 + dx) as usize];
-                    let p2 = p(1, 0); let p3 = p(1, -1); let p4 = p(0, -1);
-                    let p5 = p(-1, -1); let p6 = p(-1, 0); let p7 = p(-1, 1);
-                    let p8 = p(0, 1); let p9 = p(1, 1);
-                    if p(0, 0) == 0 { continue; }
+            for y in 1..h - 1 {
+                for x in 1..w - 1 {
+                    let p = |dx: i32, dy: i32| {
+                        sk[(y as i32 + dy) as usize * w + (x as i32 + dx) as usize]
+                    };
+                    let p2 = p(1, 0);
+                    let p3 = p(1, -1);
+                    let p4 = p(0, -1);
+                    let p5 = p(-1, -1);
+                    let p6 = p(-1, 0);
+                    let p7 = p(-1, 1);
+                    let p8 = p(0, 1);
+                    let p9 = p(1, 1);
+                    if p(0, 0) == 0 {
+                        continue;
+                    }
                     let b = p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9;
-                    if b < 2 || b > 6 { continue; }
-                    let a = (if p2==0 && p3==1 {1} else {0})
-                          + (if p3==0 && p4==1 {1} else {0})
-                          + (if p4==0 && p5==1 {1} else {0})
-                          + (if p5==0 && p6==1 {1} else {0})
-                          + (if p6==0 && p7==1 {1} else {0})
-                          + (if p7==0 && p8==1 {1} else {0})
-                          + (if p8==0 && p9==1 {1} else {0})
-                          + (if p9==0 && p2==1 {1} else {0});
-                    if a != 1 { continue; }
-                    if sub_iter == 0 && p2*p4*p8 == 0 && p2*p6*p8 == 0 { /* ok */ }
-                    else if sub_iter == 1 && p2*p4*p6 == 0 && p4*p6*p8 == 0 { /* ok */ }
-                    else { continue; }
+                    if b < 2 || b > 6 {
+                        continue;
+                    }
+                    let a = (if p2 == 0 && p3 == 1 { 1 } else { 0 })
+                        + (if p3 == 0 && p4 == 1 { 1 } else { 0 })
+                        + (if p4 == 0 && p5 == 1 { 1 } else { 0 })
+                        + (if p5 == 0 && p6 == 1 { 1 } else { 0 })
+                        + (if p6 == 0 && p7 == 1 { 1 } else { 0 })
+                        + (if p7 == 0 && p8 == 1 { 1 } else { 0 })
+                        + (if p8 == 0 && p9 == 1 { 1 } else { 0 })
+                        + (if p9 == 0 && p2 == 1 { 1 } else { 0 });
+                    if a != 1 {
+                        continue;
+                    }
+                    if sub_iter == 0 && p2 * p4 * p8 == 0 && p2 * p6 * p8 == 0 { /* ok */
+                    } else if sub_iter == 1 && p2 * p4 * p6 == 0 && p4 * p6 * p8 == 0 { /* ok */
+                    } else {
+                        continue;
+                    }
                     to_remove.push(y * w + x);
                 }
             }
@@ -152,12 +181,16 @@ fn detect_minutiae(skeleton: &[u8], width: u32, height: u32, min_q: u32) -> Temp
     let w = width as usize;
     let h = height as usize;
     let mut tpl = Template::new(width, height);
-    for y in 1..h-1 {
-        for x in 1..w-1 {
-            let p = |dx: i32, dy: i32| skeleton[(y as i32 + dy) as usize * w + (x as i32 + dx) as usize];
-            if skeleton[y * w + x] == 0 { continue; }
-            let n = p(0, 1) + p(1, 1) + p(1, 0) + p(1, -1)
-                  + p(0, -1) + p(-1, -1) + p(-1, 0) + p(-1, 1);
+    for y in 1..h - 1 {
+        for x in 1..w - 1 {
+            let p = |dx: i32, dy: i32| {
+                skeleton[(y as i32 + dy) as usize * w + (x as i32 + dx) as usize]
+            };
+            if skeleton[y * w + x] == 0 {
+                continue;
+            }
+            let n =
+                p(0, 1) + p(1, 1) + p(1, 0) + p(1, -1) + p(0, -1) + p(-1, -1) + p(-1, 0) + p(-1, 1);
             let mclass = if n == 1 {
                 MinutiaType::RidgeEnd
             } else if n == 3 {
@@ -165,7 +198,9 @@ fn detect_minutiae(skeleton: &[u8], width: u32, height: u32, min_q: u32) -> Temp
             } else {
                 MinutiaType::DontCare
             };
-            if matches!(mclass, MinutiaType::DontCare) { continue; }
+            if matches!(mclass, MinutiaType::DontCare) {
+                continue;
+            }
             // Quality = NFIQ-style heuristic: minutiae count + ridge clarity.
             // In real NBIS, NFIQ2 uses ML model with 28 features.
             let quality = ((n as u32 * 30) + 40).max(min_q);
@@ -173,7 +208,8 @@ fn detect_minutiae(skeleton: &[u8], width: u32, height: u32, min_q: u32) -> Temp
             // orientation field at this point)
             let theta = 0.0;
             tpl.add(Minutia {
-                x: x as u32, y: y as u32,
+                x: x as u32,
+                y: y as u32,
                 theta_deg: theta,
                 quality,
                 mclass,
@@ -206,6 +242,9 @@ mod tests {
         }
         let img = FingerprintImage::from_grayscale(w, h, pixels).unwrap();
         let tpl = FingerprintExtractor::default().extract(&img).unwrap();
-        assert!(!tpl.minutiae.is_empty(), "should detect at least one minutia");
+        assert!(
+            !tpl.minutiae.is_empty(),
+            "should detect at least one minutia"
+        );
     }
 }

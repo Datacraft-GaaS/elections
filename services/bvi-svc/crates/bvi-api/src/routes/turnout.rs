@@ -23,13 +23,7 @@ use axum::{
 use bvi_turnout::resolve_scope;
 use serde::Deserialize;
 
-use crate::{
-    error::ApiError,
-    idem,
-    routes::store_error,
-    state::AppState,
-    store::BviStore,
-};
+use crate::{error::ApiError, idem, routes::store_error, state::AppState, store::BviStore};
 
 const INSTANCE: &str = "/api/v1/bvi/turnout";
 

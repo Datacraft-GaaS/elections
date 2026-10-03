@@ -20,8 +20,8 @@ use rdkafka::config::ClientConfig;
 use rdkafka::consumer::{Consumer, StreamConsumer};
 use rdkafka::message::Message;
 use sqlx::PgPool;
-use tokio::sync::Semaphore;
 use tlog_sequencer::{AppendResult, Sequencer, SequencerError};
+use tokio::sync::Semaphore;
 use tracing::{error, info, warn};
 
 use crate::topic_router::topic_to_domain;
@@ -46,12 +46,12 @@ pub enum OffsetPolicy {
 /// `Ok(Some(_))` (a synthetic result with leaf_index 0), so replays after an
 /// offset-save failure are treated as Advance — exactly what makes re-append
 /// on restart dedup-safe.
-pub fn offset_policy(
-    outcome: &Result<Option<AppendResult>, SequencerError>,
-) -> OffsetPolicy {
+pub fn offset_policy(outcome: &Result<Option<AppendResult>, SequencerError>) -> OffsetPolicy {
     match outcome {
         Ok(Some(_)) => OffsetPolicy::Advance,
-        Ok(None) => OffsetPolicy::Park { kind: "rate_limited" },
+        Ok(None) => OffsetPolicy::Park {
+            kind: "rate_limited",
+        },
         Err(e) => OffsetPolicy::Park { kind: e.kind() },
     }
 }
@@ -99,14 +99,13 @@ impl IngestConsumer {
                         None => continue,
                     };
 
-                    let envelope: eel_events_rs::Envelope =
-                        match serde_json::from_slice(&payload) {
-                            Ok(e) => e,
-                            Err(e) => {
-                                warn!(topic=%topic, error=%e, "envelope deserialize failed");
-                                continue;
-                            }
-                        };
+                    let envelope: eel_events_rs::Envelope = match serde_json::from_slice(&payload) {
+                        Ok(e) => e,
+                        Err(e) => {
+                            warn!(topic=%topic, error=%e, "envelope deserialize failed");
+                            continue;
+                        }
+                    };
 
                     let domain = topic_to_domain(&topic);
                     let canonical = serde_json::to_vec(&envelope.data).unwrap_or_default();
@@ -187,8 +186,7 @@ fn base64_decode(s: &str) -> Result<Vec<u8>, ()> {
     // For WP-2.1 we just store raw bytes from the signature field.
     // Return empty on failure — the sequencer stores whatever bytes arrive.
     use std::collections::HashMap;
-    const CHARS: &[u8] =
-        b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    const CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut map: HashMap<u8, u8> = HashMap::new();
     for (i, &c) in CHARS.iter().enumerate() {
         map.insert(c, i as u8);
@@ -246,7 +244,9 @@ mod offset_policy_tests {
     fn park_on_rate_limit() {
         assert_eq!(
             offset_policy(&Ok(None)),
-            OffsetPolicy::Park { kind: "rate_limited" }
+            OffsetPolicy::Park {
+                kind: "rate_limited"
+            }
         );
     }
 
@@ -255,7 +255,10 @@ mod offset_policy_tests {
         // Simulates a partition / proof-generation failure ("db down" payload).
         let outcome: Result<Option<AppendResult>, SequencerError> =
             Err(SequencerError::Proof("db down".into()));
-        assert_eq!(offset_policy(&outcome), OffsetPolicy::Park { kind: "proof" });
+        assert_eq!(
+            offset_policy(&outcome),
+            OffsetPolicy::Park { kind: "proof" }
+        );
     }
 
     #[test]

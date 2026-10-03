@@ -15,10 +15,10 @@
 //! POST /api/v1/bvi/sessions and PATCH /api/v1/bvi/sessions/{id}/close.
 
 use axum::{
+    extract::rejection::JsonRejection,
     extract::{Path, State},
     http::{header, HeaderMap, StatusCode},
     response::{IntoResponse, Response},
-    extract::rejection::JsonRejection,
     Json,
 };
 use chrono::Utc;
@@ -49,7 +49,10 @@ pub async fn open_bvi_session<S: BviStore>(
     }
 
     let Json(create) = body.map_err(|rej| ApiError::bad_request(INSTANCE, rej.body_text()))?;
-    if create.station_code.is_empty() || create.device_serial.is_empty() || create.election_id.is_empty() {
+    if create.station_code.is_empty()
+        || create.device_serial.is_empty()
+        || create.election_id.is_empty()
+    {
         return Err(ApiError::bad_request(
             INSTANCE,
             "station_code, device_serial and election_id must be non-empty",
@@ -98,7 +101,9 @@ pub async fn close_bvi_session<S: BviStore>(
     }
 
     if existing.status == "active" {
-        let closed_at = body.and_then(|Json(b)| b.closed_at).unwrap_or_else(Utc::now);
+        let closed_at = body
+            .and_then(|Json(b)| b.closed_at)
+            .unwrap_or_else(Utc::now);
         let session = state
             .store
             .close_session(&session_id, closed_at)

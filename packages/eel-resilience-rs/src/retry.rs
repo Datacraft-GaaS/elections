@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::error::ResilienceError;
 use std::time::Duration;
 use tokio::time::sleep;
-use crate::error::ResilienceError;
 
 /// Jitter strategy for backoff.
 #[derive(Debug, Clone, Copy)]
@@ -81,7 +81,11 @@ where
                 };
                 sleep(delay).await;
             }
-            Err(_) => return Err(ResilienceError::RetriesExhausted { attempts: attempt + 1 }),
+            Err(_) => {
+                return Err(ResilienceError::RetriesExhausted {
+                    attempts: attempt + 1,
+                })
+            }
         }
     }
 }

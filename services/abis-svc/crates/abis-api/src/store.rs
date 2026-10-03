@@ -132,11 +132,7 @@ impl AbisStore {
     }
 
     /// Accept an enrolment job.
-    pub fn create_job(
-        &self,
-        subject_id: &str,
-        requested_modalities: Vec<String>,
-    ) -> EnrolmentJob {
+    pub fn create_job(&self, subject_id: &str, requested_modalities: Vec<String>) -> EnrolmentJob {
         let now = chrono::Utc::now().to_rfc3339();
         let job = EnrolmentJob {
             job_id: format!("job-{}", short_id()),
@@ -153,7 +149,10 @@ impl AbisStore {
                     .to_string(),
             ),
         };
-        self.order.lock().expect("lock poisoned").push(job.job_id.clone());
+        self.order
+            .lock()
+            .expect("lock poisoned")
+            .push(job.job_id.clone());
         self.jobs
             .lock()
             .expect("lock poisoned")
@@ -163,14 +162,21 @@ impl AbisStore {
 
     /// A job by id.
     pub fn job(&self, job_id: &str) -> Option<EnrolmentJob> {
-        self.jobs.lock().expect("lock poisoned").get(job_id).cloned()
+        self.jobs
+            .lock()
+            .expect("lock poisoned")
+            .get(job_id)
+            .cloned()
     }
 
     /// Every job, in arrival order.
     pub fn jobs(&self) -> Vec<EnrolmentJob> {
         let order = self.order.lock().expect("lock poisoned");
         let guard = self.jobs.lock().expect("lock poisoned");
-        order.iter().filter_map(|id| guard.get(id).cloned()).collect()
+        order
+            .iter()
+            .filter_map(|id| guard.get(id).cloned())
+            .collect()
     }
 
     /// Advance a job's state.
@@ -195,7 +201,9 @@ impl AbisStore {
             .get_mut(job_id)
             .ok_or_else(|| format!("no enrolment job with id {job_id}"))?;
         if job.status == JobStatus::Withdrawn {
-            return Err(format!("job {job_id} was withdrawn; no capture can be recorded"));
+            return Err(format!(
+                "job {job_id} was withdrawn; no capture can be recorded"
+            ));
         }
         if !job.requested_modalities.iter().any(|m| m == modality) {
             return Err(format!(
@@ -209,7 +217,11 @@ impl AbisStore {
             job.status = JobStatus::Processing;
         }
         // Every requested modality present means the capture is complete.
-        if job.requested_modalities.iter().all(|m| job.modalities_completed.contains(m)) {
+        if job
+            .requested_modalities
+            .iter()
+            .all(|m| job.modalities_completed.contains(m))
+        {
             job.status = JobStatus::Captured;
         }
         job.updated_at = chrono::Utc::now().to_rfc3339();

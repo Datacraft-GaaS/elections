@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use axum::{body::Body, http::{Request, StatusCode}};
+use axum::{
+    body::Body,
+    http::{Request, StatusCode},
+};
 use tower::ServiceExt;
 
 #[cfg(test)] // trace: ["FR-M37-001","FR-M42-016","FR-M60-011"]
-
 #[tokio::test]
 async fn health_returns_200() {
     let app = training_api::router::build_router();
@@ -77,10 +79,18 @@ async fn verify_badge_returns_no_pii() {
         .unwrap();
     let resp = app.oneshot(req).await.unwrap();
     assert_eq!(resp.status(), StatusCode::OK);
-    let body_bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let body_bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let body: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
-    assert!(body.get("applicant_name").is_none(), "response must not contain applicant_name PII");
-    assert!(body.get("id_number").is_none(), "response must not contain id_number PII");
+    assert!(
+        body.get("applicant_name").is_none(),
+        "response must not contain applicant_name PII"
+    );
+    assert!(
+        body.get("id_number").is_none(),
+        "response must not contain id_number PII"
+    );
 }
 
 #[tokio::test]
@@ -92,8 +102,16 @@ async fn get_crl_returns_revoked_serials_array() {
         .unwrap();
     let resp = app.oneshot(req).await.unwrap();
     assert_eq!(resp.status(), StatusCode::OK);
-    let body_bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let body_bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let body: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
-    assert!(body.get("revoked_serials").is_some(), "response must contain revoked_serials array");
-    assert!(body["revoked_serials"].is_array(), "revoked_serials must be an array");
+    assert!(
+        body.get("revoked_serials").is_some(),
+        "response must contain revoked_serials array"
+    );
+    assert!(
+        body["revoked_serials"].is_array(),
+        "revoked_serials must be an array"
+    );
 }

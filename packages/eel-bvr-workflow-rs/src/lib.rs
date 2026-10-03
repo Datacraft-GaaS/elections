@@ -31,9 +31,9 @@ pub mod compile;
 pub mod model;
 pub mod validate;
 
-pub use compile::{CompileError, CompiledWorkflow, compile};
+pub use compile::{compile, CompileError, CompiledWorkflow};
 pub use model::{
     CaptureKind, CapturePolicy, CaptureRequirement, Constraints, DataItem, DataKind, Step,
     StepKind, WorkflowSpec,
 };
-pub use validate::{SubmissionError, ValidationError, validate_submission};
+pub use validate::{validate_submission, SubmissionError, ValidationError};

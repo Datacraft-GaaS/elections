@@ -59,7 +59,11 @@ impl IabWitnessClient {
         let seed: [u8; 32] = seed
             .try_into()
             .map_err(|_| anyhow::anyhow!("EEL_WITNESS_SIGNING_KEY must be exactly 32 bytes"))?;
-        Ok(Self::new(api_base_url, witness_id, SigningKey::from_bytes(&seed)))
+        Ok(Self::new(
+            api_base_url,
+            witness_id,
+            SigningKey::from_bytes(&seed),
+        ))
     }
 
     /// Start the cosign loop (polls every 60s).
@@ -93,13 +97,16 @@ impl IabWitnessClient {
     async fn cosign_latest(&self) -> anyhow::Result<()> {
         let client = reqwest::Client::new();
         let url = format!("{}/api/v1/transparency/sth/latest", self.api_base_url);
-        let sth: SignedTreeHead = client.get(&url).send().await?.error_for_status()?.json().await?;
+        let sth: SignedTreeHead = client
+            .get(&url)
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?;
 
         let signature = self.sign_sth(&sth)?;
-        let cosign_url = format!(
-            "{}/api/v1/transparency/witnesses/cosign",
-            self.api_base_url
-        );
+        let cosign_url = format!("{}/api/v1/transparency/witnesses/cosign", self.api_base_url);
         let body = serde_json::json!({
             "sth_id": sth.id,
             "witness_id": self.witness_id,
@@ -212,7 +219,10 @@ mod tests {
         let sig_hex = posted["signature"].as_str().unwrap();
         let sig = ed25519_dalek::Signature::from_slice(&hex::decode(sig_hex).unwrap()).unwrap();
         verifying
-            .verify(&IabWitnessClient::cosign_message(&sth(7, "00112233")).unwrap(), &sig)
+            .verify(
+                &IabWitnessClient::cosign_message(&sth(7, "00112233")).unwrap(),
+                &sig,
+            )
             .expect("posted cosignature must verify");
     }
 }

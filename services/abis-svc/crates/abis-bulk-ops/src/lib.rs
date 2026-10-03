@@ -32,5 +32,5 @@ pub mod progress;
 pub mod retire;
 pub mod rewrap;
 
-pub use domain::{BulkOperation, BulkOpState, BulkOpType, FailureRecord, ProgressSnapshot};
+pub use domain::{BulkOpState, BulkOpType, BulkOperation, FailureRecord, ProgressSnapshot};
 pub use error::BulkOpsError;

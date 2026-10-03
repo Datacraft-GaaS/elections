@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::error::ResilienceError;
+use chrono::{DateTime, Duration, Utc};
+use hex::encode as hex_encode;
+use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use sha2::{Sha256, Digest};
-use hex::encode as hex_encode;
-use chrono::{DateTime, Utc, Duration};
-use crate::error::ResilienceError;
 
 /// Entry stored for an idempotency key.
 #[derive(Debug, Clone)]
@@ -71,23 +71,21 @@ impl IdempotencyStore {
             Some(entry) if entry.body_hash == hash => Ok(entry.response.clone()),
             Some(_) => Err(ResilienceError::IdempotencyConflict),
             None => {
-                guard.insert(store_key, IdempotencyEntry {
-                    body_hash: hash,
-                    response: None,
-                    created_at: Utc::now(),
-                });
+                guard.insert(
+                    store_key,
+                    IdempotencyEntry {
+                        body_hash: hash,
+                        response: None,
+                        created_at: Utc::now(),
+                    },
+                );
                 Ok(None)
             }
         }
     }
 
     /// Store the response for an idempotency key.
-    pub async fn store_response(
-        &self,
-        subject: &str,
-        idempotency_key: &str,
-        response: Vec<u8>,
-    ) {
+    pub async fn store_response(&self, subject: &str, idempotency_key: &str, response: Vec<u8>) {
         let store_key = format!("{subject}:{idempotency_key}");
         let mut guard = self.entries.lock().await;
         if let Some(entry) = guard.get_mut(&store_key) {

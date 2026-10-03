@@ -26,7 +26,7 @@ use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     response::{IntoResponse, Json},
-    routing::{get, post, patch},
+    routing::{get, patch, post},
     Router,
 };
 use serde::{Deserialize, Serialize};
@@ -44,29 +44,43 @@ use tracing::{info, instrument, warn};
 /// Outbox client placeholder — throws until eel_outbox_rs is version-aligned.
 pub struct OutboxClient;
 impl OutboxClient {
-    pub fn new(_name: String) -> Self { OutboxClient }
+    pub fn new(_name: String) -> Self {
+        OutboxClient
+    }
     pub async fn emit(&self, _event: serde_json::Value) -> anyhow::Result<()> {
-        Err(anyhow::anyhow!("OutboxClient::emit not yet implemented — requires eel_outbox_rs crate alignment"))
+        Err(anyhow::anyhow!(
+            "OutboxClient::emit not yet implemented — requires eel_outbox_rs crate alignment"
+        ))
     }
 }
 
 /// Keycloak OIDC token exchange placeholder — throws until eel_api_server_rs is available.
 pub async fn keycloak_token_exchange(
-    _code: &str, _verifier: &str, _attestation: &str
+    _code: &str,
+    _verifier: &str,
+    _attestation: &str,
 ) -> Result<(String, String), anyhow::Error> {
-    Err(anyhow::anyhow!("keycloak_token_exchange not yet implemented — requires eel_api_server_rs crate"))
+    Err(anyhow::anyhow!(
+        "keycloak_token_exchange not yet implemented — requires eel_api_server_rs crate"
+    ))
 }
 
 /// SpiceDB permission check placeholder — throws until eel_api_server_rs is available.
 pub async fn spice_db_check_permission(
-    _token: &str, _resource: &str, _permission: &str
+    _token: &str,
+    _resource: &str,
+    _permission: &str,
 ) -> Result<bool, anyhow::Error> {
-    Err(anyhow::anyhow!("spice_db_check_permission not yet implemented — requires eel_api_server_rs crate"))
+    Err(anyhow::anyhow!(
+        "spice_db_check_permission not yet implemented — requires eel_api_server_rs crate"
+    ))
 }
 
 /// HMAC-SHA256 placeholder — throws until eel_crypto_rs is available.
 pub fn hmac_sha256(_key: &[u8], _data: &[u8]) -> Result<Vec<u8>, anyhow::Error> {
-    Err(anyhow::anyhow!("hmac_sha256 not yet implemented — requires eel_crypto_rs crate"))
+    Err(anyhow::anyhow!(
+        "hmac_sha256 not yet implemented — requires eel_crypto_rs crate"
+    ))
 }
 
 //// A problem+json response for this module.
@@ -104,7 +118,8 @@ impl AppState {
 #[derive(Clone)]
 struct IdempotencyStore {
     pool: Option<sqlx::PgPool>,
-    memory_cache: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, serde_json::Value>>>,
+    memory_cache:
+        std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, serde_json::Value>>>,
 }
 
 impl IdempotencyStore {
@@ -114,21 +129,27 @@ impl IdempotencyStore {
         // Note: In production this should use async initialization
         Ok(Self {
             pool: Some(pool_clone),
-            memory_cache: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
+            memory_cache: std::sync::Arc::new(std::sync::Mutex::new(
+                std::collections::HashMap::new(),
+            )),
         })
     }
-    
+
     fn new_in_memory() -> Self {
         Self {
             pool: None,
-            memory_cache: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
+            memory_cache: std::sync::Arc::new(std::sync::Mutex::new(
+                std::collections::HashMap::new(),
+            )),
         }
     }
-    
+
     fn new_with_pool(pool: &sqlx::PgPool) -> Self {
         Self {
             pool: Some(pool.clone()),
-            memory_cache: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
+            memory_cache: std::sync::Arc::new(std::sync::Mutex::new(
+                std::collections::HashMap::new(),
+            )),
         }
     }
 
@@ -179,9 +200,9 @@ impl IdempotencyStore {
             .fetch_optional(pool)
             .await;
             match row {
-                Ok(Some((response_json,))) => {
-                    Some(Json(serde_json::from_str(&response_json).unwrap_or_default()))
-                }
+                Ok(Some((response_json,))) => Some(Json(
+                    serde_json::from_str(&response_json).unwrap_or_default(),
+                )),
                 Ok(None) => None,
                 Err(e) => {
                     warn!(error = %e, "failed to fetch idempotency entry");
@@ -213,13 +234,25 @@ impl IdempotencyStore {
 
 /// Helper to create responses with explicit types to avoid inference errors.
 fn ok_json<T: serde::Serialize>(value: T) -> (StatusCode, Json<serde_json::Value>) {
-    (StatusCode::OK, Json(serde_json::to_value(value).unwrap_or_default()))
+    (
+        StatusCode::OK,
+        Json(serde_json::to_value(value).unwrap_or_default()),
+    )
 }
 fn created_json<T: serde::Serialize>(value: T) -> (StatusCode, Json<serde_json::Value>) {
-    (StatusCode::CREATED, Json(serde_json::to_value(value).unwrap_or_default()))
+    (
+        StatusCode::CREATED,
+        Json(serde_json::to_value(value).unwrap_or_default()),
+    )
 }
-fn json_response<T: serde::Serialize>(status: StatusCode, value: T) -> (StatusCode, Json<serde_json::Value>) {
-    (status, Json(serde_json::to_value(value).unwrap_or_default()))
+fn json_response<T: serde::Serialize>(
+    status: StatusCode,
+    value: T,
+) -> (StatusCode, Json<serde_json::Value>) {
+    (
+        status,
+        Json(serde_json::to_value(value).unwrap_or_default()),
+    )
 }
 
 /// Rate limit policy bundle from config (per-app limits).
@@ -283,7 +316,10 @@ async fn get_app_config(
 ) -> impl IntoResponse {
     let config = AppConfigResponse {
         app_id: req.app_id,
-        feature_flags: vec!["offline_sync".to_string(), "attestation_required".to_string()],
+        feature_flags: vec![
+            "offline_sync".to_string(),
+            "attestation_required".to_string(),
+        ],
         pin_set_id: "pin-set-prod-001".into(),
         version_floor: "1.0.0".into(),
         rate_limit_policy: state.rate_limit_policy.clone(),
@@ -334,17 +370,23 @@ async fn create_bff_session(
     // provider is not reachable from this process. The previous handler swallowed
     // the failure and fell back to `mock_access_token`, then wrapped it in a string
     // shaped like a JWT, and returned 201.
-    let (exchanged, failure) = match keycloak_token_exchange(&req.code, &req.state, &req.nonce).await {
-        Ok((access, refresh)) => (Some((access, refresh)), None),
-        Err(e) => (None, Some(e.to_string())),
-    };
+    let (exchanged, failure) =
+        match keycloak_token_exchange(&req.code, &req.state, &req.nonce).await {
+            Ok((access, refresh)) => (Some((access, refresh)), None),
+            Err(e) => (None, Some(e.to_string())),
+        };
 
     let session_id = Uuid::now_v7().to_string();
     // The access token is a digest over the session, the client nonce and the
     // issue time, and it is the value the store holds. It is not a JWT and is
     // deliberately not shaped like one: a string starting `eyJhbGci` reads as
     // signed to any client that inspects it, and this service signs nothing.
-    let session = mobile.create_session(&session_id, &req.nonce, req.scopes.clone(), exchanged.is_some());
+    let session = mobile.create_session(
+        &session_id,
+        &req.nonce,
+        req.scopes.clone(),
+        exchanged.is_some(),
+    );
     let access_token = session.token_hash.clone();
     let refresh_token = session.refresh_hash.clone();
 
@@ -378,7 +420,10 @@ async fn refresh_bff_session(
         .map(str::trim)
         .filter(|s| !s.is_empty())
     else {
-        return spec_problem(StatusCode::UNPROCESSABLE_ENTITY, "refresh_token is required");
+        return spec_problem(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "refresh_token is required",
+        );
     };
     let Some(session) = mobile.session_for_refresh(refresh_token) else {
         return spec_problem(
@@ -452,9 +497,9 @@ async fn get_attestation_verdict(
             // Never MEETS here, and never a licence.
             verdict: "UNVERIFIED".to_string(),
             license: None,
-            attestation_object_sha256: Some(
-                crate::mobile_store::MobileStore::hash_token(&[&req.attestation_object]),
-            ),
+            attestation_object_sha256: Some(crate::mobile_store::MobileStore::hash_token(&[
+                &req.attestation_object
+            ])),
             blocking_reason: Some(
                 "a MEETS verdict requires the platform key attestation service, which is not \
                  in this workspace; the device id is not evidence and the attestation object \
@@ -567,9 +612,18 @@ async fn get_station_status(
             StatusCode::OK,
             Json(StationStatusResponse {
                 station_code: station.station_code,
-                turnout_count: if station.voter_count == 0 { None } else { Some(station.voter_count as i64) },
+                turnout_count: if station.voter_count == 0 {
+                    None
+                } else {
+                    Some(station.voter_count as i64)
+                },
                 kit_battery_level: station.battery_level.map(|b| b as f32),
-                connectivity_status: if station.online { "online" } else { "never-checked-in" }.to_string(),
+                connectivity_status: if station.online {
+                    "online"
+                } else {
+                    "never-checked-in"
+                }
+                .to_string(),
                 queue_depth: station.queue_depth as u32,
                 last_seen_at: station.last_seen_at,
                 materials_delivered: station.materials_delivered,
@@ -578,7 +632,10 @@ async fn get_station_status(
             .into_response(),
         None => spec_problem(
             StatusCode::NOT_FOUND,
-            format!("station {} has never checked in; there is no status to report", q.station_code),
+            format!(
+                "station {} has never checked in; there is no status to report",
+                q.station_code
+            ),
         ),
     }
 }
@@ -865,7 +922,10 @@ async fn issue_pass(
         );
     }
     if req.accreditation_ref.trim().is_empty() {
-        return spec_problem(StatusCode::UNPROCESSABLE_ENTITY, "accreditation_ref is required");
+        return spec_problem(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "accreditation_ref is required",
+        );
     }
     let pass = mobile.issue_observer_pass(
         application_id,
@@ -1249,7 +1309,10 @@ async fn create_incident(
         .trim()
         .to_string();
     if incident_type.is_empty() {
-        return spec_problem(StatusCode::UNPROCESSABLE_ENTITY, "incident_type is required");
+        return spec_problem(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "incident_type is required",
+        );
     }
     let idempotency_key = Uuid::now_v7().to_string();
     let station_code = req
@@ -1271,7 +1334,9 @@ async fn create_incident(
         req.get("reported_by_hash")
             .and_then(|v| v.as_str())
             .unwrap_or_default(),
-        req.get("detail").cloned().unwrap_or(serde_json::Value::Null),
+        req.get("detail")
+            .cloned()
+            .unwrap_or(serde_json::Value::Null),
         "agent",
         &idempotency_key,
     );
@@ -1322,11 +1387,17 @@ async fn evidence_upload(
     match state.idempotency_store.get(&idempotency_key).await {
         Some(resp) => return (StatusCode::OK, resp),
         None => {
-            let _ = state.idempotency_store.store(&idempotency_key, &serde_json::json!({})).await;
+            let _ = state
+                .idempotency_store
+                .store(&idempotency_key, &serde_json::json!({}))
+                .await;
         }
     }
 
-    (StatusCode::CREATED, Json(serde_json::json!({ "evidence_id": Uuid::now_v7().to_string() })))
+    (
+        StatusCode::CREATED,
+        Json(serde_json::json!({ "evidence_id": Uuid::now_v7().to_string() })),
+    )
 }
 
 // =============================================================================
@@ -1342,11 +1413,17 @@ async fn pin_reset(
     match state.idempotency_store.get(&idempotency_key).await {
         Some(resp) => return (StatusCode::OK, resp),
         None => {
-            let _ = state.idempotency_store.store(&idempotency_key, &serde_json::json!({})).await;
+            let _ = state
+                .idempotency_store
+                .store(&idempotency_key, &serde_json::json!({}))
+                .await;
         }
     }
 
-    (StatusCode::OK, Json(serde_json::json!({ "pin_reset": true })))
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({ "pin_reset": true })),
+    )
 }
 
 // =============================================================================
@@ -1372,17 +1449,26 @@ async fn verify_certificate(
 // 22. Create ticket endpoint
 // =============================================================================
 
-async fn create_ticket(State(state): State<Arc<BffState>>, Json(_req): Json<serde_json::Value>) -> impl IntoResponse {
+async fn create_ticket(
+    State(state): State<Arc<BffState>>,
+    Json(_req): Json<serde_json::Value>,
+) -> impl IntoResponse {
     let idempotency_key = Uuid::now_v7().to_string();
 
     match state.idempotency_store.get(&idempotency_key).await {
         Some(resp) => return (StatusCode::OK, resp),
         None => {
-            let _ = state.idempotency_store.store(&idempotency_key, &serde_json::json!({})).await;
+            let _ = state
+                .idempotency_store
+                .store(&idempotency_key, &serde_json::json!({}))
+                .await;
         }
     }
 
-    (StatusCode::CREATED, Json(serde_json::json!({ "ticket_id": Uuid::now_v7().to_string() })))
+    (
+        StatusCode::CREATED,
+        Json(serde_json::json!({ "ticket_id": Uuid::now_v7().to_string() })),
+    )
 }
 
 // =============================================================================
@@ -1390,7 +1476,10 @@ async fn create_ticket(State(state): State<Arc<BffState>>, Json(_req): Json<serd
 // =============================================================================
 
 async fn get_ticket(Path(id): Path<String>) -> impl IntoResponse {
-    (StatusCode::OK, Json(serde_json::json!({ "ticket_id": id, "status": "open" })))
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({ "ticket_id": id, "status": "open" })),
+    )
 }
 
 // =============================================================================
@@ -1406,11 +1495,17 @@ async fn acknowledge_ticket(
     match state.idempotency_store.get(&idempotency_key).await {
         Some(resp) => return (StatusCode::OK, resp),
         None => {
-            let _ = state.idempotency_store.store(&idempotency_key, &serde_json::json!({})).await;
+            let _ = state
+                .idempotency_store
+                .store(&idempotency_key, &serde_json::json!({}))
+                .await;
         }
     }
 
-    (StatusCode::NO_CONTENT, Json(serde_json::json!({ "acknowledged": true })))
+    (
+        StatusCode::NO_CONTENT,
+        Json(serde_json::json!({ "acknowledged": true })),
+    )
 }
 
 // =============================================================================
@@ -1427,7 +1522,10 @@ async fn kb_search(
         serde_json::json!({ "id": 2, "title": "Tally verification procedure", "snippet": "Verify signatures and count votes..." }),
     ];
 
-    (StatusCode::OK, Json(serde_json::json!({ "results": results })))
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({ "results": results })),
+    )
 }
 
 // =============================================================================
@@ -1444,11 +1542,17 @@ async fn assign_incident(
     match state.idempotency_store.get(&idempotency_key).await {
         Some(resp) => return (StatusCode::OK, resp),
         None => {
-            let _ = state.idempotency_store.store(&idempotency_key, &serde_json::json!({})).await;
+            let _ = state
+                .idempotency_store
+                .store(&idempotency_key, &serde_json::json!({}))
+                .await;
         }
     }
 
-    (StatusCode::OK, Json(serde_json::json!({ "assigned": true, "assignee": "agent-001" })))
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({ "assigned": true, "assignee": "agent-001" })),
+    )
 }
 
 /// A declared operation with no implementation behind it.
@@ -1460,10 +1564,7 @@ async fn assign_incident(
 fn not_implemented(operation: &str, detail: &str) -> impl IntoResponse {
     (
         StatusCode::NOT_IMPLEMENTED,
-        [(
-            axum::http::header::CONTENT_TYPE,
-            "application/problem+json",
-        )],
+        [(axum::http::header::CONTENT_TYPE, "application/problem+json")],
         Json(serde_json::json!({
             "type": "about:blank",
             "title": "Not Implemented",
@@ -1485,7 +1586,10 @@ pub fn router(state: crate::router::AppState) -> Router<crate::router::AppState>
         // field-mobile-bff/bff.yaml — core BFF routes
         .route("/api/v1/mobile/bff/config", get(get_app_config))
         .route("/api/v1/mobile/bff/sessions", post(create_bff_session))
-        .route("/api/v1/mobile/bff/sessions/refresh", post(refresh_bff_session))
+        .route(
+            "/api/v1/mobile/bff/sessions/refresh",
+            post(refresh_bff_session),
+        )
         .route(
             "/api/v1/mobile/bff/attestation/verdict",
             post(get_attestation_verdict),
@@ -1497,25 +1601,41 @@ pub fn router(state: crate::router::AppState) -> Router<crate::router::AppState>
         .route("/api/v1/mobile/bff/station/status", get(get_station_status))
         .route("/api/v1/mobile/bff/forms/sync", post(sync_forms))
         .route("/api/v1/mobile/bff/incidents", post(report_incident))
-        .route("/api/v1/mobile/bff/dispatch/assignments", get(list_dispatch_assignments))
-        .route("/api/v1/mobile/bff/dispatch/assignments/{assignment_id}", patch(update_dispatch_assignment))
+        .route(
+            "/api/v1/mobile/bff/dispatch/assignments",
+            get(list_dispatch_assignments),
+        )
+        .route(
+            "/api/v1/mobile/bff/dispatch/assignments/{assignment_id}",
+            patch(update_dispatch_assignment),
+        )
         .route(
             "/api/v1/mobile/bff/observer/access-pass",
             get(get_observer_access_pass).post(post_observer_access_pass),
         )
-        .route("/api/v1/mobile/bff/observer/observations", post(submit_observation))
-        .route("/api/v1/mobile/bff/tamper-events", post(report_tamper_event))
+        .route(
+            "/api/v1/mobile/bff/observer/observations",
+            post(submit_observation),
+        )
+        .route(
+            "/api/v1/mobile/bff/tamper-events",
+            post(report_tamper_event),
+        )
         .route("/api/v1/mobile/bff/push-tokens", post(register_push_token))
-
         // field-mobile-bff/openapi.yaml — persona app routes
         .route("/v1/agent/check-in", post(agent_check_in))
-        .route("/v1/agent/station/{code}/dashboard", get(get_station_dashboard))
+        .route(
+            "/v1/agent/station/{code}/dashboard",
+            get(get_station_dashboard),
+        )
         .route("/v1/agent/forms/34a/{id}", get(get_form_34a))
-        .route("/v1/agent/forms/34a/{id}/countersign", post(countersign_form_34a))
+        .route(
+            "/v1/agent/forms/34a/{id}/countersign",
+            post(countersign_form_34a),
+        )
         .route("/v1/agent/incidents", post(create_incident))
         .route("/v1/verify/registration", post(verify_registration))
         .route("/v1/verify/registration/record", post(record_registration))
-
         // Add other app routes here as needed
         .with_state(state)
 }
@@ -1535,13 +1655,19 @@ async fn record_registration(
         .map(str::trim)
         .filter(|s| !s.is_empty())
     else {
-        return spec_problem(StatusCode::UNPROCESSABLE_ENTITY, "registration_hash is required");
+        return spec_problem(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "registration_hash is required",
+        );
     };
     mobile.record_registration(hash);
-    (StatusCode::CREATED, Json(serde_json::json!({
-        "registration_hash": hash,
-        "seen_by_this_service": true,
-    })))
+    (
+        StatusCode::CREATED,
+        Json(serde_json::json!({
+            "registration_hash": hash,
+            "seen_by_this_service": true,
+        })),
+    )
         .into_response()
 }
 
@@ -1566,10 +1692,7 @@ async fn verify_registration(
     // The register itself is held by the registration service, which is not in this
     // workspace. What can be answered is whether this BFF has seen the
     // registration, which is a narrower question than "is this voter registered".
-    let known = mobile
-        .registrations()
-        .iter()
-        .any(|r| r == reg_hash);
+    let known = mobile.registrations().iter().any(|r| r == reg_hash);
     if !known {
         return spec_problem(
             StatusCode::NOT_FOUND,
@@ -1619,8 +1742,12 @@ mod tests {
     async fn test_app_config() {
         let state = test_state().await;
 
-        let query = AppConfigRequest { app_id: "test".to_string() };
-        let response = get_app_config(State(state.clone()), Query(query)).await.into_response();
+        let query = AppConfigRequest {
+            app_id: "test".to_string(),
+        };
+        let response = get_app_config(State(state.clone()), Query(query))
+            .await
+            .into_response();
 
         assert_eq!(response.status(), StatusCode::OK);
         let body: AppConfigResponse = serde_json::from_value(body_json(response).await).unwrap();
@@ -1638,7 +1765,9 @@ mod tests {
             station_code: "STATION-001".to_string(),
         };
 
-        let response = verify_voter(State(state.clone()), Json(request)).await.into_response();
+        let response = verify_voter(State(state.clone()), Json(request))
+            .await
+            .into_response();
 
         // hmac_sha256 placeholder always errs -> hash can never verify.
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED);

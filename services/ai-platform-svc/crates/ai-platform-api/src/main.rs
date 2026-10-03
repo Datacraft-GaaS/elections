@@ -25,10 +25,15 @@ async fn main() {
         .json()
         .init();
     let addr = env::var("HTTP_ADDR").unwrap_or_else(|_| "0.0.0.0:8090".to_string());
-    info!(addr, "ai-platform-api starting (store-only build; HTTP surface pending)");
+    info!(
+        addr,
+        "ai-platform-api starting (store-only build; HTTP surface pending)"
+    );
 
     // Minimal liveness listener so orchestrators can probe the binary.
     let app = axum::Router::new().route("/healthz", axum::routing::get(|| async { "ok" }));
-    let listener = tokio::net::TcpListener::bind(&addr).await.expect("bind failed");
+    let listener = tokio::net::TcpListener::bind(&addr)
+        .await
+        .expect("bind failed");
     axum::serve(listener, app).await.expect("server failed");
 }

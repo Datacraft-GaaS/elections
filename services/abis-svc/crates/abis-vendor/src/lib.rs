@@ -30,8 +30,8 @@ pub mod python_bridge;
 pub mod router;
 
 pub use adapter::{
-	FaceImage, FaceTemplate, FingerprintImage, FingerprintTemplate, HealthStatus, IrisImage,
-	IrisTemplate, Score, Template, VendorAdapter, VendorCapabilities,
+    FaceImage, FaceTemplate, FingerprintImage, FingerprintTemplate, HealthStatus, IrisImage,
+    IrisTemplate, Score, Template, VendorAdapter, VendorCapabilities,
 };
 pub use error::VendorError;
 pub use grpc_bridge::GrpcVendor;

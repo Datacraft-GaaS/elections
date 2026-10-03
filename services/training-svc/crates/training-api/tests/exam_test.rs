@@ -26,17 +26,26 @@ use tower::ServiceExt;
 use training_api::exam::{ExamBlueprint, RoleLevel, SectionSpec};
 use training_api::handlers::exam::{router, ExamApiState};
 
-async fn call(app: &axum::Router, method: &str, uri: &str, body: Option<Value>) -> (StatusCode, Value) {
+async fn call(
+    app: &axum::Router,
+    method: &str,
+    uri: &str,
+    body: Option<Value>,
+) -> (StatusCode, Value) {
     let mut builder = Request::builder().method(method).uri(uri);
     let req = if let Some(b) = body {
         builder = builder.header("content-type", "application/json");
-        builder.body(Body::from(serde_json::to_vec(&b).unwrap())).unwrap()
+        builder
+            .body(Body::from(serde_json::to_vec(&b).unwrap()))
+            .unwrap()
     } else {
         builder.body(Body::empty()).unwrap()
     };
     let resp = app.clone().oneshot(req).await.unwrap();
     let status = resp.status();
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let body = if bytes.is_empty() {
         Value::Null
     } else {
@@ -80,26 +89,56 @@ async fn full_lifecycle_pass_and_get_result() {
     assert_eq!(questions.len(), 2, "blueprint asks for 2 per section");
     for q in questions {
         assert!(q.get("options").is_some(), "options must be returned");
-        assert!(q.get("correct_indexes").is_none(), "correct answers must NOT leak");
+        assert!(
+            q.get("correct_indexes").is_none(),
+            "correct answers must NOT leak"
+        );
     }
-    let session_id = issued["session"]["session_id"].as_str().unwrap().to_string();
+    let session_id = issued["session"]["session_id"]
+        .as_str()
+        .unwrap()
+        .to_string();
 
     // Idempotent double PUT of the same answers is fine.
     let answers = json!({ "answers": { "q00": [0], "q01": [0], "q02": [0], "q03": [0] } });
-    let (status, _) = call(&app, "PUT", &format!("/v1/exams/sessions/{session_id}/answers"), Some(answers.clone())).await;
+    let (status, _) = call(
+        &app,
+        "PUT",
+        &format!("/v1/exams/sessions/{session_id}/answers"),
+        Some(answers.clone()),
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
     // Before submit a different answer REPLACES (still OK).
-    let (status, _) = call(&app, "PUT", &format!("/v1/exams/sessions/{session_id}/answers"), Some(answers)).await;
+    let (status, _) = call(
+        &app,
+        "PUT",
+        &format!("/v1/exams/sessions/{session_id}/answers"),
+        Some(answers),
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
 
     // Submit -> scored result.
-    let (status, result) = call(&app, "POST", &format!("/v1/exams/sessions/{session_id}/submit"), None).await;
+    let (status, result) = call(
+        &app,
+        "POST",
+        &format!("/v1/exams/sessions/{session_id}/submit"),
+        None,
+    )
+    .await;
     assert_eq!(status, StatusCode::OK, "{result}");
     assert_eq!(result["total_pct"], 100.0);
     assert!(result["signed_receipt_hash_hex"].as_str().is_some());
 
     // GET result by session id.
-    let (status, fetched) = call(&app, "GET", &format!("/v1/exams/results/{session_id}"), None).await;
+    let (status, fetched) = call(
+        &app,
+        "GET",
+        &format!("/v1/exams/results/{session_id}"),
+        None,
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(fetched["session_id"], session_id.as_str());
 
@@ -184,12 +223,24 @@ async fn deadline_elapsed_returns_422() {
     .await;
     let session_id = issued["session"]["session_id"].as_str().unwrap();
     tokio::time::sleep(std::time::Duration::from_millis(20)).await;
-    let (status, body) = call(&app, "POST", &format!("/v1/exams/sessions/{session_id}/submit"), None).await;
+    let (status, body) = call(
+        &app,
+        "POST",
+        &format!("/v1/exams/sessions/{session_id}/submit"),
+        None,
+    )
+    .await;
     assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
     assert_eq!(body["error"], "deadline_elapsed");
 
     // The late submit must not have produced a score.
-    let (status, _) = call(&app, "GET", &format!("/v1/exams/results/{session_id}"), None).await;
+    let (status, _) = call(
+        &app,
+        "GET",
+        &format!("/v1/exams/results/{session_id}"),
+        None,
+    )
+    .await;
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
 
@@ -213,7 +264,13 @@ async fn attempts_exhausted_returns_409_and_void_consumes_attempt() {
     // Attempt 1: void it — voiding CONSUMES the attempt.
     let (_, first) = issue("app-x").await;
     let sid1 = first["session"]["session_id"].as_str().unwrap().to_string();
-    let (status, _) = call(&app, "POST", &format!("/v1/exams/sessions/{sid1}/void"), Some(json!({ "reason": "board review" }))).await;
+    let (status, _) = call(
+        &app,
+        "POST",
+        &format!("/v1/exams/sessions/{sid1}/void"),
+        Some(json!({ "reason": "board review" })),
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
 
     // Attempt 2 still available despite void.
@@ -254,7 +311,10 @@ async fn paper_batch_import_creates_scored_results_marked_paper() {
     assert_eq!(results.len(), 2);
     assert_eq!(results[0]["channel"], "paper");
     assert!(results[0]["passed"].as_bool().unwrap());
-    assert!(!results[1]["passed"].as_bool().unwrap(), "60% < PO pass mark 80%");
+    assert!(
+        !results[1]["passed"].as_bool().unwrap(),
+        "60% < PO pass mark 80%"
+    );
     assert!(results[0]["signed_receipt_hash_hex"].as_str().is_some());
 
     // Fetchable via results endpoint.

@@ -77,10 +77,9 @@ pub struct CommitStore {
     inner: Mutex<HashMap<(String, String), Entry>>,
 }
 
-static STORE: std::sync::LazyLock<CommitStore> =
-    std::sync::LazyLock::new(|| CommitStore {
-        inner: Mutex::new(HashMap::new()),
-    });
+static STORE: std::sync::LazyLock<CommitStore> = std::sync::LazyLock::new(|| CommitStore {
+    inner: Mutex::new(HashMap::new()),
+});
 
 static RECEIVED_SEQ: AtomicU64 = AtomicU64::new(1);
 
@@ -97,10 +96,7 @@ impl CommitStore {
         self.inner
             .lock()
             .expect("commit store poisoned")
-            .insert(
-                (station_code.to_string(), form_kind.to_string()),
-                entry,
-            );
+            .insert((station_code.to_string(), form_kind.to_string()), entry);
     }
 
     pub fn snapshot(&self) -> HashMap<(String, String), Entry> {
@@ -125,12 +121,15 @@ pub fn parse_officer_registry(spec: &str) -> Result<HashMap<String, VerifyingKey
         }
         let parts: Vec<&str> = entry.split(':').collect();
         if parts.len() != 2 {
-            return Err(format!("bad EEL_RO_OFFICER_KEYS entry {entry:?} (want station:hexkey)"));
+            return Err(format!(
+                "bad EEL_RO_OFFICER_KEYS entry {entry:?} (want station:hexkey)"
+            ));
         }
         let key_bytes =
             hex::decode(parts[1]).map_err(|e| format!("bad key hex in {entry:?}: {e}"))?;
-        let key_arr: [u8; 32] =
-            key_bytes.try_into().map_err(|_| format!("key must be 32 bytes in {entry:?}"))?;
+        let key_arr: [u8; 32] = key_bytes
+            .try_into()
+            .map_err(|_| format!("key must be 32 bytes in {entry:?}"))?;
         let verifying = VerifyingKey::from_bytes(&key_arr)
             .map_err(|e| format!("bad ed25519 key in {entry:?}: {e}"))?;
         out.insert(parts[0].to_string(), verifying);
@@ -170,11 +169,12 @@ fn verify_officer_signature(
 ) -> Result<(), CommitAuthError> {
     // The registered key is looked up by STATION; officer_id is bound into the
     // signed message so it cannot be swapped after signing.
-    let key = registry.get(station_code).ok_or(CommitAuthError::UnknownOfficer)?;
+    let key = registry
+        .get(station_code)
+        .ok_or(CommitAuthError::UnknownOfficer)?;
     let sig_bytes =
         hex::decode(signature_hex.trim()).map_err(|_| CommitAuthError::BadSignatureFormat)?;
-    let sig =
-        Signature::from_slice(&sig_bytes).map_err(|_| CommitAuthError::BadSignatureFormat)?;
+    let sig = Signature::from_slice(&sig_bytes).map_err(|_| CommitAuthError::BadSignatureFormat)?;
     key.verify(
         &canonical_commit_bytes(station_code, form_kind, form_hash_hex, officer_id),
         &sig,
@@ -252,7 +252,10 @@ pub async fn forms_commit(Json(req): Json<CommitRequest>) -> Response {
 
     match STORE.get(&req.station_code, &req.form_kind) {
         Some(existing) => {
-            if existing.form_hash_hex.eq_ignore_ascii_case(&req.form_hash_hex) {
+            if existing
+                .form_hash_hex
+                .eq_ignore_ascii_case(&req.form_hash_hex)
+            {
                 // IDEMPOTENT: duplicate/retried commit (SMS relays will do
                 // this constantly under intermittent connectivity).
                 info!(
@@ -312,9 +315,7 @@ pub async fn forms_commit(Json(req): Json<CommitRequest>) -> Response {
 }
 
 // POST /api/v1/rts/forms/arrive
-pub async fn forms_arrive(
-    Json(req): Json<ArriveRequest>,
-) -> Response {
+pub async fn forms_arrive(Json(req): Json<ArriveRequest>) -> Response {
     if !valid_form_hash(&req.form_hash_hex) {
         return (
             StatusCode::BAD_REQUEST,
@@ -466,37 +467,69 @@ mod tests {
 
         async fn body_json(resp: Response) -> serde_json::Value {
             serde_json::from_slice(
-                &axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap(),
+                &axum::body::to_bytes(resp.into_body(), usize::MAX)
+                    .await
+                    .unwrap(),
             )
             .unwrap()
         }
 
         // -- idempotency -----------------------------------------------------
         let commit = signed_commit(&sk, "ST-IDEM", "34A", HASH_A, "ro-1");
-        let resp = post_json(app.clone(), "/api/v1/rts/forms/commit", serde_json::to_value(&commit).unwrap()).await;
+        let resp = post_json(
+            app.clone(),
+            "/api/v1/rts/forms/commit",
+            serde_json::to_value(&commit).unwrap(),
+        )
+        .await;
         assert_eq!(resp.status(), StatusCode::CREATED);
 
         // Identical re-post (late/duplicated SMS relay) -> 200, idempotent.
-        let resp = post_json(app.clone(), "/api/v1/rts/forms/commit", serde_json::to_value(&commit).unwrap()).await;
+        let resp = post_json(
+            app.clone(),
+            "/api/v1/rts/forms/commit",
+            serde_json::to_value(&commit).unwrap(),
+        )
+        .await;
         assert_eq!(resp.status(), StatusCode::OK);
         assert_eq!(body_json(resp).await["status"], "duplicate");
 
         // Differing hash for same (station, kind) after arrival recorded -> 409.
         let conflicting = signed_commit(&sk, "ST-IDEM", "34A", HASH_B, "ro-1");
-        let resp = post_json(app.clone(), "/api/v1/rts/forms/commit", serde_json::to_value(&conflicting).unwrap()).await;
+        let resp = post_json(
+            app.clone(),
+            "/api/v1/rts/forms/commit",
+            serde_json::to_value(&conflicting).unwrap(),
+        )
+        .await;
         assert_eq!(resp.status(), StatusCode::CONFLICT);
 
         // -- bad signature / unknown officer ---------------------------------
         let forged = signed_commit(&wrong_sk, "ST-BADSIG", "34A", HASH_A, "ro-1");
-        let resp = post_json(app.clone(), "/api/v1/rts/forms/commit", serde_json::to_value(&forged).unwrap()).await;
+        let resp = post_json(
+            app.clone(),
+            "/api/v1/rts/forms/commit",
+            serde_json::to_value(&forged).unwrap(),
+        )
+        .await;
         assert_eq!(resp.status(), StatusCode::FORBIDDEN);
 
         let unregistered = signed_commit(&sk, "ST-UNKNOWN", "34A", HASH_A, "ro-1");
-        let resp = post_json(app.clone(), "/api/v1/rts/forms/commit", serde_json::to_value(&unregistered).unwrap()).await;
+        let resp = post_json(
+            app.clone(),
+            "/api/v1/rts/forms/commit",
+            serde_json::to_value(&unregistered).unwrap(),
+        )
+        .await;
         assert_eq!(resp.status(), StatusCode::FORBIDDEN);
 
         let malformed_hash = signed_commit(&sk, "ST-IDEM", "34B", "nothex", "ro-1");
-        let resp = post_json(app.clone(), "/api/v1/rts/forms/commit", serde_json::to_value(&malformed_hash).unwrap()).await;
+        let resp = post_json(
+            app.clone(),
+            "/api/v1/rts/forms/commit",
+            serde_json::to_value(&malformed_hash).unwrap(),
+        )
+        .await;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
 
         // -- late commitment arriving AFTER arrival ---------------------------
@@ -510,7 +543,12 @@ mod tests {
         assert_eq!(body_json(resp).await["status"], "uncommitted");
 
         let late_commit = signed_commit(&sk, "ST-LATE", "34A", HASH_A, "ro-2");
-        let resp = post_json(app.clone(), "/api/v1/rts/forms/commit", serde_json::to_value(&late_commit).unwrap()).await;
+        let resp = post_json(
+            app.clone(),
+            "/api/v1/rts/forms/commit",
+            serde_json::to_value(&late_commit).unwrap(),
+        )
+        .await;
         assert_eq!(resp.status(), StatusCode::CREATED);
 
         // Re-check flow: arrival now matches the recorded commitment.
@@ -520,7 +558,12 @@ mod tests {
 
         // -- quarantined mismatch carries both hashes -------------------------
         let commit = signed_commit(&sk, "ST-QUAR", "34B", HASH_A, "ro-3");
-        let resp = post_json(app.clone(), "/api/v1/rts/forms/commit", serde_json::to_value(&commit).unwrap()).await;
+        let resp = post_json(
+            app.clone(),
+            "/api/v1/rts/forms/commit",
+            serde_json::to_value(&commit).unwrap(),
+        )
+        .await;
         assert_eq!(resp.status(), StatusCode::CREATED);
 
         let arrive_mismatch = serde_json::json!({
@@ -536,9 +579,7 @@ mod tests {
         assert_eq!(body["arrived_hash_hex"], HASH_B);
 
         // -- snapshot for offline reconciliation ------------------------------
-        let entry = STORE
-            .get("ST-LATE", "34A")
-            .expect("late commitment stored");
+        let entry = STORE.get("ST-LATE", "34A").expect("late commitment stored");
         assert_eq!(entry.form_hash_hex, HASH_A);
         assert!(entry.received_seq >= 1);
     }

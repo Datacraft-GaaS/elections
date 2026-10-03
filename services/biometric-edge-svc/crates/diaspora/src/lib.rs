@@ -24,15 +24,13 @@
 #![warn(missing_docs)]
 
 pub mod api;
-pub mod spec;
-pub mod store;
 pub mod domain;
 pub mod events;
 pub mod import;
 pub mod roll;
+pub mod spec;
+pub mod store;
 pub mod transmission;
 pub mod tz;
 
-pub use domain::{
-    CustodyEvent, DiasporaRoll, EmbassyStation, Form34ADiaspora, PouchCustody,
-};
+pub use domain::{CustodyEvent, DiasporaRoll, EmbassyStation, Form34ADiaspora, PouchCustody};

@@ -94,7 +94,9 @@ pub fn certify_session(
     if !stopped {
         return Certification::Unclosed;
     }
-    Certification::Certified { anchors: seqs.len() }
+    Certification::Certified {
+        anchors: seqs.len(),
+    }
 }
 
 #[cfg(test)]
@@ -189,7 +191,10 @@ mod tests {
 
     #[test]
     fn empty_opened_is_not_started() {
-        assert_eq!(certify_session(&[], 1, 10, true, false), Certification::NotStarted);
+        assert_eq!(
+            certify_session(&[], 1, 10, true, false),
+            Certification::NotStarted
+        );
     }
 
     #[test]

@@ -322,15 +322,24 @@ mod tests {
     #[test]
     fn no_declared_basis_fails_every_rule() {
         let v = evaluate_record(&record("r2", ""), 0, "genesis", "t".into());
-        assert!(v.iter().all(|x| !x.passed), "an unjustified transmission cannot pass");
+        assert!(
+            v.iter().all(|x| !x.passed),
+            "an unjustified transmission cannot pass"
+        );
         assert!(!v.is_empty());
     }
 
     #[test]
     fn an_unknown_basis_is_flagged_not_silently_accepted() {
-        let v = evaluate_record(&record("r3", "made-up-instrument"), 0, "genesis", "t".into());
+        let v = evaluate_record(
+            &record("r3", "made-up-instrument"),
+            0,
+            "genesis",
+            "t".into(),
+        );
         assert!(
-            v.iter().any(|x| !x.passed && x.rule_id == "unrecognised-basis"),
+            v.iter()
+                .any(|x| !x.passed && x.rule_id == "unrecognised-basis"),
             "{v:?}"
         );
     }

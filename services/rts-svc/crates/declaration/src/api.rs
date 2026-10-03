@@ -49,15 +49,15 @@ use crate::store::{may_issue_certificate, window_status_wire, SharedState};
 
 #[derive(Debug, Deserialize)]
 pub struct InitiateDeclarationRequest {
-    pub contest_id:        String,
-    pub election_id:       String,
+    pub contest_id: String,
+    pub election_id: String,
     pub tally_snapshot_id: String,
 }
 
 #[derive(Debug, Serialize)]
 pub struct DeclarationCreated {
     pub declaration_id: String,
-    pub status:         String,
+    pub status: String,
 }
 
 /// A declaration submission.
@@ -67,50 +67,50 @@ pub struct DeclarationCreated {
 /// status with no tally is exactly the fabrication this crate must not produce.
 #[derive(Debug, Deserialize)]
 pub struct DeclareRequest {
-    pub declared_by:  String,
-    pub ceremony_id:  String,
+    pub declared_by: String,
+    pub ceremony_id: String,
     pub hsm_signature: String,
     /// The signed tally snapshot the declaration is made from.
-    pub tally:        PresidentialTally,
+    pub tally: PresidentialTally,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct AmendRequest {
-    pub reason:                 String,
-    pub amended_by:             String,
-    pub approved_by:            String,
+    pub reason: String,
+    pub amended_by: String,
+    pub approved_by: String,
     pub previous_snapshot_hash: String,
-    pub new_snapshot_hash:      String,
-    pub court_order_ref:        Option<String>,
-    pub new_tally_event_id:     Option<String>,
+    pub new_snapshot_hash: String,
+    pub court_order_ref: Option<String>,
+    pub new_tally_event_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct JudiciaryAckRequest {
-    pub registrar_id:    String,
+    pub registrar_id: String,
     pub acknowledged_at: String,
 }
 
 #[derive(Debug, Serialize)]
 pub struct DeclarationState {
     pub declaration_id: String,
-    pub status:         String,
-    pub winner_id:      Option<String>,
-    pub declared_at:    Option<String>,
+    pub status: String,
+    pub winner_id: Option<String>,
+    pub declared_at: Option<String>,
     /// How the status was reached.
-    pub outcome:        Option<DeclarationOutcome>,
+    pub outcome: Option<DeclarationOutcome>,
     /// Why the declaration cannot be completed, when it cannot.
     pub blocking_reason: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
 pub struct PetitionWindowState {
-    pub declaration_id:      String,
-    pub status:              String,
-    pub window_open_at:      Option<String>,
-    pub window_close_at:     Option<String>,
+    pub declaration_id: String,
+    pub status: String,
+    pub window_open_at: Option<String>,
+    pub window_close_at: Option<String>,
     pub petition_court_case: Option<String>,
-    pub judiciary_ack_at:    Option<String>,
+    pub judiciary_ack_at: Option<String>,
 }
 
 // ---- helpers ----------------------------------------------------------------
@@ -153,7 +153,10 @@ fn outcome_event(outcome: &DeclarationOutcome) -> (&'static str, serde_json::Val
             EVENT_RESULT_DECLARED,
             serde_json::json!({ "winner_id": winner_id }),
         ),
-        DeclarationOutcome::RunoffRequired { runoff_candidates, counties_above_threshold_leader } => (
+        DeclarationOutcome::RunoffRequired {
+            runoff_candidates,
+            counties_above_threshold_leader,
+        } => (
             EVENT_RUNOFF_REQUIRED,
             serde_json::json!({
                 "runoff_candidates": runoff_candidates,
@@ -203,7 +206,10 @@ async fn declare_result(
         "declaration: declare"
     );
     let Some(current) = state.get(&id) else {
-        return problem(StatusCode::NOT_FOUND, format!("no declaration with id {id}"));
+        return problem(
+            StatusCode::NOT_FOUND,
+            format!("no declaration with id {id}"),
+        );
     };
     // A declaration is made once. Re-declaring would silently replace the
     // outcome the first declaration produced.
@@ -238,7 +244,12 @@ async fn declare_result(
 
     let declaration = match state.get(&id) {
         Some(d) => d,
-        None => return problem(StatusCode::NOT_FOUND, format!("no declaration with id {id}")),
+        None => {
+            return problem(
+                StatusCode::NOT_FOUND,
+                format!("no declaration with id {id}"),
+            )
+        }
     };
     (
         StatusCode::ACCEPTED,
@@ -265,7 +276,10 @@ async fn set_runoff(
 ) -> axum::response::Response {
     info!(declaration_id = %id, "declaration: runoff");
     let Some(current) = state.get(&id) else {
-        return problem(StatusCode::NOT_FOUND, format!("no declaration with id {id}"));
+        return problem(
+            StatusCode::NOT_FOUND,
+            format!("no declaration with id {id}"),
+        );
     };
     let outcome = evaluate(&tally);
     if !matches!(outcome, DeclarationOutcome::RunoffRequired { .. }) {
@@ -306,7 +320,10 @@ async fn set_tie(
 ) -> axum::response::Response {
     info!(declaration_id = %id, "declaration: tie_pending");
     let Some(current) = state.get(&id) else {
-        return problem(StatusCode::NOT_FOUND, format!("no declaration with id {id}"));
+        return problem(
+            StatusCode::NOT_FOUND,
+            format!("no declaration with id {id}"),
+        );
     };
     let outcome = evaluate(&tally);
     if !matches!(outcome, DeclarationOutcome::TiePending { .. }) {
@@ -342,7 +359,10 @@ async fn amend_declaration(
         "declaration: amend"
     );
     let Some(current) = state.get(&id) else {
-        return problem(StatusCode::NOT_FOUND, format!("no declaration with id {id}"));
+        return problem(
+            StatusCode::NOT_FOUND,
+            format!("no declaration with id {id}"),
+        );
     };
     // An amendment re-declares a result under a court order. A pending
     // declaration has no result to amend.
@@ -389,7 +409,12 @@ async fn amend_declaration(
     }
     let declaration = match state.get(&id) {
         Some(d) => d,
-        None => return problem(StatusCode::NOT_FOUND, format!("no declaration with id {id}")),
+        None => {
+            return problem(
+                StatusCode::NOT_FOUND,
+                format!("no declaration with id {id}"),
+            )
+        }
     };
     (
         StatusCode::ACCEPTED,
@@ -413,7 +438,10 @@ async fn get_declaration(
     let Some(declaration) = state.get(&id) else {
         // Previously any id produced `status: "pending"`, which reads as a real
         // declaration that simply had not been made.
-        return problem(StatusCode::NOT_FOUND, format!("no declaration with id {id}"));
+        return problem(
+            StatusCode::NOT_FOUND,
+            format!("no declaration with id {id}"),
+        );
     };
     let outcome = match &declaration.status {
         DeclarationStatus::RunoffRequired => Some(DeclarationOutcome::RunoffRequired {
@@ -445,7 +473,10 @@ async fn get_certificate(
     Path(id): Path<String>,
 ) -> axum::response::Response {
     let Some(declaration) = state.get(&id) else {
-        return problem(StatusCode::NOT_FOUND, format!("no declaration with id {id}"));
+        return problem(
+            StatusCode::NOT_FOUND,
+            format!("no declaration with id {id}"),
+        );
     };
     // EC-LEG-06: a certificate must never be issued while a declaration is
     // tie-pending. The aggregate owns that rule; it used to be unreachable
@@ -474,7 +505,10 @@ async fn get_petition_window(
     Path(id): Path<String>,
 ) -> axum::response::Response {
     let Some(tracker) = state.window(&id) else {
-        return problem(StatusCode::NOT_FOUND, format!("no declaration with id {id}"));
+        return problem(
+            StatusCode::NOT_FOUND,
+            format!("no declaration with id {id}"),
+        );
     };
     Json(PetitionWindowState {
         declaration_id: id,
@@ -498,7 +532,10 @@ async fn judiciary_ack(
         "declaration: judiciary_ack"
     );
     let Some(tracker) = state.window(&id) else {
-        return problem(StatusCode::NOT_FOUND, format!("no declaration with id {id}"));
+        return problem(
+            StatusCode::NOT_FOUND,
+            format!("no declaration with id {id}"),
+        );
     };
     // An acknowledgement follows a petition. Acknowledging a window that has
     // never been petitioned records a judicial act against nothing.
@@ -541,11 +578,17 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/v1/declarations/{id}/runoff", put(set_runoff))
         .route("/api/v1/declarations/{id}/tie", put(set_tie))
         .route("/api/v1/declarations/{id}/amend", post(amend_declaration))
-        .route("/api/v1/declarations/{id}/certificate", get(get_certificate))
+        .route(
+            "/api/v1/declarations/{id}/certificate",
+            get(get_certificate),
+        )
         .route(
             "/api/v1/declarations/{id}/petition-window",
             get(get_petition_window),
         )
-        .route("/api/v1/declarations/{id}/judiciary-ack", put(judiciary_ack))
+        .route(
+            "/api/v1/declarations/{id}/judiciary-ack",
+            put(judiciary_ack),
+        )
         .with_state(state)
 }

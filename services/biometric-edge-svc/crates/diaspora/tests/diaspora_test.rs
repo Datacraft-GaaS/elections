@@ -17,9 +17,9 @@
 use chrono::{NaiveDate, Utc};
 use eel_diaspora::{
     domain::{CustodyEvent, EmbassyStation, Form34ADiaspora, PouchCustody},
-    import::{ImportProfile, import_roll_csv},
+    import::{import_roll_csv, ImportProfile},
     roll::{roll_from_voter_ids, snapshot_hash},
-    transmission::{batch_transmit, attempt_delivery, BatchStatus},
+    transmission::{attempt_delivery, batch_transmit, BatchStatus},
     tz::local_to_utc,
 };
 use proptest::prelude::*;
@@ -186,13 +186,7 @@ fn form34a_stores_hsm_signature() {
 
 #[test]
 fn form34a_new_has_no_transmission() {
-    let form = Form34ADiaspora::new(
-        Uuid::now_v7(),
-        "FORM-001",
-        HashMap::new(),
-        0,
-        0,
-    );
+    let form = Form34ADiaspora::new(Uuid::now_v7(), "FORM-001", HashMap::new(), 0, 0);
     assert!(form.transmitted_at.is_none());
     assert!(form.transmission_batch_id.is_none());
     assert!(form.hsm_signature.is_none());
@@ -202,13 +196,27 @@ fn form34a_new_has_no_transmission() {
 
 #[test]
 fn station_starts_closed() {
-    let s = EmbassyStation::new("US", "Washington", "America/New_York", "123 K St", "US-DC-001", 2);
+    let s = EmbassyStation::new(
+        "US",
+        "Washington",
+        "America/New_York",
+        "123 K St",
+        "US-DC-001",
+        2,
+    );
     assert!(!s.is_open());
 }
 
 #[test]
 fn station_is_open_after_opened_at_set() {
-    let mut s = EmbassyStation::new("GB", "London", "Europe/London", "1 Kings Rd", "UK-LON-001", 1);
+    let mut s = EmbassyStation::new(
+        "GB",
+        "London",
+        "Europe/London",
+        "1 Kings Rd",
+        "UK-LON-001",
+        1,
+    );
     s.opened_at = Some(Utc::now());
     assert!(s.is_open());
 }
@@ -226,12 +234,8 @@ async fn successful_delivery_marks_batch_sent() {
         0,
     );
     let (batch, forms) = batch_transmit(vec![form], Utc::now());
-    let (updated, envelopes, result) = attempt_delivery(
-        batch,
-        &forms,
-        |_| async { Ok(()) },
-        Utc::now(),
-    ).await;
+    let (updated, envelopes, result) =
+        attempt_delivery(batch, &forms, |_| async { Ok(()) }, Utc::now()).await;
     assert!(result.is_ok());
     assert_eq!(updated.status, BatchStatus::Sent);
     assert_eq!(envelopes.len(), 1);

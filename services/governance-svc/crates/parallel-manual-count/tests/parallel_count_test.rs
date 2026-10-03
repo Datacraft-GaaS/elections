@@ -36,10 +36,14 @@ fn sample_deterministic_same_seed() {
 #[test]
 fn sample_different_seeds_different() {
     let strata = default_strata();
-    let a: std::collections::HashSet<_> =
-        sample_stations(&strata, 1).into_iter().map(|s| s.station_id).collect();
-    let b: std::collections::HashSet<_> =
-        sample_stations(&strata, 999_999).into_iter().map(|s| s.station_id).collect();
+    let a: std::collections::HashSet<_> = sample_stations(&strata, 1)
+        .into_iter()
+        .map(|s| s.station_id)
+        .collect();
+    let b: std::collections::HashSet<_> = sample_stations(&strata, 999_999)
+        .into_iter()
+        .map(|s| s.station_id)
+        .collect();
     // Different seeds should produce meaningfully different sets (some overlap is fine,
     // but they should not be identical).
     assert_ne!(a, b);

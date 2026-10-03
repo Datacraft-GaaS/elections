@@ -39,7 +39,9 @@ async fn the_default_bundle_is_refused_rather_than_stub_signed() {
         .await
         .unwrap();
     assert_eq!(resp.status(), StatusCode::NOT_IMPLEMENTED);
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let text = String::from_utf8_lossy(&bytes).to_string();
     assert!(!text.contains("stub-sig"), "{text}");
     // And nothing that a kit would parse as a bundle.
@@ -59,7 +61,9 @@ async fn no_response_from_this_router_ever_carries_a_stub_signature() {
             .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
             .await
             .unwrap();
-        let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+        let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+            .await
+            .unwrap();
         let text = String::from_utf8_lossy(&bytes).to_string();
         assert!(!text.contains("stub-sig"), "{uri}: {text}");
     }

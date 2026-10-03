@@ -15,7 +15,7 @@
 use std::sync::Arc;
 
 use axum::{
-    routing::{get, post, patch},
+    routing::{get, patch, post},
     Router,
 };
 
@@ -24,7 +24,7 @@ use crate::handlers::{
     get_results_by_scope, get_token_proof, health, queue_check_in, queue_check_out, record_token,
     report_clone, sse_events, verify_token,
 };
-use crate::spec::{BffState};
+use crate::spec::BffState;
 use crate::sse::ShardedBroadcast;
 use crate::verify_store::SharedVerifyStore;
 use axum::extract::FromRef;
@@ -86,8 +86,8 @@ pub fn build_router() -> Router {
 }
 
 pub fn build_router_with_test_state(
-    state: Arc<BffState>, 
-    broadcast: Arc<ShardedBroadcast>
+    state: Arc<BffState>,
+    broadcast: Arc<ShardedBroadcast>,
 ) -> Router {
     let app_state = AppState {
         bff: state,
@@ -111,7 +111,10 @@ pub fn build_router_with_test_state(
         .route("/verify/v1/events", get(sse_events))
         .route("/verify/v1/queue/{station}", get(get_queue_snapshot))
         .route("/verify/v1/queue/{station}/check-in", post(queue_check_in))
-        .route("/verify/v1/queue/{station}/check-out", post(queue_check_out))
+        .route(
+            "/verify/v1/queue/{station}/check-out",
+            post(queue_check_out),
+        )
         .route("/verify/v1/anomalies", get(get_anomalies))
         .route("/verify/v1/clone-report", post(report_clone))
         .route("/verify/v1/binary-integrity", post(binary_integrity_check))
@@ -140,7 +143,10 @@ pub fn build_router_with_state(broadcast: Arc<ShardedBroadcast>) -> Router {
         .route("/verify/v1/events", get(sse_events))
         .route("/verify/v1/queue/{station}", get(get_queue_snapshot))
         .route("/verify/v1/queue/{station}/check-in", post(queue_check_in))
-        .route("/verify/v1/queue/{station}/check-out", post(queue_check_out))
+        .route(
+            "/verify/v1/queue/{station}/check-out",
+            post(queue_check_out),
+        )
         .route("/verify/v1/anomalies", get(get_anomalies))
         .route("/verify/v1/clone-report", post(report_clone))
         .route("/verify/v1/binary-integrity", post(binary_integrity_check))

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use serde::{Deserialize, Serialize};
 use crate::aggregates::form34a::{CandidateAnnotation, Form34A};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum CandidateStatusAnnotation {
@@ -28,7 +28,8 @@ pub fn annotate_candidate(
     candidate_id: &str,
     annotation: CandidateStatusAnnotation,
 ) {
-    form.candidate_annotations.retain(|a| a.candidate_id != candidate_id);
+    form.candidate_annotations
+        .retain(|a| a.candidate_id != candidate_id);
     form.candidate_annotations.push(CandidateAnnotation {
         candidate_id: candidate_id.to_string(),
         annotation,

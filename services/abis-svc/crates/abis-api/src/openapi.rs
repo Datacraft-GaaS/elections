@@ -23,26 +23,22 @@ use std::sync::Arc;
 use utoipa::OpenApi;
 
 use crate::{
-	models::{
-		AdjudicationCase, AdjudicationCasePage, AdjudicationResolutionRequest,
-		AdjudicationStatus, BatchDedupRequest, BatchJobAccepted, HealthResponse, ListAdjudicationQuery,
-		Match11Request, Match11Result, Match1NRequest, Match1NResult, MatchAccepted,
-		MatchCandidate, Modality, MatchOutcome, AbisReport,
-	},
-	routes::{
-		adjudication::{
-			AssignRequest, DecideRequest, EscalateRequest, EvidenceItem,
-		},
-		admin::{AttestationPolicyUpdate, PolicyUpdateResult, VendorHealthCheckResult, VendorInfo},
-		enrolment::{EnrolmentJobAccepted, EnrolmentJobRequest, EnrolmentJobStatus, QualityReport},
-		health::{HealthResponse as HealthR, ReadinessResponse},
-		kit::{GalleryConfig, KitEnrolRequest, KitTemplate, KitVerifyRequest, KitVerifyResponse},
-		match_routes::{BatchMatchAccepted, BatchMatchRequest},
-		reports::{
-			DedupSummary, FairnessGroup, FairnessReport, FmrFnmrReport, ThroughputReport,
-		},
-	},
-	state::AppState,
+    models::{
+        AbisReport, AdjudicationCase, AdjudicationCasePage, AdjudicationResolutionRequest,
+        AdjudicationStatus, BatchDedupRequest, BatchJobAccepted, HealthResponse,
+        ListAdjudicationQuery, Match11Request, Match11Result, Match1NRequest, Match1NResult,
+        MatchAccepted, MatchCandidate, MatchOutcome, Modality,
+    },
+    routes::{
+        adjudication::{AssignRequest, DecideRequest, EscalateRequest, EvidenceItem},
+        admin::{AttestationPolicyUpdate, PolicyUpdateResult, VendorHealthCheckResult, VendorInfo},
+        enrolment::{EnrolmentJobAccepted, EnrolmentJobRequest, EnrolmentJobStatus, QualityReport},
+        health::{HealthResponse as HealthR, ReadinessResponse},
+        kit::{GalleryConfig, KitEnrolRequest, KitTemplate, KitVerifyRequest, KitVerifyResponse},
+        match_routes::{BatchMatchAccepted, BatchMatchRequest},
+        reports::{DedupSummary, FairnessGroup, FairnessReport, FmrFnmrReport, ThroughputReport},
+    },
+    state::AppState,
 };
 
 #[derive(OpenApi)]
@@ -110,7 +106,7 @@ pub struct ApiDoc;
 
 /// GET /openapi.json
 pub async fn serve_openapi(
-	State(_state): State<Arc<AppState>>,
+    State(_state): State<Arc<AppState>>,
 ) -> (StatusCode, Json<utoipa::openapi::OpenApi>) {
-	(StatusCode::OK, Json(ApiDoc::openapi()))
+    (StatusCode::OK, Json(ApiDoc::openapi()))
 }

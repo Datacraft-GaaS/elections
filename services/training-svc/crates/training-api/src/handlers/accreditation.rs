@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::models::*;
 use axum::{
     extract::Path,
     http::StatusCode,
@@ -19,16 +20,18 @@ use axum::{
 };
 use tracing::info;
 use uuid::Uuid;
-use crate::models::*;
 
 pub async fn submit_media_application(Json(req): Json<MediaAccreditationReq>) -> impl IntoResponse {
     info!(organisation_id=%req.organisation_id, "submit_media_application");
-    (StatusCode::CREATED, Json(serde_json::json!({
-        "id": Uuid::new_v4(),
-        "organisation_id": req.organisation_id,
-        "access_zones": req.access_zones,
-        "status": "pending"
-    })))
+    (
+        StatusCode::CREATED,
+        Json(serde_json::json!({
+            "id": Uuid::new_v4(),
+            "organisation_id": req.organisation_id,
+            "access_zones": req.access_zones,
+            "status": "pending"
+        })),
+    )
 }
 
 pub async fn verify_badge(Path(serial): Path<String>) -> impl IntoResponse {
@@ -58,12 +61,15 @@ pub async fn submit_observer_application(
     Json(req): Json<ObserverApplicationReq>,
 ) -> impl IntoResponse {
     info!(org_id=%org_id, full_name=%req.full_name, "submit_observer_application");
-    (StatusCode::CREATED, Json(serde_json::json!({
-        "id": Uuid::new_v4(),
-        "organisation_id": org_id,
-        "deployment_county_codes": req.deployment_county_codes,
-        "status": "pending"
-    })))
+    (
+        StatusCode::CREATED,
+        Json(serde_json::json!({
+            "id": Uuid::new_v4(),
+            "organisation_id": org_id,
+            "deployment_county_codes": req.deployment_county_codes,
+            "status": "pending"
+        })),
+    )
 }
 
 pub async fn get_public_summary() -> impl IntoResponse {

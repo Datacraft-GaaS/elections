@@ -36,30 +36,56 @@ pub async fn list_embassies(State(s): State<SharedState>) -> impl IntoResponse {
         }
         Err(e) => {
             tracing::error!(error = %e, "list_embassies failed");
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "detail": "internal error"}))).into_response()
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "detail": "internal error"})),
+            )
+                .into_response()
         }
     }
 }
 
-pub async fn get_embassy(State(s): State<SharedState>, Path(code): Path<String>) -> impl IntoResponse {
+pub async fn get_embassy(
+    State(s): State<SharedState>,
+    Path(code): Path<String>,
+) -> impl IntoResponse {
     match s.diaspora_store.get_embassy(&code).await {
         Ok(Some(v)) => Json(v).into_response(),
-        Ok(None) => (StatusCode::NOT_FOUND, Json(json!({ "detail": "embassy not found" }))).into_response(),
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "detail": "embassy not found" })),
+        )
+            .into_response(),
         Err(e) => {
             tracing::error!(error = %e, "get_embassy failed");
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "detail": "internal error"}))).into_response()
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "detail": "internal error"})),
+            )
+                .into_response()
         }
     }
 }
 
-pub async fn create_ballot_dispatch(State(s): State<SharedState>, Json(req): Json<Value>) -> impl IntoResponse {
+pub async fn create_ballot_dispatch(
+    State(s): State<SharedState>,
+    Json(req): Json<Value>,
+) -> impl IntoResponse {
     let id = uuid::Uuid::now_v7().to_string();
     let v = json!({ "dispatch_id": id, "status": "dispatched", "created_at": chrono::Utc::now().to_rfc3339(), "request": req });
-    match s.diaspora_store.create_ballot_dispatch(&id, v.clone()).await {
+    match s
+        .diaspora_store
+        .create_ballot_dispatch(&id, v.clone())
+        .await
+    {
         Ok(v) => (StatusCode::CREATED, Json(v)).into_response(),
         Err(e) => {
             tracing::error!(error = %e, "create_ballot_dispatch failed");
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "detail": "internal error"}))).into_response()
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "detail": "internal error"})),
+            )
+                .into_response()
         }
     }
 }
@@ -72,29 +98,56 @@ pub async fn list_ballot_dispatches(State(s): State<SharedState>) -> impl IntoRe
         }
         Err(e) => {
             tracing::error!(error = %e, "list_ballot_dispatches failed");
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "detail": "internal error"}))).into_response()
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "detail": "internal error"})),
+            )
+                .into_response()
         }
     }
 }
 
-pub async fn get_ballot_dispatch(State(s): State<SharedState>, Path(id): Path<String>) -> impl IntoResponse {
+pub async fn get_ballot_dispatch(
+    State(s): State<SharedState>,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
     match s.diaspora_store.get_ballot_dispatch(&id).await {
         Ok(Some(v)) => Json(v).into_response(),
-        Ok(None) => (StatusCode::NOT_FOUND, Json(json!({ "detail": "dispatch not found" }))).into_response(),
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "detail": "dispatch not found" })),
+        )
+            .into_response(),
         Err(e) => {
             tracing::error!(error = %e, "get_ballot_dispatch failed");
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "detail": "internal error"}))).into_response()
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "detail": "internal error"})),
+            )
+                .into_response()
         }
     }
 }
 
-pub async fn confirm_ballot_delivery(State(s): State<SharedState>, Path(id): Path<String>, Json(req): Json<Value>) -> impl IntoResponse {
+pub async fn confirm_ballot_delivery(
+    State(s): State<SharedState>,
+    Path(id): Path<String>,
+    Json(req): Json<Value>,
+) -> impl IntoResponse {
     match s.diaspora_store.confirm_ballot_delivery(&id, req).await {
         Ok(Some(v)) => Json(v).into_response(),
-        Ok(None) => (StatusCode::NOT_FOUND, Json(json!({ "detail": "dispatch not found" }))).into_response(),
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "detail": "dispatch not found" })),
+        )
+            .into_response(),
         Err(e) => {
             tracing::error!(error = %e, "confirm_ballot_delivery failed");
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "detail": "internal error"}))).into_response()
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "detail": "internal error"})),
+            )
+                .into_response()
         }
     }
 }
@@ -107,7 +160,11 @@ pub async fn list_return_dispatches(State(s): State<SharedState>) -> impl IntoRe
         }
         Err(e) => {
             tracing::error!(error = %e, "list_return_dispatches failed");
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "detail": "internal error"}))).into_response()
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "detail": "internal error"})),
+            )
+                .into_response()
         }
     }
 }

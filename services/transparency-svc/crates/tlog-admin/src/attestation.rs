@@ -92,8 +92,7 @@ pub fn verify_attestation(
     signature: &[u8],
     pubkey_hex: &str,
 ) -> anyhow::Result<bool> {
-    validate_artifact_sha256(&attestation.artifact_sha256)
-        .map_err(|e| anyhow::anyhow!(e))?;
+    validate_artifact_sha256(&attestation.artifact_sha256).map_err(|e| anyhow::anyhow!(e))?;
     let pk: [u8; 32] = hex::decode(pubkey_hex.trim())
         .map_err(|e| anyhow::anyhow!("pubkey not hex: {e}"))?
         .try_into()
@@ -104,7 +103,10 @@ pub fn verify_attestation(
         .try_into()
         .map_err(|_| anyhow::anyhow!("signature must be 64 bytes"))?;
     Ok(vk
-        .verify(&canonical_attestation_bytes(attestation), &Signature::from_bytes(&sig))
+        .verify(
+            &canonical_attestation_bytes(attestation),
+            &Signature::from_bytes(&sig),
+        )
         .is_ok())
 }
 
@@ -139,8 +141,8 @@ pub async fn run(
 pub async fn run_verify(attestation_file: &str, pubkey_hex: &str) -> anyhow::Result<bool> {
     let raw = std::fs::read_to_string(attestation_file)
         .map_err(|e| anyhow::anyhow!("cannot read {attestation_file}: {e}"))?;
-    let signed: SignedAttestation = serde_json::from_str(&raw)
-        .map_err(|e| anyhow::anyhow!("invalid attestation JSON: {e}"))?;
+    let signed: SignedAttestation =
+        serde_json::from_str(&raw).map_err(|e| anyhow::anyhow!("invalid attestation JSON: {e}"))?;
     let sig_bytes = hex::decode(signed.signature.trim())
         .map_err(|e| anyhow::anyhow!("signature not hex: {e}"))?;
     // Prefer the embedded signer pubkey unless an explicit one was supplied.
@@ -186,9 +188,15 @@ mod tests {
         let a = sample();
         assert_eq!(
             String::from_utf8(canonical_attestation_bytes(&a)).unwrap(),
-            format!("{}|rekor-uuid-1|iag-officer|2026-08-25T00:00:00Z", "ab".repeat(32))
+            format!(
+                "{}|rekor-uuid-1|iag-officer|2026-08-25T00:00:00Z",
+                "ab".repeat(32)
+            )
         );
-        assert_eq!(canonical_attestation_bytes(&a), canonical_attestation_bytes(&a));
+        assert_eq!(
+            canonical_attestation_bytes(&a),
+            canonical_attestation_bytes(&a)
+        );
     }
 
     #[test]
@@ -197,9 +205,7 @@ mod tests {
         let key = test_key();
         let sig = key.sign(&canonical_attestation_bytes(&att));
         let pk = hex::encode(key.verifying_key().as_bytes());
-        assert!(
-            verify_attestation(&att, &sig.to_bytes(), &pk).unwrap()
-        );
+        assert!(verify_attestation(&att, &sig.to_bytes(), &pk).unwrap());
     }
 
     #[test]

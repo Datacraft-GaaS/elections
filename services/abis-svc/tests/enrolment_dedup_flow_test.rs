@@ -27,7 +27,10 @@ mod common;
 use common::{idempotency_key, synthetic_template_blob, TestRig};
 
 /// Full clean-path enrolment: probe does not match gallery; status = clean.
-#[cfg_attr(not(feature = "cross-crate-integration"), ignore = "needs a deployed abis-api backed by PostgreSQL and Kafka; enable cross-crate-integration and run against the docker-compose stack")]
+#[cfg_attr(
+    not(feature = "cross-crate-integration"),
+    ignore = "needs a deployed abis-api backed by PostgreSQL and Kafka; enable cross-crate-integration and run against the docker-compose stack"
+)]
 #[test]
 fn test_enrolment_clean_path() {
     let rig = TestRig::local();
@@ -58,7 +61,10 @@ fn test_enrolment_clean_path() {
 }
 
 /// Duplicate enrolment: same template twice; second should return existing decision.
-#[cfg_attr(not(feature = "cross-crate-integration"), ignore = "needs a deployed abis-api backed by PostgreSQL and Kafka; enable cross-crate-integration and run against the docker-compose stack")]
+#[cfg_attr(
+    not(feature = "cross-crate-integration"),
+    ignore = "needs a deployed abis-api backed by PostgreSQL and Kafka; enable cross-crate-integration and run against the docker-compose stack"
+)]
 #[test]
 fn test_enrolment_idempotent_duplicate_submission() {
     let rig = TestRig::local();
@@ -102,7 +108,10 @@ fn test_enrolment_idempotent_duplicate_submission() {
 }
 
 /// Same idempotency key, different body: must return 422 idempotency-key-reuse.
-#[cfg_attr(not(feature = "cross-crate-integration"), ignore = "needs a deployed abis-api backed by PostgreSQL and Kafka; enable cross-crate-integration and run against the docker-compose stack")]
+#[cfg_attr(
+    not(feature = "cross-crate-integration"),
+    ignore = "needs a deployed abis-api backed by PostgreSQL and Kafka; enable cross-crate-integration and run against the docker-compose stack"
+)]
 #[test]
 fn test_enrolment_idempotency_key_reuse_different_body() {
     let rig = TestRig::local();

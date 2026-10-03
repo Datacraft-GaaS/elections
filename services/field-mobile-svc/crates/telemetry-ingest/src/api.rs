@@ -38,7 +38,7 @@ use uuid::Uuid;
 
 use crate::domain::{ExitReason, SignalClass, TelemetryDevice, TelemetrySession};
 use crate::error::TelemetryError;
-use crate::ingest::{IngestRequest, ingest_signal_pure};
+use crate::ingest::{ingest_signal_pure, IngestRequest};
 use crate::replay_defence::InMemoryNonceStore;
 use crate::repository;
 
@@ -64,13 +64,23 @@ fn err_response(status: StatusCode, msg: &str) -> impl IntoResponse {
 impl IntoResponse for TelemetryError {
     fn into_response(self) -> axum::response::Response {
         let status = match &self {
-            TelemetryError::SvidRejected(_) | TelemetryError::KitCertInvalid { .. } => StatusCode::UNAUTHORIZED,
-            TelemetryError::HmacFailure { .. } | TelemetryError::InvalidHmacKeyRef(_) => StatusCode::UNPROCESSABLE_ENTITY,
-            TelemetryError::ReplayDetected { .. } | TelemetryError::CounterOutOfOrder { .. } => StatusCode::CONFLICT,
+            TelemetryError::SvidRejected(_) | TelemetryError::KitCertInvalid { .. } => {
+                StatusCode::UNAUTHORIZED
+            }
+            TelemetryError::HmacFailure { .. } | TelemetryError::InvalidHmacKeyRef(_) => {
+                StatusCode::UNPROCESSABLE_ENTITY
+            }
+            TelemetryError::ReplayDetected { .. } | TelemetryError::CounterOutOfOrder { .. } => {
+                StatusCode::CONFLICT
+            }
             TelemetryError::DeviceRevoked { .. } => StatusCode::FORBIDDEN,
-            TelemetryError::DeviceNotFound { .. } | TelemetryError::SessionNotFound { .. } => StatusCode::NOT_FOUND,
+            TelemetryError::DeviceNotFound { .. } | TelemetryError::SessionNotFound { .. } => {
+                StatusCode::NOT_FOUND
+            }
             TelemetryError::BatchTooLarge { .. } => StatusCode::PAYLOAD_TOO_LARGE,
-            TelemetryError::Database(_) | TelemetryError::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            TelemetryError::Database(_) | TelemetryError::Internal(_) => {
+                StatusCode::INTERNAL_SERVER_ERROR
+            }
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         };
         (status, Json(serde_json::json!({"error": self.to_string()}))).into_response()
@@ -187,8 +197,7 @@ async fn ingest_single(
 
     let hmac_sig =
         hex::decode(&dto.hmac_signature).map_err(|e| TelemetryError::Internal(e.to_string()))?;
-    let nonce =
-        hex::decode(&dto.nonce).map_err(|e| TelemetryError::Internal(e.to_string()))?;
+    let nonce = hex::decode(&dto.nonce).map_err(|e| TelemetryError::Internal(e.to_string()))?;
     let device_secret =
         hex::decode(&dto.device_secret_hex).map_err(|e| TelemetryError::Internal(e.to_string()))?;
 
@@ -246,7 +255,7 @@ async fn ingest_batch_handler(
     State(state): State<AppState>,
     Json(dto): Json<IngestBatchDto>,
 ) -> Result<impl IntoResponse, TelemetryError> {
-    use crate::batch::{BatchItemResult, ingest_batch};
+    use crate::batch::{ingest_batch, BatchItemResult};
 
     let count = dto.signals.len();
     if count > 1000 {
@@ -257,8 +266,8 @@ async fn ingest_batch_handler(
     for s in dto.signals {
         let class = SignalClass::from_str(&s.class)
             .ok_or_else(|| TelemetryError::Internal(format!("unknown class: {}", s.class)))?;
-        let hmac_sig = hex::decode(&s.hmac_signature)
-            .map_err(|e| TelemetryError::Internal(e.to_string()))?;
+        let hmac_sig =
+            hex::decode(&s.hmac_signature).map_err(|e| TelemetryError::Internal(e.to_string()))?;
         let nonce = hex::decode(&s.nonce).map_err(|e| TelemetryError::Internal(e.to_string()))?;
         let device_secret = hex::decode(&s.device_secret_hex)
             .map_err(|e| TelemetryError::Internal(e.to_string()))?;
@@ -354,8 +363,9 @@ async fn close_session(
     Path(id): Path<Uuid>,
     Json(dto): Json<CloseSessionDto>,
 ) -> Result<impl IntoResponse, TelemetryError> {
-    let exit_reason = ExitReason::from_str(&dto.exit_reason)
-        .ok_or_else(|| TelemetryError::Internal(format!("unknown exit reason: {}", dto.exit_reason)))?;
+    let exit_reason = ExitReason::from_str(&dto.exit_reason).ok_or_else(|| {
+        TelemetryError::Internal(format!("unknown exit reason: {}", dto.exit_reason))
+    })?;
     repository::close_session(&state.pool, id, &exit_reason).await?;
     Ok(StatusCode::NO_CONTENT)
 }
@@ -378,7 +388,12 @@ async fn register_device(
         revocation_reason: None,
     };
     repository::insert_device(&state.pool, &device).await?;
-    Ok((StatusCode::CREATED, Json(DeviceResponse { device_id: device.device_id.to_string() })))
+    Ok((
+        StatusCode::CREATED,
+        Json(DeviceResponse {
+            device_id: device.device_id.to_string(),
+        }),
+    ))
 }
 
 async fn revoke_device(
@@ -427,6 +442,9 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/telemetry/devices", post(register_device))
         .route("/v1/telemetry/devices/{id}/revoke", patch(revoke_device))
         .route("/v1/telemetry/snapshots", get(list_snapshots))
-        .route("/v1/telemetry/snapshots/{id}/inclusion-proof", get(get_inclusion_proof))
+        .route(
+            "/v1/telemetry/snapshots/{id}/inclusion-proof",
+            get(get_inclusion_proof),
+        )
         .with_state(state)
 }

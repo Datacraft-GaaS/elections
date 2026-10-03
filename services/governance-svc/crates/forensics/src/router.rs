@@ -32,7 +32,7 @@ pub fn build_router(state: SharedState) -> Router {
         )
         .route("/v1/forensics/reports", get(list_public_reports))
         .route("/v1/forensics/reports/{id}", get(get_public_report))
-    // Public contract endpoints (governance-forensics/forensics.yaml)
+        // Public contract endpoints (governance-forensics/forensics.yaml)
         .route(
             "/api/v1/governance/forensics/investigations",
             get(list_forensic_investigations).post(initiate_forensic_investigation),

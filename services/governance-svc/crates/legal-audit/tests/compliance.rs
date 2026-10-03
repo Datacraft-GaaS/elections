@@ -62,10 +62,7 @@ async fn send(
         }
         None => Body::empty(),
     };
-    app.clone()
-        .oneshot(b.body(payload).unwrap())
-        .await
-        .unwrap()
+    app.clone().oneshot(b.body(payload).unwrap()).await.unwrap()
 }
 
 async fn record(app: &axum::Router, sender: &str, basis: &str) -> Value {
@@ -90,7 +87,10 @@ async fn record(app: &axum::Router, sender: &str, basis: &str) -> Value {
 async fn a_recorded_transmission_is_listed_and_evaluated() {
     let app = app();
     let created = record(&app, "party-a", "s39-elections-act").await;
-    let id = created["transmission"]["record_id"].as_str().unwrap().to_string();
+    let id = created["transmission"]["record_id"]
+        .as_str()
+        .unwrap()
+        .to_string();
     assert!(created["verdicts"].as_array().unwrap().len() > 0);
 
     let listed = body_json(send(&app, "GET", "/legal-audit/transmissions", None).await).await;
@@ -122,7 +122,9 @@ async fn an_unknown_legal_basis_is_flagged_rather_than_accepted() {
     let created = record(&app, "party-a", "invented-instrument").await;
     let verdicts = created["verdicts"].as_array().unwrap();
     assert!(
-        verdicts.iter().any(|v| v["rule_id"] == "unrecognised-basis" && v["passed"] == false),
+        verdicts
+            .iter()
+            .any(|v| v["rule_id"] == "unrecognised-basis" && v["passed"] == false),
         "{verdicts:?}"
     );
 }
@@ -136,7 +138,9 @@ async fn a_known_basis_passes() {
         verdicts.iter().all(|v| v["passed"] == true),
         "a recognised instrument should pass: {verdicts:?}"
     );
-    assert!(verdicts.iter().all(|v| !v["section_ref"].as_str().unwrap_or("").is_empty()));
+    assert!(verdicts
+        .iter()
+        .all(|v| !v["section_ref"].as_str().unwrap_or("").is_empty()));
 }
 
 #[tokio::test]
@@ -190,7 +194,13 @@ async fn an_unrecorded_record_has_no_verdict() {
     // Previously any id returned an empty ComplianceVerdict, whose `passed:
     // false` read as a failed check with no rule.
     let app = app();
-    let resp = send(&app, "GET", "/legal-audit/transmissions/no-such/verdict", None).await;
+    let resp = send(
+        &app,
+        "GET",
+        "/legal-audit/transmissions/no-such/verdict",
+        None,
+    )
+    .await;
     assert_eq!(resp.status(), StatusCode::NOT_FOUND);
 }
 
@@ -199,23 +209,48 @@ async fn a_record_returns_only_its_own_verdicts() {
     let app = app();
     let first = record(&app, "party-a", "s39-elections-act").await;
     let second = record(&app, "party-b", "").await;
-    let id_b = second["transmission"]["record_id"].as_str().unwrap().to_string();
-    let id_a = first["transmission"]["record_id"].as_str().unwrap().to_string();
+    let id_b = second["transmission"]["record_id"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let id_a = first["transmission"]["record_id"]
+        .as_str()
+        .unwrap()
+        .to_string();
 
     let b = body_json(
-        send(&app, "GET", &format!("/legal-audit/transmissions/{id_b}/verdict"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/legal-audit/transmissions/{id_b}/verdict"),
+            None,
+        )
+        .await,
     )
     .await;
     let verdicts = b["verdicts"].as_array().unwrap();
     assert!(!verdicts.is_empty());
     assert!(verdicts.iter().all(|v| v["record_id"] == id_b.as_str()));
-    assert!(verdicts.iter().all(|v| v["passed"] == false), "party-b has no basis");
+    assert!(
+        verdicts.iter().all(|v| v["passed"] == false),
+        "party-b has no basis"
+    );
 
     let a = body_json(
-        send(&app, "GET", &format!("/legal-audit/transmissions/{id_a}/verdict"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/legal-audit/transmissions/{id_a}/verdict"),
+            None,
+        )
+        .await,
     )
     .await;
-    assert!(a["verdicts"].as_array().unwrap().iter().all(|v| v["passed"] == true));
+    assert!(a["verdicts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|v| v["passed"] == true));
 }
 
 #[tokio::test]
@@ -232,12 +267,20 @@ async fn the_verdict_chain_links_every_verdict_in_order() {
         verdicts.len() >= 2,
         "both records must contribute verdicts: {verdicts:?}"
     );
-    let hashes: Vec<&str> = verdicts.iter().map(|v| v["verdict_hash"].as_str().unwrap()).collect();
+    let hashes: Vec<&str> = verdicts
+        .iter()
+        .map(|v| v["verdict_hash"].as_str().unwrap())
+        .collect();
     let unique: std::collections::HashSet<&&str> = hashes.iter().collect();
-    assert_eq!(unique.len(), hashes.len(), "every verdict hash must be unique");
+    assert_eq!(
+        unique.len(),
+        hashes.len(),
+        "every verdict hash must be unique"
+    );
 
     assert_eq!(
-        listed["chain_head"], *hashes.last().unwrap(),
+        listed["chain_head"],
+        *hashes.last().unwrap(),
         "the chain head is the last verdict's hash"
     );
 }
@@ -248,12 +291,13 @@ async fn a_party_summary_counts_only_evaluated_transmissions() {
     record(&app, "party-a", "s39-elections-act").await;
     record(&app, "party-a", "").await;
 
-    let summary = body_json(
-        send(&app, "GET", "/legal-audit/parties/party-a/summary", None).await,
-    )
-    .await;
+    let summary =
+        body_json(send(&app, "GET", "/legal-audit/parties/party-a/summary", None).await).await;
     assert_eq!(summary["total_transmissions"], 2);
-    assert_eq!(summary["compliant"], 1, "one transmission has a valid basis");
+    assert_eq!(
+        summary["compliant"], 1,
+        "one transmission has a valid basis"
+    );
     assert_eq!(summary["non_compliant"], 1);
 }
 
@@ -287,7 +331,10 @@ async fn the_report_is_derived_from_what_was_stored() {
     let s = &report["compliance_summary"];
     assert_eq!(s["transmissions"], 2);
     assert_eq!(s["verdicts_failed"], s["verdicts_failed"].as_u64().unwrap());
-    assert!(s["verdicts_failed"].as_u64().unwrap() > 0, "party-b fails every rule");
+    assert!(
+        s["verdicts_failed"].as_u64().unwrap() > 0,
+        "party-b fails every rule"
+    );
     assert_eq!(
         s["transmissions_without_verdicts"], 0,
         "every stored transmission was evaluated"

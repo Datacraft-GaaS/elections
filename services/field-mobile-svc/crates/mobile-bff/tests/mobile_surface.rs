@@ -68,10 +68,7 @@ async fn send(
         }
         None => Body::empty(),
     };
-    app.clone()
-        .oneshot(b.body(payload).unwrap())
-        .await
-        .unwrap()
+    app.clone().oneshot(b.body(payload).unwrap()).await.unwrap()
 }
 
 async fn send_with_headers(
@@ -80,7 +77,10 @@ async fn send_with_headers(
     body: Value,
     headers: &[(&str, &str)],
 ) -> axum::response::Response {
-    let mut b = Request::builder().uri(uri).method("POST").header("content-type", "application/json");
+    let mut b = Request::builder()
+        .uri(uri)
+        .method("POST")
+        .header("content-type", "application/json");
     for (k, v) in headers {
         b = b.header(*k, *v);
     }
@@ -357,7 +357,8 @@ async fn a_refresh_is_bound_to_its_own_session() {
     )
     .await;
     assert_ne!(
-        refreshed["session_id"], session_b.as_str(),
+        refreshed["session_id"],
+        session_b.as_str(),
         "a refresh token must only refresh its own session"
     );
 }
@@ -423,7 +424,9 @@ async fn an_unknown_dispatch_status_is_rejected() {
     )
     .await;
     // Either the assignment is unknown (404) or the status is (422); both refuse.
-    assert!(resp.status() == StatusCode::NOT_FOUND || resp.status() == StatusCode::UNPROCESSABLE_ENTITY);
+    assert!(
+        resp.status() == StatusCode::NOT_FOUND || resp.status() == StatusCode::UNPROCESSABLE_ENTITY
+    );
 }
 
 #[tokio::test]
@@ -459,7 +462,10 @@ async fn a_reported_incident_is_recorded() {
     .await;
     assert_eq!(filed["severity"], "high");
     assert!(!filed["incident_id"].is_null());
-    assert_eq!(filed["station_known"], false, "STN001 has never checked in here");
+    assert_eq!(
+        filed["station_known"], false,
+        "STN001 has never checked in here"
+    );
 
     // A retry under the same key returns the same incident, not an empty object.
     let retry = body_json(
@@ -487,7 +493,13 @@ async fn an_incident_needs_a_type_a_description_and_a_known_severity() {
         json!({"station_code": "S", "incident_type": "t", "description": "  ", "severity": "low"}),
         json!({"station_code": "S", "incident_type": "t", "description": "d", "severity": "catastrophic"}),
     ] {
-        let resp = send(&app, "POST", "/api/v1/mobile/bff/incidents", Some(body.clone())).await;
+        let resp = send(
+            &app,
+            "POST",
+            "/api/v1/mobile/bff/incidents",
+            Some(body.clone()),
+        )
+        .await;
         assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY, "{body}");
     }
 }
@@ -512,7 +524,10 @@ async fn a_push_token_is_stored_and_never_echoed() {
     .await;
     assert!(created["token_id"].as_str().unwrap().starts_with("pt-"));
     assert!(
-        created["token_hash"].as_str().unwrap().starts_with("sha256:"),
+        created["token_hash"]
+            .as_str()
+            .unwrap()
+            .starts_with("sha256:"),
         "the provider token is a credential, so only its digest is kept"
     );
     assert!(
@@ -545,7 +560,10 @@ async fn an_observer_pass_needs_the_accreditation_it_rests_on() {
     )
     .await;
     assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY);
-    let detail = body_json(resp).await["detail"].as_str().unwrap_or_default().to_string();
+    let detail = body_json(resp).await["detail"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
     assert!(
         detail.contains("accreditation"),
         "the reason should say a pass rests on an accreditation: {detail}"
@@ -571,7 +589,10 @@ async fn an_observer_pass_names_its_application() {
     .await;
     assert!(pass["access_pass"].as_str().unwrap().starts_with("PASS-"));
     assert!(
-        pass["accreditation_ref"].as_str().unwrap().contains("app-123"),
+        pass["accreditation_ref"]
+            .as_str()
+            .unwrap()
+            .contains("app-123"),
         "the pass should name the application it rests on: {pass}"
     );
     assert_eq!(pass["status"], "active");
@@ -597,7 +618,11 @@ async fn routers_do_not_share_state() {
         Some(json!({"refresh_token": refresh})),
     )
     .await;
-    assert_eq!(resp.status(), StatusCode::UNAUTHORIZED, "session state leaked");
+    assert_eq!(
+        resp.status(),
+        StatusCode::UNAUTHORIZED,
+        "session state leaked"
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -637,7 +662,10 @@ async fn a_synced_form_is_readable_and_not_yet_countersigned() {
     assert_eq!(form["form_id"], "form-1");
     assert_eq!(form["station_code"], "STN001");
     assert_eq!(form["countersigned"], false);
-    assert!(form["content_hash"].as_str().unwrap().starts_with("sha256:"));
+    assert!(form["content_hash"]
+        .as_str()
+        .unwrap()
+        .starts_with("sha256:"));
 }
 
 #[tokio::test]
@@ -780,10 +808,7 @@ async fn a_station_dashboard_counts_the_forms_it_holds() {
     .await;
     sync_form(&app, "form-1", "STN001").await;
     sync_form(&app, "form-2", "STN001").await;
-    let dash = body_json(
-        send(&app, "GET", "/v1/agent/station/STN001/dashboard", None).await,
-    )
-    .await;
+    let dash = body_json(send(&app, "GET", "/v1/agent/station/STN001/dashboard", None).await).await;
     assert_eq!(dash["station_code"], "STN001");
     assert_eq!(dash["forms_received"], 2);
     assert_eq!(dash["battery_level"], 72.0);
@@ -804,7 +829,10 @@ async fn an_agent_check_in_makes_the_station_online() {
         .await,
     )
     .await;
-    assert!(check_in["check_in_id"].as_str().unwrap().starts_with("chk-"));
+    assert!(check_in["check_in_id"]
+        .as_str()
+        .unwrap()
+        .starts_with("chk-"));
     let status = body_json(
         send(
             &app,
@@ -817,7 +845,10 @@ async fn an_agent_check_in_makes_the_station_online() {
     .await;
     assert_eq!(status["connectivity_status"], "online");
     assert_eq!(status["kit_battery_level"], 55.5);
-    assert!(status["turnout_count"].is_null(), "no kit has reported a turnout yet");
+    assert!(
+        status["turnout_count"].is_null(),
+        "no kit has reported a turnout yet"
+    );
 }
 
 #[tokio::test]
@@ -852,7 +883,10 @@ async fn a_tamper_event_is_recorded_and_a_retry_is_recognised() {
         .await,
     )
     .await;
-    assert!(filed["tamper_event_id"].as_str().unwrap().starts_with("tam-"));
+    assert!(filed["tamper_event_id"]
+        .as_str()
+        .unwrap()
+        .starts_with("tam-"));
     assert_eq!(filed["severity"], "high");
 
     let retry = body_json(
@@ -887,7 +921,10 @@ async fn a_registration_is_not_confirmed_without_anything_to_check() {
     let app = app();
     let resp = send(&app, "POST", "/v1/verify/registration", Some(json!({}))).await;
     assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY);
-    let detail = body_json(resp).await["detail"].as_str().unwrap_or_default().to_string();
+    let detail = body_json(resp).await["detail"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
     assert!(detail.contains("nothing to verify"), "{detail}");
 }
 

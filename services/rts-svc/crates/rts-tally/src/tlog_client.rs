@@ -39,7 +39,11 @@ pub const TOPIC_SNAPSHOT_ANCHORED: &str = "eel.results.snapshot_anchored.v1";
 /// server-side by `tlog-api`'s receipt endpoint via prefix match against
 /// the stored leaf hashes.
 pub fn receipt_code(data_hash: &str) -> String {
-    data_hash.chars().take(12).collect::<String>().to_uppercase()
+    data_hash
+        .chars()
+        .take(12)
+        .collect::<String>()
+        .to_uppercase()
 }
 
 /// SPIFFE identity of this service used as the CloudEvents source.
@@ -164,14 +168,16 @@ impl TlogClient {
             eel_producer_key_id: envelope.eel_producer_key_id.clone(),
             eel_signature: None,
             eel_election_id: envelope.eel_election_id.clone(),
-            eel_data_class: Some(match envelope.eel_data_class {
-                DataClass::A => "A",
-                DataClass::B => "B",
-                DataClass::C => "C",
-                DataClass::D => "D",
-                DataClass::E => "E",
-            }
-            .into()),
+            eel_data_class: Some(
+                match envelope.eel_data_class {
+                    DataClass::A => "A",
+                    DataClass::B => "B",
+                    DataClass::C => "C",
+                    DataClass::D => "D",
+                    DataClass::E => "E",
+                }
+                .into(),
+            ),
             data: envelope.data.clone(),
             topic: TOPIC_SNAPSHOT_ANCHORED.into(),
             kafka_key: envelope.eel_stream_id.clone(),
@@ -194,9 +200,14 @@ impl TlogClient {
         let envelope = self.build_anchor_envelope(merkle_root, snapshot_id)?;
         let row = Self::to_outbox_envelope(&envelope);
         let outbox = Outbox::new(pool.clone());
-        let mut tx = pool.begin().await.map_err(|e| TlogError::Append(e.to_string()))?;
+        let mut tx = pool
+            .begin()
+            .await
+            .map_err(|e| TlogError::Append(e.to_string()))?;
         outbox.emit(&mut tx, &row).await?;
-        tx.commit().await.map_err(|e| TlogError::Append(e.to_string()))?;
+        tx.commit()
+            .await
+            .map_err(|e| TlogError::Append(e.to_string()))?;
         tracing::info!(
             event_id = %envelope.id,
             merkle_root = %merkle_root,

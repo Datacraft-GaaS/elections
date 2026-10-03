@@ -22,8 +22,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use sqlx::PgPool;
-use tokio::time;
 use tlog_domain::SthCadence;
+use tokio::time;
 use tracing::{info, warn};
 
 use crate::signer::SthSigner;
@@ -79,7 +79,9 @@ impl SthProducer {
         let cadence_s = cadence_str(cadence);
 
         // Sign BEFORE persisting so no unsigned head ever exists on disk.
-        let (signature, fingerprint) = self.signer.sign_sth(tree_size as u64, &root_hash, cadence_s)
+        let (signature, fingerprint) = self
+            .signer
+            .sign_sth(tree_size as u64, &root_hash, cadence_s)
             .map_err(|e| {
                 tracing::error!(error=%e, "STH signing failed");
                 sqlx::Error::Configuration(Box::new(std::io::Error::other(e.to_string())))
@@ -93,7 +95,7 @@ impl SthProducer {
             "#,
         )
         .bind(tree_size)
-        .bind(&root_hash)
+        .bind(root_hash)
         .bind(cadence_s)
         .bind(&signature)
         .bind(&fingerprint)

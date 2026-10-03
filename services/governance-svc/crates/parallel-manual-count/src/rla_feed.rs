@@ -31,8 +31,7 @@ pub struct RlaAuditInput {
 }
 
 pub fn build_rla_input(report: &DivergenceReport) -> RlaAuditInput {
-    let raw_report_json =
-        serde_json::to_string(report).unwrap_or_else(|_| "{}".to_string());
+    let raw_report_json = serde_json::to_string(report).unwrap_or_else(|_| "{}".to_string());
 
     RlaAuditInput {
         input_id: Uuid::new_v4().to_string(),

@@ -308,10 +308,14 @@ mod tests {
         let s = store();
         s.insert("i-1", inc("i-1"));
         assert!(
-            s.update_if("i-1", |i| i.resolved, |mut i| {
-                i.resolved = true;
-                i
-            })
+            s.update_if(
+                "i-1",
+                |i| i.resolved,
+                |mut i| {
+                    i.resolved = true;
+                    i
+                }
+            )
             .is_none(),
             "a guarded update must refuse when the predicate fails"
         );
@@ -381,7 +385,11 @@ mod tests {
         assert!(b.shares_state_with(&a), "clone must share, not copy");
         assert_eq!(b.get("i-1"), Some(inc("i-1")), "clone sees the same data");
         b.insert("i-2", inc("i-2"));
-        assert_eq!(a.len(), 2, "a write through the clone is visible in the original");
+        assert_eq!(
+            a.len(),
+            2,
+            "a write through the clone is visible in the original"
+        );
     }
 
     #[test]

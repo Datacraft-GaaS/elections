@@ -217,9 +217,9 @@ fn parse_spki_public_key(pem: &str) -> Result<PublicKey, CryptoError> {
     }
 
     if oid_eq(oid, OID_ED25519) {
-        let arr: [u8; 32] = key_bits.try_into().map_err(|_| {
-            CryptoError::Cosign("ed25519 subjectPublicKey must be 32 bytes".into())
-        })?;
+        let arr: [u8; 32] = key_bits
+            .try_into()
+            .map_err(|_| CryptoError::Cosign("ed25519 subjectPublicKey must be 32 bytes".into()))?;
         return Ok(PublicKey::Ed25519(
             ed25519_dalek::VerifyingKey::from_bytes(&arr)
                 .map_err(|e| CryptoError::Cosign(format!("ed25519 key: {e}")))?,
@@ -238,7 +238,9 @@ fn parse_spki_public_key(pem: &str) -> Result<PublicKey, CryptoError> {
             .map_err(|e| CryptoError::Cosign(format!("p256 key: {e}")))?;
         return Ok(PublicKey::P256(vk));
     }
-    Err(CryptoError::Cosign("unsupported public-key algorithm".into()))
+    Err(CryptoError::Cosign(
+        "unsupported public-key algorithm".into(),
+    ))
 }
 
 #[cfg(test)]
@@ -333,8 +335,7 @@ mod tests {
         })
         .to_string();
         let err = verify_bundle(&json, &pem_encode(&ed25519_spki(&vk)), b"tampered")
-            .err()
-            .expect("tampered artifact must not verify");
+            .expect_err("tampered artifact must not verify");
         assert!(matches!(err, CryptoError::Cosign(_)));
     }
 
@@ -360,7 +361,7 @@ mod tests {
     #[test]
     fn p256_bundle_roundtrip_verifies() {
         use p256::ecdsa::signature::Signer;
-        use p256::ecdsa::{SigningKey as P256Sk, Signature as P256Sig};
+        use p256::ecdsa::{Signature as P256Sig, SigningKey as P256Sk};
 
         let sk = P256Sk::from_slice(&[9u8; 32]).unwrap();
         let vk = sk.verifying_key();
@@ -381,7 +382,6 @@ mod tests {
 
     #[test]
     fn non_pem_input_is_rejected() {
-        let sk = ed25519_dalek::SigningKey::from_bytes(&[15u8; 32]);
         let json = serde_json::json!({ "base64Signature": base64::engine::general_purpose::STANDARD.encode([0u8; 64]) }).to_string();
         assert!(verify_bundle(&json, "not a pem", b"x").is_err());
     }

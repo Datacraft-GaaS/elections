@@ -71,13 +71,12 @@ pub async fn request_otp(
     }
 
     // Rate limit against any existing session using the shared domain rules.
-    let existing = sqlx::query(
-        "SELECT attempt_count, locked_until FROM vprs_otp_sessions WHERE app_id = $1",
-    )
-    .bind(&payload.app_id)
-    .fetch_optional(&state.db)
-    .await
-    .map_err(|_| ApiError::ServiceUnavailable)?;
+    let existing =
+        sqlx::query("SELECT attempt_count, locked_until FROM vprs_otp_sessions WHERE app_id = $1")
+            .bind(&payload.app_id)
+            .fetch_optional(&state.db)
+            .await
+            .map_err(|_| ApiError::ServiceUnavailable)?;
 
     if let Some(row) = existing {
         let locked_until: Option<chrono::DateTime<Utc>> = row.get("locked_until");

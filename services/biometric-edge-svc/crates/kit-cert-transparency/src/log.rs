@@ -93,7 +93,11 @@ impl KitCertTransparencyLog {
 
     /// Return a clone of the entry at `index`, or `None` if out of range.
     pub fn entry_at(&self, index: usize) -> Option<KitCertEntry> {
-        self.inner.lock().expect("lock poisoned").get(index).cloned()
+        self.inner
+            .lock()
+            .expect("lock poisoned")
+            .get(index)
+            .cloned()
     }
 
     /// Return the current Signed Tree Head (unsigned).

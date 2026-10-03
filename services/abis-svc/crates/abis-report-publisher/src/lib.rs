@@ -18,9 +18,9 @@
 //! email, webhook, kafka, sftp, gov_printer, kbc_sftp, and api_pull channels.
 #![warn(missing_docs)]
 
-pub mod domain;
-pub mod repository;
-pub mod channels;
-pub mod pipeline;
 pub mod api;
+pub mod channels;
+pub mod domain;
 pub mod metrics;
+pub mod pipeline;
+pub mod repository;

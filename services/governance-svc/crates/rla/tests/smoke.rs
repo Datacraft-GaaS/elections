@@ -25,7 +25,10 @@ const BEARER: &str = "Bearer test-token";
 const WINNER: &str = "Ada";
 
 fn mem_app() -> axum::Router {
-    eel_governance_rla::router::build_router(Store::Mem(Default::default()), eel_governance_rla::SpecState::new())
+    eel_governance_rla::router::build_router(
+        Store::Mem(Default::default()),
+        eel_governance_rla::SpecState::new(),
+    )
 }
 
 fn create_body() -> serde_json::Value {
@@ -66,7 +69,9 @@ fn request(method: &str, uri: &str, bearer: Option<&str>, body: Option<String>) 
 }
 
 async fn json_of(resp: axum::response::Response) -> serde_json::Value {
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     serde_json::from_slice(&bytes).unwrap()
 }
 
@@ -90,7 +95,12 @@ async fn create_run(app: &axum::Router) -> String {
 async fn sample_ids(app: &axum::Router, run_id: &str) -> Vec<String> {
     let resp = app
         .clone()
-        .oneshot(request("GET", &format!("/rla/audits/{run_id}/samples"), None, None))
+        .oneshot(request(
+            "GET",
+            &format!("/rla/audits/{run_id}/samples"),
+            None,
+            None,
+        ))
         .await
         .unwrap();
     assert_eq!(resp.status(), StatusCode::OK);
@@ -124,7 +134,11 @@ async fn missing_bearer_is_401() {
         } else {
             None
         };
-        let resp = app.clone().oneshot(request(method, uri, None, body)).await.unwrap();
+        let resp = app
+            .clone()
+            .oneshot(request(method, uri, None, body))
+            .await
+            .unwrap();
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED, "{method} {uri}");
         let v = json_of(resp).await;
         assert_eq!(v["title"], "Unauthorized");
@@ -220,7 +234,12 @@ async fn happy_path_reaches_finalised() {
     // Report before any interpretations: inconclusive.
     let resp = app
         .clone()
-        .oneshot(request("GET", &format!("/rla/audits/{run_id}/report"), None, None))
+        .oneshot(request(
+            "GET",
+            &format!("/rla/audits/{run_id}/report"),
+            None,
+            None,
+        ))
         .await
         .unwrap();
     let v = json_of(resp).await;
@@ -302,7 +321,12 @@ async fn happy_path_reaches_finalised() {
     // GET report replays the stored final report.
     let resp = app
         .clone()
-        .oneshot(request("GET", &format!("/rla/audits/{run_id}/report"), None, None))
+        .oneshot(request(
+            "GET",
+            &format!("/rla/audits/{run_id}/report"),
+            None,
+            None,
+        ))
         .await
         .unwrap();
     let v = json_of(resp).await;
@@ -351,7 +375,12 @@ async fn list_and_get_endpoints_behave() {
     let one = ballots[0].clone();
     let resp = app
         .clone()
-        .oneshot(request("GET", &format!("/rla/audits/{run_id}/samples/{one}"), None, None))
+        .oneshot(request(
+            "GET",
+            &format!("/rla/audits/{run_id}/samples/{one}"),
+            None,
+            None,
+        ))
         .await
         .unwrap();
     assert_eq!(resp.status(), StatusCode::OK);
@@ -360,10 +389,23 @@ async fn list_and_get_endpoints_behave() {
     assert!(v["audited_vote"].is_null());
 
     // Missing resources are 404 problem+json.
-    for uri in ["/rla/audits/nope", "/rla/audits/nope/samples", "/rla/audits/nope/report"] {
-        let resp = app.clone().oneshot(request("GET", uri, None, None)).await.unwrap();
+    for uri in [
+        "/rla/audits/nope",
+        "/rla/audits/nope/samples",
+        "/rla/audits/nope/report",
+    ] {
+        let resp = app
+            .clone()
+            .oneshot(request("GET", uri, None, None))
+            .await
+            .unwrap();
         assert_eq!(resp.status(), StatusCode::NOT_FOUND, "{uri}");
-        let ct = resp.headers().get("content-type").unwrap().to_str().unwrap();
+        let ct = resp
+            .headers()
+            .get("content-type")
+            .unwrap()
+            .to_str()
+            .unwrap();
         assert!(ct.starts_with("application/problem+json"), "{ct}");
     }
 
@@ -372,7 +414,12 @@ async fn list_and_get_endpoints_behave() {
     bad["winner_votes"] = serde_json::json!(400);
     bad["loser_votes"] = serde_json::json!(600);
     let resp = app
-        .oneshot(request("POST", "/rla/audits", Some(BEARER), Some(bad.to_string())))
+        .oneshot(request(
+            "POST",
+            "/rla/audits",
+            Some(BEARER),
+            Some(bad.to_string()),
+        ))
         .await
         .unwrap();
     assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
@@ -392,20 +439,23 @@ async fn next_block_continues_the_seeded_stream() {
         .await
         .unwrap();
     assert_eq!(resp.status(), StatusCode::NOT_FOUND);
-    let ct = resp.headers().get("content-type").unwrap().to_str().unwrap();
+    let ct = resp
+        .headers()
+        .get("content-type")
+        .unwrap()
+        .to_str()
+        .unwrap();
     assert!(ct.starts_with("application/problem+json"), "{ct}");
 
     // Explicit block larger than the un-sampled manifest is 400.
     let resp = app
         .clone()
-        .oneshot(
-            request(
-                "GET",
-                &format!("/rla/audits/{run_id}/next-block?block_size=10001"),
-                None,
-                None,
-            ),
-        )
+        .oneshot(request(
+            "GET",
+            &format!("/rla/audits/{run_id}/next-block?block_size=10001"),
+            None,
+            None,
+        ))
         .await
         .unwrap();
     assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
@@ -413,7 +463,12 @@ async fn next_block_continues_the_seeded_stream() {
     // Default block: min(50, remaining manifest ballots).
     let resp = app
         .clone()
-        .oneshot(request("GET", &format!("/rla/audits/{run_id}/next-block"), None, None))
+        .oneshot(request(
+            "GET",
+            &format!("/rla/audits/{run_id}/next-block"),
+            None,
+            None,
+        ))
         .await
         .unwrap();
     assert_eq!(resp.status(), StatusCode::OK);
@@ -432,16 +487,23 @@ async fn next_block_continues_the_seeded_stream() {
     let rationale = &v["rationale"];
     let current_t = rationale["current_t"].as_f64().unwrap();
     let threshold = rationale["stop_threshold"].as_f64().unwrap();
-    assert!((current_t - 1.0).abs() < f64::EPSILON, "no interpretations yet, t must be 1");
+    assert!(
+        (current_t - 1.0).abs() < f64::EPSILON,
+        "no interpretations yet, t must be 1"
+    );
     assert!(threshold > 1.0, "risk_limit 0.05 implies threshold 20");
-    assert_eq!(rationale["required_additional_winner_ballots"].as_u64(), Some(17));
+    assert_eq!(
+        rationale["required_additional_winner_ballots"].as_u64(),
+        Some(17)
+    );
 
     // The block is the exact continuation of the seeded stream: disjoint
     // from the already-drawn ids and equal to stream positions 25..75.
     let manifest: eel_governance_rla::models::AuditManifest =
         serde_json::from_value(create_body()["manifest"].clone()).unwrap();
-    let expected = eel_governance_rla::engine::draw_sample_positions(&manifest, "beacon-pulse-42", 75)
-        .unwrap();
+    let expected =
+        eel_governance_rla::engine::draw_sample_positions(&manifest, "beacon-pulse-42", 75)
+            .unwrap();
     let expected_tail: HashSet<String> = expected
         .iter()
         .skip(25)
@@ -459,14 +521,12 @@ async fn next_block_continues_the_seeded_stream() {
 
     // Explicit block_size is honoured verbatim.
     let resp = app
-        .oneshot(
-            request(
-                "GET",
-                &format!("/rla/audits/{run_id}/next-block?block_size=3"),
-                None,
-                None,
-            ),
-        )
+        .oneshot(request(
+            "GET",
+            &format!("/rla/audits/{run_id}/next-block?block_size=3"),
+            None,
+            None,
+        ))
         .await
         .unwrap();
     assert_eq!(resp.status(), StatusCode::OK);

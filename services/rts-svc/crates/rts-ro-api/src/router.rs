@@ -57,7 +57,10 @@ pub fn build_router_with(trust: crate::ro_trust::SharedRoTrust) -> Router {
             post(recording_certify),
         )
         // N1: commit-reveal for 34A tallies (idempotent late/out-of-order commits)
-        .route("/api/v1/rts/forms/commit", post(commit_reveal::forms_commit))
+        .route(
+            "/api/v1/rts/forms/commit",
+            post(commit_reveal::forms_commit),
+        )
         .route(
             "/api/v1/rts/forms/arrive",
             post(commit_reveal::forms_arrive),

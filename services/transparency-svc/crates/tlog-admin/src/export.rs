@@ -196,7 +196,8 @@ mod tests {
             let mut header = tar::Header::new_gnu();
             header.set_size(body.len() as u64);
             header.set_cksum();
-            tar.append_data(&mut header, "manifest.json", &body[..]).unwrap();
+            tar.append_data(&mut header, "manifest.json", &body[..])
+                .unwrap();
             tar.finish().unwrap();
         }
         let gz = enc.finish().unwrap();

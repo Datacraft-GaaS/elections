@@ -144,8 +144,10 @@ impl IntoResponse for ApiError {
             instance: self.instance.to_owned(),
         };
         let mut resp = (self.status, Json(body)).into_response();
-        resp.headers_mut()
-            .insert(header::CONTENT_TYPE, header::HeaderValue::from_static("application/problem+json"));
+        resp.headers_mut().insert(
+            header::CONTENT_TYPE,
+            header::HeaderValue::from_static("application/problem+json"),
+        );
         resp
     }
 }
@@ -215,7 +217,10 @@ pub async fn get_audit(
     Path(run_id): Path<String>,
 ) -> Result<Response, ApiError> {
     info!(run_id, "get_audit");
-    let row = store.get_run(&run_id).await?.ok_or_else(|| ApiError::not_found(INSTANCE_AUDITS))?;
+    let row = store
+        .get_run(&run_id)
+        .await?
+        .ok_or_else(|| ApiError::not_found(INSTANCE_AUDITS))?;
     Ok(Json(row.run).into_response())
 }
 
@@ -234,7 +239,10 @@ pub async fn create_audit(
         ));
     }
     if !(req.risk_limit > 0.0 && req.risk_limit <= 1.0) {
-        return Err(ApiError::bad_request(INSTANCE_AUDITS, "risk_limit must be in (0, 1]"));
+        return Err(ApiError::bad_request(
+            INSTANCE_AUDITS,
+            "risk_limit must be in (0, 1]",
+        ));
     }
     let assertion = engine::PairwiseAssertion::new(
         req.winner_id.clone(),
@@ -244,7 +252,12 @@ pub async fn create_audit(
     )
     .map_err(|e| ApiError::bad_request(INSTANCE_AUDITS, e.to_string()))?;
 
-    let manifest_total: u64 = req.manifest.batches.iter().map(|b| b.num_ballots as u64).sum();
+    let manifest_total: u64 = req
+        .manifest
+        .batches
+        .iter()
+        .map(|b| b.num_ballots as u64)
+        .sum();
     let n = req
         .sample_size
         .unwrap_or((manifest_total / 10).max(1) as usize)
@@ -283,7 +296,10 @@ pub async fn create_audit(
 
     Ok((
         StatusCode::CREATED,
-        [(header::LOCATION, format!("{}/{}", INSTANCE_AUDITS, run.run_id))],
+        [(
+            header::LOCATION,
+            format!("{}/{}", INSTANCE_AUDITS, run.run_id),
+        )],
         Json(run),
     )
         .into_response())
@@ -378,7 +394,12 @@ pub async fn get_report(
         run_id,
         risk_achieved: 1.0 / t.max(f64::EPSILON),
         ballots_audited: ballots.iter().filter(|b| b.audited_vote.is_some()).count() as u32,
-        outcome: if t >= threshold { "confirmed" } else { "inconclusive" }.into(),
+        outcome: if t >= threshold {
+            "confirmed"
+        } else {
+            "inconclusive"
+        }
+        .into(),
         generated_at: Utc::now().to_rfc3339(),
     };
     Ok(Json(report).into_response())
@@ -399,13 +420,20 @@ pub async fn finalise_audit(
         .await?
         .ok_or_else(|| ApiError::not_found(INSTANCE_FINALISE))?;
     if row.run.status == "finalised" {
-        return Err(ApiError::conflict(INSTANCE_FINALISE, "run is already finalised"));
+        return Err(ApiError::conflict(
+            INSTANCE_FINALISE,
+            "run is already finalised",
+        ));
     }
 
     let ballots = store.list_samples(&run_id).await?;
     let assertion = rebuild_assertion(&row).map_err(|_| ApiError::internal(INSTANCE_FINALISE))?;
     let t = engine::compute_t_statistic(&assertion, &ballots);
-    if !engine::audit_complete(std::slice::from_ref(&assertion), &ballots, row.run.risk_limit) {
+    if !engine::audit_complete(
+        std::slice::from_ref(&assertion),
+        &ballots,
+        row.run.risk_limit,
+    ) {
         return Err(ApiError::conflict(
             INSTANCE_FINALISE,
             format!(
@@ -448,7 +476,12 @@ pub async fn next_block(
     let assertion = rebuild_assertion(&row).map_err(|_| ApiError::internal(INSTANCE_NEXT_BLOCK))?;
 
     let sampled = samples.len() as u64;
-    let total_manifest: u64 = row.manifest.batches.iter().map(|b| b.num_ballots as u64).sum();
+    let total_manifest: u64 = row
+        .manifest
+        .batches
+        .iter()
+        .map(|b| b.num_ballots as u64)
+        .sum();
     let remaining = total_manifest.saturating_sub(sampled);
     if let Some(size) = q.block_size {
         if size as u64 > remaining {
@@ -458,7 +491,9 @@ pub async fn next_block(
             ));
         }
     }
-    let requested = q.block_size.unwrap_or_else(|| DEFAULT_BLOCK_SIZE.min(remaining as usize));
+    let requested = q
+        .block_size
+        .unwrap_or_else(|| DEFAULT_BLOCK_SIZE.min(remaining as usize));
 
     let ballots = engine::draw_sample_block(&row.manifest, &row.seed, sampled as usize, requested)
         .map_err(|e| ApiError::bad_request(INSTANCE_NEXT_BLOCK, e.to_string()))?;
@@ -492,10 +527,16 @@ pub async fn initiate_rla_audit(
 ) -> Result<Response, ApiError> {
     info!(election_id = %req.election_id, contest = %req.contest_code, "initiate_rla_audit");
     if req.election_id.is_empty() || req.contest_code.is_empty() || req.seed.is_empty() {
-        return Err(ApiError::bad_request(INSTANCE_AUDITS, "election_id, contest_code and seed must be non-empty"));
+        return Err(ApiError::bad_request(
+            INSTANCE_AUDITS,
+            "election_id, contest_code and seed must be non-empty",
+        ));
     }
     if !(req.risk_limit > 0.0 && req.risk_limit <= 1.0) {
-        return Err(ApiError::bad_request(INSTANCE_AUDITS, "risk_limit must be in (0, 1]"));
+        return Err(ApiError::bad_request(
+            INSTANCE_AUDITS,
+            "risk_limit must be in (0, 1]",
+        ));
     }
     let now = Utc::now().to_rfc3339();
     let audit = spec::RlaAudit {
@@ -510,18 +551,22 @@ pub async fn initiate_rla_audit(
         created_at: now.clone(),
         updated_at: now,
     };
-    let mut guard = state.audits.lock().map_err(|_| ApiError::internal(INSTANCE_AUDITS))?;
+    let mut guard = state
+        .audits
+        .lock()
+        .map_err(|_| ApiError::internal(INSTANCE_AUDITS))?;
     guard.insert(audit.audit_id.clone(), audit.clone());
     drop(guard);
     Ok((StatusCode::CREATED, Json(audit)).into_response())
 }
 
 /// GET /api/v1/governance/rla/audits — list risk-limiting audits.
-pub async fn list_rla_audits(
-    State(state): State<SharedSpecState>,
-) -> Result<Response, ApiError> {
+pub async fn list_rla_audits(State(state): State<SharedSpecState>) -> Result<Response, ApiError> {
     info!("list_rla_audits");
-    let guard = state.audits.lock().map_err(|_| ApiError::internal(INSTANCE_AUDITS))?;
+    let guard = state
+        .audits
+        .lock()
+        .map_err(|_| ApiError::internal(INSTANCE_AUDITS))?;
     let mut items: Vec<spec::RlaAudit> = guard.values().cloned().collect();
     drop(guard);
     items.sort_by(|a, b| a.created_at.cmp(&b.created_at));
@@ -534,7 +579,10 @@ pub async fn get_rla_audit(
     Path(audit_id): Path<String>,
 ) -> Result<Response, ApiError> {
     info!(audit_id, "get_rla_audit");
-    let guard = state.audits.lock().map_err(|_| ApiError::internal(INSTANCE_AUDITS))?;
+    let guard = state
+        .audits
+        .lock()
+        .map_err(|_| ApiError::internal(INSTANCE_AUDITS))?;
     match guard.get(&audit_id) {
         Some(a) => Ok(Json(a.clone()).into_response()),
         None => Err(ApiError::not_found(INSTANCE_AUDITS)),
@@ -549,7 +597,10 @@ pub async fn draw_audit_sample(
 ) -> Result<Response, ApiError> {
     info!(audit_id, round = req.round, "draw_audit_sample");
     let seed = {
-        let guard = state.audits.lock().map_err(|_| ApiError::internal(INSTANCE_AUDITS))?;
+        let guard = state
+            .audits
+            .lock()
+            .map_err(|_| ApiError::internal(INSTANCE_AUDITS))?;
         match guard.get(&audit_id) {
             Some(a) => a.seed.clone(),
             None => return Err(ApiError::not_found(INSTANCE_AUDITS)),
@@ -577,11 +628,17 @@ pub async fn draw_audit_sample(
         round,
         samples: samples.clone(),
     };
-    let mut guard = state.samples.lock().map_err(|_| ApiError::internal(INSTANCE_SAMPLES))?;
+    let mut guard = state
+        .samples
+        .lock()
+        .map_err(|_| ApiError::internal(INSTANCE_SAMPLES))?;
     guard.insert(audit_id.clone(), samples);
     drop(guard);
     {
-        let mut aguard = state.audits.lock().map_err(|_| ApiError::internal(INSTANCE_AUDITS))?;
+        let mut aguard = state
+            .audits
+            .lock()
+            .map_err(|_| ApiError::internal(INSTANCE_AUDITS))?;
         if let Some(a) = aguard.get_mut(&audit_id) {
             a.current_round = req.round;
             a.status = "sampling".to_string();
@@ -598,7 +655,12 @@ pub async fn submit_manual_count(
     Json(req): Json<spec::ManualCount>,
 ) -> Result<Response, ApiError> {
     info!(audit_id, matches = req.matches, "submit_manual_count");
-    if !state.audits.lock().map_err(|_| ApiError::internal(INSTANCE_AUDITS))?.contains_key(&audit_id) {
+    if !state
+        .audits
+        .lock()
+        .map_err(|_| ApiError::internal(INSTANCE_AUDITS))?
+        .contains_key(&audit_id)
+    {
         return Err(ApiError::not_found(INSTANCE_AUDITS));
     }
     let count = spec::ManualCount {
@@ -609,7 +671,10 @@ pub async fn submit_manual_count(
         counted_by_hash: req.counted_by_hash,
         counted_at: Some(Utc::now().to_rfc3339()),
     };
-    let mut guard = state.counts.lock().map_err(|_| ApiError::internal(INSTANCE_SAMPLES))?;
+    let mut guard = state
+        .counts
+        .lock()
+        .map_err(|_| ApiError::internal(INSTANCE_SAMPLES))?;
     guard.entry(audit_id).or_default().push(count.clone());
     drop(guard);
     Ok((StatusCode::CREATED, Json(count)).into_response())
@@ -622,14 +687,20 @@ pub async fn get_rla_audit_results(
 ) -> Result<Response, ApiError> {
     info!(audit_id, "get_rla_audit_results");
     let risk_limit = {
-        let guard = state.audits.lock().map_err(|_| ApiError::internal(INSTANCE_AUDITS))?;
+        let guard = state
+            .audits
+            .lock()
+            .map_err(|_| ApiError::internal(INSTANCE_AUDITS))?;
         match guard.get(&audit_id) {
             Some(a) => a.risk_limit,
             None => return Err(ApiError::not_found(INSTANCE_AUDITS)),
         }
     };
     let counts = {
-        let guard = state.counts.lock().map_err(|_| ApiError::internal(INSTANCE_SAMPLES))?;
+        let guard = state
+            .counts
+            .lock()
+            .map_err(|_| ApiError::internal(INSTANCE_SAMPLES))?;
         guard.get(&audit_id).cloned().unwrap_or_default()
     };
     let ballots_audited = counts.len() as u32;

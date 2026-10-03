@@ -60,10 +60,7 @@ async fn send(
         }
         None => Body::empty(),
     };
-    app.clone()
-        .oneshot(b.body(payload).unwrap())
-        .await
-        .unwrap()
+    app.clone().oneshot(b.body(payload).unwrap()).await.unwrap()
 }
 
 async fn initiate(app: &axum::Router) -> String {
@@ -167,7 +164,8 @@ async fn declare(app: &axum::Router, id: &str, tally: Value) -> axum::response::
 async fn an_initiated_declaration_is_readable() {
     let app = app();
     let id = initiate(&app).await;
-    let body = body_json(send(&app, "GET", &format!("/api/v1/declarations/{id}"), None).await).await;
+    let body =
+        body_json(send(&app, "GET", &format!("/api/v1/declarations/{id}"), None).await).await;
     assert_eq!(body["declaration_id"], id.as_str());
     assert_eq!(body["status"], "pending");
     assert!(body["winner_id"].is_null());
@@ -213,8 +211,7 @@ async fn a_majority_without_the_county_threshold_does_not_declare() {
     // win, and the old handler called any submission "declared".
     let app = app();
     let id = initiate(&app).await;
-    let body = body_json(declare(&app, &id, majority_without_county_threshold_tally()).await)
-        .await;
+    let body = body_json(declare(&app, &id, majority_without_county_threshold_tally()).await).await;
     assert_ne!(
         body["status"], "declared",
         "a bare national majority is not a declaration: {body:?}"
@@ -268,11 +265,20 @@ async fn a_declaration_cannot_be_made_twice() {
     // A second submission would silently replace the first outcome.
     let app = app();
     let id = initiate(&app).await;
-    assert_eq!(declare(&app, &id, winning_tally()).await.status(), StatusCode::ACCEPTED);
+    assert_eq!(
+        declare(&app, &id, winning_tally()).await.status(),
+        StatusCode::ACCEPTED
+    );
     let second = declare(&app, &id, runoff_tally()).await;
     assert_eq!(second.status(), StatusCode::CONFLICT);
-    let detail = body_json(second).await["detail"].as_str().unwrap_or_default().to_string();
-    assert!(detail.contains("declared"), "the reason should name the status: {detail}");
+    let detail = body_json(second).await["detail"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
+    assert!(
+        detail.contains("declared"),
+        "the reason should name the status: {detail}"
+    );
 }
 
 #[tokio::test]
@@ -292,8 +298,12 @@ async fn a_runoff_cannot_be_asserted_where_the_rules_do_not_produce_one() {
         StatusCode::CONFLICT,
         "a tally with a winner is not a run-off"
     );
-    let state = body_json(send(&app, "GET", &format!("/api/v1/declarations/{id}"), None).await).await;
-    assert_eq!(state["status"], "pending", "the declaration must be unchanged");
+    let state =
+        body_json(send(&app, "GET", &format!("/api/v1/declarations/{id}"), None).await).await;
+    assert_eq!(
+        state["status"], "pending",
+        "the declaration must be unchanged"
+    );
 }
 
 #[tokio::test]
@@ -323,7 +333,8 @@ async fn a_tie_cannot_be_asserted_where_the_rules_find_a_winner() {
     )
     .await;
     assert_eq!(resp.status(), StatusCode::CONFLICT);
-    let state = body_json(send(&app, "GET", &format!("/api/v1/declarations/{id}"), None).await).await;
+    let state =
+        body_json(send(&app, "GET", &format!("/api/v1/declarations/{id}"), None).await).await;
     assert_eq!(state["status"], "pending");
 }
 
@@ -331,7 +342,13 @@ async fn a_tie_cannot_be_asserted_where_the_rules_find_a_winner() {
 async fn a_tie_is_recorded_where_the_rules_produce_one() {
     let app = app();
     let id = initiate(&app).await;
-    let resp = send(&app, "PUT", &format!("/api/v1/declarations/{id}/tie"), Some(tie_tally())).await;
+    let resp = send(
+        &app,
+        "PUT",
+        &format!("/api/v1/declarations/{id}/tie"),
+        Some(tie_tally()),
+    )
+    .await;
     assert_eq!(resp.status(), StatusCode::ACCEPTED);
     assert_eq!(body_json(resp).await["status"], "tie_pending");
 }
@@ -343,14 +360,26 @@ async fn a_tie_pending_declaration_may_never_be_certified() {
     let app = app();
     let id = initiate(&app).await;
     declare(&app, &id, tie_tally()).await;
-    let resp = send(&app, "GET", &format!("/api/v1/declarations/{id}/certificate"), None).await;
+    let resp = send(
+        &app,
+        "GET",
+        &format!("/api/v1/declarations/{id}/certificate"),
+        None,
+    )
+    .await;
     assert_eq!(
         resp.status(),
         StatusCode::CONFLICT,
         "a tie-pending declaration must not be certified"
     );
-    let detail = body_json(resp).await["detail"].as_str().unwrap_or_default().to_string();
-    assert!(detail.contains("tie_pending"), "the reason should name the status: {detail}");
+    let detail = body_json(resp).await["detail"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
+    assert!(
+        detail.contains("tie_pending"),
+        "the reason should name the status: {detail}"
+    );
 }
 
 #[tokio::test]
@@ -359,7 +388,13 @@ async fn a_declared_result_may_be_certified() {
     let id = initiate(&app).await;
     declare(&app, &id, winning_tally()).await;
     let cert = body_json(
-        send(&app, "GET", &format!("/api/v1/declarations/{id}/certificate"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/api/v1/declarations/{id}/certificate"),
+            None,
+        )
+        .await,
     )
     .await;
     assert_eq!(cert["status"], "issued");
@@ -369,7 +404,13 @@ async fn a_declared_result_may_be_certified() {
 #[tokio::test]
 async fn a_certificate_for_an_unknown_declaration_is_404() {
     let app = app();
-    let resp = send(&app, "GET", "/api/v1/declarations/no-such/certificate", None).await;
+    let resp = send(
+        &app,
+        "GET",
+        "/api/v1/declarations/no-such/certificate",
+        None,
+    )
+    .await;
     assert_eq!(resp.status(), StatusCode::NOT_FOUND);
 }
 
@@ -377,7 +418,13 @@ async fn a_certificate_for_an_unknown_declaration_is_404() {
 async fn a_pending_declaration_may_not_be_certified() {
     let app = app();
     let id = initiate(&app).await;
-    let resp = send(&app, "GET", &format!("/api/v1/declarations/{id}/certificate"), None).await;
+    let resp = send(
+        &app,
+        "GET",
+        &format!("/api/v1/declarations/{id}/certificate"),
+        None,
+    )
+    .await;
     assert_eq!(resp.status(), StatusCode::CONFLICT);
 }
 
@@ -403,7 +450,10 @@ async fn an_amendment_must_name_the_tally_it_amends() {
     )
     .await;
     assert_eq!(wrong.status(), StatusCode::CONFLICT);
-    let detail = body_json(wrong).await["detail"].as_str().unwrap_or_default().to_string();
+    let detail = body_json(wrong).await["detail"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
     assert!(
         detail.contains("tally-snap-1"),
         "the reason should name the tally it is on: {detail}"
@@ -451,7 +501,8 @@ async fn a_valid_amendment_is_recorded_with_append_only_lineage() {
         })),
     )
     .await;
-    let state = body_json(send(&app, "GET", &format!("/api/v1/declarations/{id}"), None).await).await;
+    let state =
+        body_json(send(&app, "GET", &format!("/api/v1/declarations/{id}"), None).await).await;
     assert_eq!(state["status"], "amended");
 }
 
@@ -499,7 +550,13 @@ async fn an_amendment_requires_a_reason_and_a_new_snapshot() {
 #[tokio::test]
 async fn an_unknown_declaration_has_no_petition_window() {
     let app = app();
-    let resp = send(&app, "GET", "/api/v1/declarations/no-such/petition-window", None).await;
+    let resp = send(
+        &app,
+        "GET",
+        "/api/v1/declarations/no-such/petition-window",
+        None,
+    )
+    .await;
     assert_eq!(resp.status(), StatusCode::NOT_FOUND);
 }
 
@@ -508,7 +565,13 @@ async fn a_new_declaration_has_an_unopened_petition_window() {
     let app = app();
     let id = initiate(&app).await;
     let window = body_json(
-        send(&app, "GET", &format!("/api/v1/declarations/{id}/petition-window"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/api/v1/declarations/{id}/petition-window"),
+            None,
+        )
+        .await,
     )
     .await;
     assert_eq!(window["status"], "unopened");
@@ -532,8 +595,14 @@ async fn a_judicial_acknowledgement_requires_a_petition() {
         StatusCode::CONFLICT,
         "an acknowledgement follows a petition; none was filed"
     );
-    let detail = body_json(resp).await["detail"].as_str().unwrap_or_default().to_string();
-    assert!(detail.contains("unopened"), "the reason should name the status: {detail}");
+    let detail = body_json(resp).await["detail"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
+    assert!(
+        detail.contains("unopened"),
+        "the reason should name the status: {detail}"
+    );
 }
 
 #[tokio::test]

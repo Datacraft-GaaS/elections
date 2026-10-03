@@ -48,10 +48,12 @@ pub fn assess_quality(template: &Template) -> NfiqResult {
 /// Estimator core over raw minutiae (testable without images).
 pub fn assess_minutiae(minutiae: &[Minutia]) -> NfiqResult {
     if minutiae.len() < 5 {
-        return NfiqResult { score: 5, mean_quality: 0 };
+        return NfiqResult {
+            score: 5,
+            mean_quality: 0,
+        };
     }
-    let mean =
-        minutiae.iter().map(|m| m.quality as u64).sum::<u64>() / minutiae.len() as u64;
+    let mean = minutiae.iter().map(|m| m.quality as u64).sum::<u64>() / minutiae.len() as u64;
     let mean = mean as u32;
     let score = if mean >= 80 && minutiae.len() >= 25 {
         1
@@ -62,7 +64,10 @@ pub fn assess_minutiae(minutiae: &[Minutia]) -> NfiqResult {
     } else {
         4
     };
-    NfiqResult { score, mean_quality: mean }
+    NfiqResult {
+        score,
+        mean_quality: mean,
+    }
 }
 
 #[cfg(test)]

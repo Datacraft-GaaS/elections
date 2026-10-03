@@ -27,8 +27,12 @@ use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 use std::collections::HashMap;
 
 /// Transitions that move custody between accountable parties.
-pub const HIGH_RISK_TARGET_STATES: [&str; 4] =
-    ["SEALED_RETURN", "TALLY_ARRIVED", "COUNT_COMPLETE", "STORAGE_ARCHIVE"];
+pub const HIGH_RISK_TARGET_STATES: [&str; 4] = [
+    "SEALED_RETURN",
+    "TALLY_ARRIVED",
+    "COUNT_COMPLETE",
+    "STORAGE_ARCHIVE",
+];
 
 pub fn is_high_risk(to_state: &str) -> bool {
     HIGH_RISK_TARGET_STATES.contains(&to_state)
@@ -91,10 +95,14 @@ pub fn parse_registry(spec: &str) -> Result<HashMap<String, VerifyingKey>, Strin
     for entry in spec.split(',').map(str::trim).filter(|e| !e.is_empty()) {
         let parts: Vec<&str> = entry.split(':').collect();
         if parts.len() != 2 {
-            return Err(format!("bad entry {entry:?} (want officer_uuid:hex_pubkey)"));
+            return Err(format!(
+                "bad entry {entry:?} (want officer_uuid:hex_pubkey)"
+            ));
         }
         let raw = hex::decode(parts[1]).map_err(|e| format!("bad hex in {entry:?}: {e}"))?;
-        let arr: [u8; 32] = raw.try_into().map_err(|_| format!("key not 32 bytes in {entry:?}"))?;
+        let arr: [u8; 32] = raw
+            .try_into()
+            .map_err(|_| format!("key not 32 bytes in {entry:?}"))?;
         let vk = VerifyingKey::from_bytes(&arr)
             .map_err(|e| format!("bad ed25519 key in {entry:?}: {e}"))?;
         map.insert(parts[0].to_string(), vk);
@@ -147,7 +155,13 @@ mod tests {
             SignatureCheck::UnregisteredOfficer
         );
         assert_eq!(
-            check_transition_signature(&reg, Some(officer), "TALLY_ARRIVED", &[8u8; 32], Some(&sig)),
+            check_transition_signature(
+                &reg,
+                Some(officer),
+                "TALLY_ARRIVED",
+                &[8u8; 32],
+                Some(&sig)
+            ),
             SignatureCheck::Invalid
         );
     }

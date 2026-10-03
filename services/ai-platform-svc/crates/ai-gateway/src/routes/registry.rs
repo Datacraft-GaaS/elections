@@ -34,9 +34,7 @@ pub fn router() -> Router<AppState> {
         .route("/models/{id}/activate", patch(activate_model))
 }
 
-async fn list_models(
-    State(state): State<AppState>,
-) -> Json<Vec<ModelRecord>> {
+async fn list_models(State(state): State<AppState>) -> Json<Vec<ModelRecord>> {
     let records = state.models.read().await;
     Json(records.clone())
 }

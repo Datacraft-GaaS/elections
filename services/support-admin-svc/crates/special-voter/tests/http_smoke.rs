@@ -42,7 +42,11 @@ async fn contract_submit_and_list_events() {
         violation_pending_ack: None,
     };
     let fid = facility.id;
-    state.facilities.lock().expect("lock poisoned").insert(fid, facility);
+    state
+        .facilities
+        .lock()
+        .expect("lock poisoned")
+        .insert(fid, facility);
 
     let app = router(state);
 
@@ -70,7 +74,9 @@ async fn contract_submit_and_list_events() {
         .unwrap();
     let resp = app.oneshot(req).await.unwrap();
     assert_eq!(resp.status(), 200);
-    let body = axum::body::to_bytes(resp.into_body(), 1024 * 1024).await.unwrap();
+    let body = axum::body::to_bytes(resp.into_body(), 1024 * 1024)
+        .await
+        .unwrap();
     let v: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert!(v["events"].as_array().unwrap().len() == 1);
 }

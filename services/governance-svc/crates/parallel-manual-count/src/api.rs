@@ -94,7 +94,10 @@ async fn submit_station(
             Json(serde_json::json!({ "status": "accepted" })),
         )
             .into_response(),
-        Err(msg) => (StatusCode::CONFLICT, Json(serde_json::json!({ "error": msg })))
+        Err(msg) => (
+            StatusCode::CONFLICT,
+            Json(serde_json::json!({ "error": msg })),
+        )
             .into_response(),
     }
 }

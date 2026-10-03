@@ -47,12 +47,7 @@ pub struct IprsClient {
 
 impl IprsClient {
     pub fn new(base_url: impl Into<String>) -> Self {
-        let cb = CircuitBreaker::new(
-            "iprs",
-            5,
-            Duration::from_secs(60),
-            Duration::from_secs(30),
-        );
+        let cb = CircuitBreaker::new("iprs", 5, Duration::from_secs(60), Duration::from_secs(30));
         Self {
             base_url: base_url.into(),
             circuit_breaker: cb,

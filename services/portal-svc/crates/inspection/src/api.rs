@@ -25,15 +25,17 @@ use uuid::Uuid;
 
 use crate::{
     domain::{
-        CorrectionClaim, CorrectionStatus, CorrectionType, Determination,
-        Objection, ObjectionStatus, RollSnapshot,
+        CorrectionClaim, CorrectionStatus, CorrectionType, Determination, Objection,
+        ObjectionStatus, RollSnapshot,
     },
     events,
 };
 
 #[derive(Clone)]
 pub struct AppState {
-    pub snapshots: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, crate::domain::RollSnapshot>>>,
+    pub snapshots: std::sync::Arc<
+        std::sync::Mutex<std::collections::HashMap<String, crate::domain::RollSnapshot>>,
+    >,
     /// Filed objections by id.
     pub objections: eel_memstore_rs::Collection<crate::domain::Objection>,
     /// Filed correction claims by id.
@@ -45,7 +47,8 @@ pub struct AppState {
     pub lookup_cap: std::sync::Arc<crate::search::LookupCap>,
     /// The crate's own auto-referral scheduler, so `run_auto_referral` uses
     /// `should_refer` / `run_batch` instead of logging that it would.
-    pub auto_referral: std::sync::Arc<std::sync::Mutex<crate::auto_referral::AutoReferralScheduler>>,
+    pub auto_referral:
+        std::sync::Arc<std::sync::Mutex<crate::auto_referral::AutoReferralScheduler>>,
 }
 
 /// A problem+json response for a missing resource.
@@ -60,12 +63,20 @@ fn bad_request(detail: String) -> Response {
 
 /// A problem+json response when the lookup cap is exhausted.
 fn too_many_requests(detail: String) -> Response {
-    problem(StatusCode::TOO_MANY_REQUESTS, "Too Many Requests".to_string(), detail)
+    problem(
+        StatusCode::TOO_MANY_REQUESTS,
+        "Too Many Requests".to_string(),
+        detail,
+    )
 }
 
 /// A problem+json response for an operation this crate cannot honestly perform.
 fn not_implemented(detail: String) -> Response {
-    problem(StatusCode::NOT_IMPLEMENTED, "Not Implemented".to_string(), detail)
+    problem(
+        StatusCode::NOT_IMPLEMENTED,
+        "Not Implemented".to_string(),
+        detail,
+    )
 }
 
 fn problem(status: StatusCode, title: String, detail: String) -> Response {
@@ -125,9 +136,18 @@ pub fn router() -> Router {
         .route("/corrections/{id}/decision", patch(decide_correction))
         .route("/corrections/auto-referral/run", post(run_auto_referral))
         // Public contract endpoints (inspection/voter-list.yaml)
-        .route("/api/v1/inspection/voter-list/snapshots", get(list_voter_list_snapshots))
-        .route("/api/v1/inspection/voter-list/snapshots/{snapshot_id}", get(get_voter_list_snapshot))
-        .route("/api/v1/inspection/voter-list/search", get(search_voter_list))
+        .route(
+            "/api/v1/inspection/voter-list/snapshots",
+            get(list_voter_list_snapshots),
+        )
+        .route(
+            "/api/v1/inspection/voter-list/snapshots/{snapshot_id}",
+            get(get_voter_list_snapshot),
+        )
+        .route(
+            "/api/v1/inspection/voter-list/search",
+            get(search_voter_list),
+        )
         .with_state(state)
 }
 
@@ -196,7 +216,11 @@ async fn create_roll_snapshot(
     };
     let _ev = events::roll_snapshotted_v1(&snap.id, &snap.snapshot_hash);
     tracing::info!(id = %snap.id, "roll snapshot created");
-    state.snapshots.lock().expect("lock poisoned").insert(snap.id.to_string(), snap.clone());
+    state
+        .snapshots
+        .lock()
+        .expect("lock poisoned")
+        .insert(snap.id.to_string(), snap.clone());
     (StatusCode::CREATED, Json(snap))
 }
 
@@ -232,9 +256,9 @@ async fn roll_lookup(
         )));
     }
     let _ = &req.step_up_token; // validated in middleware
-    // No voter register is loaded in this crate, so nothing can be found. The
-    // constant-time response shape is preserved deliberately: `found` is always
-    // present so a caller cannot distinguish "absent" from "errored" by shape.
+                                // No voter register is loaded in this crate, so nothing can be found. The
+                                // constant-time response shape is preserved deliberately: `found` is always
+                                // present so a caller cannot distinguish "absent" from "errored" by shape.
     tracing::debug!("roll lookup: no voter register loaded");
     Ok(Json(RollLookupResp {
         found: false,
@@ -360,9 +384,7 @@ async fn decide_correction(
         decided_at: Utc::now(),
     };
     tracing::info!(claim_id = %id, "correction determination recorded");
-    state
-        .determinations
-        .insert(det.id.to_string(), det.clone());
+    state.determinations.insert(det.id.to_string(), det.clone());
     Ok(Json(det).into_response())
 }
 

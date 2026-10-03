@@ -16,13 +16,13 @@
 #![warn(missing_docs)]
 /// domain.
 pub mod domain;
+/// Domain events.
+pub mod events;
 /// HTTP handlers for printing contract.
 pub mod http;
+/// Printer integrations.
+pub mod integrations;
 /// Typed models for printing contract.
 pub mod spec;
 /// Store trait — swap boundary.
 pub mod store;
-/// Domain events.
-pub mod events;
-/// Printer integrations.
-pub mod integrations;

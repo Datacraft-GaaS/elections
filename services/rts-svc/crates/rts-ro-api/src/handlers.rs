@@ -15,7 +15,7 @@
 use axum::{
     extract::Path,
     http::StatusCode,
-    response::{IntoResponse, Response, Json},
+    response::{IntoResponse, Json, Response},
 };
 use tracing::{info, warn};
 use uuid::Uuid;
@@ -77,9 +77,7 @@ pub async fn verify_form34a(
         }
     };
     let signature = match eel_crypto_rs::ed25519::signature_from_bytes(
-        &signature_bytes
-            .try_into()
-            .expect("checked length is 64"),
+        &signature_bytes.try_into().expect("checked length is 64"),
     ) {
         Ok(s) => s,
         Err(e) => {
@@ -110,16 +108,16 @@ pub async fn verify_form34a(
         }
     };
     let verifying_key = match eel_crypto_rs::ed25519::verifying_key_from_bytes(
-        &key_bytes
-            .try_into()
-            .expect("checked length is 32"),
+        &key_bytes.try_into().expect("checked length is 32"),
     ) {
         Ok(k) => k,
         Err(e) => {
             return problem(
                 StatusCode::SERVICE_UNAVAILABLE,
-                format!("the configured public key for this officer is not a valid Ed25519 \
-                         verifying key: {e}"),
+                format!(
+                    "the configured public key for this officer is not a valid Ed25519 \
+                         verifying key: {e}"
+                ),
             )
         }
     };
@@ -194,9 +192,7 @@ pub async fn amend_form34a(
 // POST /api/v1/rts/ro/form34b/compile
 // Constituency-level 34B compilation; requires RO + witness dual-officer
 // signatures; emits form34b_compiled.v1.
-pub async fn compile_form34b(
-    Json(req): Json<CompileForm34BRequest>,
-) -> impl IntoResponse {
+pub async fn compile_form34b(Json(req): Json<CompileForm34BRequest>) -> impl IntoResponse {
     info!(
         constituency_code = %req.constituency_code,
         election_id = %req.election_id,
@@ -216,9 +212,7 @@ pub async fn compile_form34b(
 
 // POST /api/v1/rts/ro/form34c/compile
 // National-level 34C; CRO role gated via SpiceDB; emits form34c_compiled.v1.
-pub async fn compile_form34c(
-    Json(req): Json<CompileForm34CRequest>,
-) -> impl IntoResponse {
+pub async fn compile_form34c(Json(req): Json<CompileForm34CRequest>) -> impl IntoResponse {
     info!(
         region_code = %req.region_code,
         election_id = %req.election_id,
@@ -239,9 +233,7 @@ pub async fn compile_form34c(
 
 // POST /api/v1/rts/ro/disputes
 // Raise a dispute case; emits dispute_raised.v1.
-pub async fn create_dispute(
-    Json(req): Json<DisputeRequest>,
-) -> impl IntoResponse {
+pub async fn create_dispute(Json(req): Json<DisputeRequest>) -> impl IntoResponse {
     info!(
         form_id = %req.form_id,
         raised_by = %req.raised_by,
@@ -263,9 +255,7 @@ pub async fn create_dispute(
 // Party-agent countersignature on 34A/34B. The signature is verified against
 // the registered agent key over canonical bytes form|agent|party|signed_at;
 // unregistered agents or invalid signatures are rejected outright.
-pub async fn agent_countersign(
-    Json(req): Json<AgentCountersignRequest>,
-) -> Response {
+pub async fn agent_countersign(Json(req): Json<AgentCountersignRequest>) -> Response {
     static REGISTRY: std::sync::OnceLock<crate::agents::AgentRegistry> = std::sync::OnceLock::new();
     let registry = REGISTRY.get_or_init(crate::agents::AgentRegistry::from_env);
 
@@ -312,9 +302,7 @@ pub async fn agent_countersign(
 // POST /api/v1/rts/ro/session-recording
 // Start, anchor (60-s hash), or stop session recording; hash forwarded to
 // transparency-svc; emits ro_session_recorded.v1.
-pub async fn session_recording(
-    Json(req): Json<SessionRecordingRequest>,
-) -> impl IntoResponse {
+pub async fn session_recording(Json(req): Json<SessionRecordingRequest>) -> impl IntoResponse {
     info!(
         ro_id = %req.ro_id,
         action = ?req.action,

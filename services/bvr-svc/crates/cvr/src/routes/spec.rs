@@ -94,12 +94,20 @@ pub async fn handle_ussd_session(
     })
 }
 
-
 /// Composes the public cvr contract router.
 pub fn router() -> axum::Router<crate::state::AppState> {
-	axum::Router::new()
-		.route("/api/v1/cvr/lookups", axum::routing::post(voter_lookup))
-		.route("/api/v1/cvr/register/snapshot", axum::routing::get(get_register_snapshot))
-		.route("/api/v1/cvr/register/stats", axum::routing::get(get_register_stats))
-		.route("/api/v1/cvr/ussd/sessions", axum::routing::post(handle_ussd_session))
+    axum::Router::new()
+        .route("/api/v1/cvr/lookups", axum::routing::post(voter_lookup))
+        .route(
+            "/api/v1/cvr/register/snapshot",
+            axum::routing::get(get_register_snapshot),
+        )
+        .route(
+            "/api/v1/cvr/register/stats",
+            axum::routing::get(get_register_stats),
+        )
+        .route(
+            "/api/v1/cvr/ussd/sessions",
+            axum::routing::post(handle_ussd_session),
+        )
 }

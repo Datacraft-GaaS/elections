@@ -43,7 +43,10 @@ pub async fn poll_peers_once(
 ) -> usize {
     let mut observed = 0usize;
     for peer in peers {
-        let url = format!("{}/api/v1/transparency/witnesses/head", peer.trim_end_matches('/'));
+        let url = format!(
+            "{}/api/v1/transparency/witnesses/head",
+            peer.trim_end_matches('/')
+        );
         match client.get(&url).send().await {
             Ok(resp) => match resp.json::<serde_json::Value>().await {
                 Ok(v) => match parse_peer_head(&v) {
@@ -52,8 +55,7 @@ pub async fn poll_peers_once(
                             Ok(d) => d,
                             Err(_) => return observed,
                         };
-                        let split =
-                            d.observe_root(&format!("peer:{peer}"), ts, &root);
+                        let split = d.observe_root(&format!("peer:{peer}"), ts, &root);
                         if split {
                             // Findings are retained on the detector and served
                             // via GET .../split-views; the error log above is
@@ -88,9 +90,8 @@ pub fn spawn_gossip(
             .timeout(std::time::Duration::from_secs(5))
             .build()
             .expect("http client");
-        let mut ticker = tokio::time::interval(std::time::Duration::from_secs(
-            interval_secs.max(1),
-        ));
+        let mut ticker =
+            tokio::time::interval(std::time::Duration::from_secs(interval_secs.max(1)));
         loop {
             ticker.tick().await;
             poll_peers_once(&peers, &detector, &client, "tlog-witness").await;
@@ -106,10 +107,7 @@ mod tests {
     fn parse_valid_head() {
         let v: serde_json::Value =
             serde_json::from_str(r#"{"tree_size": 12, "root_hash": "abc123"}"#).unwrap();
-        assert_eq!(
-            parse_peer_head(&v),
-            Some((12u64, "abc123".to_string()))
-        );
+        assert_eq!(parse_peer_head(&v), Some((12u64, "abc123".to_string())));
     }
 
     #[test]
@@ -121,11 +119,17 @@ mod tests {
 
     #[test]
     fn wrong_types_are_skipped_without_panic() {
-        assert!(parse_peer_head(&serde_json::json!({"tree_size": "big", "root_hash": "x"})).is_none());
+        assert!(
+            parse_peer_head(&serde_json::json!({"tree_size": "big", "root_hash": "x"})).is_none()
+        );
         assert!(parse_peer_head(&serde_json::json!({"tree_size": -1, "root_hash": "x"})).is_none());
-        assert!(parse_peer_head(&serde_json::json!({"tree_size": 1.5, "root_hash": "x"})).is_none());
+        assert!(
+            parse_peer_head(&serde_json::json!({"tree_size": 1.5, "root_hash": "x"})).is_none()
+        );
         assert!(parse_peer_head(&serde_json::json!({"tree_size": 1, "root_hash": 42})).is_none());
-        assert!(parse_peer_head(&serde_json::json!({"tree_size": null, "root_hash": null})).is_none());
+        assert!(
+            parse_peer_head(&serde_json::json!({"tree_size": null, "root_hash": null})).is_none()
+        );
         // Entirely wrong JSON shape (array / scalar) must not panic.
         assert!(parse_peer_head(&serde_json::json!([1, 2, 3])).is_none());
         assert!(parse_peer_head(&serde_json::json!("hello")).is_none());

@@ -44,8 +44,11 @@ async fn lesson_submitted_rust_calls_django_attempt_endpoint() {
         .send()
         .await
         .expect("rust assessment endpoint");
-    assert!(rust_resp.status().is_success() || rust_resp.status() == StatusCode::NOT_FOUND,
-        "rust assessment returned unexpected: {}", rust_resp.status());
+    assert!(
+        rust_resp.status().is_success() || rust_resp.status() == StatusCode::NOT_FOUND,
+        "rust assessment returned unexpected: {}",
+        rust_resp.status()
+    );
 
     // 2. Django persists the attempt + cert audit
     let worker_id = Uuid::new_v4();
@@ -62,8 +65,11 @@ async fn lesson_submitted_rust_calls_django_attempt_endpoint() {
         .send()
         .await
         .expect("django attempt endpoint");
-    assert!(django_resp.status().is_success() || django_resp.status() == StatusCode::CONFLICT,
-        "django attempt returned: {}", django_resp.status());
+    assert!(
+        django_resp.status().is_success() || django_resp.status() == StatusCode::CONFLICT,
+        "django attempt returned: {}",
+        django_resp.status()
+    );
 
     // 3. Replay with same idempotency key — must NOT create duplicate
     let replay = reqwest::Client::new()
@@ -78,16 +84,26 @@ async fn lesson_submitted_rust_calls_django_attempt_endpoint() {
         .send()
         .await
         .expect("replay");
-    assert!(replay.status().is_success() || replay.status() == StatusCode::CONFLICT,
-        "replay should be deduped: {}", replay.status());
+    assert!(
+        replay.status().is_success() || replay.status() == StatusCode::CONFLICT,
+        "replay should be deduped: {}",
+        replay.status()
+    );
 
     // 4. Cert audit log row exists for this worker
     let cert_audit = reqwest::Client::new()
-        .get(format!("{}/cert-audit/?worker_id={}", DJANGO_BASE, worker_id))
+        .get(format!(
+            "{}/cert-audit/?worker_id={}",
+            DJANGO_BASE, worker_id
+        ))
         .send()
         .await
         .expect("cert audit list");
-    assert!(cert_audit.status().is_success(), "cert audit list failed: {}", cert_audit.status());
+    assert!(
+        cert_audit.status().is_success(),
+        "cert audit list failed: {}",
+        cert_audit.status()
+    );
 }
 
 #[tokio::test]
@@ -107,6 +123,9 @@ async fn crms_party_registered_routes_to_lms_enroll() {
         .send()
         .await
         .expect("crms event consumer");
-    assert!(resp.status().is_success() || resp.status() == StatusCode::ACCEPTED,
-        "crms event consumer returned: {}", resp.status());
+    assert!(
+        resp.status().is_success() || resp.status() == StatusCode::ACCEPTED,
+        "crms event consumer returned: {}",
+        resp.status()
+    );
 }

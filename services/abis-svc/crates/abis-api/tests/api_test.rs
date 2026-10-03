@@ -102,7 +102,11 @@ async fn test_match_1n() {
         return;
     };
     seed_probe(&pool, "p1").await;
-    let app = app(Arc::new(AppState { db: pool, store: abis_api::store::AbisStore::new(), adjudication: abis_api::adjudication::AdjudicationStore::new().shared() }));
+    let app = app(Arc::new(AppState {
+        db: pool,
+        store: abis_api::store::AbisStore::new(),
+        adjudication: abis_api::adjudication::AdjudicationStore::new().shared(),
+    }));
     let body = r#"{"probe_ref":"p1","modality":"fingerprint","caller_id":"c1","election_id":"33333333-2222-3333-4444-555555555555"}"#;
     let resp = app
         .oneshot(
@@ -126,7 +130,11 @@ async fn test_match_11() {
         return;
     };
     seed_probe(&pool, "p1").await;
-    let app = app(Arc::new(AppState { db: pool, store: abis_api::store::AbisStore::new(), adjudication: abis_api::adjudication::AdjudicationStore::new().shared() }));
+    let app = app(Arc::new(AppState {
+        db: pool,
+        store: abis_api::store::AbisStore::new(),
+        adjudication: abis_api::adjudication::AdjudicationStore::new().shared(),
+    }));
     let body = r#"{"probe_ref":"p1","gallery_ref":"g1","modality":"iris","caller_id":"c1"}"#;
     let resp = app
         .oneshot(
@@ -150,7 +158,11 @@ async fn test_get_match_result() {
         return;
     };
     seed_probe(&pool, "p2").await;
-    let app = app(Arc::new(AppState { db: pool, store: abis_api::store::AbisStore::new(), adjudication: abis_api::adjudication::AdjudicationStore::new().shared() }));
+    let app = app(Arc::new(AppState {
+        db: pool,
+        store: abis_api::store::AbisStore::new(),
+        adjudication: abis_api::adjudication::AdjudicationStore::new().shared(),
+    }));
 
     // Mint a request row via 1:n, then fetch its result back.
     let body = r#"{"probe_ref":"p2","modality":"fingerprint","caller_id":"c1","election_id":"33333333-2222-3333-4444-555555555555"}"#;
@@ -169,9 +181,10 @@ async fn test_get_match_result() {
         .unwrap();
     assert_eq!(submit.status(), StatusCode::ACCEPTED);
 
-    let bytes = axum::body::to_bytes(submit.into_body(), 1_000_000).await.unwrap();
-    let request_id = serde_json::from_slice::<serde_json::Value>(&bytes)
-        .unwrap()["request_id"]
+    let bytes = axum::body::to_bytes(submit.into_body(), 1_000_000)
+        .await
+        .unwrap();
+    let request_id = serde_json::from_slice::<serde_json::Value>(&bytes).unwrap()["request_id"]
         .as_str()
         .unwrap()
         .to_string();
@@ -239,7 +252,9 @@ async fn test_list_adjudication() {
         .await
         .unwrap();
     assert_eq!(resp.status(), StatusCode::OK);
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     // An empty queue is a real answer now: the store holds no cases, and it says so.
     assert_eq!(body["total"], 0);

@@ -68,7 +68,6 @@ pub struct PartySummary {
     pub non_compliant: u32,
 }
 
-
 /// A request to record a transmission.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct RecordTransmissionRequest {

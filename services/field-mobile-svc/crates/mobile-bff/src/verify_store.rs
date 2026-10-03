@@ -127,7 +127,12 @@ impl VerifyStore {
     ///
     /// A token already recorded is not recorded twice: the second call returns the
     /// original, so a replayed submission does not inflate the leaf set.
-    pub fn record_token(&self, token_sha256: &str, constituency_code: Option<String>, source: &str) -> TokenRecord {
+    pub fn record_token(
+        &self,
+        token_sha256: &str,
+        constituency_code: Option<String>,
+        source: &str,
+    ) -> TokenRecord {
         let mut guard = self.tokens.lock().expect("lock poisoned");
         if let Some(index) = self.by_sha.lock().expect("lock poisoned").get(token_sha256) {
             return guard[*index].clone();
@@ -152,8 +157,16 @@ impl VerifyStore {
 
     /// A token by its SHA-256.
     pub fn token(&self, token_sha256: &str) -> Option<TokenRecord> {
-        let index = *self.by_sha.lock().expect("lock poisoned").get(token_sha256)?;
-        self.tokens.lock().expect("lock poisoned").get(index).cloned()
+        let index = *self
+            .by_sha
+            .lock()
+            .expect("lock poisoned")
+            .get(token_sha256)?;
+        self.tokens
+            .lock()
+            .expect("lock poisoned")
+            .get(index)
+            .cloned()
     }
 
     /// Every recorded token, in arrival order.
@@ -225,7 +238,11 @@ impl VerifyStore {
 
     /// A station's queue, if it has one.
     pub fn queue(&self, station: &str) -> Option<StationQueue> {
-        self.queues.lock().expect("lock poisoned").get(station).cloned()
+        self.queues
+            .lock()
+            .expect("lock poisoned")
+            .get(station)
+            .cloned()
     }
 
     /// Anomaly flags derived from the queue state.
@@ -245,13 +262,17 @@ impl VerifyStore {
                             // duplicate raises the same flag rather than a new
                             // one on every read.
                             let digest = Sha256::digest(
-                                format!("eel.mobile.verify.anomaly.v1|{station}|{agent}").as_bytes(),
+                                format!("eel.mobile.verify.anomaly.v1|{station}|{agent}")
+                                    .as_bytes(),
                             );
                             format!("anom-{}", hex::encode(&digest[..8]))
                         },
                         kind: "duplicate-check-in".to_string(),
                         station: station.clone(),
-                        detail: format!("agent {} checked in more than once at this station", &agent[..agent.len().min(12)]),
+                        detail: format!(
+                            "agent {} checked in more than once at this station",
+                            &agent[..agent.len().min(12)]
+                        ),
                         raised_at: chrono::Utc::now().to_rfc3339(),
                     });
                 }
@@ -261,7 +282,12 @@ impl VerifyStore {
     }
 
     /// File a clone report, returning it with its digest.
-    pub fn file_clone(&self, package_name: &str, build_id: &str, findings: Vec<String>) -> CloneReport {
+    pub fn file_clone(
+        &self,
+        package_name: &str,
+        build_id: &str,
+        findings: Vec<String>,
+    ) -> CloneReport {
         let mut h = Sha256::new();
         h.update(b"eel.mobile.verify.clone-report.v1");
         h.update([0x1e]);
@@ -280,7 +306,10 @@ impl VerifyStore {
             report_hash: format!("sha256:{}", hex::encode(h.finalize())),
             filed_at: chrono::Utc::now().to_rfc3339(),
         };
-        self.clones.lock().expect("lock poisoned").push(report.clone());
+        self.clones
+            .lock()
+            .expect("lock poisoned")
+            .push(report.clone());
         report
     }
 

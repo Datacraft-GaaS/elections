@@ -45,7 +45,12 @@ async fn body_json(resp: axum::response::Response) -> Value {
     serde_json::from_slice(&bytes).unwrap_or(Value::Null)
 }
 
-async fn send(app: &axum::Router, method: &str, uri: &str, body: Option<Value>) -> axum::response::Response {
+async fn send(
+    app: &axum::Router,
+    method: &str,
+    uri: &str,
+    body: Option<Value>,
+) -> axum::response::Response {
     let mut b = Request::builder().method(method).uri(uri);
     let payload = match body {
         Some(v) => {
@@ -84,7 +89,11 @@ async fn redteam_findings_accumulate_on_a_campaign() {
             Some(json!({"title": title, "severity": "High", "description": "probe"})),
         )
         .await;
-        assert_eq!(resp.status(), StatusCode::CREATED, "add_redteam_finding must work");
+        assert_eq!(
+            resp.status(),
+            StatusCode::CREATED,
+            "add_redteam_finding must work"
+        );
         let finding = body_json(resp).await;
         assert_eq!(finding["title"], title);
         assert!(!finding["recorded_at"].is_null());
@@ -129,7 +138,8 @@ async fn adjudicating_an_alert_assigns_it() {
     assert_eq!(adjudication["analyst_id"], "an-7");
 
     // The alert itself must now carry the analyst.
-    let fetched = body_json(send(&app, "GET", "/api/v1/ai/anomaly/alerts/alert-1", None).await).await;
+    let fetched =
+        body_json(send(&app, "GET", "/api/v1/ai/anomaly/alerts/alert-1", None).await).await;
     assert_eq!(
         fetched["assigned_analyst_id"], "an-7",
         "the adjudication must reach the alert, not just echo a request"
@@ -239,7 +249,10 @@ async fn retraining_refuses_because_no_pipeline_exists() {
     .await;
     assert_eq!(resp.status(), StatusCode::NOT_IMPLEMENTED);
     let problem = body_json(resp).await;
-    assert!(problem["detail"].as_str().unwrap_or("").contains("no training pipeline"));
+    assert!(problem["detail"]
+        .as_str()
+        .unwrap_or("")
+        .contains("no training pipeline"));
 }
 
 #[tokio::test]
@@ -249,9 +262,7 @@ async fn the_legacy_redirect_still_redirects() {
     let resp = send(&app, "GET", "/v1/ai/legacy/unmapped/path", None).await;
     assert_eq!(resp.status(), StatusCode::PERMANENT_REDIRECT);
     assert_eq!(
-        resp.headers()
-            .get("location")
-            .and_then(|v| v.to_str().ok()),
+        resp.headers().get("location").and_then(|v| v.to_str().ok()),
         Some("/api/v1/ai/legacy/unmapped/path")
     );
 }

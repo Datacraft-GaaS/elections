@@ -64,10 +64,7 @@ async fn send(
         }
         None => Body::empty(),
     };
-    app.clone()
-        .oneshot(b.body(payload).unwrap())
-        .await
-        .unwrap()
+    app.clone().oneshot(b.body(payload).unwrap()).await.unwrap()
 }
 
 async fn create_cycle(app: &axum::Router, method: &str) -> String {
@@ -118,10 +115,8 @@ async fn starting_a_run_moves_the_stored_cycle_to_running() {
     let app = app();
     let id = create_cycle(&app, "IV").await;
 
-    let run = body_json(
-        send(&app, "PUT", &format!("/v1/forensics/cycles/{id}/run"), None).await,
-    )
-    .await;
+    let run =
+        body_json(send(&app, "PUT", &format!("/v1/forensics/cycles/{id}/run"), None).await).await;
     assert_eq!(run["id"], id.as_str());
     assert_eq!(run["status"], "running");
     assert!(!run["started_at"].is_null(), "started_at must be stamped");
@@ -140,10 +135,8 @@ async fn the_run_records_why_the_estimator_cannot_proceed() {
     // honest outcome is a recorded reason, not an invented estimate.
     let app = app();
     let id = create_cycle(&app, "RD").await;
-    let run = body_json(
-        send(&app, "PUT", &format!("/v1/forensics/cycles/{id}/run"), None).await,
-    )
-    .await;
+    let run =
+        body_json(send(&app, "PUT", &format!("/v1/forensics/cycles/{id}/run"), None).await).await;
     let reason = run["blocked_reason"].as_str().unwrap_or_default();
     assert!(
         reason.contains("forensics-ml"),
@@ -177,8 +170,14 @@ async fn a_cycle_cannot_be_run_twice() {
         StatusCode::CONFLICT,
         "a running cycle must not be re-run"
     );
-    let detail = body_json(second).await["detail"].as_str().unwrap_or_default().to_string();
-    assert!(detail.contains("running"), "the reason should say the status: {detail}");
+    let detail = body_json(second).await["detail"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
+    assert!(
+        detail.contains("running"),
+        "the reason should say the status: {detail}"
+    );
 }
 
 #[tokio::test]
@@ -206,8 +205,14 @@ async fn replication_requires_a_complete_cycle() {
         StatusCode::CONFLICT,
         "a draft cycle must not be able to publish a replication package"
     );
-    let detail = body_json(resp).await["detail"].as_str().unwrap_or_default().to_string();
-    assert!(detail.contains("draft"), "the reason should name the status: {detail}");
+    let detail = body_json(resp).await["detail"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
+    assert!(
+        detail.contains("draft"),
+        "the reason should name the status: {detail}"
+    );
 }
 
 #[tokio::test]
@@ -245,7 +250,13 @@ async fn estimates_for_an_unknown_cycle_are_404() {
     // Previously any cycle id returned 200 with an empty list, which is
     // indistinguishable from "this cycle has produced no estimates".
     let app = app();
-    let resp = send(&app, "GET", "/v1/forensics/cycles/no-such-cycle/estimates", None).await;
+    let resp = send(
+        &app,
+        "GET",
+        "/v1/forensics/cycles/no-such-cycle/estimates",
+        None,
+    )
+    .await;
     assert_eq!(resp.status(), StatusCode::NOT_FOUND);
 }
 
@@ -254,7 +265,13 @@ async fn estimates_for_a_known_cycle_start_empty() {
     let app = app();
     let id = create_cycle(&app, "RD").await;
     let listed = body_json(
-        send(&app, "GET", &format!("/v1/forensics/cycles/{id}/estimates"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/v1/forensics/cycles/{id}/estimates"),
+            None,
+        )
+        .await,
     )
     .await;
     assert!(

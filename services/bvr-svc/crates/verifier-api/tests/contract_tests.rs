@@ -33,9 +33,7 @@ use serde_json::{json, Value};
 use tower::ServiceExt;
 use verifier_api::{
     http::{router, sign},
-    store::{
-        Coordinates, LeadingCandidate, ResultSummary, StationDetail, VerifierStore,
-    },
+    store::{Coordinates, LeadingCandidate, ResultSummary, StationDetail, VerifierStore},
 };
 
 fn station() -> StationDetail {
@@ -48,7 +46,10 @@ fn station() -> StationDetail {
         constituency_name: "Westlands".to_string(),
         ward_name: "Parklands/Highridge".to_string(),
         registered_voters: 1_204,
-        coordinates: Coordinates { lat: -1.2536, lng: 36.8077 },
+        coordinates: Coordinates {
+            lat: -1.2536,
+            lng: 36.8077,
+        },
         streams: Some(6),
         address: Some("Off Waiyaki Way".to_string()),
         accessibility_features: Some(vec!["ramp".to_string()]),
@@ -109,7 +110,9 @@ fn secured() -> axum::Router {
 async fn send(app: axum::Router, req: Request<Body>) -> (StatusCode, String) {
     let resp = app.oneshot(req).await.unwrap();
     let status = resp.status();
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     (status, String::from_utf8_lossy(&bytes).to_string())
 }
 
@@ -124,7 +127,12 @@ async fn post_json(app: axum::Router, uri: &str, body: Value) -> (StatusCode, Va
     (status, serde_json::from_str(&text).unwrap_or(Value::Null))
 }
 
-async fn post_signed(app: axum::Router, uri: &str, body: Value, secret: &str) -> (StatusCode, Value) {
+async fn post_signed(
+    app: axum::Router,
+    uri: &str,
+    body: Value,
+    secret: &str,
+) -> (StatusCode, Value) {
     let raw = body.to_string();
     let req = Request::builder()
         .uri(uri)
@@ -138,7 +146,11 @@ async fn post_signed(app: axum::Router, uri: &str, body: Value, secret: &str) ->
 }
 
 async fn get(app: axum::Router, uri: &str) -> (StatusCode, Value) {
-    let req = Request::builder().uri(uri).method("GET").body(Body::empty()).unwrap();
+    let req = Request::builder()
+        .uri(uri)
+        .method("GET")
+        .body(Body::empty())
+        .unwrap();
     let (status, text) = send(app, req).await;
     (status, serde_json::from_str(&text).unwrap_or(Value::Null))
 }
@@ -234,7 +246,10 @@ async fn an_absent_result_summary_is_a_fault_not_an_empty_election() {
     // the publishing chain.
     let (status, body) = get(empty(), "/api/v1/verifier/results/summary").await;
     assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR);
-    assert!(body["detail"].as_str().unwrap_or_default().contains("published"));
+    assert!(body["detail"]
+        .as_str()
+        .unwrap_or_default()
+        .contains("published"));
 }
 
 #[tokio::test]
@@ -253,7 +268,8 @@ async fn ussd_refuses_without_a_configured_webhook_secret() {
 #[tokio::test]
 async fn ussd_refuses_an_unsigned_or_mis_signed_call() {
     // Previously: 200 with `action: end` to every caller, signed or not.
-    let body = json!({ "session_id": "ATU-1", "msisdn_hash": HASH, "text": "", "service_code": "*384#" });
+    let body =
+        json!({ "session_id": "ATU-1", "msisdn_hash": HASH, "text": "", "service_code": "*384#" });
     let (status, _) = post_json(secured(), "/api/v1/verifier/ussd/session", body.clone()).await;
     assert_eq!(status, StatusCode::UNAUTHORIZED);
 
@@ -305,7 +321,10 @@ async fn ussd_resolves_a_station_from_accumulated_input() {
     assert_eq!(body["action"], "end");
     let text = body["text"].as_str().unwrap();
     assert!(text.contains("Westlands Primary School"), "{text}");
-    assert!(text.chars().count() <= 182, "USSD screens are firmware-limited");
+    assert!(
+        text.chars().count() <= 182,
+        "USSD screens are firmware-limited"
+    );
 }
 
 #[tokio::test]
@@ -369,7 +388,11 @@ async fn whatsapp_challenge_is_forbidden_on_a_wrong_or_absent_token() {
                 .unwrap(),
         )
         .await;
-        assert_eq!(status, StatusCode::FORBIDDEN, "token {token} must be refused");
+        assert_eq!(
+            status,
+            StatusCode::FORBIDDEN,
+            "token {token} must be refused"
+        );
     }
     // An unconfigured deployment must not accept every challenge.
     let (status, _) = send(

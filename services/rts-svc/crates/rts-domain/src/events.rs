@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use serde::{Deserialize, Serialize};
 use crate::aggregates::form34a::CandidateResult;
+use serde::{Deserialize, Serialize};
 
 pub const EVENT_FORM34A_CAPTURED: &str = "eel.rts.form34a_captured.v1";
 pub const EVENT_FORM34A_VERIFIED: &str = "eel.rts.form34a_verified.v1";

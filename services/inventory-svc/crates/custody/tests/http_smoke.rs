@@ -44,7 +44,9 @@ async fn contract_register_and_get_asset() {
         .unwrap();
     let resp = app.clone().oneshot(req).await.unwrap();
     assert_eq!(resp.status(), 201);
-    let body = axum::body::to_bytes(resp.into_body(), 1024 * 1024).await.unwrap();
+    let body = axum::body::to_bytes(resp.into_body(), 1024 * 1024)
+        .await
+        .unwrap();
     let created: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert!(created["asset_id"].is_string());
     let asset_id = created["asset_id"].as_str().unwrap().to_string();

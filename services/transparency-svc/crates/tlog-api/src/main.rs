@@ -37,8 +37,7 @@ async fn main() -> anyhow::Result<()> {
     let grpc_svc = grpc::service(state);
 
     let addr = std::env::var("BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".to_string());
-    let grpc_addr =
-        std::env::var("GRPC_ADDR").unwrap_or_else(|_| "0.0.0.0:50051".to_string());
+    let grpc_addr = std::env::var("GRPC_ADDR").unwrap_or_else(|_| "0.0.0.0:50051".to_string());
 
     // REST (axum) and gRPC (tonic) share one ApiState and are served
     // concurrently; either address failing to bind aborts startup.

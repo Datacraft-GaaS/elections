@@ -65,9 +65,14 @@ async fn post_raw(
     let req = b.body(Body::from(body.to_string())).unwrap();
     let resp = app.oneshot(req).await.unwrap();
     let status = resp.status();
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     // Rejection bodies (4xx from extractors) are plain text, not JSON.
-    (status, serde_json::from_slice(&bytes).unwrap_or(Value::Null))
+    (
+        status,
+        serde_json::from_slice(&bytes).unwrap_or(Value::Null),
+    )
 }
 
 async fn get(app: axum::Router, uri: &str) -> (StatusCode, Value) {
@@ -78,8 +83,13 @@ async fn get(app: axum::Router, uri: &str) -> (StatusCode, Value) {
         .unwrap();
     let resp = app.oneshot(req).await.unwrap();
     let status = resp.status();
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
-    (status, serde_json::from_slice(&bytes).unwrap_or(Value::Null))
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    (
+        status,
+        serde_json::from_slice(&bytes).unwrap_or(Value::Null),
+    )
 }
 
 fn ussd_body() -> Value {
@@ -107,7 +117,10 @@ async fn ussd_session_opens_with_a_menu() {
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["action"], "continue");
     assert!(
-        body["response_text"].as_str().unwrap().contains("Check my registration"),
+        body["response_text"]
+            .as_str()
+            .unwrap()
+            .contains("Check my registration"),
         "the caller should see a menu, got {:?}",
         body["response_text"]
     );
@@ -182,7 +195,10 @@ async fn ivr_voice_call_advances_the_menu() {
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["call_id"], "call-1");
     assert_eq!(body["state"], "awaiting_station");
-    assert!(body["response_text"].as_str().unwrap().contains("station code"));
+    assert!(body["response_text"]
+        .as_str()
+        .unwrap()
+        .contains("station code"));
 }
 
 #[tokio::test]
@@ -247,13 +263,23 @@ fn whatsapp_payload() -> String {
 #[tokio::test]
 async fn whatsapp_inbound_is_refused_without_a_signature() {
     // The old contract asserted that an **unsigned** body was acknowledged.
-    let (status, _) = post_json(secured(), "/webhook/whatsapp", json!({ "from": "254700000000" })).await;
+    let (status, _) = post_json(
+        secured(),
+        "/webhook/whatsapp",
+        json!({ "from": "254700000000" }),
+    )
+    .await;
     assert_eq!(status, StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
 async fn whatsapp_inbound_is_refused_when_no_secret_is_configured() {
-    let (status, _) = post_json(app(), "/webhook/whatsapp", json!({ "from": "254700000000" })).await;
+    let (status, _) = post_json(
+        app(),
+        "/webhook/whatsapp",
+        json!({ "from": "254700000000" }),
+    )
+    .await;
     assert_eq!(
         status,
         StatusCode::SERVICE_UNAVAILABLE,
@@ -277,7 +303,13 @@ async fn whatsapp_inbound_is_acknowledged_when_signed() {
 #[tokio::test]
 async fn a_signature_over_a_different_body_is_rejected() {
     let sig = sign(SECRET, br#"{"different":true}"#);
-    let (status, _) = post_raw(secured(), "/webhook/whatsapp", &whatsapp_payload(), Some(&sig)).await;
+    let (status, _) = post_raw(
+        secured(),
+        "/webhook/whatsapp",
+        &whatsapp_payload(),
+        Some(&sig),
+    )
+    .await;
     assert_eq!(status, StatusCode::UNAUTHORIZED);
 }
 

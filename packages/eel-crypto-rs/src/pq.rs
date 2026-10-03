@@ -126,7 +126,7 @@ pub mod hybrid {
                 .signature_from_bytes(&sig.dilithium)
                 .ok_or(CryptoError::InvalidSignature)?;
             sigalg
-                .verify(message, &dil_sig, &self.dil_pk)
+                .verify(message, dil_sig, &self.dil_pk)
                 .map_err(|_| CryptoError::InvalidSignature)?;
             self.ecdsa_pk
                 .verify(message, &sig.ecdsa)
@@ -186,7 +186,7 @@ pub mod kem {
         let ct_obj = kem
             .ciphertext_from_bytes(&ct.ct_bytes)
             .ok_or_else(|| CryptoError::InvalidKey("bad ML-KEM ciphertext".to_owned()))?;
-        kem.decapsulate(sk, &ct_obj)
+        kem.decapsulate(sk, ct_obj)
             .map(|ss| ss.into_vec())
             .map_err(|e| CryptoError::Internal(e.to_string()))
     }
@@ -233,7 +233,7 @@ pub mod slh {
             .signature_from_bytes(signature)
             .ok_or(CryptoError::InvalidSignature)?;
         sigalg
-            .verify(message, &sig, &pk)
+            .verify(message, sig, pk)
             .map_err(|_| CryptoError::InvalidSignature)
     }
 }

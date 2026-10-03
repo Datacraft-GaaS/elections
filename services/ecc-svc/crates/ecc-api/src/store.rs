@@ -45,7 +45,6 @@ pub struct MediaItemRow {
     pub submitted_at: DateTime<Utc>,
 }
 
-
 #[derive(Debug, Clone)]
 pub struct FindingRow {
     pub category: String,
@@ -126,7 +125,11 @@ pub enum Store {
 pub type Snapshot = (String, i32, serde_json::Value);
 
 impl Store {
-    pub async fn lookup_fingerprint(&self, operation: &str, key: &str) -> Result<Option<Snapshot>, StoreError> {
+    pub async fn lookup_fingerprint(
+        &self,
+        operation: &str,
+        key: &str,
+    ) -> Result<Option<Snapshot>, StoreError> {
         match self {
             Store::Pg(pool) => {
                 let row: Option<(String, i32, serde_json::Value)> = sqlx::query_as(
@@ -139,7 +142,11 @@ impl Store {
                 .await?;
                 Ok(row)
             }
-            Store::Mem(mem) => Ok(mem.lock().fingerprints.get(&(operation.to_string(), key.to_string())).cloned()),
+            Store::Mem(mem) => Ok(mem
+                .lock()
+                .fingerprints
+                .get(&(operation.to_string(), key.to_string()))
+                .cloned()),
         }
     }
 
@@ -209,7 +216,11 @@ impl Store {
             }
             Store::Mem(mem) => {
                 let mut db = mem.lock();
-                if db.media_items.iter().any(|m| m.url_sha256 == row.url_sha256) {
+                if db
+                    .media_items
+                    .iter()
+                    .any(|m| m.url_sha256 == row.url_sha256)
+                {
                     return Err(StoreError::DuplicateMediaItem);
                 }
                 db.media_items.push(row.clone());
@@ -218,7 +229,10 @@ impl Store {
         }
     }
 
-    pub async fn fetch_media_item(&self, item_id: Uuid) -> Result<Option<MediaItemRow>, StoreError> {
+    pub async fn fetch_media_item(
+        &self,
+        item_id: Uuid,
+    ) -> Result<Option<MediaItemRow>, StoreError> {
         match self {
             Store::Pg(pool) => {
                 let row: Option<(Uuid, String, String, String, String, Option<String>, DateTime<Utc>, String, DateTime<Utc>)> =
@@ -230,7 +244,17 @@ impl Store {
                     .fetch_optional(pool)
                     .await?;
                 Ok(row.map(
-                    |(item_id, url, url_sha256, media_type, language_code, top_category, captured_at, status, submitted_at)| MediaItemRow {
+                    |(
+                        item_id,
+                        url,
+                        url_sha256,
+                        media_type,
+                        language_code,
+                        top_category,
+                        captured_at,
+                        status,
+                        submitted_at,
+                    )| MediaItemRow {
                         item_id,
                         url,
                         url_sha256,
@@ -244,7 +268,12 @@ impl Store {
                     },
                 ))
             }
-            Store::Mem(mem) => Ok(mem.lock().media_items.iter().find(|m| m.item_id == item_id).cloned()),
+            Store::Mem(mem) => Ok(mem
+                .lock()
+                .media_items
+                .iter()
+                .find(|m| m.item_id == item_id)
+                .cloned()),
         }
     }
 
@@ -308,18 +337,30 @@ impl Store {
                 let total = rows.first().map(|r| r.8).unwrap_or(0);
                 let items = rows
                     .into_iter()
-                    .map(|(item_id, media_type, language_code, source_platform, status, top_category, captured_at, submitted_at, _total)| MediaItemRow {
-                        item_id,
-                        url: String::new(),
-                        url_sha256: String::new(),
-                        media_type,
-                        language_code,
-                        source_platform,
-                        captured_at,
-                        status,
-                        top_category,
-                        submitted_at,
-                    })
+                    .map(
+                        |(
+                            item_id,
+                            media_type,
+                            language_code,
+                            source_platform,
+                            status,
+                            top_category,
+                            captured_at,
+                            submitted_at,
+                            _total,
+                        )| MediaItemRow {
+                            item_id,
+                            url: String::new(),
+                            url_sha256: String::new(),
+                            media_type,
+                            language_code,
+                            source_platform,
+                            captured_at,
+                            status,
+                            top_category,
+                            submitted_at,
+                        },
+                    )
                     .collect();
                 Ok((items, total))
             }
@@ -336,7 +377,11 @@ impl Store {
                 items.sort_by(|a, b| b.submitted_at.cmp(&a.submitted_at));
                 let total = items.len() as i64;
                 let start = offset.max(0) as usize;
-                let page: Vec<MediaItemRow> = items.into_iter().skip(start).take(limit.max(0) as usize).collect();
+                let page: Vec<MediaItemRow> = items
+                    .into_iter()
+                    .skip(start)
+                    .take(limit.max(0) as usize)
+                    .collect();
                 Ok((page, total))
             }
         }
@@ -352,7 +397,14 @@ impl Store {
                 .bind(item_id)
                 .fetch_all(pool)
                 .await?;
-                Ok(rows.into_iter().map(|(category, confidence, excerpt)| FindingRow { category, confidence, excerpt }).collect())
+                Ok(rows
+                    .into_iter()
+                    .map(|(category, confidence, excerpt)| FindingRow {
+                        category,
+                        confidence,
+                        excerpt,
+                    })
+                    .collect())
             }
             Store::Mem(mem) => Ok(mem
                 .lock()
@@ -365,7 +417,12 @@ impl Store {
 
     /// Record an adjudication and transition the item status atomically.
     /// Returns `AdjudicationExists` when the item already has a verdict.
-    pub async fn record_adjudication(&self, row: &AdjudicationRow, grounds: &str, next_status: &str) -> Result<(), StoreError> {
+    pub async fn record_adjudication(
+        &self,
+        row: &AdjudicationRow,
+        grounds: &str,
+        next_status: &str,
+    ) -> Result<(), StoreError> {
         match self {
             Store::Pg(pool) => {
                 let mut tx = pool.begin().await?;
@@ -414,7 +471,10 @@ impl Store {
         }
     }
 
-    pub async fn fetch_adjudication(&self, item_id: Uuid) -> Result<Option<AdjudicationRow>, StoreError> {
+    pub async fn fetch_adjudication(
+        &self,
+        item_id: Uuid,
+    ) -> Result<Option<AdjudicationRow>, StoreError> {
         match self {
             Store::Pg(pool) => {
                 let row: Option<(Uuid, Uuid, String, String, Option<String>, DateTime<Utc>)> = sqlx::query_as(
@@ -425,7 +485,14 @@ impl Store {
                 .fetch_optional(pool)
                 .await?;
                 Ok(row.map(
-                    |(adjudication_id, item_id, verdict, referral_agency, analyst_notes, decided_at)| AdjudicationRow {
+                    |(
+                        adjudication_id,
+                        item_id,
+                        verdict,
+                        referral_agency,
+                        analyst_notes,
+                        decided_at,
+                    )| AdjudicationRow {
                         adjudication_id,
                         item_id,
                         verdict,
@@ -439,7 +506,11 @@ impl Store {
         }
     }
 
-    pub async fn summary_counts(&self, from: Option<chrono::NaiveDate>, to: Option<chrono::NaiveDate>) -> Result<SummaryCounts, StoreError> {
+    pub async fn summary_counts(
+        &self,
+        from: Option<chrono::NaiveDate>,
+        to: Option<chrono::NaiveDate>,
+    ) -> Result<SummaryCounts, StoreError> {
         match self {
             Store::Pg(pool) => {
                 let window = "WHERE ($1::date IS NULL OR submitted_at >= $1::date) \
@@ -478,13 +549,14 @@ impl Store {
                 .bind(to)
                 .fetch_all(pool)
                 .await?;
-                let bounds_row: (Option<DateTime<Utc>>, Option<DateTime<Utc>>) = sqlx::query_as(&format!(
+                let bounds_row: (Option<DateTime<Utc>>, Option<DateTime<Utc>>) =
+                    sqlx::query_as(&format!(
                     "SELECT MIN(submitted_at), MAX(submitted_at) FROM speech_media_items {window}"
                 ))
-                .bind(from)
-                .bind(to)
-                .fetch_one(pool)
-                .await?;
+                    .bind(from)
+                    .bind(to)
+                    .fetch_one(pool)
+                    .await?;
                 let bounds = match bounds_row {
                     (lo, hi) if lo.is_some() || hi.is_some() => Some((lo, hi)),
                     _ => None,
@@ -538,7 +610,10 @@ impl Store {
                     }
                     *counts.by_verdict.entry(a.verdict.clone()).or_insert(0) += 1;
                     if a.referral_agency != "none" {
-                        *counts.referrals_by_agency.entry(a.referral_agency.clone()).or_insert(0) += 1;
+                        *counts
+                            .referrals_by_agency
+                            .entry(a.referral_agency.clone())
+                            .or_insert(0) += 1;
                     }
                 }
                 Ok(counts)
@@ -648,7 +723,10 @@ impl Store {
         }
     }
 
-    pub async fn s44a_county_status(&self, county_code: &str) -> Result<S44aCountyStatus, StoreError> {
+    pub async fn s44a_county_status(
+        &self,
+        county_code: &str,
+    ) -> Result<S44aCountyStatus, StoreError> {
         match self {
             Store::Pg(pool) => {
                 let row: (i64, i64, i64) = sqlx::query_as(
@@ -668,10 +746,17 @@ impl Store {
             }
             Store::Mem(mem) => {
                 let db = mem.lock();
-                let rows: Vec<&S44aRow> = db.s44a.iter().filter(|c| c.county_code == county_code).collect();
+                let rows: Vec<&S44aRow> = db
+                    .s44a
+                    .iter()
+                    .filter(|c| c.county_code == county_code)
+                    .collect();
                 Ok(S44aCountyStatus {
                     total_stations: rows.len() as i64,
-                    officer1_confirmed: rows.iter().filter(|c| c.status == "officer1_confirmed").count() as i64,
+                    officer1_confirmed: rows
+                        .iter()
+                        .filter(|c| c.status == "officer1_confirmed")
+                        .count() as i64,
                     complete: rows.iter().filter(|c| c.status == "complete").count() as i64,
                 })
             }
@@ -680,7 +765,16 @@ impl Store {
 }
 
 fn s44a_from_tuple(
-    t: (Uuid, String, String, String, DateTime<Utc>, Option<String>, Option<DateTime<Utc>>, String),
+    t: (
+        Uuid,
+        String,
+        String,
+        String,
+        DateTime<Utc>,
+        Option<String>,
+        Option<DateTime<Utc>>,
+        String,
+    ),
 ) -> S44aRow {
     S44aRow {
         confirmation_id: t.0,
@@ -712,6 +806,8 @@ pub struct MemStore(std::sync::Arc<Mutex<MemData>>);
 
 impl MemStore {
     fn lock(&self) -> std::sync::MutexGuard<'_, MemData> {
-        self.0.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+        self.0
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
     }
 }

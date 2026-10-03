@@ -45,7 +45,12 @@ async fn body_json(resp: axum::response::Response) -> Value {
     serde_json::from_slice(&bytes).unwrap_or(Value::Null)
 }
 
-async fn send(app: &axum::Router, method: &str, uri: &str, body: Option<Value>) -> axum::response::Response {
+async fn send(
+    app: &axum::Router,
+    method: &str,
+    uri: &str,
+    body: Option<Value>,
+) -> axum::response::Response {
     let mut b = Request::builder().method(method).uri(uri);
     let payload = match body {
         Some(v) => {
@@ -109,7 +114,9 @@ async fn kit_plan_hash_is_present_and_is_not_a_signature() {
         .await,
     )
     .await;
-    let hash = plan["signed_blob_hash"].as_str().expect("a hash is recorded");
+    let hash = plan["signed_blob_hash"]
+        .as_str()
+        .expect("a hash is recorded");
     assert!(hash.starts_with("sha256:"), "got {hash}");
     assert!(!plan["signed_at"].is_null());
 }
@@ -134,8 +141,16 @@ async fn a_kit_plan_needs_at_least_one_station() {
 async fn operations_on_an_unknown_by_election_are_404() {
     let app = app();
     for (method, uri, body) in [
-        ("POST", "/v1/by-elections/nope/kit-plan", Some(json!({"stations": [{"code":"S","lat":1.0,"lng":2.0}]}))),
-        ("POST", "/v1/by-elections/nope/register-subset", Some(json!({"station_count": 1, "voter_count": 10}))),
+        (
+            "POST",
+            "/v1/by-elections/nope/kit-plan",
+            Some(json!({"stations": [{"code":"S","lat":1.0,"lng":2.0}]})),
+        ),
+        (
+            "POST",
+            "/v1/by-elections/nope/register-subset",
+            Some(json!({"station_count": 1, "voter_count": 10})),
+        ),
         ("PUT", "/v1/by-elections/nope/activate", None),
         ("GET", "/v1/by-elections/nope/cost-report", None),
     ] {
@@ -192,7 +207,13 @@ async fn cost_report_reads_back_the_submitted_figures() {
     let app = app();
     let id = seed_and_get_id(&app).await;
 
-    let absent = send(&app, "GET", &format!("/v1/by-elections/{id}/cost-report"), None).await;
+    let absent = send(
+        &app,
+        "GET",
+        &format!("/v1/by-elections/{id}/cost-report"),
+        None,
+    )
+    .await;
     assert_eq!(
         absent.status(),
         StatusCode::NOT_FOUND,
@@ -221,8 +242,20 @@ async fn cost_report_reads_back_the_submitted_figures() {
         "build_cost_report's arithmetic should be visible in the response"
     );
 
-    let fetched = body_json(send(&app, "GET", &format!("/v1/by-elections/{id}/cost-report"), None).await).await;
-    assert_eq!(fetched["total_kes"], 21000, "the submitted total must read back");
+    let fetched = body_json(
+        send(
+            &app,
+            "GET",
+            &format!("/v1/by-elections/{id}/cost-report"),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        fetched["total_kes"], 21000,
+        "the submitted total must read back"
+    );
     assert_eq!(fetched["kit_days_kes"], 1000);
     assert_eq!(fetched["other_kes"], 6000);
 }
@@ -233,14 +266,26 @@ async fn activation_requires_the_gazetted_state() {
     let app = app();
     let (draft, gazetted) = two_elections(&app).await;
 
-    let too_early = send(&app, "PUT", &format!("/v1/by-elections/{draft}/activate"), None).await;
+    let too_early = send(
+        &app,
+        "PUT",
+        &format!("/v1/by-elections/{draft}/activate"),
+        None,
+    )
+    .await;
     assert_eq!(
         too_early.status(),
         StatusCode::CONFLICT,
         "activation must require GAZETTED, which its own comment named"
     );
 
-    let ok = send(&app, "PUT", &format!("/v1/by-elections/{gazetted}/activate"), None).await;
+    let ok = send(
+        &app,
+        "PUT",
+        &format!("/v1/by-elections/{gazetted}/activate"),
+        None,
+    )
+    .await;
     assert_eq!(ok.status(), StatusCode::NO_CONTENT);
 }
 
@@ -262,7 +307,12 @@ async fn two_elections(app: &axum::Router) -> (String, String) {
         let resp = send(app, "POST", "/v1/by-elections", Some(body)).await;
         if resp.status() == StatusCode::CREATED {
             let created = body_json(resp).await;
-            ids.push(created["by_election"]["id"].as_str().unwrap_or_default().to_string());
+            ids.push(
+                created["by_election"]["id"]
+                    .as_str()
+                    .unwrap_or_default()
+                    .to_string(),
+            );
         }
     }
     assert_eq!(ids.len(), 2, "both by-elections should be created");
@@ -291,5 +341,8 @@ async fn seed_and_get_id(app: &axum::Router) -> String {
         StatusCode::CREATED,
         "create_by_election must work for the other handlers to be reachable"
     );
-    body_json(resp).await["by_election"]["id"].as_str().unwrap().to_string()
+    body_json(resp).await["by_election"]["id"]
+        .as_str()
+        .unwrap()
+        .to_string()
 }

@@ -51,18 +51,18 @@ use thiserror::Error;
 /// Top-level errors for this crate.
 #[derive(Debug, Error)]
 pub enum FheTallyError {
-	#[error("policy violation: {0}")]
-	Policy(#[from] FhePolicyError),
-	#[error("encryption error: {0}")]
-	Encryption(String),
-	#[error("aggregation error: {0}")]
-	Aggregation(String),
-	#[error("decryption error: {0}")]
-	Decryption(String),
-	#[error("insufficient shares: {got} of {required}")]
-	InsufficientShares { got: usize, required: usize },
-	#[error("proof verification failed: {0}")]
-	ProofVerification(String),
-	#[error("tampered ciphertext detected")]
-	TamperedCiphertext,
+    #[error("policy violation: {0}")]
+    Policy(#[from] FhePolicyError),
+    #[error("encryption error: {0}")]
+    Encryption(String),
+    #[error("aggregation error: {0}")]
+    Aggregation(String),
+    #[error("decryption error: {0}")]
+    Decryption(String),
+    #[error("insufficient shares: {got} of {required}")]
+    InsufficientShares { got: usize, required: usize },
+    #[error("proof verification failed: {0}")]
+    ProofVerification(String),
+    #[error("tampered ciphertext detected")]
+    TamperedCiphertext,
 }

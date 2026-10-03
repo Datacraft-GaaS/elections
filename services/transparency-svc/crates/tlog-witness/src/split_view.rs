@@ -40,12 +40,7 @@ impl SplitViewDetector {
 
     /// Primitive observation: same detection without requiring a full
     /// `SignedTreeHead` (used by gossip polling over HTTP).
-    pub fn observe_root(
-        &mut self,
-        witness_id: &str,
-        tree_size: u64,
-        root_hash: &str,
-    ) -> bool {
+    pub fn observe_root(&mut self, witness_id: &str, tree_size: u64, root_hash: &str) -> bool {
         let entry = self.seen.entry(tree_size).or_default();
         let root = root_hash.to_string();
         let mut split = false;

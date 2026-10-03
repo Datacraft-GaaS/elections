@@ -26,7 +26,9 @@ use std::sync::Arc;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::models::{AuditManifest, AuditReport, AuditRun, EntropySource, SampledBallot, WitnessRecord};
+use crate::models::{
+    AuditManifest, AuditReport, AuditRun, EntropySource, SampledBallot, WitnessRecord,
+};
 
 // ---------------------------------------------------------------------------
 // Rows
@@ -64,7 +66,20 @@ pub enum StoreError {
 // Store
 // ---------------------------------------------------------------------------
 
-type RunTuple = (String, String, String, f64, String, String, String, String, i64, i64, String, String);
+type RunTuple = (
+    String,
+    String,
+    String,
+    f64,
+    String,
+    String,
+    String,
+    String,
+    i64,
+    i64,
+    String,
+    String,
+);
 type SampleTuple = (String, String, i32, String, Option<String>, Option<String>);
 type InterpretedTuple = (String, i32, String, Option<String>, Option<String>);
 
@@ -75,7 +90,11 @@ pub enum Store {
 }
 
 impl Store {
-    pub async fn create_run(&self, row: &RunRow, entropy: &EntropySource) -> Result<(), StoreError> {
+    pub async fn create_run(
+        &self,
+        row: &RunRow,
+        entropy: &EntropySource,
+    ) -> Result<(), StoreError> {
         match self {
             Store::Pg(pool) => {
                 sqlx::query(
@@ -104,7 +123,8 @@ impl Store {
             Store::Mem(mem) => {
                 let mut db = mem.lock();
                 db.runs.insert(row.run.run_id.clone(), row.clone());
-                db.entropy.insert(entropy.source_id.clone(), entropy.clone());
+                db.entropy
+                    .insert(entropy.source_id.clone(), entropy.clone());
                 Ok(())
             }
         }
@@ -113,15 +133,14 @@ impl Store {
     pub async fn get_run(&self, run_id: &str) -> Result<Option<RunRow>, StoreError> {
         match self {
             Store::Pg(pool) => {
-                let row: Option<RunTuple> =
-                    sqlx::query_as(
-                        "SELECT run_id, election_id, contest_id, risk_limit, status, created_at, \
+                let row: Option<RunTuple> = sqlx::query_as(
+                    "SELECT run_id, election_id, contest_id, risk_limit, status, created_at, \
                                 winner_id, loser_id, winner_votes, loser_votes, seed, manifest \
                           FROM rla_audit_runs WHERE run_id = $1",
-                    )
-                    .bind(run_id)
-                    .fetch_optional(pool)
-                    .await?;
+                )
+                .bind(run_id)
+                .fetch_optional(pool)
+                .await?;
                 Ok(row.map(|r| RunRow {
                     run: AuditRun {
                         run_id: r.0,
@@ -154,18 +173,23 @@ impl Store {
                 .await?;
                 Ok(rows
                     .into_iter()
-                    .map(|(run_id, election_id, contest_id, risk_limit, status, created_at)| AuditRun {
-                        run_id,
-                        election_id,
-                        contest_id,
-                        risk_limit,
-                        status,
-                        created_at,
-                    })
+                    .map(
+                        |(run_id, election_id, contest_id, risk_limit, status, created_at)| {
+                            AuditRun {
+                                run_id,
+                                election_id,
+                                contest_id,
+                                risk_limit,
+                                status,
+                                created_at,
+                            }
+                        },
+                    )
                     .collect())
             }
             Store::Mem(mem) => {
-                let mut runs: Vec<AuditRun> = mem.lock().runs.values().map(|r| r.run.clone()).collect();
+                let mut runs: Vec<AuditRun> =
+                    mem.lock().runs.values().map(|r| r.run.clone()).collect();
                 runs.sort_by(|a, b| a.created_at.cmp(&b.created_at));
                 Ok(runs)
             }
@@ -197,7 +221,11 @@ impl Store {
         }
     }
 
-    pub async fn insert_samples(&self, run_id: &str, ballots: &[SampledBallot]) -> Result<(), StoreError> {
+    pub async fn insert_samples(
+        &self,
+        run_id: &str,
+        ballots: &[SampledBallot],
+    ) -> Result<(), StoreError> {
         match self {
             Store::Pg(pool) => {
                 for b in ballots {
@@ -239,14 +267,23 @@ impl Store {
                 .await?;
                 Ok(rows
                     .into_iter()
-                    .map(|(ballot_id, batch_id, position, manifest_entry, reported_vote, audited_vote)| SampledBallot {
-                        ballot_id,
-                        batch_id,
-                        position: position as u32,
-                        manifest_entry,
-                        reported_vote,
-                        audited_vote,
-                    })
+                    .map(
+                        |(
+                            ballot_id,
+                            batch_id,
+                            position,
+                            manifest_entry,
+                            reported_vote,
+                            audited_vote,
+                        )| SampledBallot {
+                            ballot_id,
+                            batch_id,
+                            position: position as u32,
+                            manifest_entry,
+                            reported_vote,
+                            audited_vote,
+                        },
+                    )
                     .collect())
             }
             Store::Mem(mem) => {
@@ -258,7 +295,11 @@ impl Store {
         }
     }
 
-    pub async fn get_sample(&self, run_id: &str, ballot_id: &str) -> Result<Option<SampledBallot>, StoreError> {
+    pub async fn get_sample(
+        &self,
+        run_id: &str,
+        ballot_id: &str,
+    ) -> Result<Option<SampledBallot>, StoreError> {
         match self {
             Store::Pg(pool) => {
                 let row: Option<SampleTuple> = sqlx::query_as(
@@ -270,7 +311,14 @@ impl Store {
                 .fetch_optional(pool)
                 .await?;
                 Ok(row.map(
-                    |(ballot_id, batch_id, position, manifest_entry, reported_vote, audited_vote)| SampledBallot {
+                    |(
+                        ballot_id,
+                        batch_id,
+                        position,
+                        manifest_entry,
+                        reported_vote,
+                        audited_vote,
+                    )| SampledBallot {
                         ballot_id,
                         batch_id,
                         position: position as u32,
@@ -388,7 +436,8 @@ impl Store {
             }
             Store::Mem(mem) => {
                 let mut db = mem.lock();
-                db.witnesses.insert(witness.witness_id.clone(), witness.clone());
+                db.witnesses
+                    .insert(witness.witness_id.clone(), witness.clone());
                 Ok(())
             }
         }
@@ -432,14 +481,18 @@ impl Store {
                 .bind(run_id)
                 .fetch_optional(pool)
                 .await?;
-                Ok(row.map(|(report_id, risk_achieved, ballots_audited, outcome, generated_at)| AuditReport {
-                    report_id: report_id.to_string(),
-                    run_id: run_id.to_string(),
-                    risk_achieved,
-                    ballots_audited: ballots_audited as u32,
-                    outcome,
-                    generated_at,
-                }))
+                Ok(row.map(
+                    |(report_id, risk_achieved, ballots_audited, outcome, generated_at)| {
+                        AuditReport {
+                            report_id: report_id.to_string(),
+                            run_id: run_id.to_string(),
+                            risk_achieved,
+                            ballots_audited: ballots_audited as u32,
+                            outcome,
+                            generated_at,
+                        }
+                    },
+                ))
             }
             Store::Mem(mem) => Ok(mem.lock().reports.get(run_id).cloned()),
         }
@@ -464,6 +517,8 @@ pub struct MemStore(Arc<std::sync::Mutex<MemData>>);
 
 impl MemStore {
     fn lock(&self) -> std::sync::MutexGuard<'_, MemData> {
-        self.0.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+        self.0
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
     }
 }

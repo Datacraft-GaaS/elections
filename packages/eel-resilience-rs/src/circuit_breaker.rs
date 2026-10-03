@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::error::ResilienceError;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::Mutex;
-use crate::error::ResilienceError;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CircuitState {
@@ -87,7 +87,9 @@ impl CircuitBreaker {
                         return Ok(());
                     }
                 }
-                Err(ResilienceError::CircuitOpen { dependency: self.dependency.clone() })
+                Err(ResilienceError::CircuitOpen {
+                    dependency: self.dependency.clone(),
+                })
             }
             CircuitState::HalfOpen => Ok(()), // allow probe
         }

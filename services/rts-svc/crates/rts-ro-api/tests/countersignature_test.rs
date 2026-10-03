@@ -53,8 +53,13 @@ async fn post(trust: RoTrust, uri: &str, body: Value) -> (StatusCode, Value) {
         .await
         .unwrap();
     let status = resp.status();
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
-    (status, serde_json::from_slice(&bytes).unwrap_or(Value::Null))
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    (
+        status,
+        serde_json::from_slice(&bytes).unwrap_or(Value::Null),
+    )
 }
 
 fn request(ro_id: &str, signature: &str) -> Value {
@@ -72,11 +77,8 @@ const FORM: &str = "018f6c2e-0000-7000-8000-00000000beef";
 async fn a_real_countersignature_verifies() {
     let kp = eel_crypto_rs::ed25519::generate_keypair();
     let ro_id = "RO-0001";
-    let message = handlers::countersigned_message(
-        &FORM.parse().unwrap(),
-        ro_id,
-        "2027-08-21T09:00:00Z",
-    );
+    let message =
+        handlers::countersigned_message(&FORM.parse().unwrap(), ro_id, "2027-08-21T09:00:00Z");
     let sig = sign_hex(&kp, message.as_bytes());
 
     let (status, body) = post(
@@ -95,11 +97,8 @@ async fn a_countersignature_over_a_different_form_does_not_verify() {
     let ro_id = "RO-0002";
     // Signed over a different form id.
     let other = "018f6c2e-0000-7000-8000-0000000000ff";
-    let message = handlers::countersigned_message(
-        &other.parse().unwrap(),
-        ro_id,
-        "2027-08-21T09:00:00Z",
-    );
+    let message =
+        handlers::countersigned_message(&other.parse().unwrap(), ro_id, "2027-08-21T09:00:00Z");
     let sig = sign_hex(&kp, message.as_bytes());
 
     let (status, body) = post(
@@ -118,11 +117,8 @@ async fn a_counter_signature_from_another_officer_does_not_verify() {
     let theirs = eel_crypto_rs::ed25519::generate_keypair();
     let ro_id = "RO-0003";
     // The trust anchor holds *my* key, but the signature is from another HSM.
-    let message = handlers::countersigned_message(
-        &FORM.parse().unwrap(),
-        ro_id,
-        "2027-08-21T09:00:00Z",
-    );
+    let message =
+        handlers::countersigned_message(&FORM.parse().unwrap(), ro_id, "2027-08-21T09:00:00Z");
     let sig = sign_hex(&theirs, message.as_bytes());
 
     let (status, _) = post(
@@ -141,11 +137,8 @@ async fn with_no_trust_anchor_it_says_it_cannot_verify() {
     // request regardless of the signature.
     let kp = eel_crypto_rs::ed25519::generate_keypair();
     let ro_id = "RO-UNPROVISIONED";
-    let message = handlers::countersigned_message(
-        &FORM.parse().unwrap(),
-        ro_id,
-        "2027-08-21T09:00:00Z",
-    );
+    let message =
+        handlers::countersigned_message(&FORM.parse().unwrap(), ro_id, "2027-08-21T09:00:00Z");
     let sig = sign_hex(&kp, message.as_bytes());
     // An empty trust store: this officer is not provisioned, which is the state
     // the process ships in.
@@ -169,6 +162,10 @@ async fn an_absent_or_malformed_signature_is_a_client_error() {
             request("RO-0004", sig),
         )
         .await;
-        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "signature {sig:?} must be refused");
+        assert_eq!(
+            status,
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "signature {sig:?} must be refused"
+        );
     }
 }

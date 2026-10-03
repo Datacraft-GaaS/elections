@@ -112,6 +112,8 @@ pub fn build_router() -> Router {
     // One exam store for both surfaces, so the question bank `submit_assessment`
     // scores against is the bank the exam module serves.
     let exam = exam::ExamApiState::new();
-    app.merge(spec::router(crate::spec_state::SpecState::with_exam(exam.clone())))
+    app.merge(spec::router(crate::spec_state::SpecState::with_exam(
+        exam.clone(),
+    )))
     .merge(exam::router(exam))
 }

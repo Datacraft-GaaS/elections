@@ -36,9 +36,9 @@ use std::os::raw::c_int;
 pub struct NbisMinutia {
     pub x: c_int,
     pub y: c_int,
-    pub theta: c_int,    // angle in tenths of degrees [0..1799]
-    pub quality: c_int,  // 0..100
-    pub mclass: c_int,   // 0=end, 1=bifurcation, 2=don't care
+    pub theta: c_int,   // angle in tenths of degrees [0..1799]
+    pub quality: c_int, // 0..100
+    pub mclass: c_int,  // 0=end, 1=bifurcation, 2=don't care
 }
 
 #[repr(C)]
@@ -96,10 +96,7 @@ extern "C" {
     fn bozorth_main(pstruct: *mut XytStruct, gstruct: *mut XytStruct) -> c_int;
 }
 
-pub fn bozorth_match(
-    probe: &[NbisMinutia],
-    enrolled: &[NbisMinutia],
-) -> i32 {
+pub fn bozorth_match(probe: &[NbisMinutia], enrolled: &[NbisMinutia]) -> i32 {
     if probe.is_empty() || enrolled.is_empty() {
         return 0;
     }

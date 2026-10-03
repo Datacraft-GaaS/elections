@@ -19,10 +19,10 @@ use axum::{
     routing::{delete, get, patch, post},
     Json, Router,
 };
-use serde::Deserialize;
 use eel_memstore_rs::Collection;
-use tracing::info;
+use serde::Deserialize;
 use std::sync::Arc;
+use tracing::info;
 use uuid::Uuid;
 
 use crate::domain::*;
@@ -149,7 +149,9 @@ async fn create_report(
     };
     // Real. Previously answered 201 with {"created": true} and stored nothing,
     // so a report could never be listed, fetched, versioned or shared.
-    state.reports.insert(report.adhoc_id.to_string(), report.clone());
+    state
+        .reports
+        .insert(report.adhoc_id.to_string(), report.clone());
     (StatusCode::CREATED, Json(report))
 }
 
@@ -181,7 +183,10 @@ async fn update_report(
     });
     match updated {
         Some(_) => Ok(StatusCode::NO_CONTENT.into_response()),
-        None => Err(problem(StatusCode::NOT_FOUND, format!("no report with id {adhoc_id}"))),
+        None => Err(problem(
+            StatusCode::NOT_FOUND,
+            format!("no report with id {adhoc_id}"),
+        )),
     }
 }
 
@@ -200,7 +205,10 @@ async fn archive_report(
     });
     match updated {
         Some(_) => Ok(StatusCode::NO_CONTENT.into_response()),
-        None => Err(problem(StatusCode::NOT_FOUND, format!("no report with id {adhoc_id}"))),
+        None => Err(problem(
+            StatusCode::NOT_FOUND,
+            format!("no report with id {adhoc_id}"),
+        )),
     }
 }
 
@@ -265,7 +273,10 @@ async fn create_version(
     Ok((StatusCode::CREATED, Json(version)).into_response())
 }
 
-async fn get_version(State(state): State<AppState>, Path(version_id): Path<Uuid>) -> Result<Response, Response> {
+async fn get_version(
+    State(state): State<AppState>,
+    Path(version_id): Path<Uuid>,
+) -> Result<Response, Response> {
     info!(%version_id, "adhoc.get_version");
     match state.versions.get(&version_id.to_string()) {
         Some(v) => Ok(Json(v).into_response()),
@@ -292,7 +303,10 @@ async fn run_preview(
     let preview = AdhocPreview {
         preview_id: Uuid::now_v7(),
         version_id,
-        parameter_values: body.parameter_values.clone().unwrap_or(serde_json::json!({})),
+        parameter_values: body
+            .parameter_values
+            .clone()
+            .unwrap_or(serde_json::json!({})),
         sample_limit: body.sample_limit.unwrap_or(100),
         // No query engine in this crate, so no rows were produced. Recorded as
         // null with an error message rather than reporting rows_returned 0,
@@ -316,7 +330,10 @@ async fn run_preview(
     Ok((StatusCode::CREATED, Json(preview)).into_response())
 }
 
-async fn get_preview(State(state): State<AppState>, Path(preview_id): Path<Uuid>) -> Result<Response, Response> {
+async fn get_preview(
+    State(state): State<AppState>,
+    Path(preview_id): Path<Uuid>,
+) -> Result<Response, Response> {
     info!(%preview_id, "adhoc.get_preview");
     // Real. Previously returned {"preview": null} for any id, so a caller could
     // not distinguish "no such preview" from "the preview failed".
@@ -393,7 +410,9 @@ async fn grant_share(
     };
     // Real. Previously answered 201 and stored nothing, so a report could not
     // actually be shared with anyone.
-    state.shares.insert(share.share_id.to_string(), share.clone());
+    state
+        .shares
+        .insert(share.share_id.to_string(), share.clone());
     Ok((StatusCode::CREATED, Json(share)).into_response())
 }
 
@@ -470,7 +489,10 @@ pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/reports", get(list_reports).post(create_report))
         .route("/reports/{id}", patch(update_report).delete(archive_report))
-        .route("/reports/{id}/versions", get(list_versions).post(create_version))
+        .route(
+            "/reports/{id}/versions",
+            get(list_versions).post(create_version),
+        )
         .route("/versions/{version_id}", get(get_version))
         .route("/versions/{version_id}/preview", post(run_preview))
         .route("/previews/{preview_id}", get(get_preview))

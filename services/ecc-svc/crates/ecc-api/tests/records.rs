@@ -45,7 +45,12 @@ async fn body_json(resp: axum::response::Response) -> Value {
     serde_json::from_slice(&bytes).unwrap_or(Value::Null)
 }
 
-async fn send(app: &axum::Router, method: &str, uri: &str, body: Option<Value>) -> axum::response::Response {
+async fn send(
+    app: &axum::Router,
+    method: &str,
+    uri: &str,
+    body: Option<Value>,
+) -> axum::response::Response {
     let mut b = Request::builder().method(method).uri(uri);
     let payload = match body {
         Some(v) => {
@@ -85,7 +90,13 @@ async fn filed_complaint_can_be_retrieved_by_reference_code() {
     // Previously this answered 200 for any code, with "stub" as the complainant
     // and a fixed 2027 timestamp.
     let fetched = body_json(
-        send(&app, "GET", &format!("/grievance/complaints/{ref_code}"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/grievance/complaints/{ref_code}"),
+            None,
+        )
+        .await,
     )
     .await;
     assert_eq!(fetched["reference_code"], ref_code.as_str());
@@ -93,7 +104,10 @@ async fn filed_complaint_can_be_retrieved_by_reference_code() {
     assert_eq!(fetched["category"], "long_queue");
     assert_eq!(fetched["status"], "received");
     assert!(
-        !fetched["submitted_at"].as_str().unwrap().starts_with("2027"),
+        !fetched["submitted_at"]
+            .as_str()
+            .unwrap()
+            .starts_with("2027"),
         "the timestamp must be real, not the hardcoded 2027 date"
     );
     assert_eq!(fetched["complaint_id"], id.as_str());
@@ -145,7 +159,13 @@ async fn complaint_update_is_stored_and_listed_against_its_complaint() {
     );
 
     let listed = body_json(
-        send(&app, "GET", &format!("/grievance/complaints/{id}/updates"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/grievance/complaints/{id}/updates"),
+            None,
+        )
+        .await,
     )
     .await;
     assert_eq!(listed["updates"].as_array().unwrap().len(), 1);
@@ -258,7 +278,10 @@ async fn situational_awareness_counts_real_escalations() {
 
     // Resolving one must reduce the count.
     let listed = body_json(send(&app, "GET", "/ecc/escalations", None).await).await;
-    let id = listed["escalations"][0]["escalation_id"].as_str().unwrap().to_string();
+    let id = listed["escalations"][0]["escalation_id"]
+        .as_str()
+        .unwrap()
+        .to_string();
     send(
         &app,
         "PATCH",
@@ -280,7 +303,11 @@ async fn audit_log_records_what_actually_happened() {
     let (_id, ref_code) = complaint(&app).await;
     let log = body_json(send(&app, "GET", "/ecc/audit-log", None).await).await;
     let entries = log["entries"].as_array().unwrap();
-    assert_eq!(entries.len(), 1, "filing a complaint must leave an audit entry");
+    assert_eq!(
+        entries.len(),
+        1,
+        "filing a complaint must leave an audit entry"
+    );
     assert_eq!(entries[0]["kind"], "grievance.complaint.created");
     assert_eq!(entries[0]["subject"], ref_code);
 }
@@ -337,7 +364,13 @@ async fn audit_report_round_trips_and_is_counted_in_the_summary() {
     let report_id = created["report_id"].as_str().unwrap().to_string();
 
     let fetched = body_json(
-        send(&app, "GET", &format!("/iab/audit-reports/{report_id}"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/iab/audit-reports/{report_id}"),
+            None,
+        )
+        .await,
     )
     .await;
     assert_eq!(
@@ -381,10 +414,12 @@ async fn station_lookups_do_not_invent_stations() {
         StatusCode::NOT_FOUND,
         "get_station previously answered 200 with name \"stub\" for any code"
     );
-    assert!(body_json(send(&app, "GET", "/ecc/stations", None).await).await["stations"]
-        .as_array()
-        .unwrap()
-        .is_empty());
+    assert!(
+        body_json(send(&app, "GET", "/ecc/stations", None).await).await["stations"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
 }
 
 #[tokio::test]
@@ -414,14 +449,23 @@ async fn ussd_session_advances_and_can_end() {
         }
     };
     let menu = step("").await;
-    assert!(menu["response"].as_str().unwrap().contains("Lodge a complaint"));
+    assert!(menu["response"]
+        .as_str()
+        .unwrap()
+        .contains("Lodge a complaint"));
     assert_eq!(menu["end_session"], false);
 
     let lodged = step("1").await;
-    assert!(lodged["response"].as_str().unwrap().contains("reference code"));
+    assert!(lodged["response"]
+        .as_str()
+        .unwrap()
+        .contains("reference code"));
 
     let ended = step("0").await;
-    assert_eq!(ended["end_session"], true, "a USSD session must be able to end");
+    assert_eq!(
+        ended["end_session"], true,
+        "a USSD session must be able to end"
+    );
 
     assert_ne!(
         step("1").await["response"],

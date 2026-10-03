@@ -56,9 +56,7 @@ pub async fn ballot_party_sign_off(
     Path(id): Path<Uuid>,
 ) -> Result<Json<BallotProof>> {
     let mut guard = state.ballots.lock().map_err(|_| lock_err())?;
-    let proof = guard
-        .get_mut(&id)
-        .ok_or_else(|| not_found("ballot", id))?;
+    let proof = guard.get_mut(&id).ok_or_else(|| not_found("ballot", id))?;
     proof.record_party_sign_off();
     Ok(Json(proof.clone()))
 }
@@ -70,9 +68,7 @@ pub async fn approve_ballot(
     Json(req): Json<ApproveBallot>,
 ) -> Result<Json<BallotProof>> {
     let mut guard = state.ballots.lock().map_err(|_| lock_err())?;
-    let proof = guard
-        .get_mut(&id)
-        .ok_or_else(|| not_found("ballot", id))?;
+    let proof = guard.get_mut(&id).ok_or_else(|| not_found("ballot", id))?;
     proof.approve(req.printer_sig);
     let p = proof.clone();
     drop(guard);

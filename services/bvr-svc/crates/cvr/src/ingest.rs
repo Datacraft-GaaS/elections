@@ -19,7 +19,7 @@
 //! matching, and confidence-scoring core is pure and unit-tested here; the
 //! Kafka publish and DB persist are wired at the service boundary.
 
-use crate::models::{BatchIngestionReport, BatchIngestRequest, EventSource};
+use crate::models::{BatchIngestRequest, BatchIngestionReport, EventSource};
 use chrono::Utc;
 use uuid::Uuid;
 
@@ -46,7 +46,10 @@ pub struct MatchOutcome {
 /// Returns `Err(reason)` when the record is malformed or missing a required
 /// field. A Kenyan national ID is 7-8 digits; CRS death records additionally
 /// require a biometric reference for confident matching (FR-M35-008).
-pub fn validate_record(record: &serde_json::Value, source: &EventSource) -> Result<ValidatedRecord, String> {
+pub fn validate_record(
+    record: &serde_json::Value,
+    source: &EventSource,
+) -> Result<ValidatedRecord, String> {
     let obj = record
         .as_object()
         .ok_or_else(|| "record is not a JSON object".to_string())?;
@@ -75,7 +78,10 @@ pub fn validate_record(record: &serde_json::Value, source: &EventSource) -> Resu
                 .ok_or_else(|| "CRS death record requires biometric_ref".to_string())?;
             Some(b.to_string())
         }
-        _ => obj.get("biometric_ref").and_then(|v| v.as_str()).map(String::from),
+        _ => obj
+            .get("biometric_ref")
+            .and_then(|v| v.as_str())
+            .map(String::from),
     };
 
     Ok(ValidatedRecord {
@@ -134,7 +140,8 @@ impl IngestService {
         known_ids: &std::collections::HashSet<String>,
         known_biometrics: &std::collections::HashSet<String>,
     ) -> BatchIngestionReport {
-        let id_set: std::collections::HashSet<&str> = known_ids.iter().map(String::as_str).collect();
+        let id_set: std::collections::HashSet<&str> =
+            known_ids.iter().map(String::as_str).collect();
         let bio_set: std::collections::HashSet<&str> =
             known_biometrics.iter().map(String::as_str).collect();
 
@@ -218,7 +225,10 @@ mod tests {
     fn national_id_must_be_7_to_8_digits() {
         for bad in ["123", "123456789", "12A45678"] {
             let rec = crs_record(bad, Some("BIO-1"));
-            assert!(validate_record(&rec, &EventSource::Crs).is_err(), "accepted {bad}");
+            assert!(
+                validate_record(&rec, &EventSource::Crs).is_err(),
+                "accepted {bad}"
+            );
         }
     }
 

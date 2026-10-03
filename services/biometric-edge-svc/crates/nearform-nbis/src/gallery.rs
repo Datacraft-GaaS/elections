@@ -139,15 +139,15 @@ impl Gender {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum AgeBucket {
     #[serde(rename = "0-17")]
-    Minor,       // 0–17
+    Minor, // 0–17
     #[serde(rename = "18-35")]
-    YoungAdult,  // 18–35
+    YoungAdult, // 18–35
     #[serde(rename = "36-55")]
     MiddleAged, // 36–55
     #[serde(rename = "56-75")]
-    Senior,     // 56–75
+    Senior, // 56–75
     #[serde(rename = "76+")]
-    Elderly,     // 76+
+    Elderly, // 76+
 }
 
 impl AgeBucket {
@@ -175,15 +175,26 @@ pub struct MissingDigits(pub HashMap<String, bool>);
 impl MissingDigits {
     /// Returns true if the given finger position is missing for this person.
     pub fn is_missing(&self, finger: FingerPosition) -> bool {
-        self.0.get(&format!("{:?}", finger)).copied().unwrap_or(false)
+        self.0
+            .get(&format!("{:?}", finger))
+            .copied()
+            .unwrap_or(false)
     }
 
     /// Returns the best available finger for enrollment, excluding missing ones.
     /// Priority: dominant hand index → other index → middle.
     pub fn best_available(&self, dominant: DominantHand) -> Option<FingerPosition> {
         let preferred: &[FingerPosition] = match dominant {
-            DominantHand::Right => &[FingerPosition::RightIndex, FingerPosition::LeftIndex, FingerPosition::RightMiddle],
-            DominantHand::Left => &[FingerPosition::LeftIndex, FingerPosition::RightIndex, FingerPosition::LeftMiddle],
+            DominantHand::Right => &[
+                FingerPosition::RightIndex,
+                FingerPosition::LeftIndex,
+                FingerPosition::RightMiddle,
+            ],
+            DominantHand::Left => &[
+                FingerPosition::LeftIndex,
+                FingerPosition::RightIndex,
+                FingerPosition::LeftMiddle,
+            ],
             DominantHand::Ambidextrous => &[FingerPosition::RightIndex, FingerPosition::LeftIndex],
         };
         preferred.iter().copied().find(|f| !self.is_missing(*f))
@@ -324,12 +335,15 @@ impl PartitionedGallery {
         };
         let key_str = key.to_string();
 
-        let part = self.partitions.entry(key_str.clone()).or_insert_with(|| Partition {
-            key: key.clone(),
-            count: 0,
-            templates: Vec::with_capacity(1024),
-            person_ids: Vec::with_capacity(1024),
-        });
+        let part = self
+            .partitions
+            .entry(key_str.clone())
+            .or_insert_with(|| Partition {
+                key: key.clone(),
+                count: 0,
+                templates: Vec::with_capacity(1024),
+                person_ids: Vec::with_capacity(1024),
+            });
 
         part.templates.push(entry.template_bytes);
         part.person_ids.push(entry.person_id.clone());
@@ -387,9 +401,8 @@ impl PartitionedGallery {
 
         for key_str in candidate_keys {
             if let Some(part) = self.partitions.get(&key_str) {
-                let part_matches = self._search_partition(
-                    part, probe_template, &bozorth_match, threshold,
-                );
+                let part_matches =
+                    self._search_partition(part, probe_template, &bozorth_match, threshold);
                 all_candidates.extend(part_matches);
             }
         }
@@ -413,9 +426,8 @@ impl PartitionedGallery {
         let mut all = Vec::new();
         for key_str in keys {
             if let Some(part) = self.partitions.get(&key_str) {
-                let mut matches = self._search_partition(
-                    part, probe_template, &bozorth_match, threshold,
-                );
+                let mut matches =
+                    self._search_partition(part, probe_template, &bozorth_match, threshold);
                 all.append(&mut matches);
             }
         }
@@ -440,9 +452,8 @@ impl PartitionedGallery {
         let mut all = Vec::new();
         for key_str in keys {
             if let Some(part) = self.partitions.get(&key_str) {
-                let mut matches = self._search_partition(
-                    part, probe_template, &bozorth_match, threshold,
-                );
+                let mut matches =
+                    self._search_partition(part, probe_template, &bozorth_match, threshold);
                 all.append(&mut matches);
             }
         }
@@ -492,24 +503,30 @@ impl PartitionedGallery {
                 };
                 vec![key.to_string()]
             }
-            None => {
-                self.finger_index.get(&finger).cloned().unwrap_or_default()
-            }
+            None => self.finger_index.get(&finger).cloned().unwrap_or_default(),
         }
     }
 
     // ── Statistics ────────────────────────────────────────────────────────────
 
-    pub fn partition_count(&self) -> usize { self.partitions.len() }
-    pub fn total_count(&self) -> usize { self.total_count }
-    pub fn person_count(&self) -> usize { self.person_count }
+    pub fn partition_count(&self) -> usize {
+        self.partitions.len()
+    }
+    pub fn total_count(&self) -> usize {
+        self.total_count
+    }
+    pub fn person_count(&self) -> usize {
+        self.person_count
+    }
 
     pub fn largest_partition_size(&self) -> usize {
         self.partitions.values().map(|p| p.count).max().unwrap_or(0)
     }
 
     pub fn mean_partition_size(&self) -> f64 {
-        if self.partitions.is_empty() { return 0.0; }
+        if self.partitions.is_empty() {
+            return 0.0;
+        }
         let n = self.partitions.len() as f64;
         let total: usize = self.partitions.values().map(|p| p.count).sum();
         total as f64 / n
@@ -517,7 +534,9 @@ impl PartitionedGallery {
 
     /// Search-space reduction factor. 1.0 = no partitioning, 0.001 = 1000x reduction.
     pub fn reduction_factor(&self) -> f64 {
-        if self.total_count == 0 || self.partitions.is_empty() { return 1.0; }
+        if self.total_count == 0 || self.partitions.is_empty() {
+            return 1.0;
+        }
         self.mean_partition_size() / self.total_count as f64
     }
 
@@ -566,8 +585,14 @@ impl<'de> Deserialize<'de> for PartitionedGallery {
 mod tests {
     use super::*;
 
-    fn entry(person_id: &str, finger: FingerPosition, gender: Gender,
-             age: u32, geo: &str, quality: u32) -> GalleryEntry {
+    fn entry(
+        person_id: &str,
+        finger: FingerPosition,
+        gender: Gender,
+        age: u32,
+        geo: &str,
+        quality: u32,
+    ) -> GalleryEntry {
         GalleryEntry {
             person_id: person_id.to_string(),
             finger,
@@ -603,14 +628,7 @@ mod tests {
             for gender in [Gender::Male, Gender::Female] {
                 for age in ages {
                     for geo in geos {
-                        g.enroll(entry(
-                            &format!("p{i}"),
-                            finger,
-                            gender,
-                            age,
-                            geo,
-                            80,
-                        ));
+                        g.enroll(entry(&format!("p{i}"), finger, gender, age, geo, 80));
                         i += 1;
                     }
                 }

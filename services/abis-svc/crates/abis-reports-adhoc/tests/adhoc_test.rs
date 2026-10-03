@@ -25,7 +25,11 @@ use uuid::Uuid;
 // ---------------------------------------------------------------------------
 
 fn allowed() -> Vec<String> {
-    vec!["eel_voters".to_string(), "eel_polling_stations".to_string(), "eel_results".to_string()]
+    vec![
+        "eel_voters".to_string(),
+        "eel_polling_stations".to_string(),
+        "eel_results".to_string(),
+    ]
 }
 
 #[test]
@@ -79,24 +83,14 @@ fn validator_rejects_do_block() {
 
 #[test]
 fn validator_rejects_unlisted_table() {
-    let r = validate_sql(
-        "SELECT * FROM eel_adjudication_cases",
-        &allowed(),
-        None,
-    )
-    .unwrap();
+    let r = validate_sql("SELECT * FROM eel_adjudication_cases", &allowed(), None).unwrap();
     assert!(!r.is_safe());
     assert!(r.errors.iter().any(|e| e.code == "E005"));
 }
 
 #[test]
 fn validator_rejects_pg_read_file() {
-    let r = validate_sql(
-        "SELECT pg_read_file('/etc/passwd')",
-        &[],
-        None,
-    )
-    .unwrap();
+    let r = validate_sql("SELECT pg_read_file('/etc/passwd')", &[], None).unwrap();
     assert!(!r.is_safe());
     assert!(r.errors.iter().any(|e| e.code == "E004"));
 }
@@ -162,12 +156,7 @@ fn validator_safety_score_decreases_with_join_depth() {
 
 #[test]
 fn validator_rejects_system_catalog() {
-    let r = validate_sql(
-        "SELECT * FROM pg_class",
-        &[],
-        None,
-    )
-    .unwrap();
+    let r = validate_sql("SELECT * FROM pg_class", &[], None).unwrap();
     assert!(!r.is_safe());
     assert!(r.errors.iter().any(|e| e.code == "E006"));
 }
@@ -194,7 +183,10 @@ fn query_builder_builder_compiles_to_sql() {
         filters: vec!["archived_at IS NULL".to_string()],
         joins: vec![],
         group_by: vec![],
-        order_by: vec![OrderByClause { column: "name".to_string(), descending: false }],
+        order_by: vec![OrderByClause {
+            column: "name".to_string(),
+            descending: false,
+        }],
         limit: Some(100),
     });
     let compiled = q.compile(&["eel_voters".to_string()]).unwrap();
@@ -265,7 +257,9 @@ fn all_blocked_functions_covered() {
 async fn make_rows_future(
     n: usize,
 ) -> eel_abis_reports_adhoc::error::Result<Vec<serde_json::Value>> {
-    Ok((0..n).map(|i| json!({"id": i, "name": format!("row_{i}")})).collect())
+    Ok((0..n)
+        .map(|i| json!({"id": i, "name": format!("row_{i}")}))
+        .collect())
 }
 
 #[test]

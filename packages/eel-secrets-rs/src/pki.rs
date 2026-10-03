@@ -12,64 +12,66 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::error::SecretsError;
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
-use crate::error::SecretsError;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LeafCert {
-	pub certificate: String,
-	pub issuing_ca: String,
-	pub private_key: String,
-	pub serial_number: String,
-	pub expires_at: DateTime<Utc>,
+    pub certificate: String,
+    pub issuing_ca: String,
+    pub private_key: String,
+    pub serial_number: String,
+    pub expires_at: DateTime<Utc>,
 }
 
 /// Request a leaf cert from OpenBao PKI mount.
 pub async fn issue_leaf_cert(
-	openbao_address: &str,
-	token: &str,
-	pki_mount: &str,
-	pki_role: &str,
-	common_name: &str,
-	ttl: &str,
+    openbao_address: &str,
+    token: &str,
+    pki_mount: &str,
+    pki_role: &str,
+    common_name: &str,
+    ttl: &str,
 ) -> Result<LeafCert, SecretsError> {
-	let client = reqwest::Client::builder()
-		.use_rustls_tls()
-		.build()
-		.map_err(|e| SecretsError::Pki(e.to_string()))?;
+    let client = reqwest::Client::builder()
+        .use_rustls_tls()
+        .build()
+        .map_err(|e| SecretsError::Pki(e.to_string()))?;
 
-	let url = format!("{}/v1/{}/issue/{}", openbao_address, pki_mount, pki_role);
-	let body = serde_json::json!({
-		"common_name": common_name,
-		"ttl": ttl,
-	});
+    let url = format!("{}/v1/{}/issue/{}", openbao_address, pki_mount, pki_role);
+    let body = serde_json::json!({
+        "common_name": common_name,
+        "ttl": ttl,
+    });
 
-	let resp = client
-		.post(&url)
-		.header("X-Vault-Token", token)
-		.json(&body)
-		.send()
-		.await
-		.map_err(|e| SecretsError::Pki(e.to_string()))?;
+    let resp = client
+        .post(&url)
+        .header("X-Vault-Token", token)
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| SecretsError::Pki(e.to_string()))?;
 
-	if !resp.status().is_success() {
-		return Err(SecretsError::Pki(format!("HTTP {}", resp.status())));
-	}
+    if !resp.status().is_success() {
+        return Err(SecretsError::Pki(format!("HTTP {}", resp.status())));
+    }
 
-	let json: serde_json::Value =
-		resp.json().await.map_err(|e| SecretsError::Pki(e.to_string()))?;
+    let json: serde_json::Value = resp
+        .json()
+        .await
+        .map_err(|e| SecretsError::Pki(e.to_string()))?;
 
-	let data = &json["data"];
-	let expiration = data["expiration"].as_i64().unwrap_or(0);
-	let expires_at = DateTime::from_timestamp(expiration, 0)
-		.unwrap_or_else(|| Utc::now() + Duration::hours(24));
+    let data = &json["data"];
+    let expiration = data["expiration"].as_i64().unwrap_or(0);
+    let expires_at =
+        DateTime::from_timestamp(expiration, 0).unwrap_or_else(|| Utc::now() + Duration::hours(24));
 
-	Ok(LeafCert {
-		certificate: data["certificate"].as_str().unwrap_or("").to_owned(),
-		issuing_ca: data["issuing_ca"].as_str().unwrap_or("").to_owned(),
-		private_key: data["private_key"].as_str().unwrap_or("").to_owned(),
-		serial_number: data["serial_number"].as_str().unwrap_or("").to_owned(),
-		expires_at,
-	})
+    Ok(LeafCert {
+        certificate: data["certificate"].as_str().unwrap_or("").to_owned(),
+        issuing_ca: data["issuing_ca"].as_str().unwrap_or("").to_owned(),
+        private_key: data["private_key"].as_str().unwrap_or("").to_owned(),
+        serial_number: data["serial_number"].as_str().unwrap_or("").to_owned(),
+        expires_at,
+    })
 }

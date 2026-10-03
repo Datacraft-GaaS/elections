@@ -86,7 +86,11 @@ async fn petition(app: &axum::Router) -> String {
         })),
     )
     .await;
-    assert_eq!(resp.status(), StatusCode::CREATED, "create_petition should work");
+    assert_eq!(
+        resp.status(),
+        StatusCode::CREATED,
+        "create_petition should work"
+    );
     let created = body_json(resp).await;
     assert_eq!(created["status"], "OPEN");
     let id = created["petition_id"].as_str().unwrap().to_string();
@@ -127,7 +131,16 @@ async fn imported_signatories_are_stored_and_listed() {
     assert_eq!(result["accepted"], 5, "high-confidence rows are accepted");
     assert_eq!(result["flagged_for_manual"], 0);
 
-    let listed = body_json(send(&app, "GET", &format!("/v1/recall/petitions/{id}/signatories"), None).await).await;
+    let listed = body_json(
+        send(
+            &app,
+            "GET",
+            &format!("/v1/recall/petitions/{id}/signatories"),
+            None,
+        )
+        .await,
+    )
+    .await;
     assert_eq!(listed["total"], 5, "imported rows must be listed");
     let first = &listed["records"][0];
     assert_eq!(first["petition_id"], id.as_str());
@@ -181,7 +194,16 @@ async fn low_confidence_rows_are_flagged_and_do_not_count_toward_the_threshold()
     assert_eq!(result["accepted"], 0);
     assert_eq!(result["flagged_for_manual"], 4);
 
-    let listed = body_json(send(&app, "GET", &format!("/v1/recall/petitions/{id}/signatories"), None).await).await;
+    let listed = body_json(
+        send(
+            &app,
+            "GET",
+            &format!("/v1/recall/petitions/{id}/signatories"),
+            None,
+        )
+        .await,
+    )
+    .await;
     assert_eq!(listed["total"], 4, "flagged rows are still stored");
     assert!(
         listed["records"]
@@ -216,7 +238,10 @@ async fn duplicate_voter_ids_are_detected_within_a_batch() {
     .await;
     assert_eq!(result["total_rows"], 3);
     assert_eq!(result["duplicates"], 1);
-    assert_eq!(result["accepted"], 2, "a duplicate must not also count as accepted");
+    assert_eq!(
+        result["accepted"], 2,
+        "a duplicate must not also count as accepted"
+    );
 }
 
 #[tokio::test]
@@ -266,7 +291,13 @@ async fn threshold_report_counts_only_valid_signatories() {
     .await;
 
     let report = body_json(
-        send(&app, "GET", &format!("/v1/recall/petitions/{id}/threshold-report"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/v1/recall/petitions/{id}/threshold-report"),
+            None,
+        )
+        .await,
     )
     .await;
     assert_eq!(report["total_signatories"], 40);
@@ -299,7 +330,13 @@ async fn threshold_is_not_met_when_valid_signatories_are_insufficient() {
     )
     .await;
     let report = body_json(
-        send(&app, "GET", &format!("/v1/recall/petitions/{id}/threshold-report"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/v1/recall/petitions/{id}/threshold-report"),
+            None,
+        )
+        .await,
     )
     .await;
     assert_eq!(report["verified_signatories"], 10);
@@ -313,7 +350,13 @@ async fn operations_on_an_unknown_petition_are_404() {
     // The threshold report is a verdict about a specific petition, so an
     // unknown id is 404. Listing signatories reads real state, so an empty list
     // is the truthful answer and 200 is correct.
-    let report = send(&app, "GET", "/v1/recall/petitions/nope/threshold-report", None).await;
+    let report = send(
+        &app,
+        "GET",
+        "/v1/recall/petitions/nope/threshold-report",
+        None,
+    )
+    .await;
     assert_eq!(report.status(), StatusCode::NOT_FOUND);
     let listed = send(&app, "GET", "/v1/recall/petitions/nope/signatories", None).await;
     assert_eq!(listed.status(), StatusCode::OK);
@@ -337,7 +380,13 @@ async fn operations_on_an_unknown_petition_are_404() {
 async fn closing_a_petition_updates_it_and_the_close_is_observable() {
     let app = app();
     let id = petition(&app).await;
-    let resp = send(&app, "PUT", &format!("/v1/recall/petitions/{id}/close"), None).await;
+    let resp = send(
+        &app,
+        "PUT",
+        &format!("/v1/recall/petitions/{id}/close"),
+        None,
+    )
+    .await;
     assert_eq!(resp.status(), StatusCode::NO_CONTENT);
 }
 
@@ -345,7 +394,13 @@ async fn closing_a_petition_updates_it_and_the_close_is_observable() {
 async fn creating_a_recall_election_records_it() {
     let app = app();
     let id = petition(&app).await;
-    let resp = send(&app, "POST", &format!("/v1/recall/petitions/{id}/election"), None).await;
+    let resp = send(
+        &app,
+        "POST",
+        &format!("/v1/recall/petitions/{id}/election"),
+        None,
+    )
+    .await;
     assert_eq!(resp.status(), StatusCode::CREATED);
     let election = body_json(resp).await;
     assert_eq!(election["petition_id"], id.as_str());
@@ -369,7 +424,13 @@ async fn signatories_do_not_leak_across_petitions() {
     )
     .await;
     let b_listed = body_json(
-        send(&app, "GET", &format!("/v1/recall/petitions/{b}/signatories"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/v1/recall/petitions/{b}/signatories"),
+            None,
+        )
+        .await,
     )
     .await;
     assert_eq!(

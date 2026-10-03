@@ -56,9 +56,11 @@ impl Store {
     pub async fn list_embassies(&self) -> Result<Vec<Value>, StoreError> {
         match self {
             Self::Pg(pool) => {
-                let rows = sqlx::query_as::<_, (Value,)>("SELECT data FROM diaspora_api_embassies ORDER BY embassy_code")
-                    .fetch_all(pool)
-                    .await?;
+                let rows = sqlx::query_as::<_, (Value,)>(
+                    "SELECT data FROM diaspora_api_embassies ORDER BY embassy_code",
+                )
+                .fetch_all(pool)
+                .await?;
                 Ok(rows.into_iter().map(|(v,)| v).collect())
             }
             Self::Mem(m) => {
@@ -73,13 +75,20 @@ impl Store {
     pub async fn get_embassy(&self, code: &str) -> Result<Option<Value>, StoreError> {
         match self {
             Self::Pg(pool) => {
-                let row = sqlx::query_as::<_, (Value,)>("SELECT data FROM diaspora_api_embassies WHERE embassy_code=$1")
-                    .bind(code)
-                    .fetch_optional(pool)
-                    .await?;
+                let row = sqlx::query_as::<_, (Value,)>(
+                    "SELECT data FROM diaspora_api_embassies WHERE embassy_code=$1",
+                )
+                .bind(code)
+                .fetch_optional(pool)
+                .await?;
                 Ok(row.map(|(v,)| v))
             }
-            Self::Mem(m) => Ok(m.embassies.lock().expect("lock poisoned").get(code).cloned()),
+            Self::Mem(m) => Ok(m
+                .embassies
+                .lock()
+                .expect("lock poisoned")
+                .get(code)
+                .cloned()),
         }
     }
 
@@ -94,7 +103,10 @@ impl Store {
                 Ok(data)
             }
             Self::Mem(m) => {
-                m.ballot_dispatches.lock().expect("lock poisoned").insert(id.to_string(), data.clone());
+                m.ballot_dispatches
+                    .lock()
+                    .expect("lock poisoned")
+                    .insert(id.to_string(), data.clone());
                 Ok(data)
             }
         }
@@ -103,9 +115,11 @@ impl Store {
     pub async fn list_ballot_dispatches(&self) -> Result<Vec<Value>, StoreError> {
         match self {
             Self::Pg(pool) => {
-                let rows = sqlx::query_as::<_, (Value,)>("SELECT data FROM diaspora_api_ballot_dispatches ORDER BY dispatch_id")
-                    .fetch_all(pool)
-                    .await?;
+                let rows = sqlx::query_as::<_, (Value,)>(
+                    "SELECT data FROM diaspora_api_ballot_dispatches ORDER BY dispatch_id",
+                )
+                .fetch_all(pool)
+                .await?;
                 Ok(rows.into_iter().map(|(v,)| v).collect())
             }
             Self::Mem(m) => {
@@ -120,28 +134,41 @@ impl Store {
     pub async fn get_ballot_dispatch(&self, id: &str) -> Result<Option<Value>, StoreError> {
         match self {
             Self::Pg(pool) => {
-                let row = sqlx::query_as::<_, (Value,)>("SELECT data FROM diaspora_api_ballot_dispatches WHERE dispatch_id=$1")
-                    .bind(id)
-                    .fetch_optional(pool)
-                    .await?;
+                let row = sqlx::query_as::<_, (Value,)>(
+                    "SELECT data FROM diaspora_api_ballot_dispatches WHERE dispatch_id=$1",
+                )
+                .bind(id)
+                .fetch_optional(pool)
+                .await?;
                 Ok(row.map(|(v,)| v))
             }
-            Self::Mem(m) => Ok(m.ballot_dispatches.lock().expect("lock poisoned").get(id).cloned()),
+            Self::Mem(m) => Ok(m
+                .ballot_dispatches
+                .lock()
+                .expect("lock poisoned")
+                .get(id)
+                .cloned()),
         }
     }
 
-    pub async fn confirm_ballot_delivery(&self, id: &str, confirmation: Value) -> Result<Option<Value>, StoreError> {
+    pub async fn confirm_ballot_delivery(
+        &self,
+        id: &str,
+        confirmation: Value,
+    ) -> Result<Option<Value>, StoreError> {
         match self {
             Self::Pg(pool) => {
                 let existing = self.get_ballot_dispatch(id).await?;
                 if let Some(mut v) = existing {
                     v["status"] = Value::String("delivered".to_string());
                     v["delivery_confirmation"] = confirmation;
-                    sqlx::query("UPDATE diaspora_api_ballot_dispatches SET data=$1 WHERE dispatch_id=$2")
-                        .bind(&v)
-                        .bind(id)
-                        .execute(pool)
-                        .await?;
+                    sqlx::query(
+                        "UPDATE diaspora_api_ballot_dispatches SET data=$1 WHERE dispatch_id=$2",
+                    )
+                    .bind(&v)
+                    .bind(id)
+                    .execute(pool)
+                    .await?;
                     Ok(Some(v))
                 } else {
                     Ok(None)
@@ -163,9 +190,11 @@ impl Store {
     pub async fn list_return_dispatches(&self) -> Result<Vec<Value>, StoreError> {
         match self {
             Self::Pg(pool) => {
-                let rows = sqlx::query_as::<_, (Value,)>("SELECT data FROM diaspora_api_return_dispatches ORDER BY return_id")
-                    .fetch_all(pool)
-                    .await?;
+                let rows = sqlx::query_as::<_, (Value,)>(
+                    "SELECT data FROM diaspora_api_return_dispatches ORDER BY return_id",
+                )
+                .fetch_all(pool)
+                .await?;
                 Ok(rows.into_iter().map(|(v,)| v).collect())
             }
             Self::Mem(m) => {

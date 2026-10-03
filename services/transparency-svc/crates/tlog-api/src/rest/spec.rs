@@ -52,26 +52,34 @@ pub struct LeafAppendResult {
 pub async fn get_log_entries(
     State(state): State<ApiState>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let rows: Vec<(i64, String, Vec<u8>, String, String, chrono::DateTime<chrono::Utc>)> =
-        sqlx::query_as(
-            "SELECT index, domain, hash, producer_spiffe_id, source_event_id, event_time \
+    let rows: Vec<(
+        i64,
+        String,
+        Vec<u8>,
+        String,
+        String,
+        chrono::DateTime<chrono::Utc>,
+    )> = sqlx::query_as(
+        "SELECT index, domain, hash, producer_spiffe_id, source_event_id, event_time \
              FROM leaves ORDER BY index DESC LIMIT 1000",
-        )
-        .fetch_all(&*state.pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    )
+    .fetch_all(&*state.pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let entries: Vec<LogEntry> = rows
         .into_iter()
-        .map(|(idx, domain, hash, producer, event_id, event_time)| LogEntry {
-            leaf_index: idx,
-            leaf_hash: hex::encode(hash),
-            timestamp: event_time.to_rfc3339(),
-            entry_type: domain,
-            data_hash: event_id,
-            submitter_id: producer,
-            extra_data: serde_json::Value::Null,
-        })
+        .map(
+            |(idx, domain, hash, producer, event_id, event_time)| LogEntry {
+                leaf_index: idx,
+                leaf_hash: hex::encode(hash),
+                timestamp: event_time.to_rfc3339(),
+                entry_type: domain,
+                data_hash: event_id,
+                submitter_id: producer,
+                extra_data: serde_json::Value::Null,
+            },
+        )
         .collect();
 
     let tree_size: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM leaves")

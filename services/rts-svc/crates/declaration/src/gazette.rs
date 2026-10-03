@@ -21,7 +21,7 @@ use std::pin::Pin;
 /// Outcome of a gazette package submission.
 #[derive(Debug, Clone)]
 pub struct GazetteAck {
-    pub gazette_ref:  String,
+    pub gazette_ref: String,
     pub submitted_at: String,
 }
 
@@ -44,12 +44,12 @@ impl std::fmt::Display for GazetteError {
 /// Package pushed to the Government Printer on declaration.
 #[derive(Debug, Clone)]
 pub struct GazettePackage {
-    pub declaration_id:  String,
-    pub contest_id:      String,
-    pub winner_id:       Option<String>,
+    pub declaration_id: String,
+    pub contest_id: String,
+    pub winner_id: Option<String>,
     pub certificate_ref: Option<String>,
     /// MinIO reference to the signed certificate PDF.
-    pub pdf_minio_ref:   Option<String>,
+    pub pdf_minio_ref: Option<String>,
 }
 
 /// Trait for submitting gazette packages.  Implementations live in integrations/.

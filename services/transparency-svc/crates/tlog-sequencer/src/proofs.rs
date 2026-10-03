@@ -63,15 +63,13 @@ pub async fn inclusion_proof(
         return Ok(None);
     }
     let tree = eel_crypto_rs::merkle::MerkleTree::from_leaf_hashes(hashes);
-    let path = tree
-        .inclusion_proof(index as usize)
-        .map_err(proof_error)?;
+    let path = tree.inclusion_proof(index as usize).map_err(proof_error)?;
 
     Ok(Some(InclusionProof {
         leaf_index: index as u64,
         tree_size: tree_size as u64,
         root_hash: hex::encode(tree.root()),
-        hashes: path.iter().map(|h| hex::encode(h)).collect(),
+        hashes: path.iter().map(hex::encode).collect(),
     }))
 }
 
@@ -90,17 +88,18 @@ pub async fn consistency_proof(
     }
 
     let tree = eel_crypto_rs::merkle::MerkleTree::from_leaf_hashes(hashes.clone());
-    let old_tree = eel_crypto_rs::merkle::MerkleTree::from_leaf_hashes(
-        hashes[..old_size as usize].to_vec(),
-    );
-    let path = tree.consistency_proof(old_size as usize).map_err(proof_error)?;
+    let old_tree =
+        eel_crypto_rs::merkle::MerkleTree::from_leaf_hashes(hashes[..old_size as usize].to_vec());
+    let path = tree
+        .consistency_proof(old_size as usize)
+        .map_err(proof_error)?;
 
     Ok(Some(ConsistencyProof {
         old_size,
         new_size: tree_size,
         old_root: hex::encode(old_tree.root()),
         new_root: hex::encode(tree.root()),
-        hashes: path.iter().map(|h| hex::encode(h)).collect(),
+        hashes: path.iter().map(hex::encode).collect(),
     }))
 }
 

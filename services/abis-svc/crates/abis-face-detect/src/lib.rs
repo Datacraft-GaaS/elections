@@ -18,8 +18,8 @@
 //! Boosted Cascade of Simple Features." CVPR 2001.
 #![warn(missing_docs)]
 
-pub mod nms;
 pub mod baseline;
+pub mod nms;
 
 use thiserror::Error;
 
@@ -43,7 +43,12 @@ pub struct BoundingBox {
 
 impl BoundingBox {
     pub fn new(x: u32, y: u32, width: u32, height: u32) -> Self {
-        Self { x, y, width, height }
+        Self {
+            x,
+            y,
+            width,
+            height,
+        }
     }
 
     /// Intersection-over-union with another bounding box.
@@ -65,8 +70,10 @@ impl BoundingBox {
 
     /// Centre point (x, y).
     pub fn centre(&self) -> (f32, f32) {
-        (self.x as f32 + self.width as f32 / 2.0,
-         self.y as f32 + self.height as f32 / 2.0)
+        (
+            self.x as f32 + self.width as f32 / 2.0,
+            self.y as f32 + self.height as f32 / 2.0,
+        )
     }
 
     /// Area in pixels.
@@ -79,26 +86,30 @@ impl BoundingBox {
 /// Coordinates in pixel space.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct FiveLandmarks {
-    pub left_eye:    (f32, f32),
-    pub right_eye:   (f32, f32),
-    pub nose:        (f32, f32),
-    pub left_mouth:  (f32, f32),
+    pub left_eye: (f32, f32),
+    pub right_eye: (f32, f32),
+    pub nose: (f32, f32),
+    pub left_mouth: (f32, f32),
     pub right_mouth: (f32, f32),
 }
 
 /// A detected face candidate.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FaceBox {
-    pub bbox:       BoundingBox,
+    pub bbox: BoundingBox,
     /// Detection confidence in [0.0, 1.0].
     pub confidence: f32,
     /// Coarse landmark estimates (may be None for the heuristic baseline).
-    pub landmarks:  Option<FiveLandmarks>,
+    pub landmarks: Option<FiveLandmarks>,
 }
 
 impl FaceBox {
     pub fn new(bbox: BoundingBox, confidence: f32) -> Self {
-        Self { bbox, confidence, landmarks: None }
+        Self {
+            bbox,
+            confidence,
+            landmarks: None,
+        }
     }
 
     pub fn with_landmarks(mut self, lm: FiveLandmarks) -> Self {
@@ -110,7 +121,7 @@ impl FaceBox {
 /// Raw grayscale image buffer (row-major, 1 byte per pixel).
 #[derive(Debug, Clone)]
 pub struct GrayImage {
-    pub width:  u32,
+    pub width: u32,
     pub height: u32,
     pub pixels: Vec<u8>,
 }
@@ -120,7 +131,11 @@ impl GrayImage {
         if width == 0 || height == 0 {
             return Err(DetectError::EmptyImage);
         }
-        Ok(Self { width, height, pixels })
+        Ok(Self {
+            width,
+            height,
+            pixels,
+        })
     }
 
     pub fn pixel(&self, x: u32, y: u32) -> u8 {
@@ -132,7 +147,7 @@ impl GrayImage {
 /// Raw RGB image buffer (row-major, 3 bytes per pixel: R G B).
 #[derive(Debug, Clone)]
 pub struct RgbImage {
-    pub width:  u32,
+    pub width: u32,
     pub height: u32,
     pub pixels: Vec<u8>,
 }
@@ -142,21 +157,32 @@ impl RgbImage {
         if width == 0 || height == 0 {
             return Err(DetectError::EmptyImage);
         }
-        Ok(Self { width, height, pixels })
+        Ok(Self {
+            width,
+            height,
+            pixels,
+        })
     }
 
     pub fn to_gray(&self) -> GrayImage {
         // BT.601 luminance: 0.299R + 0.587G + 0.114B
-        let pixels: Vec<u8> = self.pixels
+        let pixels: Vec<u8> = self
+            .pixels
             .chunks(3)
             .map(|c| {
                 let r = c[0] as f32;
                 let g = c[1] as f32;
                 let b = c[2] as f32;
-                (0.299 * r + 0.587 * g + 0.114 * b).round().clamp(0.0, 255.0) as u8
+                (0.299 * r + 0.587 * g + 0.114 * b)
+                    .round()
+                    .clamp(0.0, 255.0) as u8
             })
             .collect();
-        GrayImage { width: self.width, height: self.height, pixels }
+        GrayImage {
+            width: self.width,
+            height: self.height,
+            pixels,
+        }
     }
 }
 
@@ -169,11 +195,12 @@ pub trait FaceDetector {
     /// Detect in a grayscale image (convenience wrapper).
     fn detect_gray(&self, image: &GrayImage) -> Result<Vec<FaceBox>, DetectError> {
         // Build a synthetic RGB from the gray channel.
-        let pixels: Vec<u8> = image.pixels
-            .iter()
-            .flat_map(|&v| [v, v, v])
-            .collect();
-        let rgb = RgbImage { width: image.width, height: image.height, pixels };
+        let pixels: Vec<u8> = image.pixels.iter().flat_map(|&v| [v, v, v]).collect();
+        let rgb = RgbImage {
+            width: image.width,
+            height: image.height,
+            pixels,
+        };
         self.detect(&rgb)
     }
 }

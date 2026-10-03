@@ -20,9 +20,9 @@
 //! - Audit event emission via the `AuditSink` trait
 #![warn(missing_docs)]
 
+pub mod audit;
 pub mod error;
 pub mod subject;
-pub mod audit;
 
 #[cfg(feature = "keycloak")]
 pub mod jwks;
@@ -30,9 +30,9 @@ pub mod jwks;
 #[cfg(feature = "spicedb")]
 pub mod spicedb;
 
+pub use audit::{AuditEvent, AuditSink, LogSink, NoopSink};
 pub use error::AuthError;
 pub use subject::Subject;
-pub use audit::{AuditEvent, AuditSink, NoopSink, LogSink};
 
 #[cfg(feature = "keycloak")]
 pub use jwks::JwksVerifier;

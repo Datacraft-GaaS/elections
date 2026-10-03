@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::models::*;
 use axum::{
     extract::Path,
     http::StatusCode,
@@ -19,19 +20,21 @@ use axum::{
 };
 use tracing::info;
 use uuid::Uuid;
-use crate::models::*;
 
 pub async fn post_content(Json(req): Json<ContentItemCreateReq>) -> impl IntoResponse {
     info!(title=%req.title, language=%req.language, "post_content");
-    (StatusCode::CREATED, Json(ContentItem {
-        id: Uuid::new_v4(),
-        title: req.title,
-        language: req.language,
-        format: req.format,
-        topic_category: req.topic_category,
-        status: "draft".to_string(),
-        expiry_date: None,
-    }))
+    (
+        StatusCode::CREATED,
+        Json(ContentItem {
+            id: Uuid::new_v4(),
+            title: req.title,
+            language: req.language,
+            format: req.format,
+            topic_category: req.topic_category,
+            status: "draft".to_string(),
+            expiry_date: None,
+        }),
+    )
 }
 
 pub async fn get_content_list() -> impl IntoResponse {

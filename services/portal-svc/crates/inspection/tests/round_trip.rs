@@ -45,7 +45,12 @@ async fn body_json(resp: axum::response::Response) -> Value {
     serde_json::from_slice(&bytes).unwrap_or(Value::Null)
 }
 
-async fn send(app: &axum::Router, method: &str, uri: &str, body: Option<Value>) -> axum::response::Response {
+async fn send(
+    app: &axum::Router,
+    method: &str,
+    uri: &str,
+    body: Option<Value>,
+) -> axum::response::Response {
     let mut b = Request::builder().method(method).uri(uri);
     let payload = match body {
         Some(v) => {
@@ -108,10 +113,7 @@ async fn an_unknown_roll_snapshot_is_404() {
 #[tokio::test]
 async fn a_filed_objection_is_stored_and_status_updates_are_visible() {
     let app = app();
-    let created = body_json(
-        send(&app, "POST", "/objections", Some(objection_body())).await,
-    )
-    .await;
+    let created = body_json(send(&app, "POST", "/objections", Some(objection_body())).await).await;
     let id = created["id"].as_str().unwrap().to_string();
     assert_eq!(created["status"], "filed");
 
@@ -280,7 +282,8 @@ async fn auto_referral_considers_real_claims_and_refers_eligible_ones() {
         Some(json!({"decision": "approve", "decided_by": "00000000-0000-0000-0000-0000000000dd"})),
     )
     .await;
-    let approved = body_json(send(&app, "POST", "/corrections/auto-referral/run", None).await).await;
+    let approved =
+        body_json(send(&app, "POST", "/corrections/auto-referral/run", None).await).await;
     assert_eq!(approved["considered"], 1);
     assert_eq!(
         approved["referred"], 1,
@@ -338,7 +341,10 @@ async fn voter_list_search_refuses_because_there_is_no_list() {
     let resp = send(&app, "GET", "/api/v1/inspection/voter-list/search", None).await;
     assert_eq!(resp.status(), StatusCode::NOT_IMPLEMENTED);
     let problem = body_json(resp).await;
-    assert!(problem["detail"].as_str().unwrap_or("").contains("no voter list"));
+    assert!(problem["detail"]
+        .as_str()
+        .unwrap_or("")
+        .contains("no voter list"));
 }
 
 #[tokio::test]

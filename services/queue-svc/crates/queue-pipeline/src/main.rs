@@ -35,5 +35,7 @@ async fn main() {
         .expect("bind failed");
 
     info!(http_addr, "eel-queue-pipeline HTTP listening");
-    axum::serve(listener, app).await.expect("HTTP server failed");
+    axum::serve(listener, app)
+        .await
+        .expect("HTTP server failed");
 }

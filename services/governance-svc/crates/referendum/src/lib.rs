@@ -15,8 +15,8 @@
 //! referendum crate.
 #![warn(missing_docs)]
 pub mod counties;
-pub mod explainer;
 pub mod events;
+pub mod explainer;
 pub mod handlers;
 pub mod models;
 pub mod router;

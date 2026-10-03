@@ -51,10 +51,12 @@ pub fn parse_registry(spec: &str) -> Result<Vec<AgentKey>, String> {
         }
         let parts: Vec<&str> = entry.split(':').collect();
         if parts.len() != 3 {
-            return Err(format!("bad EEL_AGENT_KEYS entry {entry:?} (want party:agent:hexkey)"));
+            return Err(format!(
+                "bad EEL_AGENT_KEYS entry {entry:?} (want party:agent:hexkey)"
+            ));
         }
-        let key_bytes = hex::decode(parts[2])
-            .map_err(|e| format!("bad key hex in {entry:?}: {e}"))?;
+        let key_bytes =
+            hex::decode(parts[2]).map_err(|e| format!("bad key hex in {entry:?}: {e}"))?;
         let key_arr: [u8; 32] = key_bytes
             .try_into()
             .map_err(|_| format!("key must be 32 bytes in {entry:?}"))?;
@@ -96,12 +98,15 @@ pub fn verify_countersignature(
     signature_hex: &str,
 ) -> Result<(), CountersignError> {
     let key = lookup(registry, agent_id, party_code).ok_or(CountersignError::UnknownAgent)?;
-    let sig_bytes = hex::decode(signature_hex.trim())
-        .map_err(|_| CountersignError::BadSignatureFormat)?;
-    let sig = Signature::from_slice(&sig_bytes)
-        .map_err(|_| CountersignError::BadSignatureFormat)?;
+    let sig_bytes =
+        hex::decode(signature_hex.trim()).map_err(|_| CountersignError::BadSignatureFormat)?;
+    let sig =
+        Signature::from_slice(&sig_bytes).map_err(|_| CountersignError::BadSignatureFormat)?;
     key.verifying
-        .verify(&countersign_message(form_id, agent_id, party_code, signed_at), &sig)
+        .verify(
+            &countersign_message(form_id, agent_id, party_code, signed_at),
+            &sig,
+        )
         .map_err(|_| CountersignError::InvalidSignature)
 }
 
@@ -123,7 +128,9 @@ impl AgentRegistry {
                     map.insert((k.party_code, k.agent_id), k.verifying);
                 }
             }
-            Err(e) => tracing::error!(error = %e, "EEL_AGENT_KEYS malformed; NO countersignatures will be accepted"),
+            Err(e) => {
+                tracing::error!(error = %e, "EEL_AGENT_KEYS malformed; NO countersignatures will be accepted")
+            }
         }
         if map.is_empty() {
             tracing::warn!("EEL_AGENT_KEYS empty; all countersign requests will be rejected");

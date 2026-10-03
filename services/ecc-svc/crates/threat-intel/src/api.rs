@@ -74,10 +74,7 @@ async fn list_feeds(State(state): State<AppState>) -> impl IntoResponse {
     Json(infos)
 }
 
-async fn add_feed(
-    State(state): State<AppState>,
-    Json(ep): Json<AddFeedBody>,
-) -> impl IntoResponse {
+async fn add_feed(State(state): State<AppState>, Json(ep): Json<AddFeedBody>) -> impl IntoResponse {
     let mut eps = state.endpoints.write().await;
     eps.push(TaxiiEndpoint {
         url: ep.url,
@@ -131,7 +128,12 @@ async fn list_matches(
 ) -> impl IntoResponse {
     let all = state.matches.read().await;
     let start = (paging.page.saturating_sub(1)) * paging.per_page;
-    let page: Vec<CorrelationMatch> = all.iter().skip(start).take(paging.per_page).cloned().collect();
+    let page: Vec<CorrelationMatch> = all
+        .iter()
+        .skip(start)
+        .take(paging.per_page)
+        .cloned()
+        .collect();
     Json(page)
 }
 

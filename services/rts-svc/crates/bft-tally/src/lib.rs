@@ -53,24 +53,24 @@ use thiserror::Error;
 /// Top-level errors from this crate.
 #[derive(Debug, Error)]
 pub enum BftError {
-	#[error("invalid quorum certificate: {0}")]
-	InvalidQc(String),
-	#[error("insufficient signatures: {got} of {required}")]
-	InsufficientSignatures { got: usize, required: usize },
-	#[error("view mismatch: expected {expected}, got {actual}")]
-	ViewMismatch { expected: u64, actual: u64 },
-	#[error("block hash mismatch")]
-	HashMismatch,
-	#[error("replica {id} is not the current leader")]
-	NotLeader { id: u64 },
-	#[error("liveness lost: too many replicas faulty ({faulty} > f={f})")]
-	LivenessLost { faulty: usize, f: usize },
-	#[error("signature error: {0}")]
-	Signature(String),
-	#[error("persistence error: {0}")]
-	Persistence(String),
-	#[error("adapter error: {0}")]
-	Adapter(String),
+    #[error("invalid quorum certificate: {0}")]
+    InvalidQc(String),
+    #[error("insufficient signatures: {got} of {required}")]
+    InsufficientSignatures { got: usize, required: usize },
+    #[error("view mismatch: expected {expected}, got {actual}")]
+    ViewMismatch { expected: u64, actual: u64 },
+    #[error("block hash mismatch")]
+    HashMismatch,
+    #[error("replica {id} is not the current leader")]
+    NotLeader { id: u64 },
+    #[error("liveness lost: too many replicas faulty ({faulty} > f={f})")]
+    LivenessLost { faulty: usize, f: usize },
+    #[error("signature error: {0}")]
+    Signature(String),
+    #[error("persistence error: {0}")]
+    Persistence(String),
+    #[error("adapter error: {0}")]
+    Adapter(String),
 }
 
 /// Cluster constants: N=4, f=1, quorum=3.

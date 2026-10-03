@@ -27,7 +27,10 @@ pub fn build_router(state: SharedState) -> Router {
             get(list_reports).post(generate_report),
         )
         .route("/reporting/reports/{report_id}", get(get_report))
-        .route("/reporting/reports/{report_id}/ready", post(mark_report_ready))
+        .route(
+            "/reporting/reports/{report_id}/ready",
+            post(mark_report_ready),
+        )
         .route(
             "/reporting/testimony-workspaces",
             get(list_testimony_workspaces).post(create_testimony_workspace),
@@ -37,7 +40,7 @@ pub fn build_router(state: SharedState) -> Router {
             post(record_judiciary_handover),
         )
         .route("/reporting/sc-preregistrations", post(register_sc_it))
-    // Public contract endpoints (governance-reporting/reports.yaml)
+        // Public contract endpoints (governance-reporting/reports.yaml)
         .route(
             "/api/v1/governance/reporting/parliamentary-reports",
             get(list_parliamentary_reports).post(generate_parliamentary_report),

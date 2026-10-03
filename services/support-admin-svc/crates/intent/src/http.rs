@@ -27,7 +27,9 @@ use axum::{
 };
 use serde_json::{json, Value};
 
-use crate::spec::{AdjudicationRecord, AdjudicationRequest, PreMarkValidationRequest, SpoiltBallotRequest};
+use crate::spec::{
+    AdjudicationRecord, AdjudicationRequest, PreMarkValidationRequest, SpoiltBallotRequest,
+};
 
 #[derive(Clone, Default)]
 pub struct AppState {
@@ -78,11 +80,16 @@ pub fn router(state: SharedState) -> Router {
             post(acknowledge_alert),
         )
         .route("/v1/intent/catalogue", get(list_adjudication_catalogue))
-        .route("/v1/intent/toggle", get(list_toggle_audit).post(toggle_adjudication))
+        .route(
+            "/v1/intent/toggle",
+            get(list_toggle_audit).post(toggle_adjudication),
+        )
         .with_state(state)
 }
 
-async fn submit_pre_mark_validation(Json(req): Json<PreMarkValidationRequest>) -> impl IntoResponse {
+async fn submit_pre_mark_validation(
+    Json(req): Json<PreMarkValidationRequest>,
+) -> impl IntoResponse {
     if req.image_delete_elapsed_ms > 1000 {
         return (
             StatusCode::UNPROCESSABLE_ENTITY,
@@ -90,7 +97,11 @@ async fn submit_pre_mark_validation(Json(req): Json<PreMarkValidationRequest>) -
         )
             .into_response();
     }
-    (StatusCode::OK, Json(json!({ "valid": true, "station_code": req.station_code }))).into_response()
+    (
+        StatusCode::OK,
+        Json(json!({ "valid": true, "station_code": req.station_code })),
+    )
+        .into_response()
 }
 
 /// A spoilt ballot, recorded.
@@ -204,7 +215,11 @@ async fn get_adjudication(
     let guard = state.adjudications.lock().expect("lock poisoned");
     match guard.get(&id) {
         Some(a) => Json(a.clone()).into_response(),
-        None => (StatusCode::NOT_FOUND, Json(json!({ "detail": "adjudication not found" }))).into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "detail": "adjudication not found" })),
+        )
+            .into_response(),
     }
 }
 
@@ -225,7 +240,11 @@ async fn acknowledge_alert(
             a["acknowledged"] = json!(true);
             Json(a.clone()).into_response()
         }
-        None => (StatusCode::NOT_FOUND, Json(json!({ "detail": "alert not found" }))).into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "detail": "alert not found" })),
+        )
+            .into_response(),
     }
 }
 

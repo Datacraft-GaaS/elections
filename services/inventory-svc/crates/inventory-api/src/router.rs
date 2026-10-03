@@ -54,11 +54,26 @@ fn protected_routes(store: Store) -> Router {
             post(custody::create_custody_event),
         )
         // Public contract endpoints (inventory/management.yaml)
-        .route("/api/v1/inventory/kits", get(spec::list_kit_allocation_summary))
-        .route("/api/v1/inventory/kits/{constituency_code}/allocation", get(spec::get_constituency_kit_allocation))
-        .route("/api/v1/inventory/materials/{constituency_code}/status", get(spec::get_material_status))
-        .route("/api/v1/inventory/shortfalls", get(spec::list_shortfalls).post(spec::report_shortfall))
-        .route("/api/v1/inventory/audit-trail", get(spec::get_inventory_audit_trail))
+        .route(
+            "/api/v1/inventory/kits",
+            get(spec::list_kit_allocation_summary),
+        )
+        .route(
+            "/api/v1/inventory/kits/{constituency_code}/allocation",
+            get(spec::get_constituency_kit_allocation),
+        )
+        .route(
+            "/api/v1/inventory/materials/{constituency_code}/status",
+            get(spec::get_material_status),
+        )
+        .route(
+            "/api/v1/inventory/shortfalls",
+            get(spec::list_shortfalls).post(spec::report_shortfall),
+        )
+        .route(
+            "/api/v1/inventory/audit-trail",
+            get(spec::get_inventory_audit_trail),
+        )
         // Transport & security
         .route(
             "/v1/transport/vehicles",

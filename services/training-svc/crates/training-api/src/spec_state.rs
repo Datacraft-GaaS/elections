@@ -18,9 +18,8 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use crate::spec::{
-    AssessmentSubmissionRecord, BadgeRecord, CertificateRecord, ContentRecord,
-    AccreditationApplication, CompletionRecord, Course, Enrolment, MedicalIncident,
-    MedicalPersonnel,
+    AccreditationApplication, AssessmentSubmissionRecord, BadgeRecord, CertificateRecord,
+    CompletionRecord, ContentRecord, Course, Enrolment, MedicalIncident, MedicalPersonnel,
 };
 
 /// Shared spec-state handle.
@@ -64,7 +63,10 @@ impl SpecState {
     /// Construct a spec store sharing an existing exam store, so the two surfaces
     /// see one question bank.
     pub fn with_exam(exam: crate::handlers::exam::ExamApiState) -> SharedSpecState {
-        Arc::new(Self { exam, ..Default::default() })
+        Arc::new(Self {
+            exam,
+            ..Default::default()
+        })
     }
 
     /// An empty spec store, for callers that build the struct literally.

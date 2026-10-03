@@ -26,5 +26,5 @@
 pub mod bfm;
 pub mod spoof;
 
-pub use bfm::{Fit3dmm, Pose3d, Camera3d, Model3dmm, DmmError};
+pub use bfm::{Camera3d, DmmError, Fit3dmm, Model3dmm, Pose3d};
 pub use spoof::{SpoofDecision, SpoofDetector};

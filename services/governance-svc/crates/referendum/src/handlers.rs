@@ -27,7 +27,6 @@ use crate::threshold::{
     REQUIRED_COUNTY_THRESHOLD,
 };
 
-
 /// A problem+json response, so a refusal is readable rather than a bare status.
 fn problem(status: StatusCode, detail: String) -> Response {
     (
@@ -42,7 +41,6 @@ fn problem(status: StatusCode, detail: String) -> Response {
         .into_response()
 }
 
-
 pub async fn health() -> impl IntoResponse {
     StatusCode::OK
 }
@@ -51,9 +49,7 @@ pub async fn list_referendums(State(state): State<SharedState>) -> impl IntoResp
     info!("list_referendums");
     // Real. Previously always an empty list with total 0, which asserted that no
     // referendum exists rather than that nothing was stored.
-    let mut referendums: Vec<Referendum> = state
-        .referendums
-        .list();
+    let mut referendums: Vec<Referendum> = state.referendums.list();
     referendums.sort_by(|a, b| a.created_at.cmp(&b.created_at));
     let total = referendums.len();
     Json(serde_json::json!({ "referendums": referendums, "total": total }))
@@ -69,7 +65,10 @@ pub async fn get_referendum(
     // does not exist returned a plausible referendum instead of a 404.
     match state.referendums.get(&id) {
         Some(r) => Ok(Json(r).into_response()),
-        None => Err(problem(StatusCode::NOT_FOUND, format!("no referendum with id {id}"))),
+        None => Err(problem(
+            StatusCode::NOT_FOUND,
+            format!("no referendum with id {id}"),
+        )),
     }
 }
 
@@ -100,10 +99,13 @@ pub async fn create_referendum(
     // while storing nothing and emitting nothing, so every creation succeeded
     // and none of them existed.
     state.referendums.insert(id.clone(), referendum.clone());
-    (StatusCode::CREATED, Json(serde_json::json!({
-        "referendum": referendum,
-        "event": evt,
-    })))
+    (
+        StatusCode::CREATED,
+        Json(serde_json::json!({
+            "referendum": referendum,
+            "event": evt,
+        })),
+    )
 }
 
 pub async fn activate_referendum(Path(id): Path<String>) -> impl IntoResponse {
@@ -302,9 +304,7 @@ fn latest_question_id(state: &SharedState) -> Option<String> {
 }
 
 /// GET /api/v1/governance/referendum/questions — list all registered questions.
-pub async fn list_referendum_questions(
-    State(state): State<SharedState>,
-) -> impl IntoResponse {
+pub async fn list_referendum_questions(State(state): State<SharedState>) -> impl IntoResponse {
     info!("list_referendum_questions");
     let guard = state.questions.lock().expect("lock poisoned");
     let mut questions: Vec<ReferendumQuestion> = guard.values().cloned().collect();
@@ -357,9 +357,7 @@ pub async fn register_referendum_question(
 
 /// GET /api/v1/governance/referendum/results — national + per-county results
 /// for the most recently registered question.
-pub async fn get_referendum_results(
-    State(state): State<SharedState>,
-) -> impl IntoResponse {
+pub async fn get_referendum_results(State(state): State<SharedState>) -> impl IntoResponse {
     info!("get_referendum_results");
     let Some(question_id) = latest_question_id(&state) else {
         return Json(ReferendumResults {
@@ -407,9 +405,7 @@ pub async fn get_referendum_results(
 
 /// GET /api/v1/governance/referendum/county-threshold — 24-of-47 compliance
 /// status for the most recently registered question.
-pub async fn get_county_threshold_status(
-    State(state): State<SharedState>,
-) -> impl IntoResponse {
+pub async fn get_county_threshold_status(State(state): State<SharedState>) -> impl IntoResponse {
     info!("get_county_threshold_status");
     let Some(question_id) = latest_question_id(&state) else {
         return Json(CountyThresholdStatus {
@@ -426,10 +422,7 @@ pub async fn get_county_threshold_status(
     let rows = guard.get(&question_id).cloned().unwrap_or_default();
     drop(guard);
 
-    let counties_approved = rows
-        .iter()
-        .filter(|r| r.county_yes_majority)
-        .count() as u8;
+    let counties_approved = rows.iter().filter(|r| r.county_yes_majority).count() as u8;
     let mut breakdown: Vec<CountyBreakdown> = rows
         .iter()
         .map(|r| CountyBreakdown {

@@ -129,17 +129,21 @@ impl Store {
                 .await?;
                 Ok(rows
                     .into_iter()
-                    .map(|(id, asset_type, serial, cust, loc, status, cond, created, updated)| Asset {
-                        asset_id: id.to_string(),
-                        asset_type,
-                        serial_number: serial,
-                        current_custodian_id: cust,
-                        current_location: loc,
-                        status,
-                        condition: cond,
-                        created_at: created.to_rfc3339(),
-                        updated_at: updated.to_rfc3339(),
-                    })
+                    .map(
+                        |(id, asset_type, serial, cust, loc, status, cond, created, updated)| {
+                            Asset {
+                                asset_id: id.to_string(),
+                                asset_type,
+                                serial_number: serial,
+                                current_custodian_id: cust,
+                                current_location: loc,
+                                status,
+                                condition: cond,
+                                created_at: created.to_rfc3339(),
+                                updated_at: updated.to_rfc3339(),
+                            }
+                        },
+                    )
                     .collect())
             }
             Self::Mem(m) => {
@@ -160,17 +164,19 @@ impl Store {
                 .bind(uuid)
                 .fetch_optional(pool)
                 .await?;
-                Ok(row.map(|(id, asset_type, serial, cust, loc, status, cond, created, updated)| Asset {
-                    asset_id: id.to_string(),
-                    asset_type,
-                    serial_number: serial,
-                    current_custodian_id: cust,
-                    current_location: loc,
-                    status,
-                    condition: cond,
-                    created_at: created.to_rfc3339(),
-                    updated_at: updated.to_rfc3339(),
-                }))
+                Ok(row.map(
+                    |(id, asset_type, serial, cust, loc, status, cond, created, updated)| Asset {
+                        asset_id: id.to_string(),
+                        asset_type,
+                        serial_number: serial,
+                        current_custodian_id: cust,
+                        current_location: loc,
+                        status,
+                        condition: cond,
+                        created_at: created.to_rfc3339(),
+                        updated_at: updated.to_rfc3339(),
+                    },
+                ))
             }
             Self::Mem(m) => Ok(m.assets.get(&id.to_string())),
         }
@@ -184,7 +190,10 @@ impl Store {
         match self {
             Self::Pg(pool) => {
                 let asset_uuid = Uuid::parse_str(asset_id).map_err(|_| StoreError::NotFound)?;
-                let asset = self.get_asset(asset_id).await?.ok_or(StoreError::NotFound)?;
+                let asset = self
+                    .get_asset(asset_id)
+                    .await?
+                    .ok_or(StoreError::NotFound)?;
                 let tid = Uuid::now_v7();
                 let now = Utc::now();
                 sqlx::query(
@@ -225,7 +234,10 @@ impl Store {
                 })
             }
             Self::Mem(m) => {
-                let asset = m.assets.get(&asset_id.to_string()).ok_or(StoreError::NotFound)?;
+                let asset = m
+                    .assets
+                    .get(&asset_id.to_string())
+                    .ok_or(StoreError::NotFound)?;
                 let t = CustodyTransfer {
                     transfer_id: Uuid::now_v7().to_string(),
                     asset_id: asset_id.to_string(),
@@ -245,7 +257,8 @@ impl Store {
                 updated.status = "in_transit".to_string();
                 updated.updated_at = Utc::now().to_rfc3339();
                 m.assets.insert(asset_id.to_string(), updated);
-                m.transfers.with_lock(|map| map.entry(asset_id.to_string()).or_default().push(t.clone()));
+                m.transfers
+                    .with_lock(|map| map.entry(asset_id.to_string()).or_default().push(t.clone()));
                 Ok(t)
             }
         }
@@ -263,18 +276,22 @@ impl Store {
                 .await?;
                 Ok(rows
                     .into_iter()
-                    .map(|(tid, aid, from_c, to_c, from_l, to_l, reason, at, off, wit)| CustodyTransfer {
-                        transfer_id: tid.to_string(),
-                        asset_id: aid.to_string(),
-                        from_custodian_id: from_c,
-                        to_custodian_id: to_c,
-                        from_location: from_l,
-                        to_location: to_l,
-                        reason: reason.unwrap_or_default(),
-                        transferred_at: at.to_rfc3339(),
-                        officer_id: off,
-                        witness_id: wit,
-                    })
+                    .map(
+                        |(tid, aid, from_c, to_c, from_l, to_l, reason, at, off, wit)| {
+                            CustodyTransfer {
+                                transfer_id: tid.to_string(),
+                                asset_id: aid.to_string(),
+                                from_custodian_id: from_c,
+                                to_custodian_id: to_c,
+                                from_location: from_l,
+                                to_location: to_l,
+                                reason: reason.unwrap_or_default(),
+                                transferred_at: at.to_rfc3339(),
+                                officer_id: off,
+                                witness_id: wit,
+                            }
+                        },
+                    )
                     .collect())
             }
             Self::Mem(m) => Ok(m.transfers.get(&asset_id.to_string()).unwrap_or_default()),
@@ -288,9 +305,12 @@ impl Store {
     pub async fn create_seal(&self, req: SealCreate) -> Result<Seal, StoreError> {
         match self {
             Self::Pg(pool) => {
-                let asset_uuid = Uuid::parse_str(&req.asset_id).map_err(|_| StoreError::NotFound)?;
+                let asset_uuid =
+                    Uuid::parse_str(&req.asset_id).map_err(|_| StoreError::NotFound)?;
                 // ensure asset exists
-                self.get_asset(&req.asset_id).await?.ok_or(StoreError::NotFound)?;
+                self.get_asset(&req.asset_id)
+                    .await?
+                    .ok_or(StoreError::NotFound)?;
                 let sid = Uuid::now_v7();
                 let now = Utc::now();
                 sqlx::query(
@@ -327,14 +347,19 @@ impl Store {
         }
     }
 
-    pub async fn break_seal(&self, seal_id: &str, req: SealBreakCreate) -> Result<SealBreak, StoreError> {
+    pub async fn break_seal(
+        &self,
+        seal_id: &str,
+        req: SealBreakCreate,
+    ) -> Result<SealBreak, StoreError> {
         match self {
             Self::Pg(pool) => {
                 let sid = Uuid::parse_str(seal_id).map_err(|_| StoreError::NotFound)?;
-                let exists: Option<(Uuid,)> = sqlx::query_as("SELECT seal_id FROM custody_api_seals WHERE seal_id=$1")
-                    .bind(sid)
-                    .fetch_optional(pool)
-                    .await?;
+                let exists: Option<(Uuid,)> =
+                    sqlx::query_as("SELECT seal_id FROM custody_api_seals WHERE seal_id=$1")
+                        .bind(sid)
+                        .fetch_optional(pool)
+                        .await?;
                 if exists.is_none() {
                     return Err(StoreError::NotFound);
                 }
@@ -384,7 +409,11 @@ impl Store {
                     reason: req.reason,
                     broken_at: Utc::now().to_rfc3339(),
                 };
-                m.seal_breaks.with_lock(|map| map.entry(seal_id.to_string()).or_default().push(brk.clone()));
+                m.seal_breaks.with_lock(|map| {
+                    map.entry(seal_id.to_string())
+                        .or_default()
+                        .push(brk.clone())
+                });
                 Ok(brk)
             }
         }
@@ -425,10 +454,11 @@ impl Store {
                 let total: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM custody_api_assets")
                     .fetch_one(pool)
                     .await?;
-                let in_transit: (i64,) =
-                    sqlx::query_as("SELECT COUNT(*) FROM custody_api_assets WHERE status='in_transit'")
-                        .fetch_one(pool)
-                        .await?;
+                let in_transit: (i64,) = sqlx::query_as(
+                    "SELECT COUNT(*) FROM custody_api_assets WHERE status='in_transit'",
+                )
+                .fetch_one(pool)
+                .await?;
                 let in_custody = total.0 - in_transit.0;
                 Ok(crate::spec::CustodySummary {
                     total_assets: total.0 as u32,
@@ -456,12 +486,20 @@ impl Store {
         }
     }
 
-    pub async fn create_reconcile(&self, req: ReconcileCreate) -> Result<ReconcileReport, StoreError> {
-        let status = if req.discrepancies.is_empty() { "reconciled" } else { "discrepancy_found" };
+    pub async fn create_reconcile(
+        &self,
+        req: ReconcileCreate,
+    ) -> Result<ReconcileReport, StoreError> {
+        let status = if req.discrepancies.is_empty() {
+            "reconciled"
+        } else {
+            "discrepancy_found"
+        };
         match self {
             Self::Pg(pool) => {
                 let rid = Uuid::now_v7();
-                let discs = serde_json::to_value(&req.discrepancies).unwrap_or(Value::Array(vec![]));
+                let discs =
+                    serde_json::to_value(&req.discrepancies).unwrap_or(Value::Array(vec![]));
                 sqlx::query(
                     "INSERT INTO custody_api_reconciles (reconcile_id, station_code, election_id, assets_expected, assets_found, discrepancies, status, officer_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
                 )
@@ -497,7 +535,8 @@ impl Store {
                     status: status.to_string(),
                     officer_id: req.officer_id,
                 };
-                m.reconciles.insert(report.reconcile_id.clone(), report.clone());
+                m.reconciles
+                    .insert(report.reconcile_id.clone(), report.clone());
                 Ok(report)
             }
         }

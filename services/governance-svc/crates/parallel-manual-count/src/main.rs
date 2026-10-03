@@ -43,7 +43,8 @@ async fn main() -> anyhow::Result<()> {
         std::env::var("EEL_ELECTION_DAY").unwrap_or_else(|_| "2027-08-09".to_string());
 
     let plan = Arc::new(eel_governance_parallel_manual_count::SamplePlan::generate(
-        &election_day, seed,
+        &election_day,
+        seed,
     ));
     info!(
         plan_id = %plan.plan_id,

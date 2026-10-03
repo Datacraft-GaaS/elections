@@ -77,7 +77,6 @@ pub struct KitPlanRequest {
     pub expected_delivery_date: Option<String>,
 }
 
-
 pub async fn health() -> impl IntoResponse {
     StatusCode::OK
 }
@@ -105,8 +104,14 @@ pub async fn create_by_election(
         } else {
             ByElectionStatus::Draft
         },
-        notice_date: body["notice_date"].as_str().unwrap_or("2025-01-01").to_string(),
-        election_date: body["election_date"].as_str().unwrap_or("2025-02-01").to_string(),
+        notice_date: body["notice_date"]
+            .as_str()
+            .unwrap_or("2025-01-01")
+            .to_string(),
+        election_date: body["election_date"]
+            .as_str()
+            .unwrap_or("2025-02-01")
+            .to_string(),
         cost_ceiling_kes: body["cost_ceiling_kes"].as_u64().unwrap_or(0),
         gazette_notice_id,
         recall_petition_id: body["recall_petition_id"].as_str().map(str::to_string),
@@ -122,7 +127,6 @@ pub async fn create_by_election(
         })),
     )
 }
-
 
 pub async fn generate_register_subset(
     State(state): State<SharedState>,
@@ -175,7 +179,9 @@ pub async fn generate_register_subset(
         generated_at: chrono::Utc::now().to_rfc3339(),
         frozen_at: None,
     };
-    state.register_subsets.insert(subset.id.clone(), subset.clone());
+    state
+        .register_subsets
+        .insert(subset.id.clone(), subset.clone());
     Ok((StatusCode::CREATED, Json(subset)).into_response())
 }
 
@@ -285,8 +291,15 @@ pub async fn submit_cost_report(
             // than a default-constructed report full of zeros.
             let by_election_id = report.by_election_id.clone();
             state.cost_reports.insert(report.id.clone(), report.clone());
-            info!(by_election_id, total_kes = report.total_kes, "cost report stored");
-            (StatusCode::CREATED, Json(serde_json::to_value(report).unwrap()))
+            info!(
+                by_election_id,
+                total_kes = report.total_kes,
+                "cost report stored"
+            );
+            (
+                StatusCode::CREATED,
+                Json(serde_json::to_value(report).unwrap()),
+            )
         }
         Err(msg) => (
             StatusCode::UNPROCESSABLE_ENTITY,
@@ -352,7 +365,9 @@ pub async fn list_by_elections(State(state): State<SharedState>) -> impl IntoRes
     let mut items: Vec<spec::ByElection> = guard.values().cloned().collect();
     drop(guard);
     items.sort_by(|a, b| a.created_at.cmp(&b.created_at));
-    Json(serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }))
+    Json(
+        serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }),
+    )
 }
 
 /// GET /api/v1/governance/by-election/elections/{by_election_id} — fetch one.

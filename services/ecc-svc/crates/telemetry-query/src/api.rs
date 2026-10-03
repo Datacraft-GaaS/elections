@@ -78,10 +78,7 @@ pub fn router(state: TelemetryApiState) -> Router {
         .route("/v1/telemetry/drops", get(drops_handler))
         .route("/v1/telemetry/anomalies", get(anomalies_handler))
         .route("/v1/telemetry/presets", get(list_presets_handler))
-        .route(
-            "/v1/telemetry/presets/{name}/run",
-            post(run_preset_handler),
-        )
+        .route("/v1/telemetry/presets/{name}/run", post(run_preset_handler))
         .route(
             "/v1/telemetry/queries/{query_id}/export",
             post(export_handler),
@@ -160,13 +157,21 @@ async fn timeline_handler(
         return forbidden(e.to_string()).into_response();
     }
 
-    let q = TelemetryQuery::for_device(device_id, TimeRange { from: params.from, to: params.to });
+    let q = TelemetryQuery::for_device(
+        device_id,
+        TimeRange {
+            from: params.from,
+            to: params.to,
+        },
+    );
 
     let executor = TelemetryExecutor::new(state.pool.clone());
     match executor.execute(&q).await {
         Ok(rows) => {
             metrics::inc_query("timeline", true);
-            let _ = audit::record_query(&state.pool, &actor, &q, rows.len() as i64, None, None, None).await;
+            let _ =
+                audit::record_query(&state.pool, &actor, &q, rows.len() as i64, None, None, None)
+                    .await;
             Json(serde_json::json!({ "rows": rows, "count": rows.len() })).into_response()
         }
         Err(e) => {
@@ -266,10 +271,7 @@ async fn nl_query_handler(
 
     match result {
         Ok(proposed) => {
-            metrics::inc_nl(
-                if state.use_mock_nl { "mock" } else { "litellm" },
-                true,
-            );
+            metrics::inc_nl(if state.use_mock_nl { "mock" } else { "litellm" }, true);
             Json(NlQueryResponse {
                 proposed,
                 idempotency_key: req.idempotency_key,
@@ -278,10 +280,7 @@ async fn nl_query_handler(
             .into_response()
         }
         Err(e) => {
-            metrics::inc_nl(
-                if state.use_mock_nl { "mock" } else { "litellm" },
-                false,
-            );
+            metrics::inc_nl(if state.use_mock_nl { "mock" } else { "litellm" }, false);
             internal(e.to_string()).into_response()
         }
     }
@@ -328,7 +327,10 @@ async fn geo_near_handler(
     let q = TelemetryQuery {
         device_ids: vec![],
         signal_classes: vec![SignalClass::Location],
-        time_range: TimeRange { from: params.from, to: params.to },
+        time_range: TimeRange {
+            from: params.from,
+            to: params.to,
+        },
         geo_polygon: Some(polygon),
         aggregations: vec![],
         group_by: vec![],
@@ -344,7 +346,16 @@ async fn geo_near_handler(
     match executor.execute(&q).await {
         Ok(rows) => {
             metrics::inc_query("geo_near", true);
-            let _ = audit::record_query(&state.pool, &actor, &q, rows.len() as i64, None, Some("geo_near"), None).await;
+            let _ = audit::record_query(
+                &state.pool,
+                &actor,
+                &q,
+                rows.len() as i64,
+                None,
+                Some("geo_near"),
+                None,
+            )
+            .await;
             Json(serde_json::json!({ "rows": rows, "count": rows.len() })).into_response()
         }
         Err(e) => {
@@ -380,7 +391,16 @@ async fn officer_sessions_handler(
             match executor.execute(&q).await {
                 Ok(rows) => {
                     metrics::inc_query("officer_sessions", true);
-                    let _ = audit::record_query(&state.pool, &actor, &q, rows.len() as i64, None, Some("officer_activity"), None).await;
+                    let _ = audit::record_query(
+                        &state.pool,
+                        &actor,
+                        &q,
+                        rows.len() as i64,
+                        None,
+                        Some("officer_activity"),
+                        None,
+                    )
+                    .await;
                     Json(serde_json::json!({ "rows": rows, "count": rows.len() })).into_response()
                 }
                 Err(e) => internal(e.to_string()).into_response(),
@@ -414,7 +434,10 @@ async fn drops_handler(
     let q = TelemetryQuery {
         device_ids: vec![],
         signal_classes: vec![SignalClass::PhysicalDrops],
-        time_range: TimeRange { from: params.from, to: params.to },
+        time_range: TimeRange {
+            from: params.from,
+            to: params.to,
+        },
         geo_polygon: None,
         aggregations: vec![],
         group_by: vec![],
@@ -430,7 +453,9 @@ async fn drops_handler(
     match executor.execute(&q).await {
         Ok(rows) => {
             metrics::inc_query("drops", true);
-            let _ = audit::record_query(&state.pool, &actor, &q, rows.len() as i64, None, None, None).await;
+            let _ =
+                audit::record_query(&state.pool, &actor, &q, rows.len() as i64, None, None, None)
+                    .await;
             Json(serde_json::json!({
                 "rows": rows,
                 "count": rows.len(),
@@ -469,7 +494,10 @@ async fn anomalies_handler(
     let q = TelemetryQuery {
         device_ids: vec![],
         signal_classes: vec![],
-        time_range: TimeRange { from: params.from, to: params.to },
+        time_range: TimeRange {
+            from: params.from,
+            to: params.to,
+        },
         geo_polygon: None,
         aggregations: vec![],
         group_by: vec![],
@@ -608,7 +636,16 @@ async fn export_handler(
             };
             (q, ea, rc)
         }
-        Ok(None) => return (StatusCode::NOT_FOUND, Json(ErrorBody { error: "query not found".into(), diagnostics: None })).into_response(),
+        Ok(None) => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(ErrorBody {
+                    error: "query not found".into(),
+                    diagnostics: None,
+                }),
+            )
+                .into_response()
+        }
         Err(e) => return internal(e.to_string()).into_response(),
     };
 

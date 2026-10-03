@@ -61,7 +61,11 @@ pub struct Template {
 
 impl Template {
     pub fn new(width: u32, height: u32) -> Self {
-        Self { width, height, minutiae: Vec::new() }
+        Self {
+            width,
+            height,
+            minutiae: Vec::new(),
+        }
     }
 
     pub fn add(&mut self, m: Minutia) {
@@ -77,7 +81,10 @@ impl Template {
         Self {
             width: self.width,
             height: self.height,
-            minutiae: self.minutiae.iter().copied()
+            minutiae: self
+                .minutiae
+                .iter()
+                .copied()
                 .filter(|m| m.quality >= min_q)
                 .collect(),
         }
@@ -89,7 +96,13 @@ impl Template {
         out.push_str(&format!("# NBIS .xyt (Rust port)\n"));
         out.push_str(&format!("{} {}\n", self.width, self.height));
         for m in &self.minutiae {
-            out.push_str(&format!("{} {} {} {}\n", m.x, m.y, (m.theta_deg * 10.0) as i32, m.quality));
+            out.push_str(&format!(
+                "{} {} {} {}\n",
+                m.x,
+                m.y,
+                (m.theta_deg * 10.0) as i32,
+                m.quality
+            ));
         }
         out
     }
@@ -99,25 +112,40 @@ impl Template {
         let mut t = Template::new(0, 0);
         for line in s.lines() {
             let line = line.trim();
-            if line.is_empty() || line.starts_with('#') { continue; }
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
             let parts: Vec<&str> = line.split_whitespace().collect();
             // First non-comment line may be "WIDTH HEIGHT" header
             if parts.len() == 2 && t.width == 0 {
-                t.width = parts[0].parse().map_err(|e: std::num::ParseIntError| e.to_string())?;
-                t.height = parts[1].parse().map_err(|e: std::num::ParseIntError| e.to_string())?;
+                t.width = parts[0]
+                    .parse()
+                    .map_err(|e: std::num::ParseIntError| e.to_string())?;
+                t.height = parts[1]
+                    .parse()
+                    .map_err(|e: std::num::ParseIntError| e.to_string())?;
                 continue;
             }
-            if parts.len() < 3 { continue; }
-            let x: u32 = parts[0].parse().map_err(|e: std::num::ParseIntError| e.to_string())?;
-            let y: u32 = parts[1].parse().map_err(|e: std::num::ParseIntError| e.to_string())?;
-            let theta_raw: i32 = parts[2].parse().map_err(|e: std::num::ParseIntError| e.to_string())?;
+            if parts.len() < 3 {
+                continue;
+            }
+            let x: u32 = parts[0]
+                .parse()
+                .map_err(|e: std::num::ParseIntError| e.to_string())?;
+            let y: u32 = parts[1]
+                .parse()
+                .map_err(|e: std::num::ParseIntError| e.to_string())?;
+            let theta_raw: i32 = parts[2]
+                .parse()
+                .map_err(|e: std::num::ParseIntError| e.to_string())?;
             let quality: u32 = if parts.len() > 3 {
                 parts[3].parse().unwrap_or(0)
             } else {
                 50
             };
             t.add(Minutia {
-                x, y,
+                x,
+                y,
                 theta_deg: theta_raw as f32 / 10.0,
                 quality,
                 mclass: MinutiaType::DontCare,

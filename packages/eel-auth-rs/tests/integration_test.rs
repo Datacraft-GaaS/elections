@@ -13,10 +13,10 @@
 // limitations under the License.
 
 use eel_auth_rs::{
-    audit::{AuditEvent, NoopSink, LogSink, AuditSink},
-    subject::Subject,
-    spicedb::{SpiceDbClient, Consistency, Decision},
+    audit::{AuditEvent, AuditSink, LogSink, NoopSink},
     jwks::JwksVerifier,
+    spicedb::{Consistency, Decision, SpiceDbClient},
+    subject::Subject,
 };
 use serde_json::json;
 
@@ -62,7 +62,16 @@ async fn test_spicedb_fail_closed() {
         roles: vec![],
         purpose_scopes: vec![],
     };
-    let decision = client.check(&subject, "read", "doc:1", Consistency::MinimizeLatency, json!({})).await.unwrap();
+    let decision = client
+        .check(
+            &subject,
+            "read",
+            "doc:1",
+            Consistency::MinimizeLatency,
+            json!({}),
+        )
+        .await
+        .unwrap();
     assert_eq!(decision, Decision::Deny);
 }
 

@@ -18,15 +18,15 @@
 //! M47 (Nomination Fee Payment), M67 (Symbol/Colour Registry).
 #![warn(missing_docs)]
 
-pub mod candidate;
-pub mod nomination;
-pub mod clearance;
-pub mod quota;
-pub mod gazette;
 pub mod ballot;
-pub mod party;
+pub mod candidate;
+pub mod clearance;
 pub mod coalition;
-pub mod primaries;
-pub mod payment;
-pub mod symbol;
 pub mod events;
+pub mod gazette;
+pub mod nomination;
+pub mod party;
+pub mod payment;
+pub mod primaries;
+pub mod quota;
+pub mod symbol;

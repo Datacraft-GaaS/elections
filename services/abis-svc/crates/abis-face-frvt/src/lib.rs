@@ -30,6 +30,6 @@ pub mod corpus;
 pub mod metrics;
 pub mod report;
 
-pub use corpus::{FrvtCorpus, FrvtImage, FrvtImageSet, SkinTone, Sex};
-pub use metrics::{FmrFnmr, RankN, QualityCorrelation, FairnessSlice};
+pub use corpus::{FrvtCorpus, FrvtImage, FrvtImageSet, Sex, SkinTone};
+pub use metrics::{FairnessSlice, FmrFnmr, QualityCorrelation, RankN};
 pub use report::FrvtReport;

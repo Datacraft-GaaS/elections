@@ -14,11 +14,11 @@
 
 //! abis-explainability crate.
 #![warn(missing_docs)]
+pub mod attention;
+pub mod error;
+pub mod lime;
 pub mod overlay;
+pub mod reasoning;
 pub mod saliency;
 pub mod shap;
-pub mod lime;
-pub mod attention;
-pub mod reasoning;
-pub mod error;
 pub use error::ExplainError;

@@ -35,8 +35,12 @@ use crate::{
 #[derive(Clone, Default)]
 pub struct AppState {
     // In a real deployment: sqlx::PgPool, outbox client, HSM key ref, gov printer URL
-    pub windows: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, crate::spec::InspectionWindow>>>,
-    pub objections: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, crate::spec::ListObjection>>>,
+    pub windows: std::sync::Arc<
+        std::sync::Mutex<std::collections::HashMap<String, crate::spec::InspectionWindow>>,
+    >,
+    pub objections: std::sync::Arc<
+        std::sync::Mutex<std::collections::HashMap<String, crate::spec::ListObjection>>,
+    >,
     /// Gazette notices by id.
     pub notices: eel_memstore_rs::Collection<crate::domain::GazetteNotice>,
     /// Calendar events by id.
@@ -52,7 +56,11 @@ fn not_found(detail: String) -> Response {
 
 /// A problem+json response for an operation this crate cannot honestly perform.
 fn not_implemented(detail: String) -> Response {
-    problem(StatusCode::NOT_IMPLEMENTED, "Not Implemented".to_string(), detail)
+    problem(
+        StatusCode::NOT_IMPLEMENTED,
+        "Not Implemented".to_string(),
+        detail,
+    )
 }
 
 fn problem(status: StatusCode, title: String, detail: String) -> Response {
@@ -71,26 +79,44 @@ fn problem(status: StatusCode, title: String, detail: String) -> Response {
 pub fn router() -> Router {
     let state = AppState::default();
     Router::new()
-        .route("/calendar/events", post(create_calendar_event).get(list_calendar_events))
         .route(
-            "/calendar/events/{id}",
-            get(get_calendar_event),
+            "/calendar/events",
+            post(create_calendar_event).get(list_calendar_events),
         )
+        .route("/calendar/events/{id}", get(get_calendar_event))
         .route(
             "/calendar/events/{id}/derive-notices",
             post(derive_notices_for_event),
         )
-        .route("/gazette/notices", post(create_gazette_notice).get(list_gazette_notices))
+        .route(
+            "/gazette/notices",
+            post(create_gazette_notice).get(list_gazette_notices),
+        )
         .route("/gazette/notices/{id}/sign", post(sign_gazette_notice))
         .route("/gazette/notices/{id}/submit", post(submit_gazette_notice))
         .route("/subscriptions", post(create_subscription))
         .route("/subscriptions/{id}", delete(delete_subscription))
         // Public contract endpoints (gazette/calendar.yaml)
-        .route("/api/v1/gazette/notices/{notice_id}", get(crate::spec_handlers::get_gazette_notice))
-        .route("/api/v1/gazette/inspection/windows", get(crate::spec_handlers::list_inspection_windows))
-        .route("/api/v1/gazette/inspection/windows/{window_id}", get(crate::spec_handlers::get_inspection_window))
-        .route("/api/v1/gazette/inspection/objections", post(crate::spec_handlers::file_list_objection))
-        .route("/api/v1/gazette/inspection/objections/{reference_code}", get(crate::spec_handlers::get_objection_status))
+        .route(
+            "/api/v1/gazette/notices/{notice_id}",
+            get(crate::spec_handlers::get_gazette_notice),
+        )
+        .route(
+            "/api/v1/gazette/inspection/windows",
+            get(crate::spec_handlers::list_inspection_windows),
+        )
+        .route(
+            "/api/v1/gazette/inspection/windows/{window_id}",
+            get(crate::spec_handlers::get_inspection_window),
+        )
+        .route(
+            "/api/v1/gazette/inspection/objections",
+            post(crate::spec_handlers::file_list_objection),
+        )
+        .route(
+            "/api/v1/gazette/inspection/objections/{reference_code}",
+            get(crate::spec_handlers::get_objection_status),
+        )
         .with_state(state)
 }
 
@@ -210,9 +236,7 @@ async fn derive_notices_for_event(
         .ok_or_else(|| not_found(format!("no calendar event with id {id}")))?;
     let derived = crate::rules::derive_notices(&event);
     for notice in &derived {
-        state
-            .notices
-            .insert(notice.id.to_string(), notice.clone());
+        state.notices.insert(notice.id.to_string(), notice.clone());
     }
     tracing::info!(%id, derived = derived.len(), "derived gazette notices");
     Ok(Json(DerivedNoticesResp { derived }).into_response())
@@ -270,10 +294,7 @@ async fn sign_gazette_notice(
     StatusCode::NO_CONTENT
 }
 
-async fn submit_gazette_notice(
-    State(_state): State<AppState>,
-    Path(id): Path<Uuid>,
-) -> Response {
+async fn submit_gazette_notice(State(_state): State<AppState>, Path(id): Path<Uuid>) -> Response {
     // Refused, and this is the most serious refusal in the tree.
     //
     // This handler fabricated `gov_printer_ref = format!("GPR-{id}")`, emitted a

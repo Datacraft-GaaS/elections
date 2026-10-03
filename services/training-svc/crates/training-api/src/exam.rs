@@ -232,8 +232,7 @@ pub fn sample_questions(
     let now = Utc::now();
     // Seed is expected hex-encoded; fall back to raw bytes so callers passing
     // an opaque string still get a deterministic stream.
-    let seed_bytes =
-        hex::decode(seed_hex).unwrap_or_else(|_| seed_hex.as_bytes().to_vec());
+    let seed_bytes = hex::decode(seed_hex).unwrap_or_else(|_| seed_hex.as_bytes().to_vec());
 
     let mut sampled = Vec::new();
     for section in &blueprint.sections {
@@ -245,7 +244,12 @@ pub fn sample_questions(
                     && q.is_active_at(now)
             })
             .collect();
-        for idx in seeded_draw(&eligible, section.question_count as usize, |q| &q.question_id, &seed_bytes) {
+        for idx in seeded_draw(
+            &eligible,
+            section.question_count as usize,
+            |q| &q.question_id,
+            &seed_bytes,
+        ) {
             sampled.push(eligible[idx].question_id.clone());
         }
     }
@@ -314,7 +318,11 @@ pub fn score_session(
         weighted_total += pct * section.weight;
         weight_sum += section.weight;
     }
-    let total_pct = if weight_sum > 0.0 { weighted_total / weight_sum } else { 0.0 };
+    let total_pct = if weight_sum > 0.0 {
+        weighted_total / weight_sum
+    } else {
+        0.0
+    };
     let passed = total_pct >= blueprint.pass_mark_pct;
 
     let mut result = ExamResult {
@@ -366,10 +374,7 @@ mod tests {
         let window = if active {
             (None, None)
         } else {
-            (
-                Some(Utc::now() + chrono::Duration::days(1)),
-                None,
-            )
+            (Some(Utc::now() + chrono::Duration::days(1)), None)
         };
         Question {
             question_id: id.into(),
@@ -390,12 +395,7 @@ mod tests {
         let mut out = Vec::new();
         for (section, n) in counts {
             for i in 0..*n {
-                out.push(q(
-                    &format!("{section}-{i:02}"),
-                    section,
-                    vec![0],
-                    active,
-                ));
+                out.push(q(&format!("{section}-{i:02}"), section, vec![0], active));
             }
         }
         out
@@ -427,7 +427,10 @@ mod tests {
             2
         );
         assert_eq!(
-            sampled.iter().filter(|id| id.starts_with("ethics-")).count(),
+            sampled
+                .iter()
+                .filter(|id| id.starts_with("ethics-"))
+                .count(),
             1
         );
     }

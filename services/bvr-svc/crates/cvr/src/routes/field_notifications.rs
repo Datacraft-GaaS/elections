@@ -519,10 +519,7 @@ pub fn router() -> Router<AppState> {
             "/v1/cvr/field-notifications",
             post(submit_capture).get(list_captures),
         )
-        .route(
-            "/v1/cvr/field-notifications/{capture_id}",
-            get(get_capture),
-        )
+        .route("/v1/cvr/field-notifications/{capture_id}", get(get_capture))
         .route(
             "/v1/cvr/field-notifications/{capture_id}/reviewer-decision",
             patch(reviewer_decision),
@@ -568,7 +565,10 @@ mod tests {
         let env = field_notification_captured_envelope(capture_id, event_id);
         assert_eq!(env.topic, "eel.bvr.field_notification_captured.v1");
         assert_eq!(env.event_type, "eel.bvr.field_notification_captured.v1");
-        assert_eq!(env.subject.as_deref(), Some(format!("/captures/{capture_id}").as_str()));
+        assert_eq!(
+            env.subject.as_deref(),
+            Some(format!("/captures/{capture_id}").as_str())
+        );
         assert_eq!(env.kafka_key, capture_id.to_string());
         assert_eq!(env.aggregate_type, "field_notification");
         assert_eq!(env.aggregate_id, capture_id.to_string());

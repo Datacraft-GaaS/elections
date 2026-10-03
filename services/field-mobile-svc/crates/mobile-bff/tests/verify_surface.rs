@@ -61,10 +61,7 @@ async fn send(
         }
         None => Body::empty(),
     };
-    app.clone()
-        .oneshot(b.body(payload).unwrap())
-        .await
-        .unwrap()
+    app.clone().oneshot(b.body(payload).unwrap()).await.unwrap()
 }
 
 const SHA_A: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
@@ -78,7 +75,11 @@ async fn record(app: &axum::Router, sha: &str) -> Value {
         Some(json!({"token_sha256": sha})),
     )
     .await;
-    assert_eq!(resp.status(), StatusCode::CREATED, "token must be recordable: {sha}");
+    assert_eq!(
+        resp.status(),
+        StatusCode::CREATED,
+        "token must be recordable: {sha}"
+    );
     body_json(resp).await
 }
 
@@ -182,9 +183,14 @@ async fn recording_and_verifying_need_a_digest() {
             StatusCode::UNPROCESSABLE_ENTITY
         );
         assert_eq!(
-            send(&app, "POST", "/verify/v1/token", Some(json!({"token_sha256": sha})))
-                .await
-                .status(),
+            send(
+                &app,
+                "POST",
+                "/verify/v1/token",
+                Some(json!({"token_sha256": sha}))
+            )
+            .await
+            .status(),
             StatusCode::UNPROCESSABLE_ENTITY
         );
     }
@@ -253,10 +259,7 @@ async fn the_national_scope_returns_the_whole_set() {
     let app = app();
     record(&app, SHA_A).await;
     record(&app, SHA_B).await;
-    let listed = body_json(
-        send(&app, "GET", "/verify/v1/results/national/KE", None).await,
-    )
-    .await;
+    let listed = body_json(send(&app, "GET", "/verify/v1/results/national/KE", None).await).await;
     assert_eq!(listed["count"], 2);
     assert_eq!(listed["scope"], "national");
 }
@@ -269,7 +272,13 @@ async fn the_national_scope_returns_the_whole_set() {
 async fn a_proof_for_an_unrecorded_token_is_404() {
     // Previously `"proof": null` with a note, for any sha.
     let app = app();
-    let resp = send(&app, "GET", &format!("/verify/v1/token/{SHA_A}/proof"), None).await;
+    let resp = send(
+        &app,
+        "GET",
+        &format!("/verify/v1/token/{SHA_A}/proof"),
+        None,
+    )
+    .await;
     assert_eq!(resp.status(), StatusCode::NOT_FOUND);
 }
 
@@ -280,10 +289,19 @@ async fn a_recorded_token_has_a_proof() {
     // With a second token the tree has an interior node, so the proof is real.
     record(&app, SHA_B).await;
     let proof = body_json(
-        send(&app, "GET", &format!("/verify/v1/token/{SHA_A}/proof"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/verify/v1/token/{SHA_A}/proof"),
+            None,
+        )
+        .await,
     )
     .await;
-    assert!(!proof["proof"].as_array().unwrap().is_empty(), "two tokens need a sibling");
+    assert!(
+        !proof["proof"].as_array().unwrap().is_empty(),
+        "two tokens need a sibling"
+    );
     assert_eq!(proof["merkle_root"].as_str().unwrap().len(), 64);
     assert_eq!(proof["tree_size"], 2);
     assert_eq!(proof["tlog_inclusion_proven"], false);
@@ -327,16 +345,23 @@ async fn agents_checked_in_are_counted() {
 async fn a_repeat_check_in_is_flagged_as_duplicate() {
     let app = app();
     let body = json!({"agent_id_hash": "agent-a"});
-    send(&app, "POST", "/verify/v1/queue/STN001/check-in", Some(body.clone())).await;
-    let again = body_json(
-        send(&app, "POST", "/verify/v1/queue/STN001/check-in", Some(body)).await,
+    send(
+        &app,
+        "POST",
+        "/verify/v1/queue/STN001/check-in",
+        Some(body.clone()),
     )
     .await;
+    let again =
+        body_json(send(&app, "POST", "/verify/v1/queue/STN001/check-in", Some(body)).await).await;
     assert_eq!(
         again["duplicate_check_in"], true,
         "a duplicated device presents as a repeat check-in: {again:?}"
     );
-    assert_eq!(again["checked_in"], 1, "a re-entry does not add a second queue slot");
+    assert_eq!(
+        again["checked_in"], 1,
+        "a re-entry does not add a second queue slot"
+    );
 }
 
 #[tokio::test]
@@ -405,7 +430,13 @@ async fn anomalies_are_derived_from_the_queue_state() {
     // Previously `anomalies: []` for any query, which reads as "nothing detected".
     let app = app();
     let body = json!({"agent_id_hash": "agent-a"});
-    send(&app, "POST", "/verify/v1/queue/STN001/check-in", Some(body.clone())).await;
+    send(
+        &app,
+        "POST",
+        "/verify/v1/queue/STN001/check-in",
+        Some(body.clone()),
+    )
+    .await;
     send(&app, "POST", "/verify/v1/queue/STN001/check-in", Some(body)).await;
 
     let anomalies = body_json(send(&app, "GET", "/verify/v1/anomalies", None).await).await;
@@ -436,11 +467,20 @@ async fn the_same_duplicate_raises_the_same_flag() {
     // Otherwise every read of the anomaly list invents new flags.
     let app = app();
     let body = json!({"agent_id_hash": "agent-a"});
-    send(&app, "POST", "/verify/v1/queue/STN001/check-in", Some(body.clone())).await;
+    send(
+        &app,
+        "POST",
+        "/verify/v1/queue/STN001/check-in",
+        Some(body.clone()),
+    )
+    .await;
     send(&app, "POST", "/verify/v1/queue/STN001/check-in", Some(body)).await;
     let first = body_json(send(&app, "GET", "/verify/v1/anomalies", None).await).await;
     let second = body_json(send(&app, "GET", "/verify/v1/anomalies", None).await).await;
-    assert_eq!(first["anomalies"][0]["anomaly_id"], second["anomalies"][0]["anomaly_id"]);
+    assert_eq!(
+        first["anomalies"][0]["anomaly_id"],
+        second["anomalies"][0]["anomaly_id"]
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -456,13 +496,14 @@ async fn a_clone_report_is_recorded_with_its_own_digest() {
         "reported_signature": "sha256:abc",
         "platform": "android"
     });
-    let first = body_json(
-        send(&app, "POST", "/verify/v1/clone-report", Some(body.clone())).await,
-    )
-    .await;
+    let first =
+        body_json(send(&app, "POST", "/verify/v1/clone-report", Some(body.clone())).await).await;
     assert!(!first["report_id"].is_null());
     assert!(
-        first["report_hash"].as_str().unwrap().starts_with("sha256:"),
+        first["report_hash"]
+            .as_str()
+            .unwrap()
+            .starts_with("sha256:"),
         "a filed report carries a digest over its content: {first:?}"
     );
     // Previously the report was minted and returned with nothing recorded, so two
@@ -493,7 +534,9 @@ async fn a_clone_report_without_a_signature_says_so() {
     .await;
     let findings = report["findings"].as_array().unwrap();
     assert!(
-        findings.iter().any(|f| f.as_str().unwrap().contains("signing signature")),
+        findings
+            .iter()
+            .any(|f| f.as_str().unwrap().contains("signing signature")),
         "an unattributable build should be reported: {report:?}"
     );
 }

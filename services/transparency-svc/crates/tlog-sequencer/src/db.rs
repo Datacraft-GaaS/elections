@@ -35,6 +35,9 @@ pub struct LeafRow {
 }
 
 /// Append a leaf and return its assigned index.
+// Parameter list mirrors the transparency-log leaf record one-for-one; grouping
+// them into a struct would change the append call sites for no clarity gain.
+#[allow(clippy::too_many_arguments)]
 pub async fn append_leaf(
     pool: &PgPool,
     domain: Domain,

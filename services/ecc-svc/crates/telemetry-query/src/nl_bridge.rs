@@ -69,7 +69,9 @@ pub trait NlQueryBridge: Send + Sync {
         &'a self,
         english: &'a str,
         actor_svid: &'a str,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<ProposedQuery, NlError>> + Send + 'a>>;
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = Result<ProposedQuery, NlError>> + Send + 'a>,
+    >;
 }
 
 // ---------------------------------------------------------------------------
@@ -83,7 +85,9 @@ impl NlQueryBridge for MockBridge {
         &'a self,
         english: &'a str,
         actor_svid: &'a str,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<ProposedQuery, NlError>> + Send + 'a>> {
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = Result<ProposedQuery, NlError>> + Send + 'a>,
+    > {
         use crate::dsl::{SignalClass, TimeRange};
         use chrono::Utc;
 
@@ -138,8 +142,7 @@ impl LiteLlmBridge {
         Self {
             base_url: std::env::var("EEL_LITELLM_URL")
                 .unwrap_or_else(|_| "http://litellm:4000".into()),
-            model: std::env::var("EEL_TELEMETRY_NL_MODEL")
-                .unwrap_or_else(|_| "llama3".into()),
+            model: std::env::var("EEL_TELEMETRY_NL_MODEL").unwrap_or_else(|_| "llama3".into()),
             client: reqwest::Client::new(),
         }
     }
@@ -190,7 +193,9 @@ impl NlQueryBridge for LiteLlmBridge {
         &'a self,
         english: &'a str,
         actor_svid: &'a str,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<ProposedQuery, NlError>> + Send + 'a>> {
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = Result<ProposedQuery, NlError>> + Send + 'a>,
+    > {
         let english = english.to_string();
         let actor_svid = actor_svid.to_string();
         let base_url = self.base_url.clone();
@@ -198,7 +203,7 @@ impl NlQueryBridge for LiteLlmBridge {
         let client = self.client.clone();
 
         Box::pin(async move {
-        Self::translate_inner(english, actor_svid, base_url, model, client).await
+            Self::translate_inner(english, actor_svid, base_url, model, client).await
         })
     }
 }

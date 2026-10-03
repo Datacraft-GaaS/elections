@@ -83,22 +83,22 @@ fn adjudicator_decision_from_str(s: &str) -> Option<crate::models::AdjudicatorDe
 
 /// Column order of every SELECT/RETURNING over dereg_cases.
 type CaseRow = (
-    Uuid,                      // id
-    Uuid,                      // voter_id
-    Uuid,                      // m35_event_id
-    String,                    // status
-    Option<DateTime<Utc>>,     // notice_dispatched_at
-    Option<DateTime<Utc>>,     // notice_deadline
-    Option<Uuid>,              // appeal_id
-    Option<Uuid>,              // officer_id
-    Option<String>,            // officer_recommendation
-    Option<Uuid>,              // adjudicator_id
-    Option<String>,            // adjudicator_decision
-    Option<DateTime<Utc>>,     // adjudicator_decision_at
-    Option<String>,            // adjudicator_notes
-    Option<DateTime<Utc>>,     // data_minimisation_at
-    Option<Uuid>,              // data_minimisation_officer
-    DateTime<Utc>,             // created_at
+    Uuid,                  // id
+    Uuid,                  // voter_id
+    Uuid,                  // m35_event_id
+    String,                // status
+    Option<DateTime<Utc>>, // notice_dispatched_at
+    Option<DateTime<Utc>>, // notice_deadline
+    Option<Uuid>,          // appeal_id
+    Option<Uuid>,          // officer_id
+    Option<String>,        // officer_recommendation
+    Option<Uuid>,          // adjudicator_id
+    Option<String>,        // adjudicator_decision
+    Option<DateTime<Utc>>, // adjudicator_decision_at
+    Option<String>,        // adjudicator_notes
+    Option<DateTime<Utc>>, // data_minimisation_at
+    Option<Uuid>,          // data_minimisation_officer
+    DateTime<Utc>,         // created_at
 );
 
 const CASE_COLUMNS: &str = "id, voter_id, m35_event_id, status, notice_dispatched_at, \
@@ -130,9 +130,10 @@ fn case_from_row(row: CaseRow) -> Result<DeregistrationCase, ApiError> {
         .ok_or_else(|| ApiError::Internal(format!("unknown case status {status_s}")))?;
     let adjudicator_decision = match adjudicator_decision_s.as_deref() {
         None => None,
-        Some(s) => Some(adjudicator_decision_from_str(s).ok_or_else(|| {
-            ApiError::Internal(format!("unknown adjudicator decision {s}"))
-        })?),
+        Some(s) => Some(
+            adjudicator_decision_from_str(s)
+                .ok_or_else(|| ApiError::Internal(format!("unknown adjudicator decision {s}")))?,
+        ),
     };
 
     Ok(DeregistrationCase {
@@ -180,7 +181,9 @@ async fn create_case(
     Json(body): Json<Value>,
 ) -> Result<(StatusCode, Json<DeregistrationCase>), ApiError> {
     if !body.is_object() {
-        return Err(ApiError::BadRequest("case body must be a JSON object".into()));
+        return Err(ApiError::BadRequest(
+            "case body must be a JSON object".into(),
+        ));
     }
 
     let mut val = body;
@@ -227,7 +230,11 @@ async fn create_case(
     .bind(case.officer_id)
     .bind(&case.officer_recommendation)
     .bind(case.adjudicator_id)
-    .bind(case.adjudicator_decision.as_ref().map(adjudicator_decision_str))
+    .bind(
+        case.adjudicator_decision
+            .as_ref()
+            .map(adjudicator_decision_str),
+    )
     .bind(case.adjudicator_decision_at)
     .bind(&case.adjudicator_notes)
     .bind(case.data_minimisation_at)
@@ -245,12 +252,13 @@ async fn get_case(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<DeregistrationCase>, ApiError> {
-    let row: Option<CaseRow> =
-        sqlx::query_as(&format!("SELECT {CASE_COLUMNS} FROM dereg_cases WHERE id = $1"))
-            .bind(id)
-            .fetch_optional(&state.pool)
-            .await
-            .map_err(|e| ApiError::Internal(e.to_string()))?;
+    let row: Option<CaseRow> = sqlx::query_as(&format!(
+        "SELECT {CASE_COLUMNS} FROM dereg_cases WHERE id = $1"
+    ))
+    .bind(id)
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(|e| ApiError::Internal(e.to_string()))?;
 
     match row {
         Some(row) => Ok(Json(case_from_row(row)?)),
@@ -264,7 +272,9 @@ async fn patch_case(
     Json(body): Json<Value>,
 ) -> Result<Json<DeregistrationCase>, ApiError> {
     let status_val = body.get("status").ok_or_else(|| {
-        ApiError::BadRequest("only status updates are supported: body must be {\"status\": \"...\"}".into())
+        ApiError::BadRequest(
+            "only status updates are supported: body must be {\"status\": \"...\"}".into(),
+        )
     })?;
     let status_str = status_val
         .as_str()

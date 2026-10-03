@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use axum::{routing::{get, post}, Router};
 use crate::handlers::*;
 use crate::store::SharedState;
+use axum::{
+    routing::{get, post},
+    Router,
+};
 
 pub fn build_router(state: SharedState) -> Router {
     Router::new()
@@ -34,6 +37,9 @@ pub fn build_router(state: SharedState) -> Router {
         .route("/api/v1/rts/icr/{job_id}/result", get(get_icr_result))
         .route("/api/v1/rts/audit/{form_id}", get(get_audit))
         .route("/api/v1/rts/ro/disputes", post(create_dispute))
-        .route("/api/v1/rts/ro/disputes/{id}/resolve", post(resolve_dispute))
+        .route(
+            "/api/v1/rts/ro/disputes/{id}/resolve",
+            post(resolve_dispute),
+        )
         .with_state(state)
 }

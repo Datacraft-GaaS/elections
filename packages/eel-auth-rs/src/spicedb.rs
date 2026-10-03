@@ -12,11 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::{
+    audit::{AuditEvent, AuditSink},
+    error::AuthError,
+    subject::Subject,
+};
+use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use crate::{audit::{AuditEvent, AuditSink}, error::AuthError, subject::Subject};
-use serde_json::json;
 
 /// Consistency mode for SpiceDB checks.
 #[derive(Debug, Clone)]
@@ -91,7 +95,11 @@ impl<S: AuditSink> SpiceDbClient<S> {
                     &subject.sub,
                     permission,
                     resource,
-                    if decision == Decision::Allow { "allow" } else { "deny" },
+                    if decision == Decision::Allow {
+                        "allow"
+                    } else {
+                        "deny"
+                    },
                     json!({"cache": "hit", "context": context}),
                 );
                 let _ = self.audit_sink.emit(ev).await;
@@ -99,7 +107,9 @@ impl<S: AuditSink> SpiceDbClient<S> {
             }
         }
 
-        let decision = self.do_check(subject, permission, resource, &consistency, &context).await
+        let decision = self
+            .do_check(subject, permission, resource, &consistency, &context)
+            .await
             .unwrap_or(Decision::Deny);
 
         {
@@ -111,7 +121,11 @@ impl<S: AuditSink> SpiceDbClient<S> {
             &subject.sub,
             permission,
             resource,
-            if decision == Decision::Allow { "allow" } else { "deny" },
+            if decision == Decision::Allow {
+                "allow"
+            } else {
+                "deny"
+            },
             json!({"cache": "miss", "context": context}),
         );
         let _ = self.audit_sink.emit(ev).await;
@@ -132,9 +146,10 @@ impl<S: AuditSink> SpiceDbClient<S> {
             Consistency::AtLeastAsFresh(z) => json!({"atLeastAsFresh": {"token": z}}),
         };
 
-        let (res_type, res_id) = resource.split_once(':')
-            .unwrap_or(("resource", resource));
-        let (sub_type, sub_id) = subject.sub.split_once(':')
+        let (res_type, res_id) = resource.split_once(':').unwrap_or(("resource", resource));
+        let (sub_type, sub_id) = subject
+            .sub
+            .split_once(':')
             .unwrap_or(("user", subject.sub.as_str()));
 
         let body = json!({
@@ -144,13 +159,17 @@ impl<S: AuditSink> SpiceDbClient<S> {
             "subject": {"object": {"objectType": sub_type, "objectId": sub_id}},
         });
 
-        let url = format!("{}/v1/permissions/check", self.endpoint.trim_end_matches('/'));
+        let url = format!(
+            "{}/v1/permissions/check",
+            self.endpoint.trim_end_matches('/')
+        );
         let client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(5))
             .build()
             .map_err(|e| AuthError::Transport(e.to_string()))?;
 
-        let resp = client.post(&url)
+        let resp = client
+            .post(&url)
             .json(&body)
             .send()
             .await
@@ -160,10 +179,14 @@ impl<S: AuditSink> SpiceDbClient<S> {
             return Err(AuthError::SpiceDb(format!("HTTP {}", resp.status())));
         }
 
-        let json: serde_json::Value = resp.json().await
+        let json: serde_json::Value = resp
+            .json()
+            .await
             .map_err(|e| AuthError::SpiceDb(e.to_string()))?;
 
-        let permissionship = json["permissionship"].as_str().unwrap_or("PERMISSIONSHIP_NO_PERMISSION");
+        let permissionship = json["permissionship"]
+            .as_str()
+            .unwrap_or("PERMISSIONSHIP_NO_PERMISSION");
         Ok(if permissionship.contains("HAS_PERMISSION") {
             Decision::Allow
         } else {

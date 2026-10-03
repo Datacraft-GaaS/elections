@@ -14,8 +14,8 @@
 
 pub mod batches;
 pub mod blacklist;
-pub mod spec;
 pub mod health;
+pub mod spec;
 pub mod status;
 
 use crate::state::AppState;

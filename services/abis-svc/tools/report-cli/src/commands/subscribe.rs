@@ -31,10 +31,14 @@ pub async fn run(
         channel: channel.to_string(),
         endpoint: endpoint.to_string(),
     };
-    let resp: Value = client.post_json("/api/v1/reports/subscriptions", &req).await?;
+    let resp: Value = client
+        .post_json("/api/v1/reports/subscriptions", &req)
+        .await?;
     println!(
         "Subscribed: subscription_id={}",
-        resp.get("subscription_id").and_then(|v| v.as_str()).unwrap_or("?")
+        resp.get("subscription_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("?")
     );
     Ok(())
 }

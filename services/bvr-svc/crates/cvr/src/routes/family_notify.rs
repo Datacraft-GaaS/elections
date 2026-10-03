@@ -15,7 +15,6 @@
 use crate::{error::ApiError, models::FamilyNotificationRequest, state::AppState};
 use axum::{extract::State, http::StatusCode, routing::post, Json, Router};
 
-
 pub fn router() -> Router<AppState> {
     Router::new().route("/v1/cvr/family-notify", post(family_notify))
 }

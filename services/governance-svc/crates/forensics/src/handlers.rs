@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::models::*;
+use crate::spec;
+use crate::state::SharedState;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -19,11 +22,10 @@ use axum::{
     Json,
 };
 use tracing::info;
-use crate::models::*;
-use crate::spec;
-use crate::state::SharedState;
 
-pub async fn health() -> impl IntoResponse { StatusCode::OK }
+pub async fn health() -> impl IntoResponse {
+    StatusCode::OK
+}
 
 /// Cycle status transitions are enforced: only a draft cycle may start a run,
 /// and only a complete cycle may publish a replication package or a report.
@@ -106,7 +108,12 @@ pub async fn list_estimates(
     Path(id): Path<String>,
 ) -> axum::response::Response {
     info!(cycle_id = %id, "list_estimates");
-    if !state.cycles.lock().expect("lock poisoned").contains_key(&id) {
+    if !state
+        .cycles
+        .lock()
+        .expect("lock poisoned")
+        .contains_key(&id)
+    {
         return problem(StatusCode::NOT_FOUND, format!("no cycle with id {id}"));
     }
     Json(serde_json::json!({ "estimates": state.estimates_for(&id) })).into_response()
@@ -211,7 +218,10 @@ pub async fn get_public_report(
     let guard = state.reports.lock().expect("lock poisoned");
     match guard.get(&id) {
         Some(r) => Json(r.clone()).into_response(),
-        None => problem(StatusCode::NOT_FOUND, format!("no published report with id {id}")),
+        None => problem(
+            StatusCode::NOT_FOUND,
+            format!("no published report with id {id}"),
+        ),
     }
 }
 
@@ -237,21 +247,24 @@ pub async fn initiate_forensic_investigation(
         updated_at: now,
     };
     let mut guard = state.investigations.lock().expect("lock poisoned");
-    guard.insert(investigation.investigation_id.clone(), investigation.clone());
+    guard.insert(
+        investigation.investigation_id.clone(),
+        investigation.clone(),
+    );
     drop(guard);
     (StatusCode::CREATED, Json(investigation)).into_response()
 }
 
 /// GET /api/v1/governance/forensics/investigations — list investigations.
-pub async fn list_forensic_investigations(
-    State(state): State<SharedState>,
-) -> impl IntoResponse {
+pub async fn list_forensic_investigations(State(state): State<SharedState>) -> impl IntoResponse {
     info!("list_forensic_investigations");
     let guard = state.investigations.lock().expect("lock poisoned");
     let mut items: Vec<spec::Investigation> = guard.values().cloned().collect();
     drop(guard);
     items.sort_by(|a, b| a.created_at.cmp(&b.created_at));
-    Json(serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }))
+    Json(
+        serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }),
+    )
 }
 
 /// GET /api/v1/governance/forensics/investigations/{investigation_id} — fetch one.
@@ -279,7 +292,12 @@ pub async fn attach_evidence(
     Json(req): Json<spec::EvidenceAttachmentRequest>,
 ) -> impl IntoResponse {
     info!(investigation_id, "attach_evidence");
-    if !state.investigations.lock().expect("lock poisoned").contains_key(&investigation_id) {
+    if !state
+        .investigations
+        .lock()
+        .expect("lock poisoned")
+        .contains_key(&investigation_id)
+    {
         return (
             StatusCode::NOT_FOUND,
             Json(serde_json::json!({"detail": "investigation not found"})),
@@ -296,7 +314,10 @@ pub async fn attach_evidence(
         attached_at: chrono::Utc::now().to_rfc3339(),
     };
     let mut guard = state.evidence.lock().expect("lock poisoned");
-    guard.entry(investigation_id).or_default().push(attachment.clone());
+    guard
+        .entry(investigation_id)
+        .or_default()
+        .push(attachment.clone());
     drop(guard);
     (StatusCode::CREATED, Json(attachment)).into_response()
 }
@@ -309,7 +330,12 @@ pub async fn add_forensic_finding(
     Json(req): Json<spec::FindingRequest>,
 ) -> impl IntoResponse {
     info!(investigation_id, "add_forensic_finding");
-    if !state.investigations.lock().expect("lock poisoned").contains_key(&investigation_id) {
+    if !state
+        .investigations
+        .lock()
+        .expect("lock poisoned")
+        .contains_key(&investigation_id)
+    {
         return (
             StatusCode::NOT_FOUND,
             Json(serde_json::json!({"detail": "investigation not found"})),
@@ -326,7 +352,10 @@ pub async fn add_forensic_finding(
         created_at: chrono::Utc::now().to_rfc3339(),
     };
     let mut guard = state.findings.lock().expect("lock poisoned");
-    guard.entry(investigation_id).or_default().push(finding.clone());
+    guard
+        .entry(investigation_id)
+        .or_default()
+        .push(finding.clone());
     drop(guard);
     (StatusCode::CREATED, Json(finding)).into_response()
 }

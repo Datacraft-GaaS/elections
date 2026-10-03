@@ -64,7 +64,9 @@ async fn file_appeal(
     Json(body): Json<Value>,
 ) -> Result<(StatusCode, Json<AppealRecord>), ApiError> {
     if !body.is_object() {
-        return Err(ApiError::BadRequest("appeal body must be a JSON object".into()));
+        return Err(ApiError::BadRequest(
+            "appeal body must be a JSON object".into(),
+        ));
     }
 
     let mut val = body;
@@ -102,7 +104,9 @@ async fn file_appeal(
         )));
     }
     if notice_deadline.is_some_and(|deadline| Utc::now() > deadline) {
-        return Err(ApiError::Conflict("the 30-day appeal window has closed".into()));
+        return Err(ApiError::Conflict(
+            "the 30-day appeal window has closed".into(),
+        ));
     }
 
     sqlx::query(

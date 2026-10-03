@@ -30,7 +30,11 @@ pub struct EventReplay<'a> {
 
 impl<'a> EventReplay<'a> {
     pub fn new(events: &'a [StoredEvent], after: Option<Hlc>) -> Self {
-        Self { events, pos: 0, after }
+        Self {
+            events,
+            pos: 0,
+            after,
+        }
     }
 }
 
@@ -74,11 +78,7 @@ impl<'store> SnapshotTailReplay<'store> {
     /// If a snapshot is found, `restore_fn` converts it to `A`; events after
     /// that snapshot version are then applied.  Without a snapshot, all events
     /// from the beginning are applied to `A::default()`.
-    pub async fn rebuild<A, F>(
-        &self,
-        stream_id: Uuid,
-        restore_fn: F,
-    ) -> Result<A, EventStoreError>
+    pub async fn rebuild<A, F>(&self, stream_id: Uuid, restore_fn: F) -> Result<A, EventStoreError>
     where
         A: Aggregate + Default,
         F: FnOnce(AggregateSnapshot) -> A,

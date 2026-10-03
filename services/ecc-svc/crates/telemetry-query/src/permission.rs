@@ -50,7 +50,11 @@ pub async fn check_role(actor_svid: &str, role: &str) -> Result<(), PermissionEr
         });
     }
 
-    tracing::debug!(actor = actor_svid, role = role, "permission check (stub: allowed)");
+    tracing::debug!(
+        actor = actor_svid,
+        role = role,
+        "permission check (stub: allowed)"
+    );
     Ok(())
 }
 

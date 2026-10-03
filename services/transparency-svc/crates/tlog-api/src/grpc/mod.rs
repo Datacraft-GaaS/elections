@@ -83,9 +83,10 @@ impl TransparencyLog for TlogGrpcService {
         &self,
         request: Request<ProofQuery>,
     ) -> Result<Response<ProofResponse>, Status> {
-        let query = request.into_inner().query.ok_or_else(|| {
-            Status::invalid_argument("query must be inclusion or consistency")
-        })?;
+        let query = request
+            .into_inner()
+            .query
+            .ok_or_else(|| Status::invalid_argument("query must be inclusion or consistency"))?;
         match query {
             transparency::proof_query::Query::Inclusion(q) => {
                 let leaf_hash = hex::decode(&q.leaf_hash)

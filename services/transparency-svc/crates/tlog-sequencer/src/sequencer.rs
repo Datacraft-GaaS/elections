@@ -47,6 +47,9 @@ impl Sequencer {
     /// Append a leaf to the log.
     ///
     /// Returns `None` if the rate limiter is saturated (caller should respond 429).
+    // Mirrors `db::append_leaf`'s leaf record; kept positional to match the
+    // audit-chain field order.
+    #[allow(clippy::too_many_arguments)]
     pub async fn append(
         &self,
         domain: Domain,
@@ -109,7 +112,7 @@ impl Sequencer {
                 leaf_index: index,
                 tree_size: new_size,
                 root_hash: hex::encode(tree.root()),
-                hashes: path.iter().map(|h| hex::encode(h)).collect(),
+                hashes: path.iter().map(hex::encode).collect(),
             },
         }))
     }

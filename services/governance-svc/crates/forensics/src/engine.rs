@@ -67,12 +67,30 @@ mod tests {
     fn wire_values_match_the_contract() {
         // Pinned because `SCREAMING_SNAKE_CASE` would turn `DiD` into `DI_D`,
         // which is an accident of the variant name rather than a chosen value.
-        assert_eq!(serde_json::to_string(&AnalysisMethod::DiD).unwrap(), "\"DIFF_IN_DIFF\"");
-        assert_eq!(serde_json::to_string(&AnalysisMethod::Rd).unwrap(), "\"RD\"");
-        assert_eq!(serde_json::from_str::<AnalysisMethod>("\"DIFF_IN_DIFF\"").unwrap(), AnalysisMethod::DiD);
-        assert_eq!(serde_json::from_str::<AnalysisMethod>("\"DI_D\"").unwrap_err().to_string().contains("DIFF_IN_DIFF"), true);
+        assert_eq!(
+            serde_json::to_string(&AnalysisMethod::DiD).unwrap(),
+            "\"DIFF_IN_DIFF\""
+        );
+        assert_eq!(
+            serde_json::to_string(&AnalysisMethod::Rd).unwrap(),
+            "\"RD\""
+        );
+        assert_eq!(
+            serde_json::from_str::<AnalysisMethod>("\"DIFF_IN_DIFF\"").unwrap(),
+            AnalysisMethod::DiD
+        );
+        assert_eq!(
+            serde_json::from_str::<AnalysisMethod>("\"DI_D\"")
+                .unwrap_err()
+                .to_string()
+                .contains("DIFF_IN_DIFF"),
+            true
+        );
         // CycleStatus is the one enum in this file serialized snake_case.
-        assert_eq!(serde_json::to_string(&CycleStatus::Running).unwrap(), "\"running\"");
+        assert_eq!(
+            serde_json::to_string(&CycleStatus::Running).unwrap(),
+            "\"running\""
+        );
         assert_eq!(AnalysisMethod::DiD.wire(), "DIFF_IN_DIFF");
         assert_eq!(CycleStatus::Draft.wire(), "draft");
     }

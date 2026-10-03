@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::models::*;
+use crate::spec;
+use crate::state::SharedState;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -19,11 +22,10 @@ use axum::{
     Json,
 };
 use tracing::info;
-use crate::models::*;
-use crate::spec;
-use crate::state::SharedState;
 
-pub async fn health() -> impl IntoResponse { StatusCode::OK }
+pub async fn health() -> impl IntoResponse {
+    StatusCode::OK
+}
 
 /// A problem+json response.
 fn problem(status: StatusCode, detail: impl Into<String>) -> axum::response::Response {
@@ -206,7 +208,10 @@ pub async fn publish_joint_statement(
     State(state): State<SharedState>,
     Json(req): Json<PublishJointStatementRequest>,
 ) -> axum::response::Response {
-    info!(mission_count = req.participating_mission_ids.len(), "publish_joint_statement");
+    info!(
+        mission_count = req.participating_mission_ids.len(),
+        "publish_joint_statement"
+    );
     if !crate::engine::ObserverEngine::validate_joint_statement_participants(
         &req.participating_mission_ids,
     ) {
@@ -288,7 +293,9 @@ pub async fn list_observer_missions(State(state): State<SharedState>) -> impl In
     let mut items: Vec<spec::ObserverMission> = guard.values().cloned().collect();
     drop(guard);
     items.sort_by(|a, b| a.created_at.cmp(&b.created_at));
-    Json(serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }))
+    Json(
+        serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }),
+    )
 }
 
 /// GET /api/v1/governance/intl-observer/missions/{mission_id} — fetch one mission.
@@ -316,7 +323,12 @@ pub async fn submit_observer_report(
     Json(req): Json<spec::ObserverReportRequest>,
 ) -> impl IntoResponse {
     info!(mission_id, "submit_observer_report");
-    if !state.missions.lock().expect("lock poisoned").contains_key(&mission_id) {
+    if !state
+        .missions
+        .lock()
+        .expect("lock poisoned")
+        .contains_key(&mission_id)
+    {
         return (
             StatusCode::NOT_FOUND,
             Json(serde_json::json!({"detail": "mission not found"})),
@@ -348,5 +360,7 @@ pub async fn list_observer_reports(
     let guard = state.reports.lock().expect("lock poisoned");
     let items = guard.get(&mission_id).cloned().unwrap_or_default();
     drop(guard);
-    Json(serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }))
+    Json(
+        serde_json::json!({ "items": items, "meta": { "page": 1, "page_size": items.len(), "total": items.len(), "total_pages": 1 } }),
+    )
 }

@@ -71,11 +71,7 @@ fn main() {
     }
 
     /// Filtered variant: `keep(name)` decides per `.c` file.
-    fn add_dir_filter(
-        cc: &mut cc::Build,
-        dir: &Path,
-        keep: &dyn Fn(&str) -> bool,
-    ) {
+    fn add_dir_filter(cc: &mut cc::Build, dir: &Path, keep: &dyn Fn(&str) -> bool) {
         let entries = std::fs::read_dir(dir).unwrap_or_else(|e| {
             panic!(
                 "missing vendored NBIS dir {}: {} (see vendor/README.provenance)",
@@ -156,9 +152,9 @@ fn main() {
         &mut cc,
         &vendor.join("ijg").join("src").join("lib").join("jpegb"),
         &[
-            "cjpeg", "djpeg", "ckconfig", "example", "ansi2knr", "coderule",
-            "cdjpeg", "rdjpgcom", "wrjpgcom", "rdswitch", "jpegtran",
-            "transupp", "jmemdos", "jmemmac", "jmemansi", "jmemname",
+            "cjpeg", "djpeg", "ckconfig", "example", "ansi2knr", "coderule", "cdjpeg", "rdjpgcom",
+            "wrjpgcom", "rdswitch", "jpegtran", "transupp", "jmemdos", "jmemmac", "jmemansi",
+            "jmemname",
         ],
     );
     cc.include(vendor.join("ijg").join("src").join("lib").join("jpegb"));

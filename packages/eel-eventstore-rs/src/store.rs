@@ -24,6 +24,18 @@ use crate::{
     schema::CREATE_SCHEMA_SQL,
 };
 
+/// Raw `eel_events` row as selected by the `stream_version, id, event_type,
+/// payload, prev_hash, hlc, recorded_at` projections below.
+type EventRow = (
+    i64,
+    Uuid,
+    String,
+    serde_json::Value,
+    Option<String>,
+    String,
+    chrono::DateTime<Utc>,
+);
+
 /// Postgres-backed event store.
 pub struct EventStore {
     pool: PgPool,
@@ -41,9 +53,7 @@ impl EventStore {
 
     /// Run the DDL against the pool (idempotent; uses `CREATE ... IF NOT EXISTS`).
     pub async fn migrate(&self) -> Result<(), EventStoreError> {
-        sqlx::raw_sql(CREATE_SCHEMA_SQL)
-            .execute(&self.pool)
-            .await?;
+        sqlx::raw_sql(CREATE_SCHEMA_SQL).execute(&self.pool).await?;
         Ok(())
     }
 
@@ -110,55 +120,53 @@ impl EventStore {
         stream_id: Uuid,
         after: Option<Hlc>,
     ) -> Result<Vec<StoredEvent>, EventStoreError> {
-        let rows: Vec<(i64, Uuid, String, serde_json::Value, Option<String>, String, chrono::DateTime<Utc>)> =
-            if let Some(hlc) = after {
-                let hlc_str = hlc.to_string();
-                sqlx::query_as(
-                    r#"SELECT stream_version, id, event_type, payload, prev_hash, hlc, recorded_at
+        let rows: Vec<EventRow> = if let Some(hlc) = after {
+            let hlc_str = hlc.to_string();
+            sqlx::query_as(
+                r#"SELECT stream_version, id, event_type, payload, prev_hash, hlc, recorded_at
                        FROM eel_events
                        WHERE stream_id = $1 AND hlc > $2
                        ORDER BY stream_version ASC"#,
-                )
-                .bind(stream_id)
-                .bind(hlc_str)
-                .fetch_all(&self.pool)
-                .await?
-            } else {
-                sqlx::query_as(
-                    r#"SELECT stream_version, id, event_type, payload, prev_hash, hlc, recorded_at
+            )
+            .bind(stream_id)
+            .bind(hlc_str)
+            .fetch_all(&self.pool)
+            .await?
+        } else {
+            sqlx::query_as(
+                r#"SELECT stream_version, id, event_type, payload, prev_hash, hlc, recorded_at
                        FROM eel_events
                        WHERE stream_id = $1
                        ORDER BY stream_version ASC"#,
-                )
-                .bind(stream_id)
-                .fetch_all(&self.pool)
-                .await?
-            };
+            )
+            .bind(stream_id)
+            .fetch_all(&self.pool)
+            .await?
+        };
 
         let events = rows
             .into_iter()
-            .map(|(stream_version, id, event_type, payload, prev_hash, hlc, recorded_at)| {
-                StoredEvent {
-                    stream_id,
-                    stream_version,
-                    id,
-                    event_type,
-                    payload,
-                    prev_hash,
-                    hlc,
-                    recorded_at,
-                }
-            })
+            .map(
+                |(stream_version, id, event_type, payload, prev_hash, hlc, recorded_at)| {
+                    StoredEvent {
+                        stream_id,
+                        stream_version,
+                        id,
+                        event_type,
+                        payload,
+                        prev_hash,
+                        hlc,
+                        recorded_at,
+                    }
+                },
+            )
             .collect();
 
         Ok(events)
     }
 
     /// Persist a snapshot, overwriting any prior snapshot for the same stream.
-    pub async fn save_snapshot(
-        &self,
-        snap: AggregateSnapshot,
-    ) -> Result<(), EventStoreError> {
+    pub async fn save_snapshot(&self, snap: AggregateSnapshot) -> Result<(), EventStoreError> {
         sqlx::query(
             r#"INSERT INTO eel_snapshots (stream_id, stream_version, state, taken_at)
                VALUES ($1, $2, $3, $4)
@@ -190,23 +198,21 @@ impl EventStore {
         .fetch_optional(&self.pool)
         .await?;
 
-        Ok(row.map(|(stream_version, state, taken_at)| AggregateSnapshot {
-            stream_id,
-            stream_version,
-            state,
-            taken_at,
-        }))
+        Ok(
+            row.map(|(stream_version, state, taken_at)| AggregateSnapshot {
+                stream_id,
+                stream_version,
+                state,
+                taken_at,
+            }),
+        )
     }
 
     /// Replay all events into an aggregate, optionally starting from a snapshot.
     ///
     /// If a snapshot is found, it is passed to `restore_fn` to reconstruct the
     /// aggregate, then only events after the snapshot version are applied.
-    pub async fn replay<A, F>(
-        &self,
-        stream_id: Uuid,
-        restore_fn: F,
-    ) -> Result<A, EventStoreError>
+    pub async fn replay<A, F>(&self, stream_id: Uuid, restore_fn: F) -> Result<A, EventStoreError>
     where
         A: Aggregate + Default,
         F: FnOnce(AggregateSnapshot) -> A,
@@ -215,7 +221,9 @@ impl EventStore {
         if let Some(s) = snap {
             let snap_version = s.stream_version;
             let mut agg = restore_fn(s);
-            let events = self.load_events_after_version(stream_id, snap_version).await?;
+            let events = self
+                .load_events_after_version(stream_id, snap_version)
+                .await?;
             for ev in events {
                 agg.apply(&ev)?;
             }
@@ -235,32 +243,33 @@ impl EventStore {
         stream_id: Uuid,
         after_version: i64,
     ) -> Result<Vec<StoredEvent>, EventStoreError> {
-        let rows: Vec<(i64, Uuid, String, serde_json::Value, Option<String>, String, chrono::DateTime<Utc>)> =
-            sqlx::query_as(
-                r#"SELECT stream_version, id, event_type, payload, prev_hash, hlc, recorded_at
+        let rows: Vec<EventRow> = sqlx::query_as(
+            r#"SELECT stream_version, id, event_type, payload, prev_hash, hlc, recorded_at
                    FROM eel_events
                    WHERE stream_id = $1 AND stream_version > $2
                    ORDER BY stream_version ASC"#,
-            )
-            .bind(stream_id)
-            .bind(after_version)
-            .fetch_all(&self.pool)
-            .await?;
+        )
+        .bind(stream_id)
+        .bind(after_version)
+        .fetch_all(&self.pool)
+        .await?;
 
         Ok(rows
             .into_iter()
-            .map(|(stream_version, id, event_type, payload, prev_hash, hlc, recorded_at)| {
-                StoredEvent {
-                    stream_id,
-                    stream_version,
-                    id,
-                    event_type,
-                    payload,
-                    prev_hash,
-                    hlc,
-                    recorded_at,
-                }
-            })
+            .map(
+                |(stream_version, id, event_type, payload, prev_hash, hlc, recorded_at)| {
+                    StoredEvent {
+                        stream_id,
+                        stream_version,
+                        id,
+                        event_type,
+                        payload,
+                        prev_hash,
+                        hlc,
+                        recorded_at,
+                    }
+                },
+            )
             .collect())
     }
 }

@@ -137,7 +137,12 @@ fn rfid_error_response(err: RfidError) -> impl IntoResponse {
     struct ErrorBody {
         error: String,
     }
-    (status, Json(ErrorBody { error: err.to_string() }))
+    (
+        status,
+        Json(ErrorBody {
+            error: err.to_string(),
+        }),
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -182,7 +187,11 @@ async fn post_pair_tag(
     let tag = match crate::repository::fetch_tag(&state.pool, tag_id).await {
         Ok(Some(t)) => t,
         Ok(None) => {
-            return (StatusCode::NOT_FOUND, Json(serde_json::json!({"error": "tag not found"}))).into_response();
+            return (
+                StatusCode::NOT_FOUND,
+                Json(serde_json::json!({"error": "tag not found"})),
+            )
+                .into_response();
         }
         Err(e) => return rfid_error_response(e).into_response(),
     };
@@ -215,7 +224,11 @@ async fn post_pair_tag(
         return rfid_error_response(e).into_response();
     }
 
-    (StatusCode::OK, Json(serde_json::json!({"paired_with_box": dto.box_body_id.to_string()}))).into_response()
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({"paired_with_box": dto.box_body_id.to_string()})),
+    )
+        .into_response()
 }
 
 async fn post_ingest_read(
@@ -225,7 +238,11 @@ async fn post_ingest_read(
     // Full implementation wires IngestRequest to ingest_read_pure + DB write.
     // Stubbed to avoid requiring live HSM / Valkey in the API layer.
     // The pure logic is tested directly in rfid_test.rs.
-    (StatusCode::ACCEPTED, Json(serde_json::json!({"status": "accepted"}))).into_response()
+    (
+        StatusCode::ACCEPTED,
+        Json(serde_json::json!({"status": "accepted"})),
+    )
+        .into_response()
 }
 
 async fn post_transition(
@@ -282,10 +299,7 @@ async fn post_transition(
             this_hash: vec![],
             transitioned_at: Utc::now(),
         };
-        let hash = crate::hash_chain::compute_this_hash(
-            prev_hash.as_deref().unwrap_or(&[]),
-            &t,
-        );
+        let hash = crate::hash_chain::compute_this_hash(prev_hash.as_deref().unwrap_or(&[]), &t);
         t.this_hash = hash.to_vec();
         t
     };
@@ -296,11 +310,15 @@ async fn post_transition(
 
     crate::metrics::inc_state_transitions(from.as_str(), to.as_str());
 
-    (StatusCode::CREATED, Json(serde_json::json!({
-        "transition_id": new_t.transition_id.to_string(),
-        "from_state": from.as_str(),
-        "to_state": to.as_str(),
-    }))).into_response()
+    (
+        StatusCode::CREATED,
+        Json(serde_json::json!({
+            "transition_id": new_t.transition_id.to_string(),
+            "from_state": from.as_str(),
+            "to_state": to.as_str(),
+        })),
+    )
+        .into_response()
 }
 
 async fn get_tag_history(
@@ -350,6 +368,9 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/rfid/tags/{id}/transition", post(post_transition))
         .route("/v1/rfid/tags/{id}/history", get(get_tag_history))
         .route("/v1/rfid/tamper-alerts", get(get_tamper_alerts))
-        .route("/v1/rfid/tamper-alerts/{id}/resolve", patch(patch_resolve_alert))
+        .route(
+            "/v1/rfid/tamper-alerts/{id}/resolve",
+            patch(patch_resolve_alert),
+        )
         .with_state(state)
 }

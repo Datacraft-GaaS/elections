@@ -49,7 +49,10 @@ impl BlacklistService {
                 .bind(&entry.card_number)
                 .fetch_optional(&mut *tx)
                 .await?;
-        if existing.as_ref().is_some_and(|(reason,)| reason == &entry.reason) {
+        if existing
+            .as_ref()
+            .is_some_and(|(reason,)| reason == &entry.reason)
+        {
             tx.commit().await?;
             tracing::debug!(card_number = %entry.card_number, "blacklist entry unchanged");
             return Ok(());

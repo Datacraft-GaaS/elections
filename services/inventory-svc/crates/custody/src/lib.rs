@@ -16,8 +16,16 @@
 #![warn(missing_docs)]
 /// Domain aggregates for custody.
 pub mod domain;
+/// Domain events.
+pub mod events;
+/// Geo RBAC helpers.
+pub mod geo_rbac;
 /// HTTP handlers for custody contract.
 pub mod handlers;
+/// Merkle anchoring.
+pub mod merkle;
+/// RFID integration.
+pub mod rfid;
 /// HTTP router.
 pub mod router;
 /// Typed models for `custody/openapi.yaml`.
@@ -26,11 +34,3 @@ pub mod spec;
 pub mod state;
 /// Postgres + memory store (Store enum).
 pub mod store;
-/// Domain events.
-pub mod events;
-/// Geo RBAC helpers.
-pub mod geo_rbac;
-/// Merkle anchoring.
-pub mod merkle;
-/// RFID integration.
-pub mod rfid;

@@ -19,23 +19,23 @@
 use chrono::{Duration, Utc};
 use eel_field_mobile_telemetry_ingest::{
     alert_engine::{evaluate, AlertCandidate},
-    batch::{BatchItemResult, ingest_batch},
+    batch::{ingest_batch, BatchItemResult},
     domain::{
-        AlertClass, ExitReason, MotionClass, Severity, SignalClass, TelemetrySignal,
-        TelemetrySession,
+        AlertClass, ExitReason, MotionClass, Severity, SignalClass, TelemetrySession,
+        TelemetrySignal,
     },
-    dwell_computer::{LocationPing, compute_dwells},
+    dwell_computer::{compute_dwells, LocationPing},
     error::TelemetryError,
     events::{
-        TELEMETRY_ALERT_V1, TELEMETRY_SESSION_CLOSED_V1, TELEMETRY_SESSION_OPENED_V1,
-        TELEMETRY_SIGNAL_V1, telemetry_alert_data, telemetry_session_closed_data,
-        telemetry_session_opened_data, telemetry_signal_data,
+        telemetry_alert_data, telemetry_session_closed_data, telemetry_session_opened_data,
+        telemetry_signal_data, TELEMETRY_ALERT_V1, TELEMETRY_SESSION_CLOSED_V1,
+        TELEMETRY_SESSION_OPENED_V1, TELEMETRY_SIGNAL_V1,
     },
-    frames::{MovementSample, classify_motion, downsample},
+    frames::{classify_motion, downsample, MovementSample},
     hash_chain::{compute_this_hash, verify_chain},
     hmac_verify::{compute_hmac, verify_hmac},
-    ingest::{IngestRequest, ingest_signal_pure},
-    merkle_snapshot::{TlogClient, compute_merkle_root, take_snapshot},
+    ingest::{ingest_signal_pure, IngestRequest},
+    merkle_snapshot::{compute_merkle_root, take_snapshot, TlogClient},
     replay_defence::{InMemoryNonceStore, NonceStore, REPLAY_WINDOW},
 };
 use uuid::Uuid;
@@ -73,7 +73,11 @@ fn make_signal(
         occurred_at: now,
         ingested_at: now,
         monotonic_counter: counter,
-        prev_hash: if prev_hash.is_empty() { None } else { Some(prev_hash.clone()) },
+        prev_hash: if prev_hash.is_empty() {
+            None
+        } else {
+            Some(prev_hash.clone())
+        },
         this_hash: vec![],
         hmac_signature: vec![0u8; 32],
         server_signature: None,
@@ -106,7 +110,11 @@ fn make_ingest_request(
         payload,
         occurred_at: Utc::now(),
         monotonic_counter: counter,
-        prev_hash: if last_hash.is_empty() { None } else { Some(last_hash.clone()) },
+        prev_hash: if last_hash.is_empty() {
+            None
+        } else {
+            Some(last_hash.clone())
+        },
         hmac_signature: hmac_sig,
         nonce,
         trace_id: None,
@@ -224,16 +232,22 @@ fn test_replay_expired_nonce_accepted() {
     let past = Utc::now() - REPLAY_WINDOW - Duration::seconds(10);
     store.check_and_record("dev-1", b"old-nonce", past).unwrap();
     // Same nonce is now beyond the window; should be accepted.
-    assert!(store.check_and_record("dev-1", b"old-nonce", Utc::now()).is_ok());
+    assert!(store
+        .check_and_record("dev-1", b"old-nonce", Utc::now())
+        .is_ok());
 }
 
 #[test]
 fn test_replay_different_device_same_nonce_accepted() {
     let mut store = InMemoryNonceStore::new();
     let now = Utc::now();
-    store.check_and_record("dev-1", b"shared-nonce", now).unwrap();
+    store
+        .check_and_record("dev-1", b"shared-nonce", now)
+        .unwrap();
     // Same nonce for a different device must not be rejected.
-    assert!(store.check_and_record("dev-2", b"shared-nonce", now).is_ok());
+    assert!(store
+        .check_and_record("dev-2", b"shared-nonce", now)
+        .is_ok());
 }
 
 // ---------------------------------------------------------------------------
@@ -284,7 +298,14 @@ fn test_ingest_monotonic_counter_out_of_order_rejected() {
     let server_key = make_server_key();
     let device_id = Uuid::now_v7();
     // last_known_counter = 5, but we send counter = 3.
-    let req = make_ingest_request(device_id, SignalClass::Location, 3, 5, vec![0xAA; 32], &secret);
+    let req = make_ingest_request(
+        device_id,
+        SignalClass::Location,
+        3,
+        5,
+        vec![0xAA; 32],
+        &secret,
+    );
     let mut store = InMemoryNonceStore::new();
     let err = ingest_signal_pure(&req, &mut store, &server_key);
     assert!(matches!(err, Err(TelemetryError::CounterOutOfOrder { .. })));
@@ -308,7 +329,14 @@ fn test_ingest_counter_equal_to_last_rejected() {
     let server_key = make_server_key();
     let device_id = Uuid::now_v7();
     // counter == last_known_counter (not strictly greater).
-    let req = make_ingest_request(device_id, SignalClass::Activity, 5, 5, vec![0xBB; 32], &secret);
+    let req = make_ingest_request(
+        device_id,
+        SignalClass::Activity,
+        5,
+        5,
+        vec![0xBB; 32],
+        &secret,
+    );
     let mut store = InMemoryNonceStore::new();
     let err = ingest_signal_pure(&req, &mut store, &server_key);
     assert!(matches!(err, Err(TelemetryError::CounterOutOfOrder { .. })));
@@ -323,12 +351,22 @@ fn test_batch_over_limit_rejected() {
     let requests: Vec<_> = (0..1001)
         .map(|i| {
             let secret = make_secret();
-            make_ingest_request(Uuid::now_v7(), SignalClass::Battery, i as i64 + 1, -1, vec![], &secret)
+            make_ingest_request(
+                Uuid::now_v7(),
+                SignalClass::Battery,
+                i as i64 + 1,
+                -1,
+                vec![],
+                &secret,
+            )
         })
         .collect();
     let mut store = InMemoryNonceStore::new();
     let err = ingest_batch(requests, &mut store, &make_server_key());
-    assert!(matches!(err, Err(TelemetryError::BatchTooLarge { count: 1001 })));
+    assert!(matches!(
+        err,
+        Err(TelemetryError::BatchTooLarge { count: 1001 })
+    ));
 }
 
 #[test]
@@ -341,8 +379,14 @@ fn test_batch_partial_success() {
     let req_ok = make_ingest_request(device_id, SignalClass::Location, 1, -1, vec![], &secret);
 
     // Second request: corrupt HMAC -> will fail.
-    let mut req_bad =
-        make_ingest_request(device_id, SignalClass::Battery, 2, 1, vec![0xCC; 32], &secret);
+    let mut req_bad = make_ingest_request(
+        device_id,
+        SignalClass::Battery,
+        2,
+        1,
+        vec![0xCC; 32],
+        &secret,
+    );
     req_bad.hmac_signature = vec![0xFF; 32];
     req_bad.nonce = vec![0xAB; 4]; // fresh nonce to avoid replay rejection first
 
@@ -361,7 +405,14 @@ fn test_batch_all_accepted() {
     // 3 different devices, counter 1 each.
     let requests: Vec<_> = (0..3)
         .map(|_| {
-            make_ingest_request(Uuid::now_v7(), SignalClass::Activity, 1, -1, vec![], &secret)
+            make_ingest_request(
+                Uuid::now_v7(),
+                SignalClass::Activity,
+                1,
+                -1,
+                vec![],
+                &secret,
+            )
         })
         .collect();
 
@@ -413,8 +464,21 @@ fn make_sample_at(
     }
 }
 
-fn make_sample(device_id: Uuid, offset_ms: i64, accel_x: f32, accel_y: f32, accel_z: f32) -> MovementSample {
-    make_sample_at(frame_base(), device_id, offset_ms, accel_x, accel_y, accel_z)
+fn make_sample(
+    device_id: Uuid,
+    offset_ms: i64,
+    accel_x: f32,
+    accel_y: f32,
+    accel_z: f32,
+) -> MovementSample {
+    make_sample_at(
+        frame_base(),
+        device_id,
+        offset_ms,
+        accel_x,
+        accel_y,
+        accel_z,
+    )
 }
 
 #[test]
@@ -423,8 +487,9 @@ fn test_downsample_single_second_produces_one_frame() {
     // 5 samples all within the same second (< 1000ms apart), anchored to a
     // fixed instant so the result does not depend on the wall clock.
     let base = frame_base();
-    let samples: Vec<_> =
-        (0..5).map(|i| make_sample_at(base, device_id, i * 100, 0.1, 0.0, 9.81)).collect();
+    let samples: Vec<_> = (0..5)
+        .map(|i| make_sample_at(base, device_id, i * 100, 0.1, 0.0, 9.81))
+        .collect();
     let frames = downsample(samples);
     assert_eq!(frames.len(), 1);
     assert_eq!(frames[0].device_id, device_id);
@@ -453,7 +518,11 @@ fn test_downsample_averages_correctly() {
     let frames = downsample(vec![s1, s2]);
     assert_eq!(frames.len(), 1);
     let f = &frames[0];
-    assert!((f.accel_x_avg - 2.0).abs() < 0.01, "accel_x_avg should be 2.0, got {}", f.accel_x_avg);
+    assert!(
+        (f.accel_x_avg - 2.0).abs() < 0.01,
+        "accel_x_avg should be 2.0, got {}",
+        f.accel_x_avg
+    );
     assert!((f.accel_y_avg - 3.0).abs() < 0.01);
     assert!((f.accel_z_avg - 4.0).abs() < 0.01);
 }
@@ -480,7 +549,11 @@ fn test_motion_class_running_via_max_g() {
 // Alert rule engine tests
 // ---------------------------------------------------------------------------
 
-fn make_signal_for_alert(device_id: Uuid, class: SignalClass, payload: serde_json::Value) -> TelemetrySignal {
+fn make_signal_for_alert(
+    device_id: Uuid,
+    class: SignalClass,
+    payload: serde_json::Value,
+) -> TelemetrySignal {
     let now = Utc::now();
     TelemetrySignal {
         signal_id: Uuid::now_v7(),
@@ -553,15 +626,13 @@ fn test_alert_login_time_anomaly_midnight() {
     let device_id = Uuid::now_v7();
     let now = Utc::now();
     // Force occurred_at to midnight UTC (hour 0).
-    let midnight = now
-        .date_naive()
-        .and_hms_opt(0, 30, 0)
-        .unwrap()
-        .and_utc();
+    let midnight = now.date_naive().and_hms_opt(0, 30, 0).unwrap().and_utc();
     let mut sig = make_signal_for_alert(device_id, SignalClass::LoginLogout, serde_json::json!({}));
     sig.occurred_at = midnight;
     let alerts = evaluate(&sig);
-    assert!(alerts.iter().any(|a| a.class == AlertClass::LoginTimeAnomaly));
+    assert!(alerts
+        .iter()
+        .any(|a| a.class == AlertClass::LoginTimeAnomaly));
 }
 
 #[test]
@@ -734,12 +805,23 @@ fn test_session_unknown_exit_reason_is_none() {
 #[test]
 fn test_signal_class_roundtrip() {
     let classes = [
-        "location", "time", "activity", "proximal_rfid", "movement",
-        "login_logout", "read", "write", "battery", "lock_unlock",
-        "drop", "network", "attestation",
+        "location",
+        "time",
+        "activity",
+        "proximal_rfid",
+        "movement",
+        "login_logout",
+        "read",
+        "write",
+        "battery",
+        "lock_unlock",
+        "drop",
+        "network",
+        "attestation",
     ];
     for class_str in classes {
-        let cls = SignalClass::from_str(class_str).unwrap_or_else(|| panic!("unknown class: {}", class_str));
+        let cls = SignalClass::from_str(class_str)
+            .unwrap_or_else(|| panic!("unknown class: {}", class_str));
         assert_eq!(cls.as_str(), class_str);
     }
 }

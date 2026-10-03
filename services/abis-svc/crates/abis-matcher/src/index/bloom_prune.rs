@@ -97,7 +97,7 @@ impl BloomFilter {
     /// Allocate a Bloom filter for `capacity` items at 8 bits-per-key.
     fn new(capacity: usize) -> Self {
         let num_bits = (capacity * 8).max(64);
-        let num_words = (num_bits + 63) / 64;
+        let num_words = num_bits.div_ceil(64);
         Self {
             bits: vec![0u64; num_words],
             num_bits,

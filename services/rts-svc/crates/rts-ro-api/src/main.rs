@@ -33,5 +33,7 @@ async fn main() {
         .await
         .expect("bind failed");
     info!(http_addr, "rts-ro-api listening");
-    axum::serve(listener, app).await.expect("HTTP server failed");
+    axum::serve(listener, app)
+        .await
+        .expect("HTTP server failed");
 }

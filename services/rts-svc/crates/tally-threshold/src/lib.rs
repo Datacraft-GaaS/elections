@@ -197,8 +197,8 @@ pub fn open_payload(
     let k_mac = blake3::hash(&[MAC_DOMAIN, key].concat());
     let k_enc = blake3::hash(&[ENC_DOMAIN, key].concat());
 
-    let ciphertext = hex::decode(&sealed.ciphertext_hex)
-        .map_err(|_| ThresholdError::InvalidShareHex)?;
+    let ciphertext =
+        hex::decode(&sealed.ciphertext_hex).map_err(|_| ThresholdError::InvalidShareHex)?;
     let tag = hex::decode(&sealed.tag_hex).map_err(|_| ThresholdError::InvalidShareHex)?;
 
     let mut hasher = blake3::Hasher::new();
@@ -231,8 +231,8 @@ fn key_to_fr(key: &[u8; KEY_LEN]) -> Fr {
         return f;
     }
     for counter in 0u32.. {
-        let candidate: [u8; KEY_LEN] = blake3::hash(&[key.as_slice(), &counter.to_le_bytes()].concat())
-            .into();
+        let candidate: [u8; KEY_LEN] =
+            blake3::hash(&[key.as_slice(), &counter.to_le_bytes()].concat()).into();
         if let Some(f) = Fr::from_random_bytes(&candidate) {
             return f;
         }
@@ -262,8 +262,7 @@ fn fr_from_hex(hexstr: &str) -> Result<Fr, ThresholdError> {
         buf[..chunk.len()].copy_from_slice(chunk);
         limbs[i] = u64::from_le_bytes(buf);
     }
-    Fr::from_bigint(ark_ff::BigInteger256::new(limbs))
-        .ok_or(ThresholdError::InvalidShareHex)
+    Fr::from_bigint(ark_ff::BigInteger256::new(limbs)).ok_or(ThresholdError::InvalidShareHex)
 }
 
 fn keystream_xor(enc_key: &[u8; KEY_LEN], data: &[u8]) -> Vec<u8> {
@@ -367,7 +366,10 @@ mod tests {
             ciphertext_hex: hex::encode(ct),
             tag_hex: sealed.tag_hex.clone(),
         };
-        assert_eq!(open_payload(&key, &tampered), Err(ThresholdError::TagMismatch));
+        assert_eq!(
+            open_payload(&key, &tampered),
+            Err(ThresholdError::TagMismatch)
+        );
     }
 
     #[test]
@@ -390,7 +392,10 @@ mod tests {
         });
         let corrupt_key = combine_shares(&vec![shares[0].clone(), corrupt], 2).unwrap();
         assert_ne!(corrupt_key, key);
-        assert_eq!(open_payload(&corrupt_key, &sealed), Err(ThresholdError::TagMismatch));
+        assert_eq!(
+            open_payload(&corrupt_key, &sealed),
+            Err(ThresholdError::TagMismatch)
+        );
     }
 
     #[test]
@@ -402,6 +407,9 @@ mod tests {
 
         let sealed = seal_payload(&test_key(9), b"x");
         let j2 = serde_json::to_string(&sealed).unwrap();
-        assert_eq!(j2, serde_json::to_string(&serde_json::from_str::<SealedPayload>(&j2).unwrap()).unwrap());
+        assert_eq!(
+            j2,
+            serde_json::to_string(&serde_json::from_str::<SealedPayload>(&j2).unwrap()).unwrap()
+        );
     }
 }

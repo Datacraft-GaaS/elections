@@ -23,10 +23,7 @@ use axum::{
 use serde::Deserialize;
 
 use crate::{
-    error::ApiError,
-    models::StationConfigResponse,
-    routes::store_error,
-    state::AppState,
+    error::ApiError, models::StationConfigResponse, routes::store_error, state::AppState,
     store::BviStore,
 };
 

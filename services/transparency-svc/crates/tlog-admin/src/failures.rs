@@ -27,7 +27,10 @@ pub async fn list(db_url: &str) -> anyhow::Result<usize> {
     for f in &open {
         println!(
             "{}  {}#{} @{}  event={}  kind={}  {}",
-            f.id, f.topic, f.partition, f.kafka_offset,
+            f.id,
+            f.topic,
+            f.partition,
+            f.kafka_offset,
             f.event_id.as_deref().unwrap_or("-"),
             f.error_kind,
             if f.error_detail.len() > 80 {

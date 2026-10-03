@@ -30,56 +30,60 @@ use sha2::{Digest, Sha256};
 /// Opaque row data extracted from SQL. Column names come first, then rows.
 #[derive(Debug, Clone)]
 pub struct Rows {
-	pub columns: Vec<String>,
-	pub data:    Vec<Vec<serde_json::Value>>,
+    pub columns: Vec<String>,
+    pub data: Vec<Vec<serde_json::Value>>,
 }
 
 impl Rows {
-	pub fn new(columns: Vec<String>, data: Vec<Vec<serde_json::Value>>) -> Self {
-		Self { columns, data }
-	}
+    pub fn new(columns: Vec<String>, data: Vec<Vec<serde_json::Value>>) -> Self {
+        Self { columns, data }
+    }
 
-	pub fn row_count(&self) -> usize {
-		self.data.len()
-	}
+    pub fn row_count(&self) -> usize {
+        self.data.len()
+    }
 }
 
 /// Metadata about the run, passed to every renderer.
 #[derive(Debug, Clone)]
 pub struct RunMeta {
-	pub slug:             String,
-	pub title:            String,
-	pub template_version: String,
-	pub window_from:      chrono::DateTime<chrono::Utc>,
-	pub window_to:        chrono::DateTime<chrono::Utc>,
-	pub generated_at:     chrono::DateTime<chrono::Utc>,
+    pub slug: String,
+    pub title: String,
+    pub template_version: String,
+    pub window_from: chrono::DateTime<chrono::Utc>,
+    pub window_to: chrono::DateTime<chrono::Utc>,
+    pub generated_at: chrono::DateTime<chrono::Utc>,
 }
 
 /// Template bundle loaded from disk.
 #[derive(Debug, Clone, Default)]
 pub struct TemplateBundle {
-	/// Path to the HTML Tera template (if applicable)
-	pub html_template_path: Option<String>,
-	/// Inline SVG chart string (if applicable)
-	pub chart_svg:          Option<String>,
+    /// Path to the HTML Tera template (if applicable)
+    pub html_template_path: Option<String>,
+    /// Inline SVG chart string (if applicable)
+    pub chart_svg: Option<String>,
 }
 
 /// Result of a render operation.
 pub struct RenderOutput {
-	pub bytes:      Vec<u8>,
-	pub sha256:     Vec<u8>,
-	pub size_bytes: i64,
+    pub bytes: Vec<u8>,
+    pub sha256: Vec<u8>,
+    pub size_bytes: i64,
 }
 
 impl RenderOutput {
-	pub fn new(bytes: Vec<u8>) -> Self {
-		let sha256 = Sha256::digest(&bytes).to_vec();
-		let size_bytes = bytes.len() as i64;
-		Self { bytes, sha256, size_bytes }
-	}
+    pub fn new(bytes: Vec<u8>) -> Self {
+        let sha256 = Sha256::digest(&bytes).to_vec();
+        let size_bytes = bytes.len() as i64;
+        Self {
+            bytes,
+            sha256,
+            size_bytes,
+        }
+    }
 }
 
 /// Renderer trait all format renderers must implement.
 pub trait Renderer {
-	fn render(rows: &Rows, meta: &RunMeta, template: &TemplateBundle) -> Result<RenderOutput>;
+    fn render(rows: &Rows, meta: &RunMeta, template: &TemplateBundle) -> Result<RenderOutput>;
 }

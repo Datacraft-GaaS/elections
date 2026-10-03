@@ -21,14 +21,18 @@ use uuid::Uuid;
 
 fn make_captured_event(stream_id: Uuid) -> StoredEvent {
     StoredEvent {
-        stream_id, stream_version: 1, id: Uuid::new_v4(),
+        stream_id,
+        stream_version: 1,
+        id: Uuid::new_v4(),
         event_type: EVENT_FORM34A_CAPTURED.to_string(),
         payload: json!({ "station_code": "047-0001-001", "constituency_code": "047",
                          "county_code": "47", "registered_voters": 700, "votes_cast": 500,
                          "valid_votes": 490, "rejected_votes": 7, "spoilt_ballots": 3,
                          "candidates": [{"candidate_id":"C001","candidate_name":"Alice","votes":300},
                                         {"candidate_id":"C002","candidate_name":"Bob","votes":190}] }),
-        prev_hash: None, hlc: "0".to_string(), recorded_at: Utc::now(),
+        prev_hash: None,
+        hlc: "0".to_string(),
+        recorded_at: Utc::now(),
     }
 }
 
@@ -36,7 +40,8 @@ fn make_captured_event(stream_id: Uuid) -> StoredEvent {
 fn form34a_apply_captured_event() {
     let stream_id = Uuid::new_v4();
     let mut form = Form34A::new(stream_id);
-    form.apply(&make_captured_event(stream_id)).expect("apply should succeed");
+    form.apply(&make_captured_event(stream_id))
+        .expect("apply should succeed");
     assert_eq!(form.station_code, "047-0001-001");
     assert_eq!(form.registered_voters, 700);
     assert_eq!(form.valid_votes, 490);

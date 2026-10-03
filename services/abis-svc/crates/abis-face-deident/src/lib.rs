@@ -23,10 +23,10 @@
 //!   Privacy in Surveillance Systems. Springer. (composite-face approach)
 #![warn(missing_docs)]
 
-pub mod kanon;
-pub mod dp;
 pub mod blur;
+pub mod dp;
+pub mod kanon;
 
-pub use kanon::{KAnonDeident, KAnonError};
-pub use dp::{DpEmbeddingNoise, DpError};
 pub use blur::{blur_image, pixelate_image};
+pub use dp::{DpEmbeddingNoise, DpError};
+pub use kanon::{KAnonDeident, KAnonError};

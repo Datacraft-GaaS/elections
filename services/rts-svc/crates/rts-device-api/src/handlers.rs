@@ -20,8 +20,8 @@ use axum::{
 use tracing::info;
 use uuid::Uuid;
 
-use crate::models::*;
 use crate::codec;
+use crate::models::*;
 
 // POST /api/v1/rts/device/form34a/upload
 // Multipart: image (binary) + ocr_json (application/json) + signature (text)
@@ -92,9 +92,7 @@ pub async fn upload_form34a(mut multipart: Multipart) -> impl IntoResponse {
 // POST /api/v1/rts/device/form34a/sms-fallback
 // Body: CBOR+zstd compressed form (Content-Type: application/cbor or application/octet-stream)
 // Also accepts the HTTP wrapper JSON (base64-encoded payload) for REST clients.
-pub async fn sms_fallback(
-    Json(req): Json<SmsFallbackHttpRequest>,
-) -> impl IntoResponse {
+pub async fn sms_fallback(Json(req): Json<SmsFallbackHttpRequest>) -> impl IntoResponse {
     info!(
         kit_serial = %req.kit_serial,
         sequence_number = req.sequence_number,
@@ -162,9 +160,7 @@ pub async fn transmission_attempt(
 }
 
 // GET /api/v1/rts/device/participation-tokens/{station}
-pub async fn participation_tokens(
-    Path(station): Path<String>,
-) -> Response {
+pub async fn participation_tokens(Path(station): Path<String>) -> Response {
     info!(station_code = %station, "participation_tokens: issuing");
     // A participation token binds a voter device to one ballot kit at one station,
     // so it is only meaningful against a kit that exists. The kit registry is not in
@@ -200,9 +196,7 @@ fn problem(status: StatusCode, detail: &str) -> Response {
 // POST /api/v1/rts/device/dual-sim-resubmit
 // Idempotent: same Idempotency-Key from original SIM A attempt; back-end
 // deduplicates by key and returns the cached acceptance without re-executing.
-pub async fn dual_sim_resubmit(
-    Json(req): Json<DualSimResubmitRequest>,
-) -> impl IntoResponse {
+pub async fn dual_sim_resubmit(Json(req): Json<DualSimResubmitRequest>) -> impl IntoResponse {
     info!(
         idempotency_key = %req.idempotency_key,
         form_id = %req.form_id,

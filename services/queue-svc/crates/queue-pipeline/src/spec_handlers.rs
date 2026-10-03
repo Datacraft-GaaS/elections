@@ -48,7 +48,9 @@ pub async fn submit_queue_observation(
 }
 
 fn status_for(station: &str, obs: &[spec::QueueObservation]) -> spec::QueueStatus {
-    let latest = obs.iter().max_by(|a, b| a.submitted_at.cmp(&b.submitted_at));
+    let latest = obs
+        .iter()
+        .max_by(|a, b| a.submitted_at.cmp(&b.submitted_at));
     let queue_length = latest.map(|o| o.observed_queue_length).unwrap_or(0);
     spec::QueueStatus {
         station_code: station.to_string(),
@@ -61,9 +63,7 @@ fn status_for(station: &str, obs: &[spec::QueueObservation]) -> spec::QueueStatu
 }
 
 /// GET /queue/stations — list all observed station queue statuses.
-pub async fn list_station_queue_statuses(
-    State(state): State<SharedState>,
-) -> impl IntoResponse {
+pub async fn list_station_queue_statuses(State(state): State<SharedState>) -> impl IntoResponse {
     info!("list_station_queue_statuses");
     let guard = state.observations.lock().expect("lock poisoned");
     let mut items: Vec<spec::QueueStatus> = guard
@@ -104,8 +104,7 @@ pub async fn get_county_queue_analytics(
         guard
             .iter()
             .filter(|(station, _)| {
-                station.starts_with(&format!("{county_code}-"))
-                    || station.starts_with(&county_code)
+                station.starts_with(&format!("{county_code}-")) || station.starts_with(&county_code)
             })
             .map(|(station, obs)| (station.clone(), obs.clone()))
             .collect()

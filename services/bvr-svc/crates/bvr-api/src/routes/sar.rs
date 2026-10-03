@@ -50,7 +50,9 @@ pub fn router() -> Router<crate::state::AppState> {
 }
 
 fn is_hex64(s: &str) -> bool {
-    s.len() == 64 && s.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+    s.len() == 64
+        && s.bytes()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
 }
 
 async fn create_sar(
@@ -78,11 +80,15 @@ async fn create_sar(
             .split_once('@')
             .is_some_and(|(local, domain)| !local.is_empty() && domain.contains('.'));
         if !plausible {
-            return Err(ApiError::BadRequest("requestor_email is not a valid address".into()));
+            return Err(ApiError::BadRequest(
+                "requestor_email is not a valid address".into(),
+            ));
         }
     }
     if req.notes.as_ref().is_some_and(|n| n.chars().count() > 1000) {
-        return Err(ApiError::BadRequest("notes is at most 1000 characters".into()));
+        return Err(ApiError::BadRequest(
+            "notes is at most 1000 characters".into(),
+        ));
     }
     let row = SarRequestRow {
         sar_id: uuid::Uuid::now_v7().to_string(),

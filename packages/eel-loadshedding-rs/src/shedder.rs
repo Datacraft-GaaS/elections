@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::{metrics::ShedMetrics, priority::Priority};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::{Mutex, Semaphore};
-use crate::{metrics::ShedMetrics, priority::Priority};
 
 /// Configuration for the CoDel shedder.
 #[derive(Debug, Clone)]
@@ -80,7 +80,11 @@ impl CoDelShedder {
 
     /// Attempt to admit a request of the given priority.
     /// Returns a permit if admitted, or an error (retry_after_secs) if shed.
-    pub async fn admit(&self, priority: Priority, request_start: Instant) -> Result<CoDelPermit, u64> {
+    pub async fn admit(
+        &self,
+        priority: Priority,
+        request_start: Instant,
+    ) -> Result<CoDelPermit, u64> {
         let depth = self.config.max_inflight - self.inflight.available_permits();
         self.metrics.set_queue_depth(depth as u64);
 

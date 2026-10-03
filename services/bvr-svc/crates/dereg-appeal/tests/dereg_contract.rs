@@ -66,12 +66,23 @@ const OFFICER: &str = "sha256:officer9999";
 async fn get(s: AppState, uri: &str) -> (StatusCode, Value) {
     let resp = dereg_appeal::routes::spec::router()
         .with_state(s)
-        .oneshot(Request::builder().uri(uri).method("GET").body(Body::empty()).unwrap())
+        .oneshot(
+            Request::builder()
+                .uri(uri)
+                .method("GET")
+                .body(Body::empty())
+                .unwrap(),
+        )
         .await
         .unwrap();
     let status = resp.status();
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
-    (status, serde_json::from_slice(&bytes).unwrap_or(Value::Null))
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    (
+        status,
+        serde_json::from_slice(&bytes).unwrap_or(Value::Null),
+    )
 }
 
 async fn post(s: AppState, uri: &str, body: Value) -> (StatusCode, Value) {
@@ -88,8 +99,13 @@ async fn post(s: AppState, uri: &str, body: Value) -> (StatusCode, Value) {
         .await
         .unwrap();
     let status = resp.status();
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
-    (status, serde_json::from_slice(&bytes).unwrap_or(Value::Null))
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    (
+        status,
+        serde_json::from_slice(&bytes).unwrap_or(Value::Null),
+    )
 }
 
 fn first_appeal_id(s: &AppState) -> String {
@@ -132,7 +148,11 @@ async fn an_appeal_reads_back_by_id() {
 
 #[tokio::test]
 async fn an_unknown_appeal_is_not_found() {
-    let (status, _) = get(seeded(), "/api/v1/dereg/appeals/8f14e45f-ceea-467a-9c6e-000000000000").await;
+    let (status, _) = get(
+        seeded(),
+        "/api/v1/dereg/appeals/8f14e45f-ceea-467a-9c6e-000000000000",
+    )
+    .await;
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
 
@@ -166,7 +186,9 @@ async fn upholding_an_appeal_reinstates_the_voter() {
         assert!(body.get(required).is_some(), "missing {required}");
     }
     // The decision is a finding, not an applied register change.
-    assert!(body["blocking_reason"].as_str().is_some_and(|r| r.contains("register service")));
+    assert!(body["blocking_reason"]
+        .as_str()
+        .is_some_and(|r| r.contains("register service")));
 
     // The appeal's own status follows the verdict.
     let (status, appeal) = get(s, &format!("/api/v1/dereg/appeals/{id}")).await;
@@ -211,7 +233,10 @@ async fn a_decision_cannot_be_recorded_against_nothing() {
     )
     .await;
     assert_eq!(status, StatusCode::NOT_FOUND);
-    assert!(body["detail"].as_str().unwrap_or_default().contains("no appeal"));
+    assert!(body["detail"]
+        .as_str()
+        .unwrap_or_default()
+        .contains("no appeal"));
 }
 
 #[tokio::test]
@@ -227,7 +252,11 @@ async fn a_verdict_outside_the_contract_enum_is_rejected() {
             json!({ "verdict": bad, "grounds": "g", "decided_by_hash": OFFICER }),
         )
         .await;
-        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "verdict {bad:?} must be refused");
+        assert_eq!(
+            status,
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "verdict {bad:?} must be refused"
+        );
     }
 }
 
@@ -239,8 +268,12 @@ async fn a_decision_without_grounds_or_an_officer_is_rejected() {
         json!({ "verdict": "upheld", "grounds": "   ", "decided_by_hash": OFFICER }),
         json!({ "verdict": "upheld", "grounds": "g", "decided_by_hash": "" }),
     ] {
-        let (status, _) =
-            post(s.clone(), &format!("/api/v1/dereg/appeals/{id}/decisions"), body).await;
+        let (status, _) = post(
+            s.clone(),
+            &format!("/api/v1/dereg/appeals/{id}/decisions"),
+            body,
+        )
+        .await;
         assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
     }
 }
@@ -259,7 +292,10 @@ async fn an_appeal_cannot_be_decided_twice() {
     assert_eq!(status, StatusCode::CREATED);
     let (status, body) = post(s, &uri, decision).await;
     assert_eq!(status, StatusCode::CONFLICT);
-    assert!(body["detail"].as_str().unwrap_or_default().contains("already been decided"));
+    assert!(body["detail"]
+        .as_str()
+        .unwrap_or_default()
+        .contains("already been decided"));
 }
 
 const HASH: &str = "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3";
@@ -281,13 +317,20 @@ async fn ussd_opens_a_menu_instead_of_hanging_up() {
 #[tokio::test]
 async fn ussd_reports_a_real_appeal_by_its_notice_reference() {
     let s = seeded();
-    let (status, body) =
-        post(s.clone(), "/api/v1/dereg/ussd/sessions", ussd_body("1*DEREG-2027-0042")).await;
+    let (status, body) = post(
+        s.clone(),
+        "/api/v1/dereg/ussd/sessions",
+        ussd_body("1*DEREG-2027-0042"),
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["action"], "END");
     let text = body["response_text"].as_str().unwrap();
     assert!(text.contains("submitted"), "{text}");
-    assert!(text.chars().count() <= 182, "USSD screens are firmware-limited");
+    assert!(
+        text.chars().count() <= 182,
+        "USSD screens are firmware-limited"
+    );
 
     // And after a decision, the USSD reports the real outcome rather than a
     // standing "in progress".
@@ -299,19 +342,33 @@ async fn ussd_reports_a_real_appeal_by_its_notice_reference() {
     )
     .await;
     assert_eq!(status, StatusCode::CREATED);
-    let (status, body) =
-        post(s, "/api/v1/dereg/ussd/sessions", ussd_body("1*DEREG-2027-0042")).await;
+    let (status, body) = post(
+        s,
+        "/api/v1/dereg/ussd/sessions",
+        ussd_body("1*DEREG-2027-0042"),
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
-    assert!(body["response_text"].as_str().unwrap().contains("Umeirudishwa"));
+    assert!(body["response_text"]
+        .as_str()
+        .unwrap()
+        .contains("Umeirudishwa"));
 }
 
 #[tokio::test]
 async fn ussd_does_not_invent_an_appeal_it_never_held() {
-    let (status, body) =
-        post(seeded(), "/api/v1/dereg/ussd/sessions", ussd_body("1*DEREG-0000-0000")).await;
+    let (status, body) = post(
+        seeded(),
+        "/api/v1/dereg/ussd/sessions",
+        ussd_body("1*DEREG-0000-0000"),
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["action"], "END");
-    assert!(body["response_text"].as_str().unwrap().contains("Hakuna appeal"));
+    assert!(body["response_text"]
+        .as_str()
+        .unwrap()
+        .contains("Hakuna appeal"));
 }
 
 #[tokio::test]

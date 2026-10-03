@@ -28,11 +28,9 @@ use serde::Deserialize;
 use uuid::Uuid;
 
 use boundary_projections::{
-    BoundaryChangePageView, BoundarySnapshotView, ConstituencyDetailView,
-    ConstituencyListView, CountyListView,
-    FairnessMetricsPageView, GeofenceStationView,
-    SimulatorComputeResult, StationDetailView, StationListView,
-    SubmissionRequest, SubmissionResponse, WardListView,
+    BoundaryChangePageView, BoundarySnapshotView, ConstituencyDetailView, ConstituencyListView,
+    CountyListView, FairnessMetricsPageView, GeofenceStationView, SimulatorComputeResult,
+    StationDetailView, StationListView, SubmissionRequest, SubmissionResponse, WardListView,
 };
 
 use crate::error::ApiError;
@@ -103,7 +101,9 @@ pub async fn get_constituency(
         return Err(ApiError::bad_request("constituency_code is required"));
     }
     // Stub: return 404 for any code to show handler is wired.
-    Err(ApiError::not_found(format!("constituency {code} not found")))
+    Err(ApiError::not_found(format!(
+        "constituency {code} not found"
+    )))
 }
 
 /// GET /boundary/wards
@@ -117,9 +117,7 @@ pub async fn get_constituency(
         (status = 500, description = "Internal error"),
     )
 )]
-pub async fn list_wards(
-    Query(_q): Query<WardQuery>,
-) -> Result<Json<WardListView>, ApiError> {
+pub async fn list_wards(Query(_q): Query<WardQuery>) -> Result<Json<WardListView>, ApiError> {
     Ok(Json(WardListView {
         snapshot_id: Uuid::now_v7(),
         items: vec![],
@@ -177,9 +175,7 @@ pub async fn list_stations(
         (status = 500, description = "Internal error"),
     )
 )]
-pub async fn get_station(
-    Path(code): Path<String>,
-) -> Result<Json<StationDetailView>, ApiError> {
+pub async fn get_station(Path(code): Path<String>) -> Result<Json<StationDetailView>, ApiError> {
     Err(ApiError::not_found(format!("station {code} not found")))
 }
 
@@ -414,10 +410,10 @@ pub async fn create_submission(
 }
 
 /// POST /api/v1/changes/{id}/approve (admin, JWT+SpiceDB)
-pub async fn approve_change(
-    Path(id): Path<Uuid>,
-) -> Result<Json<serde_json::Value>, ApiError> {
-    Ok(Json(serde_json::json!({ "change_id": id, "status": "approved" })))
+pub async fn approve_change(Path(id): Path<Uuid>) -> Result<Json<serde_json::Value>, ApiError> {
+    Ok(Json(
+        serde_json::json!({ "change_id": id, "status": "approved" }),
+    ))
 }
 
 /// POST /api/v1/geofence/upload (admin, JWT+SpiceDB)
@@ -448,10 +444,7 @@ pub async fn upload_geofence(
 pub async fn import_shapefile(
     Json(body): Json<serde_json::Value>,
 ) -> Result<(StatusCode, Json<serde_json::Value>), ApiError> {
-    let file_ref = body
-        .get("file_ref")
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
+    let file_ref = body.get("file_ref").and_then(|v| v.as_str()).unwrap_or("");
     if file_ref.is_empty() {
         return Err(ApiError::bad_request("file_ref required"));
     }
@@ -492,7 +485,10 @@ mod tests {
 
     #[test]
     fn compactness_of_non_polygon_is_zero() {
-        assert_eq!(compute_compactness(&serde_json::json!({"type": "Point"})), 0.0);
+        assert_eq!(
+            compute_compactness(&serde_json::json!({"type": "Point"})),
+            0.0
+        );
         assert_eq!(compute_compactness(&serde_json::Value::Null), 0.0);
     }
 }

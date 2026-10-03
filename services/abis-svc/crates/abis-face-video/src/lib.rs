@@ -21,10 +21,10 @@
 //!   embeddings across video frames." FG 2021. (quality-weighted fusion)
 #![warn(missing_docs)]
 
+pub mod fusion;
 pub mod track;
 pub mod tracker;
-pub mod fusion;
 
+pub use fusion::{fuse_track, FusedTemplate};
 pub use track::{FrameDetection, Track, TrackId, TrackUpdate};
 pub use tracker::Tracker;
-pub use fusion::{FusedTemplate, fuse_track};

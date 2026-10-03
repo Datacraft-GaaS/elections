@@ -26,11 +26,11 @@ use tokio::sync::RwLock;
 use uuid::Uuid;
 
 use super::{
-    AccuracyReportOut, AdjudicationCommand, AdjudicationOut, AiStore, AlertQuery,
-    AnomalyAlertOut, AuditEntryOut, AuditQuery, CampaignOut, CampaignQuery, ClosureCommand,
-    DeploymentOut, EventItemIn, FindingOut, IdemRecord, ModelOut, ModelQuery, NewCampaign,
-    NewDeployment, NewFinding, NewModel, NewRetrainJob, Page, ReportQuery, RetrainJobOut,
-    StoreError, SummaryBucket, TurnoutForecastOut,
+    AccuracyReportOut, AdjudicationCommand, AdjudicationOut, AiStore, AlertQuery, AnomalyAlertOut,
+    AuditEntryOut, AuditQuery, CampaignOut, CampaignQuery, ClosureCommand, DeploymentOut,
+    EventItemIn, FindingOut, IdemRecord, ModelOut, ModelQuery, NewCampaign, NewDeployment,
+    NewFinding, NewModel, NewRetrainJob, Page, ReportQuery, RetrainJobOut, StoreError,
+    SummaryBucket, TurnoutForecastOut,
 };
 
 #[derive(Default)]
@@ -102,7 +102,10 @@ impl AiStore for InMemoryStore {
         operation: &str,
     ) -> Result<Option<IdemRecord>, StoreError> {
         let data = self.data.read().await;
-        Ok(data.idem.get(&(key.to_string(), operation.to_string())).cloned())
+        Ok(data
+            .idem
+            .get(&(key.to_string(), operation.to_string()))
+            .cloned())
     }
 
     async fn idempotency_save(
@@ -124,7 +127,10 @@ impl AiStore for InMemoryStore {
         Ok(())
     }
 
-    async fn list_anomaly_alerts(&self, q: &AlertQuery) -> Result<Page<AnomalyAlertOut>, StoreError> {
+    async fn list_anomaly_alerts(
+        &self,
+        q: &AlertQuery,
+    ) -> Result<Page<AnomalyAlertOut>, StoreError> {
         let data = self.data.read().await;
         let mut items: Vec<AnomalyAlertOut> = data
             .alerts
@@ -150,7 +156,10 @@ impl AiStore for InMemoryStore {
             .skip(q.offset.max(0) as usize)
             .take(q.limit.max(0) as usize)
             .collect();
-        Ok(Page { items: page, total_count: total })
+        Ok(Page {
+            items: page,
+            total_count: total,
+        })
     }
 
     async fn get_anomaly_alert(
@@ -295,7 +304,10 @@ impl AiStore for InMemoryStore {
             .skip(q.offset.max(0) as usize)
             .take(q.limit.max(0) as usize)
             .collect();
-        Ok(Page { items: page, total_count: total })
+        Ok(Page {
+            items: page,
+            total_count: total,
+        })
     }
 
     async fn create_retrain_job(&self, job: &NewRetrainJob) -> Result<RetrainJobOut, StoreError> {
@@ -363,7 +375,10 @@ impl AiStore for InMemoryStore {
             .skip(q.offset.max(0) as usize)
             .take(q.limit.max(0) as usize)
             .collect();
-        Ok(Page { items: page, total_count: total })
+        Ok(Page {
+            items: page,
+            total_count: total,
+        })
     }
 
     async fn get_campaign(&self, campaign_id: Uuid) -> Result<Option<CampaignOut>, StoreError> {
@@ -485,7 +500,10 @@ impl AiStore for InMemoryStore {
             .skip(q.offset.max(0) as usize)
             .take(q.limit.max(0) as usize)
             .collect();
-        Ok(Page { items: page, total_count: total })
+        Ok(Page {
+            items: page,
+            total_count: total,
+        })
     }
 
     async fn get_model(&self, model_id: Uuid) -> Result<Option<ModelOut>, StoreError> {
@@ -521,10 +539,7 @@ impl AiStore for InMemoryStore {
             model_id,
             action: "deployed".to_string(),
             actor_hash: d.approved_by_hash.clone(),
-            payload_summary: Some(format!(
-                "deployed {model_version} to {}",
-                d.target_env
-            )),
+            payload_summary: Some(format!("deployed {model_version} to {}", d.target_env)),
             occurred_at: created_at,
         });
         data.deployments.push(out.clone());
@@ -549,6 +564,9 @@ impl AiStore for InMemoryStore {
             .skip(q.offset.max(0) as usize)
             .take(q.limit.max(0) as usize)
             .collect();
-        Ok(Page { items: page, total_count: total })
+        Ok(Page {
+            items: page,
+            total_count: total,
+        })
     }
 }

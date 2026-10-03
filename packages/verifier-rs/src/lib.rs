@@ -171,7 +171,9 @@ fn recompute_inclusion_root(
     }
 
     if proof_iter.next().is_some() {
-        return Err(VerifierError::InvalidProof("inclusion proof too long".into()));
+        return Err(VerifierError::InvalidProof(
+            "inclusion proof too long".into(),
+        ));
     }
     Ok(current)
 }
@@ -203,8 +205,7 @@ fn reconstruct_consistency<'a>(
             .ok_or_else(|| VerifierError::InvalidProof("consistency proof too short".into()))?;
         Ok((oh, node_hash(&nh, right)))
     } else {
-        let (oh, nh) =
-            reconstruct_consistency(old - k, new - k, false, external_old, proof)?;
+        let (oh, nh) = reconstruct_consistency(old - k, new - k, false, external_old, proof)?;
         let left = proof
             .next()
             .ok_or_else(|| VerifierError::InvalidProof("consistency proof too short".into()))?;
@@ -344,8 +345,7 @@ pub fn verify_sth_signature(sth: &Sth, key_override: Option<&str>) -> Result<(),
         .map_err(|e| VerifierError::Signature(e.to_string()))?;
 
     let msg = sth_signing_message(sth)?;
-    ed25519::verify(&vk, &msg, &sig)
-        .map_err(|e| VerifierError::Signature(e.to_string()))
+    ed25519::verify(&vk, &msg, &sig).map_err(|e| VerifierError::Signature(e.to_string()))
 }
 
 /// Verify all witness cosignatures over `sth`.

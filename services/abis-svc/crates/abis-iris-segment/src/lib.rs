@@ -27,7 +27,7 @@ pub mod mask;
 pub mod osiris;
 pub mod segment;
 
-pub use segment::{IrisSegmentation, SegmentIris, SegmentError};
+pub use segment::{IrisSegmentation, SegmentError, SegmentIris};
 
 /// A minimal grayscale image (row-major, 8-bit per pixel).
 #[derive(Debug, Clone)]
@@ -46,7 +46,11 @@ impl GrayImage {
         if data.len() as u64 != width as u64 * height as u64 {
             return None;
         }
-        Some(Self { width, height, data })
+        Some(Self {
+            width,
+            height,
+            data,
+        })
     }
 
     /// Construct from raw bytes, panicking on size mismatch (test use).
@@ -117,11 +121,19 @@ pub struct IrisMask {
 
 impl IrisMask {
     pub fn all_valid(width: u32, height: u32) -> Self {
-        Self { width, height, bits: vec![true; (width * height) as usize] }
+        Self {
+            width,
+            height,
+            bits: vec![true; (width * height) as usize],
+        }
     }
 
     pub fn zeroed(width: u32, height: u32) -> Self {
-        Self { width, height, bits: vec![false; (width * height) as usize] }
+        Self {
+            width,
+            height,
+            bits: vec![false; (width * height) as usize],
+        }
     }
 
     pub fn set(&mut self, x: u32, y: u32, val: bool) {
@@ -152,7 +164,16 @@ impl IrisMask {
 
     /// Merge another mask: result is valid only where both are valid.
     pub fn and(&self, other: &Self) -> Self {
-        let bits = self.bits.iter().zip(other.bits.iter()).map(|(&a, &b)| a && b).collect();
-        Self { width: self.width, height: self.height, bits }
+        let bits = self
+            .bits
+            .iter()
+            .zip(other.bits.iter())
+            .map(|(&a, &b)| a && b)
+            .collect();
+        Self {
+            width: self.width,
+            height: self.height,
+            bits,
+        }
     }
 }

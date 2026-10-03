@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use thiserror::Error;
 use crate::aggregates::form34a::Form34A;
+use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum ValidationError {

@@ -18,11 +18,7 @@ use async_trait::async_trait;
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use tracing::{info_span, warn, Instrument};
 
-use crate::{
-    envelope::Envelope,
-    error::EventError,
-    spiffe::SpiffeKeyProvider,
-};
+use crate::{envelope::Envelope, error::EventError, spiffe::SpiffeKeyProvider};
 
 // ---------------------------------------------------------------------------
 // EventConsumer trait
@@ -41,7 +37,10 @@ pub trait EventConsumer: Send + Sync {
 
 /// Verify `eel_signature` on an envelope. Returns `Err(EventError::TamperDetected)`
 /// if the signature is missing, malformed, or invalid.
-pub fn verify_signature(envelope: &Envelope, provider: &dyn SpiffeKeyProvider) -> Result<(), EventError> {
+pub fn verify_signature(
+    envelope: &Envelope,
+    provider: &dyn SpiffeKeyProvider,
+) -> Result<(), EventError> {
     let sig_str = envelope
         .eel_signature
         .as_deref()
@@ -62,12 +61,8 @@ pub fn verify_signature(envelope: &Envelope, provider: &dyn SpiffeKeyProvider) -
 
     let canonical = envelope.canonical_bytes_for_signing()?;
 
-    eel_crypto_rs::ed25519::verify(
-        &provider.signing_key().verifying_key(),
-        &canonical,
-        &sig,
-    )
-    .map_err(|_| EventError::TamperDetected)
+    eel_crypto_rs::ed25519::verify(&provider.signing_key().verifying_key(), &canonical, &sig)
+        .map_err(|_| EventError::TamperDetected)
 }
 
 // ---------------------------------------------------------------------------
@@ -115,10 +110,7 @@ impl GapBuffer {
             ready
         } else {
             // Future event; park until the gap is filled.
-            self.pending
-                .entry(stream_id)
-                .or_default()
-                .insert(seq, env);
+            self.pending.entry(stream_id).or_default().insert(seq, env);
             vec![]
         }
     }
@@ -225,10 +217,7 @@ pub async fn dispatch<C: EventConsumer>(
     let ready = gap_buffer.insert(envelope);
     for env in ready {
         let span = consumer_span(&env);
-        consumer
-            .handle(env)
-            .instrument(span)
-            .await?;
+        consumer.handle(env).instrument(span).await?;
     }
 
     Ok(())
@@ -337,7 +326,15 @@ pub mod kafka {
                         };
 
                         let topic_name = msg.topic().to_string();
-                        match dispatch(&consumer_impl, envelope, key_provider, &mut gap_buffer, dedupe.as_ref()).await {
+                        match dispatch(
+                            &consumer_impl,
+                            envelope,
+                            key_provider,
+                            &mut gap_buffer,
+                            dedupe.as_ref(),
+                        )
+                        .await
+                        {
                             Ok(()) => {
                                 info!("event processed");
                             }

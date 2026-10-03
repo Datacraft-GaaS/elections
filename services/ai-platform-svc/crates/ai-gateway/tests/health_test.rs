@@ -42,12 +42,7 @@ async fn list_models_returns_empty_array() {
 async fn unknown_path_returns_404() {
     let app = ai_gateway::app();
     let response = app
-        .oneshot(
-            Request::builder()
-                .uri("/")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(Request::builder().uri("/").body(Body::empty()).unwrap())
         .await
         .unwrap();
 

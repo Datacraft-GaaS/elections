@@ -14,7 +14,9 @@
 
 use axum::{extract::State, http::StatusCode, routing::post, Json, Router};
 
-use crate::{blacklist::BlacklistService, error::ApiError, models::BlacklistEntry, state::AppState};
+use crate::{
+    blacklist::BlacklistService, error::ApiError, models::BlacklistEntry, state::AppState,
+};
 
 pub fn router() -> Router<AppState> {
     Router::new().route("/v1/voter-cards/blacklist", post(add_blacklist))

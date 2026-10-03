@@ -13,21 +13,26 @@
 // limitations under the License.
 
 use eel_resilience_rs::{
-    circuit_breaker::{CircuitBreaker, CircuitState},
     bulkhead::Bulkhead,
+    circuit_breaker::{CircuitBreaker, CircuitState},
     degradation::{DegradationFlag, DegradationMode},
-    idempotency::IdempotencyStore,
-    retry::{RetryConfig, with_retry},
-    timeout::with_timeout,
     error::ResilienceError,
+    idempotency::IdempotencyStore,
+    retry::{with_retry, RetryConfig},
+    timeout::with_timeout,
 };
-use std::time::Duration;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
+use std::time::Duration;
 
 #[tokio::test]
 async fn circuit_breaker_opens_after_threshold() {
-    let cb = CircuitBreaker::new("test-dep", 3, Duration::from_secs(60), Duration::from_secs(5));
+    let cb = CircuitBreaker::new(
+        "test-dep",
+        3,
+        Duration::from_secs(60),
+        Duration::from_secs(5),
+    );
     // Record failures up to threshold
     cb.record_failure().await;
     cb.record_failure().await;
@@ -40,7 +45,12 @@ async fn circuit_breaker_opens_after_threshold() {
 
 #[tokio::test]
 async fn circuit_breaker_half_open_on_cooldown() {
-    let cb = CircuitBreaker::new("dep2", 1, Duration::from_secs(60), Duration::from_millis(10));
+    let cb = CircuitBreaker::new(
+        "dep2",
+        1,
+        Duration::from_secs(60),
+        Duration::from_millis(10),
+    );
     cb.record_failure().await;
     assert_eq!(cb.state().await, CircuitState::Open);
     tokio::time::sleep(Duration::from_millis(20)).await;
@@ -65,7 +75,7 @@ async fn bulkhead_releases_on_drop() {
         let _p = bh.acquire().await.unwrap();
         assert!(bh.acquire().await.is_err());
     } // _p dropped here
-    // Should be available again
+      // Should be available again
     assert!(bh.acquire().await.is_ok());
 }
 
@@ -93,7 +103,9 @@ async fn idempotency_deduplicates() {
     assert!(result.is_none());
 
     // Store a response
-    store.store_response("user1", "key-abc", b"response".to_vec()).await;
+    store
+        .store_response("user1", "key-abc", b"response".to_vec())
+        .await;
 
     // Second call with same body: returns cached response
     let result = store.check("user1", "key-abc", body).await.unwrap();
@@ -118,14 +130,22 @@ async fn retry_exhausts_and_returns_error() {
     };
     let attempts = Arc::new(AtomicU32::new(0));
     let a = attempts.clone();
-    let result = with_retry(&config, |_: &String| true, move || {
-        let a = a.clone();
-        async move {
-            a.fetch_add(1, Ordering::Relaxed);
-            Err::<(), String>("always fails".to_string())
-        }
-    }).await;
-    assert!(matches!(result, Err(ResilienceError::RetriesExhausted { attempts: 3 })));
+    let result = with_retry(
+        &config,
+        |_: &String| true,
+        move || {
+            let a = a.clone();
+            async move {
+                a.fetch_add(1, Ordering::Relaxed);
+                Err::<(), String>("always fails".to_string())
+            }
+        },
+    )
+    .await;
+    assert!(matches!(
+        result,
+        Err(ResilienceError::RetriesExhausted { attempts: 3 })
+    ));
     assert_eq!(attempts.load(Ordering::Relaxed), 3);
 }
 
@@ -133,7 +153,8 @@ async fn retry_exhausts_and_returns_error() {
 async fn timeout_triggers() {
     let result = with_timeout(Duration::from_millis(10), async {
         tokio::time::sleep(Duration::from_secs(60)).await;
-    }).await;
+    })
+    .await;
     assert!(matches!(result, Err(ResilienceError::Timeout)));
 }
 

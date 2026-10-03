@@ -16,8 +16,8 @@
 #![warn(missing_docs)]
 pub mod handlers;
 pub mod models;
-pub mod rules;
 pub mod router;
+pub mod rules;
 pub mod spec;
 pub mod state;
 

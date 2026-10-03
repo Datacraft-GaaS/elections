@@ -194,7 +194,9 @@ fn test_validator_rejects_geo_polygon_too_many_vertices() {
     let err = TelemetryQueryValidator::validate(&q).unwrap_err();
     match err {
         ValidationError::Invalid(diags) => {
-            assert!(diags.iter().any(|d| d.code == "GEO_POLYGON_TOO_MANY_VERTICES"));
+            assert!(diags
+                .iter()
+                .any(|d| d.code == "GEO_POLYGON_TOO_MANY_VERTICES"));
         }
     }
 }
@@ -208,7 +210,9 @@ fn test_validator_rejects_geo_polygon_too_few_vertices() {
     let err = TelemetryQueryValidator::validate(&q).unwrap_err();
     match err {
         ValidationError::Invalid(diags) => {
-            assert!(diags.iter().any(|d| d.code == "GEO_POLYGON_TOO_FEW_VERTICES"));
+            assert!(diags
+                .iter()
+                .any(|d| d.code == "GEO_POLYGON_TOO_FEW_VERTICES"));
         }
     }
 }
@@ -324,7 +328,11 @@ fn test_preset_drops_by_county_builds() {
     params.insert("county".into(), serde_json::json!("Nairobi"));
     params.insert("hours".into(), serde_json::json!(48));
     let result = PresetLibrary::build("drops_by_county", &params);
-    assert!(result.is_ok(), "drops_by_county preset failed: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "drops_by_county preset failed: {:?}",
+        result.err()
+    );
     let (q, desc) = result.unwrap();
     assert!(!q.signal_classes.is_empty());
     assert!(desc.contains("Nairobi") || desc.contains("drop"));
@@ -335,7 +343,10 @@ fn test_preset_officer_activity_builds() {
     let now = Utc::now();
     let mut params = serde_json::Map::new();
     params.insert("officer_id".into(), serde_json::json!("4432"));
-    params.insert("from".into(), serde_json::json!((now - Duration::hours(24)).to_rfc3339()));
+    params.insert(
+        "from".into(),
+        serde_json::json!((now - Duration::hours(24)).to_rfc3339()),
+    );
     params.insert("to".into(), serde_json::json!(now.to_rfc3339()));
     let (q, _desc) = PresetLibrary::build("officer_activity", &params).unwrap();
     assert!(q.aggregations.len() >= 2);
@@ -345,7 +356,10 @@ fn test_preset_officer_activity_builds() {
 fn test_preset_attestation_gap_builds() {
     let now = Utc::now();
     let mut params = serde_json::Map::new();
-    params.insert("from".into(), serde_json::json!((now - Duration::hours(24)).to_rfc3339()));
+    params.insert(
+        "from".into(),
+        serde_json::json!((now - Duration::hours(24)).to_rfc3339()),
+    );
     params.insert("to".into(), serde_json::json!(now.to_rfc3339()));
     let (q, _) = PresetLibrary::build("attestation_gap", &params).unwrap();
     assert!(q.signal_classes.contains(&SignalClass::Attestation));
@@ -363,7 +377,10 @@ fn test_preset_battery_low_fleet_builds() {
     let mut params = serde_json::Map::new();
     params.insert("threshold_pct".into(), serde_json::json!(15.0));
     params.insert("county".into(), serde_json::json!("Mombasa"));
-    params.insert("from".into(), serde_json::json!((now - Duration::hours(4)).to_rfc3339()));
+    params.insert(
+        "from".into(),
+        serde_json::json!((now - Duration::hours(4)).to_rfc3339()),
+    );
     params.insert("to".into(), serde_json::json!(now.to_rfc3339()));
     let (q, _) = PresetLibrary::build("battery_low_fleet", &params).unwrap();
     assert!(q.signal_classes.contains(&SignalClass::Battery));
@@ -374,7 +391,10 @@ fn test_preset_coordinated_logouts_builds() {
     let now = Utc::now();
     let mut params = serde_json::Map::new();
     params.insert("station_id".into(), serde_json::json!("STN-001"));
-    params.insert("from".into(), serde_json::json!((now - Duration::hours(4)).to_rfc3339()));
+    params.insert(
+        "from".into(),
+        serde_json::json!((now - Duration::hours(4)).to_rfc3339()),
+    );
     params.insert("to".into(), serde_json::json!(now.to_rfc3339()));
     let (q, _) = PresetLibrary::build("coordinated_logouts", &params).unwrap();
     assert!(q.signal_classes.contains(&SignalClass::LoginLogout));
@@ -424,13 +444,19 @@ fn test_all_presets_produce_valid_queries() {
 async fn test_mock_bridge_happy_path() {
     let bridge = MockBridge;
     let result = bridge
-        .translate("Show me all drops in Nairobi in the last 24 hours", "svid://test")
+        .translate(
+            "Show me all drops in Nairobi in the last 24 hours",
+            "svid://test",
+        )
         .await;
     assert!(result.is_ok());
     let proposed = result.unwrap();
     assert!(!proposed.explanation.is_empty());
     assert!(proposed.confidence > 0.0);
-    assert_eq!(proposed.original_text, "Show me all drops in Nairobi in the last 24 hours");
+    assert_eq!(
+        proposed.original_text,
+        "Show me all drops in Nairobi in the last 24 hours"
+    );
 }
 
 #[tokio::test]
@@ -441,7 +467,11 @@ async fn test_mock_bridge_returns_valid_dsl() {
         .await
         .unwrap();
     let validation = TelemetryQueryValidator::validate(&proposed.query);
-    assert!(validation.is_ok(), "mock bridge returned invalid DSL: {:?}", validation.err());
+    assert!(
+        validation.is_ok(),
+        "mock bridge returned invalid DSL: {:?}",
+        validation.err()
+    );
 }
 
 #[tokio::test]

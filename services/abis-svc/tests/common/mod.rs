@@ -25,7 +25,6 @@
 
 #![allow(dead_code)]
 
-
 /// Minimal in-memory test state used by unit-level integration tests
 /// that do not require real infrastructure.
 pub struct TestRig {

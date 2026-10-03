@@ -25,8 +25,8 @@ use crate::domain::{Artifact, Delivery, Subscriber, Subscription, TlogAnchor};
 /// Eligible: (pending OR failed) AND (next_attempt_at IS NULL OR next_attempt_at <= NOW()).
 /// Uses FOR UPDATE SKIP LOCKED so concurrent workers do not race.
 pub async fn fetch_pending(pool: &PgPool, limit: i64) -> sqlx::Result<Vec<Delivery>> {
-	sqlx::query_as::<_, Delivery>(
-		r#"
+    sqlx::query_as::<_, Delivery>(
+        r#"
 		SELECT
 			delivery_id, run_id, subscription_id, artifact_id,
 			status, attempt_count, max_attempts,
@@ -39,38 +39,38 @@ pub async fn fetch_pending(pool: &PgPool, limit: i64) -> sqlx::Result<Vec<Delive
 		LIMIT $1
 		FOR UPDATE SKIP LOCKED
 		"#,
-	)
-	.bind(limit)
-	.fetch_all(pool)
-	.await
+    )
+    .bind(limit)
+    .fetch_all(pool)
+    .await
 }
 
 /// CAS: transition delivery from pending|failed -> sending.
 /// Returns 0 if the row was not in the expected state (idempotency guard).
 pub async fn mark_sending(pool: &PgPool, delivery_id: Uuid) -> sqlx::Result<u64> {
-	let rows = sqlx::query(
-		r#"
+    let rows = sqlx::query(
+        r#"
 		UPDATE eel_report_deliveries
 		SET status = 'sending', last_attempt_at = NOW()
 		WHERE delivery_id = $1
 		  AND status IN ('pending', 'failed')
 		"#,
-	)
-	.bind(delivery_id)
-	.execute(pool)
-	.await?;
-	Ok(rows.rows_affected())
+    )
+    .bind(delivery_id)
+    .execute(pool)
+    .await?;
+    Ok(rows.rows_affected())
 }
 
 /// Mark delivery as delivered. Idempotent: if already delivered, does not change delivered_at.
 pub async fn mark_delivered(
-	pool: &PgPool,
-	delivery_id: Uuid,
-	remote_receipt_id: Option<String>,
-	remote_receipt_at: Option<DateTime<Utc>>,
+    pool: &PgPool,
+    delivery_id: Uuid,
+    remote_receipt_id: Option<String>,
+    remote_receipt_at: Option<DateTime<Utc>>,
 ) -> sqlx::Result<()> {
-	sqlx::query(
-		r#"
+    sqlx::query(
+        r#"
 		UPDATE eel_report_deliveries
 		SET
 			status = 'delivered',
@@ -80,24 +80,24 @@ pub async fn mark_delivered(
 		WHERE delivery_id = $1
 		  AND status != 'abandoned'
 		"#,
-	)
-	.bind(delivery_id)
-	.bind(remote_receipt_id)
-	.bind(remote_receipt_at)
-	.execute(pool)
-	.await?;
-	Ok(())
+    )
+    .bind(delivery_id)
+    .bind(remote_receipt_id)
+    .bind(remote_receipt_at)
+    .execute(pool)
+    .await?;
+    Ok(())
 }
 
 /// Increment attempt_count, record error, compute next_attempt_at with exponential backoff.
 /// Base: 30s * 2^attempt_count, cap 4h, +20% uniform jitter.
 pub async fn mark_failed_with_backoff(
-	pool: &PgPool,
-	delivery_id: Uuid,
-	error: &str,
+    pool: &PgPool,
+    delivery_id: Uuid,
+    error: &str,
 ) -> sqlx::Result<()> {
-	sqlx::query(
-		r#"
+    sqlx::query(
+        r#"
 		UPDATE eel_report_deliveries
 		SET
 			status = CASE
@@ -116,67 +116,67 @@ pub async fn mark_failed_with_backoff(
 		WHERE delivery_id = $1
 		  AND status IN ('sending', 'failed', 'pending')
 		"#,
-	)
-	.bind(delivery_id)
-	.bind(error)
-	.execute(pool)
-	.await?;
-	Ok(())
+    )
+    .bind(delivery_id)
+    .bind(error)
+    .execute(pool)
+    .await?;
+    Ok(())
 }
 
 /// Explicitly abandon a delivery (admin action or circuit-breaker decision).
 pub async fn abandon(pool: &PgPool, delivery_id: Uuid, reason: &str) -> sqlx::Result<()> {
-	sqlx::query(
-		r#"
+    sqlx::query(
+        r#"
 		UPDATE eel_report_deliveries
 		SET status = 'abandoned', last_error = $2
 		WHERE delivery_id = $1
 		  AND status != 'delivered'
 		"#,
-	)
-	.bind(delivery_id)
-	.bind(reason)
-	.execute(pool)
-	.await?;
-	Ok(())
+    )
+    .bind(delivery_id)
+    .bind(reason)
+    .execute(pool)
+    .await?;
+    Ok(())
 }
 
 /// Reset a delivery to pending so the pipeline picks it up on the next tick.
 pub async fn retry(pool: &PgPool, delivery_id: Uuid) -> sqlx::Result<()> {
-	sqlx::query(
-		r#"
+    sqlx::query(
+        r#"
 		UPDATE eel_report_deliveries
 		SET status = 'pending', next_attempt_at = NOW(), last_error = NULL
 		WHERE delivery_id = $1
 		  AND status IN ('failed', 'abandoned')
 		"#,
-	)
-	.bind(delivery_id)
-	.execute(pool)
-	.await?;
-	Ok(())
+    )
+    .bind(delivery_id)
+    .execute(pool)
+    .await?;
+    Ok(())
 }
 
 /// Cancel a delivery (idempotent; delivered rows are not touched).
 pub async fn cancel(pool: &PgPool, delivery_id: Uuid) -> sqlx::Result<()> {
-	sqlx::query(
-		r#"
+    sqlx::query(
+        r#"
 		UPDATE eel_report_deliveries
 		SET status = 'abandoned', last_error = 'cancelled by operator'
 		WHERE delivery_id = $1
 		  AND status NOT IN ('delivered', 'abandoned')
 		"#,
-	)
-	.bind(delivery_id)
-	.execute(pool)
-	.await?;
-	Ok(())
+    )
+    .bind(delivery_id)
+    .execute(pool)
+    .await?;
+    Ok(())
 }
 
 /// Fetch one delivery by ID (for admin API).
 pub async fn fetch_delivery(pool: &PgPool, delivery_id: Uuid) -> sqlx::Result<Option<Delivery>> {
-	sqlx::query_as::<_, Delivery>(
-		r#"
+    sqlx::query_as::<_, Delivery>(
+        r#"
 		SELECT
 			delivery_id, run_id, subscription_id, artifact_id,
 			status, attempt_count, max_attempts,
@@ -185,21 +185,21 @@ pub async fn fetch_delivery(pool: &PgPool, delivery_id: Uuid) -> sqlx::Result<Op
 		FROM eel_report_deliveries
 		WHERE delivery_id = $1
 		"#,
-	)
-	.bind(delivery_id)
-	.fetch_optional(pool)
-	.await
+    )
+    .bind(delivery_id)
+    .fetch_optional(pool)
+    .await
 }
 
 /// List deliveries for a given run_id, paginated.
 pub async fn list_by_run(
-	pool: &PgPool,
-	run_id: Uuid,
-	limit: i64,
-	offset: i64,
+    pool: &PgPool,
+    run_id: Uuid,
+    limit: i64,
+    offset: i64,
 ) -> sqlx::Result<Vec<Delivery>> {
-	sqlx::query_as::<_, Delivery>(
-		r#"
+    sqlx::query_as::<_, Delivery>(
+        r#"
 		SELECT
 			delivery_id, run_id, subscription_id, artifact_id,
 			status, attempt_count, max_attempts,
@@ -210,21 +210,21 @@ pub async fn list_by_run(
 		ORDER BY delivery_id
 		LIMIT $2 OFFSET $3
 		"#,
-	)
-	.bind(run_id)
-	.bind(limit)
-	.bind(offset)
-	.fetch_all(pool)
-	.await
+    )
+    .bind(run_id)
+    .bind(limit)
+    .bind(offset)
+    .fetch_all(pool)
+    .await
 }
 
 /// Fetch subscriber for a subscription.
 pub async fn fetch_subscriber(
-	pool: &PgPool,
-	subscription_id: Uuid,
+    pool: &PgPool,
+    subscription_id: Uuid,
 ) -> sqlx::Result<Option<Subscriber>> {
-	sqlx::query_as::<_, Subscriber>(
-		r#"
+    sqlx::query_as::<_, Subscriber>(
+        r#"
 		SELECT
 			s.subscriber_id, s.name, s.channel, s.endpoint, s.endpoint_hash,
 			s.audience, s.auth_ref, s.pgp_pubkey_ref, s.preferred_format,
@@ -233,69 +233,68 @@ pub async fn fetch_subscriber(
 		JOIN eel_report_subscriptions sub ON sub.subscriber_id = s.subscriber_id
 		WHERE sub.subscription_id = $1
 		"#,
-	)
-	.bind(subscription_id)
-	.fetch_optional(pool)
-	.await
+    )
+    .bind(subscription_id)
+    .fetch_optional(pool)
+    .await
 }
 
 /// Fetch subscription.
 pub async fn fetch_subscription(
-	pool: &PgPool,
-	subscription_id: Uuid,
+    pool: &PgPool,
+    subscription_id: Uuid,
 ) -> sqlx::Result<Option<Subscription>> {
-	sqlx::query_as::<_, Subscription>(
-		r#"
+    sqlx::query_as::<_, Subscription>(
+        r#"
 		SELECT subscription_id, subscriber_id, definition_id, format, created_at, cancelled_at
 		FROM eel_report_subscriptions
 		WHERE subscription_id = $1
 		"#,
-	)
-	.bind(subscription_id)
-	.fetch_optional(pool)
-	.await
+    )
+    .bind(subscription_id)
+    .fetch_optional(pool)
+    .await
 }
 
 /// Fetch artifact.
 pub async fn fetch_artifact(pool: &PgPool, artifact_id: Uuid) -> sqlx::Result<Option<Artifact>> {
-	sqlx::query_as::<_, Artifact>(
-		r#"
+    sqlx::query_as::<_, Artifact>(
+        r#"
 		SELECT
 			artifact_id, run_id, format, blob_ref, sha256, size_bytes,
 			hsm_signature, rendered_at
 		FROM eel_report_artifacts
 		WHERE artifact_id = $1
 		"#,
-	)
-	.bind(artifact_id)
-	.fetch_optional(pool)
-	.await
+    )
+    .bind(artifact_id)
+    .fetch_optional(pool)
+    .await
 }
 
 /// Fetch tlog anchor for an artifact if present.
 pub async fn fetch_tlog_anchor(
-	pool: &PgPool,
-	artifact_id: Uuid,
+    pool: &PgPool,
+    artifact_id: Uuid,
 ) -> sqlx::Result<Option<TlogAnchor>> {
-	sqlx::query_as::<_, TlogAnchor>(
-		r#"
+    sqlx::query_as::<_, TlogAnchor>(
+        r#"
 		SELECT anchor_id, run_id, artifact_id, tlog_leaf_index
 		FROM eel_report_tlog_anchors
 		WHERE artifact_id = $1
 		"#,
-	)
-	.bind(artifact_id)
-	.fetch_optional(pool)
-	.await
+    )
+    .bind(artifact_id)
+    .fetch_optional(pool)
+    .await
 }
 
 /// Check whether an api_pull delivery has been observed in the access log.
 pub async fn api_pull_observed(pool: &PgPool, artifact_id: Uuid) -> sqlx::Result<bool> {
-	let row: (i64,) = sqlx::query_as(
-		r#"SELECT COUNT(*) FROM eel_report_access_log WHERE artifact_id = $1"#,
-	)
-	.bind(artifact_id)
-	.fetch_one(pool)
-	.await?;
-	Ok(row.0 > 0)
+    let row: (i64,) =
+        sqlx::query_as(r#"SELECT COUNT(*) FROM eel_report_access_log WHERE artifact_id = $1"#)
+            .bind(artifact_id)
+            .fetch_one(pool)
+            .await?;
+    Ok(row.0 > 0)
 }

@@ -61,10 +61,7 @@ async fn get_session_features(
     match profiles.get(&session_id) {
         None => StatusCode::NOT_FOUND.into_response(),
         Some(profile) => {
-            let flagged = profile
-                .last_distance
-                .map(|d| d > 5.0)
-                .unwrap_or(false);
+            let flagged = profile.last_distance.map(|d| d > 5.0).unwrap_or(false);
             let response = SessionFeaturesResponse {
                 session_id: profile.session_id.clone(),
                 officer_id: profile.officer_id.clone(),

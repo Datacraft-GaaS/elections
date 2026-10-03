@@ -28,7 +28,11 @@ async fn main() {
     info!(http_addr, "special-voter-api starting");
     let state = special_voter::http::AppState::new_shared();
     let app = special_voter::http::router(state);
-    let listener = tokio::net::TcpListener::bind(&http_addr).await.expect("bind failed");
+    let listener = tokio::net::TcpListener::bind(&http_addr)
+        .await
+        .expect("bind failed");
     info!(http_addr, "special-voter-api HTTP listening");
-    axum::serve(listener, app).await.expect("HTTP server failed");
+    axum::serve(listener, app)
+        .await
+        .expect("HTTP server failed");
 }

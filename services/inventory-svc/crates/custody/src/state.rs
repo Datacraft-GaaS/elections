@@ -64,7 +64,9 @@ pub struct AppState {
 
 impl Default for AppState {
     fn default() -> Self {
-        Self { store: Store::Mem(MemStore::default()) }
+        Self {
+            store: Store::Mem(MemStore::default()),
+        }
     }
 }
 
@@ -76,6 +78,8 @@ impl AppState {
 
     /// new from postgres pool (production).
     pub fn from_pool(pool: PgPool) -> Arc<Self> {
-        Arc::new(Self { store: Store::Pg(pool) })
+        Arc::new(Self {
+            store: Store::Pg(pool),
+        })
     }
 }

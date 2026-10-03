@@ -57,7 +57,10 @@ async fn distress(
     );
     // Production: emit kit_distress.v1 outbox event + fire ECC webhook with retry.
     // Failure must not propagate to the kit.
-    Ok((StatusCode::ACCEPTED, Json(DistressResponse { received: true })))
+    Ok((
+        StatusCode::ACCEPTED,
+        Json(DistressResponse { received: true }),
+    ))
 }
 
 #[cfg(test)]

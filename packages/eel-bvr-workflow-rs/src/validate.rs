@@ -198,7 +198,10 @@ pub fn validate_submission(
     }
 
     for step in &workflow.steps {
-        if let StepKind::Capture { capture: capture_id } = &step.step.kind {
+        if let StepKind::Capture {
+            capture: capture_id,
+        } = &step.step.kind
+        {
             let Some(entry) = workflow.capture(capture_id) else {
                 continue;
             };
@@ -241,7 +244,11 @@ fn format_kinds(kinds: &[crate::model::CaptureKind]) -> String {
         .filter_map(|v| v.as_str().map(str::to_owned))
         .collect();
     names.sort();
-    if names.is_empty() { "none".to_owned() } else { names.join(", ") }
+    if names.is_empty() {
+        "none".to_owned()
+    } else {
+        names.join(", ")
+    }
 }
 
 fn check_length(
@@ -253,22 +260,23 @@ fn check_length(
     let len = text.chars().count();
     if let Some(min) = item.constraints.min_length {
         if len < min {
-            out.push(ValidationError::TooShort { item: name.to_owned(), min });
+            out.push(ValidationError::TooShort {
+                item: name.to_owned(),
+                min,
+            });
         }
     }
     if let Some(max) = item.constraints.max_length {
         if len > max {
-            out.push(ValidationError::TooLong { item: name.to_owned(), max });
+            out.push(ValidationError::TooLong {
+                item: name.to_owned(),
+                max,
+            });
         }
     }
 }
 
-fn check_pattern(
-    name: &str,
-    kind: DataKind,
-    text: &str,
-    out: &mut Vec<ValidationError>,
-) {
+fn check_pattern(name: &str, kind: DataKind, text: &str, out: &mut Vec<ValidationError>) {
     use crate::model::DataKind as K;
     let field = match kind {
         K::NationalId => "national_id",
@@ -279,7 +287,10 @@ fn check_pattern(
         K::Text | K::Date | K::Choice | K::Consent => return,
     };
     if !eel_spec_helpers_rs::matches_bvr_pattern(field, text) {
-        out.push(ValidationError::PatternMismatch { item: name.to_owned(), kind });
+        out.push(ValidationError::PatternMismatch {
+            item: name.to_owned(),
+            kind,
+        });
     }
 }
 
@@ -294,7 +305,9 @@ fn check_options(
     }
     if let Some(options) = &item.constraints.options {
         if !options.iter().any(|o| o == text) {
-            out.push(ValidationError::NotAnOption { item: name.to_owned() });
+            out.push(ValidationError::NotAnOption {
+                item: name.to_owned(),
+            });
         }
     }
 }
@@ -318,7 +331,9 @@ fn check_age(
     }
 
     let Ok(date) = text.parse::<chrono::NaiveDate>() else {
-        out.push(ValidationError::NotADate { item: name.to_owned() });
+        out.push(ValidationError::NotADate {
+            item: name.to_owned(),
+        });
         return;
     };
 
@@ -331,7 +346,9 @@ fn check_age(
     // day after -- the conservative reading for a minimum-age rule.
     let today = chrono::Utc::now().date_naive();
     let Some(years) = age_in_whole_years(date, today) else {
-        out.push(ValidationError::NotADate { item: name.to_owned() });
+        out.push(ValidationError::NotADate {
+            item: name.to_owned(),
+        });
         return;
     };
 
@@ -353,5 +370,7 @@ fn age_in_whole_years(birth: chrono::NaiveDate, today: chrono::NaiveDate) -> Opt
     if (today.month(), today.day()) < (birth.month(), birth.day()) {
         years -= 1;
     }
-    u16::try_from(years).ok().filter(|y| *y > 0 || birth <= today)
+    u16::try_from(years)
+        .ok()
+        .filter(|y| *y > 0 || birth <= today)
 }

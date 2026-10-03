@@ -38,7 +38,7 @@ pub fn build_router(state: SharedState) -> Router {
             "/v1/by-elections/{id}/cost-report",
             post(submit_cost_report).get(get_cost_report),
         )
-    // Public contract endpoints (governance-by-election/operations.yaml)
+        // Public contract endpoints (governance-by-election/operations.yaml)
         .route(
             "/api/v1/governance/by-election/elections",
             get(list_by_elections).post(declare_by_election),

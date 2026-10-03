@@ -12,15 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::projector::ProjectionError;
 use eel_eventstore_rs::StoredEvent;
 use rts_domain::events::{EVENT_FORM34B_COMPILED, EVENT_FORM34C_COMPILED};
 use sqlx::PgPool;
 use tracing::info;
-use crate::projector::ProjectionError;
 
-pub struct CroViewProjector { pub pool: PgPool }
+pub struct CroViewProjector {
+    pub pool: PgPool,
+}
 impl CroViewProjector {
-    pub fn new(pool: PgPool) -> Self { Self { pool } }
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
     pub async fn project(&self, event: &StoredEvent) -> Result<(), ProjectionError> {
         match event.event_type.as_str() {
             EVENT_FORM34B_COMPILED => self.upsert_34b(event).await,
@@ -30,14 +34,32 @@ impl CroViewProjector {
     }
     async fn upsert_34b(&self, event: &StoredEvent) -> Result<(), ProjectionError> {
         let p = &event.payload;
-        let constituency_code = p.get("constituency_code").and_then(|v| v.as_str()).unwrap_or_default();
-        let county_code = p.get("county_code").and_then(|v| v.as_str()).unwrap_or_default();
-        let compiled_stations = p.get("compiled_stations").cloned().unwrap_or(serde_json::json!([]));
-        let total_registered = p.get("total_registered").and_then(|v| v.as_i64()).unwrap_or(0);
+        let constituency_code = p
+            .get("constituency_code")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default();
+        let county_code = p
+            .get("county_code")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default();
+        let compiled_stations = p
+            .get("compiled_stations")
+            .cloned()
+            .unwrap_or(serde_json::json!([]));
+        let total_registered = p
+            .get("total_registered")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
         let total_valid = p.get("total_valid").and_then(|v| v.as_i64()).unwrap_or(0);
-        let total_rejected = p.get("total_rejected").and_then(|v| v.as_i64()).unwrap_or(0);
+        let total_rejected = p
+            .get("total_rejected")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
         let total_spoilt = p.get("total_spoilt").and_then(|v| v.as_i64()).unwrap_or(0);
-        let candidate_totals = p.get("candidate_totals").cloned().unwrap_or(serde_json::json!([]));
+        let candidate_totals = p
+            .get("candidate_totals")
+            .cloned()
+            .unwrap_or(serde_json::json!([]));
         sqlx::query(
             "INSERT INTO form34b_view (stream_id, stream_version, constituency_code, county_code, compiled_stations, total_registered, total_valid, total_rejected, total_spoilt, candidate_totals, status)
              VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'compiled')
@@ -51,13 +73,28 @@ impl CroViewProjector {
     }
     async fn upsert_34c(&self, event: &StoredEvent) -> Result<(), ProjectionError> {
         let p = &event.payload;
-        let compiled_constituencies = p.get("compiled_constituencies").cloned().unwrap_or(serde_json::json!([]));
-        let total_registered = p.get("total_registered").and_then(|v| v.as_i64()).unwrap_or(0);
+        let compiled_constituencies = p
+            .get("compiled_constituencies")
+            .cloned()
+            .unwrap_or(serde_json::json!([]));
+        let total_registered = p
+            .get("total_registered")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
         let total_valid = p.get("total_valid").and_then(|v| v.as_i64()).unwrap_or(0);
-        let total_rejected = p.get("total_rejected").and_then(|v| v.as_i64()).unwrap_or(0);
+        let total_rejected = p
+            .get("total_rejected")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
         let total_spoilt = p.get("total_spoilt").and_then(|v| v.as_i64()).unwrap_or(0);
-        let candidate_totals = p.get("candidate_totals").cloned().unwrap_or(serde_json::json!([]));
-        let merkle_root: Option<String> = p.get("merkle_root").and_then(|v| v.as_str()).map(|s| s.to_string());
+        let candidate_totals = p
+            .get("candidate_totals")
+            .cloned()
+            .unwrap_or(serde_json::json!([]));
+        let merkle_root: Option<String> = p
+            .get("merkle_root")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
         sqlx::query(
             "INSERT INTO form34c_view (stream_id, stream_version, compiled_constituencies, total_registered, total_valid, total_rejected, total_spoilt, candidate_totals, merkle_root, status)
              VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'compiled')

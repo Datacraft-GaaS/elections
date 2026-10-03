@@ -29,10 +29,7 @@
 //! route.
 
 use abis_api::{
-    adjudication::AdjudicationStore,
-    app as build_app,
-    state::AppState,
-    store::AbisStore,
+    adjudication::AdjudicationStore, app as build_app, state::AppState, store::AbisStore,
 };
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
@@ -40,7 +37,10 @@ use serde_json::{json, Value};
 use std::sync::Arc;
 use tower::ServiceExt;
 
-fn seeded() -> (axum::Router, abis_api::adjudication::SharedAdjudicationStore) {
+fn seeded() -> (
+    axum::Router,
+    abis_api::adjudication::SharedAdjudicationStore,
+) {
     let adjudication = AdjudicationStore::new().shared();
     adjudication.open_case("job-1", "subject-1", "normal");
     adjudication.open_case("job-2", "subject-2", "high");
@@ -70,8 +70,13 @@ async fn call(
     };
     let resp = app.oneshot(req).await.unwrap();
     let status = resp.status();
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
-    (status, serde_json::from_slice(&bytes).unwrap_or(Value::Null))
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    (
+        status,
+        serde_json::from_slice(&bytes).unwrap_or(Value::Null),
+    )
 }
 
 const CASES: &str = "/v1/adjudication/cases";
@@ -105,14 +110,23 @@ async fn the_status_filter_and_paging_are_applied() {
     .await;
     assert_eq!(status, StatusCode::OK);
 
-    let (status, body) = call(app.clone(), "GET", &format!("{CASES}?status=assigned"), None).await;
+    let (status, body) = call(
+        app.clone(),
+        "GET",
+        &format!("{CASES}?status=assigned"),
+        None,
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["total"], 1, "the status filter must actually filter");
     assert_eq!(body["items"][0]["case_id"], second);
 
     let (status, body) = call(app, "GET", &format!("{CASES}?page_size=1&page=2"), None).await;
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(body["total"], 2, "total counts the whole filtered set, not the page");
+    assert_eq!(
+        body["total"], 2,
+        "total counts the whole filtered set, not the page"
+    );
     assert_eq!(body["items"].as_array().unwrap().len(), 1);
 }
 
@@ -230,7 +244,10 @@ async fn evidence_is_recorded_and_read_back() {
     .await;
     assert_eq!(status, StatusCode::CREATED);
     assert_eq!(body["kind"], "probe");
-    let evidence_id = body["evidence_id"].as_str().expect("evidence_id").to_string();
+    let evidence_id = body["evidence_id"]
+        .as_str()
+        .expect("evidence_id")
+        .to_string();
 
     let (status, body) = call(app.clone(), "GET", &format!("{CASES}/{id}/evidence"), None).await;
     assert_eq!(status, StatusCode::OK);
@@ -252,8 +269,17 @@ async fn an_unknown_case_is_not_an_empty_evidence_list() {
 async fn evidence_without_a_kind_or_url_is_refused() {
     let (app, adj) = seeded();
     let id = adj.cases()[0].case_id.clone();
-    for body in [json!({ "kind": "", "url": "s3://x" }), json!({ "kind": "probe", "url": "" })] {
-        let (status, _) = call(app.clone(), "POST", &format!("{CASES}/{id}/evidence"), Some(body)).await;
+    for body in [
+        json!({ "kind": "", "url": "s3://x" }),
+        json!({ "kind": "probe", "url": "" }),
+    ] {
+        let (status, _) = call(
+            app.clone(),
+            "POST",
+            &format!("{CASES}/{id}/evidence"),
+            Some(body),
+        )
+        .await;
         assert_eq!(status, StatusCode::BAD_REQUEST);
     }
 }
@@ -275,7 +301,11 @@ async fn a_case_is_decided_once_and_then_is_closed_to_changes() {
         })),
     )
     .await;
-    assert_eq!(status, StatusCode::BAD_REQUEST, "tier3 requires a second adjudicator");
+    assert_eq!(
+        status,
+        StatusCode::BAD_REQUEST,
+        "tier3 requires a second adjudicator"
+    );
 
     let decision = json!({
         "outcome": "match",
@@ -283,14 +313,26 @@ async fn a_case_is_decided_once_and_then_is_closed_to_changes() {
         "second_adjudicator_id": "adj-senior",
         "resolution_notes": "same person, re-enrolled elsewhere"
     });
-    let (status, body) = call(app.clone(), "POST", &format!("{CASES}/{id}/decide"), Some(decision.clone())).await;
+    let (status, body) = call(
+        app.clone(),
+        "POST",
+        &format!("{CASES}/{id}/decide"),
+        Some(decision.clone()),
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["state"], "decided");
     assert_eq!(body["decision"]["outcome"], "match");
     assert_eq!(body["decision"]["second_adjudicator_id"], "adj-senior");
 
     // Decided is terminal.
-    let (status, _) = call(app.clone(), "POST", &format!("{CASES}/{id}/decide"), Some(decision)).await;
+    let (status, _) = call(
+        app.clone(),
+        "POST",
+        &format!("{CASES}/{id}/decide"),
+        Some(decision),
+    )
+    .await;
     assert_eq!(status, StatusCode::CONFLICT);
     let (status, _) = call(
         app.clone(),
@@ -331,4 +373,3 @@ async fn nothing_can_be_done_to_a_case_that_does_not_exist() {
     .await;
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
-

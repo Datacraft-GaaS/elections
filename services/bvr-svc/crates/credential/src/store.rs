@@ -117,7 +117,10 @@ impl Store {
                     hsm_sig: String::new(),
                 };
                 let id = cred.credential_id;
-                m.credentials.lock().expect("lock poisoned").insert(id, cred.clone());
+                m.credentials
+                    .lock()
+                    .expect("lock poisoned")
+                    .insert(id, cred.clone());
                 if let Some(bid) = req.batch_id {
                     let mut b = m.batches.lock().expect("lock poisoned");
                     b.entry(bid).or_insert_with(|| BatchSummary {
@@ -148,38 +151,53 @@ impl Store {
                 .bind(id)
                 .fetch_optional(pool)
                 .await?;
-                Ok(row.map(|(cid, ct, hid, hname, iid, issued, expires, status, claims, sig)| Credential {
-                    credential_id: cid,
-                    credential_type: ct,
-                    holder_id: hid,
-                    holder_name: hname,
-                    issuer_id: iid,
-                    issued_at: issued,
-                    expires_at: expires,
-                    status,
-                    claims,
-                    hsm_sig: sig,
-                }))
+                Ok(row.map(
+                    |(cid, ct, hid, hname, iid, issued, expires, status, claims, sig)| Credential {
+                        credential_id: cid,
+                        credential_type: ct,
+                        holder_id: hid,
+                        holder_name: hname,
+                        issuer_id: iid,
+                        issued_at: issued,
+                        expires_at: expires,
+                        status,
+                        claims,
+                        hsm_sig: sig,
+                    },
+                ))
             }
-            Self::Mem(m) => Ok(m.credentials.lock().expect("lock poisoned").get(&id).cloned()),
+            Self::Mem(m) => Ok(m
+                .credentials
+                .lock()
+                .expect("lock poisoned")
+                .get(&id)
+                .cloned()),
         }
     }
 
-    pub async fn revoke_credential(&self, id: Uuid, _req: RevocationRequest) -> Result<Option<Credential>, StoreError> {
+    pub async fn revoke_credential(
+        &self,
+        id: Uuid,
+        _req: RevocationRequest,
+    ) -> Result<Option<Credential>, StoreError> {
         match self {
             Self::Pg(pool) => {
-                let res = sqlx::query("UPDATE credential_api_credentials SET status='revoked' WHERE credential_id=$1")
-                    .bind(id)
-                    .execute(pool)
-                    .await?;
+                let res = sqlx::query(
+                    "UPDATE credential_api_credentials SET status='revoked' WHERE credential_id=$1",
+                )
+                .bind(id)
+                .execute(pool)
+                .await?;
                 if res.rows_affected() == 0 {
                     return Ok(None);
                 }
                 // bump batch revoked if needed (lookup batch_id)
-                let batch: Option<(Option<Uuid>,)> = sqlx::query_as("SELECT batch_id FROM credential_api_credentials WHERE credential_id=$1")
-                    .bind(id)
-                    .fetch_optional(pool)
-                    .await?;
+                let batch: Option<(Option<Uuid>,)> = sqlx::query_as(
+                    "SELECT batch_id FROM credential_api_credentials WHERE credential_id=$1",
+                )
+                .bind(id)
+                .fetch_optional(pool)
+                .await?;
                 if let Some((Some(bid),)) = batch {
                     let _ = sqlx::query("UPDATE credential_api_batches SET total_revoked = total_revoked + 1 WHERE batch_id=$1")
                         .bind(bid)
@@ -224,18 +242,25 @@ impl Store {
                 .bind(batch_id)
                 .fetch_optional(pool)
                 .await?;
-                Ok(row.map(|(bid, ct, issued, failed, revoked, status, created, completed)| BatchSummary {
-                    batch_id: bid,
-                    credential_type: ct,
-                    total_issued: issued,
-                    total_failed: failed,
-                    total_revoked: revoked,
-                    status,
-                    created_at: created,
-                    completed_at: completed,
-                }))
+                Ok(row.map(
+                    |(bid, ct, issued, failed, revoked, status, created, completed)| BatchSummary {
+                        batch_id: bid,
+                        credential_type: ct,
+                        total_issued: issued,
+                        total_failed: failed,
+                        total_revoked: revoked,
+                        status,
+                        created_at: created,
+                        completed_at: completed,
+                    },
+                ))
             }
-            Self::Mem(m) => Ok(m.batches.lock().expect("lock poisoned").get(&batch_id).cloned()),
+            Self::Mem(m) => Ok(m
+                .batches
+                .lock()
+                .expect("lock poisoned")
+                .get(&batch_id)
+                .cloned()),
         }
     }
 }

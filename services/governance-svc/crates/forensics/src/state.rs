@@ -26,7 +26,9 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use crate::models::{AnalysisCycle, EstimateRecord, PublicReport, ReferralPacket, ReplicationPackage};
+use crate::models::{
+    AnalysisCycle, EstimateRecord, PublicReport, ReferralPacket, ReplicationPackage,
+};
 use crate::spec::{EvidenceAttachment, Finding, Investigation};
 
 /// Shared application state.

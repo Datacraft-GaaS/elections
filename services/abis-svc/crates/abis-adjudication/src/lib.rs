@@ -27,7 +27,7 @@ pub mod fsm;
 pub mod repository;
 
 pub use domain::{
-    AdjudicationCase, AdjudicationDecision, AdjudicationSlaPolicy, ActionType, BiometricModality,
+    ActionType, AdjudicationCase, AdjudicationDecision, AdjudicationSlaPolicy, BiometricModality,
     CasePriority, CaseState, PanelVote, Reviewer, ReviewerAction, ReviewerTier, Vote,
 };
 pub use error::AdjudicationError;

@@ -32,7 +32,10 @@ pub async fn get_gazette_notice(
     Path(notice_id): Path<Uuid>,
 ) -> impl IntoResponse {
     tracing::info!(%notice_id, "get_gazette_notice");
-    (StatusCode::NOT_FOUND, Json(json!({ "detail": "notice not found" })))
+    (
+        StatusCode::NOT_FOUND,
+        Json(json!({ "detail": "notice not found" })),
+    )
 }
 
 /// GET /api/v1/gazette/inspection/windows — list inspection windows.
@@ -54,7 +57,11 @@ pub async fn get_inspection_window(
     let guard = state.windows.lock().expect("lock poisoned");
     match guard.get(&window_id) {
         Some(w) => Json(w.clone()).into_response(),
-        None => (StatusCode::NOT_FOUND, Json(json!({ "detail": "window not found" }))).into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "detail": "window not found" })),
+        )
+            .into_response(),
     }
 }
 
@@ -92,6 +99,10 @@ pub async fn get_objection_status(
             updated_at: o.submitted_at.clone(),
         })
         .into_response(),
-        None => (StatusCode::NOT_FOUND, Json(json!({ "detail": "objection not found" }))).into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "detail": "objection not found" })),
+        )
+            .into_response(),
     }
 }

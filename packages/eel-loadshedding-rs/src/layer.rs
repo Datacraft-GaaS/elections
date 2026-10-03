@@ -12,19 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::{priority::Priority, shedder::CoDelShedder};
+use bytes::Bytes;
+use http::{Request, Response, StatusCode};
+use http_body_util::Full;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 use std::time::Instant;
-use http::{Request, Response, StatusCode};
-use http_body_util::Full;
-use bytes::Bytes;
 use tower::{Layer, Service};
-use crate::{
-    priority::Priority,
-    shedder::CoDelShedder,
-};
 
 /// Tower layer that applies CoDel load shedding.
 #[derive(Clone)]
@@ -34,7 +31,9 @@ pub struct LoadSheddingLayer {
 
 impl LoadSheddingLayer {
     pub fn new(shedder: CoDelShedder) -> Self {
-        Self { shedder: Arc::new(shedder) }
+        Self {
+            shedder: Arc::new(shedder),
+        }
     }
 
     pub fn metrics(&self) -> &crate::metrics::ShedMetrics {
@@ -90,7 +89,9 @@ where
                     // Collect response body into Bytes
                     let (parts, body) = resp.into_parts();
                     use http_body_util::BodyExt;
-                    let bytes = body.collect().await
+                    let bytes = body
+                        .collect()
+                        .await
                         .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> { e.into() })?
                         .to_bytes();
                     Ok(Response::from_parts(parts, Full::new(bytes)))

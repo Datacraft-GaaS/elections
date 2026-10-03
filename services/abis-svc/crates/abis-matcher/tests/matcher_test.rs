@@ -410,8 +410,8 @@ fn fingerprint_translational_tolerance_enforced() {
         .iter()
         .enumerate()
         .map(|(i, m)| {
-            let ox = ((i as u16 * 23) % 60 + 10) as u16; // 10..69px, prime-spaced
-            let oy = ((i as u16 * 29) % 60 + 10) as u16;
+            let ox = (i as u16 * 23) % 60 + 10; // 10..69px, prime-spaced
+            let oy = (i as u16 * 29) % 60 + 10;
             Minutia {
                 x: m.x.saturating_add(ox),
                 y: m.y.saturating_add(oy),

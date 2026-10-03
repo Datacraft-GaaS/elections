@@ -38,12 +38,12 @@ pub use report::{Report, RocPoint};
 /// Error type for the FpVTE harness.
 #[derive(Debug, thiserror::Error)]
 pub enum FpVteError {
-	#[error("corpus load error: {0}")]
-	CorpusLoad(String),
-	#[error("report write error: {0}")]
-	ReportWrite(String),
-	#[error("matcher error: {0}")]
-	Matcher(String),
-	#[error("insufficient corpus: need >= {needed} entries, got {got}")]
-	InsufficientCorpus { needed: usize, got: usize },
+    #[error("corpus load error: {0}")]
+    CorpusLoad(String),
+    #[error("report write error: {0}")]
+    ReportWrite(String),
+    #[error("matcher error: {0}")]
+    Matcher(String),
+    #[error("insufficient corpus: need >= {needed} entries, got {got}")]
+    InsufficientCorpus { needed: usize, got: usize },
 }

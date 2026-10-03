@@ -14,9 +14,9 @@
 
 //! abis-enhancement crate.
 #![warn(missing_docs)]
-pub mod fingerprint;
-pub mod face;
-pub mod slap;
-pub mod iris;
 pub mod error;
+pub mod face;
+pub mod fingerprint;
+pub mod iris;
+pub mod slap;
 pub use error::EnhancementError;

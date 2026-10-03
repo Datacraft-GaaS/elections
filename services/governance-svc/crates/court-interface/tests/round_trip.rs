@@ -45,7 +45,12 @@ async fn body_json(resp: axum::response::Response) -> Value {
     serde_json::from_slice(&bytes).unwrap_or(Value::Null)
 }
 
-async fn send(app: &axum::Router, method: &str, uri: &str, body: Option<Value>) -> axum::response::Response {
+async fn send(
+    app: &axum::Router,
+    method: &str,
+    uri: &str,
+    body: Option<Value>,
+) -> axum::response::Response {
     let mut b = Request::builder().method(method).uri(uri);
     let payload = match body {
         Some(v) => {
@@ -72,9 +77,16 @@ async fn petition(app: &axum::Router) -> String {
         })),
     )
     .await;
-    assert_eq!(resp.status(), StatusCode::CREATED, "file_petition must work");
+    assert_eq!(
+        resp.status(),
+        StatusCode::CREATED,
+        "file_petition must work"
+    );
     let created = body_json(resp).await;
-    created["petition_id"].as_str().expect("petition_id").to_string()
+    created["petition_id"]
+        .as_str()
+        .expect("petition_id")
+        .to_string()
 }
 
 fn witness_body() -> Value {
@@ -104,7 +116,16 @@ async fn registered_witness_is_stored_and_listed() {
     assert_eq!(created["petition_id"], id.as_str());
     assert!(!created["registered_at"].is_null());
 
-    let listed = body_json(send(&app, "GET", &format!("/court/petitions/{id}/witnesses"), None).await).await;
+    let listed = body_json(
+        send(
+            &app,
+            "GET",
+            &format!("/court/petitions/{id}/witnesses"),
+            None,
+        )
+        .await,
+    )
+    .await;
     let witnesses = listed["witnesses"].as_array().unwrap();
     assert_eq!(witnesses.len(), 1, "a registered witness must be listed");
     assert_eq!(witnesses[0]["full_name"], "DrAmina Yusuf");
@@ -116,7 +137,16 @@ async fn a_petition_with_no_witness_lists_empty() {
     // truthful answer. Previously it was empty too, but always, for every id.
     let app = app();
     let id = petition(&app).await;
-    let listed = body_json(send(&app, "GET", &format!("/court/petitions/{id}/witnesses"), None).await).await;
+    let listed = body_json(
+        send(
+            &app,
+            "GET",
+            &format!("/court/petitions/{id}/witnesses"),
+            None,
+        )
+        .await,
+    )
+    .await;
     assert_eq!(listed["witnesses"].as_array().unwrap().len(), 0);
 }
 
@@ -138,11 +168,27 @@ async fn evidence_request_is_recorded_and_appears_in_the_bundle() {
     .await;
     assert_eq!(accepted.status(), StatusCode::ACCEPTED);
 
-    let bundle = body_json(send(&app, "GET", &format!("/court/petitions/{id}/evidence/bundle"), None).await).await;
+    let bundle = body_json(
+        send(
+            &app,
+            "GET",
+            &format!("/court/petitions/{id}/evidence/bundle"),
+            None,
+        )
+        .await,
+    )
+    .await;
     assert_eq!(bundle["petition_id"], id.as_str());
     let items = bundle["items"].as_array().unwrap();
-    assert_eq!(items.len(), 1, "the recorded request must appear in the bundle");
-    assert!(items[0]["item_type"].as_str().unwrap().contains("voter_register"));
+    assert_eq!(
+        items.len(),
+        1,
+        "the recorded request must appear in the bundle"
+    );
+    assert!(items[0]["item_type"]
+        .as_str()
+        .unwrap()
+        .contains("voter_register"));
     assert_eq!(items[0]["court_ref"], "HC/2026/77");
     assert_eq!(
         items[0]["verified"], false,
@@ -157,7 +203,13 @@ async fn evidence_bundle_is_404_before_any_request_exists() {
     // tell that from a populated bundle.
     let app = app();
     let id = petition(&app).await;
-    let resp = send(&app, "GET", &format!("/court/petitions/{id}/evidence/bundle"), None).await;
+    let resp = send(
+        &app,
+        "GET",
+        &format!("/court/petitions/{id}/evidence/bundle"),
+        None,
+    )
+    .await;
     assert_eq!(
         resp.status(),
         StatusCode::NOT_FOUND,
@@ -183,7 +235,10 @@ async fn supplementary_request_is_stored_with_the_fields_supplied() {
     )
     .await;
     assert_eq!(created["petition_id"], id.as_str());
-    assert_eq!(created["description"], "Further witness statement from the returning officer");
+    assert_eq!(
+        created["description"],
+        "Further witness statement from the returning officer"
+    );
     assert_eq!(created["requested_by"], "registrar");
     assert_eq!(created["status"], "OPEN");
     assert!(
@@ -234,7 +289,13 @@ async fn witnesses_do_not_leak_across_petitions() {
     )
     .await;
     let b_listed = body_json(
-        send(&app, "GET", &format!("/court/petitions/{b}/witnesses"), None).await,
+        send(
+            &app,
+            "GET",
+            &format!("/court/petitions/{b}/witnesses"),
+            None,
+        )
+        .await,
     )
     .await;
     assert!(

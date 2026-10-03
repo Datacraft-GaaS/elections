@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::error::AuthError;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uuid::Uuid;
-use crate::error::AuthError;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuditEvent {
@@ -31,7 +31,13 @@ pub struct AuditEvent {
 }
 
 impl AuditEvent {
-    pub fn new(subject: &str, action: &str, resource: &str, decision: &str, metadata: Value) -> Self {
+    pub fn new(
+        subject: &str,
+        action: &str,
+        resource: &str,
+        decision: &str,
+        metadata: Value,
+    ) -> Self {
         Self {
             event_id: Uuid::new_v4().to_string(),
             timestamp: Utc::now(),

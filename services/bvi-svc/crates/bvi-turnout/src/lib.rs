@@ -46,9 +46,7 @@ impl TurnoutScope {
     pub fn scope_code(&self) -> &str {
         match self {
             TurnoutScope::National => "KE",
-            TurnoutScope::County(c)
-            | TurnoutScope::Constituency(c)
-            | TurnoutScope::Station(c) => c,
+            TurnoutScope::County(c) | TurnoutScope::Constituency(c) | TurnoutScope::Station(c) => c,
         }
     }
 }
@@ -183,12 +181,10 @@ pub async fn turnout_summary(
     scope: &TurnoutScope,
 ) -> sqlx::Result<TurnoutSummary> {
     let totals = match scope {
-        TurnoutScope::National => {
-            match exact_row(pool, "national", "KE").await? {
-                Some(t) => t,
-                None => sum_station_rows(pool, None).await?,
-            }
-        }
+        TurnoutScope::National => match exact_row(pool, "national", "KE").await? {
+            Some(t) => t,
+            None => sum_station_rows(pool, None).await?,
+        },
         TurnoutScope::County(code) => {
             if let Some(t) = exact_row(pool, "county", code).await? {
                 t
@@ -205,7 +201,11 @@ pub async fn turnout_summary(
         },
         TurnoutScope::Station(code) => match exact_row(pool, "station", code).await? {
             Some(t) => t,
-            None => RollupTotals { identified: 0, registered: 0, as_of: None },
+            None => RollupTotals {
+                identified: 0,
+                registered: 0,
+                as_of: None,
+            },
         },
     };
     Ok(finish(election_id, scope, totals))
@@ -252,9 +252,6 @@ mod tests {
     fn scope_wire_values() {
         assert_eq!(TurnoutScope::National.as_str(), "national");
         assert_eq!(TurnoutScope::National.scope_code(), "KE");
-        assert_eq!(
-            TurnoutScope::County("KE-030".into()).scope_code(),
-            "KE-030"
-        );
+        assert_eq!(TurnoutScope::County("KE-030".into()).scope_code(), "KE-030");
     }
 }

@@ -190,10 +190,9 @@ impl SignedDeclaration {
                 .commissioners
                 .get(id)
                 .ok_or_else(|| QuorumError::UnknownCommissioner(id.clone()))?;
-            let raw =
-                hex::decode(sig_hex).map_err(|_| QuorumError::BadSignature(id.clone()))?;
-            let sig = Signature::from_slice(&raw)
-                .map_err(|_| QuorumError::BadSignature(id.clone()))?;
+            let raw = hex::decode(sig_hex).map_err(|_| QuorumError::BadSignature(id.clone()))?;
+            let sig =
+                Signature::from_slice(&raw).map_err(|_| QuorumError::BadSignature(id.clone()))?;
             key.verify(&canonical, &sig)
                 .map_err(|_| QuorumError::BadSignature(id.clone()))?;
             verified += 1;
@@ -251,12 +250,17 @@ mod tests {
     fn two_of_three_seals_and_independently_verifies() {
         let cs = three_commissioners();
         let mut gate = DeclarationGate::new(&spec_of(&cs), 2).unwrap();
-        gate.approve_with_signing_key(&cs[0].signing, &canonical(&cs)).unwrap();
+        gate.approve_with_signing_key(&cs[0].signing, &canonical(&cs))
+            .unwrap();
         assert!(matches!(
             gate.seal(ELECTION, OUTCOME, ROOT, AT),
-            Err(QuorumError::QuorumNotMet { required: 2, got: 1 })
+            Err(QuorumError::QuorumNotMet {
+                required: 2,
+                got: 1
+            })
         ));
-        gate.approve_with_signing_key(&cs[1].signing, &canonical(&cs)).unwrap();
+        gate.approve_with_signing_key(&cs[1].signing, &canonical(&cs))
+            .unwrap();
 
         let sealed = gate.seal(ELECTION, OUTCOME, ROOT, AT).unwrap();
         sealed.verify(&spec_of(&cs), 2).unwrap();
@@ -266,8 +270,10 @@ mod tests {
     fn tampered_outcome_breaks_every_signature() {
         let cs = three_commissioners();
         let mut gate = DeclarationGate::new(&spec_of(&cs), 2).unwrap();
-        gate.approve_with_signing_key(&cs[0].signing, &canonical(&cs)).unwrap();
-        gate.approve_with_signing_key(&cs[1].signing, &canonical(&cs)).unwrap();
+        gate.approve_with_signing_key(&cs[0].signing, &canonical(&cs))
+            .unwrap();
+        gate.approve_with_signing_key(&cs[1].signing, &canonical(&cs))
+            .unwrap();
         let mut forged = gate.seal(ELECTION, OUTCOME, ROOT, AT).unwrap();
         forged.outcome_json = r#"{"declared":"candidate-8"}"#.to_string();
         assert!(forged.verify(&spec_of(&cs), 2).is_err());
@@ -282,7 +288,8 @@ mod tests {
             gate.approve_with_signing_key(&outsider, &canonical(&cs)),
             Err(QuorumError::UnknownCommissioner(_))
         ));
-        gate.approve_with_signing_key(&cs[0].signing, &canonical(&cs)).unwrap();
+        gate.approve_with_signing_key(&cs[0].signing, &canonical(&cs))
+            .unwrap();
         assert!(matches!(
             gate.approve_with_signing_key(&cs[0].signing, &canonical(&cs)),
             Err(QuorumError::DuplicateApproval(_))
@@ -293,8 +300,10 @@ mod tests {
     fn unregistered_verifier_registry_fails_closed() {
         let cs = three_commissioners();
         let mut gate = DeclarationGate::new(&spec_of(&cs), 2).unwrap();
-        gate.approve_with_signing_key(&cs[0].signing, &canonical(&cs)).unwrap();
-        gate.approve_with_signing_key(&cs[1].signing, &canonical(&cs)).unwrap();
+        gate.approve_with_signing_key(&cs[0].signing, &canonical(&cs))
+            .unwrap();
+        gate.approve_with_signing_key(&cs[1].signing, &canonical(&cs))
+            .unwrap();
         let sealed = gate.seal(ELECTION, OUTCOME, ROOT, AT).unwrap();
         // Verifier with a different registry must refuse.
         assert!(sealed.verify(&spec_of(&three_commissioners()), 2).is_ok()); // fresh identical registry passes

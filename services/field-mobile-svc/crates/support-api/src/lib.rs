@@ -24,5 +24,5 @@ use axum::Router;
 use state::AppState;
 
 pub fn app(state: AppState) -> Router {
-	routes::router(state)
+    routes::router(state)
 }

@@ -39,7 +39,11 @@ pub struct ConfigError {
 
 impl std::fmt::Display for ConfigError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "missing required environment variables: {:?}", self.missing)
+        write!(
+            f,
+            "missing required environment variables: {:?}",
+            self.missing
+        )
     }
 }
 
@@ -63,7 +67,11 @@ impl BviConfig {
             database_url,
             bind_addr: {
                 let v = env::var("BIND_ADDR").unwrap_or_default();
-                if v.is_empty() { DEFAULT_BIND_ADDR.to_owned() } else { v }
+                if v.is_empty() {
+                    DEFAULT_BIND_ADDR.to_owned()
+                } else {
+                    v
+                }
             },
             election_id: match env::var("EEL_ELECTION_ID") {
                 Ok(v) if !v.is_empty() => v,

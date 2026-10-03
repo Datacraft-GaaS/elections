@@ -14,7 +14,12 @@
 
 //! Public contract handlers (voter-card/issuance.yaml).
 
-use axum::{extract::{Path, State}, http::StatusCode, response::IntoResponse, Json};
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    response::IntoResponse,
+    Json,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::state::AppState;
@@ -117,17 +122,30 @@ pub async fn confirm_voter_card_collection(
 /// GET /api/v1/voter-card/collection-centres — list collection centres (postgres).
 pub async fn list_collection_centres(State(state): State<AppState>) -> impl IntoResponse {
     match state.store.list_centres().await {
-        Ok(centres) => Json(serde_json::json!({ "centres": centres, "total": centres.len() })).into_response(),
+        Ok(centres) => {
+            Json(serde_json::json!({ "centres": centres, "total": centres.len() })).into_response()
+        }
         Err(e) => store_err(e),
     }
 }
 
-
 /// Composes the public voter-card contract router.
 pub fn router() -> axum::Router<crate::state::AppState> {
-	axum::Router::new()
-		.route("/api/v1/voter-card/requests", axum::routing::post(request_voter_card))
-		.route("/api/v1/voter-card/requests/{request_id}", axum::routing::get(get_voter_card_request))
-		.route("/api/v1/voter-card/requests/{request_id}/collection-confirmation", axum::routing::post(confirm_voter_card_collection))
-		.route("/api/v1/voter-card/collection-centres", axum::routing::get(list_collection_centres))
+    axum::Router::new()
+        .route(
+            "/api/v1/voter-card/requests",
+            axum::routing::post(request_voter_card),
+        )
+        .route(
+            "/api/v1/voter-card/requests/{request_id}",
+            axum::routing::get(get_voter_card_request),
+        )
+        .route(
+            "/api/v1/voter-card/requests/{request_id}/collection-confirmation",
+            axum::routing::post(confirm_voter_card_collection),
+        )
+        .route(
+            "/api/v1/voter-card/collection-centres",
+            axum::routing::get(list_collection_centres),
+        )
 }

@@ -98,7 +98,11 @@ pub async fn report_shortfall(
         Ok(()) => (StatusCode::CREATED, Json(rec)).into_response(),
         Err(e) => {
             tracing::error!(error = %e, "shortfall insert failed");
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "detail": "internal error"}))).into_response()
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "detail": "internal error"})),
+            )
+                .into_response()
         }
     }
 }
@@ -109,7 +113,11 @@ pub async fn list_shortfalls(State(store): State<Store>) -> impl IntoResponse {
         Ok(items) => Json(page(&serde_json::to_value(items).unwrap())).into_response(),
         Err(e) => {
             tracing::error!(error = %e, "shortfall list failed");
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "detail": "internal error"}))).into_response()
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "detail": "internal error"})),
+            )
+                .into_response()
         }
     }
 }
