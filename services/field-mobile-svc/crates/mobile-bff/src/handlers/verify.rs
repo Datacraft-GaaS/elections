@@ -208,7 +208,7 @@ pub async fn get_token_proof(
         .into_response(),
         None => problem(
             StatusCode::NOT_FOUND,
-            format!("no token with that digest has been recorded here"),
+            "no token with that digest has been recorded here",
         ),
     }
 }

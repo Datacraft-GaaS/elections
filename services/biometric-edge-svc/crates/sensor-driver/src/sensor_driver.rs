@@ -902,10 +902,11 @@ mod tests {
     #[test]
     fn the_new_capture_methods_work() {
         let driver = MockSensorDriver::present("BVRD-KE-00412", 88);
-        let cases: [(
-            Modality,
-            fn(&dyn BiometricSensorDriver, Duration) -> Result<BiometricCapture, SensorError>,
-        ); 8] = [
+        type CaptureFn = fn(
+            &dyn BiometricSensorDriver,
+            Duration,
+        ) -> Result<BiometricCapture, SensorError>;
+        let cases: [(Modality, CaptureFn); 8] = [
             (Modality::PalmVein, |d, t| d.capture_palm_vein(t)),
             (Modality::FingerVein, |d, t| d.capture_finger_vein(t)),
             (Modality::WristVein, |d, t| d.capture_wrist_vein(t)),

@@ -90,36 +90,6 @@ impl BallotSerial {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use eel_trace_rs::trace;
-
-    fn assigned() -> BallotSerial {
-        let mut s = BallotSerial::new(Uuid::new_v4());
-        s.serial_low = 100;
-        s.serial_high = 200;
-        s
-    }
-
-    #[trace("FR-M63-014")]
-    #[test]
-    fn in_range_accepts_boundaries_and_rejects_outside() {
-        let s = assigned();
-        assert!(s.in_range(100));
-        assert!(s.in_range(200));
-        assert!(s.in_range(150));
-        assert!(!s.in_range(99));
-        assert!(!s.in_range(201));
-    }
-
-    #[trace("FR-M63-014")]
-    #[test]
-    fn assigned_count_is_inclusive() {
-        assert_eq!(assigned().assigned_count(), 101);
-    }
-}
-
 impl Aggregate for BallotSerial {
     fn apply(&mut self, event: &StoredEvent) -> Result<(), EventStoreError> {
         self.version = event.stream_version;
@@ -185,5 +155,35 @@ impl Aggregate for BallotSerial {
 
     fn stream_id(&self) -> Uuid {
         self.stream_id
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use eel_trace_rs::trace;
+
+    fn assigned() -> BallotSerial {
+        let mut s = BallotSerial::new(Uuid::new_v4());
+        s.serial_low = 100;
+        s.serial_high = 200;
+        s
+    }
+
+    #[trace("FR-M63-014")]
+    #[test]
+    fn in_range_accepts_boundaries_and_rejects_outside() {
+        let s = assigned();
+        assert!(s.in_range(100));
+        assert!(s.in_range(200));
+        assert!(s.in_range(150));
+        assert!(!s.in_range(99));
+        assert!(!s.in_range(201));
+    }
+
+    #[trace("FR-M63-014")]
+    #[test]
+    fn assigned_count_is_inclusive() {
+        assert_eq!(assigned().assigned_count(), 101);
     }
 }

@@ -62,6 +62,9 @@ impl SignalClass {
         }
     }
 
+    // Name mirrors the wire-format parser contract; renaming to FromStr::from_str
+    // would break every caller.
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "location" => Some(Self::Location),
@@ -118,6 +121,9 @@ impl AlertClass {
         }
     }
 
+    // Name mirrors the wire-format parser contract; renaming to FromStr::from_str
+    // would break every caller.
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "drop" => Some(Self::Drop),
@@ -158,6 +164,9 @@ impl Severity {
         }
     }
 
+    // Name mirrors the wire-format parser contract; renaming to FromStr::from_str
+    // would break every caller.
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "info" => Some(Self::Info),
@@ -196,6 +205,9 @@ impl ExitReason {
         }
     }
 
+    // Name mirrors the wire-format parser contract; renaming to FromStr::from_str
+    // would break every caller.
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "normal" => Some(Self::Normal),
@@ -236,6 +248,9 @@ impl MotionClass {
         }
     }
 
+    // Name mirrors the wire-format parser contract; renaming to FromStr::from_str
+    // would break every caller.
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "stationary" => Some(Self::Stationary),

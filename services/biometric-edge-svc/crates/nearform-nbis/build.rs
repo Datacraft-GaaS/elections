@@ -52,7 +52,7 @@ fn main() {
             let entry = file.unwrap();
             let path = entry.path();
             let name = entry.file_name().to_string_lossy().into_owned();
-            if path.extension().map_or(false, |ext| ext == "c")
+            if path.extension().is_some_and(|ext| ext == "c")
                 && name != "Makefile"
                 && !exclude_prefixes.iter().any(|p| name.starts_with(p))
             {
@@ -83,7 +83,7 @@ fn main() {
             let entry = file.unwrap();
             let path = entry.path();
             let name = entry.file_name().to_string_lossy().into_owned();
-            if path.extension().map_or(false, |ext| ext == "c") && keep(&name) {
+            if path.extension().is_some_and(|ext| ext == "c") && keep(&name) {
                 cc.file(path);
             }
         }

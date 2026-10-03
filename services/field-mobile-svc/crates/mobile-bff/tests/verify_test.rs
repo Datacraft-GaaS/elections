@@ -116,5 +116,7 @@ async fn grievance_endpoint_returns_200() {
         .body(axum::body::Body::from(body.to_string()))
         .unwrap();
     let resp = app.oneshot(req).await.unwrap();
-    assert_eq!(resp.status(), StatusCode::OK);
+    // POST creates the grievance, so 201 is correct: the handler returns
+    // StatusCode::CREATED, and the sibling POST assertion above expects the same.
+    assert_eq!(resp.status(), StatusCode::CREATED);
 }

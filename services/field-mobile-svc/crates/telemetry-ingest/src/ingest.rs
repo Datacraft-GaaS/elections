@@ -98,10 +98,9 @@ pub fn ingest_signal_pure(
         &req.hmac_signature,
         &device_id_str,
     )
-    .map_err(|e| {
+    .inspect_err(|_| {
         warn!(device_id = %req.device_id, "HMAC verification failed");
         metrics::inc_hmac_failures();
-        e
     })?;
 
     // 4. Monotonic counter strictly greater.

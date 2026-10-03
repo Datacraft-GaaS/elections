@@ -93,7 +93,7 @@ impl Template {
     /// Serialize to NBIS .xyt format: `x y theta quality` per line.
     pub fn to_xyt(&self) -> String {
         let mut out = String::new();
-        out.push_str(&format!("# NBIS .xyt (Rust port)\n"));
+        out.push_str("# NBIS .xyt (Rust port)\n");
         out.push_str(&format!("{} {}\n", self.width, self.height));
         for m in &self.minutiae {
             out.push_str(&format!(

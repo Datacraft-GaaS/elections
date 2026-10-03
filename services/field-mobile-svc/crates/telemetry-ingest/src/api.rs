@@ -214,7 +214,6 @@ async fn ingest_single(
 
     let (last_counter, last_hash) = repository::fetch_last_signal_state(&state.pool, dto.device_id)
         .await?
-        .map(|(c, h)| (c, h))
         .unwrap_or((-1, vec![]));
 
     let req = IngestRequest {

@@ -26,7 +26,7 @@ pub fn compute_merkle_root(leaves: &[&[u8]]) -> String {
     }
     let mut hashes: Vec<[u8; 32]> = leaves.iter().map(|l| leaf_hash(l)).collect();
     while hashes.len() > 1 {
-        let mut next = Vec::with_capacity((hashes.len() + 1) / 2);
+        let mut next = Vec::with_capacity(hashes.len().div_ceil(2));
         let mut i = 0;
         while i < hashes.len() {
             if i + 1 < hashes.len() {

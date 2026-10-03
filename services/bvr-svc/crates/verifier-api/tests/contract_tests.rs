@@ -211,7 +211,7 @@ async fn station_detail_returns_the_contract_shape() {
     ] {
         assert!(body.get(required).is_some(), "missing {required}");
     }
-    assert_eq!(body["coordinates"]["lat"].is_number(), true);
+    assert!(body["coordinates"]["lat"].is_number());
 }
 
 #[tokio::test]

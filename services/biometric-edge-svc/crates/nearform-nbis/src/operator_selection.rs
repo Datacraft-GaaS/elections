@@ -246,6 +246,8 @@ pub enum EnrollmentEra {
 
 impl OperatorSelectableFilters {
     /// Check whether a particular compound key matches the operator's selection.
+    // Eight independent filter dimensions; bundling them would obscure the selection semantics.
+    #[allow(clippy::too_many_arguments)]
     pub fn matches(
         &self,
         g: Gender,
@@ -285,6 +287,8 @@ impl OperatorSelectableFilters {
     }
 
     /// Build a compound key string.
+    // Eight independent filter dimensions; must mirror `matches` argument order.
+    #[allow(clippy::too_many_arguments)]
     pub fn compound_key(
         g: Gender,
         a: AgeBucket,

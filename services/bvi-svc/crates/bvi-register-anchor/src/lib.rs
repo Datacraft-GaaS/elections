@@ -54,7 +54,7 @@ pub fn build_root(entry_hashes: &[[u8; 32]]) -> [u8; 32] {
     }
     let mut level: Vec<[u8; 32]> = entry_hashes.to_vec();
     while level.len() > 1 {
-        let mut next = Vec::with_capacity((level.len() + 1) / 2);
+        let mut next = Vec::with_capacity(level.len().div_ceil(2));
         let mut i = 0;
         while i < level.len() {
             if i + 1 < level.len() {

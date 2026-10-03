@@ -146,7 +146,7 @@ fn thin(binary: &[u8], width: u32, height: u32) -> Vec<u8> {
                         continue;
                     }
                     let b = p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9;
-                    if b < 2 || b > 6 {
+                    if !(2..=6).contains(&b) {
                         continue;
                     }
                     let a = (if p2 == 0 && p3 == 1 { 1 } else { 0 })
@@ -160,9 +160,12 @@ fn thin(binary: &[u8], width: u32, height: u32) -> Vec<u8> {
                     if a != 1 {
                         continue;
                     }
-                    if sub_iter == 0 && p2 * p4 * p8 == 0 && p2 * p6 * p8 == 0 { /* ok */
-                    } else if sub_iter == 1 && p2 * p4 * p6 == 0 && p4 * p6 * p8 == 0 { /* ok */
+                    let keep = if sub_iter == 0 {
+                        p2 * p4 * p8 == 0 && p2 * p6 * p8 == 0
                     } else {
+                        p2 * p4 * p6 == 0 && p4 * p6 * p8 == 0
+                    };
+                    if !keep {
                         continue;
                     }
                     to_remove.push(y * w + x);

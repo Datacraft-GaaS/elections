@@ -19,6 +19,9 @@ use crate::ingest::{ingest_signal_pure, IngestOutcome, IngestRequest};
 use crate::replay_defence::NonceStore;
 
 /// Outcome for one signal in a batch.
+// Variants deliberately unboxed: this enum is election-adjacent on the ingest
+// hot path and boxing would change its memory layout and add an allocation per item.
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug)]
 pub enum BatchItemResult {
     Accepted(IngestOutcome),

@@ -103,7 +103,7 @@ pub async fn verify_form34a(
         _ => {
             return problem(
                 StatusCode::SERVICE_UNAVAILABLE,
-                format!("the configured public key is not 32 bytes of hex"),
+                "the configured public key is not 32 bytes of hex",
             )
         }
     };

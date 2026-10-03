@@ -89,6 +89,8 @@ pub enum FingerPosition {
 }
 
 impl FingerPosition {
+    // Inherent `from_str` returning Option, not `FromStr` with a Result; renaming breaks the public API.
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
         match s.to_uppercase().as_str() {
             "LEFT_THUMB" | "LT" => Some(Self::LeftThumb),
@@ -127,6 +129,8 @@ pub enum Gender {
 }
 
 impl Gender {
+    // Inherent `from_str` returning Option, not `FromStr` with a Result; renaming breaks the public API.
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
         match s.to_uppercase().as_str() {
             "MALE" | "M" | "M" => Some(Self::Male),
@@ -683,7 +687,7 @@ impl Gallery {
     /// 1:N search: score every entry, keep `score >= threshold`,
     /// highest first.
     pub fn search(&self, probe: &Template, threshold: u32) -> Vec<CandidateMatch> {
-        let matcher = Bozorth3::default();
+        let matcher = Bozorth3;
         let mut out: Vec<CandidateMatch> = self
             .entries
             .iter()

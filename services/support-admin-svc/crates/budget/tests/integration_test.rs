@@ -33,7 +33,7 @@ fn budget_approve_transitions_to_approved() {
 #[test]
 fn voucher_sod_violation_rejected() {
     let user = Uuid::now_v7();
-    let mut v = PaymentVoucher::new(Uuid::now_v7(), 5_000_00, user);
+    let mut v = PaymentVoucher::new(Uuid::now_v7(), 500_000, user);
     let result = v.approve(user); // same user: SoD violation
     assert!(result.is_err());
     let err = result.unwrap_err();
@@ -45,7 +45,7 @@ fn voucher_sod_violation_rejected() {
 fn voucher_approve_with_different_user_succeeds() {
     let initiator = Uuid::now_v7();
     let approver = Uuid::now_v7();
-    let mut v = PaymentVoucher::new(Uuid::now_v7(), 5_000_00, initiator);
+    let mut v = PaymentVoucher::new(Uuid::now_v7(), 500_000, initiator);
     v.approve(approver).expect("should approve");
     assert!(matches!(v.status, budget::domain::VoucherStatus::Approved));
 }

@@ -93,28 +93,27 @@ pub fn evaluate(signal: &TelemetrySignal) -> Vec<AlertCandidate> {
     }
 
     // Rule: geo_fence_breach (location signal with out_of_bounds flag).
-    if signal.class == crate::domain::SignalClass::Location {
-        if signal
+    if signal.class == crate::domain::SignalClass::Location
+        && signal
             .payload
             .get("out_of_bounds")
             .and_then(Value::as_bool)
             .unwrap_or(false)
-        {
-            candidates.push(AlertCandidate {
-                device_id: signal.device_id,
-                class: AlertClass::GeoFenceBreach,
-                severity: Severity::Critical,
-                detected_at: now,
-                triggering_signal: Some(signal.signal_id),
-                payload: signal.payload.clone(),
-            });
-        }
+    {
+        candidates.push(AlertCandidate {
+            device_id: signal.device_id,
+            class: AlertClass::GeoFenceBreach,
+            severity: Severity::Critical,
+            detected_at: now,
+            triggering_signal: Some(signal.signal_id),
+            payload: signal.payload.clone(),
+        });
     }
 
     // Rule: login_time_anomaly (login outside 06:00-20:00 UTC).
     if signal.class == crate::domain::SignalClass::LoginLogout {
         let hour = signal.occurred_at.hour();
-        if hour < 6 || hour >= 20 {
+        if !(6..20).contains(&hour) {
             candidates.push(AlertCandidate {
                 device_id: signal.device_id,
                 class: AlertClass::LoginTimeAnomaly,

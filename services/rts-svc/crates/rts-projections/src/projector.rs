@@ -25,17 +25,13 @@ pub enum ProjectionError {
     Serde(#[from] serde_json::Error),
 }
 
+pub type ProjectorFn =
+    dyn Fn(StoredEvent) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), ProjectionError>> + Send>>
+        + Send
+        + Sync;
+
 pub struct ProjectionRunner {
-    projectors: Vec<
-        Box<
-            dyn Fn(
-                    StoredEvent,
-                ) -> std::pin::Pin<
-                    Box<dyn std::future::Future<Output = Result<(), ProjectionError>> + Send>,
-                > + Send
-                + Sync,
-        >,
-    >,
+    projectors: Vec<Box<ProjectorFn>>,
 }
 impl ProjectionRunner {
     pub fn new() -> Self {

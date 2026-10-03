@@ -72,7 +72,7 @@ impl FingerprintEngine {
 
     /// 1:1 match between two templates.
     pub fn match_1_to_1(probe: &Template, enrolled: &Template, threshold: u32) -> MatchResult {
-        Bozorth3::default().match_templates(probe, enrolled, threshold)
+        Bozorth3.match_templates(probe, enrolled, threshold)
     }
 
     /// 1:N search against a gallery.

@@ -83,7 +83,7 @@ pub fn hmac_sha256(_key: &[u8], _data: &[u8]) -> Result<Vec<u8>, anyhow::Error> 
     ))
 }
 
-//// A problem+json response for this module.
+// A problem+json response for this module.
 fn spec_problem(status: StatusCode, detail: impl Into<String>) -> axum::response::Response {
     (
         status,
@@ -533,7 +533,7 @@ async fn verify_voter(
     State(_state): State<Arc<BffState>>,
     Json(req): Json<VoterVerificationRequest>,
 ) -> impl IntoResponse {
-    let verified = hmac_sha256(&req.dpo_attestation_hash.as_bytes(), &[])
+    let verified = hmac_sha256(req.dpo_attestation_hash.as_bytes(), &[])
         .ok()
         .is_some_and(|digest| hex::encode(digest) == req.dpo_attestation_hash);
 
@@ -561,7 +561,7 @@ async fn verify_voter(
         );
     }
 
-    let voter_id = format!("VOTER-{}-{}", req.station_code, Uuid::new_v4().to_string());
+    let voter_id = format!("VOTER-{}-{}", req.station_code, Uuid::new_v4());
 
     json_response(
         StatusCode::OK,

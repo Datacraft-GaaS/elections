@@ -84,8 +84,8 @@ async fn initiate(app: &axum::Router) -> String {
 /// A candidate spread across 47 counties, matching the distribution idiom the
 /// crate's own rules tests use: votes are spread over the first 24 counties.
 fn dist(candidate_id: &str, votes: u64) -> Value {
-    let per_county_total = (1000u64 + 46) / 47;
-    let per_county_votes = (votes + 46) / 47;
+    let per_county_total = 1000u64.div_ceil(47);
+    let per_county_votes = votes.div_ceil(47);
     let counties: Vec<Value> = (0..47)
         .map(|i| {
             json!({

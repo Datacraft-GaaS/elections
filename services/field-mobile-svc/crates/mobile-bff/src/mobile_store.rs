@@ -464,6 +464,9 @@ impl MobileStore {
     }
 
     /// File an incident, recording it against its idempotency key.
+    // Eight parameters mirror the incident record's wire fields; grouping them
+    // into a builder would obscure the contract for no gain at this size.
+    #[allow(clippy::too_many_arguments)]
     pub fn file_incident(
         &self,
         incident_type: &str,
