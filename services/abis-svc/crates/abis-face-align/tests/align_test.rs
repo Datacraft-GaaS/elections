@@ -54,8 +54,8 @@ fn landmarks68_to_five_extracts_correct_indices() {
     // Build artificial 68 points so we can check extraction.
     let mut pts: Vec<(f32, f32)> = vec![(0.0, 0.0); 68];
     // Right eye centre approx at indices 42-47.
-    for i in 42..48 {
-        pts[i] = (100.0, 50.0);
+    for p in &mut pts[42..48] {
+        *p = (100.0, 50.0);
     }
     // Nose tip at index 30.
     pts[30] = (55.0, 80.0);
