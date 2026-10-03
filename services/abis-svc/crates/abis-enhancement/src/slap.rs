@@ -76,7 +76,7 @@ pub fn segment_slap(
         ],
     };
     let mut fingers: Vec<SegmentedFinger> = Vec::with_capacity(4);
-    for i in 0..4usize {
+    for (i, position) in positions.iter().enumerate() {
         let x_start = i as u32 * strip_w;
         let mut strip_pixels = vec![0u8; (strip_w * h) as usize];
         for y in 0..h {
@@ -88,7 +88,7 @@ pub fn segment_slap(
         let image = GrayscaleImage::new(strip_w, h, strip_pixels)
             .map_err(|e| EnhancementError::SegmentationFailed(format!("{e}")))?;
         fingers.push(SegmentedFinger {
-            position: positions[i],
+            position: *position,
             bbox: BoundingBox {
                 x: x_start,
                 y: 0,

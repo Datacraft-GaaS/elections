@@ -93,8 +93,8 @@ pub fn gabor_filter(
     const KERNEL_SIZE: usize = 15;
     const HALF: i32 = 7;
     let mut kernel = [[0.0f64; KERNEL_SIZE]; KERNEL_SIZE];
-    for i in 0..KERNEL_SIZE {
-        for j in 0..KERNEL_SIZE {
+    for (i, row) in kernel.iter_mut().enumerate() {
+        for (j, cell) in row.iter_mut().enumerate() {
             let di = i as i32 - HALF;
             let dj = j as i32 - HALF;
             let df = di as f64;
@@ -109,7 +109,7 @@ pub fn gabor_filter(
                 * frequency
                 * (x_prime * orientation.cos() + y_prime * orientation.sin()))
             .cos();
-            kernel[i][j] = gauss * wave;
+            *cell = gauss * wave;
         }
     }
     // Normalize by kernel sum so a constant image maps to itself (DC gain = 1).
@@ -128,15 +128,15 @@ pub fn gabor_filter(
         for x in 0..w {
             let mut sum = 0.0f64;
             let mut in_border = false;
-            'outer: for ki in 0..KERNEL_SIZE {
-                for kj in 0..KERNEL_SIZE {
+            'outer: for (ki, krow) in kernel.iter().enumerate() {
+                for (kj, &kernel_value) in krow.iter().enumerate() {
                     let sy = y as i32 + ki as i32 - HALF;
                     let sx = x as i32 + kj as i32 - HALF;
                     if sy < 0 || sy >= h as i32 || sx < 0 || sx >= w as i32 {
                         in_border = true;
                         break 'outer;
                     }
-                    sum += kernel[ki][kj] * img.pixel(sx as u32, sy as u32) as f64;
+                    sum += kernel_value * img.pixel(sx as u32, sy as u32) as f64;
                 }
             }
             if !in_border {

@@ -54,7 +54,7 @@ impl CbeffContainer {
 
     /// Parse a CBEFF container from raw bytes.
     pub fn parse(bytes: &[u8]) -> Result<Self, CbeffError> {
-        if bytes.len() < CBEFF_MAGIC.len() || &bytes[..4] != CBEFF_MAGIC {
+        if bytes.len() < CBEFF_MAGIC.len() || bytes[..4] != CBEFF_MAGIC {
             return Err(CbeffError::InvalidMagic);
         }
         let mut pos = CBEFF_MAGIC.len();
@@ -145,7 +145,7 @@ impl CbeffContainer {
     /// True if the BDB itself begins with CBEFF magic (nested container).
     pub fn is_nested(&self) -> bool {
         self.bdb.data.len() >= CBEFF_MAGIC.len()
-            && &self.bdb.data[..CBEFF_MAGIC.len()] == CBEFF_MAGIC
+            && self.bdb.data[..CBEFF_MAGIC.len()] == CBEFF_MAGIC
     }
 
     /// Parse the nested CBEFF container stored inside the BDB.

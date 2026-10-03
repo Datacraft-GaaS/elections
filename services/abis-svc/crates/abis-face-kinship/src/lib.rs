@@ -176,9 +176,9 @@ pub fn cluster_families(
     // Collect clusters.
     let mut groups: std::collections::HashMap<usize, Vec<String>> =
         std::collections::HashMap::new();
-    for i in 0..n {
+    for (i, (label, _)) in subjects.iter().enumerate() {
         let root = find(&mut parent, i);
-        groups.entry(root).or_default().push(subjects[i].0.clone());
+        groups.entry(root).or_default().push(label.clone());
     }
 
     groups
