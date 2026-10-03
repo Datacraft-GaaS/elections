@@ -29,7 +29,7 @@ impl BloomFilter {
         let m = m.max(64);
         let k = ((m as f64 / capacity as f64) * ln2).ceil() as usize;
         let k = k.max(1);
-        let words = (m + 63) / 64;
+        let words = m.div_ceil(64);
         Self {
             bits: vec![0u64; words],
             k,

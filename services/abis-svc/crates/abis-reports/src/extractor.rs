@@ -109,7 +109,7 @@ fn pg_row_to_json(row: &sqlx::postgres::PgRow, col_count: usize) -> Vec<serde_js
             }
             if let Ok(v) = row.try_get::<Option<f64>, _>(i) {
                 return v
-                    .and_then(|f| serde_json::Number::from_f64(f))
+                    .and_then(serde_json::Number::from_f64)
                     .map(serde_json::Value::Number)
                     .unwrap_or(serde_json::Value::Null);
             }

@@ -29,9 +29,9 @@ pub fn score_quality(template: &SignatureTemplate) -> SignatureQuality {
     let sample_rate_score = ((template.sample_rate_hz as f32 / 100.0) * 100.0).clamp(0.0, 100.0);
 
     let dur_ms = template.total_duration_ms;
-    let duration_score = if dur_ms >= 1000 && dur_ms <= 5000 {
+    let duration_score = if (1000..=5000).contains(&dur_ms) {
         100.0
-    } else if dur_ms < 100 || dur_ms > 10_000 {
+    } else if !(100..=10_000).contains(&dur_ms) {
         0.0
     } else if dur_ms < 1000 {
         ((dur_ms as f32 - 100.0) / 900.0) * 100.0
@@ -42,7 +42,7 @@ pub fn score_quality(template: &SignatureTemplate) -> SignatureQuality {
     let strokes = template.stroke_count;
     let stroke_score = if strokes == 0 {
         0.0
-    } else if strokes >= 3 && strokes <= 8 {
+    } else if (3..=8).contains(&strokes) {
         100.0
     } else if strokes < 3 {
         (strokes as f32 / 3.0) * 100.0

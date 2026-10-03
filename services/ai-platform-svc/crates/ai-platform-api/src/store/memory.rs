@@ -136,11 +136,11 @@ impl AiStore for InMemoryStore {
             .alerts
             .iter()
             .filter(|a| {
-                q.severity.as_ref().map_or(true, |v| a.severity == *v)
-                    && q.status.as_ref().map_or(true, |v| a.status == *v)
-                    && q.alert_type.as_ref().map_or(true, |v| a.alert_type == *v)
-                    && q.from.map_or(true, |t| a.detected_at >= t)
-                    && q.to.map_or(true, |t| a.detected_at <= t)
+                q.severity.as_ref().is_none_or(|v| a.severity == *v)
+                    && q.status.as_ref().is_none_or(|v| a.status == *v)
+                    && q.alert_type.as_ref().is_none_or(|v| a.alert_type == *v)
+                    && q.from.is_none_or(|t| a.detected_at >= t)
+                    && q.to.is_none_or(|t| a.detected_at <= t)
             })
             .cloned()
             .collect();
@@ -292,8 +292,8 @@ impl AiStore for InMemoryStore {
             .reports
             .iter()
             .filter(|r| {
-                q.model_id.map_or(true, |m| r.model_id == m)
-                    && q.election_id.map_or(true, |e| r.election_id == e)
+                q.model_id.is_none_or(|m| r.model_id == m)
+                    && q.election_id.is_none_or(|e| r.election_id == e)
             })
             .cloned()
             .collect();
@@ -359,8 +359,8 @@ impl AiStore for InMemoryStore {
             .campaigns
             .iter()
             .filter(|c| {
-                q.status.as_ref().map_or(true, |v| c.status == *v)
-                    && q.attack_type.as_ref().map_or(true, |v| c.attack_type == *v)
+                q.status.as_ref().is_none_or(|v| c.status == *v)
+                    && q.attack_type.as_ref().is_none_or(|v| c.attack_type == *v)
             })
             .map(|c| {
                 let mut out = c.clone();
@@ -488,8 +488,8 @@ impl AiStore for InMemoryStore {
             .models
             .iter()
             .filter(|m| {
-                q.model_type.as_ref().map_or(true, |v| m.model_type == *v)
-                    && q.status.as_ref().map_or(true, |v| m.status == *v)
+                q.model_type.as_ref().is_none_or(|v| m.model_type == *v)
+                    && q.status.as_ref().is_none_or(|v| m.status == *v)
             })
             .cloned()
             .collect();
@@ -552,8 +552,8 @@ impl AiStore for InMemoryStore {
             .audit
             .iter()
             .filter(|e| {
-                q.model_id.map_or(true, |m| e.model_id == m)
-                    && q.action.as_ref().map_or(true, |a| e.action == *a)
+                q.model_id.is_none_or(|m| e.model_id == m)
+                    && q.action.as_ref().is_none_or(|a| e.action == *a)
             })
             .cloned()
             .collect();

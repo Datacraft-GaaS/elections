@@ -33,6 +33,7 @@ pub trait HsmSigner: Send + Sync {
 }
 
 /// Build canonical JSON for a pending action (excludes signature fields).
+#[allow(clippy::too_many_arguments)]
 fn canonical_json_for(
     id: &Uuid,
     case_id: &Uuid,
@@ -203,6 +204,12 @@ pub mod test_utils {
 
     pub struct Ed25519TestSigner {
         key: Ed25519SigningKey,
+    }
+
+    impl Default for Ed25519TestSigner {
+        fn default() -> Self {
+            Self::new()
+        }
     }
 
     impl Ed25519TestSigner {

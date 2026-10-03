@@ -84,6 +84,15 @@ fn validate_uuid(field: &str, value: &str) -> Result<uuid::Uuid, ApiError> {
         .map_err(|_| ApiError::Validation(format!("{field} must be a UUID")))
 }
 
+
+/// Columns of the match-request audit lookup.
+type MatchAuditRow = (
+    String,
+    chrono::DateTime<chrono::Utc>,
+    Option<chrono::DateTime<chrono::Utc>>,
+    Option<String>,
+);
+
 fn json_response<T: serde::Serialize>(status: StatusCode, value: &T) -> Result<Response, ApiError> {
     let body = serde_json::to_vec(value)
         .map_err(|e| ApiError::Store(sqlx::Error::Configuration(e.into())))?;
@@ -401,12 +410,7 @@ pub async fn get_match_result(
 ) -> Result<Response, ApiError> {
     validate_uuid("request_id", &request_id)?;
 
-    let row: Option<(
-        String,
-        chrono::DateTime<chrono::Utc>,
-        Option<chrono::DateTime<chrono::Utc>>,
-        Option<String>,
-    )> = sqlx::query_as(
+    let row: Option<MatchAuditRow> = sqlx::query_as(
         "SELECT status, submitted_at, completed_at, failure_reason \
 			 FROM eel_match_requests WHERE request_id = $1",
     )

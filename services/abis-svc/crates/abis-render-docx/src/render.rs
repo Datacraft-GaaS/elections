@@ -270,7 +270,7 @@ pub fn render_docx(
                     .map(|obj| {
                         headers
                             .iter()
-                            .map(|h| obj.get(h).map(|v| value_to_str(v)).unwrap_or_default())
+                            .map(|h| obj.get(h).map(value_to_str).unwrap_or_default())
                             .collect()
                     })
                     .collect();

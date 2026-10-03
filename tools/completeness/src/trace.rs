@@ -168,6 +168,7 @@ fn load_traceability(root: &Path, rel: &Path) -> Result<TraceabilityFile> {
 ///   - `entries: [{id, description, requirement}]`   (tool's native shape)
 ///   - `rows: {id: {module, wp, tests}}`             (docs/plans/TRACEABILITY.yaml)
 ///   - `requirements: {id: {description, ...}}`      (per-service TRACEABILITY.yaml)
+///
 /// A bare map of `id: {...}` is also accepted (some services omit the wrapper).
 fn normalize_traceability(v: &serde_yaml::Value) -> Vec<TraceabilityRow> {
     use serde_yaml::Value;

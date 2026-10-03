@@ -37,7 +37,7 @@ pub fn to_triage(req: &mut RectificationRequest) -> Result<(), RectificationErro
 
 /// Transition from Triage to EvidencePending.
 pub fn to_evidence_pending(req: &mut RectificationRequest) -> Result<(), RectificationError> {
-    let _policy = PolicyEngine::default();
+    let _policy = PolicyEngine;
     if req.state != RectificationState::Triage {
         return Err(RectificationError::InvalidTransition {
             from: req.state.clone(),
@@ -72,7 +72,7 @@ pub fn decide(
     decision_note: &str,
     officer_id: Uuid,
 ) -> Result<(), RectificationError> {
-    let policy = PolicyEngine::default();
+    let policy = PolicyEngine;
     policy.validate_decision(req, officer_id)?;
     match req.state {
         RectificationState::Triage | RectificationState::EvidencePending => {}

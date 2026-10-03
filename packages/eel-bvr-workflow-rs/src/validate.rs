@@ -168,10 +168,8 @@ pub fn validate_submission(
 
         // Consent is boolean-valued and must be affirmatively true.
         if item.kind == DataKind::Consent {
-            if value.as_bool() != Some(true) {
-                if item.required {
-                    violations.push(ValidationError::ConsentNotGiven { item: name.clone() });
-                }
+            if value.as_bool() != Some(true) && item.required {
+                violations.push(ValidationError::ConsentNotGiven { item: name.clone() });
             }
             continue;
         }

@@ -310,7 +310,7 @@ fn scan_openapi_unbound(root: &Path, allowlist: &Allowlist) -> Result<Vec<Findin
             e.file_type().is_file()
                 && e.path()
                     .extension()
-                    .map_or(false, |x| x == "yaml" || x == "yml")
+                    .is_some_and(|x| x == "yaml" || x == "yml")
         });
 
     for entry in walker {

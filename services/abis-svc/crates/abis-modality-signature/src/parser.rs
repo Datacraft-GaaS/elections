@@ -45,7 +45,7 @@ pub fn parse_signature(data: &[u8]) -> Result<SignatureTemplate, SignatureError>
         });
     }
 
-    if &data[0..3] != MAGIC {
+    if data[0..3] != MAGIC {
         return Err(SignatureError::InvalidMagic);
     }
 
@@ -59,7 +59,7 @@ pub fn parse_signature(data: &[u8]) -> Result<SignatureTemplate, SignatureError>
     let sample_rate_hz = cur.read_u16::<LittleEndian>()?;
 
     // Arrays: pressure (4n), velocity (4n), acceleration (4n), pen-up bitmap (ceil(n/8)).
-    let pen_up_bytes = (sample_count + 7) / 8;
+    let pen_up_bytes = sample_count.div_ceil(8);
     let arrays_len = sample_count * 4 * 3 + pen_up_bytes;
     let needed = HEADER_LEN + arrays_len;
 
@@ -134,7 +134,7 @@ pub fn parse_signature(data: &[u8]) -> Result<SignatureTemplate, SignatureError>
 
 pub fn serialize_signature(template: &SignatureTemplate) -> Vec<u8> {
     let n = template.samples.len();
-    let pen_up_bytes = (n + 7) / 8;
+    let pen_up_bytes = n.div_ceil(8);
     let mut buf = Vec::with_capacity(HEADER_LEN + n * 12 + pen_up_bytes);
 
     buf.extend_from_slice(&MAGIC);

@@ -326,7 +326,7 @@ pub async fn get_snapshot(
     Json(SnapshotResponse {
         scope,
         code,
-        snapshot_id: tree.as_ref().map(|t| snapshot_id_for(t)),
+        snapshot_id: tree.as_ref().map(snapshot_id_for),
         published_at: None,
         form34c: Some(serde_json::to_value(form34c).unwrap_or(Value::Null)),
         merkle_root: tree.as_ref().map(|t| hex::encode(t.root())),

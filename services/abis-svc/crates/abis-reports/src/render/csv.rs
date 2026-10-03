@@ -31,7 +31,7 @@ impl Renderer for CsvRenderer {
 
         // Data rows
         for row in &rows.data {
-            let record: Vec<String> = row.iter().map(|v| json_to_csv_string(v)).collect();
+            let record: Vec<String> = row.iter().map(json_to_csv_string).collect();
             wtr.write_record(&record)?;
         }
 

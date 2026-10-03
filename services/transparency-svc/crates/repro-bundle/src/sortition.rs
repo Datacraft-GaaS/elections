@@ -159,10 +159,12 @@ pub fn run_sortition(
             .map(|s| s.station_id.clone())
             .collect();
         for id in selected_ids {
-            stations_with_hash
+            if let Some(ss) = stations_with_hash
                 .iter_mut()
                 .find(|ss| ss.station_id == id)
-                .map(|ss| ss.selected = false);
+            {
+                ss.selected = false;
+            }
         }
     }
     let final_selected = stations_with_hash.iter().filter(|s| s.selected).count();

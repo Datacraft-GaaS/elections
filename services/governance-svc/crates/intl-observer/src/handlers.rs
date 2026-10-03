@@ -91,6 +91,9 @@ pub async fn register_mission(
 /// Look up a mission, or answer 404. Every `/v1` endpoint that names a mission
 /// goes through this, so a briefing or report can never be attached to a
 /// mission that was never registered.
+// axum::response::Response is a large Err variant and is the natural error type
+// for a handler; boxing it would obscure the error path for no benefit.
+#[allow(clippy::result_large_err)]
 fn require_mission(
     state: &SharedState,
     mission_id: &str,

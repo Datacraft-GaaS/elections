@@ -22,7 +22,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 /// Controls activation of the peak cross-vendor consensus mode.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum PeakPolicy {
     /// Active only within [from, to].
@@ -33,6 +33,7 @@ pub enum PeakPolicy {
     /// Always active regardless of time.
     AlwaysEnabled,
     /// Always inactive; standard single-vendor path.
+    #[default]
     Disabled,
 }
 
@@ -52,12 +53,6 @@ impl PeakPolicy {
             PeakPolicy::EnabledDuringFreeze { from, to } => Some((*from, *to)),
             _ => None,
         }
-    }
-}
-
-impl Default for PeakPolicy {
-    fn default() -> Self {
-        PeakPolicy::Disabled
     }
 }
 

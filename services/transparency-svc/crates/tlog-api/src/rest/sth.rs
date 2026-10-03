@@ -32,17 +32,13 @@ pub struct SthResponse {
     pub signature: String,
 }
 
+/// A row of the `sth` table: id, tree_size, root_hash, cadence, signed_at, signature.
+type SthRow = (String, i64, Vec<u8>, String, chrono::DateTime<chrono::Utc>, Vec<u8>);
+
 pub async fn get_latest_sth(
     State(state): State<ApiState>,
 ) -> Result<Json<SthResponse>, StatusCode> {
-    let row: Option<(
-        String,
-        i64,
-        Vec<u8>,
-        String,
-        chrono::DateTime<chrono::Utc>,
-        Vec<u8>,
-    )> = sqlx::query_as(
+    let row: Option<SthRow> = sqlx::query_as(
         "SELECT id::text, tree_size, root_hash, cadence, signed_at, signature \
              FROM sth ORDER BY tree_size DESC LIMIT 1",
     )
@@ -67,14 +63,7 @@ pub async fn get_sth_by_size(
     State(state): State<ApiState>,
     Path(tree_size): Path<i64>,
 ) -> Result<Json<SthResponse>, StatusCode> {
-    let row: Option<(
-        String,
-        i64,
-        Vec<u8>,
-        String,
-        chrono::DateTime<chrono::Utc>,
-        Vec<u8>,
-    )> = sqlx::query_as(
+    let row: Option<SthRow> = sqlx::query_as(
         "SELECT id::text, tree_size, root_hash, cadence, signed_at, signature \
              FROM sth WHERE tree_size = $1 LIMIT 1",
     )

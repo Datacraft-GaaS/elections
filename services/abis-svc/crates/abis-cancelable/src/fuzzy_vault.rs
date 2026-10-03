@@ -82,7 +82,7 @@ impl FuzzyVault {
             let x = template.len() as u32 + i + 1;
             // Chaff y-value derived differently so it won't lie on the polynomial.
             let mut h = Sha256::new();
-            h.update(&x.to_le_bytes());
+            h.update(x.to_le_bytes());
             h.update(b"chaff");
             let digest = h.finalize();
             let y = u64::from_le_bytes(digest[..8].try_into().unwrap_or([0u8; 8])).wrapping_add(1); // ensure != poly_eval
@@ -138,7 +138,7 @@ fn derive_poly_coeffs(secret: &[u8], degree: usize) -> Vec<u64> {
         .map(|i| {
             let mut h = Sha256::new();
             h.update(secret);
-            h.update(&(i as u64).to_le_bytes());
+            h.update((i as u64).to_le_bytes());
             let d = h.finalize();
             u64::from_le_bytes(d[..8].try_into().unwrap_or([0u8; 8]))
         })

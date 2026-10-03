@@ -106,7 +106,7 @@ impl EvidencePack {
 fn sign_stub(component_id: &str, report: &FmrFnmrReport) -> String {
     let mut h = Sha256::new();
     h.update(component_id.as_bytes());
-    h.update(&report.fmr.to_le_bytes());
-    h.update(&report.fnmr.to_le_bytes());
+    h.update(report.fmr.to_le_bytes());
+    h.update(report.fnmr.to_le_bytes());
     hex::encode(h.finalize())
 }

@@ -68,7 +68,7 @@ impl RandomProjector {
         while matrix.len() < total {
             let mut h = Sha256::new();
             h.update(user_key);
-            h.update(&counter.to_le_bytes());
+            h.update(counter.to_le_bytes());
             let digest = h.finalize();
             for byte in digest.iter() {
                 // Map byte range [0,255] -> [-1.0, +1.0].

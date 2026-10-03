@@ -51,7 +51,7 @@ impl AutoReferralScheduler {
             return false;
         }
         let days_until = (polling_day - Utc::now()).num_days();
-        days_until <= 60 && days_until >= 0
+        (0..=60).contains(&days_until)
     }
 
     /// Idempotently refer a claim. Returns None if already referred.

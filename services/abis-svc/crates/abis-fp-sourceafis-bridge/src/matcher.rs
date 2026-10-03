@@ -64,6 +64,9 @@ fn wrap(a: f32) -> f32 {
 
 /// Try to extend pairings radially from a seed alignment.
 /// Returns (paired_count, structure_score, ridge_score).
+// Eight arguments mirror the alignment state; grouping them would obscure the
+// seed-extension contract, so the lint is suppressed rather than restructured.
+#[allow(clippy::too_many_arguments)]
 fn extend_from_seed(
     probe_min: &[SourceAfisMinutia],
     gallery_min: &[SourceAfisMinutia],

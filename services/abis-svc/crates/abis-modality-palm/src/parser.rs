@@ -58,7 +58,7 @@ pub fn parse_iso19794_2(data: &[u8]) -> Result<Vec<Minutia>, PalmError> {
             got: data.len(),
         });
     }
-    if &data[..4] != &MAGIC {
+    if data[..4] != MAGIC {
         return Err(PalmError::InvalidMagic);
     }
 

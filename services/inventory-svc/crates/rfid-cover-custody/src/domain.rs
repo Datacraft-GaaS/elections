@@ -71,6 +71,10 @@ impl CoverState {
     }
 
     /// Parse from the Postgres string representation.
+    ///
+    /// Not `FromStr::from_str`: it returns an `Option` rather than a
+    /// `Result`, and the name mirrors the database column representation.
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "MANUFACTURED" => Some(Self::Manufactured),
@@ -153,6 +157,11 @@ impl ReaderType {
         }
     }
 
+    /// Parse from the snake_case string representation.
+    ///
+    /// Not `FromStr::from_str`: it returns an `Option` rather than a `Result`,
+    /// and the name mirrors the database column representation.
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "warehouse_gate" => Some(Self::WarehouseGate),

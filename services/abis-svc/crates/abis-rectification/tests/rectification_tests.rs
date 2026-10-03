@@ -118,14 +118,14 @@ fn sla_sweep_all_on_track() {
 
 #[test]
 fn policy_requires_officer_for_biometric_recapture() {
-    let policy = PolicyEngine::default();
+    let policy = PolicyEngine;
     assert!(policy.requires_officer(&RectificationRequestType::BiometricRecapture));
     assert!(!policy.requires_officer(&RectificationRequestType::DemographicUpdate));
 }
 
 #[test]
 fn policy_odpc_required_for_template_removal() {
-    let policy = PolicyEngine::default();
+    let policy = PolicyEngine;
     let evidence = policy.required_evidence(&RectificationRequestType::TemplateRemoval);
     assert!(matches!(
         evidence,

@@ -220,6 +220,12 @@ pub unsafe extern "C" fn eel_verifier_witness_cosign(json_ptr: *const u8, json_l
 ///
 /// `data_ptr`/`data_len`: raw bundle bytes.
 /// `expected_root_ptr`/`expected_root_len`: UTF-8 hex string (64 chars).
+///
+/// # Safety
+/// `data_ptr` must point to `data_len` readable bytes, and `expected_root_ptr`
+/// to `expected_root_len` readable bytes. Both pointers must be non-null when
+/// their length is non-zero. The caller must keep the buffers alive for the
+/// duration of the call; this function does not retain them.
 #[no_mangle]
 pub unsafe extern "C" fn eel_verifier_bundle_hash(
     data_ptr: *const u8,

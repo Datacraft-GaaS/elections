@@ -83,7 +83,7 @@ impl Shielder {
         if filter_size_bits < 64 {
             return Err(ShieldError::FilterTooSmall);
         }
-        if hash_count < 1 || hash_count > 32 {
+        if !(1..=32).contains(&hash_count) {
             return Err(ShieldError::InvalidHashCount);
         }
         Ok(Self {
@@ -103,12 +103,12 @@ impl Shielder {
             return Err(ShieldError::EmptyTemplate);
         }
 
-        let byte_count = (self.filter_size_bits + 7) / 8;
+        let byte_count = self.filter_size_bits.div_ceil(8);
         let mut filter = vec![0u8; byte_count];
 
         for h_idx in 0..self.hash_count {
             let mut hasher = Sha256::new();
-            hasher.update(&[h_idx]);
+            hasher.update([h_idx]);
             hasher.update(template);
             let digest = hasher.finalize();
 

@@ -83,18 +83,18 @@ impl BioHasher {
             return Err(BioHashError::EmptyKey);
         }
 
-        let byte_count = (self.bit_count + 7) / 8;
+        let byte_count = self.bit_count.div_ceil(8);
         let mut bits = Vec::with_capacity(byte_count);
 
         // Derive bit positions from SHA-256(key || feature_index).
         for chunk_idx in 0..byte_count {
             let mut h = Sha256::new();
             h.update(user_key);
-            h.update(&(chunk_idx as u64).to_le_bytes());
+            h.update((chunk_idx as u64).to_le_bytes());
             // Mix feature values into the hash.
             for (fi, fv) in feature.iter().enumerate() {
-                h.update(&(fi as u32).to_le_bytes());
-                h.update(&fv.to_le_bytes());
+                h.update((fi as u32).to_le_bytes());
+                h.update(fv.to_le_bytes());
             }
             let digest = h.finalize();
             bits.push(digest[0]);

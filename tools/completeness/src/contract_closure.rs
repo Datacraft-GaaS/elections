@@ -131,7 +131,7 @@ fn collect_api_paths(root: &Path) -> Result<Vec<(String, String)>> {
             e.file_type().is_file()
                 && e.path()
                     .extension()
-                    .map_or(false, |x| x == "yaml" || x == "yml")
+                    .is_some_and(|x| x == "yaml" || x == "yml")
         })
     {
         let content = std::fs::read_to_string(entry.path()).unwrap_or_default();
@@ -160,7 +160,7 @@ fn collect_event_types(root: &Path) -> Result<Vec<(String, String)>> {
         .follow_links(false)
         .into_iter()
         .filter_map(|e| e.ok())
-        .filter(|e| e.file_type().is_file() && e.path().extension().map_or(false, |x| x == "json"))
+        .filter(|e| e.file_type().is_file() && e.path().extension().is_some_and(|x| x == "json"))
     {
         let content = std::fs::read_to_string(entry.path()).unwrap_or_default();
         let rel = entry
@@ -201,7 +201,7 @@ fn collect_topic_types(root: &Path) -> Result<HashSet<String>> {
             e.file_type().is_file()
                 && e.path()
                     .extension()
-                    .map_or(false, |x| x == "yaml" || x == "yml")
+                    .is_some_and(|x| x == "yaml" || x == "yml")
         })
     {
         let content = std::fs::read_to_string(entry.path()).unwrap_or_default();

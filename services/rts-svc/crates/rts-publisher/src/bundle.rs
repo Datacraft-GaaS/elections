@@ -37,8 +37,23 @@ pub struct PublicationBundle {
     pub created_at: DateTime<Utc>,
 }
 
+/// Row shape of `form34c_view`, matching the SELECT in [`create_bundle`].
+type Form34cViewRow = (
+    uuid::Uuid,
+    i64,
+    serde_json::Value,
+    i64,
+    i64,
+    i64,
+    i64,
+    serde_json::Value,
+    Option<String>,
+    String,
+    Option<DateTime<Utc>>,
+);
+
 pub async fn create_bundle(pool: &PgPool) -> Result<PublicationBundle, BundleError> {
-    let row: Option<(uuid::Uuid, i64, serde_json::Value, i64, i64, i64, i64, serde_json::Value, Option<String>, String, Option<DateTime<Utc>>)> =
+    let row: Option<Form34cViewRow> =
         sqlx::query_as(
             "SELECT stream_id, stream_version, compiled_constituencies, total_registered, total_valid, total_rejected, total_spoilt, candidate_totals, merkle_root, status, published_at FROM form34c_view WHERE status IN ('compiled','published') ORDER BY updated_at DESC LIMIT 1"
         ).fetch_optional(pool).await?;

@@ -187,7 +187,7 @@ pub fn parse_efs(bytes: &[u8]) -> Result<ExtendedFeatureSet, ParseError> {
                 let w = u16::from_be_bytes([payload[0], payload[1]]);
                 let h = u16::from_be_bytes([payload[2], payload[3]]);
                 let bits = w as usize * h as usize;
-                let expected = 4 + (bits + 7) / 8;
+                let expected = 4 + bits.div_ceil(8);
                 if payload.len() < expected {
                     return Err(ParseError::TooShort {
                         need: expected,

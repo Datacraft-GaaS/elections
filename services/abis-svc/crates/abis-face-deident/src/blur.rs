@@ -70,8 +70,8 @@ pub fn pixelate_image(pixels: &[u8], width: u32, height: u32, block_size: u32) -
     let bs = block_size as usize;
     let mut out = vec![0u8; pixels.len()];
 
-    let by_count = (h + bs - 1) / bs;
-    let bx_count = (w + bs - 1) / bs;
+    let by_count = h.div_ceil(bs);
+    let bx_count = w.div_ceil(bs);
 
     for by in 0..by_count {
         for bx in 0..bx_count {

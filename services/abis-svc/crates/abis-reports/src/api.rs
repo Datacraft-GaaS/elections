@@ -192,7 +192,7 @@ async fn get_artifact(
     let ip_prefix = headers
         .get("X-Forwarded-For")
         .and_then(|v| v.to_str().ok())
-        .map(|ip| cidr_prefix(ip));
+        .map(cidr_prefix);
     let ua_hash: Option<Vec<u8>> =
         headers
             .get("User-Agent")

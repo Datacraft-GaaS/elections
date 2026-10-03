@@ -508,7 +508,7 @@ impl AiStore for PgStore {
         .fetch_optional(&self.pool)
         .await
         .map_err(internal)?;
-        row.map(|row| parse_campaign_row(row)).transpose()
+        row.map(parse_campaign_row).transpose()
     }
 
     async fn add_finding(

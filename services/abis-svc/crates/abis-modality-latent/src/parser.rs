@@ -53,7 +53,7 @@ pub fn parse_nist_type13(data: &[u8]) -> Result<LatentTemplate, LatentError> {
             got: data.len(),
         });
     }
-    if &data[..3] != &MAGIC {
+    if data[..3] != MAGIC {
         return Err(LatentError::InvalidMagic);
     }
 

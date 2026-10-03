@@ -31,18 +31,14 @@ pub struct LeafResponse {
     pub event_time: String,
 }
 
+/// A row of the `leaves` table, in the order get_leaf selects it.
+type LeafRow = (i64, String, Vec<u8>, String, String, chrono::DateTime<chrono::Utc>);
+
 pub async fn get_leaf(
     State(state): State<ApiState>,
     Path(index): Path<i64>,
 ) -> Result<Json<LeafResponse>, StatusCode> {
-    let row: Option<(
-        i64,
-        String,
-        Vec<u8>,
-        String,
-        String,
-        chrono::DateTime<chrono::Utc>,
-    )> = sqlx::query_as(
+    let row: Option<LeafRow> = sqlx::query_as(
         "SELECT index, domain, hash, producer_spiffe_id, source_event_id, event_time \
              FROM leaves WHERE index=$1",
     )

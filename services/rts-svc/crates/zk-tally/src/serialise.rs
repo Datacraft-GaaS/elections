@@ -18,6 +18,7 @@
 //!   - A (G1 point): 48 bytes compressed
 //!   - B (G2 point): 96 bytes compressed
 //!   - C (G1 point): 48 bytes compressed
+//!
 //!   Total: 192 bytes
 //!
 //! This fits well within the 512-byte target for embedding in a QR code or

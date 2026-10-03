@@ -48,18 +48,14 @@ pub struct LeafAppendResult {
     pub estimated_inclusion_s: u64,
 }
 
+/// A row of the `leaves` table, in the order get_log_entries selects it.
+type LogEntryRow = (i64, String, Vec<u8>, String, String, chrono::DateTime<chrono::Utc>);
+
 /// GET /api/v1/log/entries — list recent log entries.
 pub async fn get_log_entries(
     State(state): State<ApiState>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let rows: Vec<(
-        i64,
-        String,
-        Vec<u8>,
-        String,
-        String,
-        chrono::DateTime<chrono::Utc>,
-    )> = sqlx::query_as(
+    let rows: Vec<LogEntryRow> = sqlx::query_as(
         "SELECT index, domain, hash, producer_spiffe_id, source_event_id, event_time \
              FROM leaves ORDER BY index DESC LIMIT 1000",
     )

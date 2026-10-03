@@ -27,16 +27,9 @@ const DEFAULT_ORDER: &[StepKind] = &[
     StepKind::IrisExact,
 ];
 
+#[derive(Default)]
 pub struct QueryPlanner {
     pub cost_model: CostModel,
-}
-
-impl Default for QueryPlanner {
-    fn default() -> Self {
-        Self {
-            cost_model: CostModel::default(),
-        }
-    }
 }
 
 impl QueryPlanner {

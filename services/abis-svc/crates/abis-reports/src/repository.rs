@@ -108,6 +108,7 @@ pub async fn insert_definition(pool: &PgPool, def: &ReportDefinition) -> Result<
 // Runs
 // ---------------------------------------------------------------------------
 
+#[allow(clippy::too_many_arguments)] // mirrors the report row it constructs
 pub async fn create_run(
     pool: &PgPool,
     definition_id: Uuid,
@@ -229,6 +230,7 @@ pub async fn fetch_queued_runs(pool: &PgPool, limit: i64) -> Result<Vec<ReportRu
 // Artifacts
 // ---------------------------------------------------------------------------
 
+#[allow(clippy::too_many_arguments)] // mirrors the report row it constructs
 pub async fn insert_artifact(
     pool: &PgPool,
     artifact_id: Uuid,
@@ -323,6 +325,7 @@ pub async fn update_artifact_signature(
 // Tlog anchors
 // ---------------------------------------------------------------------------
 
+#[allow(clippy::too_many_arguments)] // mirrors the report row it constructs
 pub async fn insert_tlog_anchor(
     pool: &PgPool,
     anchor_id: Uuid,

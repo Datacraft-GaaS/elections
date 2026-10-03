@@ -46,6 +46,7 @@ pub struct ShieldedAuditEvent {
 ///
 /// The `visible_similarity` and `probe_popcount` are shielded-layer metrics;
 /// no plaintext template is included in the event.
+#[allow(clippy::too_many_arguments)]
 pub fn create_shielded_event(
     case_id: Uuid,
     reviewer_id: Uuid,

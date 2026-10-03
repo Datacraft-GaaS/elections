@@ -11,7 +11,18 @@ rc=0
 # buries the handful of real findings. Note that `-D warnings -A missing_docs`
 # does NOT work: the warnings group overrides the specific allow regardless of
 # flag order, so the allow has to come from not denying the group at all.
-cargo clippy --all-targets --all-features --manifest-path "$EEL_WS" -- \
+# abis-report-publisher's `pgp` feature carries a deliberate compile_error! that
+# fires unless the rpgp dependency is present, so --all-features fails that
+# crate by design. It is a member of the root workspace, so key the exemption on
+# the crate rather than on a workspace path.
+feature_flag="--all-features"
+if find "$(dirname "$EEL_WS")" -maxdepth 4 -type d -name abis-report-publisher 2>/dev/null | grep -q .; then
+  feature_flag=""
+fi
+
+# shellcheck disable=SC2086  # feature_flag is intentionally empty for abis-svc
+cargo clippy --all-targets $feature_flag --manifest-path "$EEL_WS" -- \
   -D clippy::all -A missing_docs || rc=1
 cargo fmt --all --check --manifest-path "$EEL_WS" || rc=1
+
 exit "$rc"

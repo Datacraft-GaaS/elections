@@ -42,13 +42,10 @@ pub async fn run(pool: Arc<PgPool>) {
     loop {
         let pool = pool.clone();
 
-        match breaker.allow().await {
-            Err(e) => {
-                warn!(error = %e, "circuit breaker open; pausing publisher loop");
-                tokio::time::sleep(CB_COOLDOWN).await;
-                continue;
-            }
-            Ok(()) => {}
+        if let Err(e) = breaker.allow().await {
+            warn!(error = %e, "circuit breaker open; pausing publisher loop");
+            tokio::time::sleep(CB_COOLDOWN).await;
+            continue;
         }
 
         let deliveries = match repository::fetch_pending(&pool, BATCH_SIZE).await {

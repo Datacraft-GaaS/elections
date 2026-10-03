@@ -151,7 +151,7 @@ impl TransparencyLog for TlogGrpcService {
         sth_row(&self.state.pool, q.tree_size, q.cadence.as_deref())
             .await?
             .ok_or_else(|| Status::not_found("no signed tree head found"))
-            .map(|sth| Response::new(sth))
+            .map(Response::new)
     }
 
     async fn subscribe_sth(

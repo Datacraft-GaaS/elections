@@ -55,7 +55,7 @@ pub struct WatchlistEntry {
 
 impl WatchlistEntry {
     pub fn is_sunsetted(&self) -> bool {
-        self.sunset_at.map_or(false, |t| t <= Utc::now())
+        self.sunset_at.is_some_and(|t| t <= Utc::now())
     }
 }
 

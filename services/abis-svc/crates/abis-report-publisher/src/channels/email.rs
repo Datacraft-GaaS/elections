@@ -28,6 +28,9 @@ use tracing::{info, warn};
 
 use crate::domain::{DeliveryContext, DeliveryOutcome};
 
+// Deliberate guard: enabling `pgp` without the rpgp dependency would silently
+// ship an unencrypted channel. It fires whenever the feature is on, including
+// under `cargo clippy --all-features`, so lint runs must not enable it.
 #[cfg(feature = "pgp")]
 compile_error!(
     "The `pgp` feature requires the `rpgp` crate to be added to Cargo.toml. \

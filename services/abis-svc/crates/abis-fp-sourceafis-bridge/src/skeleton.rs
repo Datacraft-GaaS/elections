@@ -66,15 +66,15 @@ fn binarise(image: &GrayImage) -> Vec<bool> {
     }
     let total = image.pixels.len() as f64;
     let mut sum = 0.0f64;
-    for i in 0..256 {
-        sum += i as f64 * hist[i] as f64;
+    for (i, &count) in hist.iter().enumerate() {
+        sum += i as f64 * count as f64;
     }
     let mut sum_b = 0.0f64;
     let mut w_b = 0.0f64;
     let mut max_var = 0.0f64;
     let mut threshold = 128u8;
-    for t in 0..256usize {
-        w_b += hist[t] as f64;
+    for (t, &count) in hist.iter().enumerate() {
+        w_b += count as f64;
         if w_b == 0.0 {
             continue;
         }
@@ -82,7 +82,7 @@ fn binarise(image: &GrayImage) -> Vec<bool> {
         if w_f == 0.0 {
             break;
         }
-        sum_b += t as f64 * hist[t] as f64;
+        sum_b += t as f64 * count as f64;
         let mean_b = sum_b / w_b;
         let mean_f = (sum - sum_b) / w_f;
         let var = w_b * w_f * (mean_b - mean_f).powi(2);
@@ -142,7 +142,7 @@ pub fn extract_skeleton(image: &GrayImage) -> Result<Skeleton, SourceAfisError> 
                         p(-1, -1),
                     );
                     let n = p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9;
-                    if n < 2 || n > 6 {
+                    if !(2..=6).contains(&n) {
                         continue;
                     }
                     // Count 0->1 transitions in cyclic order.

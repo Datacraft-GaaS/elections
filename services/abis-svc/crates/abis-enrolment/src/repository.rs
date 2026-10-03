@@ -121,7 +121,7 @@ pub async fn insert_decision(
     decision: &EnrolmentDecision,
 ) -> Result<(), EnrolmentError> {
     let previous = serde_json::to_value(
-        &decision
+        decision
             .previous_records
             .iter()
             .map(|u| u.to_string())

@@ -33,6 +33,9 @@ pub struct ConsistencyQuery {
     pub to_size: u64,
 }
 
+
+/// A row of the `sth` table, in the order get_proof reads the latest head.
+type LatestSthRow = (i64, Vec<u8>, String, chrono::DateTime<chrono::Utc>, Vec<u8>);
 pub async fn get_inclusion_proof(
     State(state): State<ApiState>,
     Query(q): Query<InclusionQuery>,
@@ -203,8 +206,7 @@ pub async fn resolve_receipt(
         .inclusion_proof(index)
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let sth_row: Option<(i64, Vec<u8>, String, chrono::DateTime<chrono::Utc>, Vec<u8>)> =
-        sqlx::query_as(
+    let sth_row: Option<LatestSthRow> = sqlx::query_as(
             "SELECT tree_size, root_hash, cadence, signed_at, signature \
              FROM sth ORDER BY tree_size DESC LIMIT 1",
         )
