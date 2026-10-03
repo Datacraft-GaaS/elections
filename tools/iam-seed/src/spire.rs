@@ -35,10 +35,19 @@ pub async fn apply(server_url: &str, entries_dir: Option<&str>, yes: bool) -> Re
     // varies by deployment mode (embedded vs. remote). A production
     // implementation should use the SPIRE SDK or exec the CLI.
     for entry in &desired {
-        info!("would apply SPIRE entry: {}", entry.get("spiffe_id").and_then(|v| v.as_str()).unwrap_or("unknown"));
+        info!(
+            "would apply SPIRE entry: {}",
+            entry
+                .get("spiffe_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown")
+        );
     }
 
-    info!("SPIRE entries apply: {} entries processed (stub)", desired.len());
+    info!(
+        "SPIRE entries apply: {} entries processed (stub)",
+        desired.len()
+    );
     Ok(())
 }
 

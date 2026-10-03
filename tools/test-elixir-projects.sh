@@ -8,6 +8,13 @@ set -uo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# Homebrew installs Erlang unlinked, so `mix` is on PATH but `erl` is not, and
+# every rebar3 dependency fails to compile with "exec: erl: not found".
+if ! command -v erl >/dev/null 2>&1 && [ -x /opt/homebrew/opt/erlang/bin/erl ]; then
+  PATH="/opt/homebrew/opt/erlang/bin:$PATH"
+  export PATH
+fi
+
 list="$(mktemp)"
 trap 'rm -f "$list"' EXIT
 

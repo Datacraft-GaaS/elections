@@ -187,8 +187,8 @@ mod tests {
 
     fn single_county_dist(id: &str, votes: u64, total: u64) -> CandidateDistribution {
         // Spread votes across 47 synthetic counties proportionally.
-        let per_county_total = (total + 46) / 47;
-        let per_county_votes = (votes + 46) / 47;
+        let per_county_total = total.div_ceil(47);
+        let per_county_votes = votes.div_ceil(47);
         let county_votes = (0..47)
             .map(|i| CountyVotes {
                 county_code: format!("{:02}", i + 1),
@@ -218,7 +218,7 @@ mod tests {
                 .map(|i| CountyVotes {
                     county_code: format!("{:02}", i + 1),
                     votes: if i < 24 { loser_votes / 47 } else { 0 },
-                    county_total_valid: (total + 46) / 47,
+                    county_total_valid: total.div_ceil(47),
                 })
                 .collect(),
         };

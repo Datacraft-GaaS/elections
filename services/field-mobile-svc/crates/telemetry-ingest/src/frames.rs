@@ -90,11 +90,11 @@ pub fn downsample(samples: Vec<MovementSample>) -> Vec<TelemetryActivityFrame> {
         let gyro_x_avg = group.iter().map(|s| s.gyro_x).sum::<f32>() / n;
         let gyro_y_avg = group.iter().map(|s| s.gyro_y).sum::<f32>() / n;
         let gyro_z_avg = group.iter().map(|s| s.gyro_z).sum::<f32>() / n;
-        let battery_pct = group.iter().map(|s| s.battery_pct).last().unwrap_or(0);
-        let battery_temp_c = group.iter().map(|s| s.battery_temp_c).last().unwrap_or(0.0);
-        let network_class = group.iter().filter_map(|s| s.network_class.clone()).last();
-        let lat_coarse = group.iter().filter_map(|s| s.lat_coarse).last();
-        let lon_coarse = group.iter().filter_map(|s| s.lon_coarse).last();
+        let battery_pct = group.last().map(|s| s.battery_pct).unwrap_or(0);
+        let battery_temp_c = group.last().map(|s| s.battery_temp_c).unwrap_or(0.0);
+        let network_class = group.iter().rev().find_map(|s| s.network_class.clone());
+        let lat_coarse = group.iter().rev().find_map(|s| s.lat_coarse);
+        let lon_coarse = group.iter().rev().find_map(|s| s.lon_coarse);
 
         // Max instantaneous acceleration magnitude.
         let accel_max_g = group

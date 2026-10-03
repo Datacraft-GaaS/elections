@@ -122,18 +122,44 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::KeycloakApply { realm, url, realm_file, yes } => {
+        Commands::KeycloakApply {
+            realm,
+            url,
+            realm_file,
+            yes,
+        } => {
             keycloak::apply(&realm, &url, realm_file.as_deref(), yes).await?;
         }
-        Commands::SpicedbApply { endpoint, token, schema_dir, yes } => {
+        Commands::SpicedbApply {
+            endpoint,
+            token,
+            schema_dir,
+            yes,
+        } => {
             spicedb::apply(&endpoint, &token, schema_dir.as_deref(), yes).await?;
         }
-        Commands::SpireApply { server_url, entries_dir, yes } => {
+        Commands::SpireApply {
+            server_url,
+            entries_dir,
+            yes,
+        } => {
             spire::apply(&server_url, entries_dir.as_deref(), yes).await?;
         }
-        Commands::OpenbaoApply { url, token, policies_dir, mounts_dir, yes } => {
-            openbao::apply(&url, &token, policies_dir.as_deref(), mounts_dir.as_deref(), yes)
-                .await?;
+        Commands::OpenbaoApply {
+            url,
+            token,
+            policies_dir,
+            mounts_dir,
+            yes,
+        } => {
+            openbao::apply(
+                &url,
+                &token,
+                policies_dir.as_deref(),
+                mounts_dir.as_deref(),
+                yes,
+            )
+            .await?;
         }
         Commands::All { env, yes } => {
             info!(env = %env, "running all apply subcommands");

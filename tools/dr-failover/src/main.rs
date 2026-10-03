@@ -39,7 +39,11 @@ use tracing::{error, info, warn};
 )]
 struct Cli {
     /// Prometheus base URL (for RTO/RPO metrics)
-    #[arg(long, env = "EEL_PROM_URL", default_value = "http://prometheus.monitoring.svc.cluster.local:9090")]
+    #[arg(
+        long,
+        env = "EEL_PROM_URL",
+        default_value = "http://prometheus.monitoring.svc.cluster.local:9090"
+    )]
     prom_url: String,
 
     /// Target site to fail over to
@@ -220,7 +224,9 @@ fn service_failover_plan(svc: &str, target_site: &str) -> Vec<FailoverStep> {
         FailoverStep {
             order: 2,
             action: format!("Scale up {svc} on {target_site} site"),
-            command: format!("kubectl --context={target_site} -n eel-prod scale deploy/{svc} --replicas=3"),
+            command: format!(
+                "kubectl --context={target_site} -n eel-prod scale deploy/{svc} --replicas=3"
+            ),
             expected_duration_secs: 60,
             verify: format!("All {svc} pods on {target_site} are Ready"),
         },
@@ -297,7 +303,11 @@ async fn cmd_plan(service: Option<String>, target_site: &str) {
         println!();
     }
     let total_secs: u32 = steps.iter().map(|s| s.expected_duration_secs).sum();
-    println!("Estimated total: {}s ({:.1} min)", total_secs, total_secs as f64 / 60.0);
+    println!(
+        "Estimated total: {}s ({:.1} min)",
+        total_secs,
+        total_secs as f64 / 60.0
+    );
 }
 
 async fn cmd_execute(
@@ -307,7 +317,9 @@ async fn cmd_execute(
     confirm: bool,
 ) -> Result<()> {
     if !dry_run && !confirm {
-        bail!("Must pass either --dry-run or --confirm. Refusing to execute without explicit intent.");
+        bail!(
+            "Must pass either --dry-run or --confirm. Refusing to execute without explicit intent."
+        );
     }
 
     let steps = match &service {
@@ -335,7 +347,10 @@ async fn cmd_execute(
             // and shell out only to read-only verifications in this version.
             // Write operations require an operator to confirm via the step plan
             // and run each command manually -- this tool orchestrates, not automates blindly.
-            warn!("Step {:02}: live execution not implemented in this version. Run manually:", step.order);
+            warn!(
+                "Step {:02}: live execution not implemented in this version. Run manually:",
+                step.order
+            );
             warn!("  {}", step.command);
         }
         println!("     VERIFY: {}", step.verify);
@@ -408,13 +423,21 @@ async fn cmd_report(
             .build()?;
         match client.get(&url).send().await {
             Ok(resp) if resp.status().is_success() => {
-                report.notes.push(format!("{svc} health check: OK ({status})", status = resp.status()));
+                report.notes.push(format!(
+                    "{svc} health check: OK ({status})",
+                    status = resp.status()
+                ));
             }
             Ok(resp) => {
-                report.notes.push(format!("{svc} health check: FAIL ({status})", status = resp.status()));
+                report.notes.push(format!(
+                    "{svc} health check: FAIL ({status})",
+                    status = resp.status()
+                ));
             }
             Err(e) => {
-                report.notes.push(format!("{svc} health check: ERROR ({e})"));
+                report
+                    .notes
+                    .push(format!("{svc} health check: ERROR ({e})"));
             }
         }
     }
@@ -424,13 +447,30 @@ async fn cmd_report(
             println!("DR Drill Report");
             println!("{}", "=".repeat(72));
             println!("Drill ID  : {}", report.drill_id);
-            println!("Generated : {}", report.generated_at.format("%Y-%m-%dT%H:%M:%SZ"));
+            println!(
+                "Generated : {}",
+                report.generated_at.format("%Y-%m-%dT%H:%M:%SZ")
+            );
             println!("Site      : {}", report.site);
             println!();
-            let rto_str = report.rto_seconds.map(|v| format!("{v:.0}s")).unwrap_or("N/A".into());
-            let rpo_str = report.rpo_seconds.map(|v| format!("{v:.0}s")).unwrap_or("N/A".into());
-            println!("RTO       : {rto_str:<10} SLO={:.0}s  {}", report.rto_slo_seconds, if report.rto_met { "PASS" } else { "FAIL" });
-            println!("RPO       : {rpo_str:<10} SLO={:.0}s  {}", report.rpo_slo_seconds, if report.rpo_met { "PASS" } else { "FAIL" });
+            let rto_str = report
+                .rto_seconds
+                .map(|v| format!("{v:.0}s"))
+                .unwrap_or("N/A".into());
+            let rpo_str = report
+                .rpo_seconds
+                .map(|v| format!("{v:.0}s"))
+                .unwrap_or("N/A".into());
+            println!(
+                "RTO       : {rto_str:<10} SLO={:.0}s  {}",
+                report.rto_slo_seconds,
+                if report.rto_met { "PASS" } else { "FAIL" }
+            );
+            println!(
+                "RPO       : {rpo_str:<10} SLO={:.0}s  {}",
+                report.rpo_slo_seconds,
+                if report.rpo_met { "PASS" } else { "FAIL" }
+            );
             println!();
             if !report.notes.is_empty() {
                 println!("Notes:");
@@ -470,12 +510,27 @@ async fn main() -> Result<()> {
             Ok(())
         }
 
-        Commands::Execute { service, dry_run, confirm } => {
-            cmd_execute(service, &cli.target_site, dry_run, confirm).await
-        }
+        Commands::Execute {
+            service,
+            dry_run,
+            confirm,
+        } => cmd_execute(service, &cli.target_site, dry_run, confirm).await,
 
-        Commands::Report { drill, check_gaps, check_svc, format } => {
-            cmd_report(&cli.prom_url, &cli.target_site, drill, check_gaps, check_svc, format).await
+        Commands::Report {
+            drill,
+            check_gaps,
+            check_svc,
+            format,
+        } => {
+            cmd_report(
+                &cli.prom_url,
+                &cli.target_site,
+                drill,
+                check_gaps,
+                check_svc,
+                format,
+            )
+            .await
         }
     }
 }

@@ -26,7 +26,10 @@ pub async fn apply(realm: &str, url: &str, realm_file: Option<&str>, yes: bool) 
     let changes = crate::compute_diff(&current, &desired);
 
     if changes.is_empty() {
-        info!("Keycloak realm '{}' is up to date, no changes needed", realm);
+        info!(
+            "Keycloak realm '{}' is up to date, no changes needed",
+            realm
+        );
         return Ok(());
     }
 
@@ -41,7 +44,11 @@ pub async fn apply(realm: &str, url: &str, realm_file: Option<&str>, yes: bool) 
     }
 
     put_realm(url, realm, &desired).await?;
-    info!("Keycloak realm '{}' applied ({} change(s))", realm, changes.len());
+    info!(
+        "Keycloak realm '{}' applied ({} change(s))",
+        realm,
+        changes.len()
+    );
     Ok(())
 }
 
@@ -50,8 +57,8 @@ fn load_desired(realm: &str, realm_file: Option<&str>) -> Result<serde_json::Val
         .map(|p| p.to_string())
         .unwrap_or_else(|| format!("platform/keycloak/{}.json", realm));
 
-    let content = std::fs::read_to_string(&path)
-        .with_context(|| format!("reading realm file {}", path))?;
+    let content =
+        std::fs::read_to_string(&path).with_context(|| format!("reading realm file {}", path))?;
     serde_json::from_str(&content).with_context(|| format!("parsing realm file {}", path))
 }
 
@@ -60,9 +67,7 @@ async fn fetch_current(url: &str, realm: &str) -> Result<serde_json::Value> {
     let token = std::env::var("KEYCLOAK_ADMIN_TOKEN")
         .unwrap_or_else(|_| std::env::var("KEYCLOAK_TOKEN").unwrap_or_default());
 
-    let client = reqwest::Client::builder()
-        .use_rustls_tls()
-        .build()?;
+    let client = reqwest::Client::builder().use_rustls_tls().build()?;
 
     let resp = client
         .get(&admin_url)
@@ -88,9 +93,7 @@ async fn put_realm(url: &str, realm: &str, desired: &serde_json::Value) -> Resul
     let token = std::env::var("KEYCLOAK_ADMIN_TOKEN")
         .unwrap_or_else(|_| std::env::var("KEYCLOAK_TOKEN").unwrap_or_default());
 
-    let client = reqwest::Client::builder()
-        .use_rustls_tls()
-        .build()?;
+    let client = reqwest::Client::builder().use_rustls_tls().build()?;
 
     client
         .put(&admin_url)

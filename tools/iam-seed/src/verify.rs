@@ -155,8 +155,13 @@ async fn check_spicedb_permission(
     if allowed != expect_allowed {
         anyhow::bail!(
             "permission check {}/{} {} {}/{}: expected allowed={}, got allowed={}",
-            resource_type, resource_id, permission, subject_type, subject_id,
-            expect_allowed, allowed
+            resource_type,
+            resource_id,
+            permission,
+            subject_type,
+            subject_id,
+            expect_allowed,
+            allowed
         );
     }
     Ok(())

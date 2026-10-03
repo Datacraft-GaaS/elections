@@ -98,10 +98,7 @@ impl std::str::FromStr for OutputFormat {
             "csv" => Ok(Self::Csv),
             "parquet" => Ok(Self::Parquet),
             "sql" => Ok(Self::Sql),
-            _ => anyhow::bail!(
-                "unknown format '{}'. Valid values: csv, parquet, sql",
-                s
-            ),
+            _ => anyhow::bail!("unknown format '{}'. Valid values: csv, parquet, sql", s),
         }
     }
 }
@@ -120,7 +117,12 @@ pub struct DegradationFlags {
 
 impl Default for DegradationFlags {
     fn default() -> Self {
-        Self { torn: false, wet: false, angled: false, low_light: false }
+        Self {
+            torn: false,
+            wet: false,
+            angled: false,
+            low_light: false,
+        }
     }
 }
 

@@ -31,7 +31,12 @@ use serde_json::{json, Value};
 /// The workspace dependency set has no regex crate, so these are hand-rolled and
 /// must be kept in step with the contract by hand. `tests/bvr_validation.rs`
 /// asserts each against the literals in the spec.
-static BVR_PATTERNS: LazyLock<[(&'static str, fn(&str) -> bool); 3]> = LazyLock::new(|| {
+///
+/// Named so the signature reads as intent; clippy's `type_complexity` fires on
+/// the tuple-of-tuple-and-fn-pointer otherwise.
+type BvrPattern = (&'static str, fn(&str) -> bool);
+
+static BVR_PATTERNS: LazyLock<[BvrPattern; 3]> = LazyLock::new(|| {
     [
         ("national_id", |s: &str| {
             s.len() == 8 && s.bytes().all(|b| b.is_ascii_digit())
@@ -140,7 +145,12 @@ where
 
     /// List all values.
     pub fn values(&self) -> Vec<V> {
-        self.inner.lock().expect("lock poisoned").values().cloned().collect()
+        self.inner
+            .lock()
+            .expect("lock poisoned")
+            .values()
+            .cloned()
+            .collect()
     }
 
     /// Current length.

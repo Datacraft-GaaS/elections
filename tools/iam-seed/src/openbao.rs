@@ -36,8 +36,8 @@ pub async fn apply(
 }
 
 async fn apply_policies(url: &str, token: &str, dir: &str, yes: bool) -> Result<()> {
-    let entries = std::fs::read_dir(dir)
-        .with_context(|| format!("reading policies directory {}", dir))?;
+    let entries =
+        std::fs::read_dir(dir).with_context(|| format!("reading policies directory {}", dir))?;
 
     let client = reqwest::Client::builder().use_rustls_tls().build()?;
 
@@ -134,8 +134,8 @@ async fn put_policy(
 }
 
 async fn apply_mounts(url: &str, token: &str, dir: &str, yes: bool) -> Result<()> {
-    let entries = std::fs::read_dir(dir)
-        .with_context(|| format!("reading mounts directory {}", dir))?;
+    let entries =
+        std::fs::read_dir(dir).with_context(|| format!("reading mounts directory {}", dir))?;
 
     let client = reqwest::Client::builder().use_rustls_tls().build()?;
 

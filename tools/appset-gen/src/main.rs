@@ -12,17 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod model;
 mod gen;
-mod kafka;
 mod initial;
+mod kafka;
+mod model;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 #[derive(Parser)]
-#[command(name = "eel-appset-gen", version, about = "Generate ArgoCD ApplicationSets and platform manifests from service descriptors")]
+#[command(
+    name = "eel-appset-gen",
+    version,
+    about = "Generate ArgoCD ApplicationSets and platform manifests from service descriptors"
+)]
 struct Cli {
     #[command(subcommand)]
     cmd: Cmd,
@@ -65,7 +69,11 @@ fn main() -> Result<()> {
                 gen::emit_appset(&svc, &out)?;
                 gen::emit_kustomize_overlays(&svc, &out)?;
             }
-            eprintln!("Generated manifests for {} service(s) in {}", names.len(), out.display());
+            eprintln!(
+                "Generated manifests for {} service(s) in {}",
+                names.len(),
+                out.display()
+            );
         }
         Cmd::Topics { out } => {
             std::fs::create_dir_all(&out)?;

@@ -51,8 +51,8 @@ pub async fn apply(endpoint: &str, token: &str, schema_dir: Option<&str>, yes: b
 
 fn load_schema(dir: &str) -> Result<String> {
     let mut schema = String::new();
-    let entries = std::fs::read_dir(dir)
-        .with_context(|| format!("reading schema directory {}", dir))?;
+    let entries =
+        std::fs::read_dir(dir).with_context(|| format!("reading schema directory {}", dir))?;
 
     let mut paths: Vec<_> = entries
         .filter_map(|e| e.ok())
@@ -62,8 +62,8 @@ fn load_schema(dir: &str) -> Result<String> {
     paths.sort();
 
     for path in &paths {
-        let content = std::fs::read_to_string(path)
-            .with_context(|| format!("reading {}", path.display()))?;
+        let content =
+            std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
         schema.push_str(&content);
         schema.push('\n');
     }
