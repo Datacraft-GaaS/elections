@@ -19,7 +19,6 @@ import numpy as np
 from eel_adversarial_training.train import (
     AdversarialConfig,
     AdversarialTrainer,
-    ModelProtocol,
     fgsm_attack,
     pgd_attack,
 )

@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import pytest
-from django.test import TestCase
 
 from finance_app.models import (
     Budget,

@@ -26,11 +26,8 @@ import nacl.signing
 from eel_events import (
     ConsumerMiddleware,
     DataClass,
-    DedupStore,
     Envelope,
     EventBuilder,
-    EventConsumer,
-    SpiffeKeyProvider,
     canonicalize,
 )
 from eel_events.signing import sign_envelope, verify_envelope

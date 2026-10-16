@@ -16,7 +16,6 @@
 
 import uuid
 
-import pytest
 
 from adhoc_editor.apps.authoring.models import (
     AdhocPreview,

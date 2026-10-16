@@ -53,25 +53,25 @@ def render_markdown(report: dict) -> str:
 
     status = "PASS" if failed == 0 else "FAIL"
     lines = [
-        f"# Completeness Audit Report",
-        f"",
+        "# Completeness Audit Report",
+        "",
         f"Generated: {now}",
         f"Mode: {mode}",
         f"Result: **{status}** ({passed}/{total} steps passed)",
-        f"",
-        f"## Step Results",
-        f"",
-        f"| Step | Label | Status |",
-        f"|---|---|---|",
+        "",
+        "## Step Results",
+        "",
+        "| Step | Label | Status |",
+        "|---|---|---|",
     ]
     for s in steps:
         icon = "PASS" if s.get("status") == "pass" else "FAIL"
         lines.append(f"| {s.get('step')} | {s.get('label')} | {icon} |")
 
     lines += [
-        f"",
-        f"## Summary",
-        f"",
+        "",
+        "## Summary",
+        "",
         f"{passed} of {total} steps passed.",
     ]
 
@@ -84,11 +84,11 @@ def render_markdown(report: dict) -> str:
         )
 
     lines += [
-        f"",
-        f"## Attestation",
-        f"",
-        f"After all steps pass, the report hash is submitted to the transparency log.",
-        f"The inclusion proof is stored in `completeness-attestation.json`.",
+        "",
+        "## Attestation",
+        "",
+        "After all steps pass, the report hash is submitted to the transparency log.",
+        "The inclusion proof is stored in `completeness-attestation.json`.",
     ]
 
     return "\n".join(lines) + "\n"

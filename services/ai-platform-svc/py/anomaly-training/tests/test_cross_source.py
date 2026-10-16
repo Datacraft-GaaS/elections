@@ -15,7 +15,6 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from eel_anomaly_training.loader import KenyaHistoricalDataLoader
 from eel_anomaly_training.cross_source import (

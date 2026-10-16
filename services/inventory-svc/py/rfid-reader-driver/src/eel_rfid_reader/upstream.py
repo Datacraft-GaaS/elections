@@ -22,7 +22,7 @@ import httpx
 from uuid6 import uuid7
 
 from .config import cfg
-from .models import ReadRequest, ReadResponse, TagState
+from .models import ReadRequest
 
 _log_ = logging.getLogger(__name__)
 

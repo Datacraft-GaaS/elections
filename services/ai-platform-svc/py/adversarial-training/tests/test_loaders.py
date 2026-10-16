@@ -14,7 +14,6 @@
 
 from __future__ import annotations
 
-import asyncio
 
 from eel_adversarial_training.asvspoof import AsvSpoofConfig, AsvSpoofLoader
 from eel_adversarial_training.dfdc import DfdcConfig, DfdcLoader

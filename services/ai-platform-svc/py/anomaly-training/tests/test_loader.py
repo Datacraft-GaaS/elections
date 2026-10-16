@@ -15,7 +15,6 @@
 from __future__ import annotations
 
 import pandas as pd
-import pytest
 
 from eel_anomaly_training.loader import KenyaHistoricalDataLoader
 

@@ -14,11 +14,9 @@
 
 from __future__ import annotations
 
-import math
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from eel_anomaly_training.benford import (
     benford_chi2_test,

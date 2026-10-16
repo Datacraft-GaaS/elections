@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import timezone as tz
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from django.contrib.admin.sites import AdminSite

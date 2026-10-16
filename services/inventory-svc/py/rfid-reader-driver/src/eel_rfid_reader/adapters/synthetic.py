@@ -20,7 +20,6 @@ challenge/response pair. Simulates tamper based on a configurable probability.
 
 from __future__ import annotations
 
-import hashlib
 import hmac
 import random
 

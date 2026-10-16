@@ -18,7 +18,6 @@ import uuid
 
 import pytest
 from django.contrib.admin.sites import AdminSite
-from django.contrib.auth.models import User
 from django.utils import timezone
 
 from abis_console.apps.adjudication.admin import AdjudicationCaseAdmin

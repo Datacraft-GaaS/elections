@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 
 from fastapi import FastAPI, HTTPException
 
-from turnout_forecast.forecaster import check_variance, clear_state, forecast, get_alerts, ingest
+from turnout_forecast.forecaster import forecast, get_alerts, ingest
 from turnout_forecast.views import TurnoutForecast, TurnoutIngest, VarianceAlert
 
 logger = logging.getLogger(__name__)

@@ -12,10 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
 import logging
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -75,7 +73,8 @@ async def test_verify_token_raises_auth_error_on_bad_token():
 
 
 async def test_verify_token_raises_auth_error_on_missing_kid():
-    import base64, json
+    import base64
+    import json
 
     header = (
         base64.urlsafe_b64encode(json.dumps({"alg": "RS256"}).encode())
@@ -128,7 +127,7 @@ async def test_noop_audit_sink_discards_events_without_error():
 
 
 async def test_jwks_cache_fetches_on_kid_miss(respx_mock):
-    import respx, httpx
+    import httpx
 
     kid = "key-1"
     jwk_data = {"kid": kid, "kty": "RSA", "use": "sig", "n": "abc", "e": "AQAB"}

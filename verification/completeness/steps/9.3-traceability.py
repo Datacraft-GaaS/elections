@@ -27,7 +27,6 @@ In dry mode, reads fixtures/mini-audit/traceability-junit.xml as the test source
 import os
 import sys
 import glob
-import json
 import xml.etree.ElementTree as ET
 import yaml
 

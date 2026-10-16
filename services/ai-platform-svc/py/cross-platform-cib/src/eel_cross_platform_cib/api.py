@@ -24,7 +24,6 @@ Routes:
 from __future__ import annotations
 
 import asyncio
-from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Annotated, Any
 from uuid import uuid4

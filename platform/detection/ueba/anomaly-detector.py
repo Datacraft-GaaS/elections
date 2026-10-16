@@ -130,7 +130,7 @@ class AnomalyDetector:
         assert self._pool is not None
         async with self._pool.acquire() as conn:
             await conn.execute(
-                f"SELECT pg_notify($1, $2)",
+                "SELECT pg_notify($1, $2)",
                 self._channel,
                 alert.to_json(),
             )

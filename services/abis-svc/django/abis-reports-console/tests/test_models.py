@@ -14,8 +14,6 @@
 
 """Model unit tests for abis-reports-console."""
 
-import uuid
-from datetime import datetime, timezone
 
 import pytest
 
@@ -23,7 +21,6 @@ from abis_reports_console.apps.reports.models import (
     ReportArtifact,
     ReportDefinition,
     ReportRun,
-    ReportSubscription,
 )
 
 

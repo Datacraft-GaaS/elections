@@ -67,11 +67,13 @@ async def detect(req: DetectRequest) -> DetectResponse:
         raise HTTPException(status_code=422, detail=f"invalid base64: {exc}") from exc
 
     pool = get_pool()
+    # Real inference needs the model's I/O contract (input name/shape, anchor
+    # decoding, NMS), which is specified per deployed model. Until the
+    # RetinaFace post-processing spec lands with the model bundle (WP-3.7), the
+    # deterministic fallback below keeps the endpoint total -- and the response
+    # says `stub-hash`, so a caller can tell which path produced the faces.
     if pool.detector is not None:
-        # Real inference requires the model's I/O contract (input name/shape,
-        # anchor decoding, NMS) which is specified per deployed model; the
-        # deterministic fallback below keeps the endpoint total until the
-        # RetinaFace post-processing spec lands with the model bundle (WP-3.7).
+        _log.info("EEL: ONNX detector available; real inference not yet wired")
 
     raw = stub_detect(image_bytes, req.width, req.height, req.conf_threshold)
     faces = [

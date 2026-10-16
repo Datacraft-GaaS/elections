@@ -36,7 +36,6 @@ from uuid6 import uuid7
 from .adapter import RfidReaderAdapter
 from .adapters.synthetic import SyntheticAdapter
 from .config import cfg
-from .hmac_gen2v2 import record_nonce
 from .models import (
     BatchReadRequest,
     ChallengeRequest,
@@ -46,7 +45,6 @@ from .models import (
     ReaderRegistration,
     ReaderStatus,
     TagState,
-    VerifyResult,
 )
 from .upstream import UpstreamClient
 

@@ -17,7 +17,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Type
+from typing import Any
 
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver

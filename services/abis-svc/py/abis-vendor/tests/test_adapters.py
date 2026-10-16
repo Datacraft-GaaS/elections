@@ -18,7 +18,7 @@ import os
 import sys
 import pytest
 from abis_vendor.adapters.mock import MockAdapter
-from abis_vendor.models import FingerprintTemplate, FaceTemplate, IrisTemplate, Modality
+from abis_vendor.models import Modality
 
 os.environ.setdefault("EEL_VENDOR_MODE", "mock")
 
@@ -88,7 +88,6 @@ def test_onnx_unavailable_raises():
     sys.modules["onnxruntime"] = None  # type: ignore[assignment]
     try:
         # Re-import with unavailable flag
-        import importlib
         import abis_vendor.adapters.onnx_face as onnx_mod
 
         # Force ONNX_AVAILABLE to False to test the guard

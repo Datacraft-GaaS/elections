@@ -22,7 +22,6 @@ from __future__ import annotations
 import os
 
 import httpx
-import pytest
 
 DOUBLE_URL = os.environ.get("SOCIAL_PLATFORMS_DOUBLE_URL", "http://localhost:8090")
 

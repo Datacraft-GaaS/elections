@@ -15,13 +15,10 @@
 """Tests for eel-pii-py."""
 
 import asyncio
-from typing import Any
 
-import pytest
 from pydantic import BaseModel
 
 from eel_pii import (
-    PIIAuditSink,
     PIIEphemeral,
     PIIOperational,
     PIIPublic,

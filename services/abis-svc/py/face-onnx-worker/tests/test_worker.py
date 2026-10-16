@@ -21,11 +21,10 @@ from __future__ import annotations
 
 import base64
 
-import pytest
 from fastapi.testclient import TestClient
 
 from eel_face_worker.main import app
-from eel_face_worker.inference import stub_detect, stub_embed, stub_quality, stub_align
+from eel_face_worker.inference import stub_embed, stub_quality, stub_align
 
 client = TestClient(app)
 

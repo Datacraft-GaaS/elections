@@ -14,7 +14,6 @@
 
 from __future__ import annotations
 
-import pytest
 from starlette.requests import Request
 from starlette.testclient import TestClient
 from starlette.applications import Starlette

@@ -14,12 +14,9 @@
 
 """Admin tests for abis-reports-console."""
 
-import uuid
-from datetime import datetime, timezone
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.test import Client
 
 User = get_user_model()
 

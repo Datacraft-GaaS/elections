@@ -15,7 +15,7 @@
 """URL configuration for diaspora-admin."""
 
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path
 
 from diaspora_admin.apps.embassies import views as embassy_views
 

@@ -62,7 +62,6 @@ def test_deliver_gov_printer_calls_upstream(
     monkeypatch: pytest.MonkeyPatch, client: TestClient
 ) -> None:
     """Monkeypatch gp.deliver to return a canned receipt."""
-    import asyncio
     from datetime import datetime, timezone
 
     from eel_report_deliverers import api as api_module

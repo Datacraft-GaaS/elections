@@ -16,7 +16,6 @@
 
 import uuid
 from datetime import timedelta
-from unittest.mock import MagicMock
 
 import pytest
 from django.utils import timezone

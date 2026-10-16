@@ -26,13 +26,10 @@ import asyncio
 import importlib.util
 import json
 import statistics
-import sys
-import types
-from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 

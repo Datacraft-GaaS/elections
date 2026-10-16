@@ -17,7 +17,6 @@ from __future__ import annotations
 import logging
 from unittest.mock import MagicMock
 
-import pytest
 
 from eel_observability.audit_shadow import generate_audit_shadow_trigger
 from eel_observability.log_scrubber import PiiScrubberFilter, _scrub

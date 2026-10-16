@@ -17,8 +17,6 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime, timezone
 
-import httpx
-import pytest
 from fastapi.testclient import TestClient
 
 from anomaly.service import app

@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import FastAPI, Form, Response, status
+from fastapi import FastAPI, Form, Response
 
 _LOGGER = logging.getLogger(__name__)
 

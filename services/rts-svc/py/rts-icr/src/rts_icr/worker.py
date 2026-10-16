@@ -14,7 +14,6 @@
 
 import logging
 
-import httpx
 
 from .models import IcrResult
 from .ocr import extract_fields

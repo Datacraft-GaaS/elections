@@ -69,7 +69,6 @@ class OnnxSession:
             raise RuntimeError(
                 f"ONNX session for {self._task_name} not loaded; hash fallback should be used instead."
             )
-        import onnxruntime as ort  # type: ignore[import-untyped]
 
         session = self._session
         assert hasattr(session, "run"), "Expected onnxruntime InferenceSession"

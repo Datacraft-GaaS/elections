@@ -14,9 +14,7 @@
 
 """Tests for M42+M43 accreditation domain (FR-M42-016, AC-M42-02, EC-DAT-01)."""
 
-import uuid
 import pytest
-from django.test import TestCase
 from uuid6 import uuid7
 
 from accreditation_app.models import (

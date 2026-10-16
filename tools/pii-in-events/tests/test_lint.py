@@ -16,10 +16,8 @@
 
 from __future__ import annotations
 
-import tempfile
 from pathlib import Path
 
-import pytest
 
 from eel_pii_in_events.lint import (
     Finding,

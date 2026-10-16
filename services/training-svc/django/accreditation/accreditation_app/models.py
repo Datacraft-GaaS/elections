@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import uuid
 from uuid6 import uuid7
 from django.db import models
 

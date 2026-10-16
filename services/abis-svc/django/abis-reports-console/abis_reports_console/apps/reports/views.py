@@ -18,7 +18,6 @@ HTMX partials, new-run form, delivery dashboard, subscription wizard.
 """
 
 import hashlib
-import io
 import json
 import uuid
 from typing import Any
@@ -28,7 +27,6 @@ from django.http import (
     HttpRequest,
     HttpResponse,
     HttpResponseBase,
-    JsonResponse,
     StreamingHttpResponse,
 )
 from django.shortcuts import get_object_or_404, redirect, render
@@ -201,7 +199,7 @@ def retry_delivery(request: HttpRequest, delivery_id: str) -> HttpResponse:
     delivery.save()
     if getattr(request, "htmx", None):
         return HttpResponse(
-            f'<span class="badge badge-pending">pending</span>', status=200
+            '<span class="badge badge-pending">pending</span>', status=200
         )
     return redirect("reports:delivery_dashboard")
 
@@ -321,7 +319,6 @@ def artifact_download(request: HttpRequest, artifact_id: str) -> HttpResponseBas
     content_type = content_types.get(artifact.format, "application/octet-stream")
     filename = artifact.blob_ref.split("/")[-1]
 
-    from django.http import StreamingHttpResponse
 
     def _iter():
         with default_storage.open(artifact.blob_ref, "rb") as f:

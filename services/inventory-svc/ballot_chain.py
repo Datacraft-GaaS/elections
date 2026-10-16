@@ -15,7 +15,9 @@
 # G13 — Ballot Paper Chain-of-Custody (CLOSED)
 # QR scan at each handover; signed handover receipt; immutable record in Postgres.
 # M5 audit: every handover emit auditId=g13-ballot-{handover_id}, proofHash, signature.
-import hashlib, json, time
+import hashlib
+import json
+import time
 from dataclasses import dataclass
 from typing import Optional
 

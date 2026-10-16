@@ -20,8 +20,7 @@ import logging
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, File, HTTPException, UploadFile
 
 from eel_cvr_ocr.extract import TESSERACT_OK, extract
 from eel_cvr_ocr.models import HealthResponse, OcrModality, OcrResponse

@@ -14,9 +14,7 @@
 
 import base64
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 
 from eel_secrets.client import OpenBaoClient
 from eel_secrets.dynamic_creds import PgCredential, PgDynamicCred

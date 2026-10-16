@@ -16,7 +16,6 @@
 
 from __future__ import annotations
 
-import pytest
 
 from eel_rfid_reader._internal_key import _derive_key
 from eel_rfid_reader.adapters.synthetic import SyntheticAdapter

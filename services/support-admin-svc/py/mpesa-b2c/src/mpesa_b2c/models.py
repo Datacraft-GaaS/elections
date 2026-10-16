@@ -16,7 +16,7 @@
 
 from typing import Annotated
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, field_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict
 
 
 def _positive_amount(v: int) -> int:

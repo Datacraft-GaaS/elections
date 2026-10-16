@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import logging
-from datetime import datetime, timezone
 
 from django.utils import timezone as djtimezone
 from rest_framework import viewsets, status
@@ -36,7 +35,7 @@ from accreditation_app.serializers import (
     IndividualObserverSerializer,
     IndividualObserverRevokeSerializer,
 )
-from accreditation_app.badge import generate_badge_serial, verify_badge
+from accreditation_app.badge import verify_badge
 from accreditation_app.crl import generate_crl
 from accreditation_app import signals as sig
 

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from rts_icr.drift import DRIFT_THRESHOLD, DriftMonitor
+from rts_icr.drift import DriftMonitor
 
 
 def test_no_drift_at_baseline():

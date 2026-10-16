@@ -23,11 +23,10 @@ hermetic.
 from __future__ import annotations
 
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-import django.test
 from django.contrib.auth.models import User
-from django.test import Client, RequestFactory, TestCase, TransactionTestCase
+from django.test import TestCase, TransactionTestCase
 from django.urls import reverse
 
 

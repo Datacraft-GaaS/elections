@@ -24,9 +24,8 @@ import uuid
 from datetime import datetime, timezone as tz
 from unittest.mock import MagicMock, patch
 
-from django.contrib.auth.models import Permission, User
-from django.test import Client, RequestFactory, TestCase
-from django.urls import reverse
+from django.contrib.auth.models import User
+from django.test import Client, TestCase
 
 
 def _perm(codename: str) -> str:

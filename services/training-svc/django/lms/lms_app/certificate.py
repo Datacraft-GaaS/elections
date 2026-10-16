@@ -15,7 +15,6 @@
 import hashlib
 from datetime import datetime, timezone
 
-from uuid6 import uuid7
 
 from .models import uuid7str
 

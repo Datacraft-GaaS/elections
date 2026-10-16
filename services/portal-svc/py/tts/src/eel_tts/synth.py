@@ -21,7 +21,6 @@ EEL_TTS_ADAPTER=piper -> PiperAdapter (requires piper-tts installed)
 from __future__ import annotations
 
 import os
-import struct
 from abc import ABC, abstractmethod
 from pathlib import Path
 

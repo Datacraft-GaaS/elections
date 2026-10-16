@@ -17,14 +17,13 @@
 from __future__ import annotations
 
 import io
-from datetime import datetime, timezone
 
 import pytest
 from django.contrib.auth.models import User
 from django.test import Client
 
 from diaspora_admin.apps.embassies.models import EmbassyStation, Form34ADiaspora
-from diaspora_admin.apps.embassies.views import ImportReport, _validate_row, RowReport
+from diaspora_admin.apps.embassies.views import _validate_row
 
 
 @pytest.fixture

@@ -14,7 +14,6 @@
 
 """Tests for eel-hlc-py."""
 
-import asyncio
 
 import pytest
 

@@ -23,9 +23,7 @@ from lms_app.models import (
     CourseModule,
     EnrollmentStatus,
     ModuleType,
-    ProgressScope,
     TargetAudience,
-    TrainingProgress,
     WorkerCertificate,
     WorkerEnrollment,
 )

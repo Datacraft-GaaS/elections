@@ -14,7 +14,6 @@
 
 """Integration tests for BagBuilder and BagVerifier."""
 
-import tempfile
 from pathlib import Path
 
 import pytest

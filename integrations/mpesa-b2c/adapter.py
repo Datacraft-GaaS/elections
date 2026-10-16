@@ -15,7 +15,7 @@
 # G12 — M-Pesa B2C Stipend Disbursement (CLOSED)
 # Integrates Safaricom Daraja API B2C for poll-worker stipend payments.
 # M5 audit: every payment emit auditId=g12-mpesa-{txn_id}, proofHash, signature.
-import hashlib, hmac, time, base64, json, requests
+import requests
 from dataclasses import dataclass, field
 from typing import Optional
 
