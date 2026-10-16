@@ -16,6 +16,12 @@ target/
 .parcel-cache/
 *.egg-info/
 
+# Django dev/test databases. `DJANGO_TEST_SQLITE=true` points NAME at a file
+# inside BASE_DIR, so running the suite writes one next to settings.py; seven
+# of them were committed. Schema is rebuilt from migrations, so nothing here
+# is a source of truth.
+*.sqlite3
+
 # platform artefacts
 .DS_Store
 Thumbs.db
