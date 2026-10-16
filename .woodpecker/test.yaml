@@ -52,6 +52,20 @@ steps:
         done
       - cargo nextest run --workspace --all-features --no-fail-fast
 
+  # `eel-migrate` above logs a failure and carries on to the next file, so a
+  # migration that cannot be applied does not fail that step. This one applies
+  # the same set with ON_ERROR_STOP and fails the build, and rejects any .sql
+  # under a migrations/ directory that eel-migrate cannot reach.
+  - name: check-migrations
+    image: eel/build-image:latest
+    when:
+      matrix:
+        LANG: rust
+    environment:
+      DATABASE_URL: postgres://eel:eel@database:5432/eel_mig_test
+    commands:
+      - tools/check-migrations.sh
+
   - name: test-python
     image: eel/build-image:latest
     when:
