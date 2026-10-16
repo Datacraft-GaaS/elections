@@ -24,8 +24,8 @@ pub fn export_to_csv(records: &[Vec<String>], headers: &[&str]) -> Result<Vec<u8
     for row in records {
         wtr.write_record(row)?;
     }
-    let data = wtr.into_inner().map_err(|e| {
-        BulkOpsError::Io(std::io::Error::other(e))
-    })?;
+    let data = wtr
+        .into_inner()
+        .map_err(|e| BulkOpsError::Io(std::io::Error::other(e)))?;
     Ok(data)
 }

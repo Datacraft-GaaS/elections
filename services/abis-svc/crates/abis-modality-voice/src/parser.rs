@@ -237,8 +237,8 @@ pub fn extract_mfcc(pcm: &[i16], sample_rate: u32, n_mfcc: usize) -> Vec<Vec<f32
         for (n, coeff) in coeffs.iter_mut().enumerate() {
             let mut sum = 0.0_f64;
             for (m, &mel) in log_mel.iter().enumerate() {
-                sum += mel
-                    * (PI * n as f64 * (2.0 * m as f64 + 1.0) / (2.0 * n_filters as f64)).cos();
+                sum +=
+                    mel * (PI * n as f64 * (2.0 * m as f64 + 1.0) / (2.0 * n_filters as f64)).cos();
             }
             *coeff = sum as f32;
         }

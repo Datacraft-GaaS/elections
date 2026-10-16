@@ -32,7 +32,14 @@ pub struct LeafResponse {
 }
 
 /// A row of the `leaves` table, in the order get_leaf selects it.
-type LeafRow = (i64, String, Vec<u8>, String, String, chrono::DateTime<chrono::Utc>);
+type LeafRow = (
+    i64,
+    String,
+    Vec<u8>,
+    String,
+    String,
+    chrono::DateTime<chrono::Utc>,
+);
 
 pub async fn get_leaf(
     State(state): State<ApiState>,

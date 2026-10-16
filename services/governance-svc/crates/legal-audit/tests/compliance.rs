@@ -91,7 +91,9 @@ async fn a_recorded_transmission_is_listed_and_evaluated() {
         .as_str()
         .unwrap()
         .to_string();
-    assert!(created["verdicts"].as_array().is_some_and(|a| !a.is_empty()));
+    assert!(created["verdicts"]
+        .as_array()
+        .is_some_and(|a| !a.is_empty()));
 
     let listed = body_json(send(&app, "GET", "/legal-audit/transmissions", None).await).await;
     let transmissions = listed["transmissions"].as_array().unwrap();

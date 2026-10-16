@@ -15,9 +15,8 @@
 use std::sync::Arc;
 
 use eel_abis_vendor::{
-    FaceImage, FingerprintImage, FingerprintTemplate, HealthStatus, IrisImage,
-    MockVendor, ModalityRoutes, PythonVendor, Score, Template, VendorAdapter,
-    VendorRouter,
+    FaceImage, FingerprintImage, FingerprintTemplate, HealthStatus, IrisImage, MockVendor,
+    ModalityRoutes, PythonVendor, Score, Template, VendorAdapter, VendorRouter,
 };
 
 // ---------------------------------------------------------------------------

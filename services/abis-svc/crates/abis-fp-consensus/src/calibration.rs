@@ -112,7 +112,10 @@ mod tests {
         let cal = ScoreCalibrator::identity();
         for i in 0..=10 {
             let v = cal.calibrate(i as f32 / 10.0);
-            assert!((0.0..=1.0).contains(&v), "calibrated value {v} out of [0,1]");
+            assert!(
+                (0.0..=1.0).contains(&v),
+                "calibrated value {v} out of [0,1]"
+            );
         }
     }
 

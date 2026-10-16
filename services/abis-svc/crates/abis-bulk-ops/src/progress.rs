@@ -55,8 +55,8 @@ pub fn write_manifest(records: &[FailureRecord]) -> Result<Vec<u8>, BulkOpsError
     for r in records {
         wtr.write_record([&r.item_id, &r.error, &r.offset.to_string()])?;
     }
-    let data = wtr.into_inner().map_err(|e| {
-        BulkOpsError::Io(std::io::Error::other(e))
-    })?;
+    let data = wtr
+        .into_inner()
+        .map_err(|e| BulkOpsError::Io(std::io::Error::other(e)))?;
     Ok(data)
 }

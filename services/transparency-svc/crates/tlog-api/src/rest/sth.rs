@@ -33,7 +33,14 @@ pub struct SthResponse {
 }
 
 /// A row of the `sth` table: id, tree_size, root_hash, cadence, signed_at, signature.
-type SthRow = (String, i64, Vec<u8>, String, chrono::DateTime<chrono::Utc>, Vec<u8>);
+type SthRow = (
+    String,
+    i64,
+    Vec<u8>,
+    String,
+    chrono::DateTime<chrono::Utc>,
+    Vec<u8>,
+);
 
 pub async fn get_latest_sth(
     State(state): State<ApiState>,

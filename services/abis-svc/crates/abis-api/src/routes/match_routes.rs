@@ -84,7 +84,6 @@ fn validate_uuid(field: &str, value: &str) -> Result<uuid::Uuid, ApiError> {
         .map_err(|_| ApiError::Validation(format!("{field} must be a UUID")))
 }
 
-
 /// Columns of the match-request audit lookup.
 type MatchAuditRow = (
     String,

@@ -49,7 +49,14 @@ pub struct LeafAppendResult {
 }
 
 /// A row of the `leaves` table, in the order get_log_entries selects it.
-type LogEntryRow = (i64, String, Vec<u8>, String, String, chrono::DateTime<chrono::Utc>);
+type LogEntryRow = (
+    i64,
+    String,
+    Vec<u8>,
+    String,
+    String,
+    chrono::DateTime<chrono::Utc>,
+);
 
 /// GET /api/v1/log/entries — list recent log entries.
 pub async fn get_log_entries(

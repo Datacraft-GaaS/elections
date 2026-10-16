@@ -159,10 +159,7 @@ pub fn run_sortition(
             .map(|s| s.station_id.clone())
             .collect();
         for id in selected_ids {
-            if let Some(ss) = stations_with_hash
-                .iter_mut()
-                .find(|ss| ss.station_id == id)
-            {
+            if let Some(ss) = stations_with_hash.iter_mut().find(|ss| ss.station_id == id) {
                 ss.selected = false;
             }
         }

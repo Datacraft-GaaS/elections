@@ -155,10 +155,7 @@ impl ConsensusMatcher {
         if let (Some(pb), Some(gb)) = (input.image_probe, input.image_gallery) {
             let w = input.image_width;
             let h = input.image_height;
-            if let (
-                Ok(pi),
-                Ok(gi),
-            ) = (
+            if let (Ok(pi), Ok(gi)) = (
                 eel_abis_fp_texture::GrayImage::new(w, h, pb.to_vec()),
                 eel_abis_fp_texture::GrayImage::new(w, h, gb.to_vec()),
             ) {
@@ -183,10 +180,7 @@ impl ConsensusMatcher {
         if let (Some(pb), Some(gb)) = (input.image_probe, input.image_gallery) {
             let w = input.image_width;
             let h = input.image_height;
-            if let (
-                Ok(pi),
-                Ok(gi),
-            ) = (
+            if let (Ok(pi), Ok(gi)) = (
                 eel_abis_fp_orientation::GrayImage::new(w, h, pb.to_vec()),
                 eel_abis_fp_orientation::GrayImage::new(w, h, gb.to_vec()),
             ) {
