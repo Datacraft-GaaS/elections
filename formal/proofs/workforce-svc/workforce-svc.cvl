@@ -1,0 +1,4 @@
+/* Certora CVL spec for workforce-svc -- auto-generated
+ * Run: certora verify --spec proofs/workforce-svc/workforce-svc.cvl --contract <path>
+ */
+// No rules specified yet.

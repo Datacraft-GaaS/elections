@@ -1,0 +1,4 @@
+/* Certora CVL spec for governance-svc -- auto-generated
+ * Run: certora verify --spec proofs/governance-svc/governance-svc.cvl --contract <path>
+ */
+// No rules specified yet.

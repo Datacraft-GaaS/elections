@@ -1,0 +1,4 @@
+/* Certora CVL spec for biometric-edge-svc -- auto-generated
+ * Run: certora verify --spec proofs/biometric-edge-svc/biometric-edge-svc.cvl --contract <path>
+ */
+// No rules specified yet.

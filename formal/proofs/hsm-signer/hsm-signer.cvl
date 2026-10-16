@@ -1,0 +1,10 @@
+/* Certora CVL spec for hsm-signer -- auto-generated
+ * Run: certora verify --spec proofs/hsm-signer/hsm-signer.cvl --contract <path>
+ */
+spec multiSig2of3 { method f(e: CCBEntry) { assert count(e.approvers) >= 2; } }
+
+spec prevHashChain { method f(e: CCBEntry, prev: CCBEntry) { assert e.prev_hash == hash(prev); } }
+
+spec dualSignature { method f(s: Signature) { assert verifyEd25519(s) && verifyMLDSA(s); } }
+
+spec breakGlassAudit { method f() { assert break_glass_active == true => audit_logged == true; } }

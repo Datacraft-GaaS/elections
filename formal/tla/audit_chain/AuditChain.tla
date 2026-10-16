@@ -7,7 +7,9 @@ EXTENDS Naturals, Sequences, FiniteSets, TLC
 CONSTANTS
   ValidSigners,   \* set of authorised HSM keys
   RequiredSigs,   \* typically 2 of 3
-  GenesisHash     \* SHA-256 of empty chain
+  GenesisHash,    \* SHA-256 of empty chain
+  prev_hash(_, _),      \* chain, index -> hash of the entry at that index
+  AppendableEntries     \* entries a correct implementation may still append
 
 VARIABLES
   chain,          \* sequence of audit entries
@@ -32,12 +34,15 @@ InvSignature ==
     Cardinality(entry.signers \cap ValidSigners \cap revoked_sigs) >= RequiredSigs
 
 InvGenesisImmutability ==
-  \A entry \in {chain[i] : i \in 1..Len(chain)} :
-    entry.prev_hash = GenesisHash \/ i > 1
+  \A i \in 1..Len(chain) :
+    chain[i].prev_hash = GenesisHash \/ i > 1
 
-\* Liveness: new valid entries can be appended
-LiveAppend == 
-  []<>\E e \in AppendableEntries : Len(chain') > Len(chain)
+\* Liveness: new valid entries can be appended. `<>` needs its action written
+\* as `<<A>>_v` -- SANY rejects a bare action under a temporal operator. The
+\* fragment has no Next, so this states the shape of the liveness property
+\* rather than discharging it; discharging needs the action spec.
+LiveAppend ==
+  []<><<Len(chain') > Len(chain)>>_chain
 
 \* Safety: no two conflicting entries can coexist
 Safety == 

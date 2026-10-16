@@ -1,0 +1,4 @@
+/* Certora CVL spec for crms-svc -- auto-generated
+ * Run: certora verify --spec proofs/crms-svc/crms-svc.cvl --contract <path>
+ */
+// No rules specified yet.

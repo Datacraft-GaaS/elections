@@ -1,0 +1,6 @@
+/* Certora CVL spec for abis-svc -- auto-generated
+ * Run: certora verify --spec proofs/abis-svc/abis-svc.cvl --contract <path>
+ */
+spec uniqueAttestation { method f(id: String, ts: Int) { assert ts > 0; } }
+
+spec signatureValid { method f(a: Attestation) { assert verifyEd25519(a); } }

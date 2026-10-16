@@ -1,0 +1,4 @@
+/* Certora CVL spec for ecc-svc -- auto-generated
+ * Run: certora verify --spec proofs/ecc-svc/ecc-svc.cvl --contract <path>
+ */
+// No rules specified yet.

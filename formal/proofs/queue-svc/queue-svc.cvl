@@ -1,0 +1,4 @@
+/* Certora CVL spec for queue-svc -- auto-generated
+ * Run: certora verify --spec proofs/queue-svc/queue-svc.cvl --contract <path>
+ */
+// No rules specified yet.

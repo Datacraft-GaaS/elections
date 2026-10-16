@@ -1,0 +1,4 @@
+/* Certora CVL spec for support-admin-svc -- auto-generated
+ * Run: certora verify --spec proofs/support-admin-svc/support-admin-svc.cvl --contract <path>
+ */
+// No rules specified yet.

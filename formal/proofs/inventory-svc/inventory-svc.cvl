@@ -1,0 +1,8 @@
+/* Certora CVL spec for inventory-svc -- auto-generated
+ * Run: certora verify --spec proofs/inventory-svc/inventory-svc.cvl --contract <path>
+ */
+spec hmacIntegrity { method f(h: BallotHandover, key: Bytes) { assert hmac_sha256(h, key) == h.hmac; } }
+
+spec seqNoMonotonic { method f(chain: Chain) { assert chain[i+1].seq == chain[i].seq + 1; } }
+
+spec paymentAudit { method f(p: Payment) { assert p.audit_id /= NULL; } }

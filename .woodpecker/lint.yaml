@@ -19,15 +19,35 @@ when:
   - event: [push, pull_request]
 
 steps:
+  # `--check`, not the best-effort `just fmt` script, which exits 0 by design.
+  # The root workspace glob does not reach the nested workspaces (bvr-svc,
+  # rts-svc, support-admin-svc), so those are checked explicitly.
   - name: rust-fmt
     image: eel/build-image:latest
     commands:
       - cargo fmt --check --all
+      - |
+        for ws in services/bvr-svc services/rts-svc services/support-admin-svc; do
+          cargo fmt --all --check --manifest-path "$ws/Cargo.toml" \
+            || { echo "FMT FAILED: $ws"; exit 1; }
+        done
 
+  # Same script `just lint` runs, so CI and a local run cannot disagree.
+  # A bare `cargo clippy --workspace` does not reach the nested workspaces,
+  # and `-D warnings` promotes ~2000 missing_docs warnings to errors, which
+  # AGENTS.md explicitly tolerates.
   - name: rust-clippy
     image: eel/build-image:latest
     commands:
-      - cargo clippy --workspace --all-targets --all-features -- -D warnings
+      - tools/foreach-workspace.sh lint ./tools/cargo-workspace-lint.sh
+
+  # SANY, not TLC: TLC needs a .cfg per spec and only a handful have one, so
+  # it would silently skip most of the corpus. SANY needs no config and is what
+  # TLC invokes anyway. The script explains why the exit code is not the signal.
+  - name: tla-sany
+    image: eel/build-image:latest
+    commands:
+      - tools/check-tla-specs.sh
 
   - name: python-ruff
     image: eel/build-image:latest

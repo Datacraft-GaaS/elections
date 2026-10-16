@@ -1,0 +1,4 @@
+/* Certora CVL spec for portal-svc -- auto-generated
+ * Run: certora verify --spec proofs/portal-svc/portal-svc.cvl --contract <path>
+ */
+// No rules specified yet.

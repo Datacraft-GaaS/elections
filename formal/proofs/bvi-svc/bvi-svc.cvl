@@ -1,0 +1,8 @@
+/* Certora CVL spec for bvi-svc -- auto-generated
+ * Run: certora verify --spec proofs/bvi-svc/bvi-svc.cvl --contract <path>
+ */
+spec scoreBounded { method f(r: VerificationResult) { assert 0.0 <= r.score && r.score <= 1.0; } }
+
+spec livenessPass { method f(r: VerificationResult) { assert r.liveness_score >= 0.5; } }
+
+spec anomalyConfidence { method f(a: Anomaly) { assert a.confidence >= 0.0 && a.confidence <= 1.0; } }

@@ -1,0 +1,4 @@
+/* Certora CVL spec for training-svc -- auto-generated
+ * Run: certora verify --spec proofs/training-svc/training-svc.cvl --contract <path>
+ */
+// No rules specified yet.

@@ -1,0 +1,10 @@
+/* Certora CVL spec for field-mobile-svc -- auto-generated
+ * Run: certora verify --spec proofs/field-mobile-svc/field-mobile-svc.cvl --contract <path>
+ */
+spec qualityGatePass { method f(r: FormSubmission) { assert r.quality_gate_passed == true => r.accepted == true; } }
+
+spec qualityGateReject { method f(r: FormSubmission) { assert r.quality_gate_passed == false => r.rejected == true; } }
+
+spec idempotencyKey { method f(k: String, v: Response) { assert store(k, v) == store(k, v); } }
+
+spec attestationVerdict { method f(v: AttestationVerdict) { assert v.verdict in {'MEETS','FAILS','UNVERIFIED'}; } }

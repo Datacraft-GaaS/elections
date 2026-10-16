@@ -1,0 +1,4 @@
+/* Certora CVL spec for ai-platform-svc -- auto-generated
+ * Run: certora verify --spec proofs/ai-platform-svc/ai-platform-svc.cvl --contract <path>
+ */
+// No rules specified yet.

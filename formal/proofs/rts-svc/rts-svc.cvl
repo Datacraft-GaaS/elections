@@ -1,0 +1,4 @@
+/* Certora CVL spec for rts-svc -- auto-generated
+ * Run: certora verify --spec proofs/rts-svc/rts-svc.cvl --contract <path>
+ */
+// No rules specified yet.

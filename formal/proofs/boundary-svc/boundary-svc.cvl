@@ -1,0 +1,4 @@
+/* Certora CVL spec for boundary-svc -- auto-generated
+ * Run: certora verify --spec proofs/boundary-svc/boundary-svc.cvl --contract <path>
+ */
+// No rules specified yet.

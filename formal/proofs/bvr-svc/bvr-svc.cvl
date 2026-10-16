@@ -1,0 +1,8 @@
+/* Certora CVL spec for bvr-svc -- auto-generated
+ * Run: certora verify --spec proofs/bvr-svc/bvr-svc.cvl --contract <path>
+ */
+spec templateExists { method f(v: Voter) { assert v.template /= NULL; } }
+
+spec dedupFair { method f(gallery: Set[Voter], newV: Voter) { assert bozorth(gallery, newV); } }
+
+spec auditEmitted { method f(v: Voter) { assert v.audit_id /= NULL; } }

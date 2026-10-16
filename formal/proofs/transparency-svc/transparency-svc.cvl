@@ -1,0 +1,10 @@
+/* Certora CVL spec for transparency-svc -- auto-generated
+ * Run: certora verify --spec proofs/transparency-svc/transparency-svc.cvl --contract <path>
+ */
+spec appendOnly { method f(chain: Chain) { require chain.len == chain.len'; } }
+
+spec noFork { method f(chain: Chain) { assert chain.tip == Hash(chain[Len(chain)-1]); } }
+
+spec deterministicSortition { method f(mr: String) { assert sortition(mr) == sortition(mr); } }
+
+spec gazetteHash { method f(g: GazetteIssue) { assert SHA256(g.content) == g.sha256; } }

@@ -1,0 +1,4 @@
+/* Certora CVL spec for hello-svc -- auto-generated
+ * Run: certora verify --spec proofs/hello-svc/hello-svc.cvl --contract <path>
+ */
+// No rules specified yet.

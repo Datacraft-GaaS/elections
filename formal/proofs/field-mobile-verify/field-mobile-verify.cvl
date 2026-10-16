@@ -1,0 +1,4 @@
+/* Certora CVL spec for field-mobile-verify -- auto-generated
+ * Run: certora verify --spec proofs/field-mobile-verify/field-mobile-verify.cvl --contract <path>
+ */
+// No rules specified yet.
