@@ -14,7 +14,16 @@
 
 from rest_framework import serializers
 
-from .models import CourseModule, TrainingProgress, WorkerCertificate, WorkerEnrollment
+from .models import (
+    CertAuditLog,
+    Course,
+    CourseModule,
+    Lesson,
+    LessonAttempt,
+    TrainingProgress,
+    WorkerCertificate,
+    WorkerEnrollment,
+)
 
 
 class CourseModuleSerializer(serializers.ModelSerializer):
@@ -59,16 +68,29 @@ class TrainingProgressSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ["id", "snapshot_at"]
 
-from .models import Course, Lesson, LessonAttempt, CertAuditLog
-
 class CourseSerializer(serializers.ModelSerializer):
-    class Meta: model=Course; fields="__all__"
+    class Meta:
+        model = Course
+        fields = "__all__"
+        read_only_fields = ["id"]
+
 
 class LessonSerializer(serializers.ModelSerializer):
-    class Meta: model=Lesson; fields="__all__"
+    class Meta:
+        model = Lesson
+        fields = "__all__"
+        read_only_fields = ["id"]
+
 
 class LessonAttemptSerializer(serializers.ModelSerializer):
-    class Meta: model=LessonAttempt; fields="__all__"; read_only_fields=["id","attempted_at"]
+    class Meta:
+        model = LessonAttempt
+        fields = "__all__"
+        read_only_fields = ["id", "attempted_at"]
+
 
 class CertAuditLogSerializer(serializers.ModelSerializer):
-    class Meta: model=CertAuditLog; fields="__all__"; read_only_fields=["id","recorded_at"]
+    class Meta:
+        model = CertAuditLog
+        fields = "__all__"
+        read_only_fields = ["id", "recorded_at"]

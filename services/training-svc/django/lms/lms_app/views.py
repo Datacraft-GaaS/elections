@@ -22,15 +22,21 @@ from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
 
 from .models import (
+    CertAuditLog,
     CourseModule,
     EnrollmentStatus,
+    Lesson,
+    LessonAttempt,
     TrainingProgress,
     WorkerCertificate,
     WorkerEnrollment,
 )
 from .serializers import (
     AssessmentSubmitSerializer,
+    CertAuditLogSerializer,
     CourseModuleSerializer,
+    LessonAttemptSerializer,
+    LessonSerializer,
     TrainingProgressSerializer,
     WorkerCertificateSerializer,
     WorkerEnrollmentSerializer,
@@ -110,12 +116,23 @@ class TrainingProgressViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["scope", "scope_code"]
 
+class LessonViewSet(viewsets.ModelViewSet):
+    queryset = Lesson.objects.all()
+    serializer_class = LessonSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields = ["course", "module"]
+    ordering_fields = ["order_index", "title"]
+
+
 class LessonAttemptViewSet(viewsets.ModelViewSet):
     queryset = LessonAttempt.objects.all()
     serializer_class = LessonAttemptSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["worker_id","lesson","completed"]
+    filterset_fields = ["worker_id", "lesson", "completed"]
+
 
 class CertAuditLogViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = CertAuditLog.objects.all()
     serializer_class = CertAuditLogSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["event_type", "worker_id", "certificate_id"]
