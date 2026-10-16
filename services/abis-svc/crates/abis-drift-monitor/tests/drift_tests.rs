@@ -107,7 +107,7 @@ fn js_divergence_bounded() {
     let q = curr.to_probs();
     let val = js_divergence(&p, &q).unwrap();
     assert!(
-        val >= 0.0 && val <= 0.7,
+        (0.0..=0.7).contains(&val),
         "JS divergence out of bounds: {val}"
     );
 }

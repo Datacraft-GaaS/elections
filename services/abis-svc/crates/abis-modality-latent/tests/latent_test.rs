@@ -173,7 +173,7 @@ fn test_quality_in_range() {
         .collect();
     let t = make_template(minutiae, 0.2, 0.8);
     let q = score_quality(&t);
-    assert!(q >= 0.0 && q <= 100.0, "quality out of range: {q}");
+    assert!((0.0..=100.0).contains(&q), "quality out of range: {q}");
 }
 
 // Test 11: imposter pair scores below threshold.
