@@ -47,7 +47,11 @@ def test_reconciliation_hold_str():
 @pytest.mark.trace("AC-M51-17")
 def test_no_delete_on_amendment_admin():
     from declaration_admin.admin import DeclarationAmendmentAdmin
+    from declaration_admin.models import DeclarationAmendment
     from django.contrib.admin import site
 
-    admin_instance = DeclarationAmendmentAdmin(None, site)
+    # ModelAdmin.__init__ reads `model._meta` to build the permission codenames,
+    # so passing None raises before has_delete_permission is ever called -- the
+    # assertion would never have run. Pass the model the admin is registered for.
+    admin_instance = DeclarationAmendmentAdmin(DeclarationAmendment, site)
     assert not admin_instance.has_delete_permission(None)

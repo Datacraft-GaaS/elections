@@ -9,7 +9,6 @@ dependencies = [
     "psycopg[binary]>=3.1",
     "django-htmx>=1.17",
     "django-widget-tweaks>=1.5",
-    "eel-web @ file:///./packages/eel-web-py",
     "pytest>=8",
     "pytest-django>=4.8",
 ]

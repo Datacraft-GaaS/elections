@@ -13,5 +13,11 @@ dev = ["pytest>=8", "pytest-django>=4.9"]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+# Two top-level packages and neither is named after the project, so hatchling's
+# default heuristic (ship the directory matching the project name, `eel_hello_django`)
+# finds nothing and `uv run` fails before Django starts.
+[tool.hatch.build.targets.wheel]
+packages = ["hello_core", "hello_project"]
+
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "hello_project.settings"

@@ -83,6 +83,58 @@ steps:
           echo "no Python service dirs, skip"
         fi
 
+  # The leg above walks `services/*/py`, which is the Rust-workspace Python
+  # services. Every Django app lives at `services/*/django/<app>`, so none of
+  # them was ever run -- 15 apps with ~180 tests, and two of them could not
+  # even import their dependencies. Walk the shape Django apps actually have.
+  #
+  # `uv run` silently falls back to whatever pytest is on PATH when the venv
+  # lacks it, so a stale venv runs the suite under a different interpreter
+  # instead of failing. `--all-extras` rather than `--extra dev`: a few of these
+  # apps carry pytest in the main dependency list with no extras table at all,
+  # and `--extra dev` errors out on those.
+  - name: test-django
+    image: eel/build-image:latest
+    when:
+      matrix:
+        LANG: python
+    environment:
+      DATABASE_URL: postgres://eel:eel@database:5432/eel_mig_test
+      DB_NAME: eel_mig_test
+      DB_HOST: database
+      DB_PORT: "5432"
+      DB_USER: eel
+      DB_PASSWORD: eel
+      DJANGO_TEST_SQLITE: "true"
+    commands:
+      - |
+        # The failure flag, not `exit 1` inside the loop: that runs in the
+        # pipeline's subshell, and the `if` below would then reset the script's
+        # status to 0, so the step could never fail.
+        found=0
+        failed=""
+        for mp in $(find services -path '*/django/*' -name manage.py \
+                      -not -path '*/.venv/*'); do
+          dir=$(dirname "$mp")
+          [ -d "$dir/tests" ] || continue
+          find "$dir/tests" -name 'test_*.py' | grep -q . || continue
+          found=$((found + 1))
+          echo "==> testing $dir"
+          (cd "$dir" && uv sync --all-extras -q && uv run python manage.py check \
+             && uv run pytest -q -p no:cacheprovider) \
+            || failed="$failed $dir"
+        done
+        if [ "$found" -eq 0 ]; then
+          echo "no Django apps found -- the walk is wrong" >&2
+          exit 1
+        fi
+        if [ -n "$failed" ]; then
+          echo "DJANGO TESTS FAILED:" >&2
+          for d in $failed; do echo "  $d" >&2; done
+          exit 1
+        fi
+        echo "test-django: $found apps passed"
+
   - name: test-elixir
     image: eel/build-image:latest
     when:
