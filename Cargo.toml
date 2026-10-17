@@ -47,6 +47,13 @@ exclude = [
   # workspace fails to load. It is gitignored, so it only ever appears locally,
   # which makes this look like a random breakage on a fresh clone.
   "tools/__pycache__",
+  # `tools/lib` holds shared Python helpers (`discover_migrations.py`), not a
+  # crate. It is the same hazard as `tools/__pycache__` one line up and was
+  # introduced the same way: `tools/*` is a glob, so any directory added under
+  # `tools/` for a non-Rust reason breaks the whole root workspace. Cargo
+  # reports only the missing manifest, so the symptom is that every cargo
+  # command at the repo root fails, not that one directory is wrong.
+  "tools/lib",
   # Scaffolding template: every manifest under it contains {{project-name}}
   # placeholders, so they are deliberately not valid crates until
   # instantiated. Each one needs its own entry because exclude is a literal

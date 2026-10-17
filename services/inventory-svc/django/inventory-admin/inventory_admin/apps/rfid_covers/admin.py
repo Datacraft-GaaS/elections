@@ -12,20 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Django admin registrations for RFID cover tag models.
+"""Django admin registrations for the RFID cover custody tables.
 
-All admins are read-only audit surfaces except the resolve/retire actions.
-Schema is owned by Rust (managed=False); no Django migrations are run.
+Schema owned by V051 (`managed=False`); Django runs no migrations for it.
+
+Everything here is read-only, and that is a property of the schema rather than a
+policy choice. V051 installs a BEFORE UPDATE/DELETE trigger that raises
+unconditionally on both `eel_cover_state_transitions` and
+`eel_cover_tamper_alerts`, so any admin write to either table fails at the
+database. The registrations previously offered two actions that did exactly
+that -- a tag "mark retired" UPDATE and a bulk alert resolve -- and neither had
+ever run against Postgres.
 """
 
 from __future__ import annotations
 
-from django.contrib import admin, messages
+from django.contrib import admin
 from django.http import HttpRequest
-from django.utils import timezone
 
-from .models import CoverStateTransition, CoverTamperAlert, RfidCoverRead, RfidCoverTag
+from .models import (
+    CoverStateTransition,
+    CoverTamperAlert,
+    RfidCoverRead,
+    RfidCoverTag,
+    as_bytes,
+)
 
 
 class ResolvedStatusFilter(admin.SimpleListFilter):
@@ -48,48 +59,74 @@ class ResolvedStatusFilter(admin.SimpleListFilter):
         return queryset
 
 
+class ReadOnlyAdmin(admin.ModelAdmin):
+    """No add, no change, no delete.
+
+    `has_change_permission` returning False keeps the object page viewable
+    without a Save button, which is what an audit surface wants: the row is the
+    evidence and the trigger would refuse the write anyway.
+    """
+
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        return False
+
+    def has_change_permission(self, request: HttpRequest, obj=None) -> bool:
+        return False
+
+    def has_delete_permission(self, request: HttpRequest, obj=None) -> bool:
+        return False
+
+
 # ---------------------------------------------------------------------------
 # RfidCoverTag
 # ---------------------------------------------------------------------------
 
 
 @admin.register(RfidCoverTag)
-class RfidCoverTagAdmin(admin.ModelAdmin):
+class RfidCoverTagAdmin(ReadOnlyAdmin):
     list_display = (
-        "epc",
+        "epc_hex",
         "manufacturer",
         "paired_with_box",
         "tamper_state",
         "cover_state",
         "chip_family",
         "issued_at",
+        "retired_at",
     )
-    list_filter = ("tamper_state", "chip_family", "cover_state")
-    search_fields = ("epc", "tag_id", "paired_with_box", "manufacturer")
+    list_filter = ("tamper_state", "chip_family")
+    search_fields = ("tag_id", "paired_with_box", "manufacturer", "lot_id")
     readonly_fields = (
         "tag_id",
-        "epc",
+        "epc_hex",
         "chip_family",
+        "lot_id",
         "paired_with_box",
-        "cover_state",
+        "paired_at",
         "manufacturer",
         "issued_at",
-        "hsm_key_ref",
-        "bluetooth_id",
+        "tag_secret_hsm_key_id",
+        "tamper_state",
+        "tamper_detected_at",
+        "tamper_detected_by",
+        "retired_at",
+        "cover_state",
     )
-    actions = ["mark_retired"]
     ordering = ("-issued_at",)
 
-    @admin.action(description="Mark selected tags as Retired")
-    def mark_retired(self, request: HttpRequest, queryset) -> None:
-        # Direct SQL update is intentional: managed=False means no ORM signals for
-        # the Rust-owned table. The Rust service must also be notified via API.
-        count = queryset.filter(tamper_state=RfidCoverTag.TamperState.INTACT).update(
-            tamper_state=RfidCoverTag.TamperState.RETIRED
-        )
-        self.message_user(
-            request, f"{count} tag(s) marked as Retired.", messages.WARNING
-        )
+    def get_queryset(self, request: HttpRequest):
+        # `cover_state` is the chain's latest `to_state`, not a column, so the
+        # list needs the annotation to sort and display it. Without this the
+        # field resolves to nothing and the column renders empty.
+        return super().get_queryset(request).with_current_state()
+
+    @admin.display(description="EPC", ordering="epc")
+    def epc_hex(self, obj: RfidCoverTag) -> str:
+        return obj.epc_hex
+
+    @admin.display(description="Cover state")
+    def cover_state(self, obj: RfidCoverTag) -> str:
+        return getattr(obj, "cover_state", None) or "—"
 
 
 # ---------------------------------------------------------------------------
@@ -98,43 +135,37 @@ class RfidCoverTagAdmin(admin.ModelAdmin):
 
 
 @admin.register(RfidCoverRead)
-class RfidCoverReadAdmin(admin.ModelAdmin):
+class RfidCoverReadAdmin(ReadOnlyAdmin):
     list_display = (
         "read_id",
-        "tag_id",
+        "tag",
         "reader_type",
-        "reader_serial",
+        "reader_id",
         "challenge_valid",
         "tamper_indicator",
         "read_at",
     )
     list_filter = ("reader_type", "challenge_valid", "tamper_indicator")
-    search_fields = ("read_id", "tag__epc", "reader_serial")
+    search_fields = ("read_id", "tag__tag_id", "reader_id")
     readonly_fields = (
         "read_id",
         "tag",
-        "reader_serial",
+        "reader_id",
         "reader_type",
-        "challenge_nonce",
-        "challenge_response",
+        "read_at",
+        "geo_lat",
+        "geo_lon",
+        "geo_accuracy_m",
+        "tag_challenge",
+        "tag_response",
         "challenge_valid",
         "tamper_indicator",
-        "rssi",
-        "latitude",
-        "longitude",
         "reader_signature",
-        "read_at",
+        "custody_event_id",
+        "correlation_id",
     )
     ordering = ("-read_at",)
-
-    def has_add_permission(self, request: HttpRequest) -> bool:
-        return False
-
-    def has_change_permission(self, request: HttpRequest, obj=None) -> bool:
-        return False
-
-    def has_delete_permission(self, request: HttpRequest, obj=None) -> bool:
-        return False
+    date_hierarchy = "read_at"
 
 
 # ---------------------------------------------------------------------------
@@ -143,10 +174,10 @@ class RfidCoverReadAdmin(admin.ModelAdmin):
 
 
 @admin.register(CoverStateTransition)
-class CoverStateTransitionAdmin(admin.ModelAdmin):
+class CoverStateTransitionAdmin(ReadOnlyAdmin):
     list_display = (
         "transition_id",
-        "tag_id",
+        "tag",
         "from_state",
         "to_state",
         "officer_id",
@@ -154,38 +185,31 @@ class CoverStateTransitionAdmin(admin.ModelAdmin):
         "this_hash_preview",
         "transitioned_at",
     )
-    search_fields = ("tag__epc", "officer_id")
+    list_filter = ("to_state",)
+    search_fields = ("tag__tag_id", "officer_id", "officer_svid")
     readonly_fields = (
         "transition_id",
         "tag",
         "from_state",
         "to_state",
         "officer_id",
-        "reader_read",
+        "officer_svid",
+        "triggered_by_read",
         "prev_hash",
         "this_hash",
-        "hsm_signature",
-        "merkle_anchor_id",
+        "officer_signature",
         "transitioned_at",
     )
     ordering = ("transitioned_at",)
+    date_hierarchy = "transitioned_at"
 
     @admin.display(description="prev hash")
     def prev_hash_preview(self, obj: CoverStateTransition) -> str:
-        return bytes(obj.prev_hash).hex()[:12] + "..." if obj.prev_hash else ""
+        return as_bytes(obj.prev_hash).hex()[:12] + "..." if obj.prev_hash else ""
 
     @admin.display(description="this hash")
     def this_hash_preview(self, obj: CoverStateTransition) -> str:
-        return bytes(obj.this_hash).hex()[:12] + "..." if obj.this_hash else ""
-
-    def has_add_permission(self, request: HttpRequest) -> bool:
-        return False
-
-    def has_change_permission(self, request: HttpRequest, obj=None) -> bool:
-        return False
-
-    def has_delete_permission(self, request: HttpRequest, obj=None) -> bool:
-        return False
+        return as_bytes(obj.this_hash).hex()[:12] + "..." if obj.this_hash else ""
 
 
 # ---------------------------------------------------------------------------
@@ -194,10 +218,10 @@ class CoverStateTransitionAdmin(admin.ModelAdmin):
 
 
 @admin.register(CoverTamperAlert)
-class CoverTamperAlertAdmin(admin.ModelAdmin):
+class CoverTamperAlertAdmin(ReadOnlyAdmin):
     list_display = (
         "alert_id",
-        "tag_id",
+        "tag",
         "severity",
         "detected_at",
         "ecc_dispatched",
@@ -205,42 +229,23 @@ class CoverTamperAlertAdmin(admin.ModelAdmin):
         "resolved_at",
     )
     list_filter = ("severity", "ecc_dispatched", ResolvedStatusFilter)
-    search_fields = ("alert_id", "tag__epc", "dispatch_officer_id")
+    search_fields = ("alert_id", "tag__tag_id", "resolution_note")
     readonly_fields = (
         "alert_id",
         "tag",
-        "trigger_read",
+        "triggering_read",
         "severity",
-        "description",
-        "geo_lat",
-        "geo_lon",
         "expected_state",
         "observed_state",
-        "ecc_dispatched",
-        "dispatch_officer_id",
         "detected_at",
+        "ecc_dispatched",
+        "ecc_dispatched_at",
+        "resolved_at",
+        "resolution_note",
     )
-    actions = ["bulk_resolve_with_note"]
+    ordering = ("-detected_at",)
+    date_hierarchy = "detected_at"
 
     @admin.display(description="Resolved", boolean=True)
     def is_resolved(self, obj: CoverTamperAlert) -> bool:
         return obj.resolved_at is not None
-
-    @admin.action(description="Bulk resolve selected alerts (mark resolved now)")
-    def bulk_resolve_with_note(self, request: HttpRequest, queryset) -> None:
-        note = (
-            f"Bulk resolved via admin by {request.user} at {timezone.now().isoformat()}"
-        )
-        count = queryset.filter(resolved_at__isnull=True).update(
-            resolved_at=timezone.now(),
-            resolution_note=note,
-        )
-        self.message_user(
-            request, f"{count} alert(s) marked resolved.", messages.SUCCESS
-        )
-
-    def has_add_permission(self, request: HttpRequest) -> bool:
-        return False
-
-    def has_delete_permission(self, request: HttpRequest, obj=None) -> bool:
-        return False

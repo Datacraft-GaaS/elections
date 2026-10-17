@@ -24,6 +24,7 @@ Three views:
 from __future__ import annotations
 
 import json
+import uuid
 from typing import Any
 
 import blake3
@@ -33,7 +34,13 @@ from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
-from .models import CoverStateTransition, CoverTamperAlert, RfidCoverRead, RfidCoverTag
+from .models import (
+    CoverStateTransition,
+    CoverTamperAlert,
+    RfidCoverRead,
+    RfidCoverTag,
+    as_bytes,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -70,11 +77,11 @@ def _verify_chain(transitions: list[CoverStateTransition]) -> list[dict[str, Any
     prev = b""
     for t in transitions:
         expected = blake3.blake3(prev + _canonical_transition_bytes(t)).digest()
-        valid = prev == (bytes(t.prev_hash) if t.prev_hash else b"") and bytes(
+        valid = prev == (as_bytes(t.prev_hash) if t.prev_hash else b"") and as_bytes(
             t.this_hash
         ) == expected
         result.append({"transition": t, "chain_valid": valid})
-        prev = bytes(t.this_hash)
+        prev = as_bytes(t.this_hash)
     return result
 
 
@@ -96,12 +103,17 @@ def box_chain_view(request: HttpRequest) -> HttpResponse:
     tag: RfidCoverTag | None = None
 
     if ballot_box_id:
+        # EPC is BYTEA, so a hex search string has to be converted before it can
+        # be compared: `epc="30A1..."` asks Postgres to match 8-bit text against
+        # a byte string and raises rather than returning nothing. `paired_with_box`
+        # is a UUID, so the box-serial branch is a UUID parse and a miss, not an
+        # error, when the input is not a UUID.
         try:
-            tag = RfidCoverTag.objects.get(paired_with_box=ballot_box_id)
-        except RfidCoverTag.DoesNotExist:
+            tag = RfidCoverTag.objects.get(paired_with_box=uuid.UUID(ballot_box_id))
+        except (RfidCoverTag.DoesNotExist, ValueError):
             try:
-                tag = RfidCoverTag.objects.get(epc=ballot_box_id)
-            except RfidCoverTag.DoesNotExist:
+                tag = RfidCoverTag.objects.get(epc=bytes.fromhex(ballot_box_id))
+            except (RfidCoverTag.DoesNotExist, ValueError):
                 tag = None
 
         if tag:
@@ -195,7 +207,7 @@ def reader_health_view(request: HttpRequest) -> HttpResponse:
     from django.db.models import Count, Max
 
     reader_stats = (
-        RfidCoverRead.objects.values("reader_serial", "reader_type")
+        RfidCoverRead.objects.values("reader_id", "reader_type")
         .annotate(
             tag_count=Count("read_id"),
             last_read=Max("read_at"),
