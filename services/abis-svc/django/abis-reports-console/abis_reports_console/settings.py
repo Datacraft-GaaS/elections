@@ -37,6 +37,10 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_htmx",
+    # Required by ArrayField. Several columns here are TEXT[] in the
+    # migrations (access_zones, audience, renderer_pipeline, ...), and Django
+    # refuses to load an ArrayField without this app installed.
+    "django.contrib.postgres",
     "widget_tweaks",
     "abis_reports_console.apps.reports",
 ]

@@ -19,6 +19,7 @@ This migration exists only so Django's test runner can create the tables in SQLi
 It is excluded from prod deployments via DJANGO_TEST_SQLITE guard.
 """
 
+from django.contrib.postgres.fields import ArrayField
 from django.db import migrations, models
 import django.db.models.deletion
 
@@ -35,10 +36,10 @@ class Migration(migrations.Migration):
                 ("slug", models.TextField(unique=True)),
                 ("title", models.TextField()),
                 ("report_class", models.TextField()),
-                ("audience", models.JSONField()),
+                ("audience", ArrayField(models.TextField())),
                 ("data_class", models.TextField()),
                 ("sql_template_ref", models.TextField(blank=True, null=True)),
-                ("renderer_pipeline", models.JSONField()),
+                ("renderer_pipeline", ArrayField(models.TextField())),
                 ("requires_hsm_sign", models.BooleanField(default=False)),
                 ("requires_tlog_anchor", models.BooleanField(default=False)),
                 ("default_schedule", models.TextField(blank=True, null=True)),

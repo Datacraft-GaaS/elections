@@ -17,6 +17,7 @@
 All models use managed = False because Rust migrations own the schema.
 """
 
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
 
@@ -25,10 +26,13 @@ class ReportDefinition(models.Model):
     slug = models.TextField(unique=True)
     title = models.TextField()
     report_class = models.TextField()
-    audience = models.JSONField()
+    # TEXT[] in V027. The sibling `audience` on ReportSubscriber below is TEXT
+    # in the same migration and stays a TextField -- the two are deliberately
+    # different shapes, and only this one is an array.
+    audience = ArrayField(models.TextField())
     data_class = models.TextField()
     sql_template_ref = models.TextField(null=True, blank=True)
-    renderer_pipeline = models.JSONField()
+    renderer_pipeline = ArrayField(models.TextField())
     requires_hsm_sign = models.BooleanField(default=False)
     requires_tlog_anchor = models.BooleanField(default=False)
     default_schedule = models.TextField(null=True, blank=True)

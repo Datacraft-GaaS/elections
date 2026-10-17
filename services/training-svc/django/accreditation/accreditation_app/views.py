@@ -14,18 +14,18 @@
 
 import logging
 
-from django.utils import timezone as djtimezone
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view
 from rest_framework.request import Request
 from rest_framework.response import Response
 
 from accreditation_app.models import (
-    MediaOrganisation,
-    MediaAccreditation,
-    ObserverOrganisation,
-    IndividualObserver,
+    BadgeRevocationEntry,
     CredentialRevocationEntry,
+    IndividualObserver,
+    MediaAccreditation,
+    MediaOrganisation,
+    ObserverOrganisation,
 )
 from accreditation_app.serializers import (
     MediaOrganisationSerializer,
@@ -61,18 +61,27 @@ class MediaAccreditationViewSet(viewsets.ModelViewSet):
         officer_id = str(ser.validated_data["officer_id"])
         revocation_reason: str = ser.validated_data.get("revocation_reason", "")
 
-        if accreditation.status == "REVOKED":
+        if accreditation.status == "revoked":
             return Response(
                 {"detail": "Already revoked."}, status=status.HTTP_400_BAD_REQUEST
             )
 
         badge_serial = accreditation.badge_serial
-        accreditation.status = "REVOKED"
-        accreditation.revocation_reason = revocation_reason
-        accreditation.revoked_at = djtimezone.now()
+        accreditation.status = "revoked"
         accreditation.save()
 
+        # Writing the revocation row is what actually revokes the badge:
+        # `crl.generate_crl()` builds the certificate revocation list from
+        # BadgeRevocationEntry, so a revocation that stops at `status` leaves
+        # the serial verifying as valid. The view previously set the status and
+        # dropped both `officer_id` and this insert.
         if badge_serial:
+            BadgeRevocationEntry.objects.create(
+                accreditation=accreditation,
+                badge_serial=str(badge_serial),
+                officer_id=officer_id,
+                reason=reason_code,
+            )
             sig.on_media_badge_revoked(
                 str(accreditation.id), str(badge_serial), reason_code
             )
@@ -103,19 +112,22 @@ class IndividualObserverViewSet(viewsets.ModelViewSet):
         reason: str = ser.validated_data["reason"]
         officer_id = str(ser.validated_data["officer_id"])
 
-        if observer.status == "REVOKED":
+        if observer.status == "credential_revoked":
             return Response(
                 {"detail": "Already revoked."}, status=status.HTTP_400_BAD_REQUEST
             )
 
         credential_serial = observer.credential_serial
-        observer.status = "REVOKED"
-        observer.revocation_reason = reason
+        observer.status = "credential_revoked"
         observer.save()
 
         if credential_serial:
+            # `observer` is required: the table declares `observer_id NOT NULL`,
+            # and the model omits it, so this insert raised against the real
+            # schema. SQLite builds its tables from the model and never noticed.
             CredentialRevocationEntry.objects.create(
-                credential_serial=credential_serial,
+                observer=observer,
+                credential_serial=str(credential_serial),
                 reason=reason,
                 officer_id=officer_id,
             )

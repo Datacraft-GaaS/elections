@@ -27,23 +27,28 @@ def uuid7str() -> str:
 def record_audit(
     action: str,
     actor_id: str,
-    accreditation_id: str,
-    purpose_code: str,
-    ip: str | None = None,
-    merkle_node_id: str = "",
+    entity_type: str,
+    entity_id: str,
+    metadata: dict | None = None,
 ) -> None:
-    """Write an audit entry for an accreditation action."""
+    """Write an audit entry for an accreditation action.
+
+    The table (0003_training_accreditation.sql) is generic over the entity it
+    audits -- `entity_type` and `entity_id`, plus a JSONB `metadata` -- rather
+    than naming an accreditation, a purpose code and a merkle node. The previous
+    signature wrote four columns that do not exist, so the call would have
+    raised; nothing called it, which is why nothing noticed.
+    """
     from accreditation_app.models import AccreditationAuditEntry
 
     AccreditationAuditEntry.objects.create(
         id=uuid7(),
         action=action,
         actor_id=actor_id,
-        accreditation_id=accreditation_id,
-        purpose_code=purpose_code,
-        ip=ip,
-        merkle_node_id=merkle_node_id,
+        entity_type=entity_type,
+        entity_id=entity_id,
+        metadata=metadata or {},
     )
     logger.info(
-        "audit action=%s actor=%s accreditation=%s", action, actor_id, accreditation_id
+        "audit action=%s actor=%s entity=%s/%s", action, actor_id, entity_type, entity_id
     )

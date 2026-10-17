@@ -13,60 +13,61 @@
 # limitations under the License.
 
 from django.contrib import admin
+
 from accreditation_app.models import (
-    MediaOrganisation,
-    MediaAccreditation,
     AccreditationAuditEntry,
-    ObserverOrganisation,
-    IndividualObserver,
+    BadgeRevocationEntry,
     CredentialRevocationEntry,
+    IndividualObserver,
+    MediaAccreditation,
+    MediaOrganisation,
+    ObserverOrganisation,
 )
 
 
 @admin.register(MediaOrganisation)
 class MediaOrganisationAdmin(admin.ModelAdmin):
-    list_display = [
-        "name",
-        "organisation_type",
-        "mck_registered",
-        "live_feed_permit",
-        "created_at",
-    ]
+    list_display = ["name", "mck_registered", "status", "created_at"]
     search_fields = ["name"]
-    list_filter = ["organisation_type", "mck_registered"]
+    list_filter = ["mck_registered", "status"]
 
 
 @admin.register(MediaAccreditation)
 class MediaAccreditationAdmin(admin.ModelAdmin):
-    list_display = ["applicant_name", "organisation", "status", "badge_serial"]
-    search_fields = ["applicant_name", "id_number"]
+    # `applicant_name` and `id_number` are not columns here -- the SQL keeps
+    # data class B in a separate encrypted vault -- so the badge serial and the
+    # organisation identify the row.
+    list_display = ["mck_membership_number", "organisation", "status", "badge_serial"]
+    search_fields = ["mck_membership_number", "badge_serial"]
     list_filter = ["status"]
-    readonly_fields = ["badge_serial", "badge_issued_at", "revoked_at"]
+    readonly_fields = ["badge_serial", "badge_issued_at"]
+
+
+@admin.register(BadgeRevocationEntry)
+class BadgeRevocationEntryAdmin(admin.ModelAdmin):
+    list_display = ["badge_serial", "reason", "revoked_at", "officer_id"]
+    list_filter = ["reason"]
+    readonly_fields = ["revoked_at"]
 
 
 @admin.register(AccreditationAuditEntry)
 class AccreditationAuditEntryAdmin(admin.ModelAdmin):
-    list_display = [
-        "action",
-        "actor_id",
-        "accreditation_id",
-        "timestamp",
-        "purpose_code",
-    ]
-    readonly_fields = ["id", "timestamp"]
+    list_display = ["action", "actor_id", "entity_type", "entity_id", "recorded_at"]
+    readonly_fields = ["id", "recorded_at"]
 
 
 @admin.register(ObserverOrganisation)
 class ObserverOrganisationAdmin(admin.ModelAdmin):
-    list_display = ["name", "org_type", "jurisdiction", "observer_quota", "approved_at"]
+    list_display = ["name", "org_type", "nationality", "status", "mou_signed_at"]
     search_fields = ["name"]
-    list_filter = ["org_type"]
+    list_filter = ["org_type", "status"]
 
 
 @admin.register(IndividualObserver)
 class IndividualObserverAdmin(admin.ModelAdmin):
-    list_display = ["full_name", "organisation", "status", "nationality"]
-    search_fields = ["full_name", "id_number"]
+    # Same reason as MediaAccreditationAdmin: no `full_name`, no `id_number`.
+    list_display = ["credential_serial", "organisation", "status", "nationality"]
+    search_fields = ["credential_serial"]
     list_filter = ["status"]
 
 

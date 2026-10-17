@@ -14,7 +14,11 @@
 
 """Badge PDF and QR helpers."""
 
+import logging
+
 from uuid6 import uuid7
+
+_log = logging.getLogger(__name__)
 
 
 def uuid7str() -> str:
@@ -27,9 +31,16 @@ def generate_badge_serial() -> str:
 
 
 def verify_badge(serial: str, crl: dict) -> str:
-    """Verify badge status against CRL.
+    """Verify badge status against the CRL and the badge's own row.
 
     Returns 'ACTIVE', 'REVOKED', or 'SUSPENDED'.
+
+    An unrecognised serial is REVOKED, and so is a lookup that raises: a gate
+    that cannot confirm a badge is valid must not report that it is. The
+    previous version returned ACTIVE from the `except`, so a database outage
+    verified every badge in the system. A badge absent from the table is not a
+    valid badge -- it is one whose revocation, or whose non-issuance, cannot be
+    ruled out.
     """
     revoked_serials: list[str] = crl.get("revoked_serials", [])
     if serial in revoked_serials:
@@ -39,12 +50,14 @@ def verify_badge(serial: str, crl: dict) -> str:
         from accreditation_app.models import MediaAccreditation
 
         accred = MediaAccreditation.objects.filter(badge_serial=serial).first()
-        if accred is None:
-            return "REVOKED"
-        if accred.status == "SUSPENDED":
-            return "SUSPENDED"
-        if accred.status in ("ACTIVE", "BADGE_ISSUED"):
-            return "ACTIVE"
+    except Exception as exc:
+        _log.warning("badge verify lookup failed for %s: %s", serial, exc)
         return "REVOKED"
-    except Exception:
+
+    if accred is None:
+        return "REVOKED"
+    if accred.status == "suspended":
+        return "SUSPENDED"
+    if accred.status in ("approved", "badge_issued"):
         return "ACTIVE"
+    return "REVOKED"

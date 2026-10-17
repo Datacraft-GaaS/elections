@@ -32,7 +32,7 @@ class MediaAccreditationSerializer(serializers.ModelSerializer):
     class Meta:
         model = MediaAccreditation
         fields = "__all__"
-        read_only_fields = ["badge_serial", "badge_issued_at", "revoked_at"]
+        read_only_fields = ["badge_serial", "badge_issued_at", "badge_hsm_signature"]
 
 
 class MediaAccreditationRevokeSerializer(serializers.Serializer):

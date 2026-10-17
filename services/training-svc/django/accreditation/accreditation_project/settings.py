@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "dev-secret-key-change-in-production"
-DEBUG = True
-ALLOWED_HOSTS = ["*"]
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-secret-key-change-in-production")
+DEBUG = os.environ.get("DJANGO_DEBUG", "false").lower() == "true"
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "*").split(",")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -28,6 +29,10 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    # Required by ArrayField. Several columns here are TEXT[] in the
+    # migrations (access_zones, audience, renderer_pipeline, ...), and Django
+    # refuses to load an ArrayField without this app installed.
+    "django.contrib.postgres",
     "django_filters",
     "accreditation_app",
 ]
@@ -62,10 +67,24 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "accreditation_project.wsgi.application"
 
+# PostgreSQL only. The previous version hardcoded SQLite with no env switch, so
+# the app could only ever read a database whose schema Django itself had
+# invented -- not the one
+# services/training-svc/migrations/0003_training_accreditation.sql creates.
+#
+# SQLite is not an option here even for tests: `access_zones` and
+# `deployment_county_codes` are TEXT[] in that migration, so they are
+# ArrayField, which is Postgres-only. A suite that ran on SQLite would have to
+# model those columns as something else, which is the drift this app was
+# carrying.
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("DB_NAME", "eel_training"),
+        "USER": os.environ.get("DB_USER", "eel"),
+        "PASSWORD": os.environ.get("DB_PASSWORD", ""),
+        "HOST": os.environ.get("DB_HOST", "localhost"),
+        "PORT": os.environ.get("DB_PORT", "5432"),
     }
 }
 

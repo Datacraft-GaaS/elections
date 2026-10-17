@@ -54,10 +54,10 @@ class VoterAdmin(admin.ModelAdmin):
 class AdjudicationCaseAdmin(admin.ModelAdmin):
     """Adjudication queue for dedup conflicts."""
 
-    list_display = ("case_id", "modality", "status", "investigator_id", "created_at")
+    list_display = ("order_id", "modality", "status", "investigator_id", "created_at")
     list_filter = ("status", "modality")
     readonly_fields = (
-        "case_id",
+        "order_id",
         "voter_ids",
         "modality",
         "status",

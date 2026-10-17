@@ -16,9 +16,16 @@ from django.db import models
 
 
 class Voter(models.Model):
-    """Read-only view of the voter register. Canonical data in Rust service."""
+    """Read-only view of the voter register. Canonical data in Rust service.
 
-    voter_id = models.UUIDField(primary_key=True)
+    `voter_id` is TEXT in V1__create_voters.sql, not UUID. The register is
+    partitioned by county_code and the id is a bare TEXT column; the Rust side
+    parses it into a `Uuid`, but the column is the string. A UUIDField here
+    sends `WHERE voter_id = $1::uuid`, which Postgres refuses against a text
+    column. The same applies to every id below that mirrors a V1-V5 table.
+    """
+
+    voter_id = models.TextField(primary_key=True)
     county_code = models.CharField(max_length=3)
     status = models.CharField(max_length=32)
     election_scope = models.CharField(max_length=64)
@@ -36,11 +43,18 @@ class Voter(models.Model):
 
 
 class AdjudicationCase(models.Model):
-    case_id = models.UUIDField(primary_key=True)
+    """One dedup order. The table's key is `order_id`, not `case_id`.
+
+    V4__dedup_and_sar.sql names the column `order_id TEXT`; the model called it
+    `case_id` and typed it UUID, so both the name and the type were wrong and
+    every query raised on the first column.
+    """
+
+    order_id = models.TextField(primary_key=True)
     voter_ids = models.JSONField()
     modality = models.CharField(max_length=32)
     status = models.CharField(max_length=32)
-    investigator_id = models.UUIDField(null=True, blank=True)
+    investigator_id = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField()
 
     class Meta:
@@ -49,12 +63,12 @@ class AdjudicationCase(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
-        return f"AdjudicationCase({self.case_id})"
+        return f"AdjudicationCase({self.order_id})"
 
 
 class SarRequestModel(models.Model):
-    sar_id = models.UUIDField(primary_key=True)
-    voter_id = models.UUIDField()
+    sar_id = models.TextField(primary_key=True)
+    voter_id = models.TextField()
     status = models.CharField(max_length=32)
     created_at = models.DateTimeField()
     resolved_at = models.DateTimeField(null=True, blank=True)
@@ -69,7 +83,7 @@ class SarRequestModel(models.Model):
 
 
 class AuditEvent(models.Model):
-    event_id = models.UUIDField(primary_key=True)
+    event_id = models.TextField(primary_key=True)
     actor = models.CharField(max_length=255)
     action = models.CharField(max_length=128)
     resource = models.CharField(max_length=255)

@@ -16,7 +16,20 @@
 
 import uuid
 
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
+
+
+class RealField(models.FloatField):
+    """A FloatField that reports itself as `real`, matching V029's REAL columns.
+
+    Django ships no single-precision float field, so a FloatField against a
+    `REAL` column is permanent drift: `makemigrations` would emit an ALTER to
+    widen it to double precision. Overriding `db_type` is the whole difference.
+    """
+
+    def db_type(self, connection) -> str:
+        return "real"
 
 
 class AdhocReport(models.Model):
@@ -82,15 +95,25 @@ class AdhocReportVersion(models.Model):
     )
     source = models.TextField()
     parameters = models.JSONField(default=list)
-    allowed_tables = models.JSONField(default=list)
+    # TEXT[] in V029, so ArrayField. `parameters` above is genuinely JSONB and
+    # stays a JSONField; these two are the allow-list and the format order, and
+    # a JSONField here raises on the first insert ("column allowed_tables is of
+    # type text[] but expression is of type jsonb").
+    allowed_tables = ArrayField(models.TextField(), default=list)
     column_projection = models.JSONField(null=True, blank=True)
-    render_pipeline = models.JSONField(default=list)
+    render_pipeline = ArrayField(models.TextField(), default=list)
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.UUIDField()
     commit_message = models.TextField(blank=True, null=True)
     linted_at = models.DateTimeField(null=True, blank=True)
     lint_report = models.JSONField(default=dict)
-    safety_score = models.FloatField(default=0.0)
+    # V029 declares REAL, which Django has no field for -- FloatField asks for
+    # double precision. `db_type` is overridden rather than the column left to
+    # drift, because `db_type` is also what the model's own `sqlmigrate` and any
+    # future `makemigrations` read: a FloatField here would emit
+    # `ALTER COLUMN safety_score TYPE double precision` and quietly widen a
+    # column the CHECK constrains to [0, 1].
+    safety_score = RealField(default=0.0)
 
     class Meta:
         managed = False
