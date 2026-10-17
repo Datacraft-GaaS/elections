@@ -54,7 +54,7 @@ def make_case_mock(state="Open", tier="Tier1Analyst", priority="Standard"):
 
 @pytest.fixture
 def auth_client(db):
-    user = User.objects.create_user(username="reviewer1", password="testpass")
+    User.objects.create_user(username="reviewer1", password="testpass")
     client = Client()
     client.login(username="reviewer1", password="testpass")
     return client

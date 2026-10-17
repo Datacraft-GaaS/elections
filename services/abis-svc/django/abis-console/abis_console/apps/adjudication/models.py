@@ -164,18 +164,42 @@ class PanelVote(models.Model):
 
 
 class Reviewer(models.Model):
-    """Reviewer profile stored in auth_user extended by this proxy model concept.
+    """A reviewer registered in `eel_reviewers` (V023).
 
-    In production this would be backed by Keycloak + a reviewer_profiles table.
-    For the console, we use Django's auth.User as the underlying store and
-    reference reviewer_id (UUID) from the Rust tables by mapping User.pk -> UUID.
-    This model is unmanaged; the auth_user table is Django-managed.
+    Unmanaged: the Rust migration owns the schema, so the field list is a
+    transcription of the table and not a design. Django's `auth_user` is a
+    separate store, and `spiffe_id` is the join between them — a reviewer
+    authenticates through Django and is identified to the Rust services by
+    their SPIFFE id.
+
+    Two columns this model used to carry were not columns at all:
+
+    * `specialisations` is the table `eel_reviewer_specialisations`, one row
+      per (reviewer, modality) with a proficiency and its own certification
+      date. A JSONField here could not express the modality CHECK, the
+      proficiency range, or the per-modality certification.
+    * `active_case_count` is derivable from `eel_adjudication_cases_v2`
+      (`assigned_to`, open states); `cases_today` is the counter the table
+      actually stores, and it is reset by shift rather than by case closure.
     """
 
-    id = models.UUIDField(primary_key=True)
+    reviewer_id = models.UUIDField(primary_key=True)
+    full_name = models.TextField()
+    staff_number = models.TextField()
+    email_hash = models.BinaryField()
     tier = models.CharField(max_length=20)
-    specialisations = models.JSONField(default=list)
-    active_case_count = models.IntegerField(default=0)
+    spiffe_id = models.TextField()
+    hardware_key_id = models.TextField(null=True, blank=True)
+    max_daily_cases = models.IntegerField(default=50)
+    cases_today = models.IntegerField(default=0)
+    is_on_shift = models.BooleanField(default=False)
+    shift_started_at = models.DateTimeField(null=True, blank=True)
+    certified_at = models.DateTimeField()
+    certification_ref = models.TextField()
+    suspended_at = models.DateTimeField(null=True, blank=True)
+    suspension_reason = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
 
     class Meta:
         db_table = "eel_reviewers"
@@ -184,4 +208,32 @@ class Reviewer(models.Model):
         verbose_name_plural = "Reviewers"
 
     def __str__(self) -> str:
-        return f"Reviewer {self.id} [{self.tier}]"
+        return f"{self.staff_number} [{self.tier}]"
+
+
+class ReviewerSpecialisation(models.Model):
+    """Which modalities a reviewer may adjudicate (V023).
+
+    The table's key is `(reviewer_id, modality)` and it has no `id` column, so
+    without `CompositePrimaryKey` Django would synthesise an implicit AutoField
+    named `id` and the model would name a column the migration does not create.
+    `reviewer_id` is a plain UUID column rather than a `ForeignKey`, which is
+    the same choice `ecc-admin`'s telemetry model makes for its composite key:
+    the relation is real but the key is the pair, and a FK would add a
+    single-column uniqueness the table does not have.
+    """
+
+    pk = models.CompositePrimaryKey("reviewer_id", "modality")
+    reviewer_id = models.UUIDField()
+    modality = models.CharField(max_length=20)
+    proficiency = models.SmallIntegerField()
+    certified_at = models.DateTimeField()
+
+    class Meta:
+        db_table = "eel_reviewer_specialisations"
+        managed = False
+        verbose_name = "Reviewer Specialisation"
+        verbose_name_plural = "Reviewer Specialisations"
+
+    def __str__(self) -> str:
+        return f"{self.reviewer_id} / {self.modality} ({self.proficiency})"
