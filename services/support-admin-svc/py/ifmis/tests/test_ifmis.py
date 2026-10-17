@@ -28,7 +28,9 @@ def _now() -> str:
 
 @pytest.fixture
 def ifmis_client(httpserver: HTTPServer) -> IfmisClient:
-    transport = httpx.ASGITransport  # not used; httpserver provides real TCP
+    # Real TCP against pytest-httpserver, not httpx.ASGITransport: the ASGI
+    # transport would bypass the server and the test would assert against the
+    # in-process app rather than over the wire.
     client = httpx.AsyncClient(base_url=httpserver.url_for("/"))
     return IfmisClient(base_url=httpserver.url_for("/"), client=client)
 

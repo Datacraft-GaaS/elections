@@ -36,11 +36,21 @@ class MediaAccreditationSerializer(serializers.ModelSerializer):
 
 
 class MediaAccreditationRevokeSerializer(serializers.Serializer):
+    """Body of `POST /media-accreditations/{id}/revoke`.
+
+    No free-text reason field: `training_accred_badge_revocations` stores a
+    `reason` column carrying `reason_code`, and the API contract
+    (`packages/openapi-contracts/training-accreditation`) publishes the code
+    only. A `revocation_reason` CharField used to sit here and was accepted
+    into `validated_data` and then dropped by the view, so a caller could send
+    an explanation and have it silently discarded -- the same shape as the
+    `officer_id` drop the view's own comment records.
+    """
+
     reason_code = serializers.ChoiceField(
         choices=["BREACH", "MISCONDUCT", "SECURITY", "EXPIRED"]
     )
     officer_id = serializers.UUIDField()
-    revocation_reason = serializers.CharField(required=False, allow_blank=True)
 
 
 class ObserverOrganisationSerializer(serializers.ModelSerializer):

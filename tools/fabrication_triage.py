@@ -136,10 +136,11 @@ def main() -> int:
     args = ap.parse_args()
 
     f = load_fidelity_module()
-    ops = f.contract_operations()
+    # Routes, not contract operations: the triage exists to reach handlers no
+    # contract names, so enumerating operations here would only re-derive the
+    # subset the fidelity scanner already covers.
     bodies = f.handler_bodies()
     routes = f.all_routes(bodies)
-    bound = {op["handler"] for op in ops if op["handler"]}
 
     impl: list[tuple[str, str, str]] = []      # handler, file, route
     needs_build: list[tuple[str, str, str, str]] = []

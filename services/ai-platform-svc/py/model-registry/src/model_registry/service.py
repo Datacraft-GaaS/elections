@@ -38,7 +38,8 @@ models_store: dict[str, ModelCard] = {}
 decision_log_store: list[DecisionLogEntry] = []
 pii_events_store: list[dict] = []
 
-now = lambda: datetime.now(timezone.utc)
+def now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 def uuid7str() -> str:

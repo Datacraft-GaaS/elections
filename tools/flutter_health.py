@@ -156,7 +156,7 @@ def main():
                              capture_output=True, text=True, timeout=600,
                              env=flutter_env())
         if pub.returncode != 0:
-            tail = [l for l in pub.stderr.splitlines() if l.strip()][-1:] or ["(no detail)"]
+            tail = [ln for ln in pub.stderr.splitlines() if ln.strip()][-1:] or ["(no detail)"]
             unmeasurable.append((rel, tail[0][:100]))
             rows.append((rel, None, None, None))
             continue

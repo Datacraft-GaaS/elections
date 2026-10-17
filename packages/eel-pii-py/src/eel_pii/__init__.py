@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import asyncio
 from enum import Enum
-from typing import Any, ClassVar, Generic, Protocol, TypeVar, get_args
+from typing import Any, ClassVar, Generic, Protocol, TypeVar
 
 from pydantic import GetCoreSchemaHandler
 from pydantic_core import core_schema

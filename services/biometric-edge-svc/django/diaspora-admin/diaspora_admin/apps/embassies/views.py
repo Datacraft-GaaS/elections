@@ -46,9 +46,16 @@ EXPECTED_HEADER = ["id", "national_id_last4", "name_nfc", "dob_yyyy", "station_c
 
 
 def _validate_row(line: int, row: dict[str, str]) -> RowReport:
+    """Validate one roll row. `name_nfc` is not read here.
+
+    The header check in `post` requires the column to be present, but nothing
+    validates its content -- unlike `id`, `national_id_last4`, `dob_yyyy` and
+    `station_code`, each of which has a rule below. A row with an empty name
+    is therefore accepted. Reading it into an unused local made that look
+    handled; it is not, and `RowReport` has no field to carry it.
+    """
     vid = row.get("id", "").strip()
     nid4 = row.get("national_id_last4", "").strip()
-    name = row.get("name_nfc", "").strip()
     dob = row.get("dob_yyyy", "").strip()
     code = row.get("station_code", "").strip()
 

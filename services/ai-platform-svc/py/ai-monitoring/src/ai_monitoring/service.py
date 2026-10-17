@@ -34,7 +34,8 @@ app = FastAPI(title="eel-ai-monitoring", version="0.1.0")
 
 reports_store: dict[str, WeeklyDetectionReport] = {}
 
-now = lambda: datetime.now(timezone.utc)
+def now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 def uuid7str() -> str:

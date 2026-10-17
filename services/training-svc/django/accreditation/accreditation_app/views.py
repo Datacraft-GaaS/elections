@@ -59,7 +59,6 @@ class MediaAccreditationViewSet(viewsets.ModelViewSet):
 
         reason_code: str = ser.validated_data["reason_code"]
         officer_id = str(ser.validated_data["officer_id"])
-        revocation_reason: str = ser.validated_data.get("revocation_reason", "")
 
         if accreditation.status == "revoked":
             return Response(

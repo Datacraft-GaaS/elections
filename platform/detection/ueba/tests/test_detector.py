@@ -25,6 +25,7 @@ from __future__ import annotations
 import asyncio
 import importlib.util
 import json
+import sys as _sys
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
@@ -39,7 +40,6 @@ _BL_PATH = Path(__file__).parent.parent / "baseline-learner.py"
 _BL_SPEC = importlib.util.spec_from_file_location("baseline_learner", _BL_PATH)
 _bl_mod = importlib.util.module_from_spec(_BL_SPEC)  # type: ignore[arg-type]
 _BL_SPEC.loader.exec_module(_bl_mod)  # type: ignore[union-attr]
-import sys as _sys
 
 _sys.modules["baseline_learner"] = _bl_mod
 

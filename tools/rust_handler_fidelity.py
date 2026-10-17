@@ -176,9 +176,6 @@ def handler_bodies() -> dict[str, dict]:
     """
     bodies: dict[str, dict] = {}
     crates = crate_names()
-    # `fn` definitions per file, so a call to a function defined *elsewhere* can
-    # be told apart from a call to one of the handler's own helpers.
-    local_defs: dict[Path, set[str]] = {}
     for rs in sorted((ROOT / "services").rglob("*.rs")):
         if "/target/" in str(rs):
             continue
@@ -630,7 +627,6 @@ def report_unbound(ops: list[dict], bodies: dict[str, dict]) -> int:
     unknown_rows: list[tuple[str, str, str, str, str]] = []
     for handler, registrations in sorted(routes.items()):
         path, source_file = registrations[0]
-        paths = [p for p, _ in registrations]
         entry = resolve_handler(handler, source_file, bodies)
         if entry is None:
             continue

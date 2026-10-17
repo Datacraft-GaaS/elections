@@ -30,7 +30,7 @@ import django
 
 django.setup()
 
-from abis_reports_console.apps.reports.models import (
+from abis_reports_console.apps.reports.models import (  # noqa: E402
     ReportAccessLog,
     ReportArtifact,
     ReportDefinition,
@@ -54,7 +54,7 @@ for _model in (
 ):
     _model._meta.managed = True
 
-import pytest
+import pytest  # noqa: E402
 
 
 def _now():

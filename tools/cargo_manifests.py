@@ -110,8 +110,8 @@ def main():
                     capture_output=True, text=True, timeout=300)
                 checked += 1
                 if r.returncode != 0:
-                    first = next((l for l in r.stderr.splitlines()
-                                  if l.startswith("error")),
+                    first = next((ln for ln in r.stderr.splitlines()
+                                  if ln.startswith("error")),
                                  r.stderr.strip()[:100])
                     broken.append((os.path.relpath(directory, ROOT), first))
                 continue
@@ -122,8 +122,8 @@ def main():
             capture_output=True, text=True, timeout=300)
         checked += 1
         if r.returncode != 0:
-            first = next((l for l in r.stderr.splitlines()
-                          if l.startswith("error")), r.stderr.strip()[:100])
+            first = next((ln for ln in r.stderr.splitlines()
+                          if ln.startswith("error")), r.stderr.strip()[:100])
             broken.append((os.path.relpath(directory, ROOT), first))
 
     for rel, why in broken:

@@ -35,7 +35,6 @@ import sys
 from pathlib import Path
 
 try:
-    import jsonschema
     from jsonschema import validate as jschema_validate, ValidationError
 except ImportError:
     print(

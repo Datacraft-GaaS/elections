@@ -44,7 +44,10 @@ class Bulkhead:
 
     async def call(self, coro: Any) -> Any:
         try:
-            acquired = await asyncio.wait_for(
+            # Awaited for its effect; the semaphore is released in the `finally`
+            # below, so the acquired value itself is not needed. It used to be
+            # bound to `acquired` and never read.
+            await asyncio.wait_for(
                 self._semaphore.acquire(),
                 timeout=self.max_wait_s,
             )
