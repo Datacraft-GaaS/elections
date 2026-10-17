@@ -33,6 +33,8 @@ from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET, require_POST
 
+from .models import TelemetryQueryAudit, TelemetrySignal
+
 _log = logging.getLogger(__name__)
 
 TELEMETRY_API_BASE: str = getattr(
@@ -125,21 +127,13 @@ def run_preset_view(request: HttpRequest, name: str) -> HttpResponse:
 @require_GET
 def query_builder_view(request: HttpRequest) -> HttpResponse:
     """Interactive DSL builder with signal-class checkboxes + NL bridge."""
-    signal_classes = [
-        ("location", "Location"),
-        ("time", "Time"),
-        ("activity", "Activity"),
-        ("proximal_rfid", "Proximal RFID"),
-        ("movements", "Movements"),
-        ("login_logout", "Login / Logout"),
-        ("reads", "Reads"),
-        ("writes", "Writes"),
-        ("battery", "Battery"),
-        ("locks_unlocks", "Locks / Unlocks"),
-        ("physical_drops", "Physical Drops"),
-        ("network", "Network"),
-        ("attestation", "Attestation"),
-    ]
+    # Taken from the model's choices, not retyped. The list here used to be a
+    # second copy, and it had drifted to the plural forms (`movements`, `reads`,
+    # `writes`, `locks_unlocks`, `physical_drops`) that the Rust ingest crate
+    # does not emit and V052's CHECK does not admit. Five of the thirteen
+    # checkboxes sent a `signal_classes` value that matches no row, so selecting
+    # them returned an empty result set that looked like "no such activity".
+    signal_classes = TelemetrySignal.SignalClass.choices
     return render(
         request,
         "telemetry/query_builder.html",
@@ -207,8 +201,6 @@ def nl_translate_view(request: HttpRequest) -> HttpResponse:
 @require_GET
 def evidence_export_view(request: HttpRequest) -> HttpResponse:
     """List recent queries and allow evidence bundle export."""
-    from .models import TelemetryQueryAudit
-
     recent_queries = TelemetryQueryAudit.objects.order_by("-executed_at")[:50]
     return render(
         request,

@@ -127,8 +127,8 @@ def load_schema(psql: str, url: str, root: str) -> dict[str, dict[str, str]]:
     return json.loads(out)
 
 
-def load_models(app: pathlib.Path) -> dict[str, dict[str, str]] | None:
-    """Return {db_table: {column: type}} for one Django app, or None if it cannot load."""
+def load_models(app: pathlib.Path) -> dict[str, dict] | None:
+    """Return {db_table: {"managed": bool, "cols": {column: type}}}, or None if it cannot load."""
     settings = sorted(p.name for p in app.iterdir() if (p / "settings.py").exists())
     if not settings:
         return None
@@ -157,8 +157,9 @@ def load_models(app: pathlib.Path) -> dict[str, dict[str, str]] | None:
         # `db_type` is what Django would emit in CREATE TABLE, which is the
         # comparable form of the migration's own column type.
         "print(json.dumps({m._meta.db_table:"
-        "{f.column: (f.db_type(pg) or '') "
-        "for f in m._meta.get_fields() if getattr(f,'column',None)}"
+        "{'managed': m._meta.managed,"
+        " 'cols': {f.column: (f.db_type(pg) or '') "
+        "for f in m._meta.get_fields() if getattr(f,'column',None)}}"
         " for m in A.get_models()}))"
     )
     env = {**os.environ, "DJANGO_TEST_SQLITE": "true"}
@@ -268,14 +269,29 @@ def main() -> int:
                 unloadable.append(rel)
             continue
         checked += 1
-        for table, cols in models.items():
+        for table, spec in models.items():
             if table.startswith(IGNORED_TABLE_PREFIXES):
                 continue
-            if table not in schema:
-                # Model-owned: no migration creates it, so Django's run_syncdb
-                # builds it and the model is authoritative.
-                continue
+            cols = spec["cols"]
             key = f"{rel}:{table}"
+            if table not in schema:
+                # No migration creates it. Which side is authoritative depends
+                # on `managed`, and the difference is not cosmetic:
+                #
+                # - managed=True: Django's run_syncdb builds it from the model,
+                #   so the model is the schema and there is nothing to compare.
+                # - managed=False: nothing ever creates it. Django will not, and
+                #   no migration does, so the model names a table that does not
+                #   exist in any environment -- and because the ORM only raises
+                #   when a query runs, nothing notices. ecc-admin carried three
+                #   such models (device_snapshots, officer_sessions,
+                #   merkle_snapshots) against tables V052 does not create. The
+                #   skip below used to swallow them as "model-owned".
+                if not spec["managed"]:
+                    findings.append(
+                        f"  {rel}\n    {table}\n      managed=False and no migration creates it"
+                    )
+                continue
             if key in allowlist:
                 continue
             sql_cols = schema[table]

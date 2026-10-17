@@ -48,6 +48,11 @@ def ensure_audit_table() -> None:
     evidence-export view reads recent queries from this table. The SQLite
     schema editor refuses to run inside a transaction, so we create the table
     with idempotent raw DDL instead.
+
+    The columns are V052's. This DDL used to declare a different set --
+    `result_sha256`, `evidence_exported`, `preset_name`, `nl_text` -- none of
+    which the migration creates. The suite passed against its own invented
+    schema, which is the same defect the models carried, restated in the test.
     """
     from django.db import connection
 
@@ -55,15 +60,17 @@ def ensure_audit_table() -> None:
         cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS eel_telemetry_queries (
-                query_id          char(32)      PRIMARY KEY,
-                actor_svid        varchar(256)  NOT NULL,
-                query_dsl         text          NOT NULL,
-                executed_at       datetime      NOT NULL,
-                row_count         bigint        NOT NULL,
-                result_sha256     varchar(64)   NOT NULL,
-                evidence_exported bool          NOT NULL,
-                preset_name       varchar(64)   NOT NULL,
-                nl_text           text          NOT NULL
+                query_id              char(32)      PRIMARY KEY,
+                actor_svid            text          NOT NULL,
+                actor_role            text,
+                query_dsl             text,
+                query_text            text,
+                executed_at           datetime      NOT NULL,
+                elapsed_ms            integer,
+                row_count             bigint,
+                evidence_bundle_hash  blob,
+                evidence_bundle_ref   text,
+                correlation_id        char(32)
             )
             """
         )
@@ -222,17 +229,24 @@ class QueryBuilderViewTest(TestCase):
         self.assertContains(resp, "Natural-language query")
         self.assertContains(resp, "natural language to DSL")
 
-    def test_query_builder_lists_all_13_classes(self):
+    def test_query_builder_lists_every_class_the_database_admits(self):
+        """Every checkbox value must be one V052's CHECK will accept.
+
+        The list this replaces asserted the plural spellings (`movements`,
+        `physical_drops`) that the Rust ingest crate never writes, so it passed
+        while five of thirteen checkboxes could not match a row. Deriving the
+        expectation from the model means the test cannot agree with the view
+        against the database.
+        """
+        from ecc_admin.apps.telemetry.models import TelemetrySignal
+
         resp = self.client.get(reverse("telemetry:query_builder"))
-        for cls in [
-            "location",
-            "movements",
-            "battery",
-            "network",
-            "attestation",
-            "physical_drops",
-        ]:
-            self.assertContains(resp, cls)
+        values = [v for v, _ in TelemetrySignal.SignalClass.choices]
+        self.assertEqual(len(values), 13)
+        for cls in values:
+            self.assertContains(resp, f'value="{cls}"')
+        for absent in ("movements", "reads", "writes", "locks_unlocks", "physical_drops"):
+            self.assertNotContains(resp, f'value="{absent}"')
 
 
 # ---------------------------------------------------------------------------
