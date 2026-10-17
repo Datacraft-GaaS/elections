@@ -137,3 +137,9 @@ tmp_new_*.txt
 /test_flutter_tmp/
 erl_crash.dump
 tmp_new_section12.txt
+
+# Astro's generated type/collection cache. `astro sync` writes it and every
+# build regenerates it. Four sites had it committed under
+# services/*/astro/*/.astro/ -- it is not source, and it drifts from the
+# content collections it is derived from.
+.astro/
