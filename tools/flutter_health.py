@@ -36,6 +36,7 @@ import re
 import subprocess
 import sys
 
+
 # The shell's SDKROOT on this machine points at
 # `.../Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk`, which is not
 # installed -- the available SDKs are MacOSX.sdk and MacOSX27. Every `flutter test`
@@ -68,7 +69,9 @@ def flutter_env():
 #
 # A control that cannot do the thing must not look like it can. `EelButton` already
 # treats `onPressed: null` as disabled, so the honest form needs no new API.
-EMPTY_CALLBACK = re.compile(r"\b(?:onPressed|onTap|onLongPress)\s*:\s*\(\s*\)\s*\{\s*\}")
+EMPTY_CALLBACK = re.compile(
+    r"\b(?:onPressed|onTap|onLongPress)\s*:\s*\(\s*\)\s*\{\s*\}"
+)
 
 # Widgets under test legitimately pass an empty callback: a golden test is checking
 # how a button *renders*, and a no-op is the point.
@@ -83,8 +86,11 @@ def empty_callbacks(path):
         return []
     if any(marker in path.replace(os.sep, "/") for marker in CALLBACK_EXEMPT):
         return []
-    return [(n, ln.strip()) for n, ln in enumerate(text.splitlines(), 1)
-            if EMPTY_CALLBACK.search(ln)]
+    return [
+        (n, ln.strip())
+        for n, ln in enumerate(text.splitlines(), 1)
+        if EMPTY_CALLBACK.search(ln)
+    ]
 
 
 def stub_callbacks(dirs):
@@ -99,8 +105,13 @@ def stub_callbacks(dirs):
             for fn in filenames:
                 if fn.endswith(".dart"):
                     for lineno, line in empty_callbacks(os.path.join(dirpath, fn)):
-                        found.append((os.path.relpath(os.path.join(dirpath, fn), ROOT),
-                                      lineno, line))
+                        found.append(
+                            (
+                                os.path.relpath(os.path.join(dirpath, fn), ROOT),
+                                lineno,
+                                line,
+                            )
+                        )
     return found
 
 
@@ -152,19 +163,31 @@ def main():
 
     for path in dirs:
         rel = os.path.relpath(path, ROOT)
-        pub = subprocess.run(["flutter", "pub", "get"], cwd=path,
-                             capture_output=True, text=True, timeout=600,
-                             env=flutter_env())
+        pub = subprocess.run(
+            ["flutter", "pub", "get"],
+            cwd=path,
+            capture_output=True,
+            text=True,
+            timeout=600,
+            env=flutter_env(),
+        )
         if pub.returncode != 0:
-            tail = [ln for ln in pub.stderr.splitlines() if ln.strip()][-1:] or ["(no detail)"]
+            tail = [ln for ln in pub.stderr.splitlines() if ln.strip()][-1:] or [
+                "(no detail)"
+            ]
             unmeasurable.append((rel, tail[0][:100]))
             rows.append((rel, None, None, None))
             continue
 
         try:
-            result = subprocess.run(["flutter", "analyze"], cwd=path,
-                                    capture_output=True, text=True, timeout=900,
-                                    env=flutter_env())
+            result = subprocess.run(
+                ["flutter", "analyze"],
+                cwd=path,
+                capture_output=True,
+                text=True,
+                timeout=900,
+                env=flutter_env(),
+            )
         except subprocess.TimeoutExpired:
             unmeasurable.append((rel, "analyze timed out"))
             rows.append((rel, None, None, None))
@@ -190,7 +213,9 @@ def main():
 
     stubs = stub_callbacks(dirs)
     if stubs:
-        print(f"empty interaction handlers (a control that looks live and does nothing): {len(stubs)}")
+        print(
+            f"empty interaction handlers (a control that looks live and does nothing): {len(stubs)}"
+        )
         print("-" * 78)
         for path, lineno, line in stubs:
             print(f"  {path}:{lineno}")
@@ -201,11 +226,15 @@ def main():
         if errors is None:
             print(f"  {rel:<52} UNMEASURABLE")
         elif errors or warnings or infos:
-            print(f"  {rel:<52} errors={errors:<4} warnings={warnings:<4} infos={infos}")
+            print(
+                f"  {rel:<52} errors={errors:<4} warnings={warnings:<4} infos={infos}"
+            )
 
     measured = sum(1 for _, e, _, _ in rows if e is not None)
     print()
-    print(f"packages: {len(rows)}  measured: {measured}  unmeasurable: {len(unmeasurable)}")
+    print(
+        f"packages: {len(rows)}  measured: {measured}  unmeasurable: {len(unmeasurable)}"
+    )
     print(f"errors: {total_errors}  warnings: {total_warnings}  infos: {total_infos}")
     for rel, why in unmeasurable:
         print(f"  UNMEASURABLE {rel}: {why}")

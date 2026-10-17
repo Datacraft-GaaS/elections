@@ -14,7 +14,6 @@
 
 """Model unit tests for abis-reports-console."""
 
-
 import pytest
 
 from abis_reports_console.apps.reports.models import (

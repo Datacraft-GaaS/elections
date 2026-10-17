@@ -31,8 +31,9 @@ UNUSED = re.compile(r"^warning • Unused import: '([^']+)'.*• (\S+\.dart):(\d
 
 
 def analyse(pkg):
-    r = subprocess.run(["flutter", "analyze"], cwd=pkg, capture_output=True,
-                       text=True, timeout=900)
+    r = subprocess.run(
+        ["flutter", "analyze"], cwd=pkg, capture_output=True, text=True, timeout=900
+    )
     return r.stdout + r.stderr
 
 
@@ -52,8 +53,11 @@ def main():
             for rel, imports in found.items():
                 path = f"{pkg}/{rel}"
                 lines = open(path).read().split("\n")
-                keep = [ln for ln in lines
-                        if not any(ln.strip() == f"import '{i}';" for i in imports)]
+                keep = [
+                    ln
+                    for ln in lines
+                    if not any(ln.strip() == f"import '{i}';" for i in imports)
+                ]
                 if len(keep) != len(lines):
                     open(path, "w").write("\n".join(keep))
                     total_removed += len(lines) - len(keep)

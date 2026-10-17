@@ -105,32 +105,57 @@ def main():
             workspace = owner(manifest)
             if workspace is None:
                 r = subprocess.run(
-                    ["cargo", "metadata", "--no-deps", "--format-version", "1",
-                     "--manifest-path", manifest],
-                    capture_output=True, text=True, timeout=300)
+                    [
+                        "cargo",
+                        "metadata",
+                        "--no-deps",
+                        "--format-version",
+                        "1",
+                        "--manifest-path",
+                        manifest,
+                    ],
+                    capture_output=True,
+                    text=True,
+                    timeout=300,
+                )
                 checked += 1
                 if r.returncode != 0:
-                    first = next((ln for ln in r.stderr.splitlines()
-                                  if ln.startswith("error")),
-                                 r.stderr.strip()[:100])
+                    first = next(
+                        (ln for ln in r.stderr.splitlines() if ln.startswith("error")),
+                        r.stderr.strip()[:100],
+                    )
                     broken.append((os.path.relpath(directory, ROOT), first))
                 continue
             manifest = workspace
         r = subprocess.run(
-            ["cargo", "metadata", "--no-deps", "--format-version", "1",
-             "--manifest-path", manifest],
-            capture_output=True, text=True, timeout=300)
+            [
+                "cargo",
+                "metadata",
+                "--no-deps",
+                "--format-version",
+                "1",
+                "--manifest-path",
+                manifest,
+            ],
+            capture_output=True,
+            text=True,
+            timeout=300,
+        )
         checked += 1
         if r.returncode != 0:
-            first = next((ln for ln in r.stderr.splitlines()
-                          if ln.startswith("error")), r.stderr.strip()[:100])
+            first = next(
+                (ln for ln in r.stderr.splitlines() if ln.startswith("error")),
+                r.stderr.strip()[:100],
+            )
             broken.append((os.path.relpath(directory, ROOT), first))
 
     for rel, why in broken:
         print(f"  BROKEN {rel}: {why}")
     print()
-    print(f"manifests checked: {checked}  excluded: {skipped} "
-          f"(of {len(skip)} exclude entries)  broken: {len(broken)}")
+    print(
+        f"manifests checked: {checked}  excluded: {skipped} "
+        f"(of {len(skip)} exclude entries)  broken: {len(broken)}"
+    )
     return 1 if broken else 0
 
 

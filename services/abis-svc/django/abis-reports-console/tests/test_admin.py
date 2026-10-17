@@ -14,7 +14,6 @@
 
 """Admin tests for abis-reports-console."""
 
-
 import pytest
 from django.contrib.auth import get_user_model
 

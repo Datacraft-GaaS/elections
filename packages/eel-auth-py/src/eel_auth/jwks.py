@@ -27,7 +27,6 @@ class AuthError(Exception):
     """Raised on JWT verification failure."""
 
 
-
 class JwksCache:
     """Caches JWKS from a Keycloak realm, refreshing on kid-miss."""
 

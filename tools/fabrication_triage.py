@@ -142,7 +142,7 @@ def main() -> int:
     bodies = f.handler_bodies()
     routes = f.all_routes(bodies)
 
-    impl: list[tuple[str, str, str]] = []      # handler, file, route
+    impl: list[tuple[str, str, str]] = []  # handler, file, route
     needs_build: list[tuple[str, str, str, str]] = []
     blocked: list[tuple[str, str, str, list[str]]] = []
 
@@ -168,7 +168,9 @@ def main() -> int:
         if blockers:
             blocked.append((f"{source_file}::{handler}", file, path, blockers))
         elif artifact:
-            needs_build.append((f"{source_file}::{handler}", file, path, artifact.group(0)))
+            needs_build.append(
+                (f"{source_file}::{handler}", file, path, artifact.group(0))
+            )
         elif verdict:
             needs_build.append(
                 (f"{source_file}::{handler}", file, path, f"{verdict.group(1)}: true")
@@ -184,7 +186,9 @@ def main() -> int:
             per_crate[file]["build"] += 1
         for h, file, _, _b in blocked:
             per_crate[file]["blocked"] += 1
-        print("| crate | implementable | needs a log or key | blocked on absent system |")
+        print(
+            "| crate | implementable | needs a log or key | blocked on absent system |"
+        )
         print("|---|---|---|---|")
         for file in sorted(per_crate):
             c = per_crate[file]
@@ -208,7 +212,9 @@ def main() -> int:
     print("-" * 86)
     for file in sorted(per_crate, key=lambda k: -(per_crate[k]["impl"])):
         c = per_crate[file]
-        print(f"{file.replace('services/', ''):<50} {c['impl']:>13} {c['build']:>11} {c['blocked']:>9}")
+        print(
+            f"{file.replace('services/', ''):<50} {c['impl']:>13} {c['build']:>11} {c['blocked']:>9}"
+        )
     print("-" * 86)
     print(f"{'TOTAL':<50} {len(impl):>13} {len(needs_build):>11} {len(blocked):>9}")
 

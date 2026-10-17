@@ -26,6 +26,7 @@ import re
 import subprocess
 import sys
 
+
 # The shell's SDKROOT on this machine points at
 # `.../Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk`, which is not
 # installed -- the available SDKs are MacOSX.sdk and MacOSX27. Every `flutter test`
@@ -64,9 +65,11 @@ def package_dirs(targets):
     out = []
     for base in targets:
         for dirpath, dirnames, filenames in os.walk(os.path.join(ROOT, base)):
-            dirnames[:] = [d for d in dirnames
-                           if d not in (".dart_tool", "build", "node_modules",
-                                        ".git", "target")]
+            dirnames[:] = [
+                d
+                for d in dirnames
+                if d not in (".dart_tool", "build", "node_modules", ".git", "target")
+            ]
             if "pubspec.yaml" in filenames:
                 rel = os.path.relpath(dirpath, ROOT)
                 if rel.split(os.sep)[0] in EXCLUDE_DIRS:
@@ -89,9 +92,7 @@ def main():
             continue
         # Tests may sit in subdirectories, so walk rather than list.
         has_tests = any(
-            f.endswith("_test.dart")
-            for _, _, files in os.walk(testdir)
-            for f in files
+            f.endswith("_test.dart") for _, _, files in os.walk(testdir) for f in files
         )
         if not has_tests:
             # A test/ directory that exists but holds nothing is a different
@@ -100,9 +101,14 @@ def main():
             empty.append(rel)
             continue
         try:
-            r = subprocess.run(["flutter", "test", "--reporter", "compact"],
-                               cwd=path, capture_output=True, text=True, env=flutter_env(),
-                               timeout=1800)
+            r = subprocess.run(
+                ["flutter", "test", "--reporter", "compact"],
+                cwd=path,
+                capture_output=True,
+                text=True,
+                env=flutter_env(),
+                timeout=1800,
+            )
         except subprocess.TimeoutExpired:
             broken.append((rel, "timed out"))
             continue
@@ -134,9 +140,11 @@ def main():
     for rel in empty:
         print(f"  NO TESTS {rel:<48} test/ exists but is empty")
     print()
-    print(f"packages: {len(dirs)}  green: {len(clean)}  "
-          f"failing: {len(failed)}  broken: {len(broken)}  "
-          f"no test dir: {len(untested)}  empty test dir: {len(empty)}")
+    print(
+        f"packages: {len(dirs)}  green: {len(clean)}  "
+        f"failing: {len(failed)}  broken: {len(broken)}  "
+        f"no test dir: {len(untested)}  empty test dir: {len(empty)}"
+    )
     print(f"tests passed: {total_pass}  failed: {total_fail}")
     return 0 if not failed and not broken and not empty else 1
 

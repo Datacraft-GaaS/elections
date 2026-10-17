@@ -14,7 +14,6 @@
 
 """Tests for M-Pesa B2C client (WP-5.6)."""
 
-
 import pytest
 from pytest_httpserver import HTTPServer
 

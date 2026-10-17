@@ -113,7 +113,9 @@ async def test_deliver_uploads_bundle_and_returns_receipt(monkeypatch) -> None:
     async def fake_fetch(ref: str) -> bytes:
         return b"artifact payload"
 
-    def fake_build_bundle(req: DeliveryRequest, artifact_bytes: bytes) -> tuple[bytes, str]:
+    def fake_build_bundle(
+        req: DeliveryRequest, artifact_bytes: bytes
+    ) -> tuple[bytes, str]:
         return b"bundle-bytes", "feedface" * 4
 
     def fake_upload(
@@ -144,6 +146,8 @@ async def test_deliver_uploads_bundle_and_returns_receipt(monkeypatch) -> None:
     assert captured["filename"] == _build_filename(req)
     assert captured["data"] == b"bundle-bytes"
     assert receipt.sha256 == "feedface" * 4
+
+
 def test_pgp_sign_unavailable_flag_matches_runtime() -> None:
     """The availability flag must reflect the interpreter, not a hardcoded False."""
     import importlib.util

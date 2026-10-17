@@ -38,7 +38,9 @@ def generate_crl() -> dict:
             for s in BadgeRevocationEntry.objects.values_list("badge_serial", flat=True)
         )
     except Exception as exc:
-        _log.warning("BadgeRevocationEntry unavailable, skipping badge serials: %s", exc)
+        _log.warning(
+            "BadgeRevocationEntry unavailable, skipping badge serials: %s", exc
+        )
 
     try:
         from accreditation_app.models import CredentialRevocationEntry

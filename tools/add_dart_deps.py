@@ -62,8 +62,14 @@ PATH_DEPS = {
 }
 
 SDK_PACKAGES = {
-    "flutter", "flutter_test", "flutter_localizations", "flutter_driver",
-    "flutter_web_plugins", "sky_engine", "integration_test", "flutter_driver_extension",
+    "flutter",
+    "flutter_test",
+    "flutter_localizations",
+    "flutter_driver",
+    "flutter_web_plugins",
+    "sky_engine",
+    "integration_test",
+    "flutter_driver_extension",
 }
 
 IMPORT_RE = re.compile(r"""(?:import|export)\s+['\"]package:([^/'\"]+)""")
@@ -109,8 +115,14 @@ def main():
     for base in targets:
         for dirpath, dirnames, filenames in os.walk(os.path.join(ROOT, base)):
             dirnames[:] = [d for d in dirnames if d not in (".dart_tool", "build")]
-            owner = next((d for d in package_dirs
-                          if dirpath == d or dirpath.startswith(d + os.sep)), None)
+            owner = next(
+                (
+                    d
+                    for d in package_dirs
+                    if dirpath == d or dirpath.startswith(d + os.sep)
+                ),
+                None,
+            )
             if owner is None:
                 continue
             for name in filenames:
@@ -126,7 +138,7 @@ def main():
         me = own_name(pubspec)
         needed = imported[package_dir] - declared - SDK_PACKAGES
         if me:
-            needed.discard(me)          # a package may import itself by name
+            needed.discard(me)  # a package may import itself by name
         for pkg in sorted(needed):
             if pkg in PATH_DEPS:
                 rel = os.path.relpath(PATH_DEPS[pkg], package_dir)
@@ -136,7 +148,9 @@ def main():
                 line = PUB_VERSIONS[pkg]
                 kind = "pub"
             else:
-                print(f"  SKIP {os.path.relpath(package_dir, ROOT)}: {pkg} (no known version)")
+                print(
+                    f"  SKIP {os.path.relpath(package_dir, ROOT)}: {pkg} (no known version)"
+                )
                 continue
             if add_dependency(pubspec, pkg, line):
                 added += 1

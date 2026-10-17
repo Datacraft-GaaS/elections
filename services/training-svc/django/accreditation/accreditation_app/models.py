@@ -202,7 +202,9 @@ class IndividualObserver(models.Model):
     )
     nationality = models.CharField(max_length=100)
     deployment_county_codes = ArrayField(models.TextField(), default=list, blank=True)
-    credential_serial = models.CharField(max_length=64, null=True, blank=True, unique=True)
+    credential_serial = models.CharField(
+        max_length=64, null=True, blank=True, unique=True
+    )
     credential_issued_at = models.DateTimeField(null=True, blank=True)
     credential_hsm_signature = models.TextField(null=True, blank=True)
     status = models.CharField(max_length=30, choices=STATUS_CHOICES, default="pending")

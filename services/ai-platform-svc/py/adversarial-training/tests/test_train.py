@@ -105,7 +105,9 @@ def test_pgd_steps_parameter() -> None:
 
     # Both must stay in the L-inf ball, at every step count.
     for name, x_adv in (("steps=1", x_one), ("steps=40", x_many)):
-        assert np.max(np.abs(x_adv - x[0:1])) <= epsilon + 1e-6, f"{name} L-inf violated"
+        assert np.max(np.abs(x_adv - x[0:1])) <= epsilon + 1e-6, (
+            f"{name} L-inf violated"
+        )
     # More steps must move further: each step adds alpha * sign(grad) before the
     # projection, so a longer run reaches the ball's edge rather than stopping
     # partway. Equal results would mean `steps` is ignored.
@@ -114,7 +116,9 @@ def test_pgd_steps_parameter() -> None:
     )
     # And the FGSM bound holds for its own single step.
     x_fgsm = fgsm_attack(model, x[0:1], y[0:1], epsilon=epsilon)
-    assert np.max(np.abs(x_fgsm - x[0:1])) <= epsilon + 1e-6, "FGSM L-inf must be bounded"
+    assert np.max(np.abs(x_fgsm - x[0:1])) <= epsilon + 1e-6, (
+        "FGSM L-inf must be bounded"
+    )
 
 
 def test_adversarial_trainer_returns_metrics() -> None:

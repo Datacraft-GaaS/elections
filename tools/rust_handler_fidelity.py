@@ -119,24 +119,28 @@ def contract_operations() -> list[dict]:
         try:
             doc = yaml.safe_load(spec.read_text()) or {}
         except Exception as exc:  # a malformed contract is itself a finding
-            print(f"  contract parse error: {spec.relative_to(ROOT)}: {exc}",
-                  file=sys.stderr)
+            print(
+                f"  contract parse error: {spec.relative_to(ROOT)}: {exc}",
+                file=sys.stderr,
+            )
             continue
         svc = spec.parent.name
         for path, methods in (doc.get("paths") or {}).items():
             for verb, op in (methods or {}).items():
                 if not isinstance(op, dict):
                     continue
-                out.append({
-                    "service": svc,
-                    "contract": spec.relative_to(ROOT),
-                    "path": path,
-                    "verb": verb,
-                    "operation_id": op.get("operationId"),
-                    "bound": op.get("x-handler-bound") or "",
-                    "handler": (op.get("x-handler-bound") or "").split(".")[-1],
-                    "responses": sorted((op.get("responses") or {}).keys()),
-                })
+                out.append(
+                    {
+                        "service": svc,
+                        "contract": spec.relative_to(ROOT),
+                        "path": path,
+                        "verb": verb,
+                        "operation_id": op.get("operationId"),
+                        "bound": op.get("x-handler-bound") or "",
+                        "handler": (op.get("x-handler-bound") or "").split(".")[-1],
+                        "responses": sorted((op.get("responses") or {}).keys()),
+                    }
+                )
     return out
 
 
@@ -189,16 +193,21 @@ def handler_bodies() -> dict[str, dict]:
         # Not just `pub fn`: handlers in route modules are routinely private
         # (`async fn list_events(...)`), and indexing only public ones reports
         # a fully implemented handler as MISSING.
-        for match in re.finditer(r"^(?:pub(?:\([^)]*\))?\s+)?(?:async\s+)?fn\s+(\w+)",
-                                 text, re.M):
+        for match in re.finditer(
+            r"^(?:pub(?:\([^)]*\))?\s+)?(?:async\s+)?fn\s+(\w+)", text, re.M
+        ):
             name = match.group(1)
             crate = _crate_of(rs, crates)
             body = _extract_body(text, match.end())
             if body is None:
                 continue
-            entry = {"file": rs.relative_to(ROOT), "body": body,
-                     "crate": crate, "fn": name,
-                     "local_fns": defs}
+            entry = {
+                "file": rs.relative_to(ROOT),
+                "body": body,
+                "crate": crate,
+                "fn": name,
+                "local_fns": defs,
+            }
             # A bare name is ambiguous; only the first claimant gets it. A
             # same-crate claimant is indexed under `crate::name`, and every body
             # is indexed under its own path, so a route registration can be
@@ -225,8 +234,10 @@ def service_dir(segment: str) -> Path | None:
     """`bvi-svc` -> services/bvi-svc, the directory the binding's first part names."""
     if not segment:
         return None
-    for candidate in (ROOT / "services" / segment,
-                      ROOT / "services" / f"{segment}-svc"):
+    for candidate in (
+        ROOT / "services" / segment,
+        ROOT / "services" / f"{segment}-svc",
+    ):
         if candidate.is_dir():
             return candidate
     return None
@@ -260,8 +271,11 @@ def resolve(op: dict, bodies: dict[str, dict]) -> dict | None:
     root = service_dir(service)
     if root is None:
         return None
-    matches = [e for e in bodies.values()
-               if e["fn"] == fn and str(root.resolve()) in str(e["file"].resolve())]
+    matches = [
+        e
+        for e in bodies.values()
+        if e["fn"] == fn and str(root.resolve()) in str(e["file"].resolve())
+    ]
     unique = {str(e["file"]): e for e in matches}
     return next(iter(unique.values())) if len(unique) == 1 else None
 
@@ -332,18 +346,60 @@ EMPTY_IDEMPOTENCY_RECORD = re.compile(
 # `acknowledge_alert` for being short.
 # Calls that are never the handler's own logic: macros, std, serde, axum.
 NOT_A_DELEGATION = {
-    "json", "format", "vec", "some", "ok", "err", "new", "default", "from",
-    "into", "to_string", "to_owned", "clone", "as_str", "as_array", "unwrap",
-    "unwrap_or", "unwrap_or_else", "unwrap_or_default", "expect", "is_none",
-    "is_some", "map", "and_then", "filter", "collect", "iter", "len", "push",
-    "insert", "get", "remove", "contains", "starts_with", "to_rfc3339", "now",
-    "parse", "read", "write", "lock", "await", "println", "eprintln", "write_all",
+    "json",
+    "format",
+    "vec",
+    "some",
+    "ok",
+    "err",
+    "new",
+    "default",
+    "from",
+    "into",
+    "to_string",
+    "to_owned",
+    "clone",
+    "as_str",
+    "as_array",
+    "unwrap",
+    "unwrap_or",
+    "unwrap_or_else",
+    "unwrap_or_default",
+    "expect",
+    "is_none",
+    "is_some",
+    "map",
+    "and_then",
+    "filter",
+    "collect",
+    "iter",
+    "len",
+    "push",
+    "insert",
+    "get",
+    "remove",
+    "contains",
+    "starts_with",
+    "to_rfc3339",
+    "now",
+    "parse",
+    "read",
+    "write",
+    "lock",
+    "await",
+    "println",
+    "eprintln",
+    "write_all",
     # Minting an identifier is not the handler's work. `submit_spoilt_ballot` was
     # `Uuid::now_v7().to_string()` and a 201: a ticket for a spoilt ballot that was
     # never recorded. Once path-qualified calls became visible, the zero-argument
     # `Uuid::now_v7()` was read as a delegation and passed it. These are generators,
     # not domain logic, so they do not earn a handler the VERIFIED verdict.
-    "now_v7", "new_v4", "now_v1", "nil", "from_u128",
+    "now_v7",
+    "new_v4",
+    "now_v1",
+    "nil",
+    "from_u128",
 }
 
 # `fn name(` calls in a handler body.
@@ -375,8 +431,11 @@ def reaches_store_via_local_helper(
         if entry is None:
             continue
         helper = entry.get("body") or ""
-        if WORK_MARKERS.search(helper) or STATE_MARKERS.search(helper) \
-                or ERROR_BRANCH.search(helper):
+        if (
+            WORK_MARKERS.search(helper)
+            or STATE_MARKERS.search(helper)
+            or ERROR_BRANCH.search(helper)
+        ):
             return True
     return False
 
@@ -393,7 +452,9 @@ CALL_SPAN = re.compile(r"(?<![.:\w])([a-z_][a-z0-9_]{2,})\s*\(([^()]*)\)")
 #
 # Macros are not calls here: `json!` is followed by `!`, not `(`, so it does not
 # match.
-QUALIFIED_CALL = re.compile(r"(?:\b[A-Za-z_][A-Za-z0-9_]*::)+([a-z_][a-z0-9_]{2,})\s*\(([^()]*)\)")
+QUALIFIED_CALL = re.compile(
+    r"(?:\b[A-Za-z_][A-Za-z0-9_]*::)+([a-z_][a-z0-9_]{2,})\s*\(([^()]*)\)"
+)
 
 # An argument list made only of literals: string, char, number, bool, and the
 # obvious decorations around them.
@@ -521,8 +582,11 @@ def classify(
     # Three independent ways to have earned the answer. Missing all three while
     # returning only a constructed success is what fabrication actually looks
     # like, and it is what the earlier heuristic kept getting wrong.
-    if WORK_MARKERS.search(body) or STATE_MARKERS.search(body) \
-            or ERROR_BRANCH.search(body):
+    if (
+        WORK_MARKERS.search(body)
+        or STATE_MARKERS.search(body)
+        or ERROR_BRANCH.search(body)
+    ):
         return "VERIFIED"
     if delegates_elsewhere(body, local_fns):
         return "VERIFIED"
@@ -651,13 +715,23 @@ def report_unbound(ops: list[dict], bodies: dict[str, dict]) -> int:
             # it returned `full_name: nfc("Placeholder Voter")` for any voter id
             # and was invisible here for the whole of its life.
             unverified += 1
-            unknown_rows.append((verdict, handler, f"{source_file}::{handler}", str(entry["file"]), path))
+            unknown_rows.append(
+                (
+                    verdict,
+                    handler,
+                    f"{source_file}::{handler}",
+                    str(entry["file"]),
+                    path,
+                )
+            )
             continue
         fab += 1
         # The row carries the bare name for the contract-binding check and the
         # qualified name for the report, because a contract names a handler and
         # two modules may define it.
-        rows.append((verdict, handler, f"{source_file}::{handler}", str(entry["file"]), path))
+        rows.append(
+            (verdict, handler, f"{source_file}::{handler}", str(entry["file"]), path)
+        )
 
     bound_rows = [r for r in rows if r[1] in bound]
     unbound = [r for r in rows if r[1] not in bound]
@@ -686,7 +760,9 @@ def report_unbound(ops: list[dict], bodies: dict[str, dict]) -> int:
             print(f"                  {path}")
         print()
     if unknown_rows:
-        print("no evidence either way -- NOT counted as fabricated, but not proven either")
+        print(
+            "no evidence either way -- NOT counted as fabricated, but not proven either"
+        )
         print("-" * 78)
         for verdict, _handler, qualified, _file, path in unknown_rows:
             print(f"[{verdict:<15}] {qualified}")
@@ -716,29 +792,61 @@ def report_unbound(ops: list[dict], bodies: dict[str, dict]) -> int:
 # classifier needs to tell a probe from a domain handler.
 SELF_TEST = [
     # (handler, file, route, expected) -- verified by reading the handler.
-    ("acknowledge_alert", "services/support-admin-svc/crates/intent/src/http.rs",
-     "/v1/intent/alerts/{id}/acknowledge", "VERIFIED"),   # locks state.alerts, mutates, 404s on unknown id
-    ("verify_voter_lookup", "services/field-mobile-svc/crates/mobile-bff/src/spec.rs",
-     "/op", "DECLARES_UNIMPLEMENTED"),
-    ("tally_verify", "services/field-mobile-svc/crates/mobile-bff/src/spec.rs",
-     "/op", "DECLARES_UNIMPLEMENTED"),
-    ("get_reports", "services/abis-svc/crates/abis-api/src/routes/reports.rs",
-     "/op", "DECLARES_UNIMPLEMENTED"),
+    (
+        "acknowledge_alert",
+        "services/support-admin-svc/crates/intent/src/http.rs",
+        "/v1/intent/alerts/{id}/acknowledge",
+        "VERIFIED",
+    ),  # locks state.alerts, mutates, 404s on unknown id
+    (
+        "verify_voter_lookup",
+        "services/field-mobile-svc/crates/mobile-bff/src/spec.rs",
+        "/op",
+        "DECLARES_UNIMPLEMENTED",
+    ),
+    (
+        "tally_verify",
+        "services/field-mobile-svc/crates/mobile-bff/src/spec.rs",
+        "/op",
+        "DECLARES_UNIMPLEMENTED",
+    ),
+    (
+        "get_reports",
+        "services/abis-svc/crates/abis-api/src/routes/reports.rs",
+        "/op",
+        "DECLARES_UNIMPLEMENTED",
+    ),
     # Implementations that replaced fabrications. certify_county_result logged
     # and returned 204 while certifying nothing; declare_referendum named
     # NoDeclarationWithoutBothThresholds in a comment without calling
     # can_declare; get_national_result synthesised an aggregate from constants.
-    ("certify_county_result", "services/governance-svc/crates/referendum/src/handlers.rs",
-     "/v1/referendums/{id}/county-results/{county}/certify", "VERIFIED"),
-    ("declare_referendum", "services/governance-svc/crates/referendum/src/handlers.rs",
-     "/v1/referendums/{id}/declare", "VERIFIED"),
-    ("get_national_result", "services/governance-svc/crates/referendum/src/handlers.rs",
-     "/v1/referendums/{id}/national-result", "VERIFIED"),
+    (
+        "certify_county_result",
+        "services/governance-svc/crates/referendum/src/handlers.rs",
+        "/v1/referendums/{id}/county-results/{county}/certify",
+        "VERIFIED",
+    ),
+    (
+        "declare_referendum",
+        "services/governance-svc/crates/referendum/src/handlers.rs",
+        "/v1/referendums/{id}/declare",
+        "VERIFIED",
+    ),
+    (
+        "get_national_result",
+        "services/governance-svc/crates/referendum/src/handlers.rs",
+        "/v1/referendums/{id}/national-result",
+        "VERIFIED",
+    ),
     # amend_form34a remains an honest 501: a Form 34A amendment needs the event
     # bus and lineage store that do not exist here, so refusing is the honest
     # answer rather than minting an amendment_id.
-    ("amend_form34a", "services/rts-svc/crates/rts-ro-api/src/handlers.rs",
-     "/api/v1/rts/ro/form34a/{id}/amend", "DECLARES_UNIMPLEMENTED"),
+    (
+        "amend_form34a",
+        "services/rts-svc/crates/rts-ro-api/src/handlers.rs",
+        "/api/v1/rts/ro/form34a/{id}/amend",
+        "DECLARES_UNIMPLEMENTED",
+    ),
     # Pinned VERIFIED as of the adjudication lifecycle. It was converted to an
     # honest 501 -- previously State(_state) unused while echoing the request back
     # as "in_review", so a case looked assigned to an adjudicator who was never
@@ -747,8 +855,12 @@ SELF_TEST = [
     # evidence and its decision now live in abis-api/src/adjudication.rs. The pin
     # moving is the signal: it caught the handler being implemented without the
     # expectation being updated in the same commit, which is exactly what it is for.
-    ("assign_adjudication", "services/abis-svc/crates/abis-api/src/routes/adjudication.rs",
-     "/cases/{id}/assign", "VERIFIED"),
+    (
+        "assign_adjudication",
+        "services/abis-svc/crates/abis-api/src/routes/adjudication.rs",
+        "/cases/{id}/assign",
+        "VERIFIED",
+    ),
     # A probe may ignore its input, but not its checks: this answers
     # ready: true with {"database": "ok"} without touching the database.
     # Pinned VERIFIED as of the readiness fix. It used to answer
@@ -758,16 +870,24 @@ SELF_TEST = [
     # `SELECT 1` against the pool with a 500ms timeout, gates readiness on that
     # result, and reports the matcher as `not-performed` rather than `ok`. The
     # FABRICATED pin here was the classifier being right about the old code.
-    ("readyz", "services/abis-svc/crates/abis-api/src/routes/health.rs",
-     "/readyz", "VERIFIED"),
+    (
+        "readyz",
+        "services/abis-svc/crates/abis-api/src/routes/health.rs",
+        "/readyz",
+        "VERIFIED",
+    ),
     # A pure computation over the request body is real capability, not a
     # fabrication: this one runs the crate's own quota evaluation over the
     # candidates supplied and returns the computed status. It takes no state, so
     # it needs a pin rather than a heuristic -- the alternative is assuming every
     # stateless short handler is fake, which is how the delegation false positive
     # above happened.
-    ("evaluate_quota_rule", "services/crms-svc/crates/crms-api/src/handlers/quota.rs",
-     "/api/v1/crms/quota/evaluate", "VERIFIED"),
+    (
+        "evaluate_quota_rule",
+        "services/crms-svc/crates/crms-api/src/handlers/quota.rs",
+        "/api/v1/crms/quota/evaluate",
+        "VERIFIED",
+    ),
     # The one remaining verifier finding, and the handler whose old shape was the
     # most dangerous in the tree. It returned `registered: false` for every
     # request, which is a definitive-looking negative about a real person on the
@@ -783,15 +903,23 @@ SELF_TEST = [
     # here -- pinning it says the state was reviewed and accepted, rather than
     # left unreviewed, and it will fail if the handler ever stops validating the
     # hash or starts asserting a registration status.
-    ("lookup_voter_registration", "services/bvr-svc/crates/verifier-api/src/http.rs",
-     "/api/v1/verifier/lookups", "IGNORES_INPUT"),
+    (
+        "lookup_voter_registration",
+        "services/bvr-svc/crates/verifier-api/src/http.rs",
+        "/api/v1/verifier/lookups",
+        "IGNORES_INPUT",
+    ),
     # A catalogue read of the crate's own preset library, and the same library
     # run_preset_handler builds and executes against, so a client can discover
     # exactly what is runnable. Flagged because the body is one line and
     # PresetLibrary::list() is a path-qualified call, which the delegation
     # heuristic cannot see -- the same blind spot that let get_voter through.
-    ("list_presets_handler", "services/ecc-svc/crates/telemetry-query/src/api.rs",
-     "/v1/telemetry/presets", "VERIFIED"),
+    (
+        "list_presets_handler",
+        "services/ecc-svc/crates/telemetry-query/src/api.rs",
+        "/v1/telemetry/presets",
+        "VERIFIED",
+    ),
 ]
 
 
@@ -849,8 +977,15 @@ def main() -> int:
     wanted = {s.strip() for s in args.services.split(",")} if args.services else None
 
     per_service: dict[str, dict] = defaultdict(
-        lambda: {"declared": 0, "fabricated": 0, "ignores_input": 0,
-                 "declared_unimpl": 0, "empty_idem": 0, "missing": 0, "unknown": 0}
+        lambda: {
+            "declared": 0,
+            "fabricated": 0,
+            "ignores_input": 0,
+            "declared_unimpl": 0,
+            "empty_idem": 0,
+            "missing": 0,
+            "unknown": 0,
+        }
     )
     findings = []
 
@@ -884,16 +1019,20 @@ def main() -> int:
         if verdict != "VERIFIED":
             findings.append((svc, op, found, verdict))
 
-    print(f"{'service':<20} {'bound':>6} {'fabricated':>11} {'ignores':>8} "
-          f"{'honest501':>9} {'emptyIdem':>10} {'missing':>8} {'unknown':>8}")
+    print(
+        f"{'service':<20} {'bound':>6} {'fabricated':>11} {'ignores':>8} "
+        f"{'honest501':>9} {'emptyIdem':>10} {'missing':>8} {'unknown':>8}"
+    )
     print("-" * 86)
     total_fab = 0
     for svc in sorted(per_service):
         c = per_service[svc]
         total_fab += c["fabricated"]
-        print(f"{svc:<20} {c['declared']:>6} {c['fabricated']:>11} "
-              f"{c['ignores_input']:>8} {c['declared_unimpl']:>9} "
-              f"{c['empty_idem']:>10} {c['missing']:>8} {c['unknown']:>8}")
+        print(
+            f"{svc:<20} {c['declared']:>6} {c['fabricated']:>11} "
+            f"{c['ignores_input']:>8} {c['declared_unimpl']:>9} "
+            f"{c['empty_idem']:>10} {c['missing']:>8} {c['unknown']:>8}"
+        )
     print("-" * 86)
     print(f"{'TOTAL':<20} {'':>6} {total_fab:>11}")
 
@@ -907,8 +1046,10 @@ def main() -> int:
                 for ln in found["body"].strip().splitlines()[:6]:
                     print(f"    {ln.strip()}")
     else:
-        print(f"\n{total_fab} fabricated handler(s); "
-              f"re-run with --verbose, or --services <name>")
+        print(
+            f"\n{total_fab} fabricated handler(s); "
+            f"re-run with --verbose, or --services <name>"
+        )
     return 0
 
 

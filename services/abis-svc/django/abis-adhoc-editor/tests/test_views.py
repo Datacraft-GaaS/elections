@@ -199,6 +199,4 @@ def test_report_editor_highlight_failure_is_logged(client, caplog):
             resp = client.get(reverse("report_editor", args=[fake_id]))
 
     assert resp.status_code == 200
-    assert any(
-        "highlight failed" in record.message for record in caplog.records
-    )
+    assert any("highlight failed" in record.message for record in caplog.records)

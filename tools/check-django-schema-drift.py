@@ -87,7 +87,10 @@ def load_schema(psql: str, url: str, root: str) -> dict[str, dict[str, str]]:
 
     migrations = discover(root, "known")
     if not migrations:
-        print("check-django-schema-drift: found no migrations -- the walk is wrong", file=sys.stderr)
+        print(
+            "check-django-schema-drift: found no migrations -- the walk is wrong",
+            file=sys.stderr,
+        )
         raise SystemExit(1)
 
     for _service, _version, _name, path in migrations:
@@ -97,7 +100,10 @@ def load_schema(psql: str, url: str, root: str) -> dict[str, dict[str, str]]:
             text=True,
         )
         if proc.returncode != 0:
-            print(f"check-django-schema-drift: migration does not apply: {path}", file=sys.stderr)
+            print(
+                f"check-django-schema-drift: migration does not apply: {path}",
+                file=sys.stderr,
+            )
             print(proc.stderr.strip()[:400], file=sys.stderr)
             raise SystemExit(1)
 
@@ -108,7 +114,9 @@ def load_schema(psql: str, url: str, root: str) -> dict[str, dict[str, str]]:
     # splitting a joined string on delimiters parses some tables and not others.
     out = subprocess.run(
         [
-            psql, url, "-tAc",
+            psql,
+            url,
+            "-tAc",
             "select json_object_agg(t, cols) from ("
             "  select c.table_name as t,"
             "         json_object_agg(c.column_name, format_type(a.atttypid, a.atttypmod)) as cols"
@@ -171,7 +179,11 @@ def load_models(app: pathlib.Path) -> dict[str, dict] | None:
             # it (they hardcode SQLite), and installing it into their venvs
             # would edit the apps to suit the checker.
             ["uv", "run", "--with", "psycopg[binary]>=3.1", "python", "-c", code],
-            cwd=app, capture_output=True, text=True, timeout=300, env=env,
+            cwd=app,
+            capture_output=True,
+            text=True,
+            timeout=300,
+            env=env,
         )
     except subprocess.TimeoutExpired:
         return None
@@ -225,7 +237,9 @@ def find_apps(root: pathlib.Path) -> list[pathlib.Path]:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--root", default=str(pathlib.Path(__file__).resolve().parent.parent))
+    ap.add_argument(
+        "--root", default=str(pathlib.Path(__file__).resolve().parent.parent)
+    )
     ap.add_argument("--allowlist", default=None)
     args = ap.parse_args()
     root = pathlib.Path(args.root).resolve()
@@ -250,12 +264,18 @@ def main() -> int:
 
     schema = load_schema(psql, url, str(root))
     if not schema:
-        print("check-django-schema-drift: schema is empty -- the dump is wrong", file=sys.stderr)
+        print(
+            "check-django-schema-drift: schema is empty -- the dump is wrong",
+            file=sys.stderr,
+        )
         return 1
 
     apps = find_apps(root)
     if not apps:
-        print("check-django-schema-drift: found no Django apps -- the walk is wrong", file=sys.stderr)
+        print(
+            "check-django-schema-drift: found no Django apps -- the walk is wrong",
+            file=sys.stderr,
+        )
         return 1
 
     findings: list[str] = []
@@ -297,7 +317,9 @@ def main() -> int:
             sql_cols = schema[table]
             missing = sorted(set(cols) - set(sql_cols))
             if missing:
-                findings.append(f"  {rel}\n    {table}\n      no such column: {', '.join(missing)}")
+                findings.append(
+                    f"  {rel}\n    {table}\n      no such column: {', '.join(missing)}"
+                )
                 continue
             # Name agreement is not schema agreement. `access_zones` was TEXT[]
             # in the migration and JSONField in the model: every name matched,
@@ -308,7 +330,9 @@ def main() -> int:
                 if sql_cols[c] != cols[c] and not type_equivalent(sql_cols[c], cols[c])
             ]
             if wrong_type:
-                findings.append(f"  {rel}\n    {table}\n      " + "\n      ".join(wrong_type))
+                findings.append(
+                    f"  {rel}\n    {table}\n      " + "\n      ".join(wrong_type)
+                )
 
     if unloadable:
         print("check-django-schema-drift: these apps do not load:", file=sys.stderr)

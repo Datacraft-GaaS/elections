@@ -44,9 +44,7 @@ import sys
 
 ROOT = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
-IDENT = set("abcdefghijklmnopqrstuvwxyz"
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            "0123456789_")
+IDENT = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")
 
 
 def _skip_non_literal(text, i):
@@ -59,11 +57,16 @@ def _skip_non_literal(text, i):
         j = text.find("*/", i + 2)
         return n if j < 0 else j + 2
     if text.startswith('"""', i) or text.startswith("'''", i):
-        quote = text[i:i + 3]
+        quote = text[i : i + 3]
         j = text.find(quote, i + 3)
         return n if j < 0 else j + 3
     # Raw string: no escapes, so a plain scan to the closing quote is correct.
-    if text[i] in "rR" and i + 1 < n and text[i + 1] in "'\"" and not text.startswith(text[i + 1] * 2, i + 1):
+    if (
+        text[i] in "rR"
+        and i + 1 < n
+        and text[i + 1] in "'\""
+        and not text.startswith(text[i + 1] * 2, i + 1)
+    ):
         quote = text[i + 1]
         j = i + 2
         while j < n and text[j] != quote:

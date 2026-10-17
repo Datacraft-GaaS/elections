@@ -319,7 +319,6 @@ def artifact_download(request: HttpRequest, artifact_id: str) -> HttpResponseBas
     content_type = content_types.get(artifact.format, "application/octet-stream")
     filename = artifact.blob_ref.split("/")[-1]
 
-
     def _iter():
         with default_storage.open(artifact.blob_ref, "rb") as f:
             while chunk := f.read(65536):

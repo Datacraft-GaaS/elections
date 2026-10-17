@@ -77,9 +77,10 @@ def _verify_chain(transitions: list[CoverStateTransition]) -> list[dict[str, Any
     prev = b""
     for t in transitions:
         expected = blake3.blake3(prev + _canonical_transition_bytes(t)).digest()
-        valid = prev == (as_bytes(t.prev_hash) if t.prev_hash else b"") and as_bytes(
-            t.this_hash
-        ) == expected
+        valid = (
+            prev == (as_bytes(t.prev_hash) if t.prev_hash else b"")
+            and as_bytes(t.this_hash) == expected
+        )
         result.append({"transition": t, "chain_valid": valid})
         prev = as_bytes(t.this_hash)
     return result
@@ -162,14 +163,20 @@ def tamper_triage_view(request: HttpRequest) -> HttpResponse:
 @permission_required("rfid_covers.change_covertamperalert", raise_exception=True)
 @require_POST
 def _resolve_alert(request: HttpRequest) -> HttpResponse:
-    from .dual_control import DualApprovalError, countersigned_note, validate_dual_approval
+    from .dual_control import (
+        DualApprovalError,
+        countersigned_note,
+        validate_dual_approval,
+    )
 
     alert_id = request.POST.get("alert_id", "")
 
     # Wave-2 HM1: tamper-alert resolution is dual-control. The second officer
     # is physically co-located (works offline); both ids are recorded.
     try:
-        second = validate_dual_approval(str(request.user), request.POST.get("second_officer"))
+        second = validate_dual_approval(
+            str(request.user), request.POST.get("second_officer")
+        )
     except DualApprovalError as e:
         return HttpResponse(str(e), status=422)
 

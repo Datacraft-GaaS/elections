@@ -100,7 +100,9 @@ class Course(models.Model):
 class Lesson(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid7str, editable=False)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="lessons")
-    module = models.ForeignKey(CourseModule, on_delete=models.CASCADE, related_name="lessons")
+    module = models.ForeignKey(
+        CourseModule, on_delete=models.CASCADE, related_name="lessons"
+    )
     order_index = models.PositiveSmallIntegerField(default=0)
     title = models.CharField(max_length=500)
     content_markdown = models.TextField()
@@ -119,10 +121,14 @@ class Lesson(models.Model):
 class LessonAttempt(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid7str, editable=False)
     worker_id = models.UUIDField()
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="attempts")
+    lesson = models.ForeignKey(
+        Lesson, on_delete=models.CASCADE, related_name="attempts"
+    )
     attempted_at = models.DateTimeField(auto_now_add=True)
     completed = models.BooleanField(default=False)
-    score_pct = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    score_pct = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True
+    )
     idempotency_key = models.CharField(max_length=128, unique=True)
 
     class Meta:

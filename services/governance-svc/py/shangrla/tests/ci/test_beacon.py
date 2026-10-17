@@ -193,12 +193,16 @@ class TestCombineSeeds:
     def test_order_independent(self):
         forward = combine_seeds(self.BEACON_HEX, self.PARTIES)
         backward = combine_seeds(self.BEACON_HEX, list(reversed(self.PARTIES)))
-        shuffled = combine_seeds(self.BEACON_HEX, [self.PARTIES[2], self.PARTIES[0], self.PARTIES[1]])
+        shuffled = combine_seeds(
+            self.BEACON_HEX, [self.PARTIES[2], self.PARTIES[0], self.PARTIES[1]]
+        )
         assert forward == backward == shuffled
 
     def test_changes_if_any_seed_changes(self):
         baseline = combine_seeds(self.BEACON_HEX, self.PARTIES)
-        mutated = [(pid, seed if pid != "beta" else "ff" * 32) for pid, seed in self.PARTIES]
+        mutated = [
+            (pid, seed if pid != "beta" else "ff" * 32) for pid, seed in self.PARTIES
+        ]
         assert combine_seeds(self.BEACON_HEX, mutated) != baseline
         assert combine_seeds("ab" * 32, self.PARTIES) != baseline
 

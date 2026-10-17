@@ -50,5 +50,9 @@ def record_audit(
         metadata=metadata or {},
     )
     logger.info(
-        "audit action=%s actor=%s entity=%s/%s", action, actor_id, entity_type, entity_id
+        "audit action=%s actor=%s entity=%s/%s",
+        action,
+        actor_id,
+        entity_type,
+        entity_id,
     )

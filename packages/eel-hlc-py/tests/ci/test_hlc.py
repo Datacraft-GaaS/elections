@@ -14,7 +14,6 @@
 
 """Tests for eel-hlc-py."""
 
-
 import pytest
 
 from eel_hlc import Hlc, HlcClock, HlcClockProtocol

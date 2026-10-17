@@ -139,7 +139,6 @@ def test_catalogue_standard_code_not_deletable():
 
 
 def test_catalogue_supplementary_code_deletable():
-
     from django.contrib.admin import site
     from support_admin.admin import AdjudicationCatalogueAdmin
     from support_admin.models import AdjudicationCatalogueEntry

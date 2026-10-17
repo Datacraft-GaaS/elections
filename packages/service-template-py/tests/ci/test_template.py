@@ -80,12 +80,7 @@ def test_generated_server_has_no_placeholders(tmp_path: pathlib.Path) -> None:
     """The rendered eel_server.py must wire the platform stack, not stub it."""
     svc_dir = _svc_dir_or_skip(tmp_path)
 
-    server_py = (
-        svc_dir
-        / "py"
-        / f"{GENERATED_SVC_NAME}_api"
-        / "eel_server.py"
-    )
+    server_py = svc_dir / "py" / f"{GENERATED_SVC_NAME}_api" / "eel_server.py"
     assert server_py.exists()
     content = server_py.read_text()
     assert "TODO" not in content

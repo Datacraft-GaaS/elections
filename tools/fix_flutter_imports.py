@@ -86,7 +86,7 @@ def candidate_for(pkg, path):
 
     # A few call sites wrote `package:foo/lib/src/...`; the `lib/` is implicit.
     if path.startswith("lib/"):
-        out.append(path[len("lib/"):])
+        out.append(path[len("lib/") :])
     # eel_core_flutter has no barrel, so its modules are one level deeper.
     if pkg == "eel_core_flutter" and not path.startswith("src/"):
         out.append("src/" + path)
@@ -119,7 +119,7 @@ def main():
             kind, uri = match.group(1), match.group(2)
             if not uri.startswith("package:"):
                 return match.group(0)
-            body = uri[len("package:"):]
+            body = uri[len("package:") :]
             pkg, _, sub = body.partition("/")
             if pkg not in PACKAGE_LAYOUT:
                 return match.group(0)
@@ -135,7 +135,8 @@ def main():
             with open(path, "w") as handle:
                 handle.write(text)
             unresolved.setdefault(os.path.relpath(path, ROOT), []).append(
-                [u for u, _ in IMPORT_RE.findall(original)])
+                [u for u, _ in IMPORT_RE.findall(original)]
+            )
 
     print(f"files scanned: {len(files)}")
     print("rewrites applied:")

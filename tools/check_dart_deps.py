@@ -31,8 +31,14 @@ import sys
 ROOT = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
 SDK_PACKAGES = {
-    "flutter", "flutter_test", "flutter_localizations", "flutter_driver",
-    "flutter_web_plugins", "sky_engine", "integration_test", "flutter_driver_extension",
+    "flutter",
+    "flutter_test",
+    "flutter_localizations",
+    "flutter_driver",
+    "flutter_web_plugins",
+    "sky_engine",
+    "integration_test",
+    "flutter_driver_extension",
 }
 
 IMPORT_RE = re.compile(r"""(?:import|export)\s+['\"]package:([^/'\"]+)""")
@@ -70,7 +76,14 @@ def main():
     for base in targets:
         for dirpath, dirnames, filenames in os.walk(os.path.join(ROOT, base)):
             dirnames[:] = [d for d in dirnames if d not in (".dart_tool", "build")]
-            owner = next((d for d in package_dirs if dirpath.startswith(d + os.sep) or dirpath == d), None)
+            owner = next(
+                (
+                    d
+                    for d in package_dirs
+                    if dirpath.startswith(d + os.sep) or dirpath == d
+                ),
+                None,
+            )
             if owner is None:
                 continue
             for name in filenames:

@@ -245,7 +245,13 @@ class QueryBuilderViewTest(TestCase):
         self.assertEqual(len(values), 13)
         for cls in values:
             self.assertContains(resp, f'value="{cls}"')
-        for absent in ("movements", "reads", "writes", "locks_unlocks", "physical_drops"):
+        for absent in (
+            "movements",
+            "reads",
+            "writes",
+            "locks_unlocks",
+            "physical_drops",
+        ):
             self.assertNotContains(resp, f'value="{absent}"')
 
 

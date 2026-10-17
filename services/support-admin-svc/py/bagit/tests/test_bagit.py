@@ -37,7 +37,10 @@ def test_create_bag_produces_required_files(
     manifest = builder.create_bag(
         source_path=sample_source,
         dest_path=dest,
-        metadata={"Source-Organization": "Electoral Authority", "Contact-Name": "Archive Unit"},
+        metadata={
+            "Source-Organization": "Electoral Authority",
+            "Contact-Name": "Archive Unit",
+        },
     )
 
     assert (dest / "bagit.txt").exists()

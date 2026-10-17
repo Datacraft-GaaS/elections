@@ -53,7 +53,9 @@ def parse_errors(path: Path) -> list[str]:
     try:
         proc = subprocess.run(
             ["rustfmt", "--edition", "2021", "--check", str(path)],
-            capture_output=True, text=True, timeout=120,
+            capture_output=True,
+            text=True,
+            timeout=120,
         )
     except FileNotFoundError:
         return ["rustfmt not installed"]
@@ -83,8 +85,12 @@ def main() -> int:
     if args.paths:
         files = [Path(p) for p in args.paths]
     elif args.staged:
-        proc = subprocess.run(["git", "diff", "--name-only", "--cached"],
-                              cwd=ROOT, capture_output=True, text=True)
+        proc = subprocess.run(
+            ["git", "diff", "--name-only", "--cached"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
         files = [ROOT / ln for ln in proc.stdout.splitlines() if ln.endswith(".rs")]
     else:
         files = changed_files()
@@ -109,8 +115,10 @@ def main() -> int:
 
     print(f"\n{len(files) - bad}/{len(files)} parse clean")
     if bad:
-        print("NOTE: this is a syntax check only, not a type check. Nothing on "
-              "this machine can link until the Xcode licence is accepted.")
+        print(
+            "NOTE: this is a syntax check only, not a type check. Nothing on "
+            "this machine can link until the Xcode licence is accepted."
+        )
     return 1 if bad else 0
 
 
