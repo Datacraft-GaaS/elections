@@ -18,7 +18,7 @@ migrations, 245 Cargo manifests and 23 Flutter packages under `services/`,
 |---|---|---|
 | Cargo manifests | `tools/cargo_manifests.py` | 245 checked, **0 broken** |
 | Migrations apply | `tools/check-migrations.sh` | **121 applied clean** |
-| Django schema drift | `tools/check-django-schema-drift.py` | **12 tables drifted, 4 apps** |
+| Django schema drift | `tools/check-django-schema-drift.py` | **0 tables drifted, 17 apps** |
 | Handler fidelity | `tools/rust_handler_fidelity.py --all-routes` | 639 judged, **8 fabricated** |
 | Fabrication triage | `tools/fabrication_triage.py` | 8 total: **1 implementable**, 1 needs build, 6 blocked |
 | Flutter analyze | `tools/flutter_health.py` | 23 packages, **0 errors / 0 warnings / 0 infos** |
@@ -74,35 +74,49 @@ can't verify any of it without a cluster."* What can be built without a cluster
 is the base/overlay structure and the Dockerfiles; what cannot is any evidence
 that they are correct.
 
-## 2. Django schema drift — 12 tables across 4 apps
+## 2. Django schema drift — closed, 12 tables to 0
 
-```
-abis-svc/django/abis-console      eel_reviewers
-training-svc/django/cms           4 tables
-training-svc/django/lms           4 tables
-training-svc/django/medical       3 tables
-```
+`tools/check-django-schema-drift.py` now reports **17 apps, 394 tables, no
+drift**, against a database built from the migration chain.
 
-The rule agreed for this work was *SQL wins where the app shares a database with
-a Rust service, models win where the app owns its database outright.* Every one
-of these four apps belongs to `training-svc` or `abis-svc` and shares a database
-with a Rust crate, so **SQL wins for all 12** — the models are wrong and the
-migrations are the schema.
+The rule applied was *SQL wins where the app shares a database with a Rust
+service, models win where the app owns its database outright*, and the two
+services were checked rather than assumed:
 
-The drift is not cosmetic. `training_lms_modules` is missing seven columns the
-migration creates (`content_markdown`, `language`, `version`, `max_retakes`,
-`expiry_date`, `asset_ids`, `case_study_ids`); `training_medical_units` is
-missing nine of its own key columns including `unit_id`, `county`, `gps_lat`,
-`gps_lon` and `locked`. `abis-console.eel_reviewers` names `id`,
-`specialisations` and `active_case_count` where the table has none of them.
+- **abis-svc**: 14 Rust crates declare a database driver, so the console shares
+  its database. SQL wins — `eel_reviewers` and
+  `eel_reviewer_specialisations` were reconciled to V023, and the model's
+  `specialisations` JSONField was replaced by the real
+  `eel_reviewer_specialisations` table (one row per modality, with a
+  proficiency and its own certification date) while `active_case_count` was
+  dropped as derivable from `eel_adjudication_cases_v2`.
+- **training-svc**: `crates/training-api` declares **no database driver** — its
+  `store.rs` is an in-memory `Arc<RwLock<...>>` — so nothing outside the Django
+  app reads `training_lms_*`, `training_cms_*` or `training_medical_*`. The app
+  owns those databases outright, so **models win** and the SQL chain was
+  brought up to the models in migrations 0007–0010. Most of it is naming
+  (`item_id` → `content_item_id`, `attempt_count` → `attempts`), done as
+  `RENAME COLUMN` so types, constraints and data survive.
 
-Two patterns already found elsewhere in this work will likely recur:
+**The gate has a blind spot worth recording.** It compares the model's columns
+against the table's, so it reports a model column the table lacks; a table
+column the *model* lacks is not drift and reads as agreement. A probe that drove
+each app's ORM against the migrated schema found two defects the gate
+structurally could not: `training_lms_certificates.hsm_signature` was `NOT NULL`
+with no field in the model, so every certificate insert failed against
+production and the HSM signature the data dictionary requires could never be
+stored; and `training_medical_units` kept `unit_name`/`provider`/`county_code`
+`NOT NULL` from a facility-register design the application does not implement.
+Both are fixed and the probe passes for all 11 tables.
 
-- A **derived value modelled as a column** (the RFID `cover_state` case — the
-  state was the last row of a transition chain, not a field on the tag).
-- **`managed = False` models naming tables no migration creates**, which the ORM
-  only reports when a query runs. The gate was widened to catch these; three
-  such models were found in `ecc-admin`.
+Two patterns recurred as predicted: a **derived value modelled as a column**
+(`active_case_count`, `specialisations`) and **models naming tables or columns no
+migration creates**.
+
+Also found: none of the three training apps declares a Postgres driver
+(`psycopg`, `dj-database-url`) and all three hardcode SQLite in `settings.py`,
+while production is Postgres. `abis-console` declares both. That is a
+deployability gap, not a schema one, and is folded into §1.
 
 ## 3. Handler fidelity — 8 handlers, 1 implementable here
 

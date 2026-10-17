@@ -189,6 +189,13 @@ class WorkerCertificate(models.Model):
     revoked_by = models.UUIDField(null=True, blank=True)
     certificate_hash = models.CharField(max_length=64, blank=True)
     qr_verification_url = models.URLField()
+    # The table declares this NOT NULL and the model had no field for it, so
+    # every insert failed against the migrated schema: the certificate's HSM
+    # signature -- the whole point of the record per the service data
+    # dictionary ("HSM-signed certificate issued on completing all required
+    # modules") -- was a column nothing could write. SQLite hid it because the
+    # test database was built from this model, which did not have the column.
+    hsm_signature = models.TextField()
 
     class Meta:
         managed = True
