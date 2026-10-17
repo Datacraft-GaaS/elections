@@ -116,8 +116,13 @@ steps:
         for mp in $(find services -path '*/django/*' -name manage.py \
                       -not -path '*/.venv/*'); do
           dir=$(dirname "$mp")
-          [ -d "$dir/tests" ] || continue
-          find "$dir/tests" -name 'test_*.py' | grep -q . || continue
+          # Any test file under the app, not only a top-level `tests/`. Two
+          # apps (inventory-admin, ecc-admin) keep their tests beside the code
+          # at `apps/<app>/tests/`, so the narrower filter skipped them and the
+          # step still reported success -- a discovery filter that excludes the
+          # files it is meant to run is indistinguishable from a passing suite.
+          find "$dir" -name 'test_*.py' -not -path '*/.venv/*' \
+            -not -path '*/node_modules/*' | grep -q . || continue
           found=$((found + 1))
           echo "==> testing $dir"
           (cd "$dir" && uv sync --all-extras -q && uv run python manage.py check \

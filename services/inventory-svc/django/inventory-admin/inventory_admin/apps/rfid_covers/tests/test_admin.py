@@ -51,16 +51,16 @@ class _Ns:
 def _make_tag(**kw) -> _Ns:
     defaults = dict(
         tag_id=uuid.uuid4(),
-        epc="E28011702000010A02BC3F2A",
+        # BYTEA in V051, so the fixture is bytes. A hex string here was a
+        # fixture for a column that does not exist.
+        epc=bytes.fromhex("E28011702000010A02BC3F2A"),
         chip_family="nxp_ucode9",
-        paired_with_box="BOX-001",
+        paired_with_box=uuid.uuid4(),
         tamper_state="intact",
-        cover_state="WAREHOUSE",
         manufacturer="Acme RFID",
         issued_at=__import__("datetime").datetime(2026, 1, 1, tzinfo=tz.utc),
-        hsm_key_ref="slot:3",
-        bluetooth_id=None,
-        notes="",
+        tag_secret_hsm_key_id="slot:3",
+        retired_at=None,
     )
     defaults.update(kw)
     return _Ns(**defaults)
@@ -71,13 +71,11 @@ def _make_alert(**kw) -> _Ns:
         alert_id=uuid.uuid4(),
         tag_id=uuid.uuid4(),
         severity="critical",
-        description="Cover lift detected",
-        geo_lat=None,
-        geo_lon=None,
         expected_state="STATION_CLOSED",
         observed_state="QUARANTINE",
         ecc_dispatched=False,
-        dispatch_officer_id=None,
+        ecc_dispatched_at=None,
+        triggering_read_id=None,
         resolved_at=None,
         resolution_note="",
         detected_at=__import__("datetime").datetime(2026, 6, 1, tzinfo=tz.utc),
@@ -100,7 +98,7 @@ def rf():
 class TestRfidCoverTagAdminListDisplay(TestCase):
     def test_list_display_fields(self):
         admin_obj = RfidCoverTagAdmin(RfidCoverTag, AdminSite())
-        assert "epc" in admin_obj.list_display
+        assert "epc_hex" in admin_obj.list_display
         assert "manufacturer" in admin_obj.list_display
         assert "paired_with_box" in admin_obj.list_display
         assert "tamper_state" in admin_obj.list_display
@@ -113,8 +111,10 @@ class TestRfidCoverTagAdminListDisplay(TestCase):
 
     def test_search_fields(self):
         admin_obj = RfidCoverTagAdmin(RfidCoverTag, AdminSite())
-        assert "epc" in admin_obj.search_fields
+        # `epc` is BYTEA, so it is not a text search field; the tag's own id
+        # and its box binding are what a search can actually match on.
         assert "tag_id" in admin_obj.search_fields
+        assert "paired_with_box" in admin_obj.search_fields
 
 
 class TestRfidCoverReadAdminPermissions(TestCase):
@@ -151,7 +151,10 @@ class TestCoverStateTransitionAdminReadOnly(TestCase):
 
     def test_hash_preview(self):
         admin_obj = CoverStateTransitionAdmin(RfidCoverTag, AdminSite())
-        fake = _Ns(prev_hash="abcdef123456abcdef", this_hash="999888777666555444")
+        fake = _Ns(
+            prev_hash=bytes.fromhex("abcdef123456abcdef"),
+            this_hash=bytes.fromhex("999888777666555444"),
+        )
         assert admin_obj.prev_hash_preview(fake).startswith("abcdef123456")
         assert admin_obj.this_hash_preview(fake).startswith("999888777666")
 
@@ -183,10 +186,25 @@ class TestCoverTamperAlertAdminActions(TestCase):
         admin_obj = CoverTamperAlertAdmin(CoverTamperAlert, AdminSite())
         assert ResolvedStatusFilter in admin_obj.list_filter
 
-    def test_bulk_resolve_action_registered(self):
-        admin_obj = CoverTamperAlertAdmin(CoverTamperAlert, AdminSite())
-        assert "bulk_resolve_with_note" in admin_obj.actions
+    def test_no_write_actions(self):
+        """V051's trigger refuses UPDATE on this table, so no action may offer one.
 
-    def test_mark_retired_action_registered(self):
+        The admin previously registered `bulk_resolve_with_note`, which issues
+        `queryset.update(resolved_at=..., resolution_note=...)`. Against Postgres
+        that raises `table eel_cover_tamper_alerts is append-only` -- the trigger
+        is unconditional. The assertion is inverted from the one it replaces,
+        which asserted the action was registered.
+        """
+        admin_obj = CoverTamperAlertAdmin(CoverTamperAlert, AdminSite())
+        assert admin_obj.actions == ()
+        assert admin_obj.has_add_permission(RequestFactory().get("/")) is False
+        assert admin_obj.has_change_permission(RequestFactory().get("/")) is False
+        assert admin_obj.has_delete_permission(RequestFactory().get("/")) is False
+
+    def test_tag_admin_offers_no_write_action(self):
+        """Same for tags: `mark_retired` was an UPDATE V051 would refuse."""
         admin_obj = RfidCoverTagAdmin(RfidCoverTag, AdminSite())
-        assert "mark_retired" in admin_obj.actions
+        assert admin_obj.actions == ()
+        assert admin_obj.has_add_permission(RequestFactory().get("/")) is False
+        assert admin_obj.has_change_permission(RequestFactory().get("/")) is False
+        assert admin_obj.has_delete_permission(RequestFactory().get("/")) is False

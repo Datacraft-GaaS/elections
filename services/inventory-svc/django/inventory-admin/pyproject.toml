@@ -6,4 +6,18 @@ dependencies = [
     "django>=4.2",
     "psycopg[binary]>=3.1",
     "blake3>=0.4",
+    "pytest>=8",
+    "pytest-django>=4.8",
 ]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "inventory_admin.settings"
+python_files = ["tests/test_*.py"]
+# No `asyncio_mode`: every test here is sync, and pytest-asyncio is not a
+# dependency, so the option would only emit `Unknown config option`.
+#
+# What this table fixes is the settings module. Without it pytest-django cannot
+# configure Django, and `uv run pytest` also escapes the venv: this app's
+# dependencies do not include pytest, so it resolved the global homebrew pytest
+# on Python 3.11, where `blake3` is absent and seven view tests failed on an
+# import that had nothing to do with the code under test.
