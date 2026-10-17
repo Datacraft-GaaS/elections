@@ -93,15 +93,28 @@ def test_pgd_steps_parameter() -> None:
     x, y = _make_xy()
     rng = np.random.default_rng(4)
     weights = rng.uniform(-1, 1, x.shape[1])
-    model_fgsm = _LinearModel(weights)
-    model_pgd = _LinearModel(weights)
+    model = _LinearModel(weights)
     epsilon = 0.1
-    x_fgsm = fgsm_attack(model_fgsm, x[0:1], y[0:1], epsilon=epsilon)
-    x_pgd = pgd_attack(model_pgd, x[0:1], y[0:1], epsilon=epsilon, alpha=0.01, steps=40)
-    # Both attacks should perturb the input; verify the L-inf constraint is respected.
-    assert np.max(np.abs(x_pgd - x[0:1])) <= epsilon + 1e-6, "PGD L-inf must be bounded"
-    # PGD produces a valid adversarial example (different from clean input).
-    assert not np.allclose(x_pgd, x[0:1]), "PGD should change the input"
+    alpha = 0.01
+
+    # `steps` is the parameter under test, so vary it. The previous version ran
+    # a single 40-step attack, dropped the FGSM result it computed, and asserted
+    # nothing about `steps` at all -- it would have passed for any value.
+    x_one = pgd_attack(model, x[0:1], y[0:1], epsilon=epsilon, alpha=alpha, steps=1)
+    x_many = pgd_attack(model, x[0:1], y[0:1], epsilon=epsilon, alpha=alpha, steps=40)
+
+    # Both must stay in the L-inf ball, at every step count.
+    for name, x_adv in (("steps=1", x_one), ("steps=40", x_many)):
+        assert np.max(np.abs(x_adv - x[0:1])) <= epsilon + 1e-6, f"{name} L-inf violated"
+    # More steps must move further: each step adds alpha * sign(grad) before the
+    # projection, so a longer run reaches the ball's edge rather than stopping
+    # partway. Equal results would mean `steps` is ignored.
+    assert np.max(np.abs(x_many - x[0:1])) > np.max(np.abs(x_one - x[0:1])), (
+        "PGD with 40 steps must travel further than with 1"
+    )
+    # And the FGSM bound holds for its own single step.
+    x_fgsm = fgsm_attack(model, x[0:1], y[0:1], epsilon=epsilon)
+    assert np.max(np.abs(x_fgsm - x[0:1])) <= epsilon + 1e-6, "FGSM L-inf must be bounded"
 
 
 def test_adversarial_trainer_returns_metrics() -> None:
