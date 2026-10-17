@@ -99,29 +99,35 @@ async def publish_report(report_id: str) -> WeeklyDetectionReport:
 
 @app.get("/v1/ai/monitoring/decision-summary")
 async def decision_summary() -> list[ModelDecisionSummary]:
-    # Real implementation: aggregate detection reports + audit shadow from event store
-    # Uses reports_store (in-memory for dev) + queries audit entries via event store replay
-    summaries: list[ModelDecisionSummary] = []
-    # Aggregate published detection reports
-    for report in reports_store.values():
-        if report.status == DetectionReportStatus.PUBLISHED:
-            summaries.append(
-                ModelDecisionSummary(
-                    report_id=str(report.id),
-                    week=report.report_week,
-                    layer_summary=report.layer_summaries,
-                    pii_stats=report.pii_strip_stats,
-                    published_at=report.published_at,
-                    audit_id=report.tlog_entry,
-                )
-            )
-    # If report count > 0 and no audit entries linked, reference audit shadow
-    if not summaries and reports_store:
-        # Log audit reference without exposing private data
-        logger.info(
-            "eel.ai.decision_summary.v1 count=%d audit_shadow=referenced", len(reports_store)
-        )
-    return summaries
+    # Cannot be served from this service's state, so it says so rather than
+    # returning something shaped like an answer.
+    #
+    # ModelDecisionSummary is per-model: model_id, model_version,
+    # decision_count, human_override_count, avg_confidence, period_start,
+    # period_end. The only thing this service holds is WeeklyDetectionReport,
+    # whose `layer_summaries` is {"KIT": {"count": 42}} -- a per-layer count
+    # with no model identity, no version and no confidence. None of the seven
+    # required fields has a source here.
+    #
+    # The previous body passed six keyword arguments (report_id, week,
+    # layer_summary, pii_stats, published_at, audit_id) that are not fields on
+    # ModelDecisionSummary, under extra="forbid". Every call that reached the
+    # loop raised ValidationError and the route returned 500; the loop only ran
+    # for a PUBLISHED report, so the empty case returned [] and the test that
+    # covered it asserted the empty list. A route that 500s the moment it has
+    # data looks healthy to a suite that never gives it data.
+    #
+    # Serving this needs the model registry (identity and version) and the
+    # decision audit log (counts, overrides, confidence). Neither is reachable
+    # from here.
+    raise HTTPException(
+        status_code=501,
+        detail=(
+            "decision summary requires the model registry and the decision "
+            "audit log; this service holds neither, and a report's "
+            "layer_summaries carries no model identity"
+        ),
+    )
 
 
 @app.get("/v1/ai/monitoring/pii-stats")

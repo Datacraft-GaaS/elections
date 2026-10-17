@@ -89,12 +89,50 @@ def test_get_report():
     loop.run_until_complete(_run())
 
 
-def test_decision_summary_empty():
+def test_decision_summary_declares_unimplemented():
+    """501, not a 200 with an empty list.
+
+    The route cannot be served from this service's state: ModelDecisionSummary
+    is per-model and a WeeklyDetectionReport carries no model identity. It
+    previously returned [] for an empty store and raised ValidationError -- a
+    500 -- for a store with a published report, which is the state a caller is
+    actually in. Asserting the 501 keeps the gap declared.
+    """
+
     async def _run():
         async with _client() as c:
             r = await c.get("/v1/ai/monitoring/decision-summary")
-        assert r.status_code == 200
-        assert r.json() == []
+        assert r.status_code == 501, r.text
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(_run())
+
+
+def test_decision_summary_with_published_report_is_declared_not_broken():
+    """The canary for the defect above.
+
+    The old body only entered its loop for a PUBLISHED report, so the empty
+    case passed while every populated call raised ValidationError and returned
+    500. Publishing first and asserting 501 -- declared unimplemented -- rather
+    than 500 is what separates "this route says what it cannot do" from "this
+    route breaks the moment it is given data". Asserting merely `< 500` would
+    accept the 500 the old body produced.
+    """
+
+    async def _run():
+        async with _client() as c:
+            created = await c.post(
+                "/v1/ai/monitoring/reports",
+                json={
+                    "report_week": "2026-W42",
+                    "layer_summaries": {"KIT": {"count": 42}},
+                    "pii_strip_stats": {},
+                },
+            )
+            report_id = created.json()["id"]
+            await c.post(f"/v1/ai/monitoring/reports/{report_id}/publish")
+            r = await c.get("/v1/ai/monitoring/decision-summary")
+        assert r.status_code == 501, f"expected a declared 501, got {r.status_code}: {r.text}"
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(_run())
