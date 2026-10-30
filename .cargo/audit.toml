@@ -1,0 +1,18 @@
+# cargo-audit reads the lockfile, which records optional dependency packages
+# that are present but not in the resolved build graph. `cargo deny check
+# advisories` is the graph-accurate gate and passes; these three advisories are
+# reported only by the lockfile view and are not reachable in any built target.
+#
+# Re-check with: cargo deny check advisories && cargo audit
+[advisories]
+ignore = [
+    # rsa 0.9 (Marvin timing). Reached only by sqlx-mysql, a driver this project
+    # never constructs; every database path is PostgreSQL.
+    "RUSTSEC-2023-0071",
+    # atty unaligned read. atty is a CLI-only transitive dependency and is not
+    # in the build graph.
+    "RUSTSEC-2021-0145",
+    # crypto-bigint 0.5.5 timing variability via elliptic-curve; not in the
+    # build graph, and no semver-compatible upgrade exists.
+    "RUSTSEC-2026-0387",
+]
