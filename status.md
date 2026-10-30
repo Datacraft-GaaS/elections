@@ -2458,3 +2458,70 @@ flutter_tests.py  -> packages: 23  green: 23  failing: 0  broken: 0
 
 373 rather than 374 is the scaffold's default counter test leaving the count. Every
 real package was already clean.
+
+---
+
+## 2026-10-30 production-readiness pass
+
+### The test harness was not running
+
+`just test-unit` exited 0 while running no tests. Five recipes looped over
+another recipe's output, which `just` cannot do: `$$(...)` reaches the shell as a
+literal `$$`, and `$(...)` is expanded by `just` itself, splicing multi-line
+output into the loop word. The Python leg additionally ran `uv run pytest`
+without installing the package, and `2>/dev/null` with
+`--suppress-no-test-exit-code` hid every failure.
+
+The loops now live in `tools/foreach-workspace.sh`, `tools/test-python-projects.sh`
+and `tools/test-elixir-projects.sh`, which own both the loop and its exit status.
+
+Verified after the repair:
+
+```
+cargo/nextest: 1,185 passed, 0 failed (10 workspace roots)
+pytest:        1,362 passed, 0 failed (14 projects)
+Elixir:           99 passed, 0 failed (7 projects)
+```
+
+Fixing the harness exposed four real defects that had been invisible: a stale
+gazette-anchor assertion, a missing `asyncio_mode` in `hello_app`, a
+`get_event_loop()` call that raises on Python 3.12, and a mobile-bff test
+asserting 200 where the handler correctly returns 201.
+
+### The lint gate was misconfigured
+
+`cargo clippy` was passed `-q`, which it does not accept, so every workspace
+failed with "Unrecognized option". Behind that, `_lint-rust` denied all warnings
+while 222 crates opt into `#![warn(missing_docs)]` and AGENTS.md states those
+warnings are tolerated; the blanket deny promoted roughly 2,000 accepted
+warnings into a red build. The recipe now denies `clippy::all` and allows
+`missing_docs`. The remaining real findings were fixed; where a lint wanted a
+signature change in biometric, crypto or transparency-log code, an explicit
+allow with a rationale was used instead.
+
+Root-workspace compile check after the fixes: `cargo check --locked --workspace
+--all-targets` exits 0 with no errors.
+
+### Open-source preparation
+
+- Apache-2.0 `LICENSE` and `NOTICE` added; the README previously claimed the
+  licence without granting it.
+- Client name removed from every tracked file (3,220 acronym occurrences, 25
+  spelled-out, 447 files). Prose reads "the Commission"; identifiers use the
+  `COMMISSION_` prefix; client domains are `eel.example`. Tender numbers removed
+  rather than renamed.
+- Live fleet IPs replaced with RFC 5737 documentation addresses; internal
+  domains replaced with `eel.example`.
+- `factory_pack/`, the closed AntIris sensor SDK (jars and both-ABI `.so`), the
+  commercial dossier, and operator-local agent instructions are untracked and
+  ignored. Vendor provisioning is documented in
+  `packages/eel_drivers/android/README.md`, and the Android module fails at
+  build time with an actionable message when the SDK is absent.
+
+### Verification scope
+
+Verified by a single command on a bare checkout: the unit suites above and the
+root-workspace compile. Not verified here because they need infrastructure the
+repository does not ship: integration and E2E (cluster, Docker, browsers,
+devices), and the fuzz, formal, load, chaos, mutation and reproducibility layers.
+Those suites exist and carry assertions; they are not evidence until run.
