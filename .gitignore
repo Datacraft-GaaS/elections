@@ -83,11 +83,25 @@ __pycache__/
 .mypy_cache/
 .tox/
 
-# Factory-pack build artifacts (distributed out-of-band; see factory_pack/SHA256SUMS)
-# NOTE: factory_pack/antiris/ is intentionally TRACKED — it is a driver input
-# for the factory test harness build, not a build artifact.
-factory_pack/*.apk
-factory_pack/*.zip
+# Factory pack: internal provisioning and test harness, distributed out of band.
+# The antiris/ tree is a closed third-party sensor SDK (jars + .so) with no
+# redistribution licence, so it cannot ship. Fetch it from the vendor and verify
+# against factory_pack/SHA256SUMS. Everything here stays on the operator's disk.
+/factory_pack/
+
+# Proprietary binaries and build outputs. The Gradle wrapper jar is the one
+# exception: it is Apache-2.0 and is meant to be committed for reproducible
+# builds.
+*.jar
+*.aar
+*.apk
+*.aab
+*.so
+*.dylib
+*.dll
+*.class
+*.dex
+!**/gradle/wrapper/gradle-wrapper.jar
 
 # Gradle build caches (any depth)
 .gradle/
