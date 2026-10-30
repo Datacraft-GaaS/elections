@@ -7,7 +7,7 @@ edition = "2021"
 publish = false
 
 [dev-dependencies]
-eel-adapter-mrz-rs = { path = "../adapter/eel-adapter-mrz-rs" }
+eel-adapter-mrz-rs = { version = "0.1.0", path = "../adapter/eel-adapter-mrz-rs" }
 
 [[test]]
 name = "icao_vectors"

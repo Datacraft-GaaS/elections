@@ -11,14 +11,14 @@ name = "eel_api_server_rs"
 path = "src/lib.rs"
 
 [dependencies]
-eel-auth-rs          = { path = "../eel-auth-rs" }
-eel-resilience-rs    = { path = "../eel-resilience-rs" }
-eel-loadshedding-rs  = { path = "../eel-loadshedding-rs" }
-eel-observability-rs = { path = "../eel-observability-rs" }
-eel-outbox-rs        = { path = "../eel-outbox-rs" }
-eel-events-rs        = { path = "../eel-events-rs" }
-eel-secrets-rs       = { path = "../eel-secrets-rs" }
-eel-crypto-rs        = { path = "../eel-crypto-rs" }
+eel-auth-rs          = { version = "0.1.0", path = "../eel-auth-rs" }
+eel-resilience-rs    = { version = "0.1.0", path = "../eel-resilience-rs" }
+eel-loadshedding-rs  = { version = "0.1.0", path = "../eel-loadshedding-rs" }
+eel-observability-rs = { version = "0.1.0", path = "../eel-observability-rs" }
+eel-outbox-rs        = { version = "0.1.0", path = "../eel-outbox-rs" }
+eel-events-rs        = { version = "0.1.0", path = "../eel-events-rs" }
+eel-secrets-rs       = { version = "0.1.0", path = "../eel-secrets-rs" }
+eel-crypto-rs        = { version = "0.1.0", path = "../eel-crypto-rs" }
 
 axum                 = { workspace = true }
 tower                = { workspace = true }

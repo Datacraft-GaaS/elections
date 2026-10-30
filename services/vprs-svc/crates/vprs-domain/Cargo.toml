@@ -12,9 +12,9 @@ name = "vprs_domain"
 path = "src/lib.rs"
 
 [dependencies]
-eel-pii-rs    = { path = "../../../../packages/eel-pii-rs" }
-eel-events-rs = { path = "../../../../packages/eel-events-rs" }
-eel-crypto-rs = { path = "../../../../packages/eel-crypto-rs" }
+eel-pii-rs    = { version = "0.1.0", path = "../../../../packages/eel-pii-rs" }
+eel-events-rs = { version = "0.1.0", path = "../../../../packages/eel-events-rs" }
+eel-crypto-rs = { version = "0.1.0", path = "../../../../packages/eel-crypto-rs" }
 uuid          = { workspace = true }
 serde         = { workspace = true }
 serde_json    = { workspace = true }

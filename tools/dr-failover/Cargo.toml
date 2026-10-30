@@ -1,5 +1,6 @@
 [package]
 name = "eel-dr-failover"
+license = "Apache-2.0"
 version = "0.1.0"
 edition = "2021"
 description = "Automated DR failover assist: measures RTO/RPO, plans and executes site failover"

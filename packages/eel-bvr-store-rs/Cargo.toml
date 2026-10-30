@@ -12,5 +12,5 @@ thiserror = { workspace = true }
 chrono = { workspace = true }
 uuid = { workspace = true }
 base64 = { workspace = true }
-eel-crypto-rs = { path = "../eel-crypto-rs" }
-eel-bvr-workflow-rs = { path = "../eel-bvr-workflow-rs" }
+eel-crypto-rs = { version = "0.1.0", path = "../eel-crypto-rs" }
+eel-bvr-workflow-rs = { version = "0.1.0", path = "../eel-bvr-workflow-rs" }

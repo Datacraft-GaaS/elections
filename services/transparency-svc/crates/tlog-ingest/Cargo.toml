@@ -18,10 +18,10 @@ path = "src/lib.rs"
 cc = "1"
 
 [dependencies]
-tlog-domain = { path = "../tlog-domain" }
-tlog-sequencer = { path = "../tlog-sequencer" }
-eel-events-rs = { path = "../../../../packages/eel-events-rs" }
-eel-crypto-rs = { path = "../../../../packages/eel-crypto-rs" }
+tlog-domain = { version = "0.1.0", path = "../tlog-domain" }
+tlog-sequencer = { version = "0.1.0", path = "../tlog-sequencer" }
+eel-events-rs = { version = "0.1.0", path = "../../../../packages/eel-events-rs" }
+eel-crypto-rs = { version = "0.1.0", path = "../../../../packages/eel-crypto-rs" }
 
 rdkafka = { workspace = true }
 sqlx = { workspace = true }

@@ -16,11 +16,11 @@ name = "rts-tally"
 path = "src/main.rs"
 
 [dependencies]
-eel-eventstore-rs = { path = "../../../../packages/eel-eventstore-rs", features = ["kafka"] }
+eel-eventstore-rs = { version = "0.1.0", path = "../../../../packages/eel-eventstore-rs", features = ["kafka"] }
 eel-events-rs     = { workspace = true }
 eel-outbox-rs     = { workspace = true }
 eel-hlc-rs        = { workspace = true }
-rts-domain        = { path = "../rts-domain" }
+rts-domain        = { version = "0.1.0", path = "../rts-domain" }
 serde             = { workspace = true }
 serde_json        = { workspace = true }
 tokio             = { workspace = true }

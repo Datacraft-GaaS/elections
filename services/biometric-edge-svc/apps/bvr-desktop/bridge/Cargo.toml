@@ -22,10 +22,10 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 uuid = { workspace = true }
 base64 = { workspace = true }
-eel-bvr-workflow-rs = { path = "../../../../../packages/eel-bvr-workflow-rs" }
-eel-bvr-store-rs = { path = "../../../../../packages/eel-bvr-store-rs" }
-eel-crypto-rs = { path = "../../../../../packages/eel-crypto-rs" }
-sensor-driver = { path = "../../../crates/sensor-driver" }
+eel-bvr-workflow-rs = { version = "0.1.0", path = "../../../../../packages/eel-bvr-workflow-rs" }
+eel-bvr-store-rs = { version = "0.1.0", path = "../../../../../packages/eel-bvr-store-rs" }
+eel-crypto-rs = { version = "0.1.0", path = "../../../../../packages/eel-crypto-rs" }
+sensor-driver = { version = "0.1.0", path = "../../../crates/sensor-driver" }
 
 [dev-dependencies]
 serde_json = { workspace = true }

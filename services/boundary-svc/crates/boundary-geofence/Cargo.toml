@@ -6,7 +6,7 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-boundary-domain = { path = "../boundary-domain" }
+boundary-domain = { version = "0.1.0", path = "../boundary-domain" }
 tonic    = { workspace = true }
 prost    = { workspace = true }
 tokio    = { workspace = true }

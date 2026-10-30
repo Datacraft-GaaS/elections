@@ -16,7 +16,7 @@ name = "replay_1m"
 harness = false
 
 [dependencies]
-eel-hlc-rs  = { path = "../eel-hlc-rs" }
+eel-hlc-rs  = { version = "0.1.0", path = "../eel-hlc-rs" }
 serde       = { workspace = true }
 serde_json  = { workspace = true }
 sqlx        = { workspace = true }

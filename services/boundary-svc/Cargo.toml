@@ -59,10 +59,10 @@ testcontainers-modules  = { version = "0.11", features = ["postgres"] }
 rstest                  = { version = "0.23" }
 
 # Internal packages: path-relative for standalone builds
-boundary-domain      = { path = "crates/boundary-domain" }
-boundary-projections = { path = "crates/boundary-projections" }
-boundary-geofence    = { path = "crates/boundary-geofence" }
-boundary-worker      = { path = "crates/boundary-worker" }
+boundary-domain      = { version = "0.1.0", path = "crates/boundary-domain" }
+boundary-projections = { version = "0.1.0", path = "crates/boundary-projections" }
+boundary-geofence    = { version = "0.1.0", path = "crates/boundary-geofence" }
+boundary-worker      = { version = "0.1.0", path = "crates/boundary-worker" }
 
 [profile.release]
 lto           = "thin"

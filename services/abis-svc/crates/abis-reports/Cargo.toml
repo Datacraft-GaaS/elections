@@ -31,10 +31,10 @@ futures           = { workspace = true }
 tower-http        = { workspace = true }
 
 # Intra-workspace
-eel-crypto-rs     = { path = "../../../../packages/eel-crypto-rs" }
-eel-events-rs     = { path = "../../../../packages/eel-events-rs" }
-eel-outbox-rs     = { path = "../../../../packages/eel-outbox-rs" }
-eel-auth-rs       = { path = "../../../../packages/eel-auth-rs" }
+eel-crypto-rs     = { version = "0.1.0", path = "../../../../packages/eel-crypto-rs" }
+eel-events-rs     = { version = "0.1.0", path = "../../../../packages/eel-events-rs" }
+eel-outbox-rs     = { version = "0.1.0", path = "../../../../packages/eel-outbox-rs" }
+eel-auth-rs       = { version = "0.1.0", path = "../../../../packages/eel-auth-rs" }
 
 # New workspace deps (added for this crate)
 tera              = { workspace = true }

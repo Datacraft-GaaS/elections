@@ -21,9 +21,9 @@ uuid        = { workspace = true }
 chrono      = { workspace = true }
 blake3      = { workspace = true }
 
-eel-events-rs = { path = "../../../../packages/eel-events-rs", default-features = false }
+eel-events-rs = { version = "0.1.0", path = "../../../../packages/eel-events-rs", default-features = false }
 
 [dev-dependencies]
 rstest      = { workspace = true }
 tokio       = { workspace = true }
-eel-events-rs = { path = "../../../../packages/eel-events-rs", default-features = false, features = ["test-utils"] }
+eel-events-rs = { version = "0.1.0", path = "../../../../packages/eel-events-rs", default-features = false, features = ["test-utils"] }

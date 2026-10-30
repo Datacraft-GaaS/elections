@@ -30,7 +30,7 @@ thiserror         = { workspace = true }
 anyhow            = { workspace = true }
 tracing           = { workspace = true }
 tracing-subscriber = { workspace = true }
-eel-spec-helpers-rs = { path = "../../../../packages/eel-spec-helpers-rs" }
+eel-spec-helpers-rs = { version = "0.1.0", path = "../../../../packages/eel-spec-helpers-rs" }
 
 [dev-dependencies]
 tokio  = { workspace = true }

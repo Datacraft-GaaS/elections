@@ -17,12 +17,12 @@ path = "tests/consensus_test.rs"
 [dependencies]
 serde      = { workspace = true }
 thiserror  = { workspace = true }
-abis-matcher              = { path = "../abis-matcher" }
-eel-abis-fp-mcc           = { path = "../abis-fp-mcc" }
-eel-abis-fp-texture       = { path = "../abis-fp-texture" }
-eel-abis-fp-orientation   = { path = "../abis-fp-orientation" }
-eel-abis-fp-skeleton      = { path = "../abis-fp-skeleton" }
-eel-abis-fusion-advanced  = { path = "../abis-fusion-advanced" }
+abis-matcher              = { version = "0.1.0", path = "../abis-matcher" }
+eel-abis-fp-mcc           = { version = "0.1.0", path = "../abis-fp-mcc" }
+eel-abis-fp-texture       = { version = "0.1.0", path = "../abis-fp-texture" }
+eel-abis-fp-orientation   = { version = "0.1.0", path = "../abis-fp-orientation" }
+eel-abis-fp-skeleton      = { version = "0.1.0", path = "../abis-fp-skeleton" }
+eel-abis-fusion-advanced  = { version = "0.1.0", path = "../abis-fusion-advanced" }
 
 [dev-dependencies]
 rstest = { workspace = true }

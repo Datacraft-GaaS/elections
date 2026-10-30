@@ -18,7 +18,7 @@ cdylib  = []
 wasm    = ["dep:wasm-bindgen"]
 
 [dependencies]
-eel-crypto-rs = { path = "../eel-crypto-rs" }
+eel-crypto-rs = { version = "0.1.0", path = "../eel-crypto-rs" }
 serde         = { version = "1", features = ["derive"] }
 serde_json    = { workspace = true }
 thiserror     = { workspace = true }
@@ -29,5 +29,5 @@ wasm-bindgen  = { version = "0.2", optional = true }
 cbindgen = "0.26"
 
 [dev-dependencies]
-eel-crypto-rs = { path = "../eel-crypto-rs" }
+eel-crypto-rs = { version = "0.1.0", path = "../eel-crypto-rs" }
 proptest      = "1"

@@ -15,7 +15,7 @@ doc = false
 
 [dependencies]
 libfuzzer-sys = "0.4"
-eel-hlc-rs    = { path = "..", default-features = false }
+eel-hlc-rs    = { version = "0.1.0", path = "..", default-features = false }
 
 # Detached from the parent workspace on purpose: the root member globs do not
 # include fuzz/, so without this cargo walks up, finds the root, and rejects

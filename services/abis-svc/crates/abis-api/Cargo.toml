@@ -14,9 +14,9 @@ name = "abis_api"
 path = "src/lib.rs"
 
 [dependencies]
-abis-matcher      = { path = "../abis-matcher", features = ["mock"] }
-abis-attest       = { path = "../abis-attest" }
-eel-abis-vendor   = { path = "../abis-vendor" }
+abis-matcher      = { version = "0.1.0", path = "../abis-matcher", features = ["mock"] }
+abis-attest       = { version = "0.1.0", path = "../abis-attest" }
+eel-abis-vendor   = { version = "0.1.0", path = "../abis-vendor" }
 axum              = { workspace = true, features = ["macros", "tokio", "multipart"] }
 tokio             = { workspace = true }
 serde             = { workspace = true }

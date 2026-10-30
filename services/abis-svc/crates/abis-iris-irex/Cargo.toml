@@ -15,10 +15,10 @@ serde_json  = { workspace = true }
 thiserror   = { workspace = true }
 tracing     = { workspace = true }
 uuid        = { workspace = true }
-eel-abis-iris-encode  = { path = "../abis-iris-encode" }
-eel-abis-iris-quality = { path = "../abis-iris-quality" }
-eel-abis-iris-dl      = { path = "../abis-iris-dl" }
-eel-abis-iris-fusion  = { path = "../abis-iris-fusion" }
+eel-abis-iris-encode  = { version = "0.1.0", path = "../abis-iris-encode" }
+eel-abis-iris-quality = { version = "0.1.0", path = "../abis-iris-quality" }
+eel-abis-iris-dl      = { version = "0.1.0", path = "../abis-iris-dl" }
+eel-abis-iris-fusion  = { version = "0.1.0", path = "../abis-iris-fusion" }
 
 [dev-dependencies]
 rstest = { workspace = true }

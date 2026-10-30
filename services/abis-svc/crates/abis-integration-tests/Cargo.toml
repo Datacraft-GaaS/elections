@@ -1,5 +1,6 @@
 [package]
 name = "abis-integration-tests"
+license = "Apache-2.0"
 version.workspace = true
 edition.workspace = true
 publish = false

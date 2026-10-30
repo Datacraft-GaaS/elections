@@ -34,21 +34,21 @@ repository   = "https://gitea.internal/eel/eel"
 
 [workspace.dependencies]
 # Internal rts crates
-rts-domain       = { path = "crates/rts-domain" }
-rts-tally        = { path = "crates/rts-tally" }
-rts-projections  = { path = "crates/rts-projections" }
-rts-publisher    = { path = "crates/rts-publisher" }
-rts-api          = { path = "crates/rts-api" }
+rts-domain       = { version = "0.1.0", path = "crates/rts-domain" }
+rts-tally        = { version = "0.1.0", path = "crates/rts-tally" }
+rts-projections  = { version = "0.1.0", path = "crates/rts-projections" }
+rts-publisher    = { version = "0.1.0", path = "crates/rts-publisher" }
+rts-api          = { version = "0.1.0", path = "crates/rts-api" }
 
 # eel platform packages
-eel-eventstore-rs  = { path = "../../packages/eel-eventstore-rs" }
-eel-events-rs      = { path = "../../packages/eel-events-rs" }
-eel-hlc-rs         = { path = "../../packages/eel-hlc-rs" }
-eel-crypto-rs      = { path = "../../packages/eel-crypto-rs" }
-eel-api-server-rs  = { path = "../../packages/eel-api-server-rs" }
-eel-auth-rs        = { path = "../../packages/eel-auth-rs" }
-eel-outbox-rs      = { path = "../../packages/eel-outbox-rs" }
-eel-trace-rs       = { path = "../../packages/eel-trace-rs" }
+eel-eventstore-rs  = { version = "0.1.0", path = "../../packages/eel-eventstore-rs" }
+eel-events-rs      = { version = "0.1.0", path = "../../packages/eel-events-rs" }
+eel-hlc-rs         = { version = "0.1.0", path = "../../packages/eel-hlc-rs" }
+eel-crypto-rs      = { version = "0.1.0", path = "../../packages/eel-crypto-rs" }
+eel-api-server-rs  = { version = "0.1.0", path = "../../packages/eel-api-server-rs" }
+eel-auth-rs        = { version = "0.1.0", path = "../../packages/eel-auth-rs" }
+eel-outbox-rs      = { version = "0.1.0", path = "../../packages/eel-outbox-rs" }
+eel-trace-rs       = { version = "0.1.0", path = "../../packages/eel-trace-rs" }
 
 # Codecs (SMS fallback)
 ciborium           = { version = "0.2" }

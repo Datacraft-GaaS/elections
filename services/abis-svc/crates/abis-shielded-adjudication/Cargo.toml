@@ -25,10 +25,10 @@ chrono          = { workspace = true }
 uuid            = { workspace = true }
 ed25519-dalek   = { workspace = true }
 
-eel-abis-shielding    = { path = "../abis-shielding" }
-eel-abis-cancelable   = { path = "../abis-cancelable" }
-eel-abis-adjudication = { path = "../abis-adjudication", features = ["test-utils"] }
-eel-crypto-rs         = { path = "../../../../packages/eel-crypto-rs", default-features = false }
+eel-abis-shielding    = { version = "0.1.0", path = "../abis-shielding" }
+eel-abis-cancelable   = { version = "0.1.0", path = "../abis-cancelable" }
+eel-abis-adjudication = { version = "0.1.0", path = "../abis-adjudication", features = ["test-utils"] }
+eel-crypto-rs         = { version = "0.1.0", path = "../../../../packages/eel-crypto-rs", default-features = false }
 
 [dev-dependencies]
 rstest          = { workspace = true }

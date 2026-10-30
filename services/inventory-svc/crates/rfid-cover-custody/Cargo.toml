@@ -55,10 +55,10 @@ prometheus      = { workspace = true }
 eel-resilience-rs = { workspace = true }
 
 # eel platform packages
-eel-crypto-rs  = { path = "../../../../packages/eel-crypto-rs" }
-eel-events-rs  = { path = "../../../../packages/eel-events-rs" }
-eel-outbox-rs  = { path = "../../../../packages/eel-outbox-rs" }
-eel-auth-rs    = { path = "../../../../packages/eel-auth-rs", default-features = false }
+eel-crypto-rs  = { version = "0.1.0", path = "../../../../packages/eel-crypto-rs" }
+eel-events-rs  = { version = "0.1.0", path = "../../../../packages/eel-events-rs" }
+eel-outbox-rs  = { version = "0.1.0", path = "../../../../packages/eel-outbox-rs" }
+eel-auth-rs    = { version = "0.1.0", path = "../../../../packages/eel-auth-rs", default-features = false }
 
 [dev-dependencies]
 tokio           = { workspace = true }

@@ -25,8 +25,8 @@ chrono           = { workspace = true }
 uuid             = { workspace = true }
 async-trait      = "0.1"
 
-eel-abis-fp-consensus = { path = "../abis-fp-consensus" }
-eel-abis-vendor       = { path = "../abis-vendor" }
+eel-abis-fp-consensus = { version = "0.1.0", path = "../abis-fp-consensus" }
+eel-abis-vendor       = { version = "0.1.0", path = "../abis-vendor" }
 
 [dev-dependencies]
 rstest           = { workspace = true }

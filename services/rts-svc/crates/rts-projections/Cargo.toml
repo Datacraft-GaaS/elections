@@ -12,8 +12,8 @@ name = "rts_projections"
 path = "src/lib.rs"
 
 [dependencies]
-eel-eventstore-rs = { path = "../../../../packages/eel-eventstore-rs" }
-rts-domain        = { path = "../rts-domain" }
+eel-eventstore-rs = { version = "0.1.0", path = "../../../../packages/eel-eventstore-rs" }
+rts-domain        = { version = "0.1.0", path = "../rts-domain" }
 sqlx              = { workspace = true }
 tokio             = { workspace = true }
 serde             = { workspace = true }

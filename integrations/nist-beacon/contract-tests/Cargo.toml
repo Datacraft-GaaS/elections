@@ -7,7 +7,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-eel-adapter-nist-beacon-rs = { path = "../adapter/eel-adapter-nist-beacon-rs" }
+eel-adapter-nist-beacon-rs = { version = "0.1.0", path = "../adapter/eel-adapter-nist-beacon-rs" }
 tokio = { version = "1", features = ["full"] }
 reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
 

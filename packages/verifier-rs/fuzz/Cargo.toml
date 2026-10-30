@@ -9,7 +9,7 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
-eel_verifier   = { path = "..", default-features = false, features = ["cdylib"] }
+eel_verifier   = { version = "0.1.0", path = "..", default-features = false, features = ["cdylib"] }
 hex            = "0.4"
 serde_json     = "1"
 

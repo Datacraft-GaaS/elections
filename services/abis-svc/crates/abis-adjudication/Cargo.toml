@@ -27,10 +27,10 @@ blake3      = { workspace = true }
 hex         = { workspace = true }
 
 ed25519-dalek  = { workspace = true }
-eel-crypto-rs = { path = "../../../../packages/eel-crypto-rs", default-features = false }
-eel-events-rs = { path = "../../../../packages/eel-events-rs", default-features = false }
+eel-crypto-rs = { version = "0.1.0", path = "../../../../packages/eel-crypto-rs", default-features = false }
+eel-events-rs = { version = "0.1.0", path = "../../../../packages/eel-events-rs", default-features = false }
 
 [dev-dependencies]
 rstest      = { workspace = true }
 tokio       = { workspace = true }
-eel-events-rs = { path = "../../../../packages/eel-events-rs", default-features = false, features = ["test-utils"] }
+eel-events-rs = { version = "0.1.0", path = "../../../../packages/eel-events-rs", default-features = false, features = ["test-utils"] }

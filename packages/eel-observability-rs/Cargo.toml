@@ -23,7 +23,7 @@ serde_json            = { workspace = true }
 thiserror             = { workspace = true }
 tokio                 = { workspace = true }
 sqlx                  = { workspace = true }
-eel-pii-rs            = { path = "../eel-pii-rs" }
+eel-pii-rs            = { version = "0.1.0", path = "../eel-pii-rs" }
 
 [dev-dependencies]
 tokio                 = { workspace = true }

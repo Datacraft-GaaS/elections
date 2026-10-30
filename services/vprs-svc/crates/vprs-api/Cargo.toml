@@ -12,10 +12,10 @@ name = "vprs_api"
 path = "src/lib.rs"
 
 [dependencies]
-vprs-domain       = { path = "../vprs-domain" }
-eel-outbox-rs     = { path = "../../../../packages/eel-outbox-rs" }
-eel-resilience-rs = { path = "../../../../packages/eel-resilience-rs" }
-eel-crypto-rs     = { path = "../../../../packages/eel-crypto-rs" }
+vprs-domain       = { version = "0.1.0", path = "../vprs-domain" }
+eel-outbox-rs     = { version = "0.1.0", path = "../../../../packages/eel-outbox-rs" }
+eel-resilience-rs = { version = "0.1.0", path = "../../../../packages/eel-resilience-rs" }
+eel-crypto-rs     = { version = "0.1.0", path = "../../../../packages/eel-crypto-rs" }
 axum              = { workspace = true }
 tower-http        = { workspace = true }
 tokio             = { workspace = true }

@@ -14,7 +14,7 @@ name = "ai_gateway"
 path = "src/lib.rs"
 
 [dependencies]
-eel-memstore-rs = { path = "../../../../packages/eel-memstore-rs" }
+eel-memstore-rs = { version = "0.1.0", path = "../../../../packages/eel-memstore-rs" }
 axum             = { workspace = true }
 tokio            = { workspace = true }
 serde            = { workspace = true }
@@ -32,7 +32,7 @@ futures          = { workspace = true }
 thiserror        = { workspace = true }
 anyhow           = { workspace = true }
 tokio-stream     = { workspace = true }
-eel-spec-helpers-rs = { path = "../../../../packages/eel-spec-helpers-rs" }
+eel-spec-helpers-rs = { version = "0.1.0", path = "../../../../packages/eel-spec-helpers-rs" }
 
 [dev-dependencies]
 rstest = { workspace = true }

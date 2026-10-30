@@ -29,8 +29,8 @@ doc = false
 
 [dependencies]
 libfuzzer-sys = "0.4"
-eel-events-rs = { path = "..", features = ["test-utils"] }
-eel-hlc-rs    = { path = "../../eel-hlc-rs" }
+eel-events-rs = { version = "0.1.0", path = "..", features = ["test-utils"] }
+eel-hlc-rs    = { version = "0.1.0", path = "../../eel-hlc-rs" }
 serde_json    = "1"
 chrono        = "0.4"
 arbitrary     = { version = "1", features = ["derive"] }

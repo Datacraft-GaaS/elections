@@ -15,7 +15,7 @@ path = "src/main.rs"
 path = "src/lib.rs"
 
 [dependencies]
-tlog-domain = { path = "../tlog-domain" }
+tlog-domain = { version = "0.1.0", path = "../tlog-domain" }
 axum = { workspace = true }
 tokio = { workspace = true }
 sqlx = { workspace = true }

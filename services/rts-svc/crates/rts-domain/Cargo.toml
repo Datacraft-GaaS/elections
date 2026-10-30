@@ -12,9 +12,9 @@ name = "rts_domain"
 path = "src/lib.rs"
 
 [dependencies]
-eel-eventstore-rs = { path = "../../../../packages/eel-eventstore-rs" }
-eel-events-rs     = { path = "../../../../packages/eel-events-rs" }
-eel-hlc-rs        = { path = "../../../../packages/eel-hlc-rs" }
+eel-eventstore-rs = { version = "0.1.0", path = "../../../../packages/eel-eventstore-rs" }
+eel-events-rs     = { version = "0.1.0", path = "../../../../packages/eel-events-rs" }
+eel-hlc-rs        = { version = "0.1.0", path = "../../../../packages/eel-hlc-rs" }
 serde             = { workspace = true }
 serde_json        = { workspace = true }
 uuid              = { workspace = true }

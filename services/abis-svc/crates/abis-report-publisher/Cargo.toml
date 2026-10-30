@@ -39,9 +39,9 @@ ssh2              = { workspace = true }
 httpmock          = { workspace = true }
 
 # Intra-workspace
-eel-crypto-rs     = { path = "../../../../packages/eel-crypto-rs" }
-eel-events-rs     = { path = "../../../../packages/eel-events-rs" }
-eel-outbox-rs     = { path = "../../../../packages/eel-outbox-rs" }
+eel-crypto-rs     = { version = "0.1.0", path = "../../../../packages/eel-crypto-rs" }
+eel-events-rs     = { version = "0.1.0", path = "../../../../packages/eel-events-rs" }
+eel-outbox-rs     = { version = "0.1.0", path = "../../../../packages/eel-outbox-rs" }
 eel-resilience-rs = { workspace = true }
 
 [dev-dependencies]

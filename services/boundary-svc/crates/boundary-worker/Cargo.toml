@@ -6,8 +6,8 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-boundary-domain      = { path = "../boundary-domain" }
-boundary-projections = { path = "../boundary-projections" }
+boundary-domain      = { version = "0.1.0", path = "../boundary-domain" }
+boundary-projections = { version = "0.1.0", path = "../boundary-projections" }
 tokio      = { workspace = true }
 serde      = { workspace = true }
 serde_json = { workspace = true }

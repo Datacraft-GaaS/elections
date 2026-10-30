@@ -16,9 +16,9 @@ name = "rts-publisher"
 path = "src/main.rs"
 
 [dependencies]
-rts-tally         = { path = "../rts-tally" }
-rts-projections    = { path = "../rts-projections" }
-eel-crypto-rs     = { path = "../../../../packages/eel-crypto-rs" }
+rts-tally         = { version = "0.1.0", path = "../rts-tally" }
+rts-projections    = { version = "0.1.0", path = "../rts-projections" }
+eel-crypto-rs     = { version = "0.1.0", path = "../../../../packages/eel-crypto-rs" }
 sqlx              = { workspace = true }
 tokio             = { workspace = true }
 serde             = { workspace = true }
@@ -29,7 +29,7 @@ tracing           = { workspace = true }
 tracing-subscriber = { workspace = true }
 chrono            = { workspace = true }
 blake3            = "1"
-rts-domain        = { path = "../rts-domain" }
+rts-domain        = { version = "0.1.0", path = "../rts-domain" }
 
 [dev-dependencies]
 eel-trace-rs = { workspace = true }

@@ -33,7 +33,7 @@ doc = false
 
 [dependencies]
 libfuzzer-sys = "0.4"
-eel-crypto-rs = { path = "..", default-features = false }
+eel-crypto-rs = { version = "0.1.0", path = "..", default-features = false }
 serde_json    = "1"
 arbitrary     = { version = "1", features = ["derive"] }
 

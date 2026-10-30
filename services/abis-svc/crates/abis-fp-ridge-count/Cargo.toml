@@ -19,6 +19,6 @@ serde      = { workspace = true }
 thiserror  = { workspace = true }
 tracing    = { workspace = true }
 uuid       = { workspace = true }
-abis-matcher = { path = "../abis-matcher" }
+abis-matcher = { version = "0.1.0", path = "../abis-matcher" }
 
 [dev-dependencies]

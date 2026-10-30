@@ -197,32 +197,32 @@ ciborium        = { version = "0.2" }
 zstd            = { version = "0.14" }
 
 # Intra-workspace crates (added by WP-3.10 to fix missing workspace dep from WP-3.8)
-kit-attest      = { path = "services/biometric-edge-svc/crates/kit-attest" }
+kit-attest      = { version = "0.1.0", path = "services/biometric-edge-svc/crates/kit-attest" }
 
 # Biometric edge integration tests inherit this from the root workspace.
-edge-api        = { path = "services/biometric-edge-svc/crates/edge-api" }
+edge-api        = { version = "0.1.0", path = "services/biometric-edge-svc/crates/edge-api" }
 
 # Intra-workspace packages (added by WP-4.3 to fix missing workspace deps)
-eel-events-rs     = { path = "packages/eel-events-rs" }
-eel-hlc-rs        = { path = "packages/eel-hlc-rs" }
-eel-resilience-rs = { path = "packages/eel-resilience-rs" }
-eel-api-server-rs = { path = "packages/eel-api-server-rs" }
-eel-outbox-rs     = { path = "packages/eel-outbox-rs" }
+eel-events-rs     = { version = "0.1.0", path = "packages/eel-events-rs" }
+eel-hlc-rs        = { version = "0.1.0", path = "packages/eel-hlc-rs" }
+eel-resilience-rs = { version = "0.1.0", path = "packages/eel-resilience-rs" }
+eel-api-server-rs = { version = "0.1.0", path = "packages/eel-api-server-rs" }
+eel-outbox-rs     = { version = "0.1.0", path = "packages/eel-outbox-rs" }
 # field-mobile-svc crates (mobile-bff, telemetry-ingest, dispatch-api,
 # support-api) reference these via { workspace = true } from the root glob.
-eel-auth-rs       = { path = "packages/eel-auth-rs" }
-eel-crypto-rs     = { path = "packages/eel-crypto-rs" }
-eel-spec-helpers-rs = { path = "packages/eel-spec-helpers-rs" }
+eel-auth-rs       = { version = "0.1.0", path = "packages/eel-auth-rs" }
+eel-crypto-rs     = { version = "0.1.0", path = "packages/eel-crypto-rs" }
+eel-spec-helpers-rs = { version = "0.1.0", path = "packages/eel-spec-helpers-rs" }
 
 # Test-trace marker (WP-0.5 completeness): no-op #[trace(...)] attribute so the
 # trace audit can map tests to requirements without altering behavior.
-eel-trace-rs = { path = "packages/eel-trace-rs" }
+eel-trace-rs = { version = "0.1.0", path = "packages/eel-trace-rs" }
 
 # BVI backend crates (M06): bvi-api inherits these from the root workspace.
-bvi-config  = { path = "services/bvi-svc/crates/bvi-config" }
-bvi-turnout = { path = "services/bvi-svc/crates/bvi-turnout" }
-bvi-register-anchor = { path = "services/bvi-svc/crates/bvi-register-anchor" }
-bvi-anomaly = { path = "services/bvi-svc/crates/bvi-anomaly" }
+bvi-config  = { version = "0.1.0", path = "services/bvi-svc/crates/bvi-config" }
+bvi-turnout = { version = "0.1.0", path = "services/bvi-svc/crates/bvi-turnout" }
+bvi-register-anchor = { version = "0.1.0", path = "services/bvi-svc/crates/bvi-register-anchor" }
+bvi-anomaly = { version = "0.1.0", path = "services/bvi-svc/crates/bvi-anomaly" }
 
 # CLI tooling
 clap            = { version = "4",    features = ["derive", "env"] }

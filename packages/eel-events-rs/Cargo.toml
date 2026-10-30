@@ -12,8 +12,8 @@ name = "eel_events_rs"
 path = "src/lib.rs"
 
 [dependencies]
-eel-hlc-rs  = { path = "../eel-hlc-rs" }
-eel-crypto-rs = { path = "../eel-crypto-rs" }
+eel-hlc-rs  = { version = "0.1.0", path = "../eel-hlc-rs" }
+eel-crypto-rs = { version = "0.1.0", path = "../eel-crypto-rs" }
 
 # HARD-5: PQ hybrid leaf signatures
 oqs           = { version = "0.11", features = ["ml_dsa", "dilithium"] }
@@ -53,7 +53,7 @@ tokio           = { workspace = true }
 serde_json      = { workspace = true }
 rstest          = { workspace = true }
 chrono          = { workspace = true }
-eel-crypto-rs   = { path = "../eel-crypto-rs" }
+eel-crypto-rs   = { version = "0.1.0", path = "../eel-crypto-rs" }
 
 [features]
 default = ["kafka"]

@@ -13,7 +13,7 @@ path = "src/lib.rs"
 serde         = { workspace = true }
 thiserror     = { workspace = true }
 tracing       = { workspace = true }
-eel-abis-iris-encode  = { path = "../abis-iris-encode" }
+eel-abis-iris-encode  = { version = "0.1.0", path = "../abis-iris-encode" }
 
 [dev-dependencies]
 rstest     = { workspace = true }

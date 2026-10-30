@@ -15,8 +15,8 @@ path = "src/main.rs"
 path = "src/lib.rs"
 
 [dependencies]
-tlog-domain = { path = "../tlog-domain" }
-eel-crypto-rs = { path = "../../../../packages/eel-crypto-rs" }
+tlog-domain = { version = "0.1.0", path = "../tlog-domain" }
+eel-crypto-rs = { version = "0.1.0", path = "../../../../packages/eel-crypto-rs" }
 
 axum = { workspace = true }
 ed25519-dalek = { workspace = true }

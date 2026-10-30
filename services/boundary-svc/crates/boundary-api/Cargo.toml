@@ -9,10 +9,10 @@ rust-version.workspace = true
 conformance-suite = []
 
 [dependencies]
-boundary-domain      = { path = "../boundary-domain" }
-boundary-projections = { path = "../boundary-projections" }
-boundary-geofence    = { path = "../boundary-geofence" }
-boundary-worker      = { path = "../boundary-worker" }
+boundary-domain      = { version = "0.1.0", path = "../boundary-domain" }
+boundary-projections = { version = "0.1.0", path = "../boundary-projections" }
+boundary-geofence    = { version = "0.1.0", path = "../boundary-geofence" }
+boundary-worker      = { version = "0.1.0", path = "../boundary-worker" }
 
 axum              = { workspace = true }
 tower             = { workspace = true }

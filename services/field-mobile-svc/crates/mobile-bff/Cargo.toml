@@ -47,9 +47,9 @@ eel-events-rs      = { workspace = true }
 eel-hlc-rs         = { workspace = true }
 
 # Service clients
-bvr-api           = { path = "../../../bvr-svc/crates/bvr-api" }
-dispatch-api      = { path = "../dispatch-api" }
-training-api      = { path = "../../../training-svc/crates/training-api" }
+bvr-api           = { version = "0.1.0", path = "../../../bvr-svc/crates/bvr-api" }
+dispatch-api      = { version = "0.1.0", path = "../dispatch-api" }
+training-api      = { version = "0.1.0", path = "../../../training-svc/crates/training-api" }
 
 [dev-dependencies]
 tokio  = { workspace = true }

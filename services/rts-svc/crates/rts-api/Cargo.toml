@@ -24,9 +24,9 @@ serde_json        = { workspace = true }
 tokio             = { workspace = true }
 utoipa            = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
-eel-api-server-rs = { path = "../../../../packages/eel-api-server-rs" }
-rts-domain        = { path = "../rts-domain" }
-rts-projections   = { path = "../rts-projections" }
+eel-api-server-rs = { version = "0.1.0", path = "../../../../packages/eel-api-server-rs" }
+rts-domain        = { version = "0.1.0", path = "../rts-domain" }
+rts-projections   = { version = "0.1.0", path = "../rts-projections" }
 sqlx              = { workspace = true }
 tracing           = { workspace = true }
 tracing-subscriber = { workspace = true }

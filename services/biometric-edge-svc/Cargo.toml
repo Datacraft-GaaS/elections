@@ -58,9 +58,9 @@ utoipa           = { version = "4", features = ["axum_extras"] }
 proptest         = { version = "1" }
 
 # Internal crates
-kit-attest   = { path = "crates/kit-attest" }
-edge-api     = { path = "crates/edge-api" }
-eel-diaspora = { path = "crates/diaspora" }
+kit-attest   = { version = "0.1.0", path = "crates/kit-attest" }
+edge-api     = { version = "0.1.0", path = "crates/edge-api" }
+eel-diaspora = { version = "0.1.0", path = "crates/diaspora" }
 
 [profile.release]
 lto           = "thin"

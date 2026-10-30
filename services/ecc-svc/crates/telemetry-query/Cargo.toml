@@ -59,10 +59,10 @@ csv             = { workspace = true }
 prometheus      = { workspace = true }
 
 # eel platform
-eel-crypto-rs   = { path = "../../../../packages/eel-crypto-rs" }
-eel-auth-rs     = { path = "../../../../packages/eel-auth-rs", default-features = false }
-eel-events-rs   = { path = "../../../../packages/eel-events-rs" }
-eel-outbox-rs   = { path = "../../../../packages/eel-outbox-rs" }
+eel-crypto-rs   = { version = "0.1.0", path = "../../../../packages/eel-crypto-rs" }
+eel-auth-rs     = { version = "0.1.0", path = "../../../../packages/eel-auth-rs", default-features = false }
+eel-events-rs   = { version = "0.1.0", path = "../../../../packages/eel-events-rs" }
+eel-outbox-rs   = { version = "0.1.0", path = "../../../../packages/eel-outbox-rs" }
 eel-resilience-rs = { workspace = true }
 
 [dev-dependencies]

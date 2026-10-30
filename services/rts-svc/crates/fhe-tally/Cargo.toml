@@ -23,7 +23,7 @@ uuid             = { workspace = true }
 
 blake3           = { workspace = true }
 
-eel-abis-fhe-match = { path = "../../../abis-svc/crates/abis-fhe-match" }
+eel-abis-fhe-match = { version = "0.1.0", path = "../../../abis-svc/crates/abis-fhe-match" }
 
 [dev-dependencies]
 rstest           = { workspace = true }

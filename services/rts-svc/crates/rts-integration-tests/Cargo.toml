@@ -9,10 +9,10 @@ name = "integration"
 path = "tests/integration/mod.rs"
 
 [dev-dependencies]
-rts-domain        = { path = "../rts-domain" }
-rts-tally         = { path = "../rts-tally" }
-rts-projections   = { path = "../rts-projections" }
-eel-eventstore-rs = { path = "../../../../packages/eel-eventstore-rs" }
+rts-domain        = { version = "0.1.0", path = "../rts-domain" }
+rts-tally         = { version = "0.1.0", path = "../rts-tally" }
+rts-projections   = { version = "0.1.0", path = "../rts-projections" }
+eel-eventstore-rs = { version = "0.1.0", path = "../../../../packages/eel-eventstore-rs" }
 tokio             = { workspace = true }
 uuid              = { workspace = true }
 serde_json        = { workspace = true }

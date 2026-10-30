@@ -30,4 +30,4 @@ anyhow        = { workspace = true }
 hex           = "0.4"
 
 # HSM signer proto types (shared crate)
-hsm-signer    = { path = "../../services/transparency-svc/crates/hsm-signer" }
+hsm-signer    = { version = "0.1.0", path = "../../services/transparency-svc/crates/hsm-signer" }

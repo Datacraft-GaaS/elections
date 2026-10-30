@@ -10,7 +10,7 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "0.4"
 # Default features off to trim the fuzz binary.
-rts-device-api = { path = "..", default-features = false }
+rts-device-api = { version = "0.1.0", path = "..", default-features = false }
 
 [[bin]]
 name = "fuzz_sms_decode"

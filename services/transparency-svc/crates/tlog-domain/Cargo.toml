@@ -11,7 +11,7 @@ description = "Domain types for the eel transparency log (WP-2.1)"
 path = "src/lib.rs"
 
 [dependencies]
-eel-crypto-rs = { path = "../../../../packages/eel-crypto-rs" }
+eel-crypto-rs = { version = "0.1.0", path = "../../../../packages/eel-crypto-rs" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

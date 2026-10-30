@@ -28,12 +28,12 @@ tracing            = { workspace = true }
 tracing-subscriber = { workspace = true }
 sqlx               = { workspace = true }
 
-custody   = { path = "../custody" }
-transport = { path = "../transport" }
-warehouse = { path = "../warehouse" }
+custody   = { version = "0.1.0", path = "../custody" }
+transport = { version = "0.1.0", path = "../transport" }
+warehouse = { version = "0.1.0", path = "../warehouse" }
 
-eel-auth-rs = { path = "../../../../packages/eel-auth-rs" }
-eel-spec-helpers-rs = { path = "../../../../packages/eel-spec-helpers-rs" }
+eel-auth-rs = { version = "0.1.0", path = "../../../../packages/eel-auth-rs" }
+eel-spec-helpers-rs = { version = "0.1.0", path = "../../../../packages/eel-spec-helpers-rs" }
 
 [dev-dependencies]
 tokio  = { workspace = true }

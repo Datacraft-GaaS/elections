@@ -24,7 +24,7 @@ ed25519-dalek   = { workspace = true }
 axum            = { workspace = true }
 tokio           = { workspace = true }
 
-eel-crypto-rs   = { path = "../../../../packages/eel-crypto-rs", default-features = false }
+eel-crypto-rs   = { version = "0.1.0", path = "../../../../packages/eel-crypto-rs", default-features = false }
 
 [dev-dependencies]
 rstest          = { workspace = true }
