@@ -41,3 +41,30 @@ dependencies {
     // Vendored AntIris SDK; .so files under src/main/jniLibs auto-package.
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 }
+
+// The AntIris jars and .so files are closed third-party code with no
+// redistribution licence, so they are not committed (see README.md). Fail at
+// build time with an actionable message rather than a wall of unresolved
+// references. Targets that do not touch a physical sensor never build this
+// module and are unaffected.
+tasks.register('checkVendorSdk') {
+    doLast {
+        def missing = []
+        if (!file('libs/antiris.antusbcamera.jar').exists()) {
+            missing << 'libs/antiris.antusbcamera.jar'
+        }
+        if (!file('libs/serenegiant.jar').exists()) {
+            missing << 'libs/serenegiant.jar'
+        }
+        if (!missing.isEmpty()) {
+            throw new GradleException(
+                "AntIris vendor SDK missing: ${missing.join(', ')}. " +
+                "Obtain it from the vendor under your own licence and place it " +
+                "in packages/eel_drivers/android/libs/. See README.md.")
+        }
+    }
+}
+
+afterEvaluate {
+    preBuild.dependsOn checkVendorSdk
+}
