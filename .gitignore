@@ -83,6 +83,11 @@ __pycache__/
 .mypy_cache/
 .tox/
 
+# Local agent instructions and a stale duplicate README. Operator-local, not
+# part of the published repository.
+/CLAUDE.md
+/README copy.md
+
 # Factory pack: internal provisioning and test harness, distributed out of band.
 # The antiris/ tree is a closed third-party sensor SDK (jars + .so) with no
 # redistribution licence, so it cannot ship. Fetch it from the vendor and verify
