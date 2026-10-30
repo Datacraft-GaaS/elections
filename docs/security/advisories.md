@@ -20,15 +20,15 @@ reconstruct the reasoning from the config. Add a row before adding an ignore.
 
 Audit count for the root lock: 30 advisories to 12.
 
-## Open, with reasons
+### RUSTSEC-2026-0286, cryptoki 0.7
 
-### Closed: cryptoki 0.7: RUSTSEC-2026-0286
-
-Upgraded to cryptoki 0.11. Its `Session` is deliberately `!Send`, so the PKCS#11
-pool now lives on a dedicated worker thread in both `tlog-sequencer` and
-`hsm-signer`; the public handles carry a channel and the signing calls block on
-a reply, which keeps them `Send` across `tokio::spawn` and `spawn_blocking`.
+Closed by upgrading to cryptoki 0.11. Its `Session` is deliberately `!Send`, so
+the PKCS#11 pool now lives on a dedicated worker thread in both `tlog-sequencer`
+and `hsm-signer`; the public handles carry a channel and the signing calls block
+on a reply, which keeps them `Send` across `tokio::spawn` and `spawn_blocking`.
 `tools/hsm-init` was migrated to the 0.11 API as well.
+
+## Open, with reasons
 
 ### zip 1.3 and 8.6: RUSTSEC-2025-0168, -2026-0367, -0368, -0369
 

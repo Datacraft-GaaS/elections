@@ -15,4 +15,25 @@ ignore = [
     # crypto-bigint 0.5.5 timing variability via elliptic-curve; not in the
     # build graph, and no semver-compatible upgrade exists.
     "RUSTSEC-2026-0387",
+    # Triaged in deny.toml and docs/security/advisories.md. zip advisories
+    # concern extraction, which this project does not perform on untrusted
+    # archives; the rest are unmaintained transitive crates or dev-only.
+    "RUSTSEC-2025-0111",
+    "RUSTSEC-2025-0055",
+    "RUSTSEC-2025-0168",
+    "RUSTSEC-2026-0367",
+    "RUSTSEC-2026-0368",
+    "RUSTSEC-2026-0369",
+    "RUSTSEC-2025-0052",
+    "RUSTSEC-2023-0089",
+    "RUSTSEC-2024-0375",
+    "RUSTSEC-2025-0141",
+    "RUSTSEC-2024-0388",
+    "RUSTSEC-2025-0119",
+    "RUSTSEC-2024-0436",
+    "RUSTSEC-2024-0370",
+    "RUSTSEC-2025-0134",
+    "RUSTSEC-2021-0127",
+    "RUSTSEC-2024-0449",
+    "RUSTSEC-2026-0192",
 ]
