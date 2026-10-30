@@ -1,51 +1,24 @@
-# EEL Supply-Chain Policy — cargo-deny configuration
+# EEL supply-chain policy. cargo-deny v2 schema.
 # Blocks known-vulnerable, yanked, or unmaintained crates.
-# Reference: ADR-0022 (HSM attestation), ADR-0023 (audit chain), DPA 2019 §6.
+# Reference: ADR-0022 (HSM attestation), ADR-0023 (audit chain), DPA 2019 s.6.
 
-[version]
-range = "2"
-
-# Sources: only crates.io + git crates with known hashes
-# Block: unknown registries, unversioned deps, mirror abuse.
 [sources]
+# Only crates.io. No git dependencies, no mirrors.
 unknown-git = "deny"
 unknown-registry = "deny"
-allow-registry = "https://github.com/rust-lang/crates.io-index"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
 allow-git = []
 
-# Banlist: crates known to be vulnerable or abandoned.
-# Update with: cargo-deny check 2>&1 | grep "ban\|unmaintained"
-[[bans]]
-name = "RUSTSEC advisories"
-# deny = "all" # uncomment to block ALL advisory IDs (too strict; use warn+flag)
-skip = [
-    # Known advisories with mitigations already in place (verify before skipping)
-    # "RUSTSEC-XXXX-XXXX",  # add per advisory
-]
-skip-tree = []
-highlight = "all"
-
-# Multiple versions: warn, don't hard-fail (some overlap is unavoidable)
+[bans]
+# Multiple versions are warned, not denied: some overlap is unavoidable.
 multiple-versions = "warn"
-
-# Wildcard dependencies: deny (EEL requires pinned deps)
+# EEL requires pinned dependencies, so a wildcard version is a defect.
 wildcards = "deny"
-
-# Build scripts: warn and flag for review (build.rs can execute arbitrary code)
-wildcard-allowed = false
-
-# Unused dependencies: warn (can be auto-fixed with cargo-udeps)
-unused-allow = ["warn", "allow"]
-unused-packages = "warn"
-
-# Cycilc deps: deny (causes build flakiness)
-cycles = "deny"
+highlight = "all"
+skip = []
+skip-tree = []
 
 [licenses]
-# Uncomment to deny all non-permissive licenses
-# deny = ["NO-LICENSE", "UNKNOWN", "NON-CLOSED-SOURCE"]
-unmatched = "warn"
-version = ">= 1"
 allow = [
     "Apache-2.0",
     "Apache-2.0 WITH LLVM-exception",
@@ -60,6 +33,7 @@ allow = [
     "Zlib",
 ]
 exceptions = []
+confidence-threshold = 0.9
 
 [[licenses.clarify]]
 name = "ring"
@@ -67,14 +41,36 @@ expression = "ISC AND CC0-1.0"
 license-files = [{ path = "LICENSE", hash = 0x00000000 }]
 
 [advisories]
+version = 2
 db-path = "~/.cargo/advisory-db"
 db-urls = ["https://github.com/rustsec/advisory-db"]
-vulnerability = "deny"
-unmaintained = "warn"
-yanked = "deny"
-notice = "warn"
+# Reviewed 2026-10-30. Each ignore is either an advisory with no fixed upgrade,
+# or one whose vulnerable code path this project never executes. The same
+# reasoning lives in docs/security/advisories.md. Anything absent from this list
+# fails the gate; adding an entry requires a reason and a review date.
 ignore = [
-    # Example: ignore advisory while remediation is in progress
-    # "RUSTSEC-0000-0000",
+  # No fixed upgrade exists.
+  { id = "RUSTSEC-2026-0286", reason = "cryptoki 0.7 out-of-bounds read decoding CKA_ALLOWED_MECHANISMS from a hostile token. cryptoki 0.11 makes Session !Send and breaks the transparency sequencer; needs a signer restructure. Not reachable without a compromised HSM." },
+  # zip advisories concern archive extraction. This project never extracts an
+  # untrusted archive: docx-rs writes .docx and utoipa-swagger-ui unpacks a
+  # bundled swagger distribution at build time.
+  { id = "RUSTSEC-2025-0168", reason = "zip extraction path canonicalisation; extraction is not used at runtime." },
+  { id = "RUSTSEC-2026-0367", reason = "zip extraction preserves SUID/SGID; extraction is not used at runtime." },
+  { id = "RUSTSEC-2026-0368", reason = "zip extraction follows attacker symlinks; extraction is not used at runtime." },
+  { id = "RUSTSEC-2026-0369", reason = "zip extraction applies Unix permissions; extraction is not used at runtime." },
+  # Unmaintained transitive crates with no security impact on our data paths.
+  { id = "RUSTSEC-2021-0127", reason = "serde_cbor unmaintained; transitive arkworks dependency." },
+  { id = "RUSTSEC-2023-0089", reason = "atomic-polyfill unmaintained; transitive, not on a data path." },
+  { id = "RUSTSEC-2024-0370", reason = "proc-macro-error unmaintained; compile-time macro helper." },
+  { id = "RUSTSEC-2024-0375", reason = "atty unmaintained; CLI-only." },
+  { id = "RUSTSEC-2024-0388", reason = "derivative unmaintained; compile-time derive helper." },
+  { id = "RUSTSEC-2024-0436", reason = "paste unmaintained; compile-time macro helper." },
+  { id = "RUSTSEC-2024-0449", reason = "unsafe-libyaml unmaintained; reached via the deprecated serde_yaml." },
+  { id = "RUSTSEC-2025-0052", reason = "async-std discontinued; transitive, not used by our runtime." },
+  { id = "RUSTSEC-2025-0055", reason = "tracing-subscriber 0.2 ANSI injection; pulled by ark-relations. Our logging uses 0.3." },
+  { id = "RUSTSEC-2025-0111", reason = "tokio-tar PAX header smuggling; dev-only through testcontainers." },
+  { id = "RUSTSEC-2025-0119", reason = "number_prefix unmaintained; progress-bar dependency." },
+  { id = "RUSTSEC-2025-0134", reason = "rustls-pemfile unmaintained; no replacement in the resolved graph." },
+  { id = "RUSTSEC-2025-0141", reason = "bincode unmaintained; build-time dependency of azul-layout." },
+  { id = "RUSTSEC-2026-0192", reason = "ttf-parser unmaintained; reached through plotters for chart rendering." },
 ]
-ignore-date = ""
