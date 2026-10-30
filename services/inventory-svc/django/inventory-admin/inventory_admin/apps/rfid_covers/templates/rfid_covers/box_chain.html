@@ -26,14 +26,14 @@
 
   {% if tag %}
     <section aria-labelledby="tag-summary-heading">
-      <h2 id="tag-summary-heading">Tag {{ tag.epc }}</h2>
+      <h2 id="tag-summary-heading">Tag {{ tag.epc_hex }}</h2>
       <dl>
         <dt>Tag ID</dt><dd>{{ tag.tag_id }}</dd>
         <dt>Chip family</dt><dd>{{ tag.get_chip_family_display }}</dd>
         <dt>Paired with box</dt><dd>{{ tag.paired_with_box|default:"(not paired)" }}</dd>
-        <dt>Cover state</dt><dd>{{ tag.cover_state }}</dd>
+        <dt>Cover state</dt><dd>{{ tag.current_state|default:"(no transitions)" }}</dd>
         <dt>Tamper state</dt><dd>
-          <span class="badge badge-{% if tag.tamper_state == 'intact' %}ok{% elif tag.tamper_state == 'quarantine' %}critical{% else %}warn{% endif %}"
+          <span class="badge badge-{% if tag.tamper_state == 'intact' %}ok{% elif tag.tamper_state == 'killed' %}critical{% else %}warn{% endif %}"
                 aria-label="Tamper state: {{ tag.get_tamper_state_display }}">
             {{ tag.get_tamper_state_display }}
           </span>
@@ -72,8 +72,10 @@
                 {% endif %}
               </td>
               <td>
-                {% if row.transition.merkle_anchor_id %}
-                  <code title="{{ row.transition.merkle_anchor_id }}">{{ row.transition.merkle_anchor_id|truncatechars:20 }}</code>
+                {# No per-transition anchor column: V051 anchors the chain, not
+                   each row. The chain hash is what is shown instead. #}
+                {% if row.transition.this_hash %}
+                  <code title="{{ row.transition.this_hash_preview }}">{{ row.transition.this_hash_preview }}</code>
                 {% else %}
                   <span style="color:#888">pending</span>
                 {% endif %}

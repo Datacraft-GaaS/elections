@@ -10,7 +10,7 @@
     <table role="grid" aria-label="Reader health table" style="width:100%;border-collapse:collapse">
       <thead>
         <tr>
-          <th scope="col">Reader serial</th>
+          <th scope="col">Reader</th>
           <th scope="col">Type</th>
           <th scope="col">Tag reads (total)</th>
           <th scope="col">Last read</th>
@@ -20,7 +20,7 @@
       <tbody>
         {% for r in reader_stats %}
         <tr>
-          <td>{{ r.reader_serial }}</td>
+          <td>{{ r.reader_id }}</td>
           <td>{{ r.reader_type }}</td>
           <td>{{ r.tag_count }}</td>
           <td>

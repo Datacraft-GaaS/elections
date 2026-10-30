@@ -16,7 +16,7 @@ Election systems fail in ways that are invisible until they matter, and the
 failure modes are not primarily technical. They are procedural, legal, and
 about trust.
 
-Across the three most recent Kenyan general election cycles, the recurring
+Across the three most recent *Kenyan* general election cycles, the recurring
 grounds of electoral petition tell a consistent story:
 
 - **Results transmission broke, and the gap was discovered by the public.**
