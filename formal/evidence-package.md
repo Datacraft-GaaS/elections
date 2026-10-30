@@ -119,6 +119,6 @@ uv run python3 formal/evidence_bundle.py
 10. ✓ Supply-chain: `deny.toml` + `rust-toolchain.toml` (1.90.0) verified
 11. ✓ K8s: 3-region overlays (NBO/KLA/DAR) deployed + ArgoCD managed
 12. ✓ DB migrations: all 6 LMS migrations + verify reference applied
-13. ✓ Git: changes pushed to `Datacraft-GaaS/elect` (requires SSH key)
+13. ✓ Git: changes pushed to `Datacraft-GaaS/elections` (requires SSH key)
 14. ✓ HSM: key ceremony complete; break-glass recovery tested
 15. ✓ IAB: 5 members appointed; charter signed; first meeting T-180

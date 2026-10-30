@@ -358,7 +358,7 @@ Cross-language libraries under `packages/` provide auth, secrets, events, persis
 
 ```bash
 # Clone and enter the repository
-git clone https://github.com/Datacraft-GaaS/eel && cd eel
+git clone https://github.com/Datacraft-GaaS/elections && cd elections
 
 # Load the Nix development environment (Rust, Python 3.12, Elixir/OTP, Dart, Node 22)
 nix develop

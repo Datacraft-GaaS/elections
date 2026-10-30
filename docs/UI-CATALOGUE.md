@@ -343,7 +343,7 @@ Alert rules ship alongside dashboards at `platform/observability/alerts/abis/abi
 ### 9.1 One-time setup
 
 ```bash
-git clone https://github.com/Datacraft-GaaS/eel && cd eel
+git clone https://github.com/Datacraft-GaaS/elections && cd elections
 nix develop
 just up  # brings up kind cluster + Postgres + Kafka + Valkey + MinIO + OpenSearch + Keycloak + SpiceDB + OpenBao + SPIRE + SoftHSM + Grafana
 just seed # loads deterministic synthetic voters + candidates + stations

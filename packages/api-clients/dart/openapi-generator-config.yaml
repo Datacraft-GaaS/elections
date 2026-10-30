@@ -18,7 +18,7 @@ additionalProperties:
   pubName: eel_api_client
   pubAuthor: eel
   pubAuthorEmail: maintainers@eel.example
-  pubHomepage: https://github.com/Datacraft-GaaS/eel
+  pubHomepage: https://github.com/Datacraft-GaaS/elections
   useEnumExtension: true
   nullableFields: true
   legacyDiscriminatorBehavior: false
