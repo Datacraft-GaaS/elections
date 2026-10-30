@@ -47,7 +47,7 @@ anyhow         = { workspace = true }
 # Observability
 tracing        = { workspace = true }
 tracing-subscriber = { workspace = true }
-prometheus     = "0.13"
+prometheus     = "0.14"
 
 # Rate limiting
 governor       = "0.6"

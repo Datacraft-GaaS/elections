@@ -37,9 +37,9 @@ bytes                = "1"
 http                 = "1"
 http-body-util       = "0.1"
 flate2               = "1"
-zstd                 = "0.13"
+zstd                 = "0.14"
 base64               = "0.22"
-prometheus           = { version = "0.13", features = ["process"] }
+prometheus           = { version = "0.14", features = ["process"] }
 async-trait          = "0.1"
 pin-project-lite     = "0.2"
 

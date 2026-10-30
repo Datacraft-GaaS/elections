@@ -20,7 +20,7 @@ thiserror        = { version = "2" }
 tracing          = { version = "0.1" }
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 uuid             = { version = "1", features = ["v4", "v7", "serde"] }
-sqlx             = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "migrate"] }
+sqlx             = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "migrate"] }
 
 eel-api-server-rs    = { git = "https://gitea.internal/eel/eel", tag = "latest" }
 eel-auth-rs          = { git = "https://gitea.internal/eel/eel", tag = "latest" }

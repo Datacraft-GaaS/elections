@@ -283,14 +283,6 @@ fn write_pdf(
 ) -> Result<String, BundleError> {
     use printpdf::*;
 
-    let (doc, page1, layer1) =
-        PdfDocument::new("Telemetry Evidence Report", Mm(210.0), Mm(297.0), "Layer 1");
-    let layer = doc.get_page(page1).get_layer(layer1);
-
-    let font = doc
-        .add_builtin_font(BuiltinFont::Helvetica)
-        .map_err(|e| BundleError::Pdf(e.to_string()))?;
-
     let lines = vec![
         "EEL Telemetry Evidence Report".to_string(),
         format!("Bundle ID: {}", bundle_id),
@@ -303,15 +295,32 @@ fn write_pdf(
         "Verify the HSM signature and tlog anchor in manifest.json.".into(),
     ];
 
-    let mut y = Mm(270.0);
+    let mut ops = Vec::new();
+    let mut y = 270.0_f32;
     for line in &lines {
-        layer.use_text(line, 12.0, Mm(15.0), y, &font);
-        y -= Mm(8.0);
+        ops.extend([
+            Op::StartTextSection,
+            Op::SetFont {
+                font: PdfFontHandle::Builtin(BuiltinFont::Helvetica),
+                size: Pt(12.0),
+            },
+            Op::SetTextCursor {
+                pos: Point::new(Mm(15.0), Mm(y)),
+            },
+            Op::ShowText {
+                items: vec![TextItem::Text(line.clone())],
+            },
+            Op::EndTextSection,
+        ]);
+        y -= 8.0;
     }
 
+    let page = PdfPage::new(Mm(210.0), Mm(297.0), ops);
+    let mut doc = PdfDocument::new("Telemetry Evidence Report");
+    let mut warnings = Vec::new();
     let bytes = doc
-        .save_to_bytes()
-        .map_err(|e| BundleError::Pdf(e.to_string()))?;
+        .with_pages(vec![page])
+        .save(&PdfSaveOptions::default(), &mut warnings);
     std::fs::write(path, &bytes)?;
 
     Ok(hex::encode(Sha256::digest(&bytes)))

@@ -192,8 +192,9 @@ async fn process_one(pool: &PgPool, delivery: crate::domain::Delivery) {
             let _ =
                 repository::mark_delivered(pool, delivery_id, remote_receipt_id, remote_receipt_at)
                     .await;
+            let channel_label = channel.to_string();
             metrics::deliveries_total()
-                .with_label_values(&[&channel.to_string(), "delivered"])
+                .with_label_values(&[channel_label.as_str(), "delivered"])
                 .inc();
             info!(%delivery_id, "delivery succeeded");
             emit_event("eel.abis.report_delivery_succeeded.v1", delivery_id).await;
@@ -212,8 +213,9 @@ async fn process_one(pool: &PgPool, delivery: crate::domain::Delivery) {
             }
 
             let _ = repository::mark_failed_with_backoff(pool, delivery_id, &error).await;
+            let channel_label = channel.to_string();
             metrics::deliveries_total()
-                .with_label_values(&[&channel.to_string(), "failed"])
+                .with_label_values(&[channel_label.as_str(), "failed"])
                 .inc();
             warn!(%delivery_id, %error, "delivery failed; will retry");
             emit_event("eel.abis.report_delivery_attempted.v1", delivery_id).await;

@@ -95,7 +95,7 @@ tokio           = { version = "1",    features = ["full"] }
 tokio-stream    = { version = "0.1",  features = ["sync"] }
 
 # Database
-sqlx            = { version = "0.8",  features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "migrate"] }
+sqlx            = { version = "0.8",  default-features = false, features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "migrate", "macros"] }
 
 # OpenAPI
 utoipa          = { version = "4",    features = ["axum_extras", "uuid"] }
@@ -194,7 +194,7 @@ proptest                = { version = "1" }
 ciborium        = { version = "0.2" }
 
 # Compression (added by WP-4.3)
-zstd            = { version = "0.13" }
+zstd            = { version = "0.14" }
 
 # Intra-workspace crates (added by WP-3.10 to fix missing workspace dep from WP-3.8)
 kit-attest      = { path = "services/biometric-edge-svc/crates/kit-attest" }
@@ -231,14 +231,14 @@ indicatif       = { version = "0.17" }
 # Deps added for eel-abis-reports (WP-reports)
 tera              = { version = "1" }
 csv               = { version = "1" }
-printpdf          = { version = "0.7" }
-rust_xlsxwriter   = { version = "0.98" }
-parquet           = { version = "54", features = ["arrow"] }
-arrow-array       = { version = "54" }
-arrow-schema      = { version = "54" }
+printpdf          = { version = "0.12" }
+rust_xlsxwriter   = { version = "0.102" }
+parquet           = { version = "60", features = ["arrow"] }
+arrow-array       = { version = "60" }
+arrow-schema      = { version = "60" }
 plotters          = { version = "0.3" }
 croner            = { version = "2" }
-prometheus        = { version = "0.13", features = ["process"] }
+prometheus        = { version = "0.14", features = ["process"] }
 tokio-util        = { version = "0.7", features = ["full"] }
 tempfile          = { version = "3" }
 httpmock          = { version = "0.7" }

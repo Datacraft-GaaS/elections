@@ -75,7 +75,7 @@ utoipa            = { version = "4", features = ["axum_extras", "uuid"] }
 utoipa-swagger-ui = { version = "7", features = ["axum"] }
 
 # Database
-sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "migrate"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "migrate"] }
 
 # Messaging
 rdkafka = { version = "0.37", features = ["cmake-build", "ssl"] }

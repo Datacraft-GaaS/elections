@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use printpdf::{Mm, PdfDocument, PdfLayerReference};
+use printpdf::{
+    BuiltinFont, Mm, Op, PdfDocument, PdfFontHandle, PdfPage, PdfSaveOptions, Point, Pt, TextItem,
+};
 
-use crate::error::{ReportError, Result};
 use crate::render::{RenderOutput, Renderer, Rows, RunMeta, TemplateBundle};
 
 const ROWS_PER_PAGE: usize = 40;
-// A4 landscape in mm (f32 required by printpdf)
+// A4 landscape in mm
 const PAGE_W: f32 = 297.0;
 const PAGE_H: f32 = 210.0;
 const MARGIN: f32 = 10.0;
@@ -32,90 +33,93 @@ const FOOTER_Y: f32 = 5.0;
 pub struct PdfRenderer;
 
 impl Renderer for PdfRenderer {
-    fn render(rows: &Rows, meta: &RunMeta, _template: &TemplateBundle) -> Result<RenderOutput> {
+    fn render(rows: &Rows, meta: &RunMeta, _template: &TemplateBundle) -> crate::error::Result<RenderOutput> {
         let title = format!("{} \u{2014} {}", meta.slug, meta.title);
-        let (doc, page1, layer1) =
-            PdfDocument::new(title.clone(), Mm(PAGE_W), Mm(PAGE_H), "Layer 1");
 
-        let font = doc
-            .add_builtin_font(printpdf::BuiltinFont::Helvetica)
-            .map_err(|e| ReportError::Renderer(e.to_string()))?;
-        let font_bold = doc
-            .add_builtin_font(printpdf::BuiltinFont::HelveticaBold)
-            .map_err(|e| ReportError::Renderer(e.to_string()))?;
-
-        let first_layer = doc.get_page(page1).get_layer(layer1);
-        render_page_header(&first_layer, meta, &font_bold, &title)?;
-        render_table_header(&first_layer, &rows.columns, &font_bold)?;
-
+        let mut pages: Vec<PdfPage> = Vec::new();
+        let mut ops: Vec<Op> = Vec::new();
         let mut page_num: usize = 1;
-        let mut layer_ref = first_layer;
+
+        ops.extend(page_header(&meta, &title));
+        ops.extend(table_header(&rows.columns));
 
         for (chunk_idx, chunk) in rows.data.chunks(ROWS_PER_PAGE).enumerate() {
             if chunk_idx > 0 {
+                ops.extend(footer(page_num, &meta.slug));
+                pages.push(PdfPage::new(Mm(PAGE_W), Mm(PAGE_H), ops));
+                ops = Vec::new();
                 page_num += 1;
-                let (page_idx, layer_idx) = doc.add_page(Mm(PAGE_W), Mm(PAGE_H), "Layer 1");
-                layer_ref = doc.get_page(page_idx).get_layer(layer_idx);
-                render_page_header(&layer_ref, meta, &font_bold, &title)?;
-                render_table_header(&layer_ref, &rows.columns, &font_bold)?;
+                ops.extend(page_header(&meta, &title));
+                ops.extend(table_header(&rows.columns));
             }
-            render_table_body(&layer_ref, chunk, &rows.columns, &font)?;
-            render_footer(&layer_ref, page_num, &meta.slug, &font)?;
+            ops.extend(table_body(chunk, &rows.columns));
         }
 
-        if rows.data.is_empty() {
-            render_footer(&layer_ref, 1, &meta.slug, &font)?;
-        }
+        ops.extend(footer(page_num, &meta.slug));
+        pages.push(PdfPage::new(Mm(PAGE_W), Mm(PAGE_H), ops));
 
+        let mut doc = PdfDocument::new(&title);
+        let mut warnings = Vec::new();
         let bytes = doc
-            .save_to_bytes()
-            .map_err(|e| ReportError::Renderer(e.to_string()))?;
+            .with_pages(pages)
+            .save(&PdfSaveOptions::default(), &mut warnings);
         Ok(RenderOutput::new(bytes))
     }
 }
 
-fn render_page_header(
-    layer: &PdfLayerReference,
-    meta: &RunMeta,
-    font: &printpdf::IndirectFontRef,
-    title: &str,
-) -> Result<()> {
-    layer.use_text(title, 14.0, Mm(MARGIN), Mm(HEADER_Y), font);
+/// Emit one line of text at an absolute position.
+fn text(x: f32, y: f32, size: f32, bold: bool, s: &str) -> Vec<Op> {
+    let font = if bold {
+        BuiltinFont::HelveticaBold
+    } else {
+        BuiltinFont::Helvetica
+    };
+    vec![
+        Op::StartTextSection,
+        Op::SetFont {
+            font: PdfFontHandle::Builtin(font),
+            size: Pt(size),
+        },
+        Op::SetTextCursor {
+            pos: Point::new(Mm(x), Mm(y)),
+        },
+        Op::ShowText {
+            items: vec![TextItem::Text(s.to_string())],
+        },
+        Op::EndTextSection,
+    ]
+}
+
+fn page_header(meta: &RunMeta, title: &str) -> Vec<Op> {
+    let mut ops = text(MARGIN, HEADER_Y, 14.0, true, title);
     let window = format!(
         "{} to {}",
         meta.window_from.format("%Y-%m-%d"),
         meta.window_to.format("%Y-%m-%d")
     );
-    layer.use_text(window.as_str(), 9.0, Mm(MARGIN), Mm(SUBTITLE_Y), font);
-    Ok(())
+    ops.extend(text(MARGIN, SUBTITLE_Y, 9.0, true, &window));
+    ops
 }
 
-fn render_table_header(
-    layer: &PdfLayerReference,
-    columns: &[String],
-    font: &printpdf::IndirectFontRef,
-) -> Result<()> {
+fn table_header(columns: &[String]) -> Vec<Op> {
     if columns.is_empty() {
-        return Ok(());
+        return Vec::new();
     }
     let col_w = (PAGE_W - MARGIN * 2.0) / columns.len() as f32;
+    let mut ops = Vec::new();
     for (i, col) in columns.iter().enumerate() {
         let x = MARGIN + i as f32 * col_w;
-        layer.use_text(col.as_str(), 8.0, Mm(x), Mm(TABLE_HDR_Y), font);
+        ops.extend(text(x, TABLE_HDR_Y, 8.0, true, col));
     }
-    Ok(())
+    ops
 }
 
-fn render_table_body(
-    layer: &PdfLayerReference,
-    chunk: &[Vec<serde_json::Value>],
-    columns: &[String],
-    font: &printpdf::IndirectFontRef,
-) -> Result<()> {
+fn table_body(chunk: &[Vec<serde_json::Value>], columns: &[String]) -> Vec<Op> {
     if columns.is_empty() {
-        return Ok(());
+        return Vec::new();
     }
     let col_w = (PAGE_W - MARGIN * 2.0) / columns.len() as f32;
+    let mut ops = Vec::new();
     for (row_idx, row) in chunk.iter().enumerate() {
         let y = TABLE_BODY_Y - row_idx as f32 * ROW_H;
         for (col_idx, _) in columns.iter().enumerate() {
@@ -129,19 +133,13 @@ fn render_table_body(
                 })
                 .unwrap_or_default();
             let truncated: String = val.chars().take(20).collect();
-            layer.use_text(truncated.as_str(), 7.0, Mm(x), Mm(y), font);
+            ops.extend(text(x, y, 7.0, false, &truncated));
         }
     }
-    Ok(())
+    ops
 }
 
-fn render_footer(
-    layer: &PdfLayerReference,
-    page: usize,
-    slug: &str,
-    font: &printpdf::IndirectFontRef,
-) -> Result<()> {
+fn footer(page: usize, slug: &str) -> Vec<Op> {
     let footer = format!("Page {page} | {slug} | tlog: pending");
-    layer.use_text(footer.as_str(), 7.0, Mm(MARGIN), Mm(FOOTER_Y), font);
-    Ok(())
+    text(MARGIN, FOOTER_Y, 7.0, false, &footer)
 }
