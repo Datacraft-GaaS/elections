@@ -22,17 +22,13 @@ Audit count for the root lock: 30 advisories to 12.
 
 ## Open, with reasons
 
-### cryptoki 0.7: RUSTSEC-2026-0286
+### Closed: cryptoki 0.7: RUSTSEC-2026-0286
 
-Out-of-bounds read when decoding `CKA_ALLOWED_MECHANISMS` from a token. The fix
-is cryptoki 0.10 or 0.11, but 0.11 makes `Session` deliberately `!Send` (it
-holds a raw handle). `SthProducer` in `tlog-sequencer` carries the signer across
-`tokio::spawn`, so the transparency sequencer stops compiling.
-
-Reachable only through a compromised or hostile HSM. Removal requires
-restructuring the signer so no PKCS#11 session crosses an await, for example by
-running each signing operation in `spawn_blocking` with the session reacquired
-inside. That is the next dependency item.
+Upgraded to cryptoki 0.11. Its `Session` is deliberately `!Send`, so the PKCS#11
+pool now lives on a dedicated worker thread in both `tlog-sequencer` and
+`hsm-signer`; the public handles carry a channel and the signing calls block on
+a reply, which keeps them `Send` across `tokio::spawn` and `spawn_blocking`.
+`tools/hsm-init` was migrated to the 0.11 API as well.
 
 ### zip 1.3 and 8.6: RUSTSEC-2025-0168, -2026-0367, -0368, -0369
 

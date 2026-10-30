@@ -40,7 +40,7 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use cryptoki::context::{CInitializeArgs, Pkcs11};
+use cryptoki::context::{CInitializeArgs, CInitializeFlags, Pkcs11};
 use cryptoki::session::Session;
 use cryptoki::slot::Slot;
 use cryptoki::types::AuthPin;
@@ -96,7 +96,7 @@ impl PkcsPool {
     pub fn open(config: PkcsPoolConfig) -> Result<Self, CryptoError> {
         let ctx =
             Pkcs11::new(config.module_path).map_err(|e| CryptoError::Internal(e.to_string()))?;
-        ctx.initialize(CInitializeArgs::OsThreads)
+        ctx.initialize(CInitializeArgs::new(CInitializeFlags::OS_LOCKING_OK))
             .map_err(|e| CryptoError::Internal(e.to_string()))?;
 
         let slots = ctx
@@ -115,7 +115,7 @@ impl PkcsPool {
             session
                 .login(
                     cryptoki::session::UserType::User,
-                    Some(&AuthPin::new(config.pin.clone())),
+                    Some(&AuthPin::new(config.pin.clone().into_boxed_str())),
                 )
                 .map_err(|e| CryptoError::Internal(e.to_string()))?;
             sessions.push(session);
@@ -153,7 +153,7 @@ impl PkcsPool {
                 .map_err(|e| CryptoError::Internal(e.to_string()))?;
             s.login(
                 cryptoki::session::UserType::User,
-                Some(&AuthPin::new(self.0.pin.clone())),
+                Some(&AuthPin::new(self.0.pin.clone().into_boxed_str())),
             )
             .map_err(|e| CryptoError::Internal(e.to_string()))?;
             s

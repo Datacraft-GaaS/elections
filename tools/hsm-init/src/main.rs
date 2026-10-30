@@ -24,7 +24,7 @@
 use anyhow::{anyhow, Context, Result};
 use clap::{Parser, Subcommand};
 use cryptoki::{
-    context::{CInitializeArgs, Pkcs11},
+    context::{CInitializeArgs, CInitializeFlags, Pkcs11},
     mechanism::Mechanism,
     object::{Attribute, AttributeType, KeyType, ObjectClass},
     session::UserType,
@@ -165,7 +165,7 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
     let pkcs11 = Pkcs11::new(&cli.module).context("failed to load PKCS#11 module")?;
     pkcs11
-        .initialize(CInitializeArgs::OsThreads)
+        .initialize(CInitializeArgs::new(CInitializeFlags::OS_LOCKING_OK))
         .context("failed to initialize PKCS#11")?;
 
     match cli.cmd {
@@ -224,7 +224,7 @@ fn generate_key(pkcs11: &Pkcs11, role: Role) -> Result<()> {
     let info = slot_for_role(role);
     let slot = find_slot(pkcs11, info.label)?;
     let session = pkcs11.open_rw_session(slot)?;
-    session.login(UserType::User, Some(&AuthPin::new(info.user_pin.into())))?;
+    session.login(UserType::User, Some(&AuthPin::new(Box::from(info.user_pin))))?;
 
     // Check if key already exists
     let existing = session.find_objects(&[
@@ -302,7 +302,7 @@ fn list_keys(pkcs11: &Pkcs11) -> Result<()> {
             Ok(slot) => {
                 let session = pkcs11.open_ro_session(slot)?;
                 if session
-                    .login(UserType::User, Some(&AuthPin::new(info.user_pin.into())))
+                    .login(UserType::User, Some(&AuthPin::new(Box::from(info.user_pin))))
                     .is_ok()
                 {
                     let objects = session.find_objects(&[])?;
@@ -336,7 +336,7 @@ fn sign_blob(pkcs11: &Pkcs11, role: Role, data: &[u8]) -> Result<Vec<u8>> {
     let info = slot_for_role(role);
     let slot = find_slot(pkcs11, info.label)?;
     let session = pkcs11.open_rw_session(slot)?;
-    session.login(UserType::User, Some(&AuthPin::new(info.user_pin.into())))?;
+    session.login(UserType::User, Some(&AuthPin::new(Box::from(info.user_pin))))?;
 
     let keys = session.find_objects(&[
         Attribute::Label(info.key_label.as_bytes().to_vec()),
@@ -356,7 +356,7 @@ fn verify_blob(pkcs11: &Pkcs11, role: Role, data: &[u8], signature: &[u8]) -> Re
     let info = slot_for_role(role);
     let slot = find_slot(pkcs11, info.label)?;
     let session = pkcs11.open_ro_session(slot)?;
-    session.login(UserType::User, Some(&AuthPin::new(info.user_pin.into())))?;
+    session.login(UserType::User, Some(&AuthPin::new(Box::from(info.user_pin))))?;
 
     let keys = session.find_objects(&[
         Attribute::Label(info.key_label.as_bytes().to_vec()),

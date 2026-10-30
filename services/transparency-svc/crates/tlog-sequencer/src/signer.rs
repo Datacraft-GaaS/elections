@@ -24,7 +24,7 @@
 //! `tree_size (u64 BE) || root_hash || cadence`.
 //! Verifiers recompute these from the stored row contents.
 
-use std::sync::Arc;
+use std::sync::mpsc::{self, Sender};
 
 use eel_crypto_rs::pkcs11_pool::{find_key_by_role, PkcsPool, PkcsPoolConfig};
 use eel_crypto_rs::{CryptoError, KeyRole};
@@ -44,9 +44,30 @@ pub enum SthSigner {
     Dev(DevEd25519),
 }
 
+/// Handle to the PKCS#11 worker thread.
+///
+/// cryptoki 0.11's `Session` is deliberately `!Send`, and an `SthProducer` is
+/// moved into `tokio::spawn`, so the pool cannot live in the future. The pool is
+/// therefore created and used only on a dedicated thread; this handle is `Send`
+/// and the signing calls block on a reply.
 #[derive(Clone)]
 pub struct Pkcs11Signer {
-    pool: Arc<PkcsPool>,
+    tx: Sender<HsmJob>,
+}
+
+enum HsmJob {
+    Sign {
+        payload: Vec<u8>,
+        reply: Sender<Result<(Vec<u8>, String), CryptoError>>,
+    },
+    Verify {
+        payload: Vec<u8>,
+        signature: Vec<u8>,
+        reply: Sender<Result<bool, CryptoError>>,
+    },
+    Fingerprint {
+        reply: Sender<Result<String, CryptoError>>,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -93,7 +114,7 @@ impl SthSigner {
                     .and_then(|s| s.parse().ok())
                     .unwrap_or(0);
                 let pin = std::env::var("EEL_HSM_PIN").unwrap_or_default();
-                let pool = PkcsPool::open(PkcsPoolConfig {
+                let tx = spawn_hsm_worker(PkcsPoolConfig {
                     module_path,
                     slot_id,
                     pin,
@@ -103,9 +124,7 @@ impl SthSigner {
                     vendor = ?std::env::var("EEL_HSM_VENDOR").unwrap_or_else(|_| "softhsm".into()),
                     "STH signing: PKCS#11 eel-sth key"
                 );
-                Ok(SthSigner::Pkcs11(Pkcs11Signer {
-                    pool: Arc::new(pool),
-                }))
+                Ok(SthSigner::Pkcs11(Pkcs11Signer { tx }))
             }
         }
     }
@@ -159,66 +178,152 @@ pub fn canonical_sth_bytes(tree_size: u64, root_hash: &[u8], cadence: &str) -> V
 
 impl Pkcs11Signer {
     fn sign_raw(&self, payload: &[u8]) -> Result<(Vec<u8>, String), CryptoError> {
-        let session = self.pool.get()?;
-        let handle = find_key_by_role(session.session(), KeyRole::Sth)?;
-        let sig = session
-            .session()
-            .sign(&cryptoki::mechanism::Mechanism::Ecdsa, handle, payload)
-            .map_err(|e| CryptoError::Internal(format!("sth sign failed: {e}")))?;
-        let fp = read_key_id(session.session(), handle)?;
-        Ok((sig, fp))
+        let (reply, rx) = mpsc::channel();
+        self.tx
+            .send(HsmJob::Sign {
+                payload: payload.to_vec(),
+                reply,
+            })
+            .map_err(|_| CryptoError::Internal("HSM worker stopped".into()))?;
+        rx.recv()
+            .map_err(|_| CryptoError::Internal("HSM worker dropped reply".into()))?
     }
 
     fn verify_raw(&self, payload: &[u8], signature: &[u8]) -> Result<bool, CryptoError> {
-        use cryptoki::object::{Attribute, ObjectClass};
-        let session = self.pool.get()?;
-        let label = KeyRole::Sth.label();
-        let handles = session
-            .session()
-            .find_objects(&[
-                Attribute::Label(label.as_bytes().to_vec()),
-                Attribute::Class(ObjectClass::PUBLIC_KEY),
-            ])
-            .map_err(|e| CryptoError::Internal(format!("find sth pubkey: {e}")))?;
-        let handle = handles
-            .into_iter()
-            .next()
-            .ok_or_else(|| CryptoError::InvalidKey("no eel-sth public key on token".into()))?;
-        match session.session().verify(
-            &cryptoki::mechanism::Mechanism::Ecdsa,
-            handle,
-            payload,
-            signature,
-        ) {
-            Ok(()) => Ok(true),
-            Err(e) => {
-                let msg = e.to_string();
-                if msg.contains("Signature") || msg.contains("signature") {
-                    Ok(false)
-                } else {
-                    Err(CryptoError::Internal(format!("sth verify: {msg}")))
-                }
-            }
-        }
+        let (reply, rx) = mpsc::channel();
+        self.tx
+            .send(HsmJob::Verify {
+                payload: payload.to_vec(),
+                signature: signature.to_vec(),
+                reply,
+            })
+            .map_err(|_| CryptoError::Internal("HSM worker stopped".into()))?;
+        rx.recv()
+            .map_err(|_| CryptoError::Internal("HSM worker dropped reply".into()))?
     }
 
     fn fingerprint(&self) -> Result<String, CryptoError> {
-        use cryptoki::object::{Attribute, ObjectClass};
-        let session = self.pool.get()?;
-        let label = KeyRole::Sth.label();
-        let handles = session
-            .session()
-            .find_objects(&[
-                Attribute::Label(label.as_bytes().to_vec()),
-                Attribute::Class(ObjectClass::PUBLIC_KEY),
-            ])
-            .map_err(|e| CryptoError::Internal(format!("find sth pubkey: {e}")))?;
-        let handle = handles
-            .into_iter()
-            .next()
-            .ok_or_else(|| CryptoError::InvalidKey("no eel-sth public key".into()))?;
-        read_key_id(session.session(), handle)
+        let (reply, rx) = mpsc::channel();
+        self.tx
+            .send(HsmJob::Fingerprint { reply })
+            .map_err(|_| CryptoError::Internal("HSM worker stopped".into()))?;
+        rx.recv()
+            .map_err(|_| CryptoError::Internal("HSM worker dropped reply".into()))?
     }
+}
+
+/// Spawn the thread that owns the PKCS#11 pool, and wait for it to open the
+/// token before returning. A failure to open is a startup failure: an
+/// unverified log is worse than no log.
+fn spawn_hsm_worker(config: PkcsPoolConfig) -> Result<Sender<HsmJob>, CryptoError> {
+    let (tx, rx) = mpsc::channel::<HsmJob>();
+    let (ready_tx, ready_rx) = mpsc::channel::<Result<(), CryptoError>>();
+
+    std::thread::Builder::new()
+        .name("eel-hsm-signer".to_string())
+        .spawn(move || {
+            let pool = match PkcsPool::open(config) {
+                Ok(pool) => pool,
+                Err(e) => {
+                    let _ = ready_tx.send(Err(e));
+                    return;
+                }
+            };
+            let _ = ready_tx.send(Ok(()));
+
+            while let Ok(job) = rx.recv() {
+                match job {
+                    HsmJob::Sign { payload, reply } => {
+                        let _ = reply.send(sign_with_pool(&pool, &payload));
+                    }
+                    HsmJob::Verify {
+                        payload,
+                        signature,
+                        reply,
+                    } => {
+                        let _ = reply.send(verify_with_pool(&pool, &payload, &signature));
+                    }
+                    HsmJob::Fingerprint { reply } => {
+                        let _ = reply.send(fingerprint_with_pool(&pool));
+                    }
+                }
+            }
+        })
+        .map_err(|e| CryptoError::Internal(format!("spawn HSM worker: {e}")))?;
+
+    ready_rx
+        .recv()
+        .map_err(|_| CryptoError::Internal("HSM worker failed to start".into()))??;
+    Ok(tx)
+}
+
+fn sign_with_pool(
+    pool: &PkcsPool,
+    payload: &[u8],
+) -> Result<(Vec<u8>, String), CryptoError> {
+    let session = pool.get()?;
+    let handle = find_key_by_role(session.session(), KeyRole::Sth)?;
+    let sig = session
+        .session()
+        .sign(&cryptoki::mechanism::Mechanism::Ecdsa, handle, payload)
+        .map_err(|e| CryptoError::Internal(format!("sth sign failed: {e}")))?;
+    let fp = read_key_id(session.session(), handle)?;
+    Ok((sig, fp))
+}
+
+fn verify_with_pool(
+    pool: &PkcsPool,
+    payload: &[u8],
+    signature: &[u8],
+) -> Result<bool, CryptoError> {
+    use cryptoki::object::{Attribute, ObjectClass};
+    let session = pool.get()?;
+    let label = KeyRole::Sth.label();
+    let handles = session
+        .session()
+        .find_objects(&[
+            Attribute::Label(label.as_bytes().to_vec()),
+            Attribute::Class(ObjectClass::PUBLIC_KEY),
+        ])
+        .map_err(|e| CryptoError::Internal(format!("find sth pubkey: {e}")))?;
+    let handle = handles
+        .into_iter()
+        .next()
+        .ok_or_else(|| CryptoError::InvalidKey("no eel-sth public key on token".into()))?;
+    match session.session().verify(
+        &cryptoki::mechanism::Mechanism::Ecdsa,
+        handle,
+        payload,
+        signature,
+    ) {
+        Ok(()) => Ok(true),
+        Err(e) => {
+            let msg = e.to_string();
+            if msg.contains("Signature") || msg.contains("signature") {
+                Ok(false)
+            } else {
+                Err(CryptoError::Internal(format!("sth verify: {msg}")))
+            }
+        }
+    }
+}
+
+fn fingerprint_with_pool(pool: &PkcsPool) -> Result<String, CryptoError> {
+    use cryptoki::object::{Attribute, ObjectClass};
+    let session = pool.get()?;
+    let label = KeyRole::Sth.label();
+    let handles = session
+        .session()
+        .find_objects(&[
+            Attribute::Label(label.as_bytes().to_vec()),
+            Attribute::Class(ObjectClass::PUBLIC_KEY),
+        ])
+        .map_err(|e| CryptoError::Internal(format!("find sth pubkey: {e}")))?;
+    let handle = handles
+        .into_iter()
+        .next()
+        .ok_or_else(|| CryptoError::InvalidKey("no eel-sth public key".into()))?;
+    read_key_id(session.session(), handle)
 }
 
 impl DevEd25519 {

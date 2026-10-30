@@ -54,7 +54,6 @@ db-urls = ["https://github.com/rustsec/advisory-db"]
 # fails the gate; adding an entry requires a reason and a review date.
 ignore = [
   # No fixed upgrade exists.
-  { id = "RUSTSEC-2026-0286", reason = "cryptoki 0.7 out-of-bounds read decoding CKA_ALLOWED_MECHANISMS from a hostile token. cryptoki 0.11 makes Session !Send and breaks the transparency sequencer; needs a signer restructure. Not reachable without a compromised HSM." },
   # zip advisories concern archive extraction. This project never extracts an
   # untrusted archive: docx-rs writes .docx and utoipa-swagger-ui unpacks a
   # bundled swagger distribution at build time.

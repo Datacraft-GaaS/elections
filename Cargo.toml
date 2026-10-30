@@ -126,7 +126,7 @@ fred            = { version = "9",    features = ["i-all"] }
 opensearch      = { version = "2" }
 
 # Crypto / HSM
-cryptoki        = { version = "0.7" }
+cryptoki        = { version = "0.11" }
 sigstore        = { version = "0.10", features = ["bundle", "rekor"] }
 ed25519-dalek   = { version = "2",    features = ["serde", "rand_core"] }
 oqs             = { version = "0.11", features = ["ml_kem", "ml_dsa", "dilithium", "kyber"] }
